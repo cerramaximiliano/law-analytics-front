@@ -1,32 +1,30 @@
 import { useState, useEffect, useCallback } from "react";
-import { Alert, Chip, CircularProgress, FormControlLabel, Stack, Switch, Typography, Grid } from "@mui/material";
-import { InfoCircle, Link1, People, TickCircle, CloseCircle } from "iconsax-react";
-import { useTheme } from "@mui/material/styles";
+import { Box, CircularProgress, FormControlLabel, Grid, Stack, Switch, Typography } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
+import { InfoCircle, Link1, People } from "iconsax-react";
 import { enqueueSnackbar } from "notistack";
 
 // project-imports
 import MainCard from "components/MainCard";
 import PjnAccountConnect from "sections/apps/folders/step-components/PjnAccountConnect";
 import ApiService from "store/reducers/ApiService";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // ==============================|| ACCOUNT PROFILE - PJN INTEGRATION ||============================== //
 
 const TabPjnIntegration = () => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 
-	// Estado del servicio PJN
 	const [serviceAvailable, setServiceAvailable] = useState(true);
 	const [serviceMessage, setServiceMessage] = useState("");
 
-	// Estado de conexión (informado por PjnAccountConnect al cargar credenciales)
 	const [isConnected, setIsConnected] = useState<boolean | null>(null);
 
-	// Sincronización de intervinientes
 	const [syncContactsEnabled, setSyncContactsEnabled] = useState(false);
 	const [syncContactsLoading, setSyncContactsLoading] = useState(false);
 	const [prefsLoaded, setPrefsLoaded] = useState(false);
 
-	// Cargar preferencia al montar
 	const loadPreferences = useCallback(async () => {
 		try {
 			const response = await ApiService.getUserPreferences();
@@ -42,7 +40,6 @@ const TabPjnIntegration = () => {
 		loadPreferences();
 	}, [loadPreferences]);
 
-	// Toggle sincronización de intervinientes como contactos
 	const handleToggleSyncContacts = async () => {
 		const newValue = !syncContactsEnabled;
 		setSyncContactsLoading(true);
@@ -66,85 +63,226 @@ const TabPjnIntegration = () => {
 		}
 	};
 
-	const serviceUnavailableAlert = !serviceAvailable ? (
-		<Alert severity="info" icon={<InfoCircle size={18} />}>
-			{serviceMessage || "La integración con el Poder Judicial de la Nación no está disponible en este momento."}
-		</Alert>
-	) : null;
+	const switchSx = {
+		"& .MuiSwitch-switchBase.Mui-checked": {
+			color: BRAND_BLUE,
+			"& .MuiSwitch-thumb": { backgroundColor: BRAND_BLUE, color: BRAND_BLUE },
+			"& + .MuiSwitch-track": { backgroundColor: `${BRAND_BLUE} !important`, opacity: 0.5 },
+		},
+	};
+
+	const SectionCard = ({
+		eyebrow,
+		title,
+		subtitle,
+		icon,
+		rightSlot,
+		children,
+	}: {
+		eyebrow: string;
+		title: string;
+		subtitle?: string;
+		icon: React.ReactNode;
+		rightSlot?: React.ReactNode;
+		children: React.ReactNode;
+	}) => (
+		<Box
+			sx={{
+				borderRadius: 2,
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+				bgcolor: "background.paper",
+				height: "100%",
+				overflow: "hidden",
+			}}
+		>
+			<Box
+				sx={{
+					px: { xs: 2, sm: 2.5 },
+					py: 1.75,
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
+					borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+				}}
+			>
+				<Stack direction="row" spacing={1.25} alignItems="center">
+					<Box
+						sx={{
+							width: 32,
+							height: 32,
+							borderRadius: 1,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+							color: BRAND_BLUE,
+							flexShrink: 0,
+						}}
+					>
+						{icon}
+					</Box>
+					<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+						<Stack direction="row" spacing={0.625} alignItems="center">
+							<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+							<Typography
+								sx={{
+									fontSize: "0.6rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+								}}
+							>
+								{eyebrow}
+							</Typography>
+						</Stack>
+						<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>{title}</Typography>
+						{subtitle && (
+							<Typography sx={{ fontSize: "0.74rem", color: "text.secondary", letterSpacing: "-0.005em" }}>{subtitle}</Typography>
+						)}
+					</Stack>
+					{rightSlot}
+				</Stack>
+			</Box>
+			<Box sx={{ p: { xs: 2, sm: 2.5 } }}>{children}</Box>
+		</Box>
+	);
+
+	const StatusPill = ({ connected }: { connected: boolean }) => {
+		const color = connected ? LIVE_GREEN : theme.palette.text.secondary;
+		return (
+			<Box
+				sx={{
+					display: "inline-flex",
+					alignItems: "center",
+					gap: 0.5,
+					px: 0.875,
+					py: 0.25,
+					borderRadius: 0.75,
+					bgcolor: alpha(color, isDark ? 0.16 : 0.1),
+					border: `1px solid ${alpha(color, isDark ? 0.32 : 0.22)}`,
+				}}
+			>
+				<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: color }} />
+				<Typography sx={{ fontSize: "0.66rem", fontWeight: 600, color, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>
+					{connected ? "Conectado" : "No conectado"}
+				</Typography>
+			</Box>
+		);
+	};
 
 	return (
-		<Grid container spacing={3}>
+		<Grid container spacing={2.5}>
 			<Grid item xs={12} md={6}>
-				<MainCard
-					title={
-						<Stack direction="row" alignItems="center" spacing={1} useFlexGap flexWrap="wrap" rowGap={1}>
-							<Link1 size={22} color={theme.palette.primary.main} />
-							<Typography variant="h5">Integración PJN</Typography>
-							{isConnected !== null &&
-								(isConnected ? (
-									<Chip label="Conectado" color="success" size="small" icon={<TickCircle size={14} />} sx={{ ml: 1 }} />
-								) : (
-									<Chip label="No conectado" color="default" size="small" icon={<CloseCircle size={14} />} sx={{ ml: 1 }} />
-								))}
-						</Stack>
-					}
+				<SectionCard
+					eyebrow="Integración"
+					title="Cuenta PJN"
+					subtitle="Vincula tu cuenta del Poder Judicial de la Nación para sincronizar automáticamente todas tus causas."
+					icon={<Link1 size={16} variant="Bulk" />}
+					rightSlot={isConnected !== null ? <StatusPill connected={isConnected} /> : undefined}
 				>
-					<Stack spacing={3}>
-						<Typography variant="body2" color="text.secondary">
-							Vincula tu cuenta del Poder Judicial de la Nación para sincronizar automáticamente todas tus causas y mantenerlas
-							actualizadas.
-						</Typography>
-						<PjnAccountConnect
-							onServiceAvailableChange={(available, message) => {
-								setServiceAvailable(available);
-								setServiceMessage(message || "");
-							}}
-							onConnectionStatusChange={(connected) => setIsConnected(connected)}
-						/>
-					</Stack>
-				</MainCard>
+					<PjnAccountConnect
+						onServiceAvailableChange={(available, message) => {
+							setServiceAvailable(available);
+							setServiceMessage(message || "");
+						}}
+						onConnectionStatusChange={(connected) => setIsConnected(connected)}
+					/>
+				</SectionCard>
 			</Grid>
 
 			<Grid item xs={12} md={6}>
-				<MainCard
-					title={
-						<Stack direction="row" alignItems="center" spacing={1}>
-							<People size={22} color={theme.palette.primary.main} />
-							<Typography variant="h5">Preferencias de sincronización</Typography>
-						</Stack>
-					}
+				<SectionCard
+					eyebrow="Sincronización"
+					title="Preferencias de sincronización"
+					subtitle="Configurá cómo se sincronizan los intervinientes de tus causas."
+					icon={<People size={16} variant="Bulk" />}
 				>
-					{serviceUnavailableAlert ||
-						(!prefsLoaded ? (
-							<Stack alignItems="center" sx={{ py: 4 }}>
-								<CircularProgress size={24} />
-							</Stack>
-						) : (
-							<Stack spacing={2}>
-								<Stack direction="row" alignItems="center" justifyContent="space-between">
-									<FormControlLabel
-										control={<Switch checked={syncContactsEnabled} onChange={handleToggleSyncContacts} disabled={syncContactsLoading} />}
-										label="Sincronizar intervinientes como contactos"
-									/>
-									{syncContactsLoading && <CircularProgress size={20} />}
-								</Stack>
-								<Typography variant="caption" color="text.secondary">
-									Los intervinientes (partes y letrados) extraídos de tus causas se crearán automáticamente como contactos en las carpetas
-									vinculadas.
+					{!serviceAvailable ? (
+						<Box
+							sx={{
+								p: 1.5,
+								borderRadius: 1.25,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+							}}
+						>
+							<Stack direction="row" spacing={1} alignItems="flex-start">
+								<InfoCircle size={16} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
+								<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+									{serviceMessage || "La integración con el Poder Judicial de la Nación no está disponible en este momento."}
 								</Typography>
-								{!syncContactsEnabled && (
-									<Alert severity="info" icon={<InfoCircle size={14} />} sx={{ py: 0.5, "& .MuiAlert-message": { fontSize: "0.75rem" } }}>
-										Al activarlo, los actores y demandados de tus causas se crearán como contactos. La app detecta contactos existentes con
-										el mismo CUIT para evitar duplicados. Si tenés muchas causas, se pueden crear cientos de contactos nuevos — activá con
-										criterio.
-									</Alert>
-								)}
-								<Alert severity="info" icon={<InfoCircle size={14} />} sx={{ py: 0.25, "& .MuiAlert-message": { fontSize: "0.75rem" } }}>
-									La cantidad de contactos sincronizados está sujeta a los límites de tu plan actual.
-								</Alert>
 							</Stack>
-						))}
-				</MainCard>
+						</Box>
+					) : !prefsLoaded ? (
+						<Stack alignItems="center" sx={{ py: 4 }} spacing={1}>
+							<CircularProgress size={24} sx={{ color: BRAND_BLUE }} />
+							<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+								Cargando preferencias…
+							</Typography>
+						</Stack>
+					) : (
+						<Stack spacing={1.5}>
+							<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5}>
+								<FormControlLabel
+									control={
+										<Switch
+											checked={syncContactsEnabled}
+											onChange={handleToggleSyncContacts}
+											disabled={syncContactsLoading}
+											sx={switchSx}
+										/>
+									}
+									label={
+										<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+											Sincronizar intervinientes como contactos
+										</Typography>
+									}
+								/>
+								{syncContactsLoading && <CircularProgress size={18} sx={{ color: BRAND_BLUE, flexShrink: 0 }} />}
+							</Stack>
+							<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+								Los intervinientes (partes y letrados) extraídos de tus causas se crearán automáticamente como contactos en las carpetas
+								vinculadas.
+							</Typography>
+
+							{!syncContactsEnabled && (
+								<Box
+									sx={{
+										p: 1.25,
+										borderRadius: 1.25,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+									}}
+								>
+									<Stack direction="row" spacing={1} alignItems="flex-start">
+										<InfoCircle size={14} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
+										<Typography sx={{ fontSize: "0.74rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+											Al activarlo, los actores y demandados de tus causas se crearán como contactos. La app detecta contactos existentes con
+											el mismo CUIT para evitar duplicados. Si tenés muchas causas, se pueden crear cientos de contactos nuevos — activá con
+											criterio.
+										</Typography>
+									</Stack>
+								</Box>
+							)}
+
+							<Box
+								sx={{
+									p: 1.25,
+									borderRadius: 1.25,
+									bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05),
+									border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+								}}
+							>
+								<Stack direction="row" spacing={1} alignItems="flex-start">
+									<InfoCircle size={14} variant="Bulk" color={STALE_AMBER} style={{ marginTop: 2, flexShrink: 0 }} />
+									<Typography sx={{ fontSize: "0.74rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+										La cantidad de contactos sincronizados está sujeta a los límites de tu plan actual.
+									</Typography>
+								</Stack>
+							</Box>
+						</Stack>
+					)}
+				</SectionCard>
 			</Grid>
 		</Grid>
 	);

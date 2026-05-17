@@ -7,38 +7,29 @@ import { AppDispatch } from "store";
 import {
 	Box,
 	Button,
-	Chip,
-	Divider,
-	Grid,
-	List,
-	ListItem,
-	ListItemText,
-	Stack,
-	Typography,
 	CircularProgress,
-	Alert,
 	Dialog,
 	DialogActions,
 	DialogContent,
-	DialogContentText,
-	DialogTitle,
-	Snackbar,
+	Grid,
+	IconButton,
+	Stack,
 	Table,
 	TableBody,
 	TableCell,
 	TableContainer,
 	TableHead,
 	TableRow,
+	Typography,
 } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 
-// assets
-import { ReceiptItem, Calendar, Timer1 } from "iconsax-react";
+// icons
+import { Calendar, CardSend, CloseSquare, Crown, InfoCircle, ReceiptItem, Refresh, ReceiptText, Timer1, Warning2 } from "iconsax-react";
 
 // project-imports
-import { useTheme } from "@mui/material/styles";
 import MainCard from "components/MainCard";
-import ApiService from "store/reducers/ApiService";
-import { Payment } from "store/reducers/ApiService";
+import ApiService, { Payment } from "store/reducers/ApiService";
 import InvoiceView from "./InvoiceView";
 import { useNavigate } from "react-router";
 import { RootState } from "store";
@@ -48,49 +39,34 @@ import dayjs from "utils/dayjs-config";
 import { useTeam } from "contexts/TeamContext";
 import { ROLE_CONFIG } from "types/teams";
 import ResourceUsageWidget from "sections/widget/chart/ResourceUsageWidget";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // ==============================|| ACCOUNT PROFILE - SUBSCRIPTION ||============================== //
 
-// Helper function to get the correct Stripe value based on environment
 const getStripeValue = (value: any): string => {
-	if (typeof value === "string") {
-		return value;
-	}
-
+	if (typeof value === "string") return value;
 	if (typeof value === "object" && value !== null) {
-		// Detectar si estamos en desarrollo o producción
 		const isDevelopment = import.meta.env.VITE_BASE_URL?.includes("localhost") || import.meta.env.MODE === "development";
-
-		if (isDevelopment && value.test) {
-			return value.test;
-		} else if (!isDevelopment && value.live) {
-			return value.live;
-		} else if (value.test) {
-			// Fallback to test if live is not available
-			return value.test;
-		} else if (value.live) {
-			// Fallback to live if test is not available
-			return value.live;
-		}
+		if (isDevelopment && value.test) return value.test;
+		if (!isDevelopment && value.live) return value.live;
+		if (value.test) return value.test;
+		if (value.live) return value.live;
 	}
-
 	return "No disponible";
 };
 
 const TabSubscription = () => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const errorColor = theme.palette.error.main;
 	const dispatch = useDispatch<AppDispatch>();
 	const navigate = useNavigate();
 
-	// Team context - para mostrar información apropiada a miembros del equipo
 	const { isTeamMode, activeTeam, userRole, isOwner, ownerSubscription } = useTeam();
-	const isTeamMember = isTeamMode && !isOwner; // Usuario es miembro de equipo (no propietario)
+	const isTeamMember = isTeamMode && !isOwner;
 
-	// Obtener la suscripción del estado Redux
 	const subscription = useSelector((state: RootState) => state.auth.subscription);
-	// Obtener el historial de pagos del estado Redux
 	const payments = useSelector(selectPaymentHistory) || [];
-	// Obtener el email del usuario para las facturas
 	const userEmail = useSelector((state: RootState) => state.auth.user?.email || state.auth.email || "");
 
 	const [loading, setLoading] = useState(false);
@@ -99,18 +75,14 @@ const TabSubscription = () => {
 	const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 	const [cancelLoading, setCancelLoading] = useState(false);
 	const [reactivateLoading, setReactivateLoading] = useState(false);
-	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-	// Estado para las facturas
 	const [paymentsLoading, setPaymentsLoading] = useState(false);
 	const [showAllPayments, setShowAllPayments] = useState(false);
 	const [paymentsError, setPaymentsError] = useState<string | null>(null);
 
-	// Estado para mostrar la factura personalizada
 	const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
 	const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
 
-	// Estado para métodos de pago
 	const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
 	const [defaultPaymentMethod, setDefaultPaymentMethod] = useState<any>(null);
 	const [paymentMethodsLoading, setPaymentMethodsLoading] = useState(false);
@@ -119,41 +91,27 @@ const TabSubscription = () => {
 	const [openingBillingPortal, setOpeningBillingPortal] = useState(false);
 	const [showAllPaymentMethods, setShowAllPaymentMethods] = useState(false);
 
-	// Función para cargar los datos de la suscripción
 	const fetchSubscription = async (forceRefresh = true) => {
 		try {
 			setLoading(true);
 			setError(null);
-
-			// Usar la acción de Redux para obtener la suscripción (forzar refresh por defecto)
 			const subscriptionData = await dispatch(fetchCurrentSubscription(forceRefresh) as any);
-
-			// Si hay un cambio de plan pendiente, guardarlo
 			if (subscriptionData && subscriptionData.pendingPlanChange) {
 				setNextPlan(getStripeValue(subscriptionData.pendingPlanChange.planId));
 			}
 		} catch (err: any) {
-			// Solo mostrar error si no es 401 (usuario no autenticado)
-			if (err.response?.status !== 401) {
-				setError("Error al cargar los datos de suscripción");
-			}
+			if (err.response?.status !== 401) setError("Error al cargar los datos de suscripción");
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	// Función para cargar el historial de pagos usando Redux
 	const loadPaymentHistory = async () => {
 		try {
 			setPaymentsLoading(true);
 			setPaymentsError(null);
-
-			// Dispatch the Redux action to fetch payment history
 			await dispatch(fetchPaymentHistory() as any);
 		} catch (err: any) {
-			// Error handling is done in the Redux action
-			// Just update local error state if needed
-			// No mostrar error para 401 (no autenticado) ni 500 (suscripción no encontrada - caso free)
 			if (err.response?.status !== 401 && err.response?.status !== 500) {
 				setPaymentsError(err.message || "Error al cargar el historial de pagos");
 			}
@@ -162,14 +120,11 @@ const TabSubscription = () => {
 		}
 	};
 
-	// Función para cargar los métodos de pago
 	const loadPaymentMethods = async () => {
 		try {
 			setPaymentMethodsLoading(true);
 			setPaymentMethodsError(null);
-
 			const response = await ApiService.getPaymentMethods();
-
 			if (response.success) {
 				setPaymentMethods(response.paymentMethods || []);
 				setDefaultPaymentMethod(response.defaultPaymentMethod || null);
@@ -177,7 +132,6 @@ const TabSubscription = () => {
 				setPaymentMethodsError(response.message || "Error al cargar métodos de pago");
 			}
 		} catch (err: any) {
-			// Solo mostrar error si no es 401 (no autenticado) ni 500 (sin métodos de pago)
 			if (err.response?.status !== 401 && err.response?.status !== 500) {
 				setPaymentMethodsError(err.message || "Error al cargar los métodos de pago");
 			}
@@ -186,27 +140,20 @@ const TabSubscription = () => {
 		}
 	};
 
-	// Función para actualizar el método de pago predeterminado
 	const handleChangePaymentMethod = async (paymentMethodId: string) => {
 		try {
 			setChangingPaymentMethod(true);
-
 			const response = await ApiService.updatePaymentMethod(paymentMethodId);
-
 			if (response.success) {
 				dispatch(
 					openSnackbar({
 						open: true,
 						message: response.message || "Método de pago actualizado correctamente",
 						variant: "alert",
-						alert: {
-							color: "success",
-						},
+						alert: { color: "success" },
 						close: false,
 					}),
 				);
-
-				// Recargar los métodos de pago
 				await loadPaymentMethods();
 			} else {
 				dispatch(
@@ -214,9 +161,7 @@ const TabSubscription = () => {
 						open: true,
 						message: response.message || "Error al actualizar el método de pago",
 						variant: "alert",
-						alert: {
-							color: "error",
-						},
+						alert: { color: "error" },
 						close: false,
 					}),
 				);
@@ -227,9 +172,7 @@ const TabSubscription = () => {
 					open: true,
 					message: err.message || "Error al actualizar el método de pago",
 					variant: "alert",
-					alert: {
-						color: "error",
-					},
+					alert: { color: "error" },
 					close: false,
 				}),
 			);
@@ -238,18 +181,12 @@ const TabSubscription = () => {
 		}
 	};
 
-	// Función para abrir el Stripe Billing Portal
 	const handleOpenBillingPortal = async () => {
 		try {
 			setOpeningBillingPortal(true);
-
-			// Obtener la URL actual para redirigir de vuelta después
 			const returnUrl = window.location.href;
-
 			const response = await ApiService.createBillingPortalSession(returnUrl);
-
 			if (response.success && response.url) {
-				// Redirigir al portal de Stripe
 				window.location.href = response.url;
 			} else {
 				dispatch(
@@ -257,9 +194,7 @@ const TabSubscription = () => {
 						open: true,
 						message: response.message || "Error al abrir el portal de facturación",
 						variant: "alert",
-						alert: {
-							color: "error",
-						},
+						alert: { color: "error" },
 						close: false,
 					}),
 				);
@@ -270,9 +205,7 @@ const TabSubscription = () => {
 					open: true,
 					message: err.message || "Error al abrir el portal de facturación",
 					variant: "alert",
-					alert: {
-						color: "error",
-					},
+					alert: { color: "error" },
 					close: false,
 				}),
 			);
@@ -281,67 +214,36 @@ const TabSubscription = () => {
 		}
 	};
 
-	// Cargar suscripción al montar el componente (siempre forzar refresh)
 	useEffect(() => {
 		fetchSubscription();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []); // Solo al montar
+	}, []);
 
 	useEffect(() => {
-		if (subscription) {
-			// Si hay un cambio de plan pendiente, guardarlo
-			if (subscription.pendingPlanChange) {
-				setNextPlan(getStripeValue(subscription.pendingPlanChange.planId));
-			}
-		}
+		if (subscription?.pendingPlanChange) setNextPlan(getStripeValue(subscription.pendingPlanChange.planId));
 	}, [subscription]);
 
-	// Cargar historial de pagos cuando se carga la suscripción
 	useEffect(() => {
-		if (subscription && !payments.length) {
-			loadPaymentHistory();
-		}
+		if (subscription && !payments.length) loadPaymentHistory();
 	}, [subscription]);
 
-	// Cargar métodos de pago cuando se carga la suscripción (solo para planes de pago)
 	useEffect(() => {
-		if (subscription && subscription.plan !== "free") {
-			loadPaymentMethods();
-		}
+		if (subscription && subscription.plan !== "free") loadPaymentMethods();
 	}, [subscription]);
 
 	const formatDate = (dateString: string | Date) => {
 		if (!dateString) return "No disponible";
-
 		const date = typeof dateString === "string" ? new Date(dateString) : dateString;
-		return new Intl.DateTimeFormat("es-ES", {
-			day: "2-digit",
-			month: "long",
-			year: "numeric",
-		}).format(date);
+		return new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "long", year: "numeric" }).format(date);
 	};
 
-	const getStatusChip = (status: string) => {
-		// Si el plan es gratuito, siempre mostrar como activa independientemente del estado
-		if (subscription && subscription.plan === "free") {
-			return <Chip label="Activa" color="success" size="small" />;
-		}
-
-		// Para otros planes, mostrar el estado normal
-		switch (status) {
-			case "active":
-				return <Chip label="Activa" color="success" size="small" />;
-			case "canceled":
-				return <Chip label="Cancelada" color="error" size="small" />;
-			case "past_due":
-				return <Chip label="Pago pendiente" color="warning" size="small" sx={{ color: "text.primary" }} />;
-			case "trialing":
-				return <Chip label="Período de prueba" color="info" size="small" />;
-			case "incomplete":
-				return <Chip label="Procesando pago" color="info" size="small" />;
-			default:
-				return <Chip label={status} color="default" size="small" />;
-		}
+	const formatAmount = (amount: number, currency: string) => {
+		const formatter = new Intl.NumberFormat("es-ES", {
+			style: "currency",
+			currency: currency || "EUR",
+			minimumFractionDigits: 2,
+		});
+		return formatter.format(amount);
 	};
 
 	const getPlanName = (planId: string) => {
@@ -357,131 +259,51 @@ const TabSubscription = () => {
 		}
 	};
 
-	// Función para obtener los límites de un plan específico
 	const getPlanLimits = (planId: string) => {
 		switch (planId) {
 			case "free":
-				return {
-					folders: 5,
-					calculators: 3,
-					contacts: 10,
-					storage: 50, // MB
-				};
+				return { folders: 5, calculators: 3, contacts: 10, storage: 50 };
 			case "standard":
-				return {
-					folders: 50,
-					calculators: 20,
-					contacts: 100,
-					storage: 1024, // 1 GB
-				};
+				return { folders: 50, calculators: 20, contacts: 100, storage: 1024 };
 			case "premium":
-				return {
-					folders: 999999, // Ilimitadas
-					calculators: 999999, // Ilimitadas
-					contacts: 999999, // Ilimitados
-					storage: 10240, // 10 GB
-				};
+				return { folders: 999999, calculators: 999999, contacts: 999999, storage: 10240 };
 			default:
-				return {
-					folders: 0,
-					calculators: 0,
-					contacts: 0,
-					storage: 0,
-				};
+				return { folders: 0, calculators: 0, contacts: 0, storage: 0 };
 		}
 	};
 
-	// Formatear cantidad monetaria
-	const formatAmount = (amount: number, currency: string) => {
-		const formatter = new Intl.NumberFormat("es-ES", {
-			style: "currency",
-			currency: currency || "EUR",
-			minimumFractionDigits: 2,
-		});
-		return formatter.format(amount);
-	};
-
-	// Obtener estado de factura/pago
-	const getPaymentStatusChip = (status: string) => {
-		switch (status) {
-			// Estados de facturas (Invoice)
-			case "paid":
-				return <Chip label="Pagada" color="success" size="small" />;
-			case "open":
-				return <Chip label="Pendiente" color="warning" size="small" sx={{ color: "text.primary" }} />;
-			case "draft":
-				return <Chip label="Borrador" color="default" size="small" />;
-			case "uncollectible":
-				return <Chip label="Incobrable" color="error" size="small" />;
-			case "void":
-				return <Chip label="Anulada" color="default" size="small" />;
-			// Estados de pagos/charges (Charge)
-			case "succeeded":
-				return <Chip label="Completado" color="success" size="small" />;
-			case "pending":
-				return <Chip label="Pendiente" color="warning" size="small" sx={{ color: "text.primary" }} />;
-			case "failed":
-				return <Chip label="Fallido" color="error" size="small" />;
-			case "refunded":
-				return <Chip label="Reembolsado" color="info" size="small" />;
-			case "partially_refunded":
-				return <Chip label="Reembolso parcial" color="info" size="small" />;
-			case "disputed":
-				return <Chip label="Disputado" color="warning" size="small" sx={{ color: "text.primary" }} />;
-			case "canceled":
-			case "cancelled":
-				return <Chip label="Cancelado" color="default" size="small" />;
-			default:
-				return <Chip label={status} color="default" size="small" />;
-		}
-	};
-
-	// Ver la factura personalizada
 	const handleViewInvoice = (payment: Payment) => {
 		setSelectedPayment(payment);
 		setInvoiceDialogOpen(true);
 	};
 
-	// Cerrar el diálogo de factura
-	const handleCloseInvoiceDialog = () => {
-		setInvoiceDialogOpen(false);
-	};
-
-	// Mostrar el diálogo de confirmación de cancelación
-	const handleOpenCancelDialog = () => {
-		setCancelDialogOpen(true);
-	};
-
-	// Cerrar el diálogo de confirmación
-	const handleCloseCancelDialog = () => {
-		setCancelDialogOpen(false);
-	};
-
+	const handleCloseInvoiceDialog = () => setInvoiceDialogOpen(false);
+	const handleOpenCancelDialog = () => setCancelDialogOpen(true);
+	const handleCloseCancelDialog = () => setCancelDialogOpen(false);
 	const handleChangePlan = () => {
-		// Redirigir a la página de planes
 		window.location.href = "/suscripciones/tables";
 	};
 
-	// Cancelar la suscripción
 	const handleCancelSubscription = async () => {
 		try {
 			setCancelLoading(true);
-
-			// Llamar al servicio de API para cancelar la suscripción
 			const response = await ApiService.cancelSubscription(true);
-
 			if (response.success) {
-				// Mostrar mensaje de éxito
-				setSuccessMessage("Tu suscripción se cancelará al final del período actual");
-				// Actualizar los datos de la suscripción en Redux
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "Tu suscripción se cancelará al final del período actual",
+						variant: "alert",
+						alert: { color: "success" },
+						close: false,
+					}),
+				);
 				if (response.data && response.data.subscription) {
 					dispatch(updateSubscription(response.data.subscription));
 				} else {
-					// Si no viene la suscripción actualizada, recargarla
 					await fetchSubscription();
 				}
 			} else {
-				// Mostrar error
 				setError("No se pudo cancelar la suscripción");
 				setTimeout(() => setError(null), 5000);
 			}
@@ -494,30 +316,29 @@ const TabSubscription = () => {
 		}
 	};
 
-	// Reactivar la suscripción cancelada
 	const handleReactivateSubscription = async () => {
 		try {
 			setReactivateLoading(true);
 			setError(null);
-
-			// Llamar al servicio de API para cancelar el downgrade programado
 			const response = await ApiService.cancelScheduledDowngrade();
-
 			if (response.success) {
-				// Mostrar mensaje de éxito
-				setSuccessMessage("Tu suscripción ha sido reactivada correctamente");
-				// Actualizar los datos de la suscripción en Redux
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "Tu suscripción ha sido reactivada correctamente",
+						variant: "alert",
+						alert: { color: "success" },
+						close: false,
+					}),
+				);
 				if (response.data && response.data.subscription) {
 					dispatch(updateSubscription(response.data.subscription));
 				} else if (response.subscription) {
-					// También verificar directamente en response por si viene en el nivel superior
 					dispatch(updateSubscription(response.subscription));
 				} else {
-					// Si no viene la suscripción actualizada, recargarla
 					await fetchSubscription();
 				}
 			} else {
-				// Mostrar error
 				setError("No se pudo reactivar la suscripción: " + (response.message || "Error desconocido"));
 				setTimeout(() => setError(null), 5000);
 			}
@@ -529,145 +350,85 @@ const TabSubscription = () => {
 		}
 	};
 
-	// Cerrar el mensaje de éxito
-	const handleCloseSuccessMessage = () => {
-		setSuccessMessage(null);
-	};
-
-	// Función para calcular días restantes en el período de gracia
 	const calculateRemainingDays = (expiryDate: string | Date): number => {
 		if (!expiryDate) return 0;
-
 		const expiry = new Date(expiryDate);
 		const today = new Date();
-
 		const diffTime = expiry.getTime() - today.getTime();
-		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-		return Math.max(0, diffDays); // Garantizar que no sea negativo
+		return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
 	};
 
-	// Función para determinar el estado del período de gracia
 	const getGracePeriodStatus = (expiryDate: string | Date): "future" | "today" | "past" => {
 		if (!expiryDate) return "past";
-
 		const expiry = new Date(expiryDate);
 		const today = new Date();
-
-		// Normalizar las fechas para comparar solo día/mes/año
 		expiry.setHours(0, 0, 0, 0);
 		today.setHours(0, 0, 0, 0);
-
-		if (expiry.getTime() > today.getTime()) {
-			return "future";
-		} else if (expiry.getTime() === today.getTime()) {
-			return "today";
-		} else {
-			return "past";
-		}
+		if (expiry.getTime() > today.getTime()) return "future";
+		if (expiry.getTime() === today.getTime()) return "today";
+		return "past";
 	};
 
-	// Función para obtener el mensaje del período de gracia según el estado
 	const getGracePeriodMessage = (expiryDate: string | Date): string => {
 		const status = getGracePeriodStatus(expiryDate);
 		const formattedDate = formatDate(expiryDate);
-
-		// Verificar si el archivado automático ya fue procesado
 		const processedAt = subscription?.downgradeGracePeriod?.processedAt;
 		const autoArchiveScheduled = subscription?.downgradeGracePeriod?.autoArchiveScheduled;
 
 		switch (status) {
 			case "future":
-				return `Tras el cambio de plan, tienes hasta el ${formattedDate} para archivar el contenido que exceda los límites del plan gratuito.`;
+				return `Tras el cambio de plan, tenés hasta el ${formattedDate} para archivar el contenido que exceda los límites del plan gratuito.`;
 			case "today":
-				// Si ya se procesó el archivado automático
 				if (processedAt && !autoArchiveScheduled) {
 					const processedDate = dayjs(processedAt).format("D [de] MMMM [de] YYYY [a las] HH:mm");
 					return `El archivado automático del contenido que excedía los límites del plan gratuito se realizó el ${processedDate}.`;
 				}
 				return `Hoy es el último día para archivar el contenido que exceda los límites del plan gratuito. El sistema archivará automáticamente el contenido excedente al finalizar el día.`;
 			case "past":
-				// Si ya se procesó el archivado automático y tenemos la fecha
 				if (processedAt) {
 					const processedDate = dayjs(processedAt).format("D [de] MMMM [de] YYYY [a las] HH:mm");
 					return `El período de gracia finalizó el ${formattedDate}. El contenido que excedía los límites del plan gratuito fue archivado automáticamente el ${processedDate}.`;
 				}
 				return `El período de gracia finalizó el ${formattedDate}. El contenido que excedía los límites del plan gratuito ha sido archivado automáticamente.`;
 			default:
-				return `Tras el cambio de plan, tienes hasta el ${formattedDate} para archivar el contenido que exceda los límites del plan gratuito.`;
+				return `Tras el cambio de plan, tenés hasta el ${formattedDate} para archivar el contenido que exceda los límites del plan gratuito.`;
 		}
 	};
 
-	// Función para verificar si está en período de gracia
 	const isInGracePeriod = () => {
 		if (!subscription) return false;
-
-		// Caso 1: Período de gracia por pagos fallidos
-		if (subscription.status === "past_due" || subscription.status === "unpaid") {
+		if (subscription.status === "past_due" || subscription.status === "unpaid") return true;
+		if (subscription.downgradeGracePeriod?.expiresAt && new Date(subscription.downgradeGracePeriod.expiresAt) > new Date()) return true;
+		if (subscription.cancelAtPeriodEnd === true && subscription.currentPeriodEnd && new Date(subscription.currentPeriodEnd) > new Date())
 			return true;
-		}
-
-		// Caso 2: Período de gracia por downgrade con fecha futura
-		if (subscription.downgradeGracePeriod?.expiresAt && new Date(subscription.downgradeGracePeriod.expiresAt) > new Date()) {
-			return true;
-		}
-
-		// Caso 3: Período de gracia por cancelación
-		if (subscription.cancelAtPeriodEnd === true && subscription.currentPeriodEnd && new Date(subscription.currentPeriodEnd) > new Date()) {
-			return true;
-		}
-
 		return false;
 	};
 
-	// Función para verificar si hay un downgrade activo y relevante
 	const isDowngradeGracePeriodActive = () => {
 		if (!subscription || !subscription.downgradeGracePeriod) return false;
-
 		const { downgradeGracePeriod } = subscription;
-
-		// Verificar que el período de gracia no ha expirado
-		if (downgradeGracePeriod.expiresAt && new Date(downgradeGracePeriod.expiresAt) <= new Date()) {
-			return false;
-		}
-
-		// Verificar que hay un previousPlan definido
+		if (downgradeGracePeriod.expiresAt && new Date(downgradeGracePeriod.expiresAt) <= new Date()) return false;
 		if (!downgradeGracePeriod.previousPlan) return false;
-
-		// Verificar que el plan actual coincide con el previousPlan del downgrade
-		// Si el plan actual es diferente, significa que hubo otro cambio de plan y el downgradeGracePeriod ya no es relevante
-		if (subscription.plan !== downgradeGracePeriod.previousPlan && subscription.plan !== "free") {
-			return false;
-		}
-
-		// Si llegamos aquí, hay un downgrade activo y relevante
+		if (subscription.plan !== downgradeGracePeriod.previousPlan && subscription.plan !== "free") return false;
 		return true;
 	};
 
-	// Función para obtener toda la información del período de gracia
 	const getGracePeriodInfo = () => {
-		// Verificar que subscription existe y está en período de gracia
 		if (!subscription || !isInGracePeriod()) return null;
-
 		let gracePeriodType = "";
 		let expiryDate = subscription.currentPeriodEnd;
 		let previousPlan = subscription.plan;
 		let targetPlan = "free";
 
-		// Determinar tipo de período de gracia y datos relevantes
 		if (subscription.status === "past_due" || subscription.status === "unpaid") {
-			// Período de gracia por pagos fallidos
 			gracePeriodType = "payment_failed";
-			// En este caso, mantenemos el mismo plan
 			targetPlan = subscription.plan;
 		} else if (subscription.downgradeGracePeriod?.expiresAt && new Date(subscription.downgradeGracePeriod.expiresAt) > new Date()) {
-			// Período de gracia por downgrade
 			gracePeriodType = "downgrade";
 			expiryDate = subscription.downgradeGracePeriod.expiresAt;
 			previousPlan = (subscription.downgradeGracePeriod.previousPlan as "free" | "standard" | "premium") || subscription.plan;
 			targetPlan = subscription.downgradeGracePeriod.targetPlan || "free";
 		} else if (subscription.cancelAtPeriodEnd === true) {
-			// Período de gracia por cancelación
 			gracePeriodType = "cancellation";
 			expiryDate = subscription.currentPeriodEnd;
 			targetPlan = "free";
@@ -676,1930 +437,1531 @@ const TabSubscription = () => {
 		const daysRemaining = calculateRemainingDays(expiryDate);
 		const isExpiringSoon = daysRemaining <= 3;
 		const willDowngradeToFreePlan = targetPlan === "free";
-		const previousPlanName = getPlanName(previousPlan);
-		const currentPlanName = getPlanName(subscription.plan);
-		const targetPlanName = getPlanName(targetPlan);
 
 		return {
 			gracePeriodType,
 			willDowngradeToFreePlan,
-			previousPlanName,
-			currentPlanName,
-			targetPlanName,
+			previousPlanName: getPlanName(previousPlan),
+			currentPlanName: getPlanName(subscription.plan),
+			targetPlanName: getPlanName(targetPlan),
 			expiryDate,
 			expiryFormatted: formatDate(expiryDate),
 			daysRemaining,
 			isExpiringSoon,
 			cancellationDate: subscription.currentPeriodEnd,
 			cancellationFormatted: formatDate(subscription.currentPeriodEnd),
-			title: "Período de Gracia",
+			title: "Período de gracia",
 		};
 	};
 
+	// ── Brand helpers ─────────────────────────────────────────────────────────
+
+	const brandPrimarySx = {
+		minWidth: 130,
+		textTransform: "none" as const,
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		borderRadius: 1.25,
+		boxShadow: "none",
+		transition: "background-color 0.15s ease",
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+		"&.Mui-disabled": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.24 : 0.4), color: alpha("#fff", 0.9) },
+	};
+	const ghostBtnSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: "text.secondary",
+		borderRadius: 1.25,
+		border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+		px: 2,
+		py: 0.75,
+		transition: "color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease",
+		"&:hover": {
+			color: BRAND_BLUE,
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+			borderColor: alpha(BRAND_BLUE, 0.28),
+		},
+	};
+	const destructiveBtnSx = {
+		minWidth: 130,
+		textTransform: "none" as const,
+		bgcolor: errorColor,
+		color: "#fff",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		borderRadius: 1.25,
+		boxShadow: "none",
+		transition: "background-color 0.15s ease",
+		"&:hover": { bgcolor: alpha(errorColor, 0.88), boxShadow: "none" },
+	};
+	const destructiveGhostBtnSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: errorColor,
+		borderRadius: 1.25,
+		border: `1px solid ${alpha(errorColor, isDark ? 0.32 : 0.22)}`,
+		px: 2,
+		py: 0.75,
+		"&:hover": {
+			bgcolor: alpha(errorColor, isDark ? 0.14 : 0.08),
+			borderColor: alpha(errorColor, isDark ? 0.5 : 0.36),
+		},
+	};
+	const greenGhostBtnSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: LIVE_GREEN,
+		borderRadius: 1.25,
+		border: `1px solid ${alpha(LIVE_GREEN, isDark ? 0.32 : 0.22)}`,
+		px: 2,
+		py: 0.75,
+		"&:hover": {
+			bgcolor: alpha(LIVE_GREEN, isDark ? 0.14 : 0.08),
+			borderColor: alpha(LIVE_GREEN, isDark ? 0.5 : 0.36),
+		},
+	};
+
+	const dialogPaperSx = {
+		borderRadius: 2,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+		boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+		overflow: "hidden",
+	};
+	const tableSx = {
+		"& .MuiTableHead-root .MuiTableCell-root": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+			color: "text.secondary",
+			fontSize: "0.68rem",
+			fontWeight: 600,
+			letterSpacing: "0.06em",
+			textTransform: "uppercase",
+			borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+			py: 1.25,
+		},
+		"& .MuiTableBody-root .MuiTableCell-root": {
+			borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.1 : 0.06)}`,
+			fontSize: "0.82rem",
+		},
+		"& .MuiTableBody-root .MuiTableRow-root:hover": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+		},
+	};
+
+	// Pills brand-aware
+	const BrandPill = ({ color, label, dot = true }: { color: string; label: string; dot?: boolean }) => (
+		<Box
+			sx={{
+				display: "inline-flex",
+				alignItems: "center",
+				gap: 0.625,
+				px: 0.875,
+				py: 0.25,
+				borderRadius: 0.75,
+				bgcolor: alpha(color, isDark ? 0.16 : 0.1),
+				border: `1px solid ${alpha(color, isDark ? 0.32 : 0.22)}`,
+			}}
+		>
+			{dot && <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: color }} />}
+			<Typography sx={{ fontSize: "0.66rem", fontWeight: 600, color, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>
+				{label}
+			</Typography>
+		</Box>
+	);
+
+	const getStatusPill = (status: string) => {
+		if (subscription && subscription.plan === "free") return <BrandPill color={LIVE_GREEN} label="Activa" />;
+		switch (status) {
+			case "active":
+				return <BrandPill color={LIVE_GREEN} label="Activa" />;
+			case "canceled":
+				return <BrandPill color={errorColor} label="Cancelada" />;
+			case "past_due":
+				return <BrandPill color={STALE_AMBER} label="Pago pendiente" />;
+			case "trialing":
+				return <BrandPill color={BRAND_BLUE} label="Período de prueba" />;
+			case "incomplete":
+				return <BrandPill color={BRAND_BLUE} label="Procesando pago" />;
+			default:
+				return <BrandPill color={theme.palette.text.secondary} label={status} />;
+		}
+	};
+
+	const getPaymentStatusPill = (status: string) => {
+		switch (status) {
+			case "paid":
+			case "succeeded":
+				return <BrandPill color={LIVE_GREEN} label={status === "paid" ? "Pagada" : "Completado"} />;
+			case "open":
+			case "pending":
+				return <BrandPill color={STALE_AMBER} label="Pendiente" />;
+			case "draft":
+				return <BrandPill color={theme.palette.text.secondary} label="Borrador" />;
+			case "uncollectible":
+			case "failed":
+				return <BrandPill color={errorColor} label={status === "failed" ? "Fallido" : "Incobrable"} />;
+			case "void":
+			case "canceled":
+			case "cancelled":
+				return <BrandPill color={theme.palette.text.secondary} label={status === "void" ? "Anulada" : "Cancelado"} />;
+			case "refunded":
+				return <BrandPill color={BRAND_BLUE} label="Reembolsado" />;
+			case "partially_refunded":
+				return <BrandPill color={BRAND_BLUE} label="Reembolso parcial" />;
+			case "disputed":
+				return <BrandPill color={STALE_AMBER} label="Disputado" />;
+			default:
+				return <BrandPill color={theme.palette.text.secondary} label={status} />;
+		}
+	};
+
+	const SectionCard = ({
+		eyebrow,
+		title,
+		subtitle,
+		icon,
+		rightSlot,
+		children,
+		tone = "primary",
+	}: {
+		eyebrow: string;
+		title: React.ReactNode;
+		subtitle?: string;
+		icon: React.ReactNode;
+		rightSlot?: React.ReactNode;
+		children: React.ReactNode;
+		tone?: "primary" | "amber" | "error";
+	}) => {
+		const color = tone === "error" ? errorColor : tone === "amber" ? STALE_AMBER : BRAND_BLUE;
+		return (
+			<Box
+				sx={{
+					borderRadius: 2,
+					border: `1px solid ${alpha(color, isDark ? 0.18 : 0.1)}`,
+					bgcolor: "background.paper",
+					overflow: "hidden",
+				}}
+			>
+				<Box
+					sx={{
+						px: { xs: 2, sm: 2.5 },
+						py: 1.75,
+						bgcolor: alpha(color, isDark ? 0.05 : 0.025),
+						borderBottom: `1px solid ${alpha(color, isDark ? 0.16 : 0.1)}`,
+					}}
+				>
+					<Stack direction="row" spacing={1.25} alignItems="center">
+						<Box
+							sx={{
+								width: 32,
+								height: 32,
+								borderRadius: 1,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(color, isDark ? 0.16 : 0.08),
+								border: `1px solid ${alpha(color, isDark ? 0.28 : 0.18)}`,
+								color,
+								flexShrink: 0,
+							}}
+						>
+							{icon}
+						</Box>
+						<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+							<Stack direction="row" spacing={0.625} alignItems="center">
+								<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: color }} />
+								<Typography
+									sx={{
+										fontSize: "0.6rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+									}}
+								>
+									{eyebrow}
+								</Typography>
+							</Stack>
+							{typeof title === "string" ? (
+								<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>
+									{title}
+								</Typography>
+							) : (
+								title
+							)}
+							{subtitle && (
+								<Typography sx={{ fontSize: "0.74rem", color: "text.secondary", letterSpacing: "-0.005em" }}>{subtitle}</Typography>
+							)}
+						</Stack>
+						{rightSlot}
+					</Stack>
+				</Box>
+				<Box sx={{ p: { xs: 2, sm: 2.5 } }}>{children}</Box>
+			</Box>
+		);
+	};
+
+	// ── Loading / Error ───────────────────────────────────────────────────────
+
 	if (loading) {
 		return (
-			<Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-				<CircularProgress />
-			</Box>
+			<Stack alignItems="center" justifyContent="center" spacing={1.25} sx={{ py: 8 }}>
+				<CircularProgress size={32} sx={{ color: BRAND_BLUE }} />
+				<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+					Cargando suscripción…
+				</Typography>
+			</Stack>
 		);
 	}
 
 	if (error) {
 		return (
-			<Alert severity="error" sx={{ mt: 2 }}>
-				{error}
-			</Alert>
+			<Box
+				sx={{
+					p: 2,
+					borderRadius: 1.5,
+					bgcolor: alpha(errorColor, isDark ? 0.08 : 0.04),
+					border: `1px solid ${alpha(errorColor, isDark ? 0.32 : 0.22)}`,
+				}}
+			>
+				<Stack direction="row" spacing={1} alignItems="center">
+					<Warning2 size={16} variant="Bulk" color={errorColor} />
+					<Typography sx={{ fontSize: "0.85rem", color: "text.primary", letterSpacing: "-0.005em" }}>{error}</Typography>
+				</Stack>
+			</Box>
 		);
 	}
 
 	if (!subscription) {
-		return <Alert severity="info">No se encontró información de suscripción. Por favor, contacta con soporte.</Alert>;
+		return (
+			<Box
+				sx={{
+					p: 2,
+					borderRadius: 1.5,
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+				}}
+			>
+				<Stack direction="row" spacing={1} alignItems="center">
+					<InfoCircle size={16} variant="Bulk" color={BRAND_BLUE} />
+					<Typography sx={{ fontSize: "0.85rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+						No se encontró información de suscripción. Contactá a soporte.
+					</Typography>
+				</Stack>
+			</Box>
+		);
 	}
 
-	// Determinar si se debe mostrar el botón de cancelación
 	const showCancelButton =
 		subscription && subscription.plan !== "free" && subscription.status === "active" && !subscription.cancelAtPeriodEnd;
-
-	// Determinar si se debe mostrar el botón de reactivación (cuando hay una cancelación programada)
 	const showReactivateButton =
 		subscription && subscription.plan !== "free" && subscription.status === "active" && subscription.cancelAtPeriodEnd;
-
-	// Determinar si hay un período de renovación
 	const hasRenewalDate = subscription && subscription.currentPeriodEnd && subscription.status === "active";
 
-	// Si el usuario es miembro de un equipo (no propietario), mostrar vista simplificada
+	// ── Team member view ──────────────────────────────────────────────────────
+
 	if (isTeamMember && activeTeam) {
 		const roleConfig = userRole ? ROLE_CONFIG[userRole as keyof typeof ROLE_CONFIG] : null;
-		const planDisplayNames: Record<string, string> = {
-			free: "Gratuito",
-			standard: "Estándar",
-			premium: "Premium",
-		};
+		const planDisplayNames: Record<string, string> = { free: "Gratuito", standard: "Estándar", premium: "Premium" };
 		const ownerPlanName = ownerSubscription?.planName
 			? planDisplayNames[ownerSubscription.planName.toLowerCase()] || ownerSubscription.planName
 			: "No disponible";
 
 		return (
-			<Grid container spacing={3}>
-				{/* Información del equipo */}
-				<Grid item xs={12}>
-					<MainCard
-						title="Tu membresía en el equipo"
-						sx={{
-							boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
-							overflow: "hidden",
-						}}
-					>
-						<Grid container spacing={3}>
-							<Grid item xs={12} md={6}>
-								<Stack spacing={2.5}>
-									<Typography variant="h5" sx={{ fontWeight: 600 }}>
+			<Stack spacing={2.5}>
+				<SectionCard
+					eyebrow="Miembro de equipo"
+					title="Tu membresía en el equipo"
+					subtitle="Estado y plan del equipo al que pertenecés"
+					icon={<Crown size={16} variant="Bulk" />}
+				>
+					<Grid container spacing={2}>
+						<Grid item xs={12} md={6}>
+							<Box
+								sx={{
+									p: 1.75,
+									borderRadius: 1.5,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+								}}
+							>
+								<Stack spacing={0.875}>
+									<Typography sx={{ fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
 										Equipo
 									</Typography>
-									<Typography variant="h3" color="primary" sx={{ fontWeight: 700 }}>
+									<Typography sx={{ fontSize: "1.1rem", fontWeight: 700, letterSpacing: "-0.015em", color: BRAND_BLUE }}>
 										{activeTeam.name}
 									</Typography>
-									<Stack direction="row" spacing={1} alignItems="center">
-										<Typography variant="body1" color="text.secondary">
-											Tu rol:
-										</Typography>
-										{roleConfig && <Chip label={roleConfig.label} color={roleConfig.color} size="small" sx={{ fontWeight: 600 }} />}
-									</Stack>
-								</Stack>
-							</Grid>
-							<Grid item xs={12} md={6}>
-								<Stack spacing={2.5}>
-									<Typography variant="h5" sx={{ fontWeight: 600 }}>
-										Plan del equipo
-									</Typography>
-									<Typography variant="h3" color="secondary" sx={{ fontWeight: 700 }}>
-										{ownerPlanName}
-									</Typography>
-									{ownerSubscription?.status === "active" && (
-										<Chip label="Activo" color="success" size="small" sx={{ width: "fit-content" }} />
+									{roleConfig && (
+										<Stack direction="row" spacing={0.75} alignItems="center" sx={{ pt: 0.5 }}>
+											<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>Tu rol:</Typography>
+											<BrandPill color={BRAND_BLUE} label={roleConfig.label} />
+										</Stack>
 									)}
 								</Stack>
-							</Grid>
+							</Box>
 						</Grid>
+						<Grid item xs={12} md={6}>
+							<Box
+								sx={{
+									p: 1.75,
+									borderRadius: 1.5,
+									bgcolor: alpha(LIVE_GREEN, isDark ? 0.08 : 0.04),
+									border: `1px solid ${alpha(LIVE_GREEN, isDark ? 0.28 : 0.18)}`,
+								}}
+							>
+								<Stack spacing={0.875}>
+									<Typography sx={{ fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
+										Plan del equipo
+									</Typography>
+									<Stack direction="row" spacing={1} alignItems="center">
+										<Crown size={18} variant="Bulk" color={LIVE_GREEN} />
+										<Typography sx={{ fontSize: "1.1rem", fontWeight: 700, letterSpacing: "-0.015em", color: LIVE_GREEN }}>
+											{ownerPlanName}
+										</Typography>
+									</Stack>
+									{ownerSubscription?.status === "active" && <BrandPill color={LIVE_GREEN} label="Activo" />}
+								</Stack>
+							</Box>
+						</Grid>
+					</Grid>
 
-						<Divider sx={{ my: 3 }} />
-
-						<Alert severity="info" sx={{ borderRadius: 1.5 }}>
-							<Typography variant="body2">
-								Como miembro del equipo, tienes acceso a las funcionalidades del plan <strong>{ownerPlanName}</strong>. Los límites de
-								recursos y facturación son gestionados por el propietario del equipo.
-							</Typography>
-						</Alert>
-					</MainCard>
-				</Grid>
-
-				{/* Características disponibles del equipo */}
-				<Grid item xs={12}>
-					<MainCard
-						title="Características disponibles"
+					<Box
 						sx={{
-							boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
-							overflow: "hidden",
+							mt: 2,
+							p: 1.75,
+							borderRadius: 1.25,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
 						}}
 					>
-						{ownerSubscription?.featuresWithDescriptions ? (
-							// Usar featuresWithDescriptions si está disponible (incluye displayName desde el backend)
-							<List disablePadding>
-								{(() => {
-									// Determinar el ambiente actual y filtrar según visibility
-									const currentEnv = import.meta.env.PROD ? "production" : "development";
-									const isVisibleInCurrentEnv = (visibility: string | undefined) => {
-										if (!visibility || visibility === "all") return true;
-										if (visibility === "none") return false;
-										return visibility === currentEnv;
-									};
-									return [...ownerSubscription.featuresWithDescriptions]
-										.filter((feature: any) => isVisibleInCurrentEnv(feature.visibility))
-										.sort((a, b) => (b.enabled ? 1 : 0) - (a.enabled ? 1 : 0));
-								})().map((feature, index, arr) => (
-									<React.Fragment key={feature.name}>
-										<ListItem sx={{ py: 1.5 }}>
-											<ListItemText
-												primary={feature.displayName || feature.description || feature.name}
-												secondary={feature.enabled ? "Disponible en tu equipo" : "No incluido en el plan"}
-											/>
-											<Chip
-												label={feature.enabled ? "Habilitado" : "No disponible"}
-												color={feature.enabled ? "success" : "default"}
-												size="small"
-												variant={feature.enabled ? "filled" : "outlined"}
-											/>
-										</ListItem>
-										{index < arr.length - 1 && <Divider />}
-									</React.Fragment>
-								))}
-							</List>
-						) : ownerSubscription?.features ? (
-							// Fallback a features sin displayName (compatibilidad con versiones anteriores)
-							<List disablePadding>
-								{Object.entries(ownerSubscription.features)
-									.sort(([, a], [, b]) => (b ? 1 : 0) - (a ? 1 : 0))
-									.map(([featureName, enabled], index, arr) => {
-										// Fallback hardcoded solo para versiones antiguas del backend
-										const featureLabels: Record<string, string> = {
-											advancedAnalytics: "Análisis avanzados",
-											exportReports: "Exportar reportes",
-											taskAutomation: "Automatizar tareas",
-											bulkOperations: "Operaciones masivas",
-											prioritySupport: "Soporte prioritario",
-											vinculateFolders: "Vincular causas",
-											booking: "Reservas y agenda",
-											teams: "Equipos",
-											movements: "Sincronizar causas",
-										};
-										return (
-											<React.Fragment key={featureName}>
-												<ListItem sx={{ py: 1.5 }}>
-													<ListItemText
-														primary={featureLabels[featureName] || featureName}
-														secondary={enabled ? "Disponible en tu equipo" : "No incluido en el plan"}
-													/>
-													<Chip
-														label={enabled ? "Habilitado" : "No disponible"}
-														color={enabled ? "success" : "default"}
-														size="small"
-														variant={enabled ? "filled" : "outlined"}
-													/>
-												</ListItem>
-												{index < arr.length - 1 && <Divider />}
-											</React.Fragment>
-										);
-									})}
-							</List>
-						) : (
-							<Typography variant="body2" color="text.secondary">
-								No hay información de características disponible.
+						<Stack direction="row" spacing={1} alignItems="flex-start">
+							<InfoCircle size={16} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
+							<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+								Como miembro del equipo, tenés acceso a las funcionalidades del plan{" "}
+								<Box component="span" sx={{ fontWeight: 600, color: BRAND_BLUE }}>
+									{ownerPlanName}
+								</Box>
+								. Los límites de recursos y facturación los gestiona el propietario del equipo.
 							</Typography>
-						)}
-					</MainCard>
-				</Grid>
+						</Stack>
+					</Box>
+				</SectionCard>
 
-				{/* Nota sobre gestión */}
-				<Grid item xs={12}>
-					<Alert severity="warning" sx={{ borderRadius: 1.5 }}>
-						<Typography variant="body2">
-							<strong>Nota:</strong> La facturación, métodos de pago y cambios de plan son gestionados exclusivamente por el propietario del
-							equipo. Si necesitas cambios en tu acceso o permisos, contacta al administrador de tu equipo.
+				<SectionCard
+					eyebrow="Funcionalidades"
+					title="Características disponibles"
+					subtitle="Funciones habilitadas por el plan del equipo"
+					icon={<ReceiptItem size={16} variant="Bulk" />}
+				>
+					{ownerSubscription?.featuresWithDescriptions ? (
+						<Stack divider={<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.06) }} />}>
+							{(() => {
+								const currentEnv = import.meta.env.PROD ? "production" : "development";
+								const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+									if (!visibility || visibility === "all") return true;
+									if (visibility === "none") return false;
+									return visibility === currentEnv;
+								};
+								return [...ownerSubscription.featuresWithDescriptions]
+									.filter((feature: any) => isVisibleInCurrentEnv(feature.visibility))
+									.sort((a, b) => (b.enabled ? 1 : 0) - (a.enabled ? 1 : 0));
+							})().map((feature: any) => (
+								<Stack key={feature.name} direction="row" alignItems="center" justifyContent="space-between" sx={{ py: 1.25 }}>
+									<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+										<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+											{feature.displayName || feature.description || feature.name}
+										</Typography>
+										<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+											{feature.enabled ? "Disponible en tu equipo" : "No incluido en el plan"}
+										</Typography>
+									</Stack>
+									<BrandPill
+										color={feature.enabled ? LIVE_GREEN : theme.palette.text.secondary}
+										label={feature.enabled ? "Habilitado" : "No disponible"}
+										dot={false}
+									/>
+								</Stack>
+							))}
+						</Stack>
+					) : (
+						<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", textAlign: "center", py: 2 }}>
+							No hay información de características disponible.
 						</Typography>
-					</Alert>
-				</Grid>
-			</Grid>
+					)}
+				</SectionCard>
+
+				<Box
+					sx={{
+						p: 1.75,
+						borderRadius: 1.5,
+						bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05),
+						border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+					}}
+				>
+					<Stack direction="row" spacing={1} alignItems="flex-start">
+						<Warning2 size={16} variant="Bulk" color={STALE_AMBER} style={{ marginTop: 2, flexShrink: 0 }} />
+						<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+							<Box component="span" sx={{ fontWeight: 600 }}>
+								Nota:
+							</Box>{" "}
+							La facturación, métodos de pago y cambios de plan los gestiona el propietario del equipo. Si necesitás cambios en tu acceso o
+							permisos, contactá al administrador.
+						</Typography>
+					</Stack>
+				</Box>
+			</Stack>
 		);
 	}
 
+	// ── Vista normal ──────────────────────────────────────────────────────────
+
+	const gracePeriodInfo = getGracePeriodInfo();
+
 	return (
-		<Grid container spacing={3}>
-			<Grid item xs={12}>
-				<ResourceUsageWidget />
-			</Grid>
-			<Grid item xs={12}>
-				<MainCard
-					title="Detalles de suscripción"
-					sx={{
-						boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
-						overflow: "hidden",
-						position: "relative",
-					}}
-				>
-					<Grid container spacing={3}>
-						<Grid item xs={12} md={6}>
-							<Stack spacing={2.5}>
-								<Stack direction="row" justifyContent="space-between" alignItems="center">
-									<Typography variant="h5" sx={{ fontWeight: 600 }}>
-										Plan actual
-									</Typography>
-									{subscription && getStatusChip(subscription.status)}
-								</Stack>
-
-								<Typography variant="h3" color="primary" sx={{ fontWeight: 700 }}>
-									{subscription ? getPlanName(subscription.plan) : "No disponible"}
+		<Grid container spacing={2.5}>
+			<Grid item xs={12} md={8}>
+			{/* Detalles de suscripción */}
+			<SectionCard
+				eyebrow="Tu suscripción"
+				title="Detalles del plan"
+				subtitle="Plan actual, renovación y acciones"
+				icon={<Crown size={16} variant="Bulk" />}
+				rightSlot={getStatusPill(subscription.status)}
+			>
+				<Grid container spacing={2.5}>
+					<Grid item xs={12} md={6}>
+						<Stack spacing={1.5}>
+							<Stack spacing={0.25}>
+								<Typography sx={{ fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
+									Plan actual
 								</Typography>
+								<Typography sx={{ fontSize: "1.5rem", fontWeight: 700, letterSpacing: "-0.02em", color: BRAND_BLUE }}>
+									{getPlanName(subscription.plan)}
+								</Typography>
+							</Stack>
 
-								{hasRenewalDate && !subscription.cancelAtPeriodEnd && (
+							{hasRenewalDate && !subscription.cancelAtPeriodEnd && (
+								<Box
+									sx={{
+										p: 1.25,
+										borderRadius: 1.25,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+									}}
+								>
+									<Stack direction="row" spacing={0.75} alignItems="center">
+										<Refresh size={14} variant="Bulk" color={BRAND_BLUE} />
+										<Typography sx={{ fontSize: "0.8rem", color: "text.primary", fontWeight: 500, letterSpacing: "-0.005em" }}>
+											Se renovará el {formatDate(subscription.currentPeriodEnd)}
+										</Typography>
+									</Stack>
+								</Box>
+							)}
+
+							{subscription.cancelAtPeriodEnd && (
+								<>
 									<Box
 										sx={{
-											display: "flex",
-											alignItems: "center",
-											py: 1,
-											px: 2,
-											bgcolor: "primary.lighter",
-											borderRadius: 1.5,
+											p: 1.25,
+											borderRadius: 1.25,
+											bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05),
+											border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
 										}}
 									>
-										<Typography variant="body2" color="primary.dark" sx={{ fontWeight: 500 }}>
-											Tu suscripción se renovará el {subscription && formatDate(subscription.currentPeriodEnd)}
-										</Typography>
+										<Stack direction="row" spacing={0.75} alignItems="center">
+											<Warning2 size={14} variant="Bulk" color={STALE_AMBER} />
+											<Typography sx={{ fontSize: "0.8rem", color: "text.primary", fontWeight: 500, letterSpacing: "-0.005em" }}>
+												{new Date(subscription.currentPeriodEnd) < new Date()
+													? `Tu suscripción terminó el ${formatDate(subscription.currentPeriodEnd)}`
+													: `Tu suscripción terminará el ${formatDate(subscription.currentPeriodEnd)}`}
+											</Typography>
+										</Stack>
 									</Box>
-								)}
-
-								{subscription && subscription.cancelAtPeriodEnd && (
-									<>
+									{isDowngradeGracePeriodActive() && (
 										<Box
 											sx={{
-												display: "flex",
-												alignItems: "center",
-												py: 1,
-												px: 2,
-												bgcolor: "warning.lighter",
-												borderRadius: 1.5,
+												p: 1.5,
+												borderRadius: 1.25,
+												bgcolor: alpha(STALE_AMBER, isDark ? 0.08 : 0.04),
+												border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
 											}}
 										>
-											<Typography variant="body2" color="text.primary" sx={{ fontWeight: 500 }}>
-												{subscription && new Date(subscription.currentPeriodEnd) < new Date()
-													? `Tu suscripción terminó el ${formatDate(subscription.currentPeriodEnd)}`
-													: `Tu suscripción terminará el ${subscription && formatDate(subscription.currentPeriodEnd)}`}
-											</Typography>
-										</Box>
-
-										{subscription && isDowngradeGracePeriodActive() && (
-											<Alert
-												severity="warning"
-												variant="outlined"
-												sx={{
-													mt: 1,
-													borderWidth: 1.5,
-													borderRadius: 1.5,
-													"& .MuiAlert-icon": { color: "warning.dark" },
-												}}
-											>
-												<Typography variant="body2">
+											<Stack direction="row" spacing={1} alignItems="flex-start">
+												<Timer1 size={16} variant="Bulk" color={STALE_AMBER} style={{ marginTop: 2, flexShrink: 0 }} />
+												<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
 													{getGracePeriodMessage(subscription.downgradeGracePeriod?.expiresAt || subscription.currentPeriodEnd)}
 												</Typography>
-											</Alert>
-										)}
-									</>
-								)}
+											</Stack>
+										</Box>
+									)}
+								</>
+							)}
 
-								{nextPlan && (
-									<Alert
-										severity="info"
-										variant="outlined"
-										sx={{
-											mt: 1,
-											borderWidth: 1.5,
-											borderRadius: 1.5,
-											"& .MuiAlert-icon": { color: "primary.main" },
-										}}
-									>
-										<Typography variant="body2" sx={{ fontWeight: 500 }}>
+							{nextPlan && (
+								<Box
+									sx={{
+										p: 1.25,
+										borderRadius: 1.25,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+									}}
+								>
+									<Stack direction="row" spacing={0.75} alignItems="center">
+										<InfoCircle size={14} variant="Bulk" color={BRAND_BLUE} />
+										<Typography sx={{ fontSize: "0.8rem", color: "text.primary", fontWeight: 500, letterSpacing: "-0.005em" }}>
 											Cambiarás al {getPlanName(nextPlan)} en la próxima renovación.
 										</Typography>
-									</Alert>
-								)}
-							</Stack>
-						</Grid>
+									</Stack>
+								</Box>
+							)}
+						</Stack>
+					</Grid>
 
-						<Grid item xs={12} md={6}>
-							<Stack spacing={2} alignItems={{ xs: "flex-start", md: "flex-end" }} sx={{ height: "100%", justifyContent: "center" }}>
-								<Button variant="contained" color="primary" onClick={handleChangePlan}>
-									Cambiar plan
+					<Grid item xs={12} md={6}>
+						<Stack spacing={1.25} alignItems={{ xs: "stretch", md: "flex-end" }} sx={{ height: "100%", justifyContent: "center" }}>
+							<Button variant="contained" onClick={handleChangePlan} sx={brandPrimarySx}>
+								Cambiar plan
+							</Button>
+							{showCancelButton && (
+								<Button onClick={handleOpenCancelDialog} sx={destructiveGhostBtnSx}>
+									Cancelar suscripción
 								</Button>
+							)}
+							{showReactivateButton && (
+								<Button
+									onClick={handleReactivateSubscription}
+									disabled={reactivateLoading}
+									startIcon={reactivateLoading ? <CircularProgress size={14} color="inherit" /> : <Refresh size={14} variant="Linear" />}
+									sx={greenGhostBtnSx}
+								>
+									Reactivar
+								</Button>
+							)}
+						</Stack>
+					</Grid>
+				</Grid>
 
-								{showCancelButton && (
-									<Button variant="outlined" color="error" onClick={handleOpenCancelDialog}>
-										Cancelar suscripción
-									</Button>
-								)}
-
-								{showReactivateButton && (
-									<Button
-										variant="outlined"
-										color="success"
-										onClick={handleReactivateSubscription}
-										disabled={reactivateLoading}
-										startIcon={reactivateLoading ? <CircularProgress size={20} /> : null}
-									>
-										Reactivar suscripción
-									</Button>
-								)}
+				{subscription.plan !== "free" && (
+					<Box sx={{ mt: 2, p: 1.5, borderRadius: 1.5, bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03), border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}` }}>
+						<Typography sx={{ fontSize: "0.6rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary", mb: 0.75 }}>
+							Información de la suscripción
+						</Typography>
+						<Stack spacing={0.625}>
+							<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+								<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em", flexShrink: 0 }}>Cliente</Typography>
+								<Typography sx={{ fontSize: "0.72rem", color: "text.primary", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+									{getStripeValue(subscription.stripeCustomerId)}
+								</Typography>
 							</Stack>
-						</Grid>
-					</Grid>
-
-					<Divider sx={{ mt: 4, mb: 3 }} />
-
-					<Grid container spacing={4}>
-						<Grid item xs={12} md={6}>
-							<Typography variant="h5" gutterBottom sx={{ mb: 2, fontWeight: 600 }}>
-								Límites de recursos
-							</Typography>
-
-							<List
-								sx={{
-									bgcolor: "background.neutral",
-									borderRadius: 2,
-									p: 2,
-									"& .MuiListItem-root": {
-										borderBottom: "1px solid",
-										borderColor: "divider",
-										"&:last-child": {
-											borderBottom: "none",
-										},
-									},
-								}}
-							>
-								{subscription?.limitsWithDescriptions ? (
-									// Usar limitsWithDescriptions si está disponible
-									[...subscription.limitsWithDescriptions]
-										.filter((item: any) => {
-											const currentEnv = import.meta.env.PROD ? "production" : "development";
-											if (!item.visibility || item.visibility === "all") return true;
-											if (item.visibility === "none") return false;
-											return item.visibility === currentEnv;
-										})
-										.sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99))
-										.map((item: any) => (
-											<ListItem key={item.name} sx={{ px: 1, py: 1 }}>
-												<ListItemText
-													primary={
-														<Typography color="text.secondary" variant="subtitle2">
-															{item.displayName || item.description || item.name}
-														</Typography>
-													}
-													secondary={
-														<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-															{(() => {
-																if (item.limit === undefined) return "No disponible";
-																if (item.limit === 999999) return "Ilimitado";
-																if (item.name === "storage") return `${item.limit} MB`;
-																return item.limit;
-															})()}
-														</Typography>
-													}
-												/>
-											</ListItem>
-										))
-								) : subscription?.limitDetails ? (
-									// Fallback a limitDetails si limitsWithDescriptions no está disponible
-									Object.entries(subscription.limitDetails).map(([key, value]: [string, any]) => (
-										<ListItem key={key} sx={{ px: 1, py: 1 }}>
-											<ListItemText
-												primary={
-													<Typography color="text.secondary" variant="subtitle2">
-														{value.description || key}
-													</Typography>
-												}
-												secondary={
-													<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-														{(() => {
-															const limit = value.limit;
-															if (limit === undefined) return "No disponible";
-															if (limit === 999999) return "Ilimitado";
-															if (key === "storage") return `${limit} MB`;
-															return limit;
-														})()}
-													</Typography>
-												}
-											/>
-										</ListItem>
-									))
-								) : subscription?.limits ? (
-									// Fallback final a limits con nombres hardcodeados
-									Object.entries(subscription.limits).map(([key, value]) => {
-										const limitNames: { [key: string]: string } = {
-											folders: "Carpetas",
-											calculators: "Cálculos",
-											contacts: "Contactos",
-											storage: "Almacenamiento",
-										};
-										return (
-											<ListItem key={key} sx={{ px: 1, py: 1 }}>
-												<ListItemText
-													primary={
-														<Typography color="text.secondary" variant="subtitle2">
-															{limitNames[key] || key}
-														</Typography>
-													}
-													secondary={
-														<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-															{(() => {
-																if (value === undefined) return "No disponible";
-																if (value === 999999) return "Ilimitado";
-																if (key === "storage") return `${value} MB`;
-																return value;
-															})()}
-														</Typography>
-													}
-												/>
-											</ListItem>
-										);
-									})
-								) : (
-									<ListItem sx={{ px: 1, py: 1 }}>
-										<ListItemText
-											primary={
-												<Typography color="text.secondary" variant="subtitle2">
-													No hay límites disponibles
-												</Typography>
-											}
-										/>
-									</ListItem>
-								)}
-							</List>
-						</Grid>
-
-						<Grid item xs={12} md={6}>
-							<Typography variant="h5" gutterBottom sx={{ mb: 2, fontWeight: 600 }}>
-								Características
-							</Typography>
-
-							<List
-								sx={{
-									bgcolor: "background.neutral",
-									borderRadius: 2,
-									p: 2,
-									"& .MuiListItem-root": {
-										borderBottom: "1px solid",
-										borderColor: "divider",
-										"&:last-child": {
-											borderBottom: "none",
-										},
-									},
-								}}
-							>
-								{subscription?.featuresWithDescriptions ? (
-									// Usar featuresWithDescriptions si está disponible
-									[...subscription.featuresWithDescriptions] // Crear copia para evitar mutar el estado
-										.filter((feature: any) => {
-											const currentEnv = import.meta.env.PROD ? "production" : "development";
-											if (!feature.visibility || feature.visibility === "all") return true;
-											if (feature.visibility === "none") return false;
-											return feature.visibility === currentEnv;
-										})
-										.sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99))
-										.map((feature: any) => (
-											<ListItem key={feature.name} sx={{ px: 1, py: 1.25 }}>
-												<ListItemText
-													primary={
-														<Typography color="text.primary" variant="subtitle2">
-															{feature.displayName || feature.description || feature.name}
-														</Typography>
-													}
-												/>
-												{feature.enabled ? (
-													<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-												) : (
-													<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-												)}
-											</ListItem>
-										))
-								) : subscription?.featureDetails ? (
-									// Fallback a featureDetails si featuresWithDescriptions no está disponible
-									Object.entries(subscription.featureDetails)
-										.sort(([keyA, valueA]: [string, any], [keyB, valueB]: [string, any]) => {
-											// Primero ordenar por enabled (activos primero)
-											if (valueA.enabled === valueB.enabled) {
-												// Si tienen el mismo estado, ordenar alfabéticamente por descripción
-												return (valueA.description || keyA).localeCompare(valueB.description || keyB);
-											}
-											// Los true (activos) van primero
-											return valueA.enabled ? -1 : 1;
-										})
-										.map(([key, value]: [string, any]) => (
-											<ListItem key={key} sx={{ px: 1, py: 1.25 }}>
-												<ListItemText
-													primary={
-														<Typography color="text.primary" variant="subtitle2">
-															{value.description || key}
-														</Typography>
-													}
-												/>
-												{value.enabled ? (
-													<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-												) : (
-													<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-												)}
-											</ListItem>
-										))
-								) : subscription?.features ? (
-									// Fallback final a features con nombres hardcodeados
-									Object.entries(subscription.features)
-										.sort(([keyA, valueA], [keyB, valueB]) => {
-											if (valueA === valueB) {
-												return keyA.localeCompare(keyB);
-											}
-											return valueA ? -1 : 1;
-										})
-										.map(([key, value]) => {
-											const featureNames: { [key: string]: string } = {
-												advancedAnalytics: "Análisis avanzados",
-												exportReports: "Exportación de reportes",
-												taskAutomation: "Automatización de tareas",
-												bulkOperations: "Operaciones masivas",
-												prioritySupport: "Soporte prioritario",
-												movements: "Movimientos judiciales",
-												vinculateFolders: "Vincular carpetas",
-												booking: "Sistema de reservas",
-											};
-											const displayName = featureNames[key] || key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase());
-
-											return (
-												<ListItem key={key} sx={{ px: 1, py: 1.25 }}>
-													<ListItemText
-														primary={
-															<Typography color="text.primary" variant="subtitle2">
-																{displayName}
-															</Typography>
-														}
-													/>
-													{value ? (
-														<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-													) : (
-														<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-													)}
-												</ListItem>
-											);
-										})
-								) : (
-									<ListItem sx={{ px: 1, py: 1.25 }}>
-										<ListItemText
-											primary={
-												<Typography color="text.secondary" variant="subtitle2">
-													No hay características disponibles
-												</Typography>
-											}
-										/>
-									</ListItem>
-								)}
-							</List>
-						</Grid>
-					</Grid>
-
-					{/* Información adicional sobre la suscripción */}
-					{subscription && subscription.plan !== "free" && (
-						<Box
-							sx={{
-								mt: 4,
-								bgcolor: "primary.lighter",
-								borderRadius: 2,
-								p: 2.5,
-							}}
-						>
-							<Typography variant="h5" gutterBottom sx={{ mb: 2, fontWeight: 600, color: "primary.dark" }}>
-								Información de la suscripción
-							</Typography>
-
-							<Grid container spacing={3}>
-								<Grid item xs={12} sm={6} md={4}>
-									<Typography color="primary.dark" variant="subtitle2">
-										ID de cliente
-									</Typography>
-									<Typography variant="body2" sx={{ wordBreak: "break-all", mt: 0.5 }}>
-										{subscription ? getStripeValue(subscription.stripeCustomerId) : "No disponible"}
-									</Typography>
-								</Grid>
-
-								<Grid item xs={12} sm={6} md={4}>
-									<Typography color="primary.dark" variant="subtitle2">
-										ID de suscripción
-									</Typography>
-									<Typography variant="body2" sx={{ wordBreak: "break-all", mt: 0.5 }}>
-										{subscription ? getStripeValue(subscription.stripeSubscriptionId) : "No disponible"}
-									</Typography>
-								</Grid>
-
-								<Grid item xs={12} sm={6} md={4}>
-									<Typography color="primary.dark" variant="subtitle2">
-										Fecha de inicio
-									</Typography>
-									<Typography variant="body2" sx={{ mt: 0.5 }}>
-										{subscription && formatDate(subscription.currentPeriodStart)}
-									</Typography>
-								</Grid>
-							</Grid>
-						</Box>
-					)}
-				</MainCard>
+							<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+								<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em", flexShrink: 0 }}>Suscripción</Typography>
+								<Typography sx={{ fontSize: "0.72rem", color: "text.primary", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+									{getStripeValue(subscription.stripeSubscriptionId)}
+								</Typography>
+							</Stack>
+							<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+								<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em", flexShrink: 0 }}>Inicio</Typography>
+								<Typography sx={{ fontSize: "0.72rem", color: "text.primary", fontVariantNumeric: "tabular-nums" }}>
+									{formatDate(subscription.currentPeriodStart)}
+								</Typography>
+							</Stack>
+						</Stack>
+					</Box>
+				)}
+			</SectionCard>
 			</Grid>
 
-			{/* Sección de Período de Gracia */}
-			{subscription && isInGracePeriod() && (
-				<Grid item xs={12}>
-					<MainCard
-						title={getGracePeriodInfo()?.title || "Período de Gracia"}
+			{/* Uso de recursos */}
+			<Grid item xs={12} md={4}>
+				<ResourceUsageWidget />
+			</Grid>
+
+			{/* Límites de recursos */}
+			<Grid item xs={12} md={6}>
+				<SectionCard
+					eyebrow="Tu plan"
+					title="Límites de recursos"
+					subtitle="Capacidad disponible por tipo de recurso"
+					icon={<ReceiptItem size={16} variant="Bulk" />}
+				>
+					<Box
 						sx={{
-							boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
-							overflow: "hidden",
-							position: "relative",
+							borderRadius: 1.5,
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 						}}
 					>
-						<Box
-							sx={{
-								bgcolor: "background.neutral",
-								p: 2.5,
-								borderRadius: 2,
-							}}
-						>
-							<Grid container spacing={3}>
-								<Grid item xs={12}>
-									{(() => {
-										const gracePeriodInfo = getGracePeriodInfo();
-										return gracePeriodInfo?.expiryDate && getGracePeriodStatus(gracePeriodInfo.expiryDate) === "past";
-									})() ? (
-										<Alert
-											severity="info"
-											variant="outlined"
-											sx={{
-												mb: 3,
-												borderRadius: 2,
-											}}
-										>
-											<Stack spacing={1}>
-												<Typography variant="subtitle1" fontWeight={600}>
-													Período de gracia finalizado
-												</Typography>
-												<Typography variant="body2">
-													El período de gracia finalizó el{" "}
-													{(() => {
-														const info = getGracePeriodInfo();
-														return info?.expiryDate ? formatDate(info.expiryDate) : "";
-													})()}
-													. El contenido que excedía los límites de tu{" "}
-													{getGracePeriodInfo()?.willDowngradeToFreePlan ? "plan gratuito" : "plan actual"} ha sido archivado
-													automáticamente.
-												</Typography>
-											</Stack>
-										</Alert>
-									) : (
-										<Alert
-											severity="warning"
-											variant="outlined"
-											sx={{
-												mb: 3,
-												borderRadius: 2,
-											}}
-										>
-											<Stack spacing={1}>
-												<Typography variant="subtitle1" fontWeight={600}>
-													{getGracePeriodInfo()?.willDowngradeToFreePlan
-														? `Tu plan ${getGracePeriodInfo()?.previousPlanName} ha cambiado al Plan Gratuito el ${
-																getGracePeriodInfo()?.cancellationFormatted
-														  }`
-														: `Tu plan ha cambiado de ${getGracePeriodInfo()?.previousPlanName} a ${getGracePeriodInfo()?.currentPlanName}`}
-												</Typography>
-												<Typography variant="body2">
-													Tienes hasta el {getGracePeriodInfo()?.expiryFormatted} para ajustar tus datos a los nuevos límites antes de que
-													se archive automáticamente el contenido excedente.
-												</Typography>
-											</Stack>
-										</Alert>
-									)}
-								</Grid>
+						{(() => {
+							const renderLimitRow = (label: string, limit: any, unit?: string, isLast?: boolean) => (
+								<Stack
+									key={label}
+									direction="row"
+									justifyContent="space-between"
+									alignItems="center"
+									sx={{
+										px: 1.5,
+										py: 1,
+										borderBottom: isLast ? "none" : `1px solid ${alpha(BRAND_BLUE, isDark ? 0.1 : 0.06)}`,
+									}}
+								>
+									<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>{label}</Typography>
+									<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", fontVariantNumeric: "tabular-nums" }}>
+										{limit === undefined ? "No disponible" : limit === 999999 ? "Ilimitado" : unit ? `${limit} ${unit}` : limit}
+									</Typography>
+								</Stack>
+							);
 
-								<Grid item xs={12}>
-									<Grid container spacing={4}>
-										<Grid item xs={12} sm={4}>
-											<Box
-												sx={{
-													bgcolor: "background.paper",
-													p: 2.5,
-													borderRadius: 2,
-													boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
-													height: "100%",
-												}}
-											>
-												<Stack spacing={1.5} alignItems="center" textAlign="center">
-													<Box
-														sx={{
-															width: 48,
-															height: 48,
-															borderRadius: "50%",
-															bgcolor: "primary.lighter",
-															display: "flex",
-															alignItems: "center",
-															justifyContent: "center",
-															mb: 0.5,
-														}}
-													>
-														<ReceiptItem aria-hidden="true" size={24} color={theme.palette.primary.dark} />
-													</Box>
-													<Typography color="text.secondary" variant="body2" fontWeight={500}>
-														Plan anterior
-													</Typography>
-													<Typography variant="h5" color="text.primary">
-														{getGracePeriodInfo()?.previousPlanName}
-													</Typography>
-												</Stack>
-											</Box>
-										</Grid>
+							if (subscription?.limitsWithDescriptions) {
+								const items = [...subscription.limitsWithDescriptions]
+									.filter((item: any) => {
+										const currentEnv = import.meta.env.PROD ? "production" : "development";
+										if (!item.visibility || item.visibility === "all") return true;
+										if (item.visibility === "none") return false;
+										return item.visibility === currentEnv;
+									})
+									.sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99));
+								return items.map((item: any, idx: number) =>
+									renderLimitRow(
+										item.displayName || item.description || item.name,
+										item.limit,
+										item.name === "storage" ? "MB" : undefined,
+										idx === items.length - 1,
+									),
+								);
+							}
+							if (subscription?.limitDetails) {
+								const entries = Object.entries(subscription.limitDetails);
+								return entries.map(([key, value]: [string, any], idx) =>
+									renderLimitRow(value.description || key, value.limit, key === "storage" ? "MB" : undefined, idx === entries.length - 1),
+								);
+							}
+							if (subscription?.limits) {
+								const limitNames: { [key: string]: string } = {
+									folders: "Carpetas",
+									calculators: "Cálculos",
+									contacts: "Contactos",
+									storage: "Almacenamiento",
+								};
+								const entries = Object.entries(subscription.limits);
+								return entries.map(([key, value]: [string, any], idx) =>
+									renderLimitRow(limitNames[key] || key, value, key === "storage" ? "MB" : undefined, idx === entries.length - 1),
+								);
+							}
+							return (
+								<Typography sx={{ p: 1.5, fontSize: "0.78rem", color: "text.secondary" }}>No hay límites disponibles</Typography>
+							);
+						})()}
+					</Box>
+				</SectionCard>
+			</Grid>
 
-										<Grid item xs={12} sm={4}>
-											<Box
-												sx={{
-													bgcolor: "background.paper",
-													p: 2.5,
-													borderRadius: 2,
-													boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
-													height: "100%",
-												}}
-											>
-												<Stack spacing={1.5} alignItems="center" textAlign="center">
-													<Box
-														sx={{
-															width: 48,
-															height: 48,
-															borderRadius: "50%",
-															bgcolor: "error.lighter",
-															display: "flex",
-															alignItems: "center",
-															justifyContent: "center",
-															mb: 0.5,
-														}}
-													>
-														<Calendar aria-hidden="true" size={24} color={theme.palette.error.dark} />
-													</Box>
-													<Typography color="text.secondary" variant="body2" fontWeight={500}>
-														Fecha límite
-													</Typography>
-													<Typography variant="h5" color="text.primary">
-														{getGracePeriodInfo()?.expiryFormatted}
-													</Typography>
-												</Stack>
-											</Box>
-										</Grid>
+			{/* Características */}
+			<Grid item xs={12} md={6}>
+				<SectionCard
+					eyebrow="Tu plan"
+					title="Características"
+					subtitle="Funciones habilitadas en tu plan"
+					icon={<Crown size={16} variant="Bulk" />}
+				>
+					<Box
+						sx={{
+							borderRadius: 1.5,
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+						}}
+					>
+						{(() => {
+							const renderFeatureRow = (label: string, enabled: boolean, isLast: boolean, idx: number) => (
+								<Stack
+									key={`${label}-${idx}`}
+									direction="row"
+									justifyContent="space-between"
+									alignItems="center"
+									sx={{
+										px: 1.5,
+										py: 1,
+										borderBottom: isLast ? "none" : `1px solid ${alpha(BRAND_BLUE, isDark ? 0.1 : 0.06)}`,
+									}}
+								>
+									<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em", flex: 1, minWidth: 0 }}>
+										{label}
+									</Typography>
+									<BrandPill
+										color={enabled ? LIVE_GREEN : theme.palette.text.secondary}
+										label={enabled ? "Activo" : "No disponible"}
+										dot={enabled}
+									/>
+								</Stack>
+							);
 
-										<Grid item xs={12} sm={4}>
-											<Box
-												sx={{
-													bgcolor: "background.paper",
-													p: 2.5,
-													borderRadius: 2,
-													boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
-													height: "100%",
-												}}
-											>
-												<Stack spacing={1.5} alignItems="center" textAlign="center">
-													<Box
-														sx={{
-															width: 48,
-															height: 48,
-															borderRadius: "50%",
-															bgcolor: getGracePeriodInfo()?.isExpiringSoon ? "error.lighter" : "warning.lighter",
-															display: "flex",
-															alignItems: "center",
-															justifyContent: "center",
-															mb: 0.5,
-														}}
-													>
-														<Timer1
-															aria-hidden="true"
-															size={24}
-															color={getGracePeriodInfo()?.isExpiringSoon ? theme.palette.error.dark : theme.palette.text.primary}
-														/>
-													</Box>
-													<Typography color="text.secondary" variant="body2" fontWeight={500}>
-														Días restantes
-													</Typography>
-													<Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 0.5 }}>
-														<Typography variant="h5" color="text.primary">
-															{getGracePeriodInfo()?.daysRemaining} días
-														</Typography>
-														{getGracePeriodInfo()?.isExpiringSoon && <Chip label="¡Expira pronto!" color="error" size="small" />}
-													</Box>
-												</Stack>
-											</Box>
-										</Grid>
-									</Grid>
-								</Grid>
+							if (subscription?.featuresWithDescriptions) {
+								const items = [...subscription.featuresWithDescriptions]
+									.filter((feature: any) => {
+										const currentEnv = import.meta.env.PROD ? "production" : "development";
+										if (!feature.visibility || feature.visibility === "all") return true;
+										if (feature.visibility === "none") return false;
+										return feature.visibility === currentEnv;
+									})
+									.sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99));
+								return items.map((feature: any, idx: number) =>
+									renderFeatureRow(feature.displayName || feature.description || feature.name, feature.enabled, idx === items.length - 1, idx),
+								);
+							}
+							if (subscription?.featureDetails) {
+								const entries = Object.entries(subscription.featureDetails).sort(
+									([keyA, valueA]: [string, any], [keyB, valueB]: [string, any]) => {
+										if (valueA.enabled === valueB.enabled) return (valueA.description || keyA).localeCompare(valueB.description || keyB);
+										return valueA.enabled ? -1 : 1;
+									},
+								);
+								return entries.map(([key, value]: [string, any], idx) =>
+									renderFeatureRow(value.description || key, value.enabled, idx === entries.length - 1, idx),
+								);
+							}
+							if (subscription?.features) {
+								const entries = Object.entries(subscription.features).sort(([keyA, valueA], [keyB, valueB]) => {
+									if (valueA === valueB) return keyA.localeCompare(keyB);
+									return valueA ? -1 : 1;
+								});
+								const featureNames: { [key: string]: string } = {
+									advancedAnalytics: "Análisis avanzados",
+									exportReports: "Exportación de reportes",
+									taskAutomation: "Automatización de tareas",
+									bulkOperations: "Operaciones masivas",
+									prioritySupport: "Soporte prioritario",
+									movements: "Movimientos judiciales",
+									vinculateFolders: "Vincular carpetas",
+									booking: "Sistema de reservas",
+								};
+								return entries.map(([key, value], idx) =>
+									renderFeatureRow(featureNames[key] || key, Boolean(value), idx === entries.length - 1, idx),
+								);
+							}
+							return (
+								<Typography sx={{ p: 1.5, fontSize: "0.78rem", color: "text.secondary" }}>No hay características disponibles</Typography>
+							);
+						})()}
+					</Box>
+				</SectionCard>
+			</Grid>
 
-								<Grid item xs={12}>
-									<Box
-										sx={{
-											bgcolor: "background.paper",
-											p: 2.5,
-											borderRadius: 2,
-											boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
-											mt: 1,
-										}}
-									>
-										{(() => {
-											const gracePeriodInfo = getGracePeriodInfo();
-											return gracePeriodInfo?.expiryDate && getGracePeriodStatus(gracePeriodInfo.expiryDate) === "past";
-										})() ? (
-											<Typography variant="h6" gutterBottom color="text.primary" fontWeight={600}>
-												Archivado automático completado
-											</Typography>
-										) : (
-											<Typography variant="h6" gutterBottom color="text.primary" fontWeight={600}>
-												¿Qué ocurre después de esta fecha?
-											</Typography>
-										)}
-
-										<Typography variant="body1" paragraph sx={{ fontWeight: 500 }}>
-											El sistema archivará automáticamente los elementos que excedan los límites de tu{" "}
-											{getGracePeriodInfo()?.willDowngradeToFreePlan ? "nuevo plan gratuito" : "plan actual"}.
-										</Typography>
-
-										<Typography variant="body2" color="text.secondary" paragraph>
-											Para evitar pérdida de acceso a tus datos importantes, te recomendamos revisar y ajustar manualmente tu contenido
-											antes del vencimiento del período de gracia.
-										</Typography>
-
-										<Box sx={{ mt: 3, display: "flex", gap: 2, flexWrap: "wrap", justifyContent: "center" }}>
-											<Button
-												variant="contained"
-												color="primary"
-												onClick={() => navigate("/apps/folders/list")}
-												size="large"
-												sx={{
-													px: 3,
-													py: 1,
-													fontWeight: 600,
-													boxShadow: "0 4px 10px 0 rgba(0,0,0,0.1)",
-													minWidth: 200,
-												}}
-											>
-												Gestionar Carpetas
-											</Button>
-											<Button
-												variant="contained"
-												color="primary"
-												onClick={() => navigate("/apps/calc/labor")}
-												size="large"
-												sx={{
-													px: 3,
-													py: 1,
-													fontWeight: 600,
-													boxShadow: "0 4px 10px 0 rgba(0,0,0,0.1)",
-													minWidth: 200,
-												}}
-											>
-												Gestionar Cálculos
-											</Button>
-											<Button
-												variant="contained"
-												color="primary"
-												onClick={() => navigate("/apps/customer/customer-list")}
-												size="large"
-												sx={{
-													px: 3,
-													py: 1,
-													fontWeight: 600,
-													boxShadow: "0 4px 10px 0 rgba(0,0,0,0.1)",
-													minWidth: 200,
-												}}
-											>
-												Gestionar Contactos
-											</Button>
-										</Box>
-									</Box>
-								</Grid>
-							</Grid>
+			{/* Período de gracia */}
+			{isInGracePeriod() && gracePeriodInfo && (
+				<Grid item xs={12}>
+				<SectionCard
+					eyebrow="Período de gracia"
+					title={gracePeriodInfo.title}
+					subtitle="Plazo para ajustar tus datos a los nuevos límites"
+					icon={<Timer1 size={16} variant="Bulk" />}
+					tone="amber"
+				>
+					{gracePeriodInfo.expiryDate && getGracePeriodStatus(gracePeriodInfo.expiryDate) === "past" ? (
+						<Box sx={{ p: 1.75, borderRadius: 1.25, bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04), border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}` }}>
+							<Stack direction="row" spacing={1} alignItems="flex-start">
+								<InfoCircle size={16} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
+								<Stack spacing={0.5}>
+									<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+										Período de gracia finalizado
+									</Typography>
+									<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+										El período finalizó el {gracePeriodInfo.expiryFormatted}. El contenido que excedía los límites de tu{" "}
+										{gracePeriodInfo.willDowngradeToFreePlan ? "plan gratuito" : "plan actual"} ha sido archivado automáticamente.
+									</Typography>
+								</Stack>
+							</Stack>
 						</Box>
-					</MainCard>
+					) : (
+						<Box sx={{ p: 1.75, borderRadius: 1.25, bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05), border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}` }}>
+							<Stack direction="row" spacing={1} alignItems="flex-start">
+								<Warning2 size={16} variant="Bulk" color={STALE_AMBER} style={{ marginTop: 2, flexShrink: 0 }} />
+								<Stack spacing={0.5}>
+									<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+										{gracePeriodInfo.willDowngradeToFreePlan
+											? `Tu plan ${gracePeriodInfo.previousPlanName} cambió al Plan Gratuito el ${gracePeriodInfo.cancellationFormatted}`
+											: `Tu plan cambió de ${gracePeriodInfo.previousPlanName} a ${gracePeriodInfo.currentPlanName}`}
+									</Typography>
+									<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+										Tenés hasta el {gracePeriodInfo.expiryFormatted} para ajustar tus datos a los nuevos límites antes de que se archive
+										automáticamente el contenido excedente.
+									</Typography>
+								</Stack>
+							</Stack>
+						</Box>
+					)}
+
+					<Grid container spacing={2} sx={{ mt: 1 }}>
+						{[
+							{ label: "Plan anterior", value: gracePeriodInfo.previousPlanName, icon: <ReceiptItem size={18} variant="Bulk" />, color: BRAND_BLUE },
+							{
+								label: "Fecha límite",
+								value: gracePeriodInfo.expiryFormatted,
+								icon: <Calendar size={18} variant="Bulk" />,
+								color: errorColor,
+							},
+							{
+								label: "Días restantes",
+								value: `${gracePeriodInfo.daysRemaining} ${gracePeriodInfo.daysRemaining === 1 ? "día" : "días"}`,
+								icon: <Timer1 size={18} variant="Bulk" />,
+								color: gracePeriodInfo.isExpiringSoon ? errorColor : STALE_AMBER,
+								badge: gracePeriodInfo.isExpiringSoon ? <BrandPill color={errorColor} label="Expira pronto" /> : null,
+							},
+						].map((card, idx) => (
+							<Grid item xs={12} sm={4} key={idx}>
+								<Box
+									sx={{
+										p: 2,
+										borderRadius: 1.5,
+										bgcolor: "background.paper",
+										border: `1px solid ${alpha(card.color, isDark ? 0.22 : 0.14)}`,
+										height: "100%",
+										textAlign: "center",
+									}}
+								>
+									<Stack spacing={1} alignItems="center">
+										<Box
+											sx={{
+												width: 40,
+												height: 40,
+												borderRadius: 1,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												bgcolor: alpha(card.color, isDark ? 0.16 : 0.08),
+												border: `1px solid ${alpha(card.color, isDark ? 0.28 : 0.18)}`,
+												color: card.color,
+											}}
+										>
+											{card.icon}
+										</Box>
+										<Typography sx={{ fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
+											{card.label}
+										</Typography>
+										<Typography sx={{ fontSize: "1rem", fontWeight: 700, color: "text.primary", letterSpacing: "-0.015em", fontVariantNumeric: "tabular-nums" }}>
+											{card.value}
+										</Typography>
+										{card.badge}
+									</Stack>
+								</Box>
+							</Grid>
+						))}
+					</Grid>
+
+					<Box sx={{ mt: 2, p: 1.75, borderRadius: 1.5, bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03), border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}` }}>
+						<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em", mb: 0.5 }}>
+							{gracePeriodInfo.expiryDate && getGracePeriodStatus(gracePeriodInfo.expiryDate) === "past"
+								? "Archivado automático completado"
+								: "¿Qué ocurre después?"}
+						</Typography>
+						<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty", mb: 0.625 }}>
+							El sistema archivará automáticamente los elementos que excedan los límites de tu{" "}
+							{gracePeriodInfo.willDowngradeToFreePlan ? "nuevo plan gratuito" : "plan actual"}.
+						</Typography>
+						<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+							Para evitar pérdida de acceso a tus datos importantes, revisá y ajustá manualmente tu contenido antes del vencimiento.
+						</Typography>
+
+						<Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ mt: 2 }} justifyContent="center" flexWrap="wrap" useFlexGap>
+							{[
+								{ label: "Gestionar carpetas", to: "/apps/folders/list" },
+								{ label: "Gestionar cálculos", to: "/apps/calc/labor" },
+								{ label: "Gestionar contactos", to: "/apps/customer/customer-list" },
+							].map((cta) => (
+								<Button key={cta.to} variant="contained" onClick={() => navigate(cta.to)} sx={{ ...brandPrimarySx, minWidth: 180 }}>
+									{cta.label}
+								</Button>
+							))}
+						</Stack>
+					</Box>
+				</SectionCard>
 				</Grid>
 			)}
 
-			{/* Comparación de límites cuando hay período de gracia */}
-			{subscription && isDowngradeGracePeriodActive() && (
+			{/* Comparación de límites */}
+			{isDowngradeGracePeriodActive() && gracePeriodInfo && (
 				<Grid item xs={12}>
-					<MainCard
-						title={
-							<Stack direction="row" alignItems="center" spacing={1}>
-								<Typography variant="h5" fontWeight={600}>
-									Comparación de Límites
-								</Typography>
-								<Chip label="Importante" size="small" color="primary" sx={{ fontWeight: 600, borderRadius: 1 }} />
-							</Stack>
-						}
+				<SectionCard
+					eyebrow="Comparativa"
+					title="Comparación de límites"
+					subtitle="Revisá los cambios en los límites para evitar pérdida de acceso"
+					icon={<ReceiptText size={16} variant="Bulk" />}
+				>
+					<TableContainer
 						sx={{
-							boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
-							overflow: "hidden",
+							borderRadius: 1.5,
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`,
 						}}
 					>
-						<Stack spacing={2}>
-							<Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-								Revisa los cambios en los límites de tu cuenta para evitar la pérdida de acceso a tus recursos.
+						<Table sx={tableSx} size="small">
+							<TableHead>
+								<TableRow>
+									<TableCell>Recurso</TableCell>
+									<TableCell align="center">
+										<Stack spacing={0.125} alignItems="center">
+											<Typography sx={{ fontSize: "0.72rem", fontWeight: 600, color: BRAND_BLUE, letterSpacing: "-0.005em", textTransform: "none" }}>
+												{gracePeriodInfo.previousPlanName}
+											</Typography>
+											<Typography sx={{ fontSize: "0.62rem", color: "text.secondary", textTransform: "none", letterSpacing: "0.04em" }}>
+												Anterior
+											</Typography>
+										</Stack>
+									</TableCell>
+									<TableCell align="center">
+										<Stack spacing={0.125} alignItems="center">
+											<Typography sx={{ fontSize: "0.72rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "-0.005em", textTransform: "none" }}>
+												{gracePeriodInfo.targetPlanName}
+											</Typography>
+											<Typography sx={{ fontSize: "0.62rem", color: "text.secondary", textTransform: "none", letterSpacing: "0.04em" }}>
+												Nuevo
+											</Typography>
+										</Stack>
+									</TableCell>
+								</TableRow>
+							</TableHead>
+							<TableBody>
+								{[
+									{
+										label: "Carpetas",
+										prev:
+											subscription.downgradeGracePeriod?.previousPlan === "premium"
+												? "Ilimitadas"
+												: subscription.downgradeGracePeriod?.previousPlan === "standard"
+												? "50"
+												: "5",
+										next: (() => {
+											const t = subscription.downgradeGracePeriod?.targetPlan || "free";
+											const l = getPlanLimits(t);
+											return l.folders === 999999 ? "Ilimitadas" : String(l.folders);
+										})(),
+									},
+									{
+										label: "Cálculos",
+										prev:
+											subscription.downgradeGracePeriod?.previousPlan === "premium"
+												? "Ilimitados"
+												: subscription.downgradeGracePeriod?.previousPlan === "standard"
+												? "20"
+												: "3",
+										next: (() => {
+											const t = subscription.downgradeGracePeriod?.targetPlan || "free";
+											const l = getPlanLimits(t);
+											return l.calculators === 999999 ? "Ilimitados" : String(l.calculators);
+										})(),
+									},
+									{
+										label: "Contactos",
+										prev:
+											subscription.downgradeGracePeriod?.previousPlan === "premium"
+												? "Ilimitados"
+												: subscription.downgradeGracePeriod?.previousPlan === "standard"
+												? "100"
+												: "10",
+										next: (() => {
+											const t = subscription.downgradeGracePeriod?.targetPlan || "free";
+											const l = getPlanLimits(t);
+											return l.contacts === 999999 ? "Ilimitados" : String(l.contacts);
+										})(),
+									},
+									{
+										label: "Almacenamiento",
+										prev:
+											subscription.downgradeGracePeriod?.previousPlan === "premium"
+												? "10 GB"
+												: subscription.downgradeGracePeriod?.previousPlan === "standard"
+												? "1 GB"
+												: "50 MB",
+										next: (() => {
+											const t = subscription.downgradeGracePeriod?.targetPlan || "free";
+											const l = getPlanLimits(t);
+											return l.storage >= 1024 ? `${l.storage / 1024} GB` : `${l.storage} MB`;
+										})(),
+									},
+								].map((row) => (
+									<TableRow key={row.label}>
+										<TableCell sx={{ fontWeight: 500 }}>{row.label}</TableCell>
+										<TableCell align="center" sx={{ fontWeight: 600, color: BRAND_BLUE, fontVariantNumeric: "tabular-nums" }}>
+											{row.prev}
+										</TableCell>
+										<TableCell align="center" sx={{ fontWeight: 600, color: STALE_AMBER, fontVariantNumeric: "tabular-nums" }}>
+											{row.next}
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</TableContainer>
+					<Box
+						sx={{
+							mt: 1.5,
+							p: 1.5,
+							borderRadius: 1.25,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+						}}
+					>
+						<Stack direction="row" spacing={1} alignItems="flex-start">
+							<InfoCircle size={16} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
+							<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+								<Box component="span" sx={{ fontWeight: 600 }}>
+									Recomendación:
+								</Box>{" "}
+								Para evitar la pérdida automática de datos, ajustá manualmente tus recursos a los nuevos límites antes de que finalice el
+								período de gracia.
 							</Typography>
+						</Stack>
+					</Box>
+				</SectionCard>
+				</Grid>
+			)}
 
-							<TableContainer
+			{/* Métodos de pago */}
+			{subscription.plan !== "free" && (
+				<Grid item xs={12} md={6}>
+				<SectionCard
+					eyebrow="Pagos"
+					title="Métodos de pago"
+					subtitle="Tarjetas asociadas a tu suscripción"
+					icon={<CardSend size={16} variant="Bulk" />}
+					rightSlot={
+						paymentMethods.length > 0 ? (
+							<BrandPill color={BRAND_BLUE} label={`${paymentMethods.length} ${paymentMethods.length === 1 ? "método" : "métodos"}`} dot={false} />
+						) : undefined
+					}
+				>
+					{paymentMethodsLoading ? (
+						<Stack alignItems="center" sx={{ py: 4 }} spacing={1}>
+							<CircularProgress size={24} sx={{ color: BRAND_BLUE }} />
+							<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>Cargando métodos de pago…</Typography>
+						</Stack>
+					) : paymentMethodsError ? (
+						<Box
+							sx={{
+								p: 1.5,
+								borderRadius: 1.25,
+								bgcolor: alpha(errorColor, isDark ? 0.08 : 0.04),
+								border: `1px solid ${alpha(errorColor, isDark ? 0.32 : 0.22)}`,
+							}}
+						>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Warning2 size={16} variant="Bulk" color={errorColor} />
+								<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>{paymentMethodsError}</Typography>
+							</Stack>
+						</Box>
+					) : paymentMethods.length === 0 ? (
+						<Stack alignItems="center" spacing={1} sx={{ py: 4, textAlign: "center" }}>
+							<Box
 								sx={{
-									borderRadius: 2,
-									boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
-									"& .MuiTable-root": {
-										borderCollapse: "separate",
-										borderSpacing: "0",
-									},
-									"& .MuiTableHead-root": {
-										backgroundColor: "background.neutral",
-									},
-									"& .MuiTableRow-root:last-child .MuiTableCell-root": {
-										borderBottom: "none",
-									},
+									width: 48,
+									height: 48,
+									borderRadius: 1.5,
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+									color: BRAND_BLUE,
 								}}
 							>
-								<Table>
+								<CardSend size={22} variant="Bulk" />
+							</Box>
+							<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+								Sin métodos de pago
+							</Typography>
+							<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", maxWidth: 360, textWrap: "pretty" }}>
+								Los métodos de pago se agregan automáticamente al suscribirte a un plan.
+							</Typography>
+						</Stack>
+					) : (
+						<>
+							<TableContainer sx={{ borderRadius: 1.5, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}` }}>
+								<Table sx={tableSx} size="small">
 									<TableHead>
 										<TableRow>
-											<TableCell
-												sx={{
-													fontWeight: 600,
-													fontSize: "0.875rem",
-													py: 2,
-													borderTopLeftRadius: 8,
-													borderBottom: "2px solid",
-													borderColor: "divider",
-												}}
-											>
-												Recurso
-											</TableCell>
-											<TableCell
-												align="center"
-												sx={{
-													fontWeight: 600,
-													fontSize: "0.875rem",
-													py: 2,
-													borderBottom: "2px solid",
-													borderColor: "divider",
-												}}
-											>
-												<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-													<Typography variant="subtitle2" color="primary.main" sx={{ mb: 0.5 }}>
-														{getGracePeriodInfo()?.previousPlanName}
-													</Typography>
-													<Typography variant="caption" color="text.secondary">
-														Plan Anterior
-													</Typography>
-												</Box>
-											</TableCell>
-											<TableCell
-												align="center"
-												sx={{
-													fontWeight: 600,
-													fontSize: "0.875rem",
-													py: 2,
-													borderTopRightRadius: 8,
-													borderBottom: "2px solid",
-													borderColor: "divider",
-												}}
-											>
-												<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-													<Typography variant="subtitle2" color="warning.dark" sx={{ mb: 0.5 }}>
-														{getGracePeriodInfo()?.targetPlanName}
-													</Typography>
-													<Typography variant="caption" color="text.secondary">
-														Nuevo Plan
-													</Typography>
-												</Box>
-											</TableCell>
+											<TableCell>Tipo de tarjeta</TableCell>
+											<TableCell>Número</TableCell>
+											<TableCell>Vencimiento</TableCell>
+											<TableCell>Estado</TableCell>
+											<TableCell align="center">Acciones</TableCell>
 										</TableRow>
 									</TableHead>
 									<TableBody>
-										<TableRow hover>
-											<TableCell
-												sx={{
-													fontWeight: 500,
-													borderBottom: "1px solid",
-													borderColor: "divider",
-													py: 2,
-												}}
-											>
-												Carpetas
-											</TableCell>
-											<TableCell
-												align="center"
-												sx={{
-													fontWeight: 600,
-													color: "primary.main",
-													borderBottom: "1px solid",
-													borderColor: "divider",
-													py: 2,
-												}}
-											>
-												{subscription && subscription.downgradeGracePeriod && subscription.downgradeGracePeriod.previousPlan === "premium"
-													? "Ilimitadas"
-													: subscription &&
-													  subscription.downgradeGracePeriod &&
-													  subscription.downgradeGracePeriod.previousPlan === "standard"
-													? "50"
-													: "5"}
-											</TableCell>
-											<TableCell
-												align="center"
-												sx={{
-													fontWeight: 600,
-													color: "text.primary",
-													borderBottom: "1px solid",
-													borderColor: "divider",
-													py: 2,
-												}}
-											>
-												{(() => {
-													const targetPlan = subscription?.downgradeGracePeriod?.targetPlan || "free";
-													const limits = getPlanLimits(targetPlan);
-													return limits.folders === 999999 ? "Ilimitadas" : limits.folders;
-												})()}
-											</TableCell>
-										</TableRow>
-										<TableRow hover>
-											<TableCell
-												sx={{
-													fontWeight: 500,
-													borderBottom: "1px solid",
-													borderColor: "divider",
-													py: 2,
-												}}
-											>
-												Calculadoras
-											</TableCell>
-											<TableCell
-												align="center"
-												sx={{
-													fontWeight: 600,
-													color: "primary.main",
-													borderBottom: "1px solid",
-													borderColor: "divider",
-													py: 2,
-												}}
-											>
-												{subscription && subscription.downgradeGracePeriod && subscription.downgradeGracePeriod.previousPlan === "premium"
-													? "Ilimitadas"
-													: subscription &&
-													  subscription.downgradeGracePeriod &&
-													  subscription.downgradeGracePeriod.previousPlan === "standard"
-													? "20"
-													: "3"}
-											</TableCell>
-											<TableCell
-												align="center"
-												sx={{
-													fontWeight: 600,
-													color: "text.primary",
-													borderBottom: "1px solid",
-													borderColor: "divider",
-													py: 2,
-												}}
-											>
-												{(() => {
-													const targetPlan = subscription?.downgradeGracePeriod?.targetPlan || "free";
-													const limits = getPlanLimits(targetPlan);
-													return limits.calculators === 999999 ? "Ilimitados" : limits.calculators;
-												})()}
-											</TableCell>
-										</TableRow>
-										<TableRow hover>
-											<TableCell
-												sx={{
-													fontWeight: 500,
-													borderBottom: "1px solid",
-													borderColor: "divider",
-													py: 2,
-												}}
-											>
-												Contactos
-											</TableCell>
-											<TableCell
-												align="center"
-												sx={{
-													fontWeight: 600,
-													color: "primary.main",
-													borderBottom: "1px solid",
-													borderColor: "divider",
-													py: 2,
-												}}
-											>
-												{subscription && subscription.downgradeGracePeriod && subscription.downgradeGracePeriod.previousPlan === "premium"
-													? "Ilimitados"
-													: subscription &&
-													  subscription.downgradeGracePeriod &&
-													  subscription.downgradeGracePeriod.previousPlan === "standard"
-													? "100"
-													: "10"}
-											</TableCell>
-											<TableCell
-												align="center"
-												sx={{
-													fontWeight: 600,
-													color: "text.primary",
-													borderBottom: "1px solid",
-													borderColor: "divider",
-													py: 2,
-												}}
-											>
-												{(() => {
-													const targetPlan = subscription?.downgradeGracePeriod?.targetPlan || "free";
-													const limits = getPlanLimits(targetPlan);
-													return limits.contacts === 999999 ? "Ilimitados" : limits.contacts;
-												})()}
-											</TableCell>
-										</TableRow>
-										<TableRow hover>
-											<TableCell
-												sx={{
-													fontWeight: 500,
-													py: 2,
-												}}
-											>
-												Almacenamiento
-											</TableCell>
-											<TableCell
-												align="center"
-												sx={{
-													fontWeight: 600,
-													color: "primary.main",
-													py: 2,
-												}}
-											>
-												{subscription && subscription.downgradeGracePeriod && subscription.downgradeGracePeriod.previousPlan === "premium"
-													? "10 GB"
-													: subscription &&
-													  subscription.downgradeGracePeriod &&
-													  subscription.downgradeGracePeriod.previousPlan === "standard"
-													? "1 GB"
-													: "50 MB"}
-											</TableCell>
-											<TableCell
-												align="center"
-												sx={{
-													fontWeight: 600,
-													color: "text.primary",
-													py: 2,
-												}}
-											>
-												{(() => {
-													const targetPlan = subscription?.downgradeGracePeriod?.targetPlan || "free";
-													const limits = getPlanLimits(targetPlan);
-													return limits.storage >= 1024 ? `${limits.storage / 1024} GB` : `${limits.storage} MB`;
-												})()}
-											</TableCell>
-										</TableRow>
+										{paymentMethods.slice(0, showAllPaymentMethods ? paymentMethods.length : 3).map((method) => {
+											const isDefault = defaultPaymentMethod?.id === method.id;
+											return (
+												<TableRow key={method.id}>
+													<TableCell sx={{ fontWeight: 500 }}>
+														{method.card?.brand ? method.card.brand.charAt(0).toUpperCase() + method.card.brand.slice(1) : "Tarjeta"}
+													</TableCell>
+													<TableCell sx={{ fontFamily: "monospace" }}>•••• {method.card?.last4 || "****"}</TableCell>
+													<TableCell sx={{ fontVariantNumeric: "tabular-nums" }}>
+														{method.card?.exp_month && method.card?.exp_year
+															? `${String(method.card.exp_month).padStart(2, "0")}/${method.card.exp_year}`
+															: "—"}
+													</TableCell>
+													<TableCell>
+														<BrandPill
+															color={isDefault ? LIVE_GREEN : theme.palette.text.secondary}
+															label={isDefault ? "Predeterminado" : "Disponible"}
+															dot={isDefault}
+														/>
+													</TableCell>
+													<TableCell align="center">
+														{!isDefault && (
+															<Button
+																size="small"
+																onClick={() => handleChangePaymentMethod(method.id)}
+																disabled={changingPaymentMethod}
+																startIcon={changingPaymentMethod ? <CircularProgress size={12} color="inherit" /> : undefined}
+																sx={{ ...ghostBtnSx, fontSize: "0.72rem", py: 0.5, px: 1.25 }}
+															>
+																Hacer predeterminada
+															</Button>
+														)}
+													</TableCell>
+												</TableRow>
+											);
+										})}
 									</TableBody>
 								</Table>
 							</TableContainer>
 
-							<Alert
-								severity="info"
-								variant="outlined"
-								sx={{
-									mt: 2,
-									borderRadius: 2,
-									borderWidth: 1.5,
-								}}
-							>
-								<Typography variant="body2">
-									<strong>Recomendación:</strong> Para evitar la pérdida automática de datos, ajusta manualmente tus recursos a los nuevos
-									límites antes de que finalice el período de gracia.
-								</Typography>
-							</Alert>
-						</Stack>
-					</MainCard>
-				</Grid>
-			)}
-
-			{/* Sección de Métodos de Pago */}
-			{subscription && subscription.plan !== "free" && (
-				<Grid item xs={12}>
-					<MainCard
-						title={
-							<Stack direction="row" alignItems="center" spacing={2}>
-								<Typography variant="h5" fontWeight={600}>
-									Métodos de pago
-								</Typography>
-								{paymentMethods.length > 0 && (
-									<Chip
-										label={`${paymentMethods.length} ${paymentMethods.length === 1 ? "método" : "métodos"}`}
-										size="small"
-										color="primary"
-										variant="outlined"
-										sx={{ fontWeight: 500, borderRadius: 1 }}
-									/>
-								)}
-							</Stack>
-						}
-						sx={{
-							boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
-							overflow: "hidden",
-						}}
-					>
-						<>
-							{paymentMethodsLoading ? (
-								<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 5 }}>
-									<CircularProgress size={30} thickness={3} />
-								</Box>
-							) : paymentMethodsError ? (
-								<Alert
-									severity="error"
-									variant="filled"
-									sx={{
-										mt: 2,
-										borderRadius: 2,
-										boxShadow: "0 4px 12px 0 rgba(0,0,0,0.06)",
-									}}
-								>
-									<Typography variant="body2">{paymentMethodsError}</Typography>
-								</Alert>
-							) : paymentMethods.length === 0 ? (
-								<Box
-									sx={{
-										display: "flex",
-										flexDirection: "column",
-										alignItems: "center",
-										justifyContent: "center",
-										py: 5,
-										bgcolor: "background.neutral",
-										borderRadius: 2,
-									}}
-								>
-									<Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-										No se encontraron métodos de pago para esta cuenta.
-									</Typography>
-									<Typography variant="body2" color="text.secondary">
-										Los métodos de pago se agregan automáticamente al suscribirte a un plan.
-									</Typography>
-								</Box>
-							) : (
-								<>
-									<Box sx={{ overflowX: "auto" }}>
-										<TableContainer
-											sx={{
-												borderRadius: 2,
-												boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
-												"& .MuiTable-root": {
-													borderCollapse: "separate",
-													borderSpacing: "0",
-												},
-												"& .MuiTableHead-root": {
-													backgroundColor: "background.neutral",
-												},
-												"& .MuiTableRow-root:last-child .MuiTableCell-root": {
-													borderBottom: "none",
-												},
-											}}
-										>
-											<Table>
-												<TableHead>
-													<TableRow>
-														<TableCell
-															sx={{
-																fontWeight: 600,
-																fontSize: "0.875rem",
-																py: 2,
-																borderTopLeftRadius: 8,
-																borderBottom: "2px solid",
-																borderColor: "divider",
-															}}
-														>
-															Tipo de tarjeta
-														</TableCell>
-														<TableCell
-															sx={{
-																fontWeight: 600,
-																fontSize: "0.875rem",
-																py: 2,
-																borderBottom: "2px solid",
-																borderColor: "divider",
-															}}
-														>
-															Número
-														</TableCell>
-														<TableCell
-															sx={{
-																fontWeight: 600,
-																fontSize: "0.875rem",
-																py: 2,
-																borderBottom: "2px solid",
-																borderColor: "divider",
-															}}
-														>
-															Vencimiento
-														</TableCell>
-														<TableCell
-															sx={{
-																fontWeight: 600,
-																fontSize: "0.875rem",
-																py: 2,
-																borderBottom: "2px solid",
-																borderColor: "divider",
-															}}
-														>
-															Estado
-														</TableCell>
-														<TableCell
-															align="center"
-															sx={{
-																fontWeight: 600,
-																fontSize: "0.875rem",
-																py: 2,
-																borderTopRightRadius: 8,
-																borderBottom: "2px solid",
-																borderColor: "divider",
-															}}
-														>
-															Acciones
-														</TableCell>
-													</TableRow>
-												</TableHead>
-												<TableBody>
-													{paymentMethods.slice(0, showAllPaymentMethods ? paymentMethods.length : 3).map((method) => {
-														const isDefault = defaultPaymentMethod?.id === method.id;
-														return (
-															<TableRow key={method.id} hover>
-																<TableCell
-																	sx={{
-																		borderBottom: "1px solid",
-																		borderColor: "divider",
-																		py: 2,
-																		fontWeight: 500,
-																	}}
-																>
-																	{method.card?.brand ? method.card.brand.charAt(0).toUpperCase() + method.card.brand.slice(1) : "Tarjeta"}
-																</TableCell>
-																<TableCell
-																	sx={{
-																		borderBottom: "1px solid",
-																		borderColor: "divider",
-																		py: 2,
-																	}}
-																>
-																	•••• {method.card?.last4 || "****"}
-																</TableCell>
-																<TableCell
-																	sx={{
-																		borderBottom: "1px solid",
-																		borderColor: "divider",
-																		py: 2,
-																	}}
-																>
-																	{method.card?.exp_month && method.card?.exp_year
-																		? `${String(method.card.exp_month).padStart(2, "0")}/${method.card.exp_year}`
-																		: "No disponible"}
-																</TableCell>
-																<TableCell
-																	sx={{
-																		borderBottom: "1px solid",
-																		borderColor: "divider",
-																		py: 2,
-																	}}
-																>
-																	{isDefault ? (
-																		<Chip label="Predeterminado" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-																	) : (
-																		<Chip label="Disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-																	)}
-																</TableCell>
-																<TableCell
-																	align="center"
-																	sx={{
-																		borderBottom: "1px solid",
-																		borderColor: "divider",
-																		py: 2,
-																	}}
-																>
-																	{!isDefault && (
-																		<Button
-																			size="small"
-																			variant="outlined"
-																			color="primary"
-																			onClick={() => handleChangePaymentMethod(method.id)}
-																			disabled={changingPaymentMethod}
-																			sx={{
-																				borderRadius: 1.5,
-																				px: 2,
-																				py: 0.75,
-																				minWidth: 0,
-																				fontWeight: 600,
-																			}}
-																		>
-																			{changingPaymentMethod ? <CircularProgress size={16} /> : "Establecer como predeterminado"}
-																		</Button>
-																	)}
-																</TableCell>
-															</TableRow>
-														);
-													})}
-												</TableBody>
-											</Table>
-										</TableContainer>
-									</Box>
-
-									{paymentMethods.length > 5 && (
-										<Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
-											<Button
-												variant="outlined"
-												color="primary"
-												onClick={() => setShowAllPaymentMethods(!showAllPaymentMethods)}
-												sx={{
-													borderRadius: 2,
-													px: 3,
-													fontWeight: 500,
-												}}
-											>
-												{showAllPaymentMethods ? "Ver menos métodos" : "Ver todos"}
-											</Button>
-										</Box>
-									)}
-
-									<Alert
-										severity="info"
-										variant="outlined"
-										sx={{
-											mt: 3,
-											borderRadius: 2,
-											borderWidth: 1.5,
-										}}
-									>
-										<Typography variant="body2">
-											<strong>Nota:</strong> El método de pago predeterminado se utilizará para los cargos automáticos de tu suscripción.
-										</Typography>
-									</Alert>
-								</>
+							{paymentMethods.length > 5 && (
+								<Stack direction="row" justifyContent="center" sx={{ mt: 1.5 }}>
+									<Button onClick={() => setShowAllPaymentMethods(!showAllPaymentMethods)} sx={ghostBtnSx}>
+										{showAllPaymentMethods ? "Ver menos" : "Ver todas"}
+									</Button>
+								</Stack>
 							)}
 
-							{/* Botón para gestionar métodos de pago */}
-							<Box
-								sx={{
-									mt: 3,
-									display: "flex",
-									justifyContent: "center",
-									alignItems: "center",
-									flexDirection: "column",
-									gap: 2,
-								}}
-							>
-								<Button
-									variant="contained"
-									color="primary"
-									onClick={handleOpenBillingPortal}
-									disabled={openingBillingPortal}
-									startIcon={openingBillingPortal ? <CircularProgress size={20} color="inherit" /> : null}
-									sx={{
-										borderRadius: 2,
-										px: 4,
-										py: 1.25,
-										fontWeight: 600,
-										boxShadow: "0 4px 12px 0 rgba(0,0,0,0.1)",
-										minWidth: 250,
-									}}
-								>
-									{openingBillingPortal ? "Abriendo portal..." : "Gestionar métodos de pago"}
-								</Button>
-								<Typography variant="caption" color="text.secondary" sx={{ textAlign: "center", maxWidth: 400 }}>
-									Se abrirá el portal seguro de Stripe donde podrás agregar, eliminar o actualizar tus métodos de pago.
-								</Typography>
+							<Box sx={{ mt: 2, p: 1.5, borderRadius: 1.25, bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04), border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}` }}>
+								<Stack direction="row" spacing={1} alignItems="flex-start">
+									<InfoCircle size={14} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
+									<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+										<Box component="span" sx={{ fontWeight: 600 }}>
+											Nota:
+										</Box>{" "}
+										El método de pago predeterminado se utilizará para los cargos automáticos de tu suscripción.
+									</Typography>
+								</Stack>
 							</Box>
 						</>
-					</MainCard>
+					)}
+
+					<Stack alignItems="center" spacing={1} sx={{ mt: 2.5 }}>
+						<Button
+							variant="contained"
+							onClick={handleOpenBillingPortal}
+							disabled={openingBillingPortal}
+							startIcon={openingBillingPortal ? <CircularProgress size={14} color="inherit" /> : <CardSend size={15} variant="Linear" />}
+							sx={{ ...brandPrimarySx, minWidth: 250 }}
+						>
+							{openingBillingPortal ? "Abriendo portal…" : "Gestionar métodos de pago"}
+						</Button>
+						<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", textAlign: "center", maxWidth: 400, letterSpacing: "-0.005em" }}>
+							Se abrirá el portal seguro de Stripe donde podrás agregar, eliminar o actualizar tus métodos de pago.
+						</Typography>
+					</Stack>
+				</SectionCard>
 				</Grid>
 			)}
 
-			<Grid item xs={12}>
-				<MainCard
-					title={
-						<Stack direction="row" alignItems="center" spacing={2}>
-							<Typography variant="h5" fontWeight={600}>
-								Historial de facturación
-							</Typography>
-							{payments.length > 0 && (
-								<Chip
-									label={`${payments.length} ${payments.length === 1 ? "factura" : "facturas"}`}
-									size="small"
-									color="primary"
-									variant="outlined"
-									sx={{ fontWeight: 500, borderRadius: 1 }}
-								/>
-							)}
-						</Stack>
-					}
-					sx={{
-						boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
-						overflow: "hidden",
-					}}
-				>
-					<>
-						{paymentsLoading ? (
-							<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 5 }}>
-								<CircularProgress size={30} thickness={3} />
-							</Box>
-						) : paymentsError ? (
-							<Alert
-								severity="error"
-								variant="filled"
-								sx={{
-									mt: 2,
-									borderRadius: 2,
-									boxShadow: "0 4px 12px 0 rgba(0,0,0,0.06)",
-								}}
-							>
-								<Typography variant="body2">{paymentsError}</Typography>
-							</Alert>
-						) : payments.length === 0 ? (
-							<Box
-								sx={{
-									display: "flex",
-									flexDirection: "column",
-									alignItems: "center",
-									justifyContent: "center",
-									py: 5,
-									bgcolor: "background.neutral",
-									borderRadius: 2,
-								}}
-							>
-								<Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-									No se encontraron facturas para esta cuenta.
-								</Typography>
-								<Button variant="outlined" color="primary" size="small" sx={{ borderRadius: 2 }} onClick={handleChangePlan}>
-									Explorar planes
-								</Button>
-							</Box>
-						) : (
-							<>
-								<Box
-									sx={{
-										overflowX: "auto",
-										position: "relative",
-										"&::after": {
-											content: '""',
-											position: "absolute",
-											top: 0,
-											right: 0,
-											bottom: 0,
-											width: 40,
-											pointerEvents: "none",
-											background: "linear-gradient(to left, rgba(0,0,0,0.08), transparent)",
-											display: { xs: "block", md: "none" },
-										},
-									}}
-								>
-									<TableContainer
-										sx={{
-											borderRadius: 2,
-											boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
-											"& .MuiTable-root": {
-												borderCollapse: "separate",
-												borderSpacing: "0",
-											},
-											"& .MuiTableHead-root": {
-												backgroundColor: "background.neutral",
-											},
-											"& .MuiTableRow-root:last-child .MuiTableCell-root": {
-												borderBottom: "none",
-											},
-										}}
-									>
-										<Table>
-											<TableHead>
-												<TableRow>
-													<TableCell
-														sx={{
-															fontWeight: 600,
-															fontSize: "0.875rem",
-															py: 2,
-															borderTopLeftRadius: 8,
-															borderBottom: "2px solid",
-															borderColor: "divider",
-														}}
-													>
-														Número
-													</TableCell>
-													<TableCell
-														sx={{
-															fontWeight: 600,
-															fontSize: "0.875rem",
-															py: 2,
-															borderBottom: "2px solid",
-															borderColor: "divider",
-														}}
-													>
-														Fecha
-													</TableCell>
-													<TableCell
-														sx={{
-															fontWeight: 600,
-															fontSize: "0.875rem",
-															py: 2,
-															borderBottom: "2px solid",
-															borderColor: "divider",
-														}}
-													>
-														Importe
-													</TableCell>
-													<TableCell
-														sx={{
-															fontWeight: 600,
-															fontSize: "0.875rem",
-															py: 2,
-															borderBottom: "2px solid",
-															borderColor: "divider",
-														}}
-													>
-														Estado
-													</TableCell>
-													<TableCell
-														align="center"
-														sx={{
-															fontWeight: 600,
-															fontSize: "0.875rem",
-															py: 2,
-															borderTopRightRadius: 8,
-															borderBottom: "2px solid",
-															borderColor: "divider",
-														}}
-													>
-														Acciones
-													</TableCell>
-												</TableRow>
-											</TableHead>
-											<TableBody>
-												{payments.slice(0, showAllPayments ? payments.length : 3).map((payment) => (
-													<TableRow key={payment.id} hover>
-														<TableCell
-															sx={{
-																borderBottom: "1px solid",
-																borderColor: "divider",
-																py: 2,
-																fontWeight: 500,
-															}}
-														>
-															{payment.invoiceNumber || payment.receiptNumber || payment.invoiceId || "N/A"}
-														</TableCell>
-														<TableCell
-															sx={{
-																borderBottom: "1px solid",
-																borderColor: "divider",
-																py: 2,
-															}}
-														>
-															{formatDate(payment.createdAt)}
-														</TableCell>
-														<TableCell
-															sx={{
-																borderBottom: "1px solid",
-																borderColor: "divider",
-																py: 2,
-																fontWeight: 600,
-															}}
-														>
-															{formatAmount(payment.amount, payment.currency)}
-														</TableCell>
-														<TableCell
-															sx={{
-																borderBottom: "1px solid",
-																borderColor: "divider",
-																py: 2,
-															}}
-														>
-															{getPaymentStatusChip(payment.status)}
-														</TableCell>
-														<TableCell
-															align="center"
-															sx={{
-																borderBottom: "1px solid",
-																borderColor: "divider",
-																py: 2,
-															}}
-														>
-															<Button
-																size="small"
-																variant="contained"
-																color="primary"
-																onClick={() => handleViewInvoice(payment)}
-																title="Ver factura"
-																sx={{
-																	borderRadius: 1.5,
-																	px: 2,
-																	py: 0.75,
-																	minWidth: 0,
-																	boxShadow: "none",
-																	fontWeight: 600,
-																}}
-															>
-																Ver
-															</Button>
-														</TableCell>
-													</TableRow>
-												))}
-											</TableBody>
-										</Table>
-									</TableContainer>
-								</Box>
-
-								{payments.length > 3 && (
-									<Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
-										<Button
-											variant="outlined"
-											color="primary"
-											onClick={() => setShowAllPayments(!showAllPayments)}
-											sx={{
-												borderRadius: 2,
-												px: 3,
-												fontWeight: 500,
-											}}
-										>
-											{showAllPayments ? "Ver menos facturas" : "Ver todas las facturas"}
-										</Button>
-									</Box>
-								)}
-							</>
-						)}
-					</>
-				</MainCard>
-			</Grid>
-
-			<Grid item xs={12}>
-				<Box
-					sx={{
-						bgcolor: "primary.lighter",
-						p: 3,
-						borderRadius: 3,
-						textAlign: "center",
-						boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
-					}}
-				>
-					<Typography variant="h5" color="primary.dark" sx={{ mb: 2, fontWeight: 600 }}>
-						¿Necesitas más recursos o características para tu negocio?
-					</Typography>
-					<Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 700, mx: "auto" }}>
-						Explora nuestros planes y encuentra la opción perfecta para tus necesidades. Todos incluyen soporte técnico y actualizaciones
-						regulares.
-					</Typography>
-					<Button
-						variant="contained"
-						color="primary"
-						onClick={handleChangePlan}
-						size="large"
-						sx={{
-							px: 4,
-							py: 1.25,
-							borderRadius: 2,
-							fontWeight: 600,
-							boxShadow: "0 6px 15px 0 rgba(0,0,0,0.15)",
-							fontSize: "1rem",
-						}}
-					>
-						Explorar planes
-					</Button>
-				</Box>
-			</Grid>
-
-			{/* Diálogo de confirmación para cancelar suscripción */}
-			<Dialog
-				open={cancelDialogOpen}
-				onClose={handleCloseCancelDialog}
-				aria-labelledby="cancel-subscription-dialog-title"
-				aria-describedby="cancel-subscription-dialog-description"
-				PaperProps={{
-					sx: {
-						borderRadius: 3,
-						boxShadow: "0 10px 40px 0 rgba(0,0,0,0.1)",
-						maxWidth: 500,
-					},
-				}}
+			{/* Historial de facturación */}
+			<Grid item xs={12} md={subscription.plan !== "free" ? 6 : 12}>
+			<SectionCard
+				eyebrow="Facturación"
+				title="Historial de facturación"
+				subtitle="Facturas y cargos de tu cuenta"
+				icon={<ReceiptText size={16} variant="Bulk" />}
+				rightSlot={
+					payments.length > 0 ? (
+						<BrandPill color={BRAND_BLUE} label={`${payments.length} ${payments.length === 1 ? "factura" : "facturas"}`} dot={false} />
+					) : undefined
+				}
 			>
-				<DialogTitle
-					id="cancel-subscription-dialog-title"
-					sx={{
-						pb: 1,
-						pt: 3,
-						px: 3,
-						fontWeight: 600,
-					}}
-				>
-					Cancelar suscripción
-				</DialogTitle>
-				<DialogContent sx={{ p: 3 }}>
-					<DialogContentText id="cancel-subscription-dialog-description" sx={{ color: "text.primary", mb: 2 }}>
-						¿Estás seguro de que deseas cancelar tu suscripción?
-					</DialogContentText>
-
+				{paymentsLoading ? (
+					<Stack alignItems="center" sx={{ py: 4 }} spacing={1}>
+						<CircularProgress size={24} sx={{ color: BRAND_BLUE }} />
+						<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>Cargando facturas…</Typography>
+					</Stack>
+				) : paymentsError ? (
 					<Box
 						sx={{
-							bgcolor: "background.neutral",
-							p: 2,
-							borderRadius: 2,
-							mb: 2,
+							p: 1.5,
+							borderRadius: 1.25,
+							bgcolor: alpha(errorColor, isDark ? 0.08 : 0.04),
+							border: `1px solid ${alpha(errorColor, isDark ? 0.32 : 0.22)}`,
 						}}
 					>
-						<Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 1 }}>
-							Detalles importantes:
-						</Typography>
-						<Stack spacing={1}>
-							<Typography variant="body2" color="text.primary" sx={{ display: "flex", alignItems: "center" }}>
-								• Tu servicio seguirá activo hasta el {subscription && formatDate(subscription.currentPeriodEnd)}
-							</Typography>
-							<Typography variant="body2" color="text.primary" sx={{ display: "flex", alignItems: "center" }}>
-								• Después de esta fecha, no se realizarán más cargos automáticos
-							</Typography>
-							{subscription && subscription.plan !== "free" && (
-								<Typography variant="body2" color="text.primary" sx={{ display: "flex", alignItems: "center" }}>
-									• Tendrás un período de gracia de 15 días para archivar contenido
-								</Typography>
-							)}
+						<Stack direction="row" spacing={1} alignItems="center">
+							<Warning2 size={16} variant="Bulk" color={errorColor} />
+							<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>{paymentsError}</Typography>
 						</Stack>
 					</Box>
-
-					{subscription && subscription.plan !== "free" && (
-						<Alert
-							severity="info"
-							variant="outlined"
+				) : payments.length === 0 ? (
+					<Stack alignItems="center" spacing={1.25} sx={{ py: 4, textAlign: "center" }}>
+						<Box
 							sx={{
-								mb: 0,
-								borderWidth: 1.5,
-								borderRadius: 2,
-								"& .MuiAlert-icon": { color: "primary.main" },
+								width: 48,
+								height: 48,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
 							}}
 						>
-							<Typography variant="body2">
-								Después de cancelar, tendrás acceso limitado a tus recursos. Considera archivar o exportar datos importantes antes de que
-								finalice tu suscripción.
+							<ReceiptText size={22} variant="Bulk" />
+						</Box>
+						<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+							Sin facturas todavía
+						</Typography>
+						<Typography sx={{ fontSize: "0.78rem", color: "text.secondary" }}>
+							No se encontraron facturas para esta cuenta.
+						</Typography>
+						<Button size="small" onClick={handleChangePlan} sx={ghostBtnSx}>
+							Explorar planes
+						</Button>
+					</Stack>
+				) : (
+					<>
+						<TableContainer sx={{ borderRadius: 1.5, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}` }}>
+							<Table sx={tableSx} size="small">
+								<TableHead>
+									<TableRow>
+										<TableCell>Número</TableCell>
+										<TableCell>Fecha</TableCell>
+										<TableCell>Importe</TableCell>
+										<TableCell>Estado</TableCell>
+										<TableCell align="center">Acciones</TableCell>
+									</TableRow>
+								</TableHead>
+								<TableBody>
+									{payments.slice(0, showAllPayments ? payments.length : 3).map((payment) => (
+										<TableRow key={payment.id}>
+											<TableCell sx={{ fontFamily: "monospace", fontSize: "0.78rem" }}>
+												{payment.invoiceNumber || payment.receiptNumber || payment.invoiceId || "N/A"}
+											</TableCell>
+											<TableCell sx={{ fontVariantNumeric: "tabular-nums" }}>{formatDate(payment.createdAt)}</TableCell>
+											<TableCell sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+												{formatAmount(payment.amount, payment.currency)}
+											</TableCell>
+											<TableCell>{getPaymentStatusPill(payment.status)}</TableCell>
+											<TableCell align="center">
+												<Button size="small" onClick={() => handleViewInvoice(payment)} sx={{ ...ghostBtnSx, fontSize: "0.72rem", py: 0.5, px: 1.25 }}>
+													Ver
+												</Button>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</TableContainer>
+
+						{payments.length > 3 && (
+							<Stack direction="row" justifyContent="center" sx={{ mt: 1.5 }}>
+								<Button onClick={() => setShowAllPayments(!showAllPayments)} sx={ghostBtnSx}>
+									{showAllPayments ? "Ver menos" : "Ver todas"}
+								</Button>
+							</Stack>
+						)}
+					</>
+				)}
+			</SectionCard>
+			</Grid>
+
+			{/* CTA: Explorar planes */}
+			<Grid item xs={12}>
+			<Box
+				sx={{
+					position: "relative",
+					overflow: "hidden",
+					borderRadius: 2,
+					p: { xs: 3, md: 4 },
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)}`,
+					textAlign: "center",
+				}}
+			>
+				<Box
+					sx={{
+						position: "absolute",
+						top: -80,
+						left: "50%",
+						transform: "translateX(-50%)",
+						width: 360,
+						height: 360,
+						borderRadius: "50%",
+						background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)} 0%, transparent 70%)`,
+						pointerEvents: "none",
+					}}
+				/>
+				<Stack spacing={1.5} alignItems="center" sx={{ position: "relative" }}>
+					<Box
+						sx={{
+							width: 52,
+							height: 52,
+							borderRadius: 1.5,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+							color: BRAND_BLUE,
+						}}
+					>
+						<Crown size={24} variant="Bulk" />
+					</Box>
+					<Typography sx={{ fontSize: "1.1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary", textWrap: "balance" }}>
+						¿Necesitás más recursos o características?
+					</Typography>
+					<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", maxWidth: 600, letterSpacing: "-0.005em", textWrap: "pretty" }}>
+						Explorá nuestros planes y encontrá la opción perfecta para tu estudio. Todos incluyen soporte y actualizaciones regulares.
+					</Typography>
+					<Button variant="contained" onClick={handleChangePlan} sx={{ ...brandPrimarySx, mt: 0.5 }}>
+						Explorar planes
+					</Button>
+				</Stack>
+			</Box>
+			</Grid>
+
+			{/* Dialog cancelar */}
+			<Dialog open={cancelDialogOpen} onClose={handleCloseCancelDialog} maxWidth="sm" fullWidth PaperProps={{ sx: dialogPaperSx }}>
+				<Box
+					sx={{
+						position: "relative",
+						overflow: "hidden",
+						p: { xs: 2.25, sm: 2.5 },
+						bgcolor: alpha(errorColor, isDark ? 0.08 : 0.04),
+						borderBottom: `1px solid ${alpha(errorColor, isDark ? 0.22 : 0.14)}`,
+					}}
+				>
+					<Box
+						sx={{
+							position: "absolute",
+							top: -60,
+							right: -40,
+							width: 220,
+							height: 220,
+							borderRadius: "50%",
+							background: `radial-gradient(circle, ${alpha(errorColor, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
+							pointerEvents: "none",
+						}}
+					/>
+					<Stack direction="row" alignItems="center" spacing={1.5} sx={{ position: "relative" }}>
+						<Box
+							sx={{
+								width: 40,
+								height: 40,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(errorColor, isDark ? 0.18 : 0.1),
+								border: `1px solid ${alpha(errorColor, isDark ? 0.28 : 0.18)}`,
+								color: errorColor,
+							}}
+						>
+							<Warning2 size={20} variant="Bulk" />
+						</Box>
+						<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+							<Stack direction="row" spacing={0.75} alignItems="center">
+								<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: errorColor }} />
+								<Typography sx={{ fontSize: "0.6rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
+									Cancelar suscripción
+								</Typography>
+							</Stack>
+							<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+								¿Confirmás la cancelación?
 							</Typography>
-						</Alert>
-					)}
+						</Stack>
+						<IconButton
+							onClick={handleCloseCancelDialog}
+							sx={{ color: "text.secondary", borderRadius: 1, "&:hover": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) } }}
+							aria-label="cerrar"
+						>
+							<CloseSquare size={20} variant="Linear" />
+						</IconButton>
+					</Stack>
+				</Box>
+				<DialogContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+					<Stack spacing={2}>
+						<Typography sx={{ fontSize: "0.85rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+							Al cancelar tu suscripción:
+						</Typography>
+						<Box
+							sx={{
+								p: 1.5,
+								borderRadius: 1.25,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+							}}
+						>
+							<Stack spacing={0.625}>
+								<Stack direction="row" spacing={1} alignItems="flex-start">
+									<Box sx={{ width: 4, height: 4, mt: "8px", borderRadius: "50%", bgcolor: BRAND_BLUE, flexShrink: 0 }} />
+									<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+										Tu servicio seguirá activo hasta el {formatDate(subscription.currentPeriodEnd)}
+									</Typography>
+								</Stack>
+								<Stack direction="row" spacing={1} alignItems="flex-start">
+									<Box sx={{ width: 4, height: 4, mt: "8px", borderRadius: "50%", bgcolor: BRAND_BLUE, flexShrink: 0 }} />
+									<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+										Después de esa fecha, no se realizarán más cargos automáticos
+									</Typography>
+								</Stack>
+								{subscription.plan !== "free" && (
+									<Stack direction="row" spacing={1} alignItems="flex-start">
+										<Box sx={{ width: 4, height: 4, mt: "8px", borderRadius: "50%", bgcolor: BRAND_BLUE, flexShrink: 0 }} />
+										<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+											Tendrás un período de gracia de 15 días para archivar contenido
+										</Typography>
+									</Stack>
+								)}
+							</Stack>
+						</Box>
+						{subscription.plan !== "free" && (
+							<Box
+								sx={{
+									p: 1.5,
+									borderRadius: 1.25,
+									bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05),
+									border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+								}}
+							>
+								<Stack direction="row" spacing={1} alignItems="flex-start">
+									<InfoCircle size={16} variant="Bulk" color={STALE_AMBER} style={{ marginTop: 2, flexShrink: 0 }} />
+									<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+										Después de cancelar tendrás acceso limitado a tus recursos. Archivá o exportá los datos importantes antes de que finalice tu
+										suscripción.
+									</Typography>
+								</Stack>
+							</Box>
+						)}
+					</Stack>
 				</DialogContent>
-				<DialogActions sx={{ px: 3, pb: 3 }}>
-					<Button onClick={handleCloseCancelDialog} color="primary">
+				<DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
+					<Button onClick={handleCloseCancelDialog} sx={ghostBtnSx}>
 						Mantener suscripción
 					</Button>
 					<Button
-						onClick={handleCancelSubscription}
-						color="error"
 						variant="contained"
+						onClick={handleCancelSubscription}
 						disabled={cancelLoading}
-						startIcon={cancelLoading ? <CircularProgress size={20} /> : null}
+						startIcon={cancelLoading ? <CircularProgress size={14} color="inherit" /> : null}
+						sx={destructiveBtnSx}
 					>
-						Confirmar cancelación
+						{cancelLoading ? "Procesando…" : "Confirmar cancelación"}
 					</Button>
 				</DialogActions>
 			</Dialog>
 
-			{/* Diálogo de factura personalizada */}
 			<InvoiceView open={invoiceDialogOpen} onClose={handleCloseInvoiceDialog} payment={selectedPayment} userEmail={userEmail} />
-
-			{/* Snackbar para mensajes de éxito */}
-			<Snackbar
-				open={!!successMessage}
-				autoHideDuration={6000}
-				onClose={handleCloseSuccessMessage}
-				anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-				sx={{
-					"& .MuiSnackbarContent-root": {
-						borderRadius: 2,
-						boxShadow: "0 4px 20px 0 rgba(0,0,0,0.1)",
-						paddingY: 1.5,
-						backgroundColor: "success.main",
-					},
-				}}
-			>
-				<Alert
-					severity="success"
-					variant="filled"
-					onClose={handleCloseSuccessMessage}
-					sx={{
-						borderRadius: 2,
-						width: "100%",
-						boxShadow: "0 4px 12px 0 rgba(0,0,0,0.06)",
-						"& .MuiAlert-message": {
-							fontWeight: 500,
-						},
-					}}
-				>
-					{successMessage}
-				</Alert>
-			</Snackbar>
 		</Grid>
 	);
 };

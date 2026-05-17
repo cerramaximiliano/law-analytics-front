@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 
 // material-ui
-import { Theme, useTheme } from "@mui/material/styles";
+import { alpha, Theme, useTheme } from "@mui/material/styles";
 import {
 	useMediaQuery,
 	Box,
@@ -46,6 +46,7 @@ import CalendarStyled from "sections/apps/calendar/CalendarStyled";
 import AddEventForm from "sections/apps/calendar/AddEventForm";
 import GoogleCalendarSync from "sections/apps/calendar/GoogleCalendarSync";
 import { GuideCalendar } from "components/guides";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 import {
 	//getEvents,
@@ -379,6 +380,7 @@ const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete, canUpdate 
 };
 
 const Calendar = () => {
+	const theme = useTheme();
 	const matchDownSM = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
 
 	// Compute the responsive initial view synchronously so FullCalendar receives the
@@ -814,9 +816,33 @@ const Calendar = () => {
 
 	// Componente de Skeleton para el calendario
 	if (loading) {
+		const isDarkSk = theme.palette.mode === "dark";
 		return (
-			<Box sx={{ position: "relative" }}>
-				<CalendarStyled>
+			<Stack spacing={{ xs: 1, sm: 2.5 }}>
+				{/* Skeleton del header card brand — mantiene la estructura del page */}
+				<Box
+					sx={{
+						border: `1px solid ${alpha(BRAND_BLUE, isDarkSk ? 0.18 : 0.12)}`,
+						boxShadow: `0 4px 18px ${alpha(BRAND_BLUE, isDarkSk ? 0.16 : 0.08)}`,
+						borderRadius: 1.5,
+						px: { xs: 1.5, sm: 2.5 },
+						py: { xs: 1.25, sm: 1.75 },
+					}}
+				>
+					<Stack direction={{ xs: "column", md: "row" }} alignItems="center" spacing={{ xs: 1.25, md: 3 }}>
+						<Stack direction="row" alignItems="center" spacing={1.5} sx={{ flex: { md: 1 }, width: "100%" }}>
+							<Skeleton variant="rounded" width={100} height={22} />
+							<Skeleton variant="text" sx={{ flex: 1 }} height={18} />
+						</Stack>
+						<Stack direction="row" alignItems="center" spacing={1}>
+							<Skeleton variant="circular" width={18} height={18} />
+							<Skeleton variant="text" width={120} height={18} />
+						</Stack>
+					</Stack>
+				</Box>
+
+				<Box sx={{ position: "relative" }}>
+					<CalendarStyled>
 					{/* Skeleton para barra superior integrada */}
 					<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mb: 2 }}>
 						{/* Skeleton para Google Calendar Sync - Solo para owner o modo personal */}
@@ -917,7 +943,8 @@ const Calendar = () => {
 						</Box>
 					</Card>
 				</CalendarStyled>
-			</Box>
+				</Box>
+			</Stack>
 		);
 	}
 
@@ -1082,10 +1109,142 @@ const Calendar = () => {
 		}
 	};
 
+	const isDark = theme.palette.mode === "dark";
+
+	// Brand primary button — sober (no shadow, no lift), patrón de la sesión.
+	const brandPrimaryButtonSx = {
+		textTransform: "none",
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		borderRadius: 1.25,
+		boxShadow: "none",
+		transition: "background-color 0.15s ease",
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+	} as const;
+
+	// Stat compacto del header — eventos del mes actual.
+	const eventsThisMonth = events.filter((ev) => {
+		const eventDate = dayjs(ev.start);
+		return eventDate.isSame(date, "month");
+	}).length;
+
 	return (
-		<Box sx={{ position: "relative" }}>
-			<CalendarStyled>
-				{/* Barra superior integrada con todas las funciones */}
+		<Stack spacing={{ xs: 1, sm: 2.5 }}>
+			{/* ── HEADER DE SECCIÓN ────────────────────────────────────────── */}
+			<Box
+				sx={{
+					position: "relative",
+					overflow: "hidden",
+					bgcolor: theme.palette.background.paper,
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+					boxShadow: `0 4px 18px ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)}`,
+					borderRadius: 1.5,
+					px: { xs: 1.5, sm: 2.5 },
+					py: { xs: 1.25, sm: 1.75 },
+				}}
+			>
+				<Box
+					aria-hidden
+					sx={{
+						display: { xs: "none", md: "block" },
+						position: "absolute",
+						top: "-80%",
+						right: "-10%",
+						width: 280,
+						height: 280,
+						borderRadius: "50%",
+						background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.15 : 0.09)} 0%, transparent 65%)`,
+						filter: "blur(50px)",
+						pointerEvents: "none",
+						zIndex: 0,
+					}}
+				/>
+				<Box
+					aria-hidden
+					sx={{
+						display: { xs: "none", md: "block" },
+						position: "absolute",
+						inset: 0,
+						backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDark ? 0.06 : 0.04)} 1px, transparent 1px)`,
+						backgroundSize: "22px 22px",
+						maskImage: "radial-gradient(ellipse 50% 100% at 90% 50%, #000 0%, transparent 70%)",
+						WebkitMaskImage: "radial-gradient(ellipse 50% 100% at 90% 50%, #000 0%, transparent 70%)",
+						pointerEvents: "none",
+						zIndex: 0,
+					}}
+				/>
+
+				<Stack
+					direction={{ xs: "column", md: "row" }}
+					alignItems={{ xs: "stretch", md: "center" }}
+					spacing={{ xs: 1.25, md: 3 }}
+					sx={{ position: "relative", zIndex: 1 }}
+				>
+					<Stack
+						direction="row"
+						alignItems="center"
+						spacing={1.5}
+						sx={{ flex: { md: 1 }, minWidth: 0, display: { xs: "none", md: "flex" } }}
+					>
+						<Box
+							sx={{
+								display: "inline-flex",
+								alignItems: "center",
+								px: 1.25,
+								py: 0.4,
+								borderRadius: 1,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.2)}`,
+								flexShrink: 0,
+							}}
+						>
+							<Typography
+								sx={{
+									fontSize: "0.68rem",
+									fontWeight: 600,
+									letterSpacing: "0.14em",
+									textTransform: "uppercase",
+									color: BRAND_BLUE,
+									fontVariantNumeric: "tabular-nums",
+								}}
+							>
+								Calendario
+							</Typography>
+						</Box>
+						<Typography sx={{ fontSize: "0.875rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>
+							Audiencias, vencimientos y reuniones de tus expedientes en un solo lugar.
+						</Typography>
+					</Stack>
+
+					{/* Stat compacto: eventos del mes actual */}
+					<Stack
+						direction="row"
+						alignItems="center"
+						spacing={1.25}
+						sx={{
+							flexShrink: 0,
+							pl: { md: 2 },
+							borderLeft: { md: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` },
+						}}
+					>
+						<CalendarIcon variant="Bulk" size={18} style={{ color: BRAND_BLUE, flexShrink: 0 }} />
+						<Stack direction="row" alignItems="baseline" spacing={0.5}>
+							<Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "text.primary", fontVariantNumeric: "tabular-nums" }}>
+								{eventsThisMonth}
+							</Typography>
+							<Typography sx={{ fontSize: "0.78rem", color: "text.secondary" }}>
+								{eventsThisMonth === 1 ? "evento este mes" : "eventos este mes"}
+							</Typography>
+						</Stack>
+					</Stack>
+				</Stack>
+			</Box>
+
+			<Box sx={{ position: "relative" }}>
+				<CalendarStyled>
+					{/* Barra superior integrada con todas las funciones */}
 				<Stack
 					direction={{ xs: "column", md: "row" }}
 					justifyContent="space-between"
@@ -1129,7 +1288,16 @@ const Calendar = () => {
 								<ArrowRight2 size={matchDownSM ? 16 : 18} />
 							</IconButton>
 							<Tooltip title="Ir a hoy">
-								<IconButton color="primary" onClick={handleDateToday} size="small" data-testid="calendar-today-btn">
+								<IconButton
+									onClick={handleDateToday}
+									size="small"
+									data-testid="calendar-today-btn"
+									sx={{
+										color: BRAND_BLUE,
+										transition: "background-color 0.15s ease",
+										"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.06) },
+									}}
+								>
 									<Calendar1 size={matchDownSM ? 16 : 18} variant="Bulk" />
 								</IconButton>
 							</Tooltip>
@@ -1164,10 +1332,19 @@ const Calendar = () => {
 											return (
 												<Tooltip title={viewOption.label} key={viewOption.value}>
 													<IconButton
-														color={isActive ? "primary" : "default"}
 														size="small"
 														onClick={() => handleViewChange(viewOption.value)}
 														data-testid={`calendar-view-${viewOption.value}`}
+														sx={{
+															color: isActive ? BRAND_BLUE : "text.secondary",
+															bgcolor: isActive ? alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) : "transparent",
+															borderRadius: 1,
+															transition: "background-color 0.15s ease, color 0.15s ease",
+															"&:hover": {
+																bgcolor: isActive ? alpha(BRAND_BLUE, isDark ? 0.2 : 0.12) : alpha(BRAND_BLUE, isDark ? 0.1 : 0.06),
+																color: BRAND_BLUE,
+															},
+														}}
 													>
 														<Icon size={18} variant={isActive ? "Bulk" : "Linear"} />
 													</IconButton>
@@ -1182,18 +1359,29 @@ const Calendar = () => {
 							{/* Botones de acción */}
 							{canCreate &&
 								(matchDownSM ? (
-									<Tooltip title="Agregar Nuevo Evento">
-										<IconButton color="primary" onClick={handleAddEventClick} size="small" data-testid="calendar-add-btn">
+									<Tooltip title="Agregar nuevo evento">
+										<IconButton
+											onClick={handleAddEventClick}
+											size="small"
+											data-testid="calendar-add-btn"
+											sx={{
+												bgcolor: BRAND_BLUE,
+												color: "#fff",
+												borderRadius: 1.25,
+												transition: "background-color 0.15s ease",
+												"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88) },
+											}}
+										>
 											<Add variant="Bulk" size={20} />
 										</IconButton>
 									</Tooltip>
 								) : (
 									<Button
 										variant="contained"
-										color="primary"
 										startIcon={<Add variant="Bulk" size={18} />}
 										onClick={handleAddEventClick}
 										size="small"
+										sx={brandPrimaryButtonSx}
 										data-testid="calendar-add-btn"
 									>
 										Nuevo evento
@@ -1233,9 +1421,12 @@ const Calendar = () => {
 					eventClick={handleEventSelect}
 					eventResize={canUpdate ? handleEventUpdate : undefined}
 					locale={esLocale}
-					height="auto"
-					contentHeight="auto"
-					aspectRatio={matchDownSM ? 1.2 : 2.1}
+					// En desktop: altura constraineada al viewport — el calendario
+					// scrollea internamente sus celdas (vía dayMaxEvents) en vez de
+					// expandirse infinitamente y empujar el page hacia abajo.
+					// En mobile: auto para no romper el scroll vertical natural.
+					height={matchDownSM ? "auto" : "calc(100vh - 340px)"}
+					dayMaxEvents
 					fixedWeekCount={false}
 					showNonCurrentDates={false}
 					plugins={[listPlugin, dayGridPlugin, timelinePlugin, timeGridPlugin, interactionPlugin]}
@@ -1341,7 +1532,8 @@ const Calendar = () => {
 				availableFolders={availableFolders}
 				loadingFolders={loadingFolders}
 			/>
-		</Box>
+			</Box>
+		</Stack>
 	);
 };
 

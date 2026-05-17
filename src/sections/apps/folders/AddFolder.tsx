@@ -18,6 +18,8 @@ import {
 	Backdrop,
 	Skeleton,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 import merge from "lodash/merge";
 import * as Yup from "yup";
 import { Form, Formik, FormikValues } from "formik";
@@ -549,22 +551,62 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 				<Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
 					<DialogTitle
 						sx={{
-							bgcolor: theme.palette.primary.lighter,
-							p: 2,
-							borderBottom: `1px solid ${theme.palette.divider}`,
+							bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.08 : 0.04),
+							p: { xs: 1.75, sm: 2 },
+							borderBottom: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.18 : 0.12)}`,
 							flexShrink: 0,
 						}}
 					>
-						<Stack spacing={0.5}>
-							<Stack direction="row" alignItems="center" spacing={1}>
-								<FolderAdd size={24} color={theme.palette.primary.main} />
-								<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
-									{isCreating ? "Nueva Carpeta" : "Editar Carpeta"}
+						<Stack direction="row" alignItems="center" spacing={1.25}>
+							{/* Ícono en círculo tintado brand */}
+							<Box
+								sx={{
+									width: 36,
+									height: 36,
+									borderRadius: 1.25,
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.18 : 0.1),
+									color: BRAND_BLUE,
+									flexShrink: 0,
+								}}
+							>
+								<FolderAdd size={20} variant="Bulk" />
+							</Box>
+							<Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+								<Typography
+									sx={{
+										fontSize: "1.05rem",
+										fontWeight: 600,
+										letterSpacing: "-0.015em",
+										lineHeight: 1.2,
+										color: "text.primary",
+									}}
+								>
+									{isCreating ? "Nueva carpeta" : "Editar carpeta"}
 								</Typography>
+								{/* Eyebrow del step actual con tabular-nums */}
+								<Stack direction="row" alignItems="center" spacing={0.75}>
+									<Typography
+										sx={{
+											fontSize: "0.62rem",
+											fontWeight: 600,
+											letterSpacing: "0.14em",
+											textTransform: "uppercase",
+											color: BRAND_BLUE,
+											fontVariantNumeric: "tabular-nums",
+											lineHeight: 1,
+										}}
+									>
+										Paso {activeStep + 1} / {steps.length}
+									</Typography>
+									<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1 }}>·</Typography>
+									<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1 }}>
+										{steps[activeStep]}
+									</Typography>
+								</Stack>
 							</Stack>
-							<Typography variant="body2" color="textSecondary">
-								{`Paso ${activeStep + 1} de ${steps.length}: ${steps[activeStep]}`}
-							</Typography>
 						</Stack>
 					</DialogTitle>
 
@@ -585,13 +627,13 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 										</Box>
 									) : (
 										<Box>
-											{/* Steps Progress */}
+											{/* Steps Progress — bars con BRAND_BLUE + labels tracked uppercase */}
 											<Stack
 												direction="row"
-												spacing={2}
+												spacing={1.5}
 												sx={{
 													mb: 2,
-													pb: 4,
+													pb: 3.5,
 													position: "sticky",
 													top: -16,
 													zIndex: 1,
@@ -599,28 +641,38 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 													pt: 2,
 												}}
 											>
-												{steps.map((label, index) => (
-													<Box key={label} sx={{ position: "relative", width: "100%" }}>
-														<Box
-															sx={{
-																height: 4,
-																bgcolor: index <= activeStep ? "primary.main" : "divider",
-																borderRadius: 1,
-																transition: "all 0.3s ease",
-															}}
-														/>
-														<Typography
-															variant="caption"
-															sx={{
-																position: "absolute",
-																top: 8,
-																color: index <= activeStep ? "primary.main" : "text.secondary",
-															}}
-														>
-															{label}
-														</Typography>
-													</Box>
-												))}
+												{steps.map((label, index) => {
+													const isActive = index <= activeStep;
+													return (
+														<Box key={label} sx={{ position: "relative", width: "100%" }}>
+															<Box
+																sx={{
+																	height: 3,
+																	bgcolor: isActive
+																		? BRAND_BLUE
+																		: alpha(theme.palette.text.primary, theme.palette.mode === "dark" ? 0.12 : 0.08),
+																	borderRadius: 1,
+																	transition: "background-color 0.3s ease",
+																}}
+															/>
+															<Typography
+																sx={{
+																	position: "absolute",
+																	top: 8,
+																	fontSize: "0.6rem",
+																	fontWeight: 600,
+																	letterSpacing: "0.08em",
+																	textTransform: "uppercase",
+																	color: isActive ? BRAND_BLUE : "text.secondary",
+																	fontVariantNumeric: "tabular-nums",
+																	transition: "color 0.3s ease",
+																}}
+															>
+																{`0${index + 1}`.slice(-2)} · {label}
+															</Typography>
+														</Box>
+													);
+												})}
 											</Stack>
 
 											{/* Form Content */}
@@ -631,39 +683,66 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 
 								<DialogActions
 									sx={{
-										p: 2,
-										bgcolor: theme.palette.background.default,
-										borderTop: `1px solid ${theme.palette.divider}`,
+										p: { xs: 1.5, sm: 2 },
+										bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.04 : 0.02),
+										borderTop: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.16 : 0.1)}`,
 										flexShrink: 0,
 									}}
 								>
 									<Grid container justifyContent="space-between" alignItems="center">
 										<Grid item>
 											{!isCreating && (
-												<Tooltip title="Eliminar Carpeta" placement="top">
+												<Tooltip title="Eliminar carpeta" placement="top" arrow>
 													<IconButton
 														onClick={() => setOpenAlert(true)}
-														size="large"
+														size="medium"
 														sx={{
-															color: "error.main",
+															color: "text.secondary",
+															transition: "background-color 0.15s ease, color 0.15s ease",
 															"&:hover": {
-																bgcolor: "error.lighter",
+																bgcolor: alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.18 : 0.1),
+																color: theme.palette.error.main,
 															},
 														}}
 													>
-														<Trash variant="Bold" />
+														<Trash variant="Bulk" size={20} />
 													</IconButton>
 												</Tooltip>
 											)}
 										</Grid>
 										<Grid item>
-											<Stack direction="row" spacing={2} alignItems="center">
+											<Stack direction="row" spacing={1.25} alignItems="center">
 												{activeStep > 0 && (
-													<Button onClick={handleBack} startIcon={<ArrowLeft2 size={18} />}>
+													<Button
+														onClick={handleBack}
+														startIcon={<ArrowLeft2 size={16} />}
+														sx={{
+															textTransform: "none",
+															color: "text.secondary",
+															fontWeight: 500,
+															"&:hover": {
+																bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.1 : 0.06),
+																color: BRAND_BLUE,
+															},
+														}}
+													>
 														Atrás
 													</Button>
 												)}
-												<Button color="error" onClick={onCancel} sx={{ minWidth: 100 }}>
+												{/* Cancelar — neutro, no rojo. Cerrar el modal no es destructive. */}
+												<Button
+													onClick={onCancel}
+													sx={{
+														minWidth: 90,
+														textTransform: "none",
+														color: "text.secondary",
+														fontWeight: 500,
+														"&:hover": {
+															bgcolor: alpha(theme.palette.text.primary, theme.palette.mode === "dark" ? 0.08 : 0.05),
+															color: "text.primary",
+														},
+													}}
+												>
 													Cancelar
 												</Button>
 												{!(
@@ -676,12 +755,27 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 														variant="contained"
 														disabled={isSubmitting || isProcessing}
 														endIcon={
-															isProcessing ? <CircularProgress size={16} color="inherit" /> : !isLastStep && <ArrowRight2 size={18} />
+															isProcessing ? <CircularProgress size={14} color="inherit" /> : !isLastStep && <ArrowRight2 size={16} />
 														}
-														sx={{ minWidth: 100 }}
+														sx={{
+															minWidth: 100,
+															textTransform: "none",
+															bgcolor: BRAND_BLUE,
+															color: "#fff",
+															fontWeight: 600,
+															letterSpacing: "-0.005em",
+															borderRadius: 1.25,
+															boxShadow: "none",
+															transition: "background-color 0.15s ease",
+															"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+															"&.Mui-disabled": {
+																bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.24 : 0.4),
+																color: alpha("#fff", 0.9),
+															},
+														}}
 													>
 														{isProcessing
-															? "Procesando..."
+															? "Procesando…"
 															: folder && isLastStep
 															? "Editar"
 															: !folder && isLastStep
@@ -699,7 +793,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 
 					{!isCreating && <AlertFolderDelete title={folder.folderName} open={openAlert} handleClose={handleAlertClose} id={folder._id} />}
 
-					{/* Backdrop con indicador de carga mientras se procesa */}
+					{/* Backdrop brand-aware mientras se procesa */}
 					<Backdrop
 						open={isProcessing}
 						sx={{
@@ -707,12 +801,34 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 							zIndex: (theme) => theme.zIndex.drawer + 1,
 							position: "absolute",
 							borderRadius: 2,
+							bgcolor: alpha(theme.palette.background.paper, theme.palette.mode === "dark" ? 0.88 : 0.85),
+							backdropFilter: "blur(4px)",
 						}}
 					>
-						<Stack spacing={2} alignItems="center">
-							<CircularProgress color="inherit" size={48} />
-							<Typography variant="h6" color="inherit">
-								{folder ? "Actualizando carpeta..." : "Creando carpeta..."}
+						<Stack spacing={2.5} alignItems="center">
+							<Box
+								sx={{
+									width: 56,
+									height: 56,
+									borderRadius: "50%",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.16 : 0.1),
+									border: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.32 : 0.2)}`,
+								}}
+							>
+								<CircularProgress size={28} sx={{ color: BRAND_BLUE }} />
+							</Box>
+							<Typography
+								sx={{
+									fontSize: "0.95rem",
+									fontWeight: 600,
+									letterSpacing: "-0.01em",
+									color: "text.primary",
+								}}
+							>
+								{folder ? "Actualizando carpeta…" : "Creando carpeta…"}
 							</Typography>
 						</Stack>
 					</Backdrop>

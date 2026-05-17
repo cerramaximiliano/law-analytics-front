@@ -22,9 +22,11 @@ import {
 	CardContent,
 	Dialog,
 	DialogContent,
+	Tooltip,
 } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
-import { Link1, Eye, EyeSlash, TickCircle, CloseCircle, Refresh2, InfoCircle } from "iconsax-react";
+import { alpha, useTheme } from "@mui/material/styles";
+import { Link1, Eye, EyeSlash, TickCircle, CloseCircle, Refresh2, InfoCircle, ShieldTick } from "iconsax-react";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 import { enqueueSnackbar } from "notistack";
 import { Zoom } from "@mui/material";
 import { useSelector, useDispatch } from "react-redux";
@@ -35,6 +37,8 @@ import { incrementUserStat, fetchUserStats } from "store/reducers/userStats";
 import { pjnSyncStarted, pjnSyncReset, pjnSyncCompleted, pjnSyncError } from "store/reducers/pjnSync";
 import { PopupTransition } from "components/@extended/Transitions";
 import Avatar from "components/@extended/Avatar";
+import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
+import PjnGuardedButton from "components/PjnGuardedButton";
 import pjnCredentialsService, { PjnCredentialsStatus, UnlinkImpact } from "api/pjnCredentials";
 import { useTeam } from "contexts/TeamContext";
 
@@ -806,127 +810,239 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 			// Error con credenciales válidas → error de seguimiento o transitorio (ej. DocumentNotFoundError)
 			const isTrackingError = hasError && !isCredentialError && credentialsStatus.isValid;
 
+			const isDarkConnected = theme.palette.mode === "dark";
+			// LIVE_GREEN no está importado aquí; uso success.main del theme para coherencia.
+			const successAccent = theme.palette.success.main;
+			const errorAccent = theme.palette.error.main;
+			const accent = isComplete ? successAccent : isCredentialError || hasError ? errorAccent : BRAND_BLUE;
+
+			const renderInlineNotice = (text: React.ReactNode, color: string, extra?: React.ReactNode) => (
+				<Box
+					sx={{
+						display: "flex",
+						alignItems: "flex-start",
+						gap: 1,
+						px: 1.25,
+						py: 1,
+						borderRadius: 1.25,
+						border: `1px solid ${alpha(color, isDarkConnected ? 0.28 : 0.18)}`,
+						bgcolor: alpha(color, isDarkConnected ? 0.08 : 0.05),
+					}}
+				>
+					<Box sx={{ color, display: "flex", mt: 0.125, flexShrink: 0 }}>
+						<InfoCircle size={14} variant="Bulk" />
+					</Box>
+					<Stack spacing={0.5} sx={{ flex: 1 }}>
+						<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", lineHeight: 1.45, textWrap: "pretty" }}>{text}</Typography>
+						{extra}
+					</Stack>
+				</Box>
+			);
+
 			return (
 				<>
 					{unlinkDialog}
-					<Card
-						variant="outlined"
-						sx={{
-							borderColor: isComplete
-								? theme.palette.success.light
-								: isCredentialError
-								? theme.palette.error.light
-								: theme.palette.warning.light,
-						}}
-					>
-						<CardContent>
-							<Stack spacing={2}>
+					<Stack spacing={2}>
+						<Box
+							sx={{
+								borderRadius: 1.5,
+								border: `1px solid ${alpha(accent, isDarkConnected ? 0.32 : 0.22)}`,
+								bgcolor: alpha(accent, isDarkConnected ? 0.06 : 0.03),
+								p: { xs: 1.5, sm: 1.75 },
+							}}
+						>
+							<Stack spacing={1.5}>
 								<Stack direction="row" alignItems="center" justifyContent="space-between">
-									<Stack direction="row" alignItems="center" spacing={1}>
-										{isComplete ? (
-											<TickCircle size={24} color={theme.palette.success.main} variant="Bold" />
-										) : isCredentialError ? (
-											<CloseCircle size={24} color={theme.palette.error.main} variant="Bold" />
-										) : hasError ? (
-											<CloseCircle size={24} color={theme.palette.warning.main} variant="Bold" />
-										) : (
-											<Link1 size={24} color={theme.palette.warning.main} />
-										)}
-										<Typography variant="subtitle1" fontWeight={500}>
+									<Stack direction="row" alignItems="center" spacing={0.875}>
+										<Box
+											sx={{
+												width: 28,
+												height: 28,
+												borderRadius: 1,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												bgcolor: alpha(accent, isDarkConnected ? 0.18 : 0.1),
+												color: accent,
+												flexShrink: 0,
+											}}
+										>
+											{isComplete ? (
+												<TickCircle size={16} variant="Bulk" />
+											) : isCredentialError || hasError ? (
+												<CloseCircle size={16} variant="Bulk" />
+											) : (
+												<Link1 size={16} variant="Bulk" />
+											)}
+										</Box>
+										<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
 											{isComplete ? "Cuenta conectada" : hasError ? "Error de sincronización" : "Cuenta vinculada"}
 										</Typography>
 									</Stack>
 
-									<Stack direction="row" spacing={1}>
-										<IconButton
-											size="small"
-											onClick={handleResync}
-											title="Re-sincronizar"
-											disabled={!credentialsStatus.enabled || isCredentialError}
-											data-testid="pjn-resync-btn"
-										>
-											<Refresh2 size={18} />
-										</IconButton>
-									</Stack>
+									<Tooltip title="Re-sincronizar" placement="top" arrow>
+										<span>
+											<IconButton
+												size="small"
+												onClick={handleResync}
+												disabled={!credentialsStatus.enabled || isCredentialError}
+												data-testid="pjn-resync-btn"
+												sx={{
+													color: "text.secondary",
+													transition: "background-color 0.15s ease, color 0.15s ease",
+													"&:hover:not(.Mui-disabled)": {
+														bgcolor: alpha(BRAND_BLUE, isDarkConnected ? 0.16 : 0.08),
+														color: BRAND_BLUE,
+													},
+												}}
+											>
+												<Refresh2 size={16} />
+											</IconButton>
+										</span>
+									</Tooltip>
 								</Stack>
 
-								{isComplete && (
-									<Alert severity="success" icon={<TickCircle size={20} />}>
-										Tus causas del Poder Judicial de la Nación están sincronizadas. Se crearon {credentialsStatus.foldersCreatedCount || 0}{" "}
-										carpetas.
-									</Alert>
-								)}
+								<PjnMaintenanceAlert
+									compact
+									contextHint="Las sincronizaciones de tus causas PJN están pausadas hasta que el servicio vuelva."
+								/>
 
-								{hasError && (
-									<Alert
-										severity={isCredentialError ? "error" : "warning"}
-										action={
-											!isCredentialError ? (
-												<Button color="inherit" size="small" onClick={() => loadCredentialsStatus()}>
-													Verificar
-												</Button>
-											) : undefined
-										}
-									>
-										{isCredentialError
+								{isComplete &&
+									renderInlineNotice(
+										<>Tus causas del PJN están sincronizadas. Se crearon <strong>{credentialsStatus.foldersCreatedCount || 0}</strong> carpetas.</>,
+										successAccent,
+									)}
+
+								{hasError &&
+									renderInlineNotice(
+										isCredentialError
 											? !credentialsStatus.enabled
 												? "Cuenta desactivada: la contraseña del PJN falló en múltiples intentos. Actualizá tu contraseña y volvé a intentar."
 												: "Contraseña del PJN incorrecta o expirada. Verificá tus credenciales en el portal del Poder Judicial."
-											: "Ocurrió un error durante la sincronización. Tus credenciales son válidas — podés reintentar la sincronización o verificar el estado actual."}
-										{isCredentialError && credentialsStatus.consecutiveErrors > 1 && credentialsStatus.enabled && (
-											<Typography variant="caption" display="block" sx={{ mt: 0.5, opacity: 0.8 }}>
-												Intentos fallidos: {credentialsStatus.consecutiveErrors} / 5
-											</Typography>
-										)}
-									</Alert>
-								)}
+											: "Error durante la sincronización. Tus credenciales son válidas — podés reintentar o verificar el estado.",
+										errorAccent,
+										<>
+											{isCredentialError && credentialsStatus.consecutiveErrors > 1 && credentialsStatus.enabled && (
+												<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", opacity: 0.8, fontVariantNumeric: "tabular-nums" }}>
+													Intentos fallidos: {credentialsStatus.consecutiveErrors} / 5
+												</Typography>
+											)}
+											{!isCredentialError && (
+												<Button
+													size="small"
+													onClick={() => loadCredentialsStatus()}
+													sx={{
+														alignSelf: "flex-start",
+														textTransform: "none",
+														fontSize: "0.74rem",
+														fontWeight: 600,
+														color: errorAccent,
+														p: 0,
+														minWidth: 0,
+														"&:hover": { bgcolor: "transparent", textDecoration: "underline" },
+													}}
+												>
+													Verificar →
+												</Button>
+											)}
+										</>,
+									)}
 
 								{isTrackingError && (
-									<Button
+									<PjnGuardedButton
 										variant="outlined"
 										size="small"
-										color="warning"
-										startIcon={<Refresh2 size={16} />}
+										startIcon={<Refresh2 size={14} />}
 										onClick={handleResync}
 										disabled={!credentialsStatus.enabled}
 										data-testid="pjn-resync-retry-btn"
+										sx={{
+											alignSelf: "flex-start",
+											textTransform: "none",
+											fontSize: "0.78rem",
+											color: BRAND_BLUE,
+											borderColor: alpha(BRAND_BLUE, isDarkConnected ? 0.4 : 0.28),
+											"&:hover": {
+												borderColor: BRAND_BLUE,
+												bgcolor: alpha(BRAND_BLUE, isDarkConnected ? 0.12 : 0.06),
+											},
+										}}
 									>
 										Reintentar sincronización
-									</Button>
+									</PjnGuardedButton>
 								)}
 
-								<Divider />
+								<Box sx={{ height: 1, bgcolor: alpha(accent, isDarkConnected ? 0.16 : 0.1) }} />
 
-								<Button variant="text" color="error" size="small" onClick={handleUnlinkClick} startIcon={<CloseCircle size={16} />}>
+								<Button
+									size="small"
+									onClick={handleUnlinkClick}
+									startIcon={<CloseCircle size={14} />}
+									sx={{
+										alignSelf: "flex-start",
+										textTransform: "none",
+										color: "text.secondary",
+										fontWeight: 500,
+										fontSize: "0.78rem",
+										"&:hover": {
+											bgcolor: alpha(theme.palette.error.main, isDarkConnected ? 0.16 : 0.08),
+											color: theme.palette.error.main,
+										},
+									}}
+								>
 									Desvincular cuenta
 								</Button>
 							</Stack>
-						</CardContent>
-					</Card>
+						</Box>
+					</Stack>
 				</>
 			);
 		}
 
 		// Renderizar formulario de conexión
+		const isDark = theme.palette.mode === "dark";
 		return (
-			<Card variant="outlined" sx={{ overflow: "visible" }}>
-				<CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
+			<Stack spacing={1.5}>
+				<Box
+					sx={{
+						borderRadius: 1.5,
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+						p: { xs: 1.5, sm: 1.75 },
+					}}
+				>
 					<Stack spacing={1.25}>
-						<Stack direction="row" alignItems="center" spacing={1}>
-							<Link1 size={20} color={theme.palette.primary.main} />
-							<Typography variant="subtitle2" fontWeight={500}>
+						{/* Header brand con ícono en círculo, alineado al patrón del resto */}
+						<Stack direction="row" alignItems="center" spacing={0.875}>
+							<Box
+								sx={{
+									width: 28,
+									height: 28,
+									borderRadius: 1,
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+									color: BRAND_BLUE,
+									flexShrink: 0,
+								}}
+							>
+								<Link1 size={16} variant="Bulk" />
+							</Box>
+							<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
 								Conectar cuenta PJN
 							</Typography>
 						</Stack>
 
-						<Alert severity="info" icon={<InfoCircle size={14} />} sx={{ py: 0.25, "& .MuiAlert-message": { fontSize: "0.75rem" } }}>
-							Vincula tu cuenta del Portal PJN para importar todas tus causas.
-						</Alert>
+						<PjnMaintenanceAlert
+							compact
+							contextHint="No podés vincular ni sincronizar tu cuenta PJN mientras el portal esté caído."
+						/>
 
 						<TextField
 							fullWidth
 							label="CUIL"
-							placeholder="Ej: 20-12345678-9"
+							placeholder="20-12345678-9"
 							value={formatCuil(cuil)}
 							onChange={(e) => {
 								const value = e.target.value.replace(/\D/g, "");
@@ -935,7 +1051,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 							}}
 							onBlur={() => validateCuil(cuil)}
 							error={Boolean(cuilError)}
-							helperText={cuilError || "Formato: XX-XXXXXXXX-X (11 dígitos)"}
+							helperText={cuilError || undefined}
 							disabled={isSubmitting}
 							inputProps={{ maxLength: 13, inputMode: "numeric" }}
 							autoComplete="username"
@@ -953,12 +1069,17 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 							}}
 							onBlur={() => validatePassword(password)}
 							error={Boolean(passwordError)}
-							helperText={passwordError}
+							helperText={passwordError || undefined}
 							disabled={isSubmitting}
 							size="small"
 							InputProps={{
 								endAdornment: (
 									<InputAdornment position="end">
+										<Tooltip title="Tu contraseña se almacena encriptada (AES-256) y solo se usa para sincronizar tus causas." arrow placement="top">
+											<IconButton edge="end" size="small" sx={{ color: BRAND_BLUE, mr: 0.25 }}>
+												<ShieldTick size={14} variant="Bulk" />
+											</IconButton>
+										</Tooltip>
 										<IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
 											{showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
 										</IconButton>
@@ -967,23 +1088,34 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 							}}
 						/>
 
-						<Alert severity="info" icon={<InfoCircle size={14} />} sx={{ py: 0.25, "& .MuiAlert-message": { fontSize: "0.75rem" } }}>
-							<strong>Seguridad:</strong> Tu contraseña se almacena encriptada (AES-256) y solo se usa para sincronizar tus causas.
-						</Alert>
-
-						<Button
+						<PjnGuardedButton
 							variant="contained"
 							fullWidth
 							size="small"
 							onClick={handleSubmit}
 							disabled={isSubmitting || !cuil || !password}
-							startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <Link1 size={16} />}
+							startIcon={isSubmitting ? <CircularProgress size={14} color="inherit" /> : <Link1 size={14} />}
+							sx={{
+								textTransform: "none",
+								bgcolor: BRAND_BLUE,
+								color: "#fff",
+								fontWeight: 600,
+								letterSpacing: "-0.005em",
+								borderRadius: 1.25,
+								boxShadow: "none",
+								transition: "background-color 0.15s ease",
+								"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+								"&.Mui-disabled": {
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.24 : 0.4),
+									color: alpha("#fff", 0.9),
+								},
+							}}
 						>
-							{isSubmitting ? "Conectando..." : "Conectar cuenta"}
-						</Button>
+							{isSubmitting ? "Conectando…" : "Conectar cuenta"}
+						</PjnGuardedButton>
 					</Stack>
-				</CardContent>
-			</Card>
+				</Box>
+			</Stack>
 		);
 	},
 );

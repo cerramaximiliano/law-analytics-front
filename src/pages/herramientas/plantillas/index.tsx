@@ -1,24 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
-	Alert,
-	Badge,
 	Box,
 	Button,
-	Card,
-	CardActions,
-	CardContent,
-	Chip,
 	CircularProgress,
 	Dialog,
-	DialogActions,
 	DialogContent,
-	DialogContentText,
-	DialogTitle,
-	Divider,
 	Grid,
 	IconButton,
 	InputAdornment,
+	Pagination,
 	Skeleton,
 	Stack,
 	Tab,
@@ -26,9 +17,10 @@ import {
 	TextField,
 	Tooltip,
 	Typography,
-	useTheme,
+	useMediaQuery,
 } from "@mui/material";
-import { Add, ClipboardText, DocumentText, DocumentUpload, Edit2, Eye, SearchNormal1, Setting2, Trash } from "iconsax-react";
+import { alpha, useTheme } from "@mui/material/styles";
+import { Add, ClipboardText, CloseSquare, DocumentText, DocumentUpload, Edit2, Eye, SearchNormal1, Setting2, Trash } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { dispatch, useSelector } from "store";
 import { fetchPdfTemplates, getPdfTemplate } from "store/reducers/postalDocuments";
@@ -38,27 +30,9 @@ import { PdfTemplate } from "types/postal-document";
 import { RichTextTemplate, RichTextTemplateCategory } from "types/rich-text-document";
 import CreatePostalDocumentModal from "sections/apps/postal-documents/CreatePostalDocumentModal";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
+import { BRAND_BLUE, STALE_AMBER } from "themes/dashboardTokens";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
-
-const PDF_CATEGORY_COLORS: Record<string, "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning"> = {
-	postal: "info",
-	laboral: "warning",
-	judicial: "error",
-	societario: "secondary",
-	notarial: "success",
-	otros: "default",
-};
-
-const RT_CATEGORY_COLORS: Record<RichTextTemplateCategory, "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning"> =
-	{
-		laboral: "warning",
-		civil: "info",
-		penal: "error",
-		societario: "secondary",
-		familia: "success",
-		otro: "default",
-	};
 
 const RT_CATEGORY_LABELS: Record<RichTextTemplateCategory, string> = {
 	laboral: "Laboral",
@@ -69,35 +43,248 @@ const RT_CATEGORY_LABELS: Record<RichTextTemplateCategory, string> = {
 	otro: "Otro",
 };
 
+// ── Brand pill ─────────────────────────────────────────────────────────────────
+
+const Pill = ({ label, tone = "primary" }: { label: string; tone?: "primary" | "neutral" | "amber" }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const color = tone === "primary" ? BRAND_BLUE : tone === "amber" ? STALE_AMBER : theme.palette.text.secondary;
+	return (
+		<Box
+			sx={{
+				display: "inline-flex",
+				alignItems: "center",
+				px: 0.875,
+				py: 0.25,
+				borderRadius: 0.75,
+				bgcolor: alpha(color, isDark ? 0.16 : 0.08),
+				border: `1px solid ${alpha(color, isDark ? 0.3 : 0.2)}`,
+				alignSelf: "flex-start",
+			}}
+		>
+			<Typography sx={{ fontSize: "0.66rem", fontWeight: 600, color, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>
+				{label}
+			</Typography>
+		</Box>
+	);
+};
+
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 
-const CardsSkeleton = ({ count = 4 }: { count?: number }) => (
-	<Grid container spacing={2.5}>
-		{Array(count)
-			.fill(0)
-			.map((_, i) => (
-				<Grid item xs={12} sm={6} md={4} lg={3} key={i}>
-					<Card variant="outlined" sx={{ height: "100%" }}>
-						<CardContent>
+const CardsSkeleton = ({ count = 4 }: { count?: number }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	return (
+		<Grid container spacing={2}>
+			{Array(count)
+				.fill(0)
+				.map((_, i) => (
+					<Grid item xs={12} sm={6} md={4} lg={3} key={i}>
+						<Box
+							sx={{
+								height: "100%",
+								p: 1.75,
+								borderRadius: 1.5,
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`,
+							}}
+						>
 							<Stack spacing={1.5}>
 								<Stack direction="row" spacing={1}>
-									<Skeleton variant="rounded" width={60} height={22} sx={{ borderRadius: 4 }} />
-									<Skeleton variant="rounded" width={55} height={22} sx={{ borderRadius: 4 }} />
+									<Skeleton variant="rounded" width={60} height={20} sx={{ borderRadius: 0.75 }} />
+									<Skeleton variant="rounded" width={55} height={20} sx={{ borderRadius: 0.75 }} />
 								</Stack>
 								<Skeleton variant="rounded" width="80%" height={22} />
 								<Skeleton variant="rounded" width="100%" height={40} />
 								<Skeleton variant="rounded" width={80} height={18} />
+								<Stack direction="row" spacing={1} sx={{ pt: 1 }}>
+									<Skeleton variant="rounded" width={95} height={30} />
+									<Skeleton variant="rounded" width={100} height={30} />
+								</Stack>
 							</Stack>
-						</CardContent>
-						<CardActions sx={{ px: 2, pb: 2 }}>
-							<Skeleton variant="rounded" width={95} height={30} />
-							<Skeleton variant="rounded" width={100} height={30} />
-						</CardActions>
-					</Card>
-				</Grid>
-			))}
-	</Grid>
-);
+						</Box>
+					</Grid>
+				))}
+		</Grid>
+	);
+};
+
+// ── Brand styles hook ──────────────────────────────────────────────────────────
+
+const useBrandStyles = () => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+
+	const brandPrimarySx = {
+		minWidth: 120,
+		textTransform: "none" as const,
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		borderRadius: 1.25,
+		boxShadow: "none",
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+	};
+
+	const ghostBtnSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: "text.secondary",
+		borderRadius: 1.25,
+		border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+		px: 2,
+		py: 0.75,
+		"&:hover": {
+			color: BRAND_BLUE,
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+			borderColor: alpha(BRAND_BLUE, 0.28),
+		},
+	};
+
+	const inputSx = {
+		"& .MuiOutlinedInput-root": {
+			borderRadius: 1.25,
+			fontSize: "0.875rem",
+			"& fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.14), transition: "border-color 0.15s ease" },
+			"&:hover fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.28) },
+			"&.Mui-focused fieldset": { borderColor: BRAND_BLUE, borderWidth: 1 },
+		},
+	};
+
+	const iconBtnSx = {
+		width: 28,
+		height: 28,
+		borderRadius: 1,
+		color: "text.secondary",
+		transition: "color 0.15s ease, background-color 0.15s ease",
+		"&:hover": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) },
+	};
+
+	const iconBtnDestructiveSx = {
+		...iconBtnSx,
+		"&:hover": { color: theme.palette.error.main, bgcolor: alpha(theme.palette.error.main, isDark ? 0.14 : 0.08) },
+	};
+
+	const dialogPaperSx = {
+		borderRadius: 2,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+		boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+		overflow: "hidden",
+	};
+
+	return { brandPrimarySx, ghostBtnSx, inputSx, iconBtnSx, iconBtnDestructiveSx, dialogPaperSx, isDark };
+};
+
+// ── Dialog brand header reusable ───────────────────────────────────────────────
+
+const DialogBrandHeader = ({
+	eyebrow,
+	title,
+	subtitle,
+	icon,
+	onClose,
+	rightSlot,
+}: {
+	eyebrow: string;
+	title: string;
+	subtitle?: string;
+	icon: React.ReactNode;
+	onClose: () => void;
+	rightSlot?: React.ReactNode;
+}) => {
+	const { isDark, iconBtnSx } = useBrandStyles();
+	return (
+		<Box
+			sx={{
+				position: "relative",
+				overflow: "hidden",
+				p: { xs: 2.25, sm: 2.5 },
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+				borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+			}}
+		>
+			<Box
+				sx={{
+					position: "absolute",
+					top: -60,
+					right: -40,
+					width: 220,
+					height: 220,
+					borderRadius: "50%",
+					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
+					pointerEvents: "none",
+				}}
+			/>
+			<Box
+				sx={{
+					position: "absolute",
+					inset: 0,
+					backgroundImage: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)} 1px, transparent 1px)`,
+					backgroundSize: "20px 20px",
+					maskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+					WebkitMaskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+					opacity: 0.55,
+					pointerEvents: "none",
+				}}
+			/>
+			<Stack direction="row" alignItems="center" spacing={1.5} sx={{ position: "relative" }}>
+				<Box
+					sx={{
+						width: 40,
+						height: 40,
+						borderRadius: 1.5,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+						color: BRAND_BLUE,
+						flexShrink: 0,
+					}}
+				>
+					{icon}
+				</Box>
+				<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+					<Stack direction="row" spacing={0.75} alignItems="center">
+						<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+						<Typography
+							sx={{
+								fontSize: "0.6rem",
+								fontWeight: 600,
+								letterSpacing: "0.08em",
+								textTransform: "uppercase",
+								color: "text.secondary",
+							}}
+						>
+							{eyebrow}
+						</Typography>
+					</Stack>
+					<Typography
+						sx={{
+							fontSize: "1.05rem",
+							fontWeight: 600,
+							letterSpacing: "-0.015em",
+							color: "text.primary",
+							overflow: "hidden",
+							textOverflow: "ellipsis",
+							whiteSpace: "nowrap",
+						}}
+					>
+						{title}
+					</Typography>
+					{subtitle && (
+						<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>{subtitle}</Typography>
+					)}
+				</Stack>
+				{rightSlot}
+				<IconButton onClick={onClose} sx={iconBtnSx} aria-label="cerrar">
+					<CloseSquare size={20} variant="Linear" />
+				</IconButton>
+			</Stack>
+		</Box>
+	);
+};
 
 // ── Vista previa PDF ───────────────────────────────────────────────────────────
 
@@ -109,35 +296,35 @@ interface PreviewDialogProps {
 	onClose: () => void;
 }
 
-const PreviewDialog = ({ open, template, pdfUrl, loading, onClose }: PreviewDialogProps) => (
-	<Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-		<DialogTitle>
-			<Stack direction="row" alignItems="center" spacing={1.5}>
-				<Typography variant="h5">{template?.name}</Typography>
-				{template?.category && <Chip size="small" label={template.category} color={PDF_CATEGORY_COLORS[template.category] ?? "default"} />}
-				<Chip
-					size="small"
-					label={template?.modelType === "dynamic" ? "Dinámico" : "Estático"}
-					color={template?.modelType === "dynamic" ? "secondary" : "default"}
-					variant="outlined"
-				/>
-			</Stack>
-		</DialogTitle>
-		<DialogContent dividers>
-			{loading ? (
-				<Stack alignItems="center" justifyContent="center" sx={{ py: 8 }}>
-					<CircularProgress />
-				</Stack>
-			) : pdfUrl ? (
-				<iframe src={pdfUrl} title={template?.name} style={{ width: "100%", height: 560, border: "none" }} />
-			) : (
-				<Stack alignItems="center" justifyContent="center" sx={{ py: 6 }}>
-					<Typography color="textSecondary">No se pudo cargar la vista previa.</Typography>
-				</Stack>
-			)}
-		</DialogContent>
-	</Dialog>
-);
+const PreviewDialog = ({ open, template, pdfUrl, loading, onClose }: PreviewDialogProps) => {
+	const { dialogPaperSx } = useBrandStyles();
+	if (!template) return null;
+	const modelTypeLabel = template?.modelType === "dynamic" ? "Dinámico" : "Estático";
+	return (
+		<Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth PaperProps={{ sx: dialogPaperSx }}>
+			<DialogBrandHeader
+				eyebrow="Vista previa"
+				title={template.name}
+				subtitle={`${template.category ?? "—"} · ${modelTypeLabel}`}
+				icon={<DocumentText size={20} variant="Bulk" />}
+				onClose={onClose}
+			/>
+			<DialogContent sx={{ p: 0 }}>
+				{loading ? (
+					<Stack alignItems="center" justifyContent="center" sx={{ py: 8 }}>
+						<CircularProgress size={32} sx={{ color: BRAND_BLUE }} />
+					</Stack>
+				) : pdfUrl ? (
+					<iframe src={pdfUrl} title={template.name} style={{ width: "100%", height: 560, border: "none", display: "block" }} />
+				) : (
+					<Stack alignItems="center" justifyContent="center" sx={{ py: 6 }}>
+						<Typography sx={{ fontSize: "0.85rem", color: "text.secondary" }}>No se pudo cargar la vista previa.</Typography>
+					</Stack>
+				)}
+			</DialogContent>
+		</Dialog>
+	);
+};
 
 // ── Tarjeta modelo PDF ─────────────────────────────────────────────────────────
 
@@ -147,46 +334,56 @@ interface ModelCardProps {
 	onUse: (t: PdfTemplate) => void;
 }
 
-const ModelCard = ({ template, onPreview, onUse }: ModelCardProps) => (
-	<Card variant="outlined" sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-		<CardContent sx={{ flexGrow: 1 }}>
-			<Stack spacing={1.5}>
-				<Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
-					<Chip size="small" label={template.category} color={PDF_CATEGORY_COLORS[template.category] ?? "default"} variant="outlined" />
-					<Chip
-						size="small"
-						label={template.modelType === "dynamic" ? "Dinámico" : "Estático"}
-						variant="outlined"
-						color={template.modelType === "dynamic" ? "secondary" : "default"}
-					/>
+const ModelCard = ({ template, onPreview, onUse }: ModelCardProps) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const { brandPrimarySx, ghostBtnSx } = useBrandStyles();
+	return (
+		<Box
+			sx={{
+				height: "100%",
+				display: "flex",
+				flexDirection: "column",
+				p: 1.75,
+				borderRadius: 1.5,
+				bgcolor: "background.paper",
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`,
+				transition: "border-color 0.15s ease, transform 0.15s ease",
+				"&:hover": { borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.24), transform: "translateY(-1px)" },
+			}}
+		>
+			<Stack spacing={1.25} sx={{ flex: 1 }}>
+				<Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+					<Pill label={template.category} tone="primary" />
+					<Pill label={template.modelType === "dynamic" ? "Dinámico" : "Estático"} tone={template.modelType === "dynamic" ? "amber" : "neutral"} />
 				</Stack>
-				<Typography variant="subtitle1" fontWeight={600} lineHeight={1.3}>
+				<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary", lineHeight: 1.3 }}>
 					{template.name}
 				</Typography>
 				{template.description && (
-					<Typography variant="body2" color="textSecondary">
+					<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
 						{template.description}
 					</Typography>
 				)}
-				<Divider />
+				<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.06), mt: 0.5 }} />
 				<Stack direction="row" alignItems="center" spacing={0.75}>
-					<DocumentText size={14} style={{ opacity: 0.5 }} />
-					<Typography variant="caption" color="textSecondary">
+					<DocumentText size={13} color={theme.palette.text.secondary} variant="Linear" />
+					<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
 						{template.fields?.length ?? 0} campo{template.fields?.length !== 1 ? "s" : ""} completables
 					</Typography>
 				</Stack>
 			</Stack>
-		</CardContent>
-		<CardActions sx={{ px: 2, pb: 2, gap: 1 }}>
-			<Button size="small" variant="outlined" color="secondary" startIcon={<Eye size={15} />} onClick={() => onPreview(template)}>
-				Vista previa
-			</Button>
-			<Button size="small" variant="contained" onClick={() => onUse(template)}>
-				Usar modelo
-			</Button>
-		</CardActions>
-	</Card>
-);
+			<Stack direction="row" spacing={1} sx={{ pt: 1.5 }}>
+				<Button size="small" startIcon={<Eye size={14} variant="Linear" />} onClick={() => onPreview(template)} sx={{ ...ghostBtnSx, flex: 1 }}>
+					Vista previa
+				</Button>
+				<Button size="small" onClick={() => onUse(template)} sx={{ ...brandPrimarySx, flex: 1, minWidth: 0 }}>
+					Usar modelo
+				</Button>
+			</Stack>
+		</Box>
+	);
+};
 
 // ── Tarjeta modelo rich text ───────────────────────────────────────────────────
 
@@ -197,58 +394,163 @@ interface RichTextModelCardProps {
 	onUse: (t: RichTextTemplate) => void;
 }
 
-const RichTextModelCard = ({ template, onEdit, onDelete, onUse }: RichTextModelCardProps) => (
-	<Card variant="outlined" sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-		<CardContent sx={{ flexGrow: 1 }}>
-			<Stack spacing={1.5}>
+const RichTextModelCard = ({ template, onEdit, onDelete, onUse }: RichTextModelCardProps) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const { brandPrimarySx, ghostBtnSx, iconBtnSx, iconBtnDestructiveSx } = useBrandStyles();
+	return (
+		<Box
+			sx={{
+				height: "100%",
+				display: "flex",
+				flexDirection: "column",
+				p: 1.75,
+				borderRadius: 1.5,
+				bgcolor: "background.paper",
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`,
+				transition: "border-color 0.15s ease, transform 0.15s ease",
+				"&:hover": { borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.24), transform: "translateY(-1px)" },
+			}}
+		>
+			<Stack spacing={1.25} sx={{ flex: 1 }}>
 				<Stack direction="row" alignItems="center" justifyContent="space-between">
-					<Chip
-						size="small"
-						label={RT_CATEGORY_LABELS[template.category] ?? template.category}
-						color={RT_CATEGORY_COLORS[template.category] ?? "default"}
-						variant="outlined"
-					/>
-					<Stack direction="row">
+					<Pill label={RT_CATEGORY_LABELS[template.category] ?? template.category} tone="primary" />
+					<Stack direction="row" spacing={0.25}>
 						<Tooltip title="Editar">
-							<IconButton size="small" onClick={() => onEdit(template)}>
-								<Edit2 size={15} />
+							<IconButton sx={iconBtnSx} onClick={() => onEdit(template)}>
+								<Edit2 size={14} variant="Linear" />
 							</IconButton>
 						</Tooltip>
 						<Tooltip title="Eliminar">
-							<IconButton size="small" color="error" onClick={() => onDelete(template)}>
-								<Trash size={15} />
+							<IconButton sx={iconBtnDestructiveSx} onClick={() => onDelete(template)}>
+								<Trash size={14} variant="Linear" />
 							</IconButton>
 						</Tooltip>
 					</Stack>
 				</Stack>
-				<Typography variant="subtitle1" fontWeight={600} lineHeight={1.3}>
+				<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary", lineHeight: 1.3 }}>
 					{template.name}
 				</Typography>
 				{template.description && (
-					<Typography variant="body2" color="textSecondary">
+					<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
 						{template.description}
 					</Typography>
 				)}
-				<Divider />
+				<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.06), mt: 0.5 }} />
 				<Stack direction="row" alignItems="center" spacing={0.75}>
-					<DocumentText size={14} style={{ opacity: 0.5 }} />
-					<Typography variant="caption" color="textSecondary">
+					<DocumentText size={13} color={theme.palette.text.secondary} variant="Linear" />
+					<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
 						{template.mergeFields?.length ?? 0} campo{template.mergeFields?.length !== 1 ? "s" : ""} dinámico
 						{template.mergeFields?.length !== 1 ? "s" : ""}
 					</Typography>
 				</Stack>
 			</Stack>
-		</CardContent>
-		<CardActions sx={{ px: 2, pb: 2, gap: 1 }}>
-			<Button size="small" variant="outlined" onClick={() => onEdit(template)} startIcon={<Edit2 size={15} />}>
-				Editar
-			</Button>
-			<Button size="small" variant="contained" onClick={() => onUse(template)} startIcon={<DocumentUpload size={15} />}>
-				Crear documento
-			</Button>
-		</CardActions>
-	</Card>
-);
+			<Stack direction="row" spacing={1} sx={{ pt: 1.5 }}>
+				<Button size="small" startIcon={<Edit2 size={14} variant="Linear" />} onClick={() => onEdit(template)} sx={{ ...ghostBtnSx, flex: 1 }}>
+					Editar
+				</Button>
+				<Button
+					size="small"
+					startIcon={<DocumentUpload size={14} variant="Linear" />}
+					onClick={() => onUse(template)}
+					sx={{ ...brandPrimarySx, flex: 1, minWidth: 0 }}
+				>
+					Crear documento
+				</Button>
+			</Stack>
+		</Box>
+	);
+};
+
+// ── Tarjeta "dashed" para crear / solicitar ────────────────────────────────────
+
+const DashedCard = ({ icon, title, subtitle, onClick }: { icon: React.ReactNode; title: string; subtitle?: string; onClick: () => void }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	return (
+		<Box
+			role="button"
+			tabIndex={0}
+			onClick={onClick}
+			onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onClick()}
+			sx={{
+				height: "100%",
+				minHeight: 180,
+				p: 2,
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+				cursor: "pointer",
+				borderRadius: 1.5,
+				border: `1px dashed ${alpha(BRAND_BLUE, isDark ? 0.3 : 0.22)}`,
+				bgcolor: "transparent",
+				transition: "border-color 0.2s, background-color 0.2s",
+				"&:hover": {
+					borderColor: alpha(BRAND_BLUE, isDark ? 0.55 : 0.42),
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+				},
+				"&:focus-visible": {
+					outline: "none",
+					boxShadow: `0 0 0 2px ${alpha(BRAND_BLUE, 0.35)}`,
+				},
+			}}
+		>
+			<Stack alignItems="center" spacing={1.25} sx={{ textAlign: "center" }}>
+				<Box
+					sx={{
+						width: 44,
+						height: 44,
+						borderRadius: 1.5,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+						color: BRAND_BLUE,
+					}}
+				>
+					{icon}
+				</Box>
+				<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: BRAND_BLUE }}>{title}</Typography>
+				{subtitle && (
+					<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em", maxWidth: 220, textWrap: "pretty" }}>
+						{subtitle}
+					</Typography>
+				)}
+			</Stack>
+		</Box>
+	);
+};
+
+// ── HeaderStat ─────────────────────────────────────────────────────────────────
+
+const HeaderStat = ({ label, value, tone = "primary" }: { label: string; value: number; tone?: "primary" | "amber" | "neutral" }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const color = tone === "primary" ? BRAND_BLUE : tone === "amber" ? STALE_AMBER : theme.palette.text.secondary;
+	return (
+		<Stack
+			spacing={0.25}
+			sx={{
+				px: 1.25,
+				py: 0.875,
+				borderRadius: 1.25,
+				bgcolor: alpha(color, isDark ? 0.12 : 0.06),
+				border: `1px solid ${alpha(color, isDark ? 0.26 : 0.16)}`,
+				minWidth: 86,
+			}}
+		>
+			<Typography sx={{ fontSize: "0.58rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
+				{label}
+			</Typography>
+			<Typography
+				sx={{ fontSize: "1.05rem", fontWeight: 700, letterSpacing: "-0.015em", color, fontVariantNumeric: "tabular-nums", lineHeight: 1.1 }}
+			>
+				{value}
+			</Typography>
+		</Stack>
+	);
+};
 
 // ── Confirmación de eliminación ────────────────────────────────────────────────
 
@@ -260,34 +562,157 @@ interface DeleteConfirmProps {
 	onClose: () => void;
 }
 
-const DeleteConfirmDialog = ({ open, name, loading, onConfirm, onClose }: DeleteConfirmProps) => (
-	<Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-		<DialogTitle>Eliminar modelo</DialogTitle>
-		<DialogContent>
-			<DialogContentText>
-				¿Eliminás el modelo <strong>{name}</strong>? Esta acción no se puede deshacer.
-			</DialogContentText>
-		</DialogContent>
-		<DialogActions>
-			<Button onClick={onClose} disabled={loading}>
-				Cancelar
-			</Button>
-			<Button color="error" variant="contained" onClick={onConfirm} disabled={loading}>
-				{loading ? <CircularProgress size={16} /> : "Eliminar"}
-			</Button>
-		</DialogActions>
-	</Dialog>
-);
+const DeleteConfirmDialog = ({ open, name, loading, onConfirm, onClose }: DeleteConfirmProps) => {
+	const theme = useTheme();
+	const { ghostBtnSx, dialogPaperSx, isDark } = useBrandStyles();
+	const errorColor = theme.palette.error.main;
+
+	return (
+		<Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth PaperProps={{ sx: dialogPaperSx }}>
+			<DialogContent sx={{ p: { xs: 3, sm: 3.5 }, position: "relative" }}>
+				<Box
+					sx={{
+						position: "absolute",
+						top: -80,
+						left: "50%",
+						transform: "translateX(-50%)",
+						width: 280,
+						height: 280,
+						borderRadius: "50%",
+						background: `radial-gradient(circle, ${alpha(errorColor, isDark ? 0.18 : 0.1)} 0%, transparent 70%)`,
+						pointerEvents: "none",
+					}}
+				/>
+				<Stack alignItems="center" spacing={2.25} sx={{ position: "relative" }}>
+					<Box
+						sx={{
+							width: 60,
+							height: 60,
+							borderRadius: 1.5,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(errorColor, isDark ? 0.16 : 0.08),
+							border: `1px solid ${alpha(errorColor, isDark ? 0.32 : 0.2)}`,
+							color: errorColor,
+						}}
+					>
+						<Trash size={26} variant="Bulk" />
+					</Box>
+					<Stack spacing={1} alignItems="center">
+						<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary", textAlign: "center" }}>
+							¿Eliminar este modelo?
+						</Typography>
+						<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", letterSpacing: "-0.005em", textAlign: "center", textWrap: "pretty" }}>
+							Vas a eliminar{" "}
+							<Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
+								"{name}"
+							</Box>{" "}
+							de forma permanente. Esta acción no se puede deshacer.
+						</Typography>
+					</Stack>
+					<Stack direction="row" spacing={1.25} sx={{ width: 1, mt: 0.5 }}>
+						<Button fullWidth onClick={onClose} disabled={loading} sx={ghostBtnSx}>
+							Cancelar
+						</Button>
+						<Button
+							fullWidth
+							onClick={onConfirm}
+							disabled={loading}
+							sx={{
+								textTransform: "none",
+								fontWeight: 600,
+								letterSpacing: "-0.005em",
+								bgcolor: errorColor,
+								color: "#fff",
+								borderRadius: 1.25,
+								py: 1,
+								boxShadow: "none",
+								"&:hover": { bgcolor: alpha(errorColor, 0.88), boxShadow: "none" },
+							}}
+						>
+							{loading ? <CircularProgress size={16} color="inherit" /> : "Eliminar"}
+						</Button>
+					</Stack>
+				</Stack>
+			</DialogContent>
+		</Dialog>
+	);
+};
+
+// ── Empty state atmosférico ────────────────────────────────────────────────────
+
+const EmptyState = ({
+	title,
+	message,
+	action,
+}: {
+	title: string;
+	message: string;
+	action?: React.ReactNode;
+}) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	return (
+		<Box sx={{ position: "relative", overflow: "hidden", px: 3, py: { xs: 6, md: 8 }, textAlign: "center" }}>
+			<Box
+				sx={{
+					position: "absolute",
+					top: "-20%",
+					left: "50%",
+					transform: "translateX(-50%)",
+					width: 360,
+					height: 360,
+					borderRadius: "50%",
+					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)} 0%, transparent 70%)`,
+					pointerEvents: "none",
+				}}
+			/>
+			<Box
+				sx={{
+					position: "absolute",
+					inset: 0,
+					backgroundImage: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)} 1px, transparent 1px)`,
+					backgroundSize: "20px 20px",
+					opacity: 0.5,
+					maskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
+					WebkitMaskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
+					pointerEvents: "none",
+				}}
+			/>
+			<Stack spacing={1.5} alignItems="center" sx={{ position: "relative" }}>
+				<Box
+					sx={{
+						width: 56,
+						height: 56,
+						borderRadius: 1.5,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+						color: BRAND_BLUE,
+					}}
+				>
+					<ClipboardText size={26} variant="Bulk" />
+				</Box>
+				<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>{title}</Typography>
+				<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", maxWidth: 360, textWrap: "pretty" }}>{message}</Typography>
+				{action}
+			</Stack>
+		</Box>
+	);
+};
 
 // ── Página principal ───────────────────────────────────────────────────────────
 
 const ModelosPage = () => {
-	const theme = useTheme();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 	const userId = useSelector((state: any) => state.auth?.user?._id);
+	const { brandPrimarySx, ghostBtnSx, inputSx, isDark } = useBrandStyles();
+	const theme = useTheme();
 
-	// PDF templates (Tab 0)
 	const [pdfTemplates, setPdfTemplates] = useState<PdfTemplate[]>([]);
 	const [pdfLoading, setPdfLoading] = useState(true);
 	const [previewTemplate, setPreviewTemplate] = useState<PdfTemplate | null>(null);
@@ -295,16 +720,13 @@ const ModelosPage = () => {
 	const [previewLoading, setPreviewLoading] = useState(false);
 	const [createFromTemplate, setCreateFromTemplate] = useState<PdfTemplate | null>(null);
 
-	// Rich text templates (Tab 1)
 	const [rtTemplates, setRtTemplates] = useState<RichTextTemplate[]>([]);
 	const [rtLoading, setRtLoading] = useState(false);
 	const [rtSearch, setRtSearch] = useState("");
 	const [deleteTarget, setDeleteTarget] = useState<RichTextTemplate | null>(null);
 	const [deleteLoading, setDeleteLoading] = useState(false);
-	// Conteo de modelos propios para el badge del tab
-	const [myModelsCount, setMyModelsCount] = useState<number | null>(null);
+	const [myModelsCount, setMyModelsCount] = useState<number>(0);
 
-	// Shared — initialise from ?tab= query param
 	const [activeTab, setActiveTab] = useState(() => {
 		const t = Number(searchParams.get("tab"));
 		return isNaN(t) ? 0 : t;
@@ -312,11 +734,18 @@ const ModelosPage = () => {
 	const [pdfSearch, setPdfSearch] = useState("");
 	const [requestModelOpen, setRequestModelOpen] = useState(false);
 
+	// Paginación: 2 filas según breakpoint (lg=4 cols → 8, md=3 cols → 6, sm=2 cols → 4, xs=1 col → 2)
+	const isLg = useMediaQuery(theme.breakpoints.up("lg"));
+	const isMd = useMediaQuery(theme.breakpoints.up("md"));
+	const isSm = useMediaQuery(theme.breakpoints.up("sm"));
+	const cardsPerPage = isLg ? 8 : isMd ? 6 : isSm ? 4 : 2;
+	const [pdfPage, setPdfPage] = useState(1);
+	const [rtPage, setRtPage] = useState(1);
+
 	const showSnackbar = (message: string, severity: "success" | "error") => {
 		dispatch(openSnackbar({ open: true, message, variant: "alert", alert: { color: severity }, close: true }));
 	};
 
-	// Cargar PDF templates
 	useEffect(() => {
 		dispatch(fetchPdfTemplates()).then((res: any) => {
 			if (res.success) setPdfTemplates(res.templates || []);
@@ -324,25 +753,37 @@ const ModelosPage = () => {
 		});
 	}, []);
 
-	// Prefetch del conteo de modelos propios para el badge del Tab 1
 	useEffect(() => {
 		dispatch(fetchRichTextTemplates({ source: "user" })).then((res: any) => {
 			if (res.success) {
-				const count = (res.templates || []).length;
-				setMyModelsCount(count > 0 ? count : null);
+				const list = res.templates || [];
+				setMyModelsCount(list.length);
+				if (activeTab === 1) setRtTemplates(list);
 			}
 		});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	// Cargar rich text templates cuando se activa el tab
 	useEffect(() => {
 		if (activeTab !== 1) return;
 		setRtLoading(true);
 		dispatch(fetchRichTextTemplates({ source: "user" })).then((res: any) => {
-			if (res.success) setRtTemplates(res.templates || []);
+			if (res.success) {
+				setRtTemplates(res.templates || []);
+				setMyModelsCount((res.templates || []).length);
+			}
 			setRtLoading(false);
 		});
 	}, [activeTab]);
+
+	// Reset paginación al cambiar búsqueda o breakpoint
+	useEffect(() => {
+		setPdfPage(1);
+	}, [pdfSearch, cardsPerPage]);
+
+	useEffect(() => {
+		setRtPage(1);
+	}, [rtSearch, cardsPerPage]);
 
 	const handlePreview = async (tpl: PdfTemplate) => {
 		setPreviewTemplate(tpl);
@@ -363,6 +804,7 @@ const ModelosPage = () => {
 		const res = await dispatch(deleteRichTextTemplate(deleteTarget._id));
 		if (res.success) {
 			setRtTemplates((prev) => prev.filter((t) => t._id !== deleteTarget._id));
+			setMyModelsCount((c) => Math.max(0, c - 1));
 			showSnackbar("Modelo eliminado", "success");
 		} else {
 			showSnackbar(res.error || "Error al eliminar", "error");
@@ -371,7 +813,6 @@ const ModelosPage = () => {
 		setDeleteTarget(null);
 	};
 
-	// Filtros
 	const systemTemplates = pdfTemplates
 		.filter((t) => t.source === "system" || t.isPublic || !t.userId)
 		.filter((t) => {
@@ -386,239 +827,407 @@ const ModelosPage = () => {
 		return t.name.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q);
 	});
 
+	const systemTotal = pdfTemplates.filter((t) => t.source === "system" || t.isPublic || !t.userId).length;
+
+	// Calcula slice de cards y total de páginas, dejando un slot libre en la primera página para la dashed card
+	function paginateWithDashed<T>(items: T[], page: number) {
+		const firstPageSlots = Math.max(1, cardsPerPage - 1);
+		const totalPages = items.length <= firstPageSlots ? 1 : 1 + Math.ceil((items.length - firstPageSlots) / cardsPerPage);
+		const safePage = Math.min(Math.max(1, page), totalPages);
+		const start = safePage === 1 ? 0 : firstPageSlots + (safePage - 2) * cardsPerPage;
+		const end = safePage === 1 ? firstPageSlots : start + cardsPerPage;
+		return { slice: items.slice(start, end), totalPages, isFirstPage: safePage === 1 };
+	}
+
+	const pdfPagination = paginateWithDashed(systemTemplates, pdfPage);
+	const rtPagination = paginateWithDashed(filteredRtTemplates, rtPage);
+
+	const paginationSx = {
+		"& .MuiPaginationItem-root": {
+			fontWeight: 600,
+			color: "text.secondary",
+			borderRadius: 1,
+			"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.06), color: BRAND_BLUE },
+		},
+		"& .Mui-selected": {
+			bgcolor: `${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)} !important`,
+			color: BRAND_BLUE,
+			border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.4 : 0.28)}`,
+		},
+	};
+
+	const brandTabsSx = {
+		minHeight: 44,
+		"& .MuiTab-root": {
+			textTransform: "none",
+			fontWeight: 600,
+			fontSize: "0.85rem",
+			letterSpacing: "-0.005em",
+			color: "text.secondary",
+			minHeight: 44,
+			py: 1,
+			px: 2,
+			"&.Mui-selected": { color: BRAND_BLUE },
+		},
+		"& .MuiTabs-indicator": { backgroundColor: BRAND_BLUE, height: 2 },
+	};
+
 	return (
-		<MainCard title="Modelos">
-			<Tabs
-				value={activeTab}
-				onChange={(_e, v) => setActiveTab(v)}
-				variant="scrollable"
-				scrollButtons="auto"
-				allowScrollButtonsMobile
-				sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}
+		<Stack spacing={2.5} sx={{ mt: 1 }}>
+			{/* Header brand atmosférico */}
+			<Box
+				sx={{
+					position: "relative",
+					overflow: "hidden",
+					borderRadius: 2,
+					p: { xs: 2, md: 2.5 },
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)}`,
+				}}
 			>
-				<Tab
-					label={
-						<Stack direction="row" alignItems="center" spacing={1}>
-							<Setting2 size={16} />
-							<span>Modelos del sistema</span>
-						</Stack>
-					}
+				<Box
+					sx={{
+						position: "absolute",
+						top: -60,
+						right: -40,
+						width: 280,
+						height: 280,
+						borderRadius: "50%",
+						background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
+						pointerEvents: "none",
+					}}
 				/>
-				<Tab
-					label={
-						<Stack direction="row" alignItems="center" spacing={1}>
-							<ClipboardText size={16} />
-							<Badge badgeContent={myModelsCount} color="primary" max={99}>
-								<span style={{ paddingRight: myModelsCount ? 8 : 0 }}>Mis modelos</span>
-							</Badge>
-						</Stack>
-					}
+				<Box
+					sx={{
+						position: "absolute",
+						inset: 0,
+						backgroundImage: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)} 1px, transparent 1px)`,
+						backgroundSize: "22px 22px",
+						maskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+						WebkitMaskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+						opacity: 0.6,
+						pointerEvents: "none",
+					}}
 				/>
-			</Tabs>
 
-			{/* ── Tab 0: Modelos del sistema ── */}
-			{activeTab === 0 && (
-				<>
-					<Stack
-						direction={{ xs: "column", sm: "row" }}
-						alignItems={{ sm: "center" }}
-						justifyContent="space-between"
-						spacing={1.5}
-						sx={{ mb: 2.5 }}
-					>
-						<Typography variant="body2" color="textSecondary">
-							Plantillas predefinidas listas para usar.
-						</Typography>
-						<Stack
-							direction={{ xs: "column", sm: "row" }}
-							spacing={1}
-							alignItems={{ xs: "stretch", sm: "center" }}
-							sx={{ width: { xs: "100%", sm: "auto" } }}
+				<Stack
+					direction={{ xs: "column", md: "row" }}
+					alignItems={{ xs: "flex-start", md: "center" }}
+					spacing={{ xs: 1.5, md: 3 }}
+					sx={{ position: "relative" }}
+				>
+					<Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+						<Box
+							sx={{
+								width: 44,
+								height: 44,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+								flexShrink: 0,
+							}}
 						>
-							<Button
-								size="small"
-								variant="outlined"
-								color="secondary"
-								startIcon={<DocumentUpload size={15} />}
-								onClick={() => setRequestModelOpen(true)}
-								sx={{ width: { xs: "100%", sm: "auto" } }}
+							<ClipboardText size={22} variant="Bulk" />
+						</Box>
+						<Stack spacing={0.25} sx={{ minWidth: 0 }}>
+							<Stack direction="row" spacing={0.875} alignItems="center" sx={{ display: { xs: "none", md: "flex" } }}>
+								<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+								<Typography
+									sx={{
+										fontSize: "0.62rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+									}}
+								>
+									Plantillas
+								</Typography>
+							</Stack>
+							<Typography
+								sx={{
+									fontSize: { xs: "1.05rem", md: "1.25rem" },
+									fontWeight: 600,
+									letterSpacing: "-0.015em",
+									color: "text.primary",
+									textWrap: "balance",
+								}}
 							>
-								Solicitar modelo
-							</Button>
-							<TextField
-								size="small"
-								placeholder="Buscar modelo..."
-								value={pdfSearch}
-								onChange={(e) => setPdfSearch(e.target.value)}
-								sx={{ minWidth: { sm: 220 }, width: { xs: "100%", sm: "auto" } }}
-								InputProps={{
-									startAdornment: (
-										<InputAdornment position="start">
-											<SearchNormal1 size={16} style={{ opacity: 0.5 }} />
-										</InputAdornment>
-									),
+								Modelos de documentos
+							</Typography>
+							<Typography
+								sx={{
+									display: { xs: "none", md: "block" },
+									fontSize: "0.82rem",
+									color: "text.secondary",
+									letterSpacing: "-0.005em",
+									textWrap: "pretty",
 								}}
-							/>
+							>
+								Plantillas del sistema y modelos propios con campos dinámicos.
+							</Typography>
 						</Stack>
 					</Stack>
 
-					{pdfLoading ? (
-						<CardsSkeleton count={4} />
-					) : systemTemplates.length === 0 ? (
-						<Stack alignItems="center" justifyContent="center" spacing={2} sx={{ py: 6 }}>
-							<Box sx={{ p: 2, bgcolor: "grey.100", borderRadius: "50%" }}>
-								<ClipboardText size={32} style={{ color: theme.palette.text.secondary }} />
-							</Box>
-							<Typography color="textSecondary">
-								{pdfSearch.trim() ? `Sin resultados para "${pdfSearch}"` : "No hay modelos del sistema configurados."}
-							</Typography>
-						</Stack>
-					) : (
-						<Grid container spacing={2.5}>
-							{systemTemplates.map((tpl) => (
-								<Grid item xs={12} sm={6} md={4} lg={3} key={tpl._id}>
-									<ModelCard template={tpl} onPreview={handlePreview} onUse={setCreateFromTemplate} />
-								</Grid>
-							))}
-							<Grid item xs={12} sm={6} md={4} lg={3}>
-								<Card
-									variant="outlined"
-									role="button"
-									tabIndex={0}
-									onClick={() => setRequestModelOpen(true)}
-									onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setRequestModelOpen(true)}
-									sx={{
-										height: "100%",
-										minHeight: 160,
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										borderStyle: "dashed",
-										borderColor: "primary.light",
-										cursor: "pointer",
-										transition: "border-color 0.2s, background-color 0.2s",
-										"&:hover": { borderColor: "primary.main", bgcolor: "primary.lighter" },
-									}}
-								>
-									<CardContent>
-										<Stack alignItems="center" spacing={1.5} sx={{ textAlign: "center" }}>
-											<Box sx={{ p: 1.5, bgcolor: "primary.lighter", borderRadius: "50%" }}>
-												<DocumentUpload size={24} color={theme.palette.primary.main} />
-											</Box>
-											<Typography variant="subtitle2" fontWeight={600} color="primary">
-												Solicitar nuevo modelo
-											</Typography>
-											<Typography variant="caption" color="textSecondary">
-												¿Tenés un PDF o DOC que querés convertir en modelo autocompletable?
-											</Typography>
-										</Stack>
-									</CardContent>
-								</Card>
-							</Grid>
-						</Grid>
-					)}
-				</>
-			)}
+					<Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0, display: { xs: "none", sm: "flex" } }}>
+						<HeaderStat label="Sistema" value={systemTotal} tone="primary" />
+						<HeaderStat label="Míos" value={myModelsCount} tone="amber" />
+					</Stack>
+				</Stack>
+			</Box>
 
-			{/* ── Tab 1: Mis modelos ── */}
-			{activeTab === 1 && (
-				<>
-					<Stack
-						direction={{ xs: "column", sm: "row" }}
-						alignItems={{ sm: "center" }}
-						justifyContent="space-between"
-						spacing={1.5}
-						sx={{ mb: 2.5 }}
+			{/* Card de contenido */}
+			<MainCard content={false} sx={{ borderRadius: 2, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
+				<Box sx={{ px: { xs: 1.5, sm: 2 }, pt: 1 }}>
+					<Tabs
+						value={activeTab}
+						onChange={(_e, v) => setActiveTab(v)}
+						variant="scrollable"
+						scrollButtons="auto"
+						allowScrollButtonsMobile
+						sx={{ borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`, ...brandTabsSx }}
 					>
-						<Typography variant="body2" color="textSecondary">
-							Modelos de texto enriquecido propios con campos dinámicos vinculables a expedientes y contactos.
-						</Typography>
-						<Stack direction="row" spacing={1} alignItems="center">
-							<TextField
-								size="small"
-								placeholder="Buscar modelo..."
-								value={rtSearch}
-								onChange={(e) => setRtSearch(e.target.value)}
-								sx={{ minWidth: 200 }}
-								InputProps={{
-									startAdornment: (
-										<InputAdornment position="start">
-											<SearchNormal1 size={16} style={{ opacity: 0.5 }} />
-										</InputAdornment>
-									),
-								}}
-							/>
-							<Button variant="contained" size="small" startIcon={<Add size={16} />} onClick={() => navigate("/documentos/modelos/nuevo")}>
-								Crear modelo
-							</Button>
-						</Stack>
-					</Stack>
+						<Tab
+							label={
+								<Stack direction="row" alignItems="center" spacing={1}>
+									<Setting2 size={15} variant="Linear" />
+									<span>Modelos del sistema</span>
+								</Stack>
+							}
+						/>
+						<Tab
+							label={
+								<Stack direction="row" alignItems="center" spacing={1}>
+									<ClipboardText size={15} variant="Linear" />
+									<span>Mis modelos</span>
+									{myModelsCount > 0 && (
+										<Box
+											sx={{
+												ml: 0.25,
+												px: 0.625,
+												py: 0.125,
+												borderRadius: 0.75,
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.12),
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.36 : 0.24)}`,
+												color: BRAND_BLUE,
+												fontSize: "0.65rem",
+												fontWeight: 700,
+												fontVariantNumeric: "tabular-nums",
+												lineHeight: 1.4,
+											}}
+										>
+											{myModelsCount > 99 ? "99+" : myModelsCount}
+										</Box>
+									)}
+								</Stack>
+							}
+						/>
+					</Tabs>
+				</Box>
 
-					{rtLoading ? (
-						<CardsSkeleton count={3} />
-					) : filteredRtTemplates.length === 0 ? (
-						<Stack alignItems="center" justifyContent="center" spacing={2} sx={{ py: 6 }}>
-							<Box sx={{ p: 2, bgcolor: "grey.100", borderRadius: "50%" }}>
-								<ClipboardText size={32} style={{ color: theme.palette.text.secondary }} />
-							</Box>
-							<Typography color="textSecondary">
-								{rtSearch.trim() ? `Sin resultados para "${rtSearch}"` : "Todavía no creaste ningún modelo propio."}
-							</Typography>
-							{!rtSearch.trim() && (
-								<Button variant="outlined" size="small" startIcon={<Add size={16} />} onClick={() => navigate("/documentos/modelos/nuevo")}>
-									Crear mi primer modelo
-								</Button>
-							)}
-						</Stack>
-					) : (
-						<Grid container spacing={2.5}>
-							{filteredRtTemplates.map((tpl) => (
-								<Grid item xs={12} sm={6} md={4} lg={3} key={tpl._id}>
-									<RichTextModelCard
-										template={tpl}
-										onEdit={(t) => navigate(`/documentos/modelos/${t._id}/editar`)}
-										onDelete={setDeleteTarget}
-										onUse={(t) => navigate(`/documentos/escritos/nuevo?templateId=${t._id}`)}
-									/>
-								</Grid>
-							))}
-							{/* Tarjeta para crear nuevo */}
-							<Grid item xs={12} sm={6} md={4} lg={3}>
-								<Card
-									variant="outlined"
-									role="button"
-									tabIndex={0}
-									onClick={() => navigate("/documentos/modelos/nuevo")}
-									onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && navigate("/documentos/modelos/nuevo")}
-									sx={{
-										height: "100%",
-										minHeight: 160,
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										borderStyle: "dashed",
-										borderColor: "primary.light",
-										cursor: "pointer",
-										transition: "border-color 0.2s, background-color 0.2s",
-										"&:hover": { borderColor: "primary.main", bgcolor: "primary.lighter" },
-									}}
+				<Box sx={{ p: { xs: 2, sm: 2.5 } }}>
+					{/* ── Tab 0: Modelos del sistema ── */}
+					{activeTab === 0 && (
+						<>
+							<Stack
+								direction={{ xs: "column", sm: "row" }}
+								alignItems={{ sm: "center" }}
+								justifyContent="space-between"
+								spacing={1.5}
+								sx={{ mb: 2 }}
+							>
+								<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+									Plantillas predefinidas listas para usar.
+								</Typography>
+								<Stack
+									direction={{ xs: "column", sm: "row" }}
+									spacing={1}
+									alignItems={{ xs: "stretch", sm: "center" }}
+									sx={{ width: { xs: "100%", sm: "auto" } }}
 								>
-									<CardContent>
-										<Stack alignItems="center" spacing={1.5} sx={{ textAlign: "center" }}>
-											<Box sx={{ p: 1.5, bgcolor: "primary.lighter", borderRadius: "50%" }}>
-												<Add size={24} color={theme.palette.primary.main} />
-											</Box>
-											<Typography variant="subtitle2" fontWeight={600} color="primary">
-												Nuevo modelo
-											</Typography>
-										</Stack>
-									</CardContent>
-								</Card>
-							</Grid>
-						</Grid>
+									<Button
+										size="small"
+										startIcon={<DocumentUpload size={14} variant="Linear" />}
+										onClick={() => setRequestModelOpen(true)}
+										sx={{ ...ghostBtnSx, width: { xs: "100%", sm: "auto" } }}
+									>
+										Solicitar modelo
+									</Button>
+									<TextField
+										size="small"
+										placeholder="Buscar modelo..."
+										value={pdfSearch}
+										onChange={(e) => setPdfSearch(e.target.value)}
+										sx={{ minWidth: { sm: 240 }, width: { xs: "100%", sm: "auto" }, ...inputSx }}
+										InputProps={{
+											startAdornment: (
+												<InputAdornment position="start">
+													<SearchNormal1 size={15} color={theme.palette.text.secondary} />
+												</InputAdornment>
+											),
+										}}
+									/>
+								</Stack>
+							</Stack>
+
+							{pdfLoading ? (
+								<CardsSkeleton count={cardsPerPage} />
+							) : systemTemplates.length === 0 ? (
+								<EmptyState
+									title={pdfSearch.trim() ? "Sin resultados" : "Sin modelos del sistema"}
+									message={
+										pdfSearch.trim()
+											? `No encontramos plantillas que coincidan con "${pdfSearch}". Probá con otro término.`
+											: "No hay modelos del sistema configurados todavía."
+									}
+								/>
+							) : (
+								<>
+									<Grid container spacing={2}>
+										{pdfPagination.slice.map((tpl) => (
+											<Grid item xs={12} sm={6} md={4} lg={3} key={tpl._id}>
+												<ModelCard template={tpl} onPreview={handlePreview} onUse={setCreateFromTemplate} />
+											</Grid>
+										))}
+										{pdfPagination.isFirstPage && (
+											<Grid item xs={12} sm={6} md={4} lg={3}>
+												<DashedCard
+													icon={<DocumentUpload size={22} variant="Bulk" />}
+													title="Solicitar nuevo modelo"
+													subtitle="¿Tenés un PDF o DOC que querés convertir en modelo autocompletable?"
+													onClick={() => setRequestModelOpen(true)}
+												/>
+											</Grid>
+										)}
+									</Grid>
+									{pdfPagination.totalPages > 1 && (
+										<Box display="flex" justifyContent="center" sx={{ pt: 2.5 }}>
+											<Pagination
+												count={pdfPagination.totalPages}
+												page={pdfPage}
+												onChange={(_e, v) => setPdfPage(v)}
+												size="small"
+												sx={paginationSx}
+											/>
+										</Box>
+									)}
+								</>
+							)}
+						</>
 					)}
-				</>
-			)}
+
+					{/* ── Tab 1: Mis modelos ── */}
+					{activeTab === 1 && (
+						<>
+							<Stack
+								direction={{ xs: "column", sm: "row" }}
+								alignItems={{ sm: "center" }}
+								justifyContent="space-between"
+								spacing={1.5}
+								sx={{ mb: 2 }}
+							>
+								<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+									Modelos propios con campos dinámicos vinculables a expedientes y contactos.
+								</Typography>
+								<Stack
+									direction={{ xs: "column", sm: "row" }}
+									spacing={1}
+									alignItems={{ xs: "stretch", sm: "center" }}
+									sx={{ width: { xs: "100%", sm: "auto" } }}
+								>
+									<TextField
+										size="small"
+										placeholder="Buscar modelo..."
+										value={rtSearch}
+										onChange={(e) => setRtSearch(e.target.value)}
+										sx={{ minWidth: { sm: 220 }, width: { xs: "100%", sm: "auto" }, ...inputSx }}
+										InputProps={{
+											startAdornment: (
+												<InputAdornment position="start">
+													<SearchNormal1 size={15} color={theme.palette.text.secondary} />
+												</InputAdornment>
+											),
+										}}
+									/>
+									<Button
+										size="small"
+										startIcon={<Add size={15} variant="Linear" />}
+										onClick={() => navigate("/documentos/modelos/nuevo")}
+										sx={brandPrimarySx}
+									>
+										Crear modelo
+									</Button>
+								</Stack>
+							</Stack>
+
+							{rtLoading ? (
+								<CardsSkeleton count={cardsPerPage} />
+							) : filteredRtTemplates.length === 0 ? (
+								<EmptyState
+									title={rtSearch.trim() ? "Sin resultados" : "Sin modelos propios"}
+									message={
+										rtSearch.trim()
+											? `No encontramos modelos que coincidan con "${rtSearch}".`
+											: "Creá tu primer modelo de texto enriquecido con campos dinámicos para reutilizar en escritos."
+									}
+									action={
+										!rtSearch.trim() && (
+											<Button
+												size="small"
+												startIcon={<Add size={15} variant="Linear" />}
+												onClick={() => navigate("/documentos/modelos/nuevo")}
+												sx={{ ...brandPrimarySx, mt: 0.5 }}
+											>
+												Crear mi primer modelo
+											</Button>
+										)
+									}
+								/>
+							) : (
+								<>
+									<Grid container spacing={2}>
+										{rtPagination.slice.map((tpl) => (
+											<Grid item xs={12} sm={6} md={4} lg={3} key={tpl._id}>
+												<RichTextModelCard
+													template={tpl}
+													onEdit={(t) => navigate(`/documentos/modelos/${t._id}/editar`)}
+													onDelete={setDeleteTarget}
+													onUse={(t) => navigate(`/documentos/escritos/nuevo?templateId=${t._id}`)}
+												/>
+											</Grid>
+										))}
+										{rtPagination.isFirstPage && (
+											<Grid item xs={12} sm={6} md={4} lg={3}>
+												<DashedCard
+													icon={<Add size={22} variant="Linear" />}
+													title="Nuevo modelo"
+													subtitle="Creá uno desde cero con campos dinámicos."
+													onClick={() => navigate("/documentos/modelos/nuevo")}
+												/>
+											</Grid>
+										)}
+									</Grid>
+									{rtPagination.totalPages > 1 && (
+										<Box display="flex" justifyContent="center" sx={{ pt: 2.5 }}>
+											<Pagination
+												count={rtPagination.totalPages}
+												page={rtPage}
+												onChange={(_e, v) => setRtPage(v)}
+												size="small"
+												sx={paginationSx}
+											/>
+										</Box>
+									)}
+								</>
+							)}
+						</>
+					)}
+				</Box>
+			</MainCard>
 
 			{/* Diálogos */}
 			<PreviewDialog
@@ -652,7 +1261,7 @@ const ModelosPage = () => {
 				onConfirm={handleDeleteConfirm}
 				onClose={() => setDeleteTarget(null)}
 			/>
-		</MainCard>
+		</Stack>
 	);
 };
 

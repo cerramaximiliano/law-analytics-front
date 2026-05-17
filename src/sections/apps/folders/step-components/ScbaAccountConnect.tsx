@@ -24,12 +24,17 @@ import {
 	Card,
 	CardContent,
 	Chip,
+	Tooltip,
 } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
-import { Link1, Eye, EyeSlash, TickCircle, CloseCircle, Refresh2, InfoCircle, DocumentText } from "iconsax-react";
+import { alpha, useTheme } from "@mui/material/styles";
+import { Link1, Eye, EyeSlash, TickCircle, CloseCircle, Refresh2, InfoCircle, DocumentText, ShieldTick } from "iconsax-react";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import { enqueueSnackbar } from "notistack";
 import { Zoom } from "@mui/material";
 import scbaCredentialsService, { ScbaCredentialsData } from "api/scbaCredentials";
+import { useScbaSiteStatus } from "hooks/useScbaSiteStatus";
+import { scbaSiteStatusUpdated } from "store/reducers/scbaSiteStatus";
+import ScbaMaintenanceAlert from "components/ScbaMaintenanceAlert";
 
 interface ScbaAccountConnectProps {
 	onConnectionSuccess?: () => void;
@@ -77,6 +82,9 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		const dispatch = useDispatch();
 		const scbaSync = useSelector((state: any) => state.scbaSync as ScbaSyncState);
 		const lastWsCompletedAtRef = useRef<string | null>(null);
+
+		// Estado del portal SCBA — usado para deshabilitar submit y mostrar banner.
+		const { isDown: isPortalDown } = useScbaSiteStatus();
 
 		// Cargar estado al montar
 		useEffect(() => {
@@ -255,6 +263,21 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 			try {
 				const response = await scbaCredentialsService.linkCredentials(username.trim(), password);
 
+				// Bloqueo por portal caído: sincronizamos el slice (mostrar banner) y
+				// avisamos al usuario con un toast específico.
+				if (!response.success && response.code === "SCBA_MAINTENANCE") {
+					if (response.scbaSiteStatus) {
+						dispatch(scbaSiteStatusUpdated(response.scbaSiteStatus));
+					}
+					enqueueSnackbar(response.error || "El portal de la SCBA no está respondiendo. Reintentá más tarde.", {
+						variant: "warning",
+						anchorOrigin: { vertical: "bottom", horizontal: "right" },
+						TransitionComponent: Zoom,
+						autoHideDuration: 5000,
+					});
+					return false;
+				}
+
 				if (response.success) {
 					enqueueSnackbar(response.message || "Cuenta SCBA vinculada correctamente", {
 						variant: "success",
@@ -319,13 +342,25 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		// Exponer métodos al padre
 		useImperativeHandle(ref, () => ({
 			submit: handleSubmit,
-			canSubmit: () => Boolean(username && password && !isSubmitting && !hasCredentials),
+			canSubmit: () => Boolean(username && password && !isSubmitting && !hasCredentials && !isPortalDown),
 		}));
 
 		// Re-sincronizar
 		const handleResync = async () => {
 			try {
 				const response = await scbaCredentialsService.requestSync();
+				if (!response.success && response.code === "SCBA_MAINTENANCE") {
+					if (response.scbaSiteStatus) {
+						dispatch(scbaSiteStatusUpdated(response.scbaSiteStatus));
+					}
+					enqueueSnackbar(response.error || "El portal de la SCBA no está respondiendo. Reintentá más tarde.", {
+						variant: "warning",
+						anchorOrigin: { vertical: "bottom", horizontal: "right" },
+						TransitionComponent: Zoom,
+						autoHideDuration: 5000,
+					});
+					return;
+				}
 				if (response.success) {
 					enqueueSnackbar("Sincronización iniciada", {
 						variant: "info",
@@ -407,51 +442,115 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 
 		// Sincronización en progreso
 		if (isSyncing || credentialsStatus?.syncStatus === "in_progress" || credentialsStatus?.syncStatus === "pending") {
+			const isDark = theme.palette.mode === "dark";
 			return (
-				<Card variant="outlined" sx={{ borderColor: theme.palette.primary.light }}>
-					<CardContent>
-						<Stack spacing={2}>
-							<Stack direction="row" alignItems="center" spacing={1}>
-								<CircularProgress size={20} />
-								<Typography variant="subtitle1" fontWeight={500}>
-									Sincronizando causas...
-								</Typography>
-							</Stack>
-
-							<Box>
-								<LinearProgress variant="determinate" value={syncProgress} sx={{ height: 8, borderRadius: 4 }} />
-								<Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-									{syncMessage || `${syncProgress.toFixed(0)}% completado`}
-								</Typography>
+				<Box
+					sx={{
+						borderRadius: 1.5,
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+						p: { xs: 1.5, sm: 1.75 },
+					}}
+				>
+					<Stack spacing={1.5}>
+						<Stack direction="row" alignItems="center" spacing={0.875}>
+							<Box
+								sx={{
+									width: 28,
+									height: 28,
+									borderRadius: 1,
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+									flexShrink: 0,
+								}}
+							>
+								<CircularProgress size={14} sx={{ color: BRAND_BLUE }} />
 							</Box>
-
-							<Alert severity="info" icon={<InfoCircle size={20} />}>
-								El proceso puede tomar varios minutos dependiendo de la cantidad de causas. Puede continuar trabajando con normalidad, las
-								carpetas se crearán automáticamente.
-							</Alert>
-
-							{credentialsStatus?.currentSyncProgress && (
-								<Stack direction="row" spacing={2} justifyContent="center">
-									<Chip
-										icon={<DocumentText size={16} />}
-										label={`${credentialsStatus.currentSyncProgress.causasFound || 0} causas encontradas`}
-										size="small"
-										variant="outlined"
-									/>
-									{credentialsStatus.currentSyncProgress.causasCreated > 0 && (
-										<Chip
-											icon={<DocumentText size={16} />}
-											label={`${credentialsStatus.currentSyncProgress.causasCreated} nuevas`}
-											size="small"
-											variant="outlined"
-											color="primary"
-										/>
-									)}
-								</Stack>
-							)}
+							<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+								Sincronizando causas
+							</Typography>
 						</Stack>
-					</CardContent>
-				</Card>
+
+						<Box>
+							<LinearProgress
+								variant="determinate"
+								value={syncProgress}
+								sx={{
+									height: 8,
+									borderRadius: 1.25,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08),
+									"& .MuiLinearProgress-bar": { bgcolor: BRAND_BLUE, borderRadius: 1.25 },
+								}}
+							/>
+							<Typography
+								sx={{
+									mt: 0.625,
+									display: "block",
+									fontSize: "0.72rem",
+									color: "text.secondary",
+									fontVariantNumeric: "tabular-nums",
+								}}
+							>
+								{syncMessage || `${syncProgress.toFixed(0)}% completado`}
+							</Typography>
+						</Box>
+
+						<Box
+							sx={{
+								display: "flex",
+								alignItems: "flex-start",
+								gap: 1,
+								px: 1.25,
+								py: 1,
+								borderRadius: 1.25,
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.05),
+							}}
+						>
+							<Box sx={{ color: BRAND_BLUE, display: "flex", mt: 0.125, flexShrink: 0 }}>
+								<InfoCircle size={14} variant="Bulk" />
+							</Box>
+							<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", lineHeight: 1.45, textWrap: "pretty" }}>
+								El proceso puede tardar unos minutos. Podés seguir trabajando — las carpetas se crean en segundo plano.
+							</Typography>
+						</Box>
+
+						{credentialsStatus?.currentSyncProgress && (
+							<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+								<Chip
+									icon={<DocumentText size={14} variant="Bulk" />}
+									label={`${credentialsStatus.currentSyncProgress.causasFound || 0} encontradas`}
+									size="small"
+									sx={{
+										fontSize: "0.7rem",
+										height: 22,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+										color: BRAND_BLUE,
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.2)}`,
+										"& .MuiChip-icon": { color: BRAND_BLUE },
+									}}
+								/>
+								{credentialsStatus.currentSyncProgress.causasCreated > 0 && (
+									<Chip
+										icon={<DocumentText size={14} variant="Bulk" />}
+										label={`${credentialsStatus.currentSyncProgress.causasCreated} nuevas`}
+										size="small"
+										sx={{
+											fontSize: "0.7rem",
+											height: 22,
+											bgcolor: alpha(LIVE_GREEN, isDark ? 0.14 : 0.08),
+											color: LIVE_GREEN,
+											border: `1px solid ${alpha(LIVE_GREEN, isDark ? 0.32 : 0.2)}`,
+											"& .MuiChip-icon": { color: LIVE_GREEN },
+										}}
+									/>
+								)}
+							</Stack>
+						)}
+					</Stack>
+				</Box>
 			);
 		}
 
@@ -459,162 +558,290 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		if (hasCredentials && credentialsStatus) {
 			const isComplete = credentialsStatus.syncStatus === "completed";
 			const hasError = credentialsStatus.syncStatus === "error";
+			const isDark = theme.palette.mode === "dark";
 
-			return (
-				<Card
-					variant="outlined"
+			// Color accent según estado: brand-blue para neutral, green para completed, error/amber.
+			const accent = isComplete ? LIVE_GREEN : hasError ? theme.palette.error.main : BRAND_BLUE;
+
+			// Notice helper brand-aware (mismo lenguaje que automaticStep)
+			const renderInlineNotice = (text: string, color: string) => (
+				<Box
 					sx={{
-						borderColor: isComplete ? theme.palette.success.light : hasError ? theme.palette.error.light : theme.palette.warning.light,
+						display: "flex",
+						alignItems: "flex-start",
+						gap: 1,
+						px: 1.25,
+						py: 1,
+						borderRadius: 1.25,
+						border: `1px solid ${alpha(color, isDark ? 0.28 : 0.18)}`,
+						bgcolor: alpha(color, isDark ? 0.08 : 0.05),
 					}}
 				>
-					<CardContent>
-						<Stack spacing={2}>
-							<Stack direction="row" alignItems="center" justifyContent="space-between">
-								<Stack direction="row" alignItems="center" spacing={1}>
-									{isComplete ? (
-										<TickCircle size={24} color={theme.palette.success.main} variant="Bold" />
-									) : hasError ? (
-										<CloseCircle size={24} color={theme.palette.error.main} variant="Bold" />
-									) : (
-										<Link1 size={24} color={theme.palette.warning.main} />
-									)}
-									<Typography variant="subtitle1" fontWeight={500}>
-										{isComplete ? "Cuenta conectada" : hasError ? "Error de sincronización" : "Cuenta vinculada"}
-									</Typography>
-								</Stack>
+					<Box sx={{ color, display: "flex", mt: 0.125, flexShrink: 0 }}>
+						<InfoCircle size={14} variant="Bulk" />
+					</Box>
+					<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", lineHeight: 1.45, textWrap: "pretty" }}>{text}</Typography>
+				</Box>
+			);
 
-								<Stack direction="row" spacing={1}>
-									<IconButton size="small" onClick={handleResync} title="Re-sincronizar" disabled={!credentialsStatus.enabled}>
-										<Refresh2 size={18} />
-									</IconButton>
-								</Stack>
+			return (
+				<Box
+					sx={{
+						borderRadius: 1.5,
+						border: `1px solid ${alpha(accent, isDark ? 0.32 : 0.22)}`,
+						bgcolor: alpha(accent, isDark ? 0.06 : 0.03),
+						p: { xs: 1.5, sm: 1.75 },
+					}}
+				>
+					<Stack spacing={1.5}>
+						{isPortalDown && (
+							<ScbaMaintenanceAlert
+								compact
+								contextHint="Mientras el portal esté caído, la sincronización queda en pausa."
+							/>
+						)}
+						<Stack direction="row" alignItems="center" justifyContent="space-between">
+							<Stack direction="row" alignItems="center" spacing={0.875}>
+								<Box
+									sx={{
+										width: 28,
+										height: 28,
+										borderRadius: 1,
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										bgcolor: alpha(accent, isDark ? 0.18 : 0.1),
+										color: accent,
+										flexShrink: 0,
+									}}
+								>
+									{isComplete ? (
+										<TickCircle size={16} variant="Bulk" />
+									) : hasError ? (
+										<CloseCircle size={16} variant="Bulk" />
+									) : (
+										<Link1 size={16} variant="Bulk" />
+									)}
+								</Box>
+								<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+									{isComplete ? "Cuenta conectada" : hasError ? "Error de sincronización" : "Cuenta vinculada"}
+								</Typography>
 							</Stack>
 
-							{isComplete && (
-								<Alert severity="success" icon={<TickCircle size={20} />}>
-									Tus causas del Poder Judicial de la Provincia de Buenos Aires están sincronizadas. Se encontraron{" "}
-									{credentialsStatus.stats?.totalCausasFound || 0} causas ({credentialsStatus.stats?.causasCreated || 0} nuevas,{" "}
-									{credentialsStatus.stats?.causasLinked || 0} vinculadas).
-								</Alert>
-							)}
-
-							{hasError && credentialsStatus.lastError && <Alert severity="error">{credentialsStatus.lastError.message}</Alert>}
-
-							{!isComplete && !hasError && credentialsStatus.syncStatus === "never_synced" && (
-								<Alert severity="info">
-									Tu cuenta está vinculada pero aún no se ha sincronizado. Presiona el botón de sincronización para iniciar.
-								</Alert>
-							)}
-
-							{credentialsStatus.isExpired && (
-								<Alert severity="warning">
-									Tus credenciales han expirado. Desvinculá tu cuenta y vinculala nuevamente con la contraseña actualizada.
-								</Alert>
-							)}
-
-							{isComplete && (
-								<Stack direction="row" spacing={2} justifyContent="center">
-									<Chip
-										icon={<DocumentText size={16} />}
-										label={`${credentialsStatus.stats?.totalCausasFound || 0} causas`}
+							<Tooltip title={isPortalDown ? "Portal SCBA caído — no se puede re-sincronizar" : "Re-sincronizar"} placement="top" arrow>
+								<span>
+									<IconButton
 										size="small"
-										variant="outlined"
-									/>
-									<Chip
-										icon={<DocumentText size={16} />}
-										label={`${credentialsStatus.stats?.causasCreated || 0} nuevas`}
-										size="small"
-										variant="outlined"
-										color="primary"
-									/>
-								</Stack>
-							)}
-
-							<Divider />
-
-							<Button variant="text" color="error" size="small" onClick={handleUnlink} startIcon={<CloseCircle size={16} />}>
-								Desvincular cuenta
-							</Button>
+										onClick={handleResync}
+										disabled={!credentialsStatus.enabled || isPortalDown}
+										sx={{
+											color: "text.secondary",
+											transition: "background-color 0.15s ease, color 0.15s ease",
+											"&:hover:not(.Mui-disabled)": {
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+												color: BRAND_BLUE,
+											},
+										}}
+									>
+										<Refresh2 size={16} />
+									</IconButton>
+								</span>
+							</Tooltip>
 						</Stack>
-					</CardContent>
-				</Card>
+
+						{isComplete &&
+							renderInlineNotice(
+								`Tus causas de la Provincia de Buenos Aires están sincronizadas. Se encontraron ${credentialsStatus.stats?.totalCausasFound || 0} causas (${credentialsStatus.stats?.causasCreated || 0} nuevas, ${credentialsStatus.stats?.causasLinked || 0} vinculadas).`,
+								LIVE_GREEN,
+							)}
+
+						{hasError && credentialsStatus.lastError && renderInlineNotice(credentialsStatus.lastError.message, theme.palette.error.main)}
+
+						{!isComplete && !hasError && credentialsStatus.syncStatus === "never_synced" &&
+							renderInlineNotice("Tu cuenta está vinculada pero aún no se sincronizó. Apretá el botón de re-sincronizar para iniciar.", BRAND_BLUE)}
+
+						{credentialsStatus.isExpired &&
+							renderInlineNotice("Tus credenciales expiraron. Desvinculá tu cuenta y vinculala con la contraseña actualizada.", STALE_AMBER)}
+
+						{isComplete && (
+							<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+								<Chip
+									icon={<DocumentText size={14} variant="Bulk" />}
+									label={`${credentialsStatus.stats?.totalCausasFound || 0} causas`}
+									size="small"
+									sx={{
+										fontSize: "0.7rem",
+										height: 22,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+										color: BRAND_BLUE,
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.2)}`,
+										"& .MuiChip-icon": { color: BRAND_BLUE },
+									}}
+								/>
+								<Chip
+									icon={<DocumentText size={14} variant="Bulk" />}
+									label={`${credentialsStatus.stats?.causasCreated || 0} nuevas`}
+									size="small"
+									sx={{
+										fontSize: "0.7rem",
+										height: 22,
+										bgcolor: alpha(LIVE_GREEN, isDark ? 0.14 : 0.08),
+										color: LIVE_GREEN,
+										border: `1px solid ${alpha(LIVE_GREEN, isDark ? 0.32 : 0.2)}`,
+										"& .MuiChip-icon": { color: LIVE_GREEN },
+									}}
+								/>
+							</Stack>
+						)}
+
+						<Box sx={{ height: 1, bgcolor: alpha(accent, isDark ? 0.16 : 0.1) }} />
+
+						<Button
+							size="small"
+							onClick={handleUnlink}
+							startIcon={<CloseCircle size={14} />}
+							sx={{
+								alignSelf: "flex-start",
+								textTransform: "none",
+								color: "text.secondary",
+								fontWeight: 500,
+								fontSize: "0.78rem",
+								"&:hover": {
+									bgcolor: alpha(theme.palette.error.main, isDark ? 0.16 : 0.08),
+									color: theme.palette.error.main,
+								},
+							}}
+						>
+							Desvincular cuenta
+						</Button>
+					</Stack>
+				</Box>
 			);
 		}
 
 		// Formulario de conexión
+		const isDark = theme.palette.mode === "dark";
 		return (
-			<Card variant="outlined" sx={{ overflow: "visible" }}>
-				<CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
-					<Stack spacing={1.25}>
-						<Stack direction="row" alignItems="center" spacing={1}>
-							<Link1 size={20} color={theme.palette.primary.main} />
-							<Typography variant="subtitle2" fontWeight={500}>
-								Conectar cuenta SCBA
-							</Typography>
-						</Stack>
-
-						<Alert severity="info" icon={<InfoCircle size={14} />} sx={{ py: 0.25, "& .MuiAlert-message": { fontSize: "0.75rem" } }}>
-							Vincula tu cuenta del Portal de Notificaciones SCBA para importar y sincronizar tus causas de la Provincia de Buenos Aires.
-						</Alert>
-
-						<TextField
-							fullWidth
-							label="Domicilio Electrónico"
-							placeholder="20XXXXXXXX7@notificaciones.scba.gov.ar"
-							value={username}
-							onChange={(e) => {
-								setUsername(e.target.value);
-								if (usernameError) validateUsername(e.target.value);
+			<Stack spacing={1.5}>
+				{isPortalDown && (
+					<ScbaMaintenanceAlert
+						compact
+						contextHint="No se pueden conectar cuentas nuevas mientras el portal esté caído."
+					/>
+				)}
+				<Box
+					sx={{
+						borderRadius: 1.5,
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+						p: { xs: 1.5, sm: 1.75 },
+					}}
+				>
+				<Stack spacing={1.25}>
+					<Stack direction="row" alignItems="center" spacing={0.875}>
+						<Box
+							sx={{
+								width: 28,
+								height: 28,
+								borderRadius: 1,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								color: BRAND_BLUE,
+								flexShrink: 0,
 							}}
-							onBlur={() => validateUsername(username)}
-							error={Boolean(usernameError)}
-							helperText={usernameError || "CUIL o domicilio electrónico completo"}
-							disabled={isSubmitting}
-							size="small"
-						/>
-
-						<TextField
-							fullWidth
-							label="Contraseña"
-							type={showPassword ? "text" : "password"}
-							value={password}
-							onChange={(e) => {
-								setPassword(e.target.value);
-								if (passwordError) validatePassword(e.target.value);
-							}}
-							onBlur={() => validatePassword(password)}
-							error={Boolean(passwordError)}
-							helperText={passwordError}
-							disabled={isSubmitting}
-							size="small"
-							InputProps={{
-								endAdornment: (
-									<InputAdornment position="end">
-										<IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
-											{showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
-										</IconButton>
-									</InputAdornment>
-								),
-							}}
-						/>
-
-						<Alert severity="info" icon={<InfoCircle size={14} />} sx={{ py: 0.25, "& .MuiAlert-message": { fontSize: "0.75rem" } }}>
-							<strong>Seguridad:</strong> Tu contraseña se almacena encriptada (AES-256) y solo se usa para sincronizar tus causas.
-						</Alert>
-
-						<Button
-							variant="contained"
-							fullWidth
-							size="small"
-							onClick={handleSubmit}
-							disabled={isSubmitting || !username || !password}
-							startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <Link1 size={16} />}
 						>
-							{isSubmitting ? "Conectando..." : "Conectar cuenta"}
-						</Button>
+							<Link1 size={16} variant="Bulk" />
+						</Box>
+						<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+							Conectar cuenta SCBA
+						</Typography>
 					</Stack>
-				</CardContent>
-			</Card>
+
+					<TextField
+						fullWidth
+						label="Domicilio electrónico"
+						placeholder="20XXXXXXXX7@notificaciones.scba.gov.ar"
+						value={username}
+						onChange={(e) => {
+							setUsername(e.target.value);
+							if (usernameError) validateUsername(e.target.value);
+						}}
+						onBlur={() => validateUsername(username)}
+						error={Boolean(usernameError)}
+						helperText={usernameError || undefined}
+						disabled={isSubmitting}
+						size="small"
+					/>
+
+					<TextField
+						fullWidth
+						label="Contraseña"
+						type={showPassword ? "text" : "password"}
+						value={password}
+						onChange={(e) => {
+							setPassword(e.target.value);
+							if (passwordError) validatePassword(e.target.value);
+						}}
+						onBlur={() => validatePassword(password)}
+						error={Boolean(passwordError)}
+						helperText={passwordError || undefined}
+						disabled={isSubmitting}
+						size="small"
+						InputProps={{
+							endAdornment: (
+								<InputAdornment position="end">
+									<Tooltip title="Tu contraseña se almacena encriptada (AES-256) y solo se usa para sincronizar tus causas." arrow placement="top">
+										<IconButton edge="end" size="small" sx={{ color: BRAND_BLUE, mr: 0.25 }}>
+											<ShieldTick size={14} variant="Bulk" />
+										</IconButton>
+									</Tooltip>
+									<IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
+										{showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
+									</IconButton>
+								</InputAdornment>
+							),
+						}}
+					/>
+
+					<Tooltip
+						title={isPortalDown ? "Portal SCBA caído — no se pueden conectar cuentas nuevas ahora" : ""}
+						placement="top"
+						arrow
+						disableHoverListener={!isPortalDown}
+					>
+						<span>
+							<Button
+								variant="contained"
+								fullWidth
+								size="small"
+								onClick={handleSubmit}
+								disabled={isSubmitting || !username || !password || isPortalDown}
+								startIcon={isSubmitting ? <CircularProgress size={14} color="inherit" /> : <Link1 size={14} />}
+								sx={{
+									textTransform: "none",
+									bgcolor: BRAND_BLUE,
+									color: "#fff",
+									fontWeight: 600,
+									letterSpacing: "-0.005em",
+									borderRadius: 1.25,
+									boxShadow: "none",
+									transition: "background-color 0.15s ease",
+									"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+									"&.Mui-disabled": {
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.24 : 0.4),
+										color: alpha("#fff", 0.9),
+									},
+								}}
+							>
+								{isSubmitting ? "Conectando…" : "Conectar cuenta"}
+							</Button>
+						</span>
+					</Tooltip>
+				</Stack>
+				</Box>
+			</Stack>
 		);
 	},
 );

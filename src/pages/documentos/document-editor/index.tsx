@@ -7,9 +7,7 @@ import {
 	Autocomplete,
 	Box,
 	Button,
-	Chip,
 	CircularProgress,
-	Divider,
 	Drawer,
 	FormControl,
 	IconButton,
@@ -23,7 +21,9 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
-import { ArrowLeft2, CloseCircle, DocumentText, MagicStar, Refresh, Save2, Setting4, Warning2 } from "iconsax-react";
+import { alpha, useTheme } from "@mui/material/styles";
+import { ArrowLeft2, CloseSquare, DocumentText, MagicStar, Refresh, Save2, Setting4, Warning2 } from "iconsax-react";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import AiSparklesIcon from "components/icons/AiSparklesIcon";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -48,7 +48,6 @@ import { Movement } from "types/movements";
 import { openSnackbar } from "store/reducers/snackbar";
 import ApiService from "store/reducers/ApiService";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
-import MainCard from "components/MainCard";
 import EditorToolbar from "pages/herramientas/editor-poc/EditorToolbar";
 import MergeFieldsPanel from "pages/herramientas/editor-poc/MergeFieldsPanel";
 import AiChatPanel from "pages/herramientas/editor-poc/AiChatPanel";
@@ -190,12 +189,51 @@ const SLASH_MENU_CONFIG: SlashMenuConfig = {
 const DocumentEditorPage = () => {
 	const navigate = useNavigate();
 	const dispatch = useDispatch();
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const [searchParams] = useSearchParams();
 	const { id: documentId } = useParams<{ id: string }>();
 	const templateId = searchParams.get("templateId");
 	const folderIdParam = searchParams.get("folderId");
 	const autoResolveParam = searchParams.get("autoResolve") === "true";
 	const isEdit = Boolean(documentId);
+
+	// ── Brand helpers ──────────────────────────────────────────────────────────
+	const inputSx = {
+		"& .MuiOutlinedInput-root": {
+			borderRadius: 1.25,
+			fontSize: "0.82rem",
+			"& fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.14), transition: "border-color 0.15s ease" },
+			"&:hover fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.28) },
+			"&.Mui-focused fieldset": { borderColor: BRAND_BLUE, borderWidth: 1 },
+		},
+		"& .MuiInputLabel-root.Mui-focused": { color: BRAND_BLUE },
+	};
+	const selectSx = {
+		borderRadius: 1.25,
+		fontSize: "0.82rem",
+		"& fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.14) },
+		"&:hover fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.28) },
+		"&.Mui-focused fieldset": { borderColor: BRAND_BLUE },
+	};
+	const brandPrimarySx = {
+		minWidth: 110,
+		textTransform: "none" as const,
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		borderRadius: 1.25,
+		boxShadow: "none",
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+		"&.Mui-disabled": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.24 : 0.4), color: alpha("#fff", 0.9) },
+	};
+	const iconBtnBrandSx = {
+		color: "text.secondary",
+		borderRadius: 1,
+		transition: "color 0.15s ease, background-color 0.15s ease",
+		"&:hover": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) },
+	};
 
 	const userId = useSelector((state: any) => state.auth?.user?._id);
 	const userSkills: any[] = useSelector((state: any) => {
@@ -814,32 +852,56 @@ const DocumentEditorPage = () => {
 
 	return (
 		<Stack className="tiptap-root" spacing={1} sx={{ height: "calc(100vh - 80px)" }}>
-			{/* Header */}
-			<MainCard sx={{ "& .MuiCardContent-root": { py: "10px !important" } }}>
-				<Stack direction="row" alignItems="flex-start" gap={1.5}>
-					{/* Botón volver — fuera de la columna para no romper alineación entre filas */}
+			{/* Header brand sober */}
+			<Box
+				sx={{
+					position: "relative",
+					overflow: "hidden",
+					px: 2,
+					py: 1.25,
+					borderRadius: 1.5,
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.03),
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+				}}
+			>
+				<Stack direction="row" alignItems="center" gap={1.25}>
 					<Tooltip title="Volver">
 						<IconButton
 							onClick={() => navigate("/documentos/escritos")}
 							sx={{
-								mt: 0.25,
 								flexShrink: 0,
-								p: 1,
-								borderRadius: 1.5,
-								"&:hover": { bgcolor: "action.hover", transform: "translateX(-1px)" },
-								transition: "transform 0.15s",
+								...iconBtnBrandSx,
+								"&:hover": {
+									...(iconBtnBrandSx["&:hover"] as object),
+									transform: "translateX(-1px)",
+								},
+								transition: "transform 0.15s ease, color 0.15s ease, background-color 0.15s ease",
 							}}
 						>
-							<ArrowLeft2 size={18} />
+							<ArrowLeft2 size={18} variant="Linear" />
 						</IconButton>
 					</Tooltip>
 
-					{/* Columna de contenido: ambas filas con el mismo punto de inicio */}
-					<Stack spacing={1} flex={1} minWidth={0}>
-						{/* Fila 1: identidad del documento + acciones principales */}
-						<Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
-							{/* Título inline editable + modelo */}
-							<Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1, minWidth: 0 }}>
+					{/* Identidad del documento */}
+					<Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1, minWidth: 0 }}>
+						<Box
+							sx={{
+								width: 30,
+								height: 30,
+								borderRadius: 1,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+								flexShrink: 0,
+							}}
+						>
+							<DocumentText size={16} variant="Bulk" />
+						</Box>
+						<Stack sx={{ minWidth: 0 }}>
+							<Stack direction="row" alignItems="center" spacing={0.625} sx={{ minWidth: 0 }}>
 								{editingTitle ? (
 									<TextField
 										size="small"
@@ -849,87 +911,107 @@ const DocumentEditorPage = () => {
 										onKeyDown={(e) => e.key === "Enter" && setEditingTitle(false)}
 										autoFocus
 										inputProps={{ maxLength: 160, "data-testid": "editor-title-input" }}
-										sx={{ minWidth: 220 }}
+										sx={{ minWidth: 240, ...inputSx }}
 									/>
 								) : (
 									<Typography
-										variant="body2"
-										fontWeight={600}
 										noWrap
 										onClick={() => setEditingTitle(true)}
 										data-testid="editor-title-text"
 										sx={{
 											cursor: "text",
 											minWidth: 0,
-											maxWidth: 320,
+											maxWidth: 360,
+											fontSize: "0.95rem",
+											fontWeight: 600,
+											letterSpacing: "-0.01em",
 											color: title ? "text.primary" : "text.disabled",
 											borderBottom: "1px dashed transparent",
 											transition: "border-color 0.15s",
-											"&:hover": { borderBottomColor: "text.disabled" },
+											"&:hover": { borderBottomColor: alpha(BRAND_BLUE, 0.4) },
 										}}
 									>
 										{title || "Sin título"}
 									</Typography>
 								)}
-								{templateName && (
-									<>
-										<Typography variant="body2" color="text.disabled" sx={{ flexShrink: 0, userSelect: "none", mx: 0.5, opacity: 0.35 }}>
-											—
-										</Typography>
-										<Typography variant="caption" color="text.secondary" noWrap sx={{ flexShrink: 0, maxWidth: 220 }}>
-											Modelo: {templateName}
-										</Typography>
-									</>
-								)}
 							</Stack>
-
-							<Box sx={{ flexShrink: 0 }} />
-
-							<FormControl size="small" sx={{ minWidth: 120 }}>
-								<InputLabel>Estado</InputLabel>
-								<Select label="Estado" value={status} onChange={(e) => setStatus(e.target.value as RichTextDocumentStatus)}>
-									<MenuItem value="draft">Borrador</MenuItem>
-									<MenuItem value="final">Final</MenuItem>
-								</Select>
-							</FormControl>
-
-							<Tooltip title={saving ? "" : isEdit ? "Actualizar documento" : "Guardar documento"} placement="bottom">
-								<span>
-									<Button
-										variant="contained"
-										size="small"
-										onClick={handleSave}
-										disabled={saving}
-										startIcon={saving ? <CircularProgress size={14} color="inherit" /> : <Save2 size={15} />}
-										data-testid="editor-save-btn"
+							{templateName && (
+								<Stack direction="row" alignItems="center" spacing={0.625}>
+									<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: alpha(BRAND_BLUE, 0.6) }} />
+									<Typography
+										noWrap
+										sx={{
+											fontSize: "0.66rem",
+											fontWeight: 600,
+											letterSpacing: "0.06em",
+											textTransform: "uppercase",
+											color: "text.secondary",
+											maxWidth: 320,
+										}}
 									>
-										{saving ? "Guardando..." : "Guardar"}
-									</Button>
-								</span>
-							</Tooltip>
-							<Tooltip title="Asistente IA">
-								<IconButton
-									size="small"
-									onClick={() => handleOpenAiDrawer()}
-									color={aiDrawerOpen ? "secondary" : "default"}
-									sx={{ borderRadius: 1.5 }}
-								>
-									<AiSparklesIcon size={18} />
-								</IconButton>
-							</Tooltip>
+										Modelo · {templateName}
+									</Typography>
+								</Stack>
+							)}
 						</Stack>
 					</Stack>
+
+					{/* Acciones */}
+					<Stack direction="row" alignItems="center" spacing={1} sx={{ flexShrink: 0 }}>
+						<FormControl size="small" sx={{ minWidth: 130 }}>
+							<InputLabel>Estado</InputLabel>
+							<Select
+								label="Estado"
+								value={status}
+								onChange={(e) => setStatus(e.target.value as RichTextDocumentStatus)}
+								sx={selectSx}
+							>
+								<MenuItem value="draft">Borrador</MenuItem>
+								<MenuItem value="final">Final</MenuItem>
+							</Select>
+						</FormControl>
+
+						<Tooltip title={saving ? "" : isEdit ? "Actualizar documento" : "Guardar documento"} placement="bottom">
+							<span>
+								<Button
+									size="small"
+									onClick={handleSave}
+									disabled={saving}
+									startIcon={saving ? <CircularProgress size={14} color="inherit" /> : <Save2 size={15} variant="Linear" />}
+									data-testid="editor-save-btn"
+									sx={brandPrimarySx}
+								>
+									{saving ? "Guardando..." : "Guardar"}
+								</Button>
+							</span>
+						</Tooltip>
+						<Tooltip title="Asistente IA">
+							<IconButton
+								size="small"
+								onClick={() => handleOpenAiDrawer()}
+								sx={{
+									...iconBtnBrandSx,
+									...(aiDrawerOpen && {
+										color: BRAND_BLUE,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.22)}`,
+									}),
+								}}
+							>
+								<AiSparklesIcon size={18} />
+							</IconButton>
+						</Tooltip>
+					</Stack>
 				</Stack>
-			</MainCard>
+			</Box>
 
 			{/* Editor area */}
 			<Box
 				sx={{
 					flex: 1,
 					minHeight: 0,
-					border: "1px solid",
-					borderColor: "divider",
-					borderRadius: 1,
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+					borderRadius: 1.5,
 					overflow: "hidden",
 					display: "flex",
 					flexDirection: "column",
@@ -978,11 +1060,10 @@ const DocumentEditorPage = () => {
 							sx={{
 								width: 300,
 								flexShrink: 0,
-								borderLeft: "2px solid",
-								borderColor: "primary.light",
+								borderLeft: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 								display: "flex",
 								flexDirection: "column",
-								bgcolor: "background.default",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.03 : 0.015),
 								overflow: "hidden",
 							}}
 						>
@@ -991,25 +1072,26 @@ const DocumentEditorPage = () => {
 								onChange={(_e, v) => setRightTab(v)}
 								variant="fullWidth"
 								sx={{
-									minHeight: 52,
+									minHeight: 48,
 									flexShrink: 0,
-									borderBottom: "1px solid",
-									borderColor: "divider",
+									borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 									"& .MuiTab-root": {
-										minHeight: 52,
-										fontSize: "0.7rem",
+										minHeight: 48,
+										fontSize: "0.72rem",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
 										textTransform: "none",
 										py: 0.5,
-										opacity: 0.5,
-										transition: "all 0.15s",
+										color: "text.secondary",
+										transition: "color 0.15s ease",
+										"&.Mui-selected": { color: BRAND_BLUE },
 									},
-									"& .MuiTab-root.Mui-selected": { opacity: 1, fontWeight: 700 },
+									"& .MuiTabs-indicator": { backgroundColor: BRAND_BLUE, height: 2 },
 								}}
-								TabIndicatorProps={{ style: { height: 3 } }}
 							>
 								<Tab
 									value="fields"
-									icon={<DocumentText size={18} />}
+									icon={<DocumentText size={16} variant="Bulk" />}
 									iconPosition="top"
 									label={
 										<Stack direction="row" alignItems="center" spacing={0.5}>
@@ -1020,7 +1102,7 @@ const DocumentEditorPage = () => {
 													width: 6,
 													height: 6,
 													borderRadius: "50%",
-													bgcolor: pendingFields > 0 ? "warning.main" : "grey.400",
+													bgcolor: pendingFields > 0 ? STALE_AMBER : alpha(BRAND_BLUE, isDark ? 0.35 : 0.25),
 													display: "inline-block",
 													flexShrink: 0,
 												}}
@@ -1030,7 +1112,7 @@ const DocumentEditorPage = () => {
 								/>
 								<Tab
 									value="data"
-									icon={<Setting4 size={18} />}
+									icon={<Setting4 size={16} variant="Bulk" />}
 									iconPosition="top"
 									label={
 										<Stack direction="row" alignItems="center" spacing={0.5}>
@@ -1041,7 +1123,7 @@ const DocumentEditorPage = () => {
 													width: 6,
 													height: 6,
 													borderRadius: "50%",
-													bgcolor: pendingFields > 0 ? "warning.main" : "grey.400",
+													bgcolor: pendingFields > 0 ? STALE_AMBER : alpha(BRAND_BLUE, isDark ? 0.35 : 0.25),
 													display: "inline-block",
 													flexShrink: 0,
 												}}
@@ -1064,7 +1146,7 @@ const DocumentEditorPage = () => {
 											onChange={(_e, val) => setSelectedFolder(val)}
 											size="small"
 											fullWidth
-											renderInput={(params) => <TextField {...params} label="Expediente" placeholder="Buscar..." />}
+											renderInput={(params) => <TextField {...params} label="Expediente" placeholder="Buscar..." sx={inputSx} />}
 											renderOption={(props, option) => (
 												<li {...props} key={option._id}>
 													<Stack>
@@ -1090,7 +1172,7 @@ const DocumentEditorPage = () => {
 											onChange={(_e, val) => setSelectedContact(val)}
 											size="small"
 											fullWidth
-											renderInput={(params) => <TextField {...params} label="Actor" placeholder="Buscar..." />}
+											renderInput={(params) => <TextField {...params} label="Actor" placeholder="Buscar..." sx={inputSx} />}
 											renderOption={(props, option) => (
 												<li {...props} key={option._id}>
 													<Stack spacing={0}>
@@ -1111,7 +1193,7 @@ const DocumentEditorPage = () => {
 											onChange={(_e, val) => setSelectedContraparte(val)}
 											size="small"
 											fullWidth
-											renderInput={(params) => <TextField {...params} label="Demandado" placeholder="Buscar..." />}
+											renderInput={(params) => <TextField {...params} label="Demandado" placeholder="Buscar..." sx={inputSx} />}
 											renderOption={(props, option) => (
 												<li {...props} key={option._id}>
 													<Stack spacing={0}>
@@ -1129,7 +1211,7 @@ const DocumentEditorPage = () => {
 											fullWidth
 											noOptionsText={selectedFolder ? "Sin cálculos para este expediente" : "Seleccioná un expediente primero"}
 											disabled={!selectedFolder}
-											renderInput={(params) => <TextField {...params} label="Cálculo" placeholder="Buscar..." />}
+											renderInput={(params) => <TextField {...params} label="Cálculo" placeholder="Buscar..." sx={inputSx} />}
 											renderOption={(props, option) => (
 												<li {...props} key={option._id}>
 													<Stack spacing={0}>
@@ -1180,6 +1262,7 @@ const DocumentEditorPage = () => {
 													{...params}
 													label="Movimiento"
 													placeholder="Buscar..."
+													sx={inputSx}
 													InputProps={{
 														...params.InputProps,
 														...(movementsLimited
@@ -1187,10 +1270,7 @@ const DocumentEditorPage = () => {
 																	endAdornment: (
 																		<>
 																			<Tooltip title="Plan gratuito: se muestran solo los últimos movimientos." placement="top" arrow>
-																				<Warning2
-																					size={14}
-																					style={{ color: "var(--mui-palette-warning-main, #ed6c02)", cursor: "help", flexShrink: 0 }}
-																				/>
+																				<Warning2 size={14} style={{ color: STALE_AMBER, cursor: "help", flexShrink: 0 }} />
 																			</Tooltip>
 																			{params.InputProps.endAdornment}
 																		</>
@@ -1244,6 +1324,7 @@ const DocumentEditorPage = () => {
 													{...params}
 													label="Matrícula"
 													placeholder="Seleccionar..."
+													sx={inputSx}
 													InputProps={{
 														...params.InputProps,
 														...(userSkills.length === 0
@@ -1255,10 +1336,7 @@ const DocumentEditorPage = () => {
 																				placement="top"
 																				arrow
 																			>
-																				<Warning2
-																					size={14}
-																					style={{ color: "var(--mui-palette-warning-main, #ed6c02)", cursor: "help", flexShrink: 0 }}
-																				/>
+																				<Warning2 size={14} style={{ color: STALE_AMBER, cursor: "help", flexShrink: 0 }} />
 																			</Tooltip>
 																			{params.InputProps.endAdornment}
 																		</>
@@ -1283,24 +1361,30 @@ const DocumentEditorPage = () => {
 												</li>
 											)}
 										/>
-										<Divider />
+										<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />
 										{/* Contexto de representación para el asistente IA */}
 										<Stack spacing={1}>
-											<Typography
-												variant="caption"
-												color="text.secondary"
-												fontWeight={600}
-												sx={{ textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.65rem" }}
-											>
-												Asistente IA
-											</Typography>
+											<Stack direction="row" alignItems="center" spacing={0.875}>
+												<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+												<Typography
+													sx={{
+														fontSize: "0.62rem",
+														fontWeight: 600,
+														letterSpacing: "0.08em",
+														textTransform: "uppercase",
+														color: BRAND_BLUE,
+													}}
+												>
+													Asistente IA
+												</Typography>
+											</Stack>
 											<FormControl size="small" fullWidth>
 												<InputLabel sx={{ fontSize: "0.78rem" }}>Parte representada</InputLabel>
 												<Select
 													label="Parte representada"
 													value={representedParty}
 													onChange={(e) => setRepresentedParty(e.target.value as typeof representedParty)}
-													sx={{ fontSize: "0.78rem" }}
+													sx={selectSx}
 												>
 													<MenuItem value="">
 														<em>Sin especificar</em>
@@ -1315,7 +1399,7 @@ const DocumentEditorPage = () => {
 													label="Tipo de representación"
 													value={representationType}
 													onChange={(e) => setRepresentationType(e.target.value as typeof representationType)}
-													sx={{ fontSize: "0.78rem" }}
+													sx={selectSx}
 												>
 													<MenuItem value="">
 														<em>Sin especificar</em>
@@ -1325,7 +1409,7 @@ const DocumentEditorPage = () => {
 												</Select>
 											</FormControl>
 										</Stack>
-										<Divider />
+										<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />
 										<Tooltip
 											title={
 												pendingFields === 0
@@ -1335,9 +1419,7 @@ const DocumentEditorPage = () => {
 										>
 											<span>
 												<Button
-													variant="contained"
 													size="small"
-													color="secondary"
 													fullWidth
 													onClick={handleResolve}
 													disabled={!canResolve || resolving}
@@ -1345,31 +1427,56 @@ const DocumentEditorPage = () => {
 														resolving ? (
 															<CircularProgress size={14} color="inherit" />
 														) : resolvedCount > 0 ? (
-															<Refresh size={14} />
+															<Refresh size={14} variant="Linear" />
 														) : (
-															<MagicStar size={14} />
+															<MagicStar size={14} variant="Bulk" />
 														)
 													}
+													sx={{ ...brandPrimarySx, minWidth: 0 }}
 												>
 													{resolving ? "Resolviendo..." : resolvedCount > 0 ? "Resolver de nuevo" : "Resolver campos"}
 												</Button>
 											</span>
 										</Tooltip>
 										{pendingFields > 0 && (
-											<Chip
-												label={`${pendingFields} campo${pendingFields !== 1 ? "s" : ""} sin resolver`}
-												size="small"
-												color="warning"
-												variant="outlined"
-											/>
+											<Box
+												sx={{
+													display: "inline-flex",
+													alignSelf: "flex-start",
+													alignItems: "center",
+													gap: 0.625,
+													px: 0.875,
+													py: 0.25,
+													borderRadius: 0.75,
+													bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
+													border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+												}}
+											>
+												<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: STALE_AMBER }} />
+												<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
+													{pendingFields} campo{pendingFields !== 1 ? "s" : ""} sin resolver
+												</Typography>
+											</Box>
 										)}
 										{resolvedCount > 0 && pendingFields === 0 && (
-											<Chip
-												label={`${resolvedCount} campo${resolvedCount !== 1 ? "s" : ""} resuelto${resolvedCount !== 1 ? "s" : ""}`}
-												size="small"
-												color="success"
-												variant="outlined"
-											/>
+											<Box
+												sx={{
+													display: "inline-flex",
+													alignSelf: "flex-start",
+													alignItems: "center",
+													gap: 0.625,
+													px: 0.875,
+													py: 0.25,
+													borderRadius: 0.75,
+													bgcolor: alpha(LIVE_GREEN, isDark ? 0.16 : 0.1),
+													border: `1px solid ${alpha(LIVE_GREEN, isDark ? 0.32 : 0.22)}`,
+												}}
+											>
+												<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: LIVE_GREEN }} />
+												<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: LIVE_GREEN, letterSpacing: "0.01em", lineHeight: 1 }}>
+													{resolvedCount} campo{resolvedCount !== 1 ? "s" : ""} resuelto{resolvedCount !== 1 ? "s" : ""}
+												</Typography>
+											</Box>
 										)}
 									</Stack>
 								</Box>
@@ -1397,24 +1504,65 @@ const DocumentEditorPage = () => {
 				anchor="right"
 				open={aiDrawerOpen}
 				onClose={() => setAiDrawerOpen(false)}
-				PaperProps={{ sx: { width: 440, display: "flex", flexDirection: "column" } }}
+				PaperProps={{
+					sx: {
+						width: 440,
+						display: "flex",
+						flexDirection: "column",
+						borderLeft: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+					},
+				}}
 			>
 				<Stack
 					direction="row"
 					alignItems="center"
 					justifyContent="space-between"
 					px={2}
-					py={1.25}
-					sx={{ borderBottom: "1px solid", borderColor: "divider", flexShrink: 0 }}
+					py={1.5}
+					sx={{
+						borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.03),
+						flexShrink: 0,
+					}}
 				>
-					<Stack direction="row" alignItems="center" spacing={1}>
-						<AiSparklesIcon size={16} />
-						<Typography variant="subtitle2" fontWeight={600}>
-							Asistente IA
-						</Typography>
+					<Stack direction="row" alignItems="center" spacing={1.25}>
+						<Box
+							sx={{
+								width: 32,
+								height: 32,
+								borderRadius: 1,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+							}}
+						>
+							<AiSparklesIcon size={16} />
+						</Box>
+						<Stack spacing={0.125}>
+							<Stack direction="row" alignItems="center" spacing={0.625}>
+								<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+								<Typography
+									sx={{
+										fontSize: "0.6rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+									}}
+								>
+									Inteligencia artificial
+								</Typography>
+							</Stack>
+							<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>
+								Asistente IA
+							</Typography>
+						</Stack>
 					</Stack>
-					<IconButton size="small" onClick={() => setAiDrawerOpen(false)}>
-						<CloseCircle size={18} />
+					<IconButton size="small" onClick={() => setAiDrawerOpen(false)} sx={iconBtnBrandSx}>
+						<CloseSquare size={18} variant="Linear" />
 					</IconButton>
 				</Stack>
 				<Box sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>

@@ -1,19 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-	Alert,
 	Autocomplete,
 	Box,
 	Button,
-	CardActions,
-	Chip,
 	CircularProgress,
 	Dialog,
 	DialogActions,
 	DialogContent,
-	DialogContentText,
 	DialogTitle,
-	Divider,
 	Fab,
 	FormControl,
 	Grid,
@@ -22,7 +17,6 @@ import {
 	Menu,
 	MenuItem as MuiMenuItem,
 	Pagination,
-	Paper,
 	Select,
 	Skeleton,
 	Stack,
@@ -38,14 +32,15 @@ import {
 	Tooltip,
 	Typography,
 	useMediaQuery,
-	useTheme,
+	Divider,
 } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 import {
 	Add,
 	ArrowDown2,
+	CloseSquare,
 	DocumentDownload,
 	DocumentText,
-	Edit2,
 	Eye,
 	FolderOpen,
 	More,
@@ -72,63 +67,14 @@ import { type PostalDocumentType } from "types/postal-document";
 import { type PostalTrackingType } from "types/postal-tracking";
 import { type FolderData } from "types/folder";
 import CreatePostalDocumentModal from "sections/apps/postal-documents/CreatePostalDocumentModal";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 const VALID_CODE_IDS = [
-	"CC",
-	"CD",
-	"CL",
-	"CM",
-	"CO",
-	"CP",
-	"DE",
-	"DI",
-	"EC",
-	"EE",
-	"EO",
-	"EP",
-	"GC",
-	"GD",
-	"GE",
-	"GF",
-	"GO",
-	"GR",
-	"GS",
-	"HC",
-	"HD",
-	"HE",
-	"HO",
-	"HU",
-	"HX",
-	"IN",
-	"IS",
-	"JP",
-	"LC",
-	"LS",
-	"ND",
-	"MD",
-	"ME",
-	"MC",
-	"MS",
-	"MU",
-	"MX",
-	"OL",
-	"PC",
-	"PP",
-	"RD",
-	"RE",
-	"RP",
-	"RR",
-	"SD",
-	"SL",
-	"SP",
-	"SR",
-	"ST",
-	"TC",
-	"TD",
-	"TL",
-	"UP",
+	"CC", "CD", "CL", "CM", "CO", "CP", "DE", "DI", "EC", "EE", "EO", "EP", "GC", "GD", "GE", "GF", "GO", "GR", "GS",
+	"HC", "HD", "HE", "HO", "HU", "HX", "IN", "IS", "JP", "LC", "LS", "ND", "MD", "ME", "MC", "MS", "MU", "MX", "OL",
+	"PC", "PP", "RD", "RE", "RP", "RR", "SD", "SL", "SP", "SR", "ST", "TC", "TD", "TL", "UP",
 ];
 
 const TRACKING_SLUGS = ["telegrama_laboral"];
@@ -155,7 +101,7 @@ interface DocRow {
 
 const PAGE_SIZE = 15;
 
-// ── Status helpers ─────────────────────────────────────────────────────────────
+// ── Status configs (brand-aware) ───────────────────────────────────────────────
 
 const POSTAL_STATUS_LABELS: Record<string, string> = {
 	draft: "Borrador",
@@ -164,15 +110,7 @@ const POSTAL_STATUS_LABELS: Record<string, string> = {
 	archived: "Archivado",
 };
 
-const POSTAL_STATUS_COLORS: Record<string, "default" | "warning" | "success" | "info"> = {
-	draft: "warning",
-	generated: "success",
-	sent: "info",
-	archived: "default",
-};
-
 const RT_STATUS_LABELS: Record<string, string> = { draft: "Borrador", final: "Final" };
-const RT_STATUS_COLORS: Record<string, "default" | "success"> = { draft: "default", final: "success" };
 
 function formatDate(iso?: string | null) {
 	if (!iso) return "—";
@@ -211,17 +149,348 @@ function toDocRow(doc: PostalDocumentType | RichTextDocument, kind: "postal" | "
 	}
 }
 
+// ── Brand Pills ────────────────────────────────────────────────────────────────
+
+const BrandPill = ({ color, label, dot = true }: { color: string; label: string; dot?: boolean }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	return (
+		<Box
+			sx={{
+				display: "inline-flex",
+				alignItems: "center",
+				gap: 0.625,
+				px: 0.875,
+				py: 0.25,
+				borderRadius: 0.75,
+				bgcolor: alpha(color, isDark ? 0.16 : 0.1),
+				border: `1px solid ${alpha(color, isDark ? 0.32 : 0.22)}`,
+			}}
+		>
+			{dot && <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: color }} />}
+			<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color, letterSpacing: "0.01em", lineHeight: 1 }}>
+				{label}
+			</Typography>
+		</Box>
+	);
+};
+
+const PostalStatusPill = ({ value }: { value: string }) => {
+	const theme = useTheme();
+	const map: Record<string, string> = {
+		draft: STALE_AMBER,
+		generated: LIVE_GREEN,
+		sent: BRAND_BLUE,
+		archived: theme.palette.text.secondary,
+	};
+	const color = map[value] ?? theme.palette.text.secondary;
+	return <BrandPill color={color} label={POSTAL_STATUS_LABELS[value] ?? value} />;
+};
+
+const RichTextStatusPill = ({ value }: { value: string }) => {
+	const theme = useTheme();
+	const map: Record<string, string> = {
+		final: LIVE_GREEN,
+		draft: theme.palette.text.secondary,
+	};
+	const color = map[value] ?? theme.palette.text.secondary;
+	return <BrandPill color={color} label={RT_STATUS_LABELS[value] ?? value} />;
+};
+
+const TypePill = ({ kind }: { kind: "postal" | "richtext" }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const isPostal = kind === "postal";
+	const color = isPostal ? BRAND_BLUE : theme.palette.text.secondary;
+	const Icon = isPostal ? DocumentDownload : DocumentText;
+	return (
+		<Box
+			sx={{
+				display: "inline-flex",
+				alignItems: "center",
+				gap: 0.5,
+				px: 0.75,
+				py: 0.25,
+				borderRadius: 0.75,
+				bgcolor: alpha(color, isDark ? 0.14 : 0.08),
+				border: `1px solid ${alpha(color, isDark ? 0.28 : 0.18)}`,
+				color,
+			}}
+		>
+			<Icon size={11} variant="Linear" />
+			<Typography sx={{ fontSize: "0.66rem", fontWeight: 600, color, letterSpacing: "0.01em", lineHeight: 1 }}>
+				{isPostal ? "Postal" : "Escrito"}
+			</Typography>
+		</Box>
+	);
+};
+
+const TrackingMicroPill = () => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	return (
+		<Box
+			sx={{
+				display: "inline-flex",
+				alignItems: "center",
+				gap: 0.5,
+				px: 0.625,
+				py: 0.125,
+				borderRadius: 0.75,
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+			}}
+		>
+			<Routing size={9} variant="Linear" color={BRAND_BLUE} />
+			<Typography sx={{ fontSize: "0.6rem", fontWeight: 600, color: BRAND_BLUE, letterSpacing: "0.04em", lineHeight: 1 }}>
+				Seguimiento
+			</Typography>
+		</Box>
+	);
+};
+
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 
 const RowSkeleton = () => (
 	<TableRow>
-		{[220, 140, 90, 100, 90, 100].map((w, i) => (
+		{[220, 140, 90, 100, 90, 60].map((w, i) => (
 			<TableCell key={i}>
 				<Skeleton variant="text" width={w} />
 			</TableCell>
 		))}
 	</TableRow>
 );
+
+// ── Shared brand styles ────────────────────────────────────────────────────────
+
+const useBrandStyles = () => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+
+	const brandPrimaryButtonSx = {
+		minWidth: 130,
+		textTransform: "none" as const,
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		borderRadius: 1.25,
+		boxShadow: "none",
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+		"&.Mui-disabled": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.24 : 0.4), color: alpha("#fff", 0.9) },
+	};
+
+	const ghostCancelSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: "text.secondary",
+		borderRadius: 1.25,
+		border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+		px: 2,
+		py: 0.75,
+		"&:hover": {
+			color: BRAND_BLUE,
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+			borderColor: alpha(BRAND_BLUE, 0.28),
+		},
+	};
+
+	const iconBtnSx = {
+		width: 32,
+		height: 32,
+		borderRadius: 1,
+		color: "text.secondary",
+		transition: "color 0.15s ease, background-color 0.15s ease",
+		"&:hover": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) },
+	};
+
+	const iconBtnDestructiveSx = {
+		...iconBtnSx,
+		"&:hover": { color: theme.palette.error.main, bgcolor: alpha(theme.palette.error.main, isDark ? 0.14 : 0.08) },
+	};
+
+	const tableSx = {
+		"& .MuiTableHead-root .MuiTableCell-root": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+			color: "text.secondary",
+			fontSize: "0.68rem",
+			fontWeight: 600,
+			letterSpacing: "0.06em",
+			textTransform: "uppercase",
+			borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+			py: 1.25,
+		},
+		"& .MuiTableBody-root .MuiTableRow-root": {
+			transition: "background-color 0.12s ease",
+		},
+		"& .MuiTableBody-root .MuiTableRow-root:hover": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+		},
+		"& .MuiTableBody-root .MuiTableCell-root": {
+			borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.1 : 0.06)}`,
+		},
+	};
+
+	const dialogPaperSx = {
+		borderRadius: 2,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+		boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+		overflow: "hidden",
+	};
+
+	const inputSx = {
+		"& .MuiOutlinedInput-root": {
+			borderRadius: 1.25,
+			fontSize: "0.875rem",
+			"& fieldset": {
+				borderColor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.14),
+				transition: "border-color 0.15s ease",
+			},
+			"&:hover fieldset": {
+				borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.28),
+			},
+			"&.Mui-focused fieldset": {
+				borderColor: BRAND_BLUE,
+				borderWidth: 1,
+			},
+		},
+	};
+
+	const menuPaperSx = {
+		mt: 0.5,
+		minWidth: 220,
+		borderRadius: 1.5,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+		boxShadow: `0 10px 28px ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)}`,
+		"& .MuiMenuItem-root": {
+			fontSize: "0.82rem",
+			letterSpacing: "-0.005em",
+			py: 0.875,
+			"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.06) },
+		},
+	};
+
+	const dialogHeaderSx = {
+		position: "relative" as const,
+		overflow: "hidden",
+		p: { xs: 2.25, sm: 2.5 },
+		bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+		borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+	};
+
+	return { brandPrimaryButtonSx, ghostCancelSx, iconBtnSx, iconBtnDestructiveSx, tableSx, dialogPaperSx, inputSx, menuPaperSx, dialogHeaderSx, isDark };
+};
+
+// ── Dialog header atmosférico reusable ─────────────────────────────────────────
+
+const DialogBrandHeader = ({
+	eyebrow,
+	title,
+	subtitle,
+	icon,
+	onClose,
+}: {
+	eyebrow: string;
+	title: string;
+	subtitle?: string;
+	icon: React.ReactNode;
+	onClose: () => void;
+}) => {
+	const { isDark, dialogHeaderSx, iconBtnSx } = useBrandStyles();
+	return (
+		<Box sx={dialogHeaderSx}>
+			{/* Radial blob */}
+			<Box
+				sx={{
+					position: "absolute",
+					top: -60,
+					right: -40,
+					width: 220,
+					height: 220,
+					borderRadius: "50%",
+					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
+					pointerEvents: "none",
+				}}
+			/>
+			{/* Dot grid */}
+			<Box
+				sx={{
+					position: "absolute",
+					inset: 0,
+					backgroundImage: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)} 1px, transparent 1px)`,
+					backgroundSize: "20px 20px",
+					maskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+					WebkitMaskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+					opacity: 0.55,
+					pointerEvents: "none",
+				}}
+			/>
+			<Stack direction="row" alignItems="center" spacing={1.5} sx={{ position: "relative" }}>
+				<Box
+					sx={{
+						width: 40,
+						height: 40,
+						borderRadius: 1.5,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+						color: BRAND_BLUE,
+						flexShrink: 0,
+					}}
+				>
+					{icon}
+				</Box>
+				<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+					<Stack direction="row" spacing={0.75} alignItems="center">
+						<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+						<Typography
+							sx={{
+								fontSize: "0.6rem",
+								fontWeight: 600,
+								letterSpacing: "0.08em",
+								textTransform: "uppercase",
+								color: "text.secondary",
+							}}
+						>
+							{eyebrow}
+						</Typography>
+					</Stack>
+					<Typography
+						sx={{
+							fontSize: "1.05rem",
+							fontWeight: 600,
+							letterSpacing: "-0.015em",
+							color: "text.primary",
+							textWrap: "balance",
+							overflow: "hidden",
+							textOverflow: "ellipsis",
+						}}
+					>
+						{title}
+					</Typography>
+					{subtitle && (
+						<Typography
+							sx={{
+								fontSize: "0.78rem",
+								color: "text.secondary",
+								letterSpacing: "-0.005em",
+								textWrap: "pretty",
+							}}
+						>
+							{subtitle}
+						</Typography>
+					)}
+				</Stack>
+				<IconButton onClick={onClose} sx={iconBtnSx} aria-label="cerrar">
+					<CloseSquare size={20} variant="Linear" />
+				</IconButton>
+			</Stack>
+		</Box>
+	);
+};
 
 // ── TemplatePickerDialog ───────────────────────────────────────────────────────
 
@@ -234,15 +503,6 @@ const CATEGORY_LABELS: Record<RichTextTemplateCategory, string> = {
 	otro: "Otro",
 };
 
-const CATEGORY_COLORS: Record<RichTextTemplateCategory, "default" | "primary" | "secondary" | "info" | "success" | "warning" | "error"> = {
-	civil: "info",
-	laboral: "warning",
-	penal: "error",
-	familia: "secondary",
-	societario: "primary",
-	otro: "default",
-};
-
 interface TemplatePickerDialogProps {
 	open: boolean;
 	onClose: () => void;
@@ -252,6 +512,7 @@ const TemplatePickerDialog = ({ open, onClose }: TemplatePickerDialogProps) => {
 	const navigate = useNavigate();
 	const dispatch = useDispatch();
 	const { templates, isLoader } = useSelector((state: any) => state.richTextDocumentsReducer);
+	const { brandPrimaryButtonSx, ghostCancelSx, inputSx, dialogPaperSx, isDark } = useBrandStyles();
 
 	const [search, setSearch] = useState("");
 	const [categoryFilter, setCategoryFilter] = useState<RichTextTemplateCategory | "">("");
@@ -284,25 +545,24 @@ const TemplatePickerDialog = ({ open, onClose }: TemplatePickerDialogProps) => {
 	};
 
 	return (
-		<Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-			<DialogTitle>
-				<Stack spacing={0.5}>
-					<Typography variant="h5">Elegir modelo</Typography>
-					<Typography variant="body2" color="text.secondary">
-						Seleccioná un modelo para pre-cargar su contenido y campos dinámicos.
-					</Typography>
-				</Stack>
-			</DialogTitle>
+		<Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: dialogPaperSx }}>
+			<DialogBrandHeader
+				eyebrow="Mis modelos"
+				title="Elegir modelo"
+				subtitle="Seleccioná un modelo para pre-cargar contenido y campos dinámicos."
+				icon={<DocumentText size={20} variant="Bulk" />}
+				onClose={onClose}
+			/>
 
-			<DialogContent dividers sx={{ pb: 0 }}>
+			<DialogContent sx={{ pb: 0, pt: 2.5 }}>
 				{/* Filters */}
-				<Stack direction="row" spacing={1.5} mb={2}>
+				<Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} mb={2}>
 					<TextField
 						size="small"
 						placeholder="Buscar modelo..."
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
-						sx={{ flex: 1 }}
+						sx={{ flex: 1, ...inputSx }}
 						InputProps={{
 							startAdornment: (
 								<InputAdornment position="start">
@@ -316,7 +576,14 @@ const TemplatePickerDialog = ({ open, onClose }: TemplatePickerDialogProps) => {
 						value={categoryFilter}
 						onChange={(e) => setCategoryFilter(e.target.value as RichTextTemplateCategory | "")}
 						displayEmpty
-						sx={{ minWidth: 160 }}
+						sx={{
+							minWidth: { xs: "100%", sm: 180 },
+							borderRadius: 1.25,
+							fontSize: "0.875rem",
+							"& fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.14) },
+							"&:hover fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.28) },
+							"&.Mui-focused fieldset": { borderColor: BRAND_BLUE },
+						}}
 					>
 						<MuiMenuItem value="">Todas las categorías</MuiMenuItem>
 						{(Object.keys(CATEGORY_LABELS) as RichTextTemplateCategory[]).map((cat) => (
@@ -330,67 +597,95 @@ const TemplatePickerDialog = ({ open, onClose }: TemplatePickerDialogProps) => {
 				{/* Template list */}
 				{isLoader ? (
 					<Stack alignItems="center" justifyContent="center" py={6}>
-						<CircularProgress size={32} />
+						<CircularProgress size={32} sx={{ color: BRAND_BLUE }} />
 					</Stack>
 				) : filtered.length === 0 ? (
 					<Stack alignItems="center" justifyContent="center" spacing={1} py={6}>
-						<Typography variant="body2" color="text.secondary">
+						<Box
+							sx={{
+								width: 48,
+								height: 48,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+							}}
+						>
+							<DocumentText size={22} variant="Bulk" />
+						</Box>
+						<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", textAlign: "center", textWrap: "pretty" }}>
 							{search || categoryFilter
 								? "No hay modelos que coincidan con los filtros."
 								: "Todavía no creaste ningún modelo. Podés crear uno desde «Documentos › Modelos»."}
 						</Typography>
 					</Stack>
 				) : (
-					<Box sx={{ maxHeight: 360, overflowY: "auto", pr: 0.5 }}>
-						<Stack spacing={1} pb={2}>
+					<Box sx={{ maxHeight: 360, overflowY: "auto", pr: 0.5, pb: 1 }}>
+						<Stack spacing={1}>
 							{filtered.map((tpl) => {
 								const isSelected = selected?._id === tpl._id;
 								return (
-									<Paper
+									<Box
 										key={tpl._id}
-										variant="outlined"
 										onClick={() => setSelected(isSelected ? null : tpl)}
 										sx={{
-											p: 1.5,
+											p: 1.25,
+											borderRadius: 1.25,
 											cursor: "pointer",
-											borderColor: isSelected ? "primary.main" : "divider",
-											borderWidth: isSelected ? 2 : 1,
-											bgcolor: isSelected ? "primary.lighter" : "background.paper",
-											"&:hover": { borderColor: "primary.light", bgcolor: isSelected ? "primary.lighter" : "action.hover" },
-											transition: "border-color 0.15s, background-color 0.15s",
+											bgcolor: isSelected ? alpha(BRAND_BLUE, isDark ? 0.14 : 0.06) : "background.paper",
+											border: `1px solid ${
+												isSelected ? alpha(BRAND_BLUE, 0.55) : alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)
+											}`,
+											transition: "border-color 0.15s ease, background-color 0.15s ease",
+											"&:hover": {
+												borderColor: alpha(BRAND_BLUE, isSelected ? 0.65 : 0.32),
+												bgcolor: isSelected ? alpha(BRAND_BLUE, isDark ? 0.18 : 0.08) : alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+											},
 										}}
 									>
 										<Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
 											<Stack spacing={0.5} flex={1} minWidth={0}>
-												<Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" gap={0.5}>
-													<Typography variant="body2" fontWeight={600}>
+												<Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap" gap={0.5}>
+													<Typography
+														sx={{
+															fontSize: "0.875rem",
+															fontWeight: 600,
+															letterSpacing: "-0.005em",
+															color: "text.primary",
+														}}
+													>
 														{tpl.name}
 													</Typography>
-													<Chip
-														label={CATEGORY_LABELS[tpl.category]}
-														size="small"
-														color={CATEGORY_COLORS[tpl.category]}
-														variant="outlined"
-														sx={{ height: 18, fontSize: "0.65rem" }}
-													/>
+													<BrandPill color={BRAND_BLUE} label={CATEGORY_LABELS[tpl.category]} dot={false} />
 												</Stack>
 												{tpl.description && (
-													<Typography variant="caption" color="text.secondary" noWrap>
+													<Typography
+														sx={{ fontSize: "0.75rem", color: "text.secondary", letterSpacing: "-0.005em" }}
+														noWrap
+													>
 														{tpl.description}
 													</Typography>
 												)}
 											</Stack>
 											{tpl.mergeFields?.length > 0 && (
-												<Chip
-													label={`${tpl.mergeFields.length} campo${tpl.mergeFields.length !== 1 ? "s" : ""}`}
-													size="small"
-													variant="outlined"
-													color="default"
-													sx={{ flexShrink: 0, height: 20, fontSize: "0.65rem" }}
-												/>
+												<Typography
+													sx={{
+														fontSize: "0.65rem",
+														fontWeight: 600,
+														color: "text.secondary",
+														letterSpacing: "0.04em",
+														textTransform: "uppercase",
+														flexShrink: 0,
+													}}
+												>
+													{tpl.mergeFields.length} campo{tpl.mergeFields.length !== 1 ? "s" : ""}
+												</Typography>
 											)}
 										</Stack>
-									</Paper>
+									</Box>
 								);
 							})}
 						</Stack>
@@ -399,14 +694,14 @@ const TemplatePickerDialog = ({ open, onClose }: TemplatePickerDialogProps) => {
 			</DialogContent>
 
 			<DialogActions sx={{ px: 3, py: 2, justifyContent: "space-between" }}>
-				<Button variant="text" color="secondary" onClick={handleBlank} data-testid="picker-blank-btn">
+				<Button variant="text" onClick={handleBlank} data-testid="picker-blank-btn" sx={ghostCancelSx}>
 					Continuar sin modelo
 				</Button>
-				<Stack direction="row" spacing={1}>
-					<Button variant="outlined" onClick={onClose}>
+				<Stack direction="row" spacing={1.25}>
+					<Button onClick={onClose} sx={ghostCancelSx}>
 						Cancelar
 					</Button>
-					<Button variant="contained" onClick={handleContinue} disabled={!selected} data-testid="picker-continue-btn">
+					<Button onClick={handleContinue} disabled={!selected} data-testid="picker-continue-btn" sx={brandPrimaryButtonSx}>
 						Crear documento
 					</Button>
 				</Stack>
@@ -430,6 +725,8 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 	const folders: FolderData[] = useSelector((state: any) => state.folder?.folders || []);
 	const trackings: PostalTrackingType[] = useSelector((state: any) => state.postalTrackingReducer?.allTrackings || []);
 	const userId = useSelector((state: any) => state.auth?.user?._id);
+	const { brandPrimaryButtonSx, ghostCancelSx, inputSx, dialogPaperSx, isDark } = useBrandStyles();
+	const theme = useTheme();
 
 	const isPostal = docRow?.kind === "postal";
 	const supportsTracking = isPostal && Boolean(docRow?.supportsTracking);
@@ -437,10 +734,10 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 	const [tab, setTab] = useState(0);
 	const [submitting, setSubmitting] = useState(false);
 
-	// ── Folder tab ──
+	// Folder
 	const [selectedFolder, setSelectedFolder] = useState<FolderData | null>(null);
 
-	// ── Tracking tab ──
+	// Tracking
 	const [trackingTab, setTrackingTab] = useState(0);
 	const [loadingTrackings, setLoadingTrackings] = useState(false);
 	const [codeId, setCodeId] = useState("TC");
@@ -458,11 +755,9 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 		setLabel(docRow.title || "");
 		setSelectedTracking(null);
 
-		// Pre-select current linked folder
 		const currentFolder = folders.find((f) => f._id === docRow.linkedFolderId) || null;
 		setSelectedFolder(currentFolder);
 
-		// Load data if needed
 		if (folders.length === 0 && userId) dispatch(getFoldersByUserId(userId) as any);
 		if (isPostal && supportsTracking) {
 			setLoadingTrackings(true);
@@ -472,7 +767,6 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 
 	const activeFolders = folders.filter((f: any) => f.status !== "archived");
 
-	// ── Folder save ──
 	const handleSaveFolder = async () => {
 		if (!docRow) return;
 		setSubmitting(true);
@@ -496,7 +790,6 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 		setSubmitting(false);
 	};
 
-	// ── Create tracking ──
 	const numberIdValid = /^\d{9}$/.test(numberId);
 
 	const handleCreateTracking = async () => {
@@ -528,7 +821,6 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 		setSubmitting(false);
 	};
 
-	// ── Link existing tracking ──
 	const folderConflict = selectedTracking
 		? selectedTracking.folderId && docRow?.linkedFolderId && selectedTracking.folderId !== docRow.linkedFolderId
 		: false;
@@ -568,27 +860,42 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 
 	if (!docRow) return null;
 
-	return (
-		<Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-			<DialogTitle>
-				<Stack spacing={0.5}>
-					<Typography variant="h5">Vincular</Typography>
-					<Typography variant="body2" color="text.secondary">
-						{docRow.title}
-					</Typography>
-				</Stack>
-			</DialogTitle>
+	const brandTabsSx = {
+		"& .MuiTab-root": {
+			textTransform: "none",
+			fontWeight: 600,
+			fontSize: "0.82rem",
+			letterSpacing: "-0.005em",
+			color: "text.secondary",
+			minHeight: 40,
+			"&.Mui-selected": { color: BRAND_BLUE },
+		},
+		"& .MuiTabs-indicator": { backgroundColor: BRAND_BLUE, height: 2 },
+	};
 
-			<Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 3, borderBottom: 1, borderColor: "divider" }}>
+	return (
+		<Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: dialogPaperSx }}>
+			<DialogBrandHeader
+				eyebrow="Vincular documento"
+				title={docRow.title}
+				subtitle="Asociá este documento a una carpeta o seguimiento postal."
+				icon={<Routing size={20} variant="Bulk" />}
+				onClose={onClose}
+			/>
+
+			<Tabs
+				value={tab}
+				onChange={(_, v) => setTab(v)}
+				sx={{ px: 3, borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`, ...brandTabsSx }}
+			>
 				<Tab label="Carpeta" />
 				{supportsTracking && <Tab label="Seguimiento postal" />}
 			</Tabs>
 
 			<DialogContent sx={{ pt: 2.5, minHeight: 240, display: "flex", flexDirection: "column" }}>
-				{/* ── Carpeta ── */}
 				{tab === 0 && (
 					<Stack spacing={2}>
-						<Typography variant="body2" color="text.secondary">
+						<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 							Vinculá este documento a una carpeta de tu lista.
 						</Typography>
 						<Autocomplete
@@ -601,29 +908,24 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 							renderOption={(props, f: FolderData) => (
 								<Box component="li" {...props} key={f._id}>
 									<Stack>
-										<Typography variant="body2" fontWeight={500}>
-											{f.folderName}
-										</Typography>
+										<Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{f.folderName}</Typography>
 										{f.folderFuero && (
-											<Typography variant="caption" color="text.secondary">
-												{f.folderFuero}
-											</Typography>
+											<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>{f.folderFuero}</Typography>
 										)}
 									</Stack>
 								</Box>
 							)}
-							renderInput={(params) => <TextField {...params} label="Buscar carpeta..." />}
+							renderInput={(params) => <TextField {...params} label="Buscar carpeta..." sx={inputSx} />}
 							noOptionsText="Sin carpetas disponibles"
 						/>
 						{docRow.linkedFolderId && !selectedFolder && (
-							<Typography variant="caption" color="warning.main">
+							<Typography sx={{ fontSize: "0.72rem", color: STALE_AMBER, letterSpacing: "-0.005em" }}>
 								Si confirmás sin seleccionar una carpeta, se eliminará la vinculación actual.
 							</Typography>
 						)}
 					</Stack>
 				)}
 
-				{/* ── Seguimiento postal (solo para docs postales que lo soporten) ── */}
 				{tab === 1 && supportsTracking && (
 					<Stack direction="row" sx={{ flex: 1, minHeight: 0 }}>
 						<Tabs
@@ -631,11 +933,16 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 							onChange={(_, v) => setTrackingTab(v)}
 							orientation="vertical"
 							sx={{
-								borderRight: 1,
-								borderColor: "divider",
-								minWidth: 140,
+								borderRight: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+								minWidth: 150,
 								mr: 2,
-								"& .MuiTab-root": { alignItems: "flex-start", textAlign: "left", minHeight: 52 },
+								...brandTabsSx,
+								"& .MuiTab-root": {
+									...brandTabsSx["& .MuiTab-root"],
+									alignItems: "flex-start",
+									textAlign: "left",
+									minHeight: 48,
+								},
 							}}
 						>
 							<Tab label="Crear nuevo" />
@@ -645,12 +952,22 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 						<Box sx={{ flex: 1, overflow: "auto" }}>
 							{trackingTab === 0 && (
 								<Stack spacing={2}>
-									<Typography variant="body2" color="text.secondary">
+									<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 										Ingresá el código de seguimiento del envío postal para registrarlo y vincularlo a este documento.
 									</Typography>
-									<Stack direction="row" spacing={1.5}>
+									<Stack direction="row" spacing={1.25}>
 										<FormControl size="small" sx={{ minWidth: 90 }}>
-											<Select value={codeId} onChange={(e) => setCodeId(e.target.value)}>
+											<Select
+												value={codeId}
+												onChange={(e) => setCodeId(e.target.value)}
+												sx={{
+													borderRadius: 1.25,
+													fontSize: "0.875rem",
+													"& fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.14) },
+													"&:hover fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.28) },
+													"&.Mui-focused fieldset": { borderColor: BRAND_BLUE },
+												}}
+											>
 												{VALID_CODE_IDS.map((c) => (
 													<MuiMenuItem key={c} value={c}>
 														{c}
@@ -667,11 +984,19 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 											error={numberId.length > 0 && !numberIdValid}
 											helperText={numberId.length > 0 && !numberIdValid ? "Debe tener exactamente 9 dígitos" : ""}
 											inputProps={{ inputMode: "numeric" }}
+											sx={inputSx}
 										/>
 									</Stack>
-									<TextField size="small" label="Etiqueta (opcional)" fullWidth value={label} onChange={(e) => setLabel(e.target.value)} />
+									<TextField
+										size="small"
+										label="Etiqueta (opcional)"
+										fullWidth
+										value={label}
+										onChange={(e) => setLabel(e.target.value)}
+										sx={inputSx}
+									/>
 									{docRow.linkedFolderId && (
-										<Typography variant="caption" color="text.secondary">
+										<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 											El seguimiento también se vinculará a la carpeta asociada al documento.
 										</Typography>
 									)}
@@ -680,12 +1005,12 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 
 							{trackingTab === 1 && (
 								<Stack spacing={2}>
-									<Typography variant="body2" color="text.secondary">
+									<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 										Seleccioná un seguimiento postal ya existente para vincularlo a este documento.
 									</Typography>
 									{loadingTrackings ? (
 										<Stack alignItems="center" sx={{ py: 3 }}>
-											<CircularProgress size={28} />
+											<CircularProgress size={28} sx={{ color: BRAND_BLUE }} />
 										</Stack>
 									) : (
 										<Autocomplete
@@ -698,33 +1023,31 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 											renderOption={(props, t: PostalTrackingType) => (
 												<Box component="li" {...props} key={t._id}>
 													<Stack>
-														<Typography variant="body2" fontWeight={500}>
+														<Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>
 															{t.codeId} {t.numberId}
 														</Typography>
 														{t.label && (
-															<Typography variant="caption" color="text.secondary">
-																{t.label}
-															</Typography>
+															<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>{t.label}</Typography>
 														)}
 													</Stack>
 												</Box>
 											)}
-											renderInput={(params) => <TextField {...params} label="Buscar seguimiento..." />}
+											renderInput={(params) => <TextField {...params} label="Buscar seguimiento..." sx={inputSx} />}
 											noOptionsText="Sin seguimientos disponibles"
 										/>
 									)}
 									{selectedTracking?.documentId && selectedTracking.documentId !== docRow.id && (
-										<Typography variant="caption" color="warning.main">
+										<Typography sx={{ fontSize: "0.72rem", color: STALE_AMBER, letterSpacing: "-0.005em" }}>
 											Este seguimiento ya tiene un documento vinculado. Al continuar se reemplazará.
 										</Typography>
 									)}
 									{folderConflict && (
-										<Typography variant="caption" color="warning.main">
+										<Typography sx={{ fontSize: "0.72rem", color: STALE_AMBER, letterSpacing: "-0.005em" }}>
 											El seguimiento y el documento están vinculados a carpetas distintas. Se usará la carpeta del seguimiento para ambos.
 										</Typography>
 									)}
 									{folderPropagation && !folderConflict && (
-										<Typography variant="caption" color="info.main">
+										<Typography sx={{ fontSize: "0.72rem", color: BRAND_BLUE, letterSpacing: "-0.005em" }}>
 											{selectedTracking?.folderId
 												? "El documento adoptará la carpeta del seguimiento para mantener consistencia."
 												: "La carpeta del documento se asignará también al seguimiento."}
@@ -738,15 +1061,15 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 			</DialogContent>
 
 			<DialogActions sx={{ px: 3, py: 2 }}>
-				<Button onClick={onClose} color="secondary" variant="outlined" disabled={submitting}>
+				<Button onClick={onClose} disabled={submitting} sx={ghostCancelSx}>
 					Cancelar
 				</Button>
 				{tab === 0 && (
 					<Button
 						onClick={handleSaveFolder}
-						variant="contained"
 						disabled={submitting}
-						startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <FolderOpen size={16} />}
+						startIcon={submitting ? <CircularProgress size={14} color="inherit" /> : <FolderOpen size={16} variant="Linear" />}
+						sx={brandPrimaryButtonSx}
 					>
 						Guardar carpeta
 					</Button>
@@ -754,9 +1077,9 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 				{tab === 1 && trackingTab === 0 && (
 					<Button
 						onClick={handleCreateTracking}
-						variant="contained"
 						disabled={submitting || !numberIdValid}
-						startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <Routing size={16} />}
+						startIcon={submitting ? <CircularProgress size={14} color="inherit" /> : <Routing size={16} variant="Linear" />}
+						sx={brandPrimaryButtonSx}
 					>
 						Crear seguimiento
 					</Button>
@@ -764,9 +1087,9 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 				{tab === 1 && trackingTab === 1 && (
 					<Button
 						onClick={handleLinkTracking}
-						variant="contained"
 						disabled={submitting || !selectedTracking || loadingTrackings}
-						startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <Routing size={16} />}
+						startIcon={submitting ? <CircularProgress size={14} color="inherit" /> : <Routing size={16} variant="Linear" />}
+						sx={brandPrimaryButtonSx}
 					>
 						Vincular seguimiento
 					</Button>
@@ -787,10 +1110,10 @@ interface PostalDetailDialogProps {
 const PostalDetailDialog = ({ open, doc, onClose }: PostalDetailDialogProps) => {
 	const dispatch = useDispatch();
 	const folders = useSelector((state: any) => state.folder?.folders || []);
+	const { brandPrimaryButtonSx, ghostCancelSx, dialogPaperSx, isDark } = useBrandStyles();
 	const [freshUrl, setFreshUrl] = useState<string | null>(null);
 	const [urlLoading, setUrlLoading] = useState(false);
 
-	// Fetch a fresh presigned URL each time the dialog opens
 	useEffect(() => {
 		if (!open || !doc?._id) return;
 		setFreshUrl(null);
@@ -805,85 +1128,87 @@ const PostalDetailDialog = ({ open, doc, onClose }: PostalDetailDialogProps) => 
 
 	const linkedFolder = doc.linkedFolderId ? folders.find((f: any) => f._id === doc.linkedFolderId) : null;
 
+	const metaLabelSx = {
+		fontSize: "0.6rem",
+		fontWeight: 600,
+		letterSpacing: "0.08em",
+		textTransform: "uppercase",
+		color: "text.secondary",
+	} as const;
+	const metaValueSx = { fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" } as const;
+
 	return (
-		<Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-			<DialogTitle>
-				<Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={1}>
-					<Stack spacing={0.5}>
-						<Typography variant="h5">{doc.title}</Typography>
-						<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-							<Chip size="small" label={doc.templateName} variant="outlined" />
-							<Chip
-								size="small"
-								label={POSTAL_STATUS_LABELS[doc.status] ?? doc.status}
-								color={POSTAL_STATUS_COLORS[doc.status] ?? "default"}
-							/>
-						</Stack>
-					</Stack>
-					{freshUrl && (
-						<Button
-							variant="contained"
-							size="small"
-							startIcon={<DocumentDownload size={16} />}
-							onClick={() => window.open(freshUrl, "_blank")}
-							sx={{ flexShrink: 0 }}
-						>
-							Descargar PDF
-						</Button>
-					)}
-				</Stack>
-			</DialogTitle>
-			<DialogContent dividers sx={{ p: 0 }}>
+		<Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: dialogPaperSx }}>
+			<DialogBrandHeader
+				eyebrow="Documento postal"
+				title={doc.title}
+				subtitle={doc.templateName}
+				icon={<DocumentDownload size={20} variant="Bulk" />}
+				onClose={onClose}
+			/>
+
+			<DialogContent sx={{ p: 0 }}>
 				<Grid container sx={{ height: 480 }}>
-					<Grid item xs={12} md={8} sx={{ height: "100%", borderRight: 1, borderColor: "divider" }}>
+					<Grid
+						item
+						xs={12}
+						md={8}
+						sx={{ height: "100%", borderRight: { md: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` } }}
+					>
 						{urlLoading ? (
 							<Stack alignItems="center" justifyContent="center" sx={{ height: "100%" }}>
-								<CircularProgress size={28} />
+								<CircularProgress size={28} sx={{ color: BRAND_BLUE }} />
 							</Stack>
 						) : freshUrl ? (
 							<iframe src={freshUrl} title={doc.title} style={{ width: "100%", height: "100%", border: "none", display: "block" }} />
 						) : (
 							<Stack alignItems="center" justifyContent="center" sx={{ height: "100%" }}>
-								<Typography color="text.secondary">El PDF no está disponible.</Typography>
+								<Typography sx={{ fontSize: "0.85rem", color: "text.secondary" }}>El PDF no está disponible.</Typography>
 							</Stack>
 						)}
 					</Grid>
 					<Grid item xs={12} md={4} sx={{ p: 2.5, overflowY: "auto" }}>
 						<Stack spacing={2}>
-							<Stack spacing={0.5}>
-								<Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase" letterSpacing={0.5}>
-									Modelo
-								</Typography>
-								<Typography variant="body2">{doc.templateName}</Typography>
+							<Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+								<PostalStatusPill value={doc.status} />
 							</Stack>
 							<Stack spacing={0.5}>
-								<Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase" letterSpacing={0.5}>
-									Fecha
-								</Typography>
-								<Typography variant="body2">{formatDate(doc.createdAt)}</Typography>
+								<Typography sx={metaLabelSx}>Modelo</Typography>
+								<Typography sx={metaValueSx}>{doc.templateName}</Typography>
+							</Stack>
+							<Stack spacing={0.5}>
+								<Typography sx={metaLabelSx}>Fecha</Typography>
+								<Typography sx={metaValueSx}>{formatDate(doc.createdAt)}</Typography>
 							</Stack>
 							{linkedFolder && (
 								<Stack spacing={0.5}>
-									<Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase" letterSpacing={0.5}>
-										Carpeta
-									</Typography>
-									<Typography variant="body2">{linkedFolder.folderName}</Typography>
+									<Typography sx={metaLabelSx}>Carpeta</Typography>
+									<Typography sx={metaValueSx}>{linkedFolder.folderName}</Typography>
 								</Stack>
 							)}
 							{doc.description && (
 								<Stack spacing={0.5}>
-									<Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase" letterSpacing={0.5}>
-										Descripción
-									</Typography>
-									<Typography variant="body2">{doc.description}</Typography>
+									<Typography sx={metaLabelSx}>Descripción</Typography>
+									<Typography sx={{ ...metaValueSx, textWrap: "pretty" }}>{doc.description}</Typography>
 								</Stack>
 							)}
 						</Stack>
 					</Grid>
 				</Grid>
 			</DialogContent>
-			<DialogActions>
-				<Button onClick={onClose}>Cerrar</Button>
+			<DialogActions sx={{ px: 3, py: 2 }}>
+				<Button onClick={onClose} sx={ghostCancelSx}>
+					Cerrar
+				</Button>
+				{freshUrl && (
+					<Button
+						onClick={() => window.open(freshUrl, "_blank")}
+						startIcon={<DocumentDownload size={16} variant="Linear" />}
+						sx={brandPrimaryButtonSx}
+					>
+						Descargar PDF
+					</Button>
+				)}
 			</DialogActions>
 		</Dialog>
 	);
@@ -899,24 +1224,113 @@ interface DeleteDialogProps {
 	onClose: () => void;
 }
 
-const DeleteDialog = ({ open, title, loading, onConfirm, onClose }: DeleteDialogProps) => (
-	<Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-		<DialogTitle>Eliminar documento</DialogTitle>
-		<DialogContent>
-			<DialogContentText>
-				¿Eliminás el documento <strong>{title}</strong>? Esta acción no se puede deshacer.
-			</DialogContentText>
-		</DialogContent>
-		<DialogActions>
-			<Button onClick={onClose} disabled={loading}>
-				Cancelar
-			</Button>
-			<Button color="error" variant="contained" onClick={onConfirm} disabled={loading}>
-				{loading ? <CircularProgress size={16} color="inherit" /> : "Eliminar"}
-			</Button>
-		</DialogActions>
-	</Dialog>
-);
+const DeleteDialog = ({ open, title, loading, onConfirm, onClose }: DeleteDialogProps) => {
+	const theme = useTheme();
+	const { ghostCancelSx, dialogPaperSx, isDark } = useBrandStyles();
+	const errorColor = theme.palette.error.main;
+
+	return (
+		<Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth PaperProps={{ sx: dialogPaperSx }}>
+			<DialogContent sx={{ p: { xs: 3, sm: 3.5 }, position: "relative" }}>
+				<Box
+					sx={{
+						position: "absolute",
+						top: -80,
+						left: "50%",
+						transform: "translateX(-50%)",
+						width: 280,
+						height: 280,
+						borderRadius: "50%",
+						background: `radial-gradient(circle, ${alpha(errorColor, isDark ? 0.18 : 0.1)} 0%, transparent 70%)`,
+						pointerEvents: "none",
+					}}
+				/>
+				<Stack alignItems="center" spacing={2.25} sx={{ position: "relative" }}>
+					<Box
+						sx={{
+							width: 60,
+							height: 60,
+							borderRadius: 1.5,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(errorColor, isDark ? 0.16 : 0.08),
+							border: `1px solid ${alpha(errorColor, isDark ? 0.32 : 0.2)}`,
+							color: errorColor,
+						}}
+					>
+						<Trash size={26} variant="Bulk" />
+					</Box>
+					<Stack spacing={1} alignItems="center">
+						<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary", textAlign: "center" }}>
+							¿Eliminar este documento?
+						</Typography>
+						<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", letterSpacing: "-0.005em", textAlign: "center", textWrap: "pretty" }}>
+							Vas a eliminar{" "}
+							<Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
+								"{title}"
+							</Box>{" "}
+							de forma permanente. Esta acción no se puede deshacer.
+						</Typography>
+					</Stack>
+					<Stack direction="row" spacing={1.25} sx={{ width: 1, mt: 0.5 }}>
+						<Button fullWidth onClick={onClose} disabled={loading} sx={ghostCancelSx}>
+							Cancelar
+						</Button>
+						<Button
+							fullWidth
+							onClick={onConfirm}
+							disabled={loading}
+							sx={{
+								textTransform: "none",
+								fontWeight: 600,
+								letterSpacing: "-0.005em",
+								bgcolor: errorColor,
+								color: "#fff",
+								borderRadius: 1.25,
+								py: 1,
+								boxShadow: "none",
+								"&:hover": { bgcolor: alpha(errorColor, 0.88), boxShadow: "none" },
+							}}
+						>
+							{loading ? <CircularProgress size={16} color="inherit" /> : "Eliminar"}
+						</Button>
+					</Stack>
+				</Stack>
+			</DialogContent>
+		</Dialog>
+	);
+};
+
+// ── Header Stat (mini stat tile) ───────────────────────────────────────────────
+
+const HeaderStat = ({ label, value, tone = "primary" }: { label: string; value: number; tone?: "primary" | "amber" | "neutral" }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const color = tone === "primary" ? BRAND_BLUE : tone === "amber" ? STALE_AMBER : theme.palette.text.secondary;
+	return (
+		<Stack
+			spacing={0.25}
+			sx={{
+				px: 1.25,
+				py: 0.875,
+				borderRadius: 1.25,
+				bgcolor: alpha(color, isDark ? 0.12 : 0.06),
+				border: `1px solid ${alpha(color, isDark ? 0.26 : 0.16)}`,
+				minWidth: 86,
+			}}
+		>
+			<Typography sx={{ fontSize: "0.58rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
+				{label}
+			</Typography>
+			<Typography
+				sx={{ fontSize: "1.05rem", fontWeight: 700, letterSpacing: "-0.015em", color, fontVariantNumeric: "tabular-nums", lineHeight: 1.1 }}
+			>
+				{value}
+			</Typography>
+		</Stack>
+	);
+};
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
@@ -925,6 +1339,7 @@ const EscritosPage = () => {
 	const dispatch = useDispatch();
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+	const { brandPrimaryButtonSx, ghostCancelSx, iconBtnSx, iconBtnDestructiveSx, tableSx, inputSx, menuPaperSx, isDark } = useBrandStyles();
 
 	const { documents: rtDocs, documentsTotal: rtTotal, isLoader: rtLoading } = useSelector((state: any) => state.richTextDocumentsReducer);
 	const { documents: postalDocs, total: postalTotal, isLoader: postalLoading } = useSelector((state: any) => state.postalDocumentsReducer);
@@ -951,14 +1366,12 @@ const EscritosPage = () => {
 	} | null>(null);
 	const [rowMenuAnchor, setRowMenuAnchor] = useState<{ el: HTMLElement; row: DocRow } | null>(null);
 
-	// Load folders if needed
 	useEffect(() => {
 		if (folders.length === 0 && userId) {
 			dispatch(getFoldersByUserId(userId) as any);
 		}
 	}, [dispatch, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-	// Fetch documents
 	useEffect(() => {
 		const fetchPage = typeFilter === "all" ? 1 : page;
 		if (typeFilter === "all" || typeFilter === "postal") {
@@ -969,7 +1382,6 @@ const EscritosPage = () => {
 		}
 	}, [dispatch, page, search, typeFilter]);
 
-	// Merged & sorted rows
 	const rows = useMemo((): DocRow[] => {
 		let result: DocRow[] = [];
 		if (typeFilter !== "richtext") {
@@ -1013,7 +1425,7 @@ const EscritosPage = () => {
 				return false;
 			}
 		} catch {
-			// ante error de red, permitir continuar
+			// nothing
 		}
 		return true;
 	};
@@ -1030,7 +1442,6 @@ const EscritosPage = () => {
 		if (typeFilter === "all" || typeFilter === "richtext") {
 			dispatch(fetchRichTextDocuments({ page: fetchPage, limit: PAGE_SIZE, search: search || undefined }));
 		}
-		// Also reload folders to get updated linked state
 		if (userId) dispatch(getFoldersByUserId(userId) as any);
 	};
 
@@ -1055,96 +1466,215 @@ const EscritosPage = () => {
 	};
 
 	return (
-		<Stack spacing={2}>
-			{/* Header */}
-			<MainCard>
-				<Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5}>
-					<Typography variant="body2" color="text.secondary">
-						Documentos generados a partir de modelos del sistema y modelos propios
-					</Typography>
+		<Stack spacing={2.5} sx={{ mt: 1 }}>
+			{/* Header brand atmosférico */}
+			<Box
+				sx={{
+					position: "relative",
+					overflow: "hidden",
+					borderRadius: 2,
+					p: { xs: 2, md: 2.5 },
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)}`,
+				}}
+			>
+				<Box
+					sx={{
+						position: "absolute",
+						top: -60,
+						right: -40,
+						width: 280,
+						height: 280,
+						borderRadius: "50%",
+						background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
+						pointerEvents: "none",
+					}}
+				/>
+				<Box
+					sx={{
+						position: "absolute",
+						inset: 0,
+						backgroundImage: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)} 1px, transparent 1px)`,
+						backgroundSize: "22px 22px",
+						maskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+						WebkitMaskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+						opacity: 0.6,
+						pointerEvents: "none",
+					}}
+				/>
 
-					<Box>
+				<Stack
+					direction={{ xs: "column", md: "row" }}
+					alignItems={{ xs: "flex-start", md: "center" }}
+					spacing={{ xs: 1.75, md: 3 }}
+					sx={{ position: "relative" }}
+				>
+					{/* Identidad */}
+					<Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+						<Box
+							sx={{
+								width: 44,
+								height: 44,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+								flexShrink: 0,
+							}}
+						>
+							<DocumentText size={22} variant="Bulk" />
+						</Box>
+						<Stack spacing={0.25} sx={{ minWidth: 0 }}>
+							<Stack direction="row" spacing={0.875} alignItems="center" sx={{ display: { xs: "none", md: "flex" } }}>
+								<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+								<Typography
+									sx={{
+										fontSize: "0.62rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+									}}
+								>
+									Documentos
+								</Typography>
+							</Stack>
+							<Typography
+								sx={{
+									fontSize: { xs: "1.05rem", md: "1.25rem" },
+									fontWeight: 600,
+									letterSpacing: "-0.015em",
+									color: "text.primary",
+									textWrap: "balance",
+								}}
+							>
+								Tus escritos
+							</Typography>
+							<Typography
+								sx={{
+									display: { xs: "none", md: "block" },
+									fontSize: "0.82rem",
+									color: "text.secondary",
+									letterSpacing: "-0.005em",
+									textWrap: "pretty",
+								}}
+							>
+								Documentos generados a partir de modelos del sistema y modelos propios.
+							</Typography>
+						</Stack>
+					</Stack>
+
+					{/* Métricas */}
+					<Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0, display: { xs: "none", sm: "flex" } }}>
+						<HeaderStat label="Totales" value={postalTotal + rtTotal} tone="primary" />
+						<HeaderStat label="Sistema" value={postalTotal} tone="neutral" />
+						<HeaderStat label="Mis modelos" value={rtTotal} tone="amber" />
+					</Stack>
+
+					{/* CTA */}
+					<Box sx={{ flexShrink: 0 }}>
 						{isMobile ? (
 							<Fab
 								size="small"
-								color="primary"
 								aria-label="Nuevo documento"
 								onClick={(e) => setNewDocMenuAnchor(e.currentTarget)}
 								data-testid="escritos-new-btn"
+								sx={{
+									bgcolor: BRAND_BLUE,
+									color: "#fff",
+									boxShadow: `0 4px 12px ${alpha(BRAND_BLUE, 0.4)}`,
+									"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88) },
+								}}
 							>
 								<Add size={18} />
 							</Fab>
 						) : (
 							<Button
-								variant="contained"
 								size="small"
-								startIcon={<Add size={16} />}
-								endIcon={<ArrowDown2 size={14} />}
+								startIcon={<Add size={16} variant="Linear" />}
+								endIcon={<ArrowDown2 size={12} variant="Linear" />}
 								onClick={(e) => setNewDocMenuAnchor(e.currentTarget)}
 								data-testid="escritos-new-btn"
+								sx={brandPrimaryButtonSx}
 							>
 								Nuevo documento
 							</Button>
 						)}
-						<Menu anchorEl={newDocMenuAnchor} open={Boolean(newDocMenuAnchor)} onClose={() => setNewDocMenuAnchor(null)}>
+						<Menu
+							anchorEl={newDocMenuAnchor}
+							open={Boolean(newDocMenuAnchor)}
+							onClose={() => setNewDocMenuAnchor(null)}
+							anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+							transformOrigin={{ vertical: "top", horizontal: "right" }}
+							PaperProps={{ elevation: 0, sx: menuPaperSx }}
+						>
 							<MuiMenuItem
 								onClick={async () => {
 									setNewDocMenuAnchor(null);
 									if (!(await checkMainLimit())) return;
 									setOpenCreatePostal(true);
 								}}
-								sx={{ py: 1.5 }}
+								sx={{ py: 1.25, flexDirection: "column", alignItems: "flex-start" }}
 								data-testid="escritos-new-postal"
 							>
-								<Stack spacing={0.25}>
-									<Typography variant="body2" fontWeight={500}>
-										Modelo del Sistema
-									</Typography>
-									<Typography variant="caption" color="text.secondary">
-										Telegramas, cartas documento y más
-									</Typography>
-								</Stack>
+								<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+									Modelo del sistema
+								</Typography>
+								<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+									Telegramas, cartas documento y más
+								</Typography>
 							</MuiMenuItem>
-							<Divider />
+							<Divider sx={{ borderColor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />
 							<MuiMenuItem
 								onClick={async () => {
 									setNewDocMenuAnchor(null);
 									if (!(await checkMainLimit())) return;
 									setOpenTemplatePicker(true);
 								}}
-								sx={{ py: 1.5 }}
+								sx={{ py: 1.25, flexDirection: "column", alignItems: "flex-start" }}
 								data-testid="escritos-new-richtext"
 							>
-								<Stack spacing={0.25}>
-									<Typography variant="body2" fontWeight={500}>
-										Mis Modelos
-									</Typography>
-									<Typography variant="caption" color="text.secondary">
-										Escritos personalizados con editor de texto
-									</Typography>
-								</Stack>
+								<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+									Mis modelos
+								</Typography>
+								<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+									Escritos personalizados con editor de texto
+								</Typography>
 							</MuiMenuItem>
 						</Menu>
 					</Box>
 				</Stack>
-			</MainCard>
+			</Box>
 
-			{/* Table card */}
-			<MainCard>
-				{/* Filters */}
-				<Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} gap={1} mb={2} alignItems={{ sm: "center" }}>
+			{/* Card de contenido */}
+			<MainCard content={false} sx={{ borderRadius: 2, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
+				{/* Toolbar consolidada */}
+				<Stack
+					direction={{ xs: "column", sm: "row" }}
+					spacing={{ xs: 1.25, sm: 1.5 }}
+					alignItems={{ xs: "stretch", sm: "center" }}
+					sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.75, sm: 2 } }}
+				>
 					<TextField
 						size="small"
-						label="Buscar en escritos"
-						placeholder="Título o modelo..."
+						placeholder="Buscar por título o modelo..."
 						value={searchInput}
 						onChange={(e) => setSearchInput(e.target.value)}
 						onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit()}
-						sx={{ minWidth: { sm: 240 }, flex: { sm: 1 }, maxWidth: { sm: 360 }, width: { xs: "100%", sm: "auto" } }}
+						sx={{
+							minWidth: { sm: 240 },
+							flex: { sm: 1 },
+							maxWidth: { sm: 360 },
+							width: { xs: "100%", sm: "auto" },
+							...inputSx,
+						}}
 						InputProps={{
 							startAdornment: (
 								<InputAdornment position="start">
-									<SearchNormal1 size={14} />
+									<SearchNormal1 size={14} color={theme.palette.text.secondary} />
 								</InputAdornment>
 							),
 						}}
@@ -1153,42 +1683,52 @@ const EscritosPage = () => {
 						size="small"
 						value={typeFilter}
 						onChange={(e) => handleTypeChange(e.target.value as TypeFilter)}
-						sx={{ minWidth: { sm: 160 }, width: { xs: "100%", sm: "auto" } }}
+						sx={{
+							minWidth: { sm: 180 },
+							width: { xs: "100%", sm: "auto" },
+							borderRadius: 1.25,
+							fontSize: "0.875rem",
+							"& fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.14) },
+							"&:hover fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.28) },
+							"&.Mui-focused fieldset": { borderColor: BRAND_BLUE },
+						}}
 					>
 						<MuiMenuItem value="all">Todos los tipos</MuiMenuItem>
-						<MuiMenuItem value="postal">Del Sistema</MuiMenuItem>
-						<MuiMenuItem value="richtext">Mis Modelos</MuiMenuItem>
+						<MuiMenuItem value="postal">Del sistema</MuiMenuItem>
+						<MuiMenuItem value="richtext">Mis modelos</MuiMenuItem>
 					</Select>
-					<Button size="small" variant="contained" onClick={handleSearchSubmit} sx={{ width: { xs: "100%", sm: "auto" } }}>
+					<Box sx={{ flex: 1 }} />
+					<Button size="small" onClick={handleSearchSubmit} sx={{ ...brandPrimaryButtonSx, minWidth: 110 }}>
 						Buscar
 					</Button>
 				</Stack>
 
-				<Divider sx={{ mb: 2 }} />
+				<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08), mx: { xs: 2, sm: 3 } }} />
 
-				{/* Table (>= sm) / Cards (< sm) */}
+				{/* Mobile cards / Desktop table */}
 				{isMobile ? (
-					/* ── Mobile card list ── */
-					<Stack spacing={1.5}>
+					<Stack spacing={1.25} sx={{ p: 2 }}>
 						{isLoading ? (
 							Array(4)
 								.fill(0)
 								.map((_, i) => (
-									<Paper key={i} variant="outlined" sx={{ p: 1.5 }}>
+									<Box
+										key={i}
+										sx={{
+											p: 1.5,
+											borderRadius: 1.5,
+											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`,
+										}}
+									>
 										<Stack spacing={1}>
 											<Skeleton variant="text" width="70%" />
 											<Skeleton variant="text" width="40%" />
-											<Skeleton variant="rectangular" width={80} height={24} sx={{ borderRadius: 1 }} />
+											<Skeleton variant="rectangular" width={80} height={20} sx={{ borderRadius: 0.75 }} />
 										</Stack>
-									</Paper>
+									</Box>
 								))
 						) : rows.length === 0 ? (
-							<Stack alignItems="center" justifyContent="center" spacing={1.5} py={6}>
-								<DocumentText size={40} style={{ opacity: 0.3 }} />
-								<Typography variant="body2" color="text.secondary" textAlign="center">
-									{search ? "No se encontraron documentos con esa búsqueda." : "Todavía no creaste ningún documento."}
-								</Typography>
-							</Stack>
+							<EmptyState search={search} />
 						) : (
 							rows.map((row) => {
 								const isPostal = row.kind === "postal";
@@ -1196,149 +1736,142 @@ const EscritosPage = () => {
 								const hasTracking = isPostal && Boolean(row.linkedTrackingId);
 
 								return (
-									<Paper key={`${row.kind}-${row.id}`} variant="outlined" sx={{ overflow: "hidden" }}>
-										{/* Card body */}
+									<Box
+										key={`${row.kind}-${row.id}`}
+										sx={{
+											borderRadius: 1.5,
+											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`,
+											overflow: "hidden",
+											transition: "border-color 0.15s ease",
+											"&:hover": { borderColor: alpha(BRAND_BLUE, isDark ? 0.32 : 0.22) },
+										}}
+									>
 										<Stack spacing={1} sx={{ p: 1.5 }}>
-											{/* Title row */}
 											<Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
-												<Typography variant="body2" fontWeight={600} sx={{ flex: 1, wordBreak: "break-word" }}>
+												<Typography
+													sx={{
+														fontSize: "0.875rem",
+														fontWeight: 600,
+														letterSpacing: "-0.005em",
+														color: "text.primary",
+														flex: 1,
+														wordBreak: "break-word",
+													}}
+												>
 													{row.title}
 												</Typography>
-												{/* Type chip */}
-												<Chip
-													size="small"
-													label={isPostal ? "Postal" : "Escrito"}
-													icon={isPostal ? <DocumentDownload size={12} /> : <DocumentText size={12} />}
-													variant="outlined"
-													color={isPostal ? "info" : "default"}
-													sx={{ flexShrink: 0, height: 20, fontSize: "0.65rem" }}
-												/>
+												<TypePill kind={row.kind} />
 											</Stack>
 
-											{/* Status + tracking */}
-											<Stack direction="row" spacing={0.75} flexWrap="wrap" alignItems="center">
-												{isPostal ? (
-													<Chip
-														size="small"
-														label={POSTAL_STATUS_LABELS[row.status] ?? row.status}
-														color={POSTAL_STATUS_COLORS[row.status] ?? "default"}
-													/>
-												) : (
-													<Chip
-														size="small"
-														label={RT_STATUS_LABELS[row.status] ?? row.status}
-														color={(RT_STATUS_COLORS[row.status] ?? "default") as "default" | "success"}
-														variant={row.status === "final" ? "filled" : "outlined"}
-													/>
-												)}
-												{hasTracking && (
-													<Chip size="small" label="Seguimiento" color="info" variant="outlined" sx={{ height: 18, fontSize: "0.65rem" }} />
-												)}
+											<Stack direction="row" spacing={0.75} flexWrap="wrap" alignItems="center" useFlexGap>
+												{isPostal ? <PostalStatusPill value={row.status} /> : <RichTextStatusPill value={row.status} />}
+												{hasTracking && <TrackingMicroPill />}
 											</Stack>
 
-											{/* Metadata row: carpeta + fecha */}
-											<Stack direction="row" spacing={2} flexWrap="wrap">
-												<Stack spacing={0.1}>
+											<Stack direction="row" spacing={2.5} flexWrap="wrap" sx={{ pt: 0.25 }}>
+												<Stack spacing={0.125}>
 													<Typography
-														variant="caption"
-														color="text.disabled"
-														fontWeight={600}
-														textTransform="uppercase"
-														letterSpacing={0.4}
+														sx={{
+															fontSize: "0.58rem",
+															fontWeight: 600,
+															letterSpacing: "0.08em",
+															textTransform: "uppercase",
+															color: "text.secondary",
+														}}
 													>
 														Carpeta
 													</Typography>
 													{linkedFolder ? (
 														<Typography
-															variant="caption"
 															onClick={() => navigate(`/apps/folders/details/${row.linkedFolderId}`)}
-															sx={{ cursor: "pointer", "&:hover": { textDecoration: "underline" } }}
+															sx={{
+																fontSize: "0.78rem",
+																color: "text.primary",
+																cursor: "pointer",
+																"&:hover": { color: BRAND_BLUE, textDecoration: "underline" },
+															}}
 														>
 															{linkedFolder.folderName}
 														</Typography>
 													) : (
-														<Typography variant="caption" color="text.disabled">
-															Sin vincular
-														</Typography>
+														<Typography sx={{ fontSize: "0.78rem", color: "text.secondary" }}>—</Typography>
 													)}
 												</Stack>
-												<Stack spacing={0.1}>
+												<Stack spacing={0.125}>
 													<Typography
-														variant="caption"
-														color="text.disabled"
-														fontWeight={600}
-														textTransform="uppercase"
-														letterSpacing={0.4}
+														sx={{
+															fontSize: "0.58rem",
+															fontWeight: 600,
+															letterSpacing: "0.08em",
+															textTransform: "uppercase",
+															color: "text.secondary",
+														}}
 													>
 														Fecha
 													</Typography>
-													<Typography variant="caption" color="text.secondary">
+													<Typography sx={{ fontSize: "0.78rem", color: "text.primary", fontVariantNumeric: "tabular-nums" }}>
 														{formatDate(row.createdAt)}
 													</Typography>
 												</Stack>
 											</Stack>
 										</Stack>
 
-										<Divider />
+										<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.06) }} />
 
-										{/* Card footer: actions */}
-										<CardActions sx={{ px: 1, py: 0.75, justifyContent: "flex-end" }}>
-											<Stack direction="row" spacing={0.25}>
-												{isPostal ? (
-													<>
-														<Tooltip title="Ver documento">
-															<IconButton size="small" color="primary" onClick={() => setPostalDetail(row.rawPostal!)}>
-																<Eye size={15} />
-															</IconButton>
-														</Tooltip>
-														{row.documentUrl && (
-															<Tooltip title="Descargar PDF">
-																<IconButton size="small" color="info" onClick={() => window.open(row.documentUrl, "_blank")}>
-																	<DocumentDownload size={15} />
-																</IconButton>
-															</Tooltip>
-														)}
-													</>
-												) : (
-													<Tooltip title="Ver / Editar documento">
-														<IconButton
-															size="small"
-															onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)}
-															data-testid="escritos-edit-btn"
-														>
-															<Eye size={15} />
+										<Stack direction="row" spacing={0.25} sx={{ p: 0.75, justifyContent: "flex-end" }}>
+											{isPostal ? (
+												<>
+													<Tooltip title="Ver documento">
+														<IconButton sx={iconBtnSx} onClick={() => setPostalDetail(row.rawPostal!)}>
+															<Eye size={16} variant="Linear" />
 														</IconButton>
 													</Tooltip>
-												)}
-												<Tooltip title={row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}>
-													<IconButton size="small" color={row.linkedFolderId ? "success" : "default"} onClick={() => setVincularRow(row)}>
-														<Routing size={15} />
-													</IconButton>
-												</Tooltip>
-												<Tooltip title="Eliminar">
+													{row.documentUrl && (
+														<Tooltip title="Descargar PDF">
+															<IconButton sx={iconBtnSx} onClick={() => window.open(row.documentUrl, "_blank")}>
+																<DocumentDownload size={16} variant="Linear" />
+															</IconButton>
+														</Tooltip>
+													)}
+												</>
+											) : (
+												<Tooltip title="Ver / Editar">
 													<IconButton
-														size="small"
-														color="error"
-														onClick={() => setDeleteTarget({ kind: row.kind, id: row.id, title: row.title })}
-														data-testid="escritos-delete-btn"
+														sx={iconBtnSx}
+														onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)}
+														data-testid="escritos-edit-btn"
 													>
-														<Trash size={15} />
+														<Eye size={16} variant="Linear" />
 													</IconButton>
 												</Tooltip>
-											</Stack>
-										</CardActions>
-									</Paper>
+											)}
+											<Tooltip title={row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}>
+												<IconButton sx={iconBtnSx} onClick={() => setVincularRow(row)}>
+													<Routing size={16} variant="Linear" />
+												</IconButton>
+											</Tooltip>
+											<Tooltip title="Eliminar">
+												<IconButton
+													sx={iconBtnDestructiveSx}
+													onClick={() => setDeleteTarget({ kind: row.kind, id: row.id, title: row.title })}
+													data-testid="escritos-delete-btn"
+												>
+													<Trash size={16} variant="Linear" />
+												</IconButton>
+											</Tooltip>
+										</Stack>
+									</Box>
 								);
 							})
 						)}
 					</Stack>
 				) : (
-					/* ── Desktop / tablet table (>= sm) ── */
 					<TableContainer>
-						<Table size="small">
+						<Table size="small" sx={tableSx}>
 							<TableHead>
 								<TableRow>
 									<TableCell>Título</TableCell>
+									<TableCell>Tipo</TableCell>
 									<TableCell>Modelo</TableCell>
 									<TableCell>Estado</TableCell>
 									<TableCell>Carpeta</TableCell>
@@ -1353,13 +1886,8 @@ const EscritosPage = () => {
 										.map((_, i) => <RowSkeleton key={i} />)
 								) : rows.length === 0 ? (
 									<TableRow>
-										<TableCell colSpan={6}>
-											<Stack alignItems="center" justifyContent="center" spacing={1.5} py={6}>
-												<DocumentText size={40} style={{ opacity: 0.3 }} />
-												<Typography variant="body2" color="text.secondary">
-													{search ? "No se encontraron documentos con esa búsqueda." : "Todavía no creaste ningún documento."}
-												</Typography>
-											</Stack>
+										<TableCell colSpan={7} sx={{ p: 0 }}>
+											<EmptyState search={search} />
 										</TableCell>
 									</TableRow>
 								) : (
@@ -1369,72 +1897,77 @@ const EscritosPage = () => {
 										const hasTracking = isPostal && Boolean(row.linkedTrackingId);
 
 										return (
-											<TableRow key={`${row.kind}-${row.id}`} hover>
+											<TableRow key={`${row.kind}-${row.id}`}>
 												<TableCell>
-													<Stack spacing={0.25}>
-														<Typography variant="body2" fontWeight={500} noWrap sx={{ maxWidth: 200 }}>
+													<Stack spacing={0.5}>
+														<Typography
+															sx={{
+																fontSize: "0.875rem",
+																fontWeight: 600,
+																letterSpacing: "-0.005em",
+																color: "text.primary",
+																maxWidth: 220,
+																overflow: "hidden",
+																textOverflow: "ellipsis",
+																whiteSpace: "nowrap",
+															}}
+														>
 															{row.title}
 														</Typography>
-														{hasTracking && (
-															<Chip
-																size="small"
-																label="Seguimiento"
-																color="info"
-																variant="outlined"
-																sx={{ alignSelf: "flex-start", height: 18, fontSize: "0.65rem" }}
-															/>
-														)}
+														{hasTracking && <Box sx={{ alignSelf: "flex-start" }}><TrackingMicroPill /></Box>}
 													</Stack>
 												</TableCell>
 												<TableCell>
-													<Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 140 }}>
+													<TypePill kind={row.kind} />
+												</TableCell>
+												<TableCell>
+													<Typography
+														sx={{
+															fontSize: "0.78rem",
+															color: "text.secondary",
+															maxWidth: 160,
+															overflow: "hidden",
+															textOverflow: "ellipsis",
+															whiteSpace: "nowrap",
+														}}
+													>
 														{row.templateName}
 													</Typography>
 												</TableCell>
 												<TableCell>
-													{isPostal ? (
-														<Chip
-															size="small"
-															label={POSTAL_STATUS_LABELS[row.status] ?? row.status}
-															color={POSTAL_STATUS_COLORS[row.status] ?? "default"}
-														/>
-													) : (
-														<Chip
-															size="small"
-															label={RT_STATUS_LABELS[row.status] ?? row.status}
-															color={(RT_STATUS_COLORS[row.status] ?? "default") as "default" | "success"}
-															variant={row.status === "final" ? "filled" : "outlined"}
-														/>
-													)}
+													{isPostal ? <PostalStatusPill value={row.status} /> : <RichTextStatusPill value={row.status} />}
 												</TableCell>
 												<TableCell>
 													{linkedFolder ? (
 														<Typography
-															variant="body2"
 															onClick={() => navigate(`/apps/folders/details/${row.linkedFolderId}`)}
-															sx={{ cursor: "pointer", "&:hover": { textDecoration: "underline" } }}
+															sx={{
+																fontSize: "0.82rem",
+																color: "text.primary",
+																cursor: "pointer",
+																letterSpacing: "-0.005em",
+																"&:hover": { color: BRAND_BLUE, textDecoration: "underline" },
+															}}
 														>
 															{linkedFolder.folderName}
 														</Typography>
 													) : (
-														<Typography variant="caption" color="text.disabled">
-															Sin vincular
-														</Typography>
+														<Typography sx={{ fontSize: "0.82rem", color: "text.secondary" }}>—</Typography>
 													)}
 												</TableCell>
 												<TableCell>
-													<Typography variant="caption" color="text.secondary">
+													<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
 														{formatDate(row.createdAt)}
 													</Typography>
 												</TableCell>
-												<TableCell align="right" sx={{ width: 48 }}>
+												<TableCell align="right" sx={{ width: 56 }}>
 													<Tooltip title="Acciones">
 														<IconButton
-															size="small"
+															sx={iconBtnSx}
 															onClick={(e) => setRowMenuAnchor({ el: e.currentTarget, row })}
 															data-testid="escritos-row-menu-btn"
 														>
-															<More size={16} style={{ transform: "rotate(90deg)" }} />
+															<More size={16} variant="Linear" style={{ transform: "rotate(90deg)" }} />
 														</IconButton>
 													</Tooltip>
 												</TableCell>
@@ -1447,13 +1980,14 @@ const EscritosPage = () => {
 					</TableContainer>
 				)}
 
-				{/* Row actions overflow menu (desktop table) */}
+				{/* Row actions menu */}
 				<Menu
 					anchorEl={rowMenuAnchor?.el}
 					open={Boolean(rowMenuAnchor)}
 					onClose={() => setRowMenuAnchor(null)}
 					transformOrigin={{ horizontal: "right", vertical: "top" }}
 					anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+					PaperProps={{ elevation: 0, sx: menuPaperSx }}
 				>
 					{rowMenuAnchor?.row.kind === "postal"
 						? [
@@ -1464,7 +1998,7 @@ const EscritosPage = () => {
 										setRowMenuAnchor(null);
 									}}
 								>
-									<Eye size={16} style={{ marginRight: 8 }} />
+									<Eye size={15} variant="Linear" style={{ marginRight: 10, color: theme.palette.text.secondary }} />
 									Ver documento
 								</MuiMenuItem>,
 								rowMenuAnchor.row.documentUrl ? (
@@ -1475,7 +2009,7 @@ const EscritosPage = () => {
 											setRowMenuAnchor(null);
 										}}
 									>
-										<DocumentDownload size={16} style={{ marginRight: 8 }} />
+										<DocumentDownload size={15} variant="Linear" style={{ marginRight: 10, color: theme.palette.text.secondary }} />
 										Descargar PDF
 									</MuiMenuItem>
 								) : null,
@@ -1486,19 +2020,22 @@ const EscritosPage = () => {
 										setRowMenuAnchor(null);
 									}}
 								>
-									<Routing size={16} style={{ marginRight: 8 }} />
+									<Routing size={15} variant="Linear" style={{ marginRight: 10, color: theme.palette.text.secondary }} />
 									{rowMenuAnchor.row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}
 								</MuiMenuItem>,
-								<Divider key="divider" />,
+								<Divider key="divider" sx={{ borderColor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />,
 								<MuiMenuItem
 									key="eliminar"
 									onClick={() => {
 										setDeleteTarget({ kind: rowMenuAnchor.row.kind, id: rowMenuAnchor.row.id, title: rowMenuAnchor.row.title });
 										setRowMenuAnchor(null);
 									}}
-									sx={{ color: "error.main" }}
+									sx={{
+										color: theme.palette.error.main,
+										"&:hover": { bgcolor: alpha(theme.palette.error.main, isDark ? 0.12 : 0.06) + " !important" },
+									}}
 								>
-									<Trash size={16} style={{ marginRight: 8 }} />
+									<Trash size={15} variant="Linear" style={{ marginRight: 10 }} />
 									Eliminar
 								</MuiMenuItem>,
 						  ]
@@ -1511,7 +2048,7 @@ const EscritosPage = () => {
 									}}
 									data-testid="escritos-edit-btn"
 								>
-									<Eye size={16} style={{ marginRight: 8 }} />
+									<Eye size={15} variant="Linear" style={{ marginRight: 10, color: theme.palette.text.secondary }} />
 									Ver / Editar
 								</MuiMenuItem>,
 								<MuiMenuItem
@@ -1521,51 +2058,84 @@ const EscritosPage = () => {
 										setRowMenuAnchor(null);
 									}}
 								>
-									<Routing size={16} style={{ marginRight: 8 }} />
+									<Routing size={15} variant="Linear" style={{ marginRight: 10, color: theme.palette.text.secondary }} />
 									{rowMenuAnchor?.row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}
 								</MuiMenuItem>,
-								<Divider key="divider" />,
+								<Divider key="divider" sx={{ borderColor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />,
 								<MuiMenuItem
 									key="eliminar"
 									onClick={() => {
 										setDeleteTarget({ kind: rowMenuAnchor!.row.kind, id: rowMenuAnchor!.row.id, title: rowMenuAnchor!.row.title });
 										setRowMenuAnchor(null);
 									}}
-									sx={{ color: "error.main" }}
+									sx={{
+										color: theme.palette.error.main,
+										"&:hover": { bgcolor: alpha(theme.palette.error.main, isDark ? 0.12 : 0.06) + " !important" },
+									}}
 								>
-									<Trash size={16} style={{ marginRight: 8 }} />
+									<Trash size={15} variant="Linear" style={{ marginRight: 10 }} />
 									Eliminar
 								</MuiMenuItem>,
 						  ]}
 				</Menu>
 
-				{/* Pagination — only in type-specific mode */}
+				{/* Pagination */}
 				{typeFilter !== "all" && totalPages > 1 && (
-					<Box display="flex" justifyContent="center" mt={2}>
-						<Pagination count={totalPages} page={page} onChange={(_e, v) => setPage(v)} size="small" color="primary" />
+					<Box display="flex" justifyContent="center" sx={{ py: 2 }}>
+						<Pagination
+							count={totalPages}
+							page={page}
+							onChange={(_e, v) => setPage(v)}
+							size="small"
+							sx={{
+								"& .MuiPaginationItem-root": { fontWeight: 600 },
+								"& .Mui-selected": {
+									bgcolor: `${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)} !important`,
+									color: BRAND_BLUE,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.4 : 0.28)}`,
+								},
+							}}
+						/>
 					</Box>
 				)}
+
 				{typeFilter === "all" && postalTotal + rtTotal > PAGE_SIZE && (
-					<Alert
-						severity="info"
-						sx={{ mt: 1.5 }}
-						action={
+					<Box
+						sx={{
+							mx: { xs: 2, sm: 3 },
+							mb: 2,
+							p: 1.5,
+							borderRadius: 1.25,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+						}}
+					>
+						<Stack
+							direction={{ xs: "column", sm: "row" }}
+							spacing={1.25}
+							alignItems={{ xs: "flex-start", sm: "center" }}
+							justifyContent="space-between"
+						>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+								<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+									Mostrando los {PAGE_SIZE} documentos más recientes. Filtrá por tipo para ver el historial paginado.
+								</Typography>
+							</Stack>
 							<Stack direction="row" spacing={1}>
-								<Button size="small" onClick={() => handleTypeChange("richtext")}>
+								<Button size="small" onClick={() => handleTypeChange("richtext")} sx={ghostCancelSx}>
 									Ver escritos
 								</Button>
-								<Button size="small" onClick={() => handleTypeChange("postal")}>
+								<Button size="small" onClick={() => handleTypeChange("postal")} sx={ghostCancelSx}>
 									Ver postales
 								</Button>
 							</Stack>
-						}
-					>
-						Mostrando los {PAGE_SIZE} documentos más recientes. Seleccioná un tipo para ver el historial paginado.
-					</Alert>
+						</Stack>
+					</Box>
 				)}
 			</MainCard>
 
-			{/* ── Modals ── */}
+			{/* Modals */}
 			<TemplatePickerDialog open={openTemplatePicker} onClose={() => setOpenTemplatePicker(false)} />
 
 			<LimitErrorModal
@@ -1603,6 +2173,75 @@ const EscritosPage = () => {
 				showSnackbar={showSnackbar}
 			/>
 		</Stack>
+	);
+};
+
+// ── Empty state atmosférico ────────────────────────────────────────────────────
+
+const EmptyState = ({ search }: { search: string }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	return (
+		<Box
+			sx={{
+				position: "relative",
+				overflow: "hidden",
+				px: 3,
+				py: { xs: 6, md: 8 },
+				textAlign: "center",
+			}}
+		>
+			<Box
+				sx={{
+					position: "absolute",
+					top: "-20%",
+					left: "50%",
+					transform: "translateX(-50%)",
+					width: 360,
+					height: 360,
+					borderRadius: "50%",
+					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)} 0%, transparent 70%)`,
+					pointerEvents: "none",
+				}}
+			/>
+			<Box
+				sx={{
+					position: "absolute",
+					inset: 0,
+					backgroundImage: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)} 1px, transparent 1px)`,
+					backgroundSize: "20px 20px",
+					opacity: 0.5,
+					maskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
+					WebkitMaskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
+					pointerEvents: "none",
+				}}
+			/>
+			<Stack spacing={1.5} alignItems="center" sx={{ position: "relative" }}>
+				<Box
+					sx={{
+						width: 56,
+						height: 56,
+						borderRadius: 1.5,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+						color: BRAND_BLUE,
+					}}
+				>
+					<DocumentText size={26} variant="Bulk" />
+				</Box>
+				<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>
+					{search ? "Sin resultados" : "Sin documentos todavía"}
+				</Typography>
+				<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", maxWidth: 380, textWrap: "pretty" }}>
+					{search
+						? "No encontramos documentos que coincidan con tu búsqueda. Probá con otro término o limpiá el filtro."
+						: "Creá tu primer documento desde un modelo del sistema o uno de tus modelos propios."}
+				</Typography>
+			</Stack>
+		</Box>
 	);
 };
 

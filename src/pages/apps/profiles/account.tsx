@@ -4,10 +4,12 @@ import { useLocation, Link, Outlet, useNavigate } from "react-router-dom";
 
 // material-ui
 import { Box, Tab, Tabs } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 
 // project-imports
 import MainCard from "components/MainCard";
 import { useTeam } from "contexts/TeamContext";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 // assets
 import { Profile2User, Card, TableDocument, Link1 } from "iconsax-react";
@@ -15,11 +17,12 @@ import { Profile2User, Card, TableDocument, Link1 } from "iconsax-react";
 // ==============================|| PROFILE - ACCOUNT ||============================== //
 
 const AccountProfile = () => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
 	const { isTeamMode, isOwner } = useTeam();
 
-	// El tab PJN solo se muestra para cuentas personales o owners de equipo
 	const showPjnTab = !isTeamMode || isOwner;
 
 	const tabPaths = [
@@ -32,15 +35,11 @@ const AccountProfile = () => {
 	const selectedTab = tabPaths.indexOf(pathname);
 	const [value, setValue] = useState(selectedTab !== -1 ? selectedTab : 0);
 
-	// Actualizar el tab seleccionado cuando cambia la ruta
 	useEffect(() => {
 		const idx = tabPaths.indexOf(pathname);
-		if (idx !== -1) {
-			setValue(idx);
-		}
+		if (idx !== -1) setValue(idx);
 	}, [pathname, tabPaths.length]);
 
-	// Si un miembro de equipo accede directamente a /pjn, redirigir a mi-cuenta
 	useEffect(() => {
 		if (!showPjnTab && pathname === "/apps/profiles/account/pjn") {
 			navigate("/apps/profiles/account/my-account", { replace: true });
@@ -51,19 +50,78 @@ const AccountProfile = () => {
 		setValue(newValue);
 	};
 
+	const brandTabsSx = {
+		minHeight: 44,
+		"& .MuiTab-root": {
+			textTransform: "none",
+			fontWeight: 600,
+			fontSize: "0.85rem",
+			letterSpacing: "-0.005em",
+			color: "text.secondary",
+			minHeight: 44,
+			py: 1,
+			px: 2,
+			"& .MuiTab-iconWrapper": {
+				color: "text.secondary",
+				transition: "color 0.15s ease",
+			},
+			"&.Mui-selected": {
+				color: BRAND_BLUE,
+				"& .MuiTab-iconWrapper": { color: BRAND_BLUE },
+			},
+			"&:hover:not(.Mui-selected)": { color: "text.primary" },
+		},
+		"& .MuiTabs-indicator": { backgroundColor: BRAND_BLUE, height: 2 },
+	};
+
 	return (
-		<MainCard border={false}>
-			<Box sx={{ borderBottom: 1, borderColor: "divider", width: "100%" }}>
-				<Tabs value={value} onChange={handleChange} variant="scrollable" scrollButtons="auto" aria-label="account profile tab">
-					<Tab label="Mi cuenta" component={Link} to="/apps/profiles/account/my-account" icon={<TableDocument />} iconPosition="start" />
-					<Tab label="Suscripción" component={Link} to="/apps/profiles/account/subscription" icon={<Card />} iconPosition="start" />
-					<Tab label="Mi Equipo" component={Link} to="/apps/profiles/account/role" icon={<Profile2User />} iconPosition="start" />
+		<MainCard
+			border={false}
+			content={false}
+			sx={{ borderRadius: 2, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`, p: 0 }}
+		>
+			<Box sx={{ px: { xs: 1.5, sm: 2 }, pt: 1, borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
+				<Tabs
+					value={value}
+					onChange={handleChange}
+					variant="scrollable"
+					scrollButtons="auto"
+					aria-label="account profile tab"
+					sx={brandTabsSx}
+				>
+					<Tab
+						label="Mi cuenta"
+						component={Link}
+						to="/apps/profiles/account/my-account"
+						icon={<TableDocument size={15} variant="Linear" />}
+						iconPosition="start"
+					/>
+					<Tab
+						label="Suscripción"
+						component={Link}
+						to="/apps/profiles/account/subscription"
+						icon={<Card size={15} variant="Linear" />}
+						iconPosition="start"
+					/>
+					<Tab
+						label="Mi equipo"
+						component={Link}
+						to="/apps/profiles/account/role"
+						icon={<Profile2User size={15} variant="Linear" />}
+						iconPosition="start"
+					/>
 					{showPjnTab && (
-						<Tab label="Integración PJN" component={Link} to="/apps/profiles/account/pjn" icon={<Link1 />} iconPosition="start" />
+						<Tab
+							label="Integración PJN"
+							component={Link}
+							to="/apps/profiles/account/pjn"
+							icon={<Link1 size={15} variant="Linear" />}
+							iconPosition="start"
+						/>
 					)}
 				</Tabs>
 			</Box>
-			<Box sx={{ mt: 2.5 }}>
+			<Box sx={{ p: { xs: 2, sm: 2.5 } }}>
 				<Outlet />
 			</Box>
 		</MainCard>

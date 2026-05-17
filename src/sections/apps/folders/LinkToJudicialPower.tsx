@@ -32,6 +32,8 @@ import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
 import { linkFolderToCausa } from "store/reducers/folder";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
+import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
+import PjnGuardedButton from "components/PjnGuardedButton";
 
 interface LinkToJudicialPowerProps {
 	openLink: boolean;
@@ -496,6 +498,12 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 
 					<DialogContent sx={{ p: 2.5 }}>
 						<Grid container spacing={3}>
+							<Grid item xs={12}>
+								<PjnMaintenanceAlert
+									compact
+									contextHint="No vas a poder vincular la causa hasta que el portal vuelva."
+								/>
+							</Grid>
 							{/* Logo del Poder Judicial de la Nación */}
 							<Grid item xs={12}>
 								<Box
@@ -675,7 +683,7 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 									<Button onClick={handleClose} disabled={loading} color="error" sx={{ minWidth: 100 }}>
 										Cancelar
 									</Button>
-									<Button
+									<PjnGuardedButton
 										variant="contained"
 										onClick={handleSubmit}
 										disabled={
@@ -684,7 +692,7 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 										sx={{ minWidth: 100 }}
 									>
 										{loading ? "Vinculando..." : "Vincular"}
-									</Button>
+									</PjnGuardedButton>
 								</Stack>
 							</Grid>
 						</Grid>
