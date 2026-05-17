@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, SyntheticEvent } from "react";
+import { useState, useRef, SyntheticEvent } from "react";
 import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
@@ -32,7 +32,7 @@ import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { setNeedsVerification } from "store/reducers/auth";
 import { strengthColor, strengthIndicator } from "utils/password-strength";
-import { trackSignUp } from "utils/gtm";
+import { trackSignUp, trackRegisterFormStart, trackRegisterFormSubmit, trackRegisterFormError } from "utils/gtm";
 
 // types
 import { StringColorProps } from "types/password";
@@ -56,6 +56,14 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 
 	const [level, setLevel] = useState<StringColorProps>();
 	const [showPassword, setShowPassword] = useState(false);
+	const formStartedRef = useRef(false);
+
+	const fireFormStartOnce = () => {
+		if (!formStartedRef.current) {
+			formStartedRef.current = true;
+			trackRegisterFormStart(source, feature);
+		}
+	};
 	const handleClickShowPassword = () => {
 		setShowPassword(!showPassword);
 	};
@@ -82,6 +90,7 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 					password: Yup.string().min(8, "Mínimo 8 caracteres").max(255).required("El password es requerido"),
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
+					trackRegisterFormSubmit("email", source, feature);
 					try {
 						await register(values.email, values.password);
 						if (scriptedRef.current) {
@@ -116,10 +125,13 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 							}, 500);
 						}
 					} catch (err: any) {
+						const apiMessage = err?.response?.data?.message;
+						const errorType = err?.response?.status ? `api_${err.response.status}` : "api_network";
+						trackRegisterFormError(errorType, apiMessage, source);
 						if (scriptedRef.current) {
 							setStatus({ success: false });
 							setTimeout(() => {
-								setErrors({ submit: err.response.data.message });
+								setErrors({ submit: apiMessage });
 							}, 1);
 							setSubmitting(false);
 						}
@@ -146,7 +158,10 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 										value={values.email}
 										name="email"
 										onBlur={handleBlur}
-										onChange={handleChange}
+										onChange={(e) => {
+											fireFormStartOnce();
+											handleChange(e);
+										}}
 										placeholder="nombre@estudio.com"
 										startAdornment={
 											<InputAdornment position="start">
@@ -178,6 +193,7 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 										name="password"
 										onBlur={handleBlur}
 										onChange={(e) => {
+											fireFormStartOnce();
 											handleChange(e);
 											changePassword(e.target.value);
 										}}

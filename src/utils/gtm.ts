@@ -41,6 +41,9 @@ export const GTMEvents = {
 	FEATURE_MODAL_CTA_CLICK: "feature_modal_cta_click",
 	// Registration funnel events
 	REGISTER_VIEW: "register_view",
+	REGISTER_FORM_START: "register_form_start",
+	REGISTER_FORM_SUBMIT: "register_form_submit",
+	REGISTER_FORM_ERROR: "register_form_error",
 	SIGN_UP: "sign_up",
 	GOOGLE_SIGNUP_CLICK: "google_signup_click",
 } as const;
@@ -200,5 +203,37 @@ export const trackGoogleSignupClick = (source?: string, feature?: string): void 
 	pushGTMEvent(GTMEvents.GOOGLE_SIGNUP_CLICK, {
 		source: source || "direct",
 		feature: feature || null,
+	});
+};
+
+/**
+ * Track first interaction with the register form (first keystroke)
+ */
+export const trackRegisterFormStart = (source?: string, feature?: string): void => {
+	pushGTMEvent(GTMEvents.REGISTER_FORM_START, {
+		source: source || "direct",
+		feature: feature || null,
+	});
+};
+
+/**
+ * Track register form submit (user clicked "Registrarme")
+ */
+export const trackRegisterFormSubmit = (method: "email", source?: string, feature?: string): void => {
+	pushGTMEvent(GTMEvents.REGISTER_FORM_SUBMIT, {
+		method,
+		source: source || "direct",
+		feature: feature || null,
+	});
+};
+
+/**
+ * Track register form error (validation or API failure)
+ */
+export const trackRegisterFormError = (errorType: string, errorMessage?: string, source?: string): void => {
+	pushGTMEvent(GTMEvents.REGISTER_FORM_ERROR, {
+		error_type: errorType,
+		error_message: errorMessage || null,
+		source: source || "direct",
 	});
 };
