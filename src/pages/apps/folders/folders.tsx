@@ -3878,11 +3878,11 @@ const FoldersLayout = () => {
 					fullWidth
 					PaperProps={{ elevation: 5, sx: { borderRadius: 2, overflow: "hidden" } }}
 				>
-					<DialogTitle sx={{ bgcolor: theme.palette.primary.lighter, p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
+					<DialogTitle sx={{ bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035), p: 3, borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}` }}>
 						<Stack spacing={1}>
 							<Stack direction="row" alignItems="center" spacing={1}>
-								<DocumentText1 size={24} color={theme.palette.primary.main} variant="Bold" />
-								<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+								<DocumentText1 size={24} color={BRAND_BLUE} variant="Bold" />
+								<Typography variant="h5" sx={{ fontWeight: 600, color: BRAND_BLUE }}>
 									Crear Documento
 								</Typography>
 							</Stack>
