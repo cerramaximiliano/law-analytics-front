@@ -34,6 +34,8 @@ import googleCalendar from "./googleCalendar";
 import teams from "./teams";
 import activityLog from "./activityLog";
 import pjnSync from "./pjnSync";
+import pjnSiteStatus from "./pjnSiteStatus";
+import scbaSiteStatus from "./scbaSiteStatus";
 import scbaSync from "./scbaSync";
 import movementsSync from "./movementsSync";
 import postalTrackingReducer from "./postalTracking";
@@ -80,6 +82,8 @@ const reducers = combineReducers({
 	teams,
 	activityLog,
 	pjnSync,
+	pjnSiteStatus,
+	scbaSiteStatus,
 	scbaSync,
 	movementsSync,
 	postalTrackingReducer,

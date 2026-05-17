@@ -7,6 +7,8 @@ import { openSnackbar } from "store/reducers/snackbar";
 // Importamos correctamente las acciones
 import { ADD_MULTIPLE_ALERTS, ADD_ALERT } from "store/reducers/alerts";
 import { pjnSyncStarted, pjnSyncProgress, pjnSyncCompleted, pjnSyncError } from "store/reducers/pjnSync";
+import { pjnSiteStatusUpdated, fetchPjnSiteStatus } from "store/reducers/pjnSiteStatus";
+import { scbaSiteStatusUpdated, fetchScbaSiteStatus } from "store/reducers/scbaSiteStatus";
 import { scbaSyncStarted, scbaSyncProgress, scbaSyncCompleted, scbaSyncError } from "store/reducers/scbaSync";
 import { movementsSyncStarted, movementsSyncCompleted } from "store/reducers/movementsSync";
 import { getFoldersByUserId } from "store/reducers/folder";
@@ -168,6 +170,36 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 				}
 			}
 
+			// Estado global del sitio (PJN/SCBA en mantenimiento / operativo).
+			// Payload viene como { type: '<PORTAL>_SITE_STATUS', payload: {...}, timestamp }.
+			if (message.type === "SYSTEM_STATUS") {
+				const env = message.payload as any;
+				if (env?.type === "PJN_SITE_STATUS" && env.payload) {
+					dispatch(pjnSiteStatusUpdated(env.payload));
+
+					if (env.payload.status === "maintenance") {
+						showNotification(
+							"El portal del PJN entró en mantenimiento. Las sincronizaciones quedan en pausa.",
+							"warning",
+						);
+					} else if (env.payload.status === "healthy") {
+						showNotification("El portal del PJN volvió a estar operativo.", "success");
+					}
+				}
+				if (env?.type === "SCBA_SITE_STATUS" && env.payload) {
+					dispatch(scbaSiteStatusUpdated(env.payload));
+
+					if (env.payload.status === "down") {
+						showNotification(
+							"El portal de la SCBA no está respondiendo. Las sincronizaciones quedan en pausa.",
+							"warning",
+						);
+					} else if (env.payload.status === "healthy") {
+						showNotification("El portal de la SCBA volvió a estar operativo.", "success");
+					}
+				}
+			}
+
 			if (message.type === "NOTIFICATION") {
 				// Manejar alertas pendientes - formato {pendingAlerts: Alert[]}
 				if (message.payload && message.payload.pendingAlerts) {
@@ -245,10 +277,15 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 	useEffect(() => {
 		if (isLoggedIn && autoConnect && userId) {
 			connect();
+			// Hidratación inicial del estado de los portales PJN/SCBA. El socket
+			// recibe updates en tiempo real, pero al login necesitamos saber si
+			// alguno ya estaba caído antes de conectarnos.
+			dispatch(fetchPjnSiteStatus() as any);
+			dispatch(fetchScbaSiteStatus() as any);
 		} else if (!isLoggedIn) {
 			disconnect();
 		}
-	}, [isLoggedIn, autoConnect, connect, disconnect, userId]);
+	}, [isLoggedIn, autoConnect, connect, disconnect, userId, dispatch]);
 
 	// Actualizar userId cuando cambie
 	useEffect(() => {

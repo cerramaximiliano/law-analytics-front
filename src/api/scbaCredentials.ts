@@ -67,6 +67,12 @@ export interface GetScbaCredentialsStatusResponse {
 	error?: string;
 }
 
+export interface ScbaSiteStatusSnapshot {
+	status: "healthy" | "down" | "unknown";
+	message: string | null;
+	lastTransitionAt: string | null;
+}
+
 export interface LinkScbaCredentialsResponse {
 	success: boolean;
 	message?: string;
@@ -81,6 +87,9 @@ export interface LinkScbaCredentialsResponse {
 		updatedAt?: string;
 	};
 	error?: string;
+	/** Cuando el server bloquea por portal caído. */
+	code?: "SCBA_MAINTENANCE";
+	scbaSiteStatus?: ScbaSiteStatusSnapshot;
 }
 
 export interface GenericScbaResponse {
@@ -88,6 +97,8 @@ export interface GenericScbaResponse {
 	message?: string;
 	error?: string;
 	data?: any;
+	code?: "SCBA_MAINTENANCE";
+	scbaSiteStatus?: ScbaSiteStatusSnapshot;
 }
 
 class ScbaCredentialsService {
@@ -113,6 +124,14 @@ class ScbaCredentialsService {
 			}
 			if (axiosError.response?.status === 409) {
 				return { success: false, error: axiosError.response.data?.error || "Ya existen credenciales vinculadas" };
+			}
+			if (axiosError.response?.status === 503 && axiosError.response.data?.code === "SCBA_MAINTENANCE") {
+				return {
+					success: false,
+					error: axiosError.response.data?.message || "El portal de la SCBA no está respondiendo.",
+					code: "SCBA_MAINTENANCE",
+					scbaSiteStatus: axiosError.response.data?.scbaSiteStatus,
+				};
 			}
 
 			return { success: false, error: axiosError.response?.data?.error || "Error al vincular credenciales SCBA" };
@@ -156,6 +175,14 @@ class ScbaCredentialsService {
 					success: false,
 					error: axiosError.response.data?.error || "No se puede iniciar sincronización",
 					data: axiosError.response.data?.currentProgress,
+				};
+			}
+			if (axiosError.response?.status === 503 && axiosError.response.data?.code === "SCBA_MAINTENANCE") {
+				return {
+					success: false,
+					error: axiosError.response.data?.message || "El portal de la SCBA no está respondiendo.",
+					code: "SCBA_MAINTENANCE",
+					scbaSiteStatus: axiosError.response.data?.scbaSiteStatus,
 				};
 			}
 

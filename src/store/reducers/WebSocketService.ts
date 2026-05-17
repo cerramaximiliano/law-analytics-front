@@ -5,7 +5,7 @@ import { Alert } from "types/alert";
 import secureStorage from "../../services/secureStorage";
 
 // Tipos para los eventos y mensajes
-export type WSMessageType = "NOTIFICATION" | "FOLDER_UPDATE" | "TASK_UPDATE" | "USER_ACTIVITY" | "CONNECTION_STATE" | "SYNC_PROGRESS";
+export type WSMessageType = "NOTIFICATION" | "FOLDER_UPDATE" | "TASK_UPDATE" | "USER_ACTIVITY" | "CONNECTION_STATE" | "SYNC_PROGRESS" | "SYSTEM_STATUS";
 
 export interface WSMessage<T = any> {
 	type: WSMessageType;
@@ -409,6 +409,18 @@ class WebSocketService {
 			this.handleMessage({
 				type: "SYNC_PROGRESS",
 				payload: progress,
+				timestamp: new Date().toISOString(),
+			});
+		});
+
+		// Estado global del sistema (mantenimiento del portal PJN, etc).
+		// Broadcast por la-notification cuando pjn-workers reportan transición.
+		// El payload incluye { type: 'PJN_SITE_STATUS', payload: {...} }.
+		this.socket.on("system_status", (message: any) => {
+			this.log(`system_status recibido: ${message?.type ?? "(sin type)"}`);
+			this.handleMessage({
+				type: "SYSTEM_STATUS",
+				payload: message,
 				timestamp: new Date().toISOString(),
 			});
 		});
