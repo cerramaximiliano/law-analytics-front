@@ -1368,7 +1368,7 @@ function ReactTable({
 									</Stack>
 								</CardContent>
 
-								<Divider />
+								<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) }} />
 
 								{/* Footer: acciones — delega en la Cell "Acciones" ya preparada */}
 								<CardActions sx={{ px: 1, py: 0.5, justifyContent: "flex-end" }} onClick={(e) => e.stopPropagation()}>
@@ -3891,7 +3891,7 @@ const FoldersLayout = () => {
 							</Typography>
 						</Stack>
 					</DialogTitle>
-					<Divider />
+					<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.12) }} />
 					<DialogContent sx={{ pb: 3 }}>
 						<Stack spacing={1.5}>
 							<Card

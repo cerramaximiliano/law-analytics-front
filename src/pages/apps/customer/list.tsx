@@ -144,6 +144,27 @@ function ReactTable({
 		},
 	} as const;
 
+	const iconBtnBrandSx = {
+		color: "text.secondary",
+		transition: "color 0.15s ease, background-color 0.15s ease",
+		"&:hover": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) },
+	} as const;
+
+	const ghostOutlinedBtnSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: "text.secondary",
+		borderRadius: 1.25,
+		borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.16),
+		transition: "color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease",
+		"&:hover": {
+			color: BRAND_BLUE,
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+			borderColor: alpha(BRAND_BLUE, 0.32),
+		},
+	} as const;
+
 	// Lenguaje brand-aware compartido para inputs (search + sort).
 	const brandedInputSx = {
 		"& .MuiOutlinedInput-notchedOutline": {
@@ -396,7 +417,7 @@ function ReactTable({
 								</Button>
 							)}
 							<Tooltip title="Más opciones">
-								<IconButton size="small" color="secondary" onClick={handleOverflowOpen} aria-label="Más opciones">
+								<IconButton size="small" onClick={handleOverflowOpen} aria-label="Más opciones" sx={iconBtnBrandSx}>
 									<More variant="Bulk" size={20} />
 								</IconButton>
 							</Tooltip>
@@ -423,11 +444,10 @@ function ReactTable({
 						<Stack direction="row" spacing={1}>
 							<Button
 								variant="outlined"
-								color="secondary"
 								size="small"
 								startIcon={<Box1 size={18} />}
 								onClick={handleOpenArchivedModal}
-								sx={{ textTransform: "none" }}
+								sx={ghostOutlinedBtnSx}
 							>
 								Archivados
 							</Button>
@@ -439,12 +459,11 @@ function ReactTable({
 									<span>
 										<Button
 											variant="outlined"
-											color="secondary"
 											size="small"
 											startIcon={<Archive size={18} />}
 											onClick={() => handleArchiveSelected(selectedFlatRows)}
 											disabled={Object.keys(selectedRowIds).length === 0}
-											sx={{ textTransform: "none" }}
+											sx={ghostOutlinedBtnSx}
 										>
 											{Object.keys(selectedRowIds).length > 0 ? `Archivar (${selectedFlatRows.length})` : "Archivar"}
 										</Button>
@@ -468,7 +487,7 @@ function ReactTable({
 								/>
 							</Box>
 							<Tooltip title="Más opciones">
-								<IconButton color="secondary" size="small" onClick={handleOverflowOpen} aria-label="Más opciones">
+								<IconButton size="small" onClick={handleOverflowOpen} aria-label="Más opciones" sx={iconBtnBrandSx}>
 									<More variant="Bulk" size={20} />
 								</IconButton>
 							</Tooltip>

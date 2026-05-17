@@ -250,7 +250,7 @@ const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete, canUpdate 
 					</Stack>
 				</Stack>
 			</DialogTitle>
-			<Divider />
+			<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, 0.18) }} />
 			<DialogContent
 				sx={{
 					p: 3,
@@ -336,7 +336,7 @@ const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete, canUpdate 
 					</Grid>
 				</Box>
 			</DialogContent>
-			<Divider />
+			<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, 0.18) }} />
 			<DialogActions
 				sx={{
 					p: 2.5,
@@ -1352,7 +1352,7 @@ const Calendar = () => {
 											);
 										})}
 									</Stack>
-									<Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+									<Box sx={{ width: 1, alignSelf: "stretch", mx: 0.5, bgcolor: alpha(BRAND_BLUE, 0.18) }} />
 								</>
 							)}
 
