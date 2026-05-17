@@ -150,6 +150,7 @@ export interface LoginResponse {
 		id: string;
 		email: string | null;
 	};
+	isNewUser?: boolean;
 }
 
 export interface RegisterResponse {
@@ -180,7 +181,7 @@ export interface ServerContextType extends AuthProps {
 	updateProfile: (userData: Partial<UserProfile>) => Promise<void>;
 	setIsLoggedIn: (value: boolean) => void;
 	setNeedsVerification: (value: boolean) => void;
-	loginWithGoogle: (tokenResponse: CredentialResponse) => Promise<boolean>;
+	loginWithGoogle: (tokenResponse: CredentialResponse) => Promise<{ success: boolean; isNewUser?: boolean }>;
 	handleLogoutAndRedirect?: () => Promise<void>;
 	resetPassword: (email: string) => Promise<void>;
 	verifyResetCode: (email: string, code: string) => Promise<boolean>;
@@ -193,7 +194,7 @@ export interface UnauthorizedModalProps {
 	open: boolean;
 	onClose: () => void;
 	onLogin: (email: string, password: string) => Promise<boolean>;
-	onGoogleLogin: (response: CredentialResponse) => Promise<boolean>;
+	onGoogleLogin: (response: CredentialResponse) => Promise<{ success: boolean; isNewUser?: boolean }>;
 	onLogout: () => void;
 }
 

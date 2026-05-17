@@ -18,6 +18,7 @@ import { Payment } from "store/reducers/ApiService";
 import { fetchUserStats } from "store/reducers/userStats";
 import { AppDispatch } from "store";
 import secureStorage from "services/secureStorage";
+import { getAttributionPayload } from "utils/attribution";
 import { requestQueueService } from "services/requestQueueService";
 import authTokenService from "services/authTokenService";
 import { extractErrorMessage } from "utils/errorMessages";
@@ -137,13 +138,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	};
 
 	// Iniciar sesión con Google
-	const loginWithGoogle = async (tokenResponse: CredentialResponse): Promise<boolean> => {
+	const loginWithGoogle = async (tokenResponse: CredentialResponse): Promise<{ success: boolean; isNewUser?: boolean }> => {
 		try {
 			const credential = tokenResponse.credential;
 			if (credential) {
-				const result = await axios.post<LoginResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/google`, { token: credential });
+				const params = new URLSearchParams(window.location.search);
+				const result = await axios.post<LoginResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/google`, {
+					token: credential,
+					attribution: getAttributionPayload(params.get("source"), params.get("feature")),
+				});
 
-				const { user, success, subscription, paymentHistory, customer } = result.data;
+				const { user, success, subscription, paymentHistory, customer, isNewUser } = result.data;
 
 				if (success) {
 					setIsGoogleLoggedIn(true);
@@ -183,7 +188,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					// Procesar la cola de peticiones pendientes después de login exitoso
 					await processRequestQueue();
 
-					return true;
+					return { success: true, isNewUser: Boolean(isNewUser) };
 				} else {
 					throw new Error("No se pudo autenticar. Intenta nuevamente.");
 				}
@@ -529,11 +534,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		lastName?: string,
 	): Promise<{ email: string; isLoggedIn: boolean; needsVerification: boolean }> => {
 		try {
+			const params = new URLSearchParams(window.location.search);
 			const response = await axios.post<RegisterResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/register`, {
 				email,
 				password,
 				...(firstName && { firstName }),
 				...(lastName && { lastName }),
+				attribution: getAttributionPayload(params.get("source"), params.get("feature")),
 			});
 
 			// Siempre necesitará verificación para nuevos registros
