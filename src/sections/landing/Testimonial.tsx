@@ -363,7 +363,7 @@ const TestimonialPage = () => {
 							</Typography>
 							<Button
 								component={RouterLink}
-								to="/register"
+								to="/register?source=testimonial"
 								variant="contained"
 								color="primary"
 								size="large"
