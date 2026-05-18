@@ -25,6 +25,8 @@ import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 // Logos externos (Cloudinary)
 const logoPJCABA = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
 const logoSECLO = "https://res.cloudinary.com/dqyoeolib/image/upload/q_auto/f_auto/v1776203385/seclo-removebg-preview_rxcvzm.png";
+const logoPJSalta =
+	"https://res.cloudinary.com/dqyoeolib/image/upload/v1779137783/ChatGPT_Image_18_may_2026__05_52_35_p.m.-removebg-preview_bngpqd.png";
 
 // ============================== TOKENS ============================== //
 // El gradiente sobre "Estudio Jurídico" es el ÚNICO uso intencional de púrpura
@@ -86,6 +88,16 @@ const INTEGRATIONS: Integration[] = [
 		tooltipTitle: "SECLO - Próximamente",
 		status: "comingSoon",
 		logoSrc: logoSECLO,
+		bgColor: "#ffffff",
+		hasBorder: true,
+	},
+	{
+		key: "pjsalta",
+		shortName: "PJSALTA",
+		fullName: "Poder Judicial de la\nProv. de Salta",
+		tooltipTitle: "Poder Judicial de la Provincia de Salta - Próximamente",
+		status: "comingSoon",
+		logoSrc: logoPJSalta,
 		bgColor: "#ffffff",
 		hasBorder: true,
 	},
