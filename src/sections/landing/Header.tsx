@@ -375,7 +375,7 @@ const HeaderPage = () => {
 												<AnimateButton>
 													<Button
 														component={RouterLink}
-														to="/register"
+														to="/register?source=hero"
 														size="large"
 														color="primary"
 														variant="contained"

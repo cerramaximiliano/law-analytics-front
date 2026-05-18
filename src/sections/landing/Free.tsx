@@ -68,7 +68,7 @@ const FreePage = () => {
 									color="primary"
 									size="large"
 									component={RouterLink}
-									to="/register"
+									to="/register?source=prueba_pagar"
 									onClick={trackPruebaPagarCTA}
 									sx={{
 										px: 6,

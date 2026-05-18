@@ -437,7 +437,7 @@ const TechnologiesPage = () => {
 		cta: "Activar sistema de citas",
 		// Banner sin modal previo — el query string permite que /register muestre
 		// el panel contextual del feature aunque no haya pasado por FeatureModal.
-		to: `/register?source=banner&feature=${FeatureNames.SISTEMA_CITAS}`,
+		to: `/register?source=citas&feature=${FeatureNames.SISTEMA_CITAS}`,
 		featureKey: FeatureNames.SISTEMA_CITAS,
 	};
 
@@ -616,7 +616,7 @@ const TechnologiesPage = () => {
 							</Typography>
 							<Button
 								component={RouterLink}
-								to="/register?source=cta&location=prueba_pagar"
+								to="/register?source=prueba_pagar"
 								variant="contained"
 								color="primary"
 								size="large"
