@@ -95,9 +95,17 @@ const buildTouchFromURL = (): AttributionTouch | null => {
 		referrer = document.referrer || null;
 	}
 
+	// Si vino gclid/fbclid pero NO trae utm_source/medium explícitos, inferimos
+	// los valores estándar. Esto resuelve el caso típico de Google Ads con
+	// auto-tagging activo y SIN tracking template — la URL trae solo ?gclid=...
+	// y sin esto el User.attribution.firstTouch.source quedaría null aunque
+	// sabemos que vino de Google Ads.
+	const inferredSource = utmSource || (gclid ? "google" : fbclid ? "facebook" : null);
+	const inferredMedium = utmMedium || (gclid ? "cpc" : fbclid ? "cpc" : null);
+
 	return {
-		source: utmSource,
-		medium: utmMedium,
+		source: inferredSource,
+		medium: inferredMedium,
 		campaign: utmCampaign,
 		content: utmContent,
 		term: utmTerm,
