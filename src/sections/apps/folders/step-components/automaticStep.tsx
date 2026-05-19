@@ -256,12 +256,14 @@ const AutomaticStep = () => {
 			.sort((a, b) => a.organismo.nombre.localeCompare(b.organismo.nombre));
 	}, [values.jurisdictionBA, navigationCodes]);
 
-	// Cargar códigos de navegación cuando sea Buenos Aires
+	// Cargar códigos de navegación cuando sea Buenos Aires en modo "Importar expediente".
+	// En modo "Conectar mi cuenta" no se necesitan, así que no los pedimos para evitar
+	// mostrar un error irrelevante si falla la API.
 	useEffect(() => {
-		if (values.judicialPower === "buenosaires") {
+		if (values.judicialPower === "buenosaires" && baImportMode === "single") {
 			loadNavigationCodes();
 		}
-	}, [values.judicialPower]);
+	}, [values.judicialPower, baImportMode]);
 
 	const loadNavigationCodes = async () => {
 		setLoadingCodes(true);
@@ -1280,6 +1282,11 @@ const AutomaticStep = () => {
 													if (value !== null) {
 														setBaImportMode(value);
 														setFieldValue("baImportMode", value);
+														// Al cambiar a "Conectar mi cuenta" limpiamos errores que
+														// solo aplican a la carga de códigos de navegación.
+														if (value === "connect") {
+															setError("");
+														}
 													}
 												}}
 												fullWidth

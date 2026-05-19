@@ -1,12 +1,23 @@
 import { useState, useEffect, useCallback } from "react";
-import { Box, CircularProgress, FormControlLabel, Grid, Stack, Switch, Typography } from "@mui/material";
+import {
+	Box,
+	CircularProgress,
+	FormControlLabel,
+	Grid,
+	Stack,
+	Switch,
+	ToggleButton,
+	ToggleButtonGroup,
+	Typography,
+} from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { InfoCircle, Link1, People } from "iconsax-react";
+import { Buildings2, InfoCircle, Link1, People } from "iconsax-react";
 import { enqueueSnackbar } from "notistack";
 
 // project-imports
 import MainCard from "components/MainCard";
 import PjnAccountConnect from "sections/apps/folders/step-components/PjnAccountConnect";
+import ScbaAccountConnect from "sections/apps/folders/step-components/ScbaAccountConnect";
 import ApiService from "store/reducers/ApiService";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
@@ -20,6 +31,9 @@ const TabPjnIntegration = () => {
 	const [serviceMessage, setServiceMessage] = useState("");
 
 	const [isConnected, setIsConnected] = useState<boolean | null>(null);
+	const [isScbaConnected, setIsScbaConnected] = useState<boolean | null>(null);
+
+	const [view, setView] = useState<"pjn" | "scba">("pjn");
 
 	const [syncContactsEnabled, setSyncContactsEnabled] = useState(false);
 	const [syncContactsLoading, setSyncContactsLoading] = useState(false);
@@ -69,6 +83,41 @@ const TabPjnIntegration = () => {
 			"& .MuiSwitch-thumb": { backgroundColor: BRAND_BLUE, color: BRAND_BLUE },
 			"& + .MuiSwitch-track": { backgroundColor: `${BRAND_BLUE} !important`, opacity: 0.5 },
 		},
+	};
+
+	const toggleButtonSx = {
+		py: 0.875,
+		px: 1.75,
+		textTransform: "none" as const,
+		fontWeight: 600,
+		fontSize: "0.82rem",
+		letterSpacing: "-0.005em",
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.24 : 0.16)} !important`,
+		color: "text.secondary",
+		transition: "background-color 0.15s ease, color 0.15s ease",
+		"&.Mui-selected": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+			color: BRAND_BLUE,
+			borderColor: `${alpha(BRAND_BLUE, isDark ? 0.45 : 0.32)} !important`,
+			"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14) },
+		},
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.05) },
+	};
+
+	const ViewStatusDot = ({ status }: { status: boolean | null }) => {
+		const color = status === true ? LIVE_GREEN : status === false ? theme.palette.text.disabled : "transparent";
+		return (
+			<Box
+				sx={{
+					width: 6,
+					height: 6,
+					borderRadius: "50%",
+					bgcolor: color,
+					border: status === null ? `1px dashed ${alpha(theme.palette.text.disabled, 0.5)}` : "none",
+					flexShrink: 0,
+				}}
+			/>
+		);
 	};
 
 	const SectionCard = ({
@@ -171,32 +220,61 @@ const TabPjnIntegration = () => {
 	};
 
 	return (
-		<Grid container spacing={2.5}>
-			<Grid item xs={12} md={6}>
-				<SectionCard
-					eyebrow="Integración"
-					title="Cuenta PJN"
-					subtitle="Vincula tu cuenta del Poder Judicial de la Nación para sincronizar automáticamente todas tus causas."
-					icon={<Link1 size={16} variant="Bulk" />}
-					rightSlot={isConnected !== null ? <StatusPill connected={isConnected} /> : undefined}
+		<Stack spacing={2.5}>
+			<Box>
+				<ToggleButtonGroup
+					value={view}
+					exclusive
+					onChange={(_, value) => {
+						if (value !== null) setView(value);
+					}}
+					size="small"
+					sx={{ display: "flex", flexWrap: "wrap", gap: 1, "& .MuiToggleButtonGroup-grouped": { borderRadius: 1.25 } }}
 				>
-					<PjnAccountConnect
-						onServiceAvailableChange={(available, message) => {
-							setServiceAvailable(available);
-							setServiceMessage(message || "");
-						}}
-						onConnectionStatusChange={(connected) => setIsConnected(connected)}
-					/>
-				</SectionCard>
-			</Grid>
+					<ToggleButton value="pjn" sx={toggleButtonSx}>
+						<Stack direction="row" alignItems="center" spacing={1}>
+							<Buildings2 size={15} variant="Bulk" />
+							<span>Poder Judicial de la Nación</span>
+							<ViewStatusDot status={isConnected} />
+						</Stack>
+					</ToggleButton>
+					<ToggleButton value="scba" sx={toggleButtonSx}>
+						<Stack direction="row" alignItems="center" spacing={1}>
+							<Buildings2 size={15} variant="Bulk" />
+							<span>Suprema Corte de Buenos Aires</span>
+							<ViewStatusDot status={isScbaConnected} />
+						</Stack>
+					</ToggleButton>
+				</ToggleButtonGroup>
+			</Box>
 
-			<Grid item xs={12} md={6}>
-				<SectionCard
-					eyebrow="Sincronización"
-					title="Preferencias de sincronización"
-					subtitle="Configurá cómo se sincronizan los intervinientes de tus causas."
-					icon={<People size={16} variant="Bulk" />}
-				>
+			{view === "pjn" ? (
+				<Grid container spacing={2.5}>
+					<Grid item xs={12} md={6}>
+						<SectionCard
+							eyebrow="Integración · Nación"
+							title="Cuenta PJN"
+							subtitle="Vincula tu cuenta del Poder Judicial de la Nación para sincronizar automáticamente todas tus causas."
+							icon={<Link1 size={16} variant="Bulk" />}
+							rightSlot={isConnected !== null ? <StatusPill connected={isConnected} /> : undefined}
+						>
+							<PjnAccountConnect
+								onServiceAvailableChange={(available, message) => {
+									setServiceAvailable(available);
+									setServiceMessage(message || "");
+								}}
+								onConnectionStatusChange={(connected) => setIsConnected(connected)}
+							/>
+						</SectionCard>
+					</Grid>
+
+					<Grid item xs={12} md={6}>
+						<SectionCard
+							eyebrow="Sincronización · Nación"
+							title="Preferencias de sincronización"
+							subtitle="Configurá cómo se sincronizan los intervinientes de tus causas del Poder Judicial de la Nación."
+							icon={<People size={16} variant="Bulk" />}
+						>
 					{!serviceAvailable ? (
 						<Box
 							sx={{
@@ -284,7 +362,23 @@ const TabPjnIntegration = () => {
 					)}
 				</SectionCard>
 			</Grid>
-		</Grid>
+			</Grid>
+			) : (
+				<Grid container spacing={2.5}>
+					<Grid item xs={12} md={6}>
+						<SectionCard
+							eyebrow="Integración · Buenos Aires"
+							title="Cuenta SCBA"
+							subtitle="Vincula tu domicilio electrónico de la Suprema Corte de Buenos Aires para sincronizar tus causas provinciales."
+							icon={<Link1 size={16} variant="Bulk" />}
+							rightSlot={isScbaConnected !== null ? <StatusPill connected={isScbaConnected} /> : undefined}
+						>
+							<ScbaAccountConnect onConnectionStatusChange={(connected) => setIsScbaConnected(connected)} />
+						</SectionCard>
+					</Grid>
+				</Grid>
+			)}
+		</Stack>
 	);
 };
 

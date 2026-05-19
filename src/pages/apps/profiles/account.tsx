@@ -112,7 +112,7 @@ const AccountProfile = () => {
 					/>
 					{showPjnTab && (
 						<Tab
-							label="Integración PJN"
+							label="Integraciones"
 							component={Link}
 							to="/apps/profiles/account/pjn"
 							icon={<Link1 size={15} variant="Linear" />}

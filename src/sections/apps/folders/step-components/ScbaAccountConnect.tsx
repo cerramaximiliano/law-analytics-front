@@ -40,6 +40,7 @@ interface ScbaAccountConnectProps {
 	onConnectionSuccess?: () => void;
 	onSyncComplete?: () => void;
 	onServiceAvailableChange?: (available: boolean, message?: string) => void;
+	onConnectionStatusChange?: (connected: boolean) => void;
 }
 
 export interface ScbaAccountConnectRef {
@@ -48,7 +49,7 @@ export interface ScbaAccountConnectRef {
 }
 
 const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectProps>(
-	({ onConnectionSuccess, onSyncComplete, onServiceAvailableChange }, ref) => {
+	({ onConnectionSuccess, onSyncComplete, onServiceAvailableChange, onConnectionStatusChange }, ref) => {
 		const theme = useTheme();
 
 		// Estado del formulario
@@ -94,6 +95,13 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 				if (stopPolling) stopPolling();
 			};
 		}, []);
+
+		// Notificar al padre cuando el estado de conexión cambia (después de cargar)
+		useEffect(() => {
+			if (!isLoadingStatus) {
+				onConnectionStatusChange?.(hasCredentials);
+			}
+		}, [hasCredentials, isLoadingStatus]);
 
 		const loadCredentialsStatus = async () => {
 			setIsLoadingStatus(true);
