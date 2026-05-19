@@ -202,6 +202,10 @@ interface ReactTableProps extends Props {
 	handleMenuClose: () => void;
 	/** If true, shows onboarding-specific UI (special empty state, muted controls) */
 	isOnboarding?: boolean;
+	/** If true, disables row-level navigation to folder details (desktop double-click + mobile card title click). */
+	disableRowNavigation?: boolean;
+	/** If true, disables row selection: hides the checkbox column and removes the click-to-toggle on rows/cards. */
+	disableRowSelection?: boolean;
 	/** Filtros */
 	folderTypeFilter?: "all" | "manual" | "pjn" | "eje" | "mev";
 	onFolderTypeFilterChange?: (event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev">) => void;
@@ -256,6 +260,8 @@ function ReactTable({
 	onJurisdiccionFilterChange,
 	uniqueJurisdicciones = [],
 	onBarWidthMeasured,
+	disableRowNavigation = false,
+	disableRowSelection = false,
 }: ReactTableProps) {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
@@ -355,8 +361,8 @@ function ReactTable({
 	const sortBy = { id: "folderName", desc: false };
 
 	const defaultHiddenColumns = useMemo(
-		() =>
-			matchDownSM
+		() => {
+			const base = matchDownSM
 				? [
 						"_id",
 						"email",
@@ -370,8 +376,10 @@ function ReactTable({
 						"createdAt",
 						"updatedAt",
 				  ]
-				: ["email", "_id", "description", "finalDateFolder", "createdAt", "updatedAt"],
-		[matchDownSM],
+				: ["email", "_id", "description", "finalDateFolder", "createdAt", "updatedAt"];
+			return disableRowSelection ? [...base, "selection"] : base;
+		},
+		[matchDownSM, disableRowSelection],
 	);
 
 	const {
@@ -1294,11 +1302,11 @@ function ReactTable({
 							<Card
 								key={row.id}
 								variant="outlined"
-								onClick={() => row.toggleRowSelected()}
+								onClick={disableRowSelection ? undefined : () => row.toggleRowSelected()}
 								sx={{
 									borderColor: isSelected ? "primary.main" : "divider",
 									bgcolor: isSelected ? alpha(theme.palette.primary.lighter, 0.25) : "background.paper",
-									cursor: "pointer",
+									cursor: disableRowSelection ? "default" : "pointer",
 									transition: "border-color 0.15s, background-color 0.15s",
 								}}
 							>
@@ -1310,11 +1318,20 @@ function ReactTable({
 											<Typography
 												variant="subtitle2"
 												fontWeight={600}
-												sx={{ flex: 1, lineHeight: 1.3, wordBreak: "break-word" }}
-												onClick={(e) => {
-													e.stopPropagation();
-													navigate(`../details/${folder._id}`);
+												sx={{
+													flex: 1,
+													lineHeight: 1.3,
+													wordBreak: "break-word",
+													cursor: disableRowNavigation ? "default" : "pointer",
 												}}
+												onClick={
+													disableRowNavigation
+														? undefined
+														: (e) => {
+																e.stopPropagation();
+																navigate(`../details/${folder._id}`);
+														  }
+												}
 											>
 												{folder.folderName ? formatFolderName(folder.folderName, 60) : "Sin nombre"}
 											</Typography>
@@ -1401,14 +1418,22 @@ function ReactTable({
 									<Fragment key={i}>
 										<TableRow
 											{...row.getRowProps()}
-											onClick={() => {
-												row.toggleRowSelected();
-											}}
-											onDoubleClick={() => {
-												navigate(`../details/${row.original._id}`);
-											}}
+											onClick={
+												disableRowSelection
+													? undefined
+													: () => {
+															row.toggleRowSelected();
+													  }
+											}
+											onDoubleClick={
+												disableRowNavigation
+													? undefined
+													: () => {
+															navigate(`../details/${row.original._id}`);
+													  }
+											}
 											sx={{
-												cursor: "pointer",
+												cursor: disableRowSelection && disableRowNavigation ? "default" : "pointer",
 												transition: "background-color 0.15s ease",
 												bgcolor: row.isSelected ? alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) : "inherit",
 												"&:hover": {
@@ -3540,6 +3565,8 @@ const FoldersLayout = () => {
 								menuRowId={menuRowId}
 								handleMenuOpen={handleMenuOpen}
 								handleMenuClose={handleMenuClose}
+								disableRowNavigation
+								disableRowSelection
 							/>
 						</ScrollX>
 					</Box>
