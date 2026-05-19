@@ -49,6 +49,7 @@ import { deleteContact, unlinkFolderFromContact, filterContactsByFolder, archive
 import { dispatch, useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { useTeam } from "contexts/TeamContext";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 interface MembersProps {
 	title: string;
@@ -495,59 +496,79 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 		handleMenuClose();
 	};
 
+	const isDark = theme.palette.mode === "dark";
+	const errorColor = theme.palette.error.main;
+
 	const EmptyState = () => (
-		<Box sx={{ textAlign: "center", py: 4 }}>
-			<motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 260, damping: 20 }}>
-				<Avatar
-					color="error"
-					variant="rounded"
-					sx={{
-						width: 64,
-						height: 64,
-						bgcolor: alpha(theme.palette.error.main, 0.1),
-						color: "error.main",
-						mx: "auto",
-						mb: 2,
-					}}
-				>
-					<UserSquare variant="Bold" size={32} />
-				</Avatar>
-			</motion.div>
-			<Typography variant="subtitle1" color="textSecondary" gutterBottom>
-				No hay intervinientes registrados
+		<Box
+			sx={{
+				p: 3.5,
+				textAlign: "center",
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+				border: `1px dashed ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.2)}`,
+				borderRadius: 1.5,
+			}}
+		>
+			<Box
+				sx={{
+					width: 56,
+					height: 56,
+					borderRadius: 1.5,
+					display: "inline-flex",
+					alignItems: "center",
+					justifyContent: "center",
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+					color: BRAND_BLUE,
+					mb: 1.5,
+				}}
+			>
+				<UserSquare size={28} variant="Bulk" />
+			</Box>
+			<Typography sx={{ fontSize: "1rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.015em" }}>
+				Sin intervinientes registrados
 			</Typography>
-			<Typography variant="body2" color="textSecondary" sx={{ maxWidth: 320, mx: "auto" }}>
-				Agrega los contactos relacionados con este expediente como clientes, abogados, peritos y más
+			<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", letterSpacing: "-0.005em", mt: 0.5, maxWidth: 360, mx: "auto" }}>
+				Agregá los contactos relacionados con este expediente: clientes, abogados, peritos y más.
 			</Typography>
 		</Box>
 	);
 
+	const ctaButtonSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		borderRadius: 1.25,
+		py: 1,
+		boxShadow: "none",
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+	};
+	const ghostCtaSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: BRAND_BLUE,
+		borderRadius: 1.25,
+		py: 1,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+		bgcolor: "transparent",
+		"&:hover": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+		},
+	};
+
 	return (
 		<MainCard
-			shadow={3}
-			title={
-				title ? (
-					<List disablePadding>
-						<ListItem sx={{ p: 0 }}>
-							<ListItemAvatar>
-								<Avatar color="success" variant="rounded">
-									<UserSquare variant="Bold" />
-								</Avatar>
-							</ListItemAvatar>
-							<ListItemText
-								sx={{ my: 0 }}
-								primary="Intervinientes"
-								secondary={<Typography variant="subtitle1">Personas relacionadas con el expediente</Typography>}
-							/>
-						</ListItem>
-					</List>
-				) : null
-			}
 			content={false}
 			sx={{
-				"& .MuiCardContent-root": {
-					p: 2.5,
-				},
+				"& .MuiCardContent-root": { p: 0 },
+				borderRadius: 1.5,
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+				boxShadow: "none",
+				overflow: "hidden",
 			}}
 		>
 			<Dialog
@@ -580,52 +601,54 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 				membersData={selectedContacts}
 			/>
 
-			{/* Actions Menu */}
+			{/* Actions Menu — brand */}
 			<Menu
 				anchorEl={anchorEl}
 				open={Boolean(anchorEl)}
 				onClose={handleMenuClose}
 				transformOrigin={{ horizontal: "right", vertical: "top" }}
 				anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+				PaperProps={{
+					sx: {
+						borderRadius: 1.25,
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+						boxShadow: `0 8px 24px ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)}`,
+						mt: 0.5,
+					},
+				}}
 			>
-				<MenuItem onClick={handleViewProfile}>
+				<MenuItem onClick={handleViewProfile} sx={{ py: 1, px: 1.5 }}>
 					<ListItemIcon>
-						<Profile size={18} />
+						<Profile size={16} variant="Bulk" color={BRAND_BLUE} />
 					</ListItemIcon>
-					<Typography variant="body2">Ver perfil</Typography>
+					<Typography sx={{ fontSize: "0.82rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em" }}>Ver perfil</Typography>
 				</MenuItem>
 				{canUpdate && selectedMember?.importSource !== "interviniente" && (
-					<>
-						<Divider />
-						<MenuItem onClick={() => selectedMember && handleUnlink(selectedMember._id)}>
-							<ListItemIcon>
-								<Link1 size={18} color={theme.palette.warning.main} />
-							</ListItemIcon>
-							<Typography variant="body2" color="warning.main">
-								Desvincular
-							</Typography>
-						</MenuItem>
-					</>
+					<MenuItem onClick={() => selectedMember && handleUnlink(selectedMember._id)} sx={{ py: 1, px: 1.5 }}>
+						<ListItemIcon>
+							<Link1 size={16} variant="Bulk" color={STALE_AMBER} />
+						</ListItemIcon>
+						<Typography sx={{ fontSize: "0.82rem", fontWeight: 500, color: STALE_AMBER, letterSpacing: "-0.005em" }}>
+							Desvincular
+						</Typography>
+					</MenuItem>
 				)}
 				{canUpdate && selectedMember?.importSource === "interviniente" && (
-					<>
-						<Divider />
-						<MenuItem onClick={() => selectedMember && handleArchive(selectedMember._id, selectedMember.userId)}>
-							<ListItemIcon>
-								<Archive size={18} color={theme.palette.warning.main} />
-							</ListItemIcon>
-							<Typography variant="body2" color="warning.main">
-								Archivar
-							</Typography>
-						</MenuItem>
-					</>
+					<MenuItem onClick={() => selectedMember && handleArchive(selectedMember._id, selectedMember.userId)} sx={{ py: 1, px: 1.5 }}>
+						<ListItemIcon>
+							<Archive size={16} variant="Bulk" color={STALE_AMBER} />
+						</ListItemIcon>
+						<Typography sx={{ fontSize: "0.82rem", fontWeight: 500, color: STALE_AMBER, letterSpacing: "-0.005em" }}>
+							Archivar
+						</Typography>
+					</MenuItem>
 				)}
 				{canDelete && (
-					<MenuItem onClick={() => selectedMember && handleDelete(selectedMember._id)}>
+					<MenuItem onClick={() => selectedMember && handleDelete(selectedMember._id)} sx={{ py: 1, px: 1.5 }}>
 						<ListItemIcon>
-							<Trash size={18} color={theme.palette.error.main} />
+							<Trash size={16} variant="Bulk" color={errorColor} />
 						</ListItemIcon>
-						<Typography variant="body2" color="error">
+						<Typography sx={{ fontSize: "0.82rem", fontWeight: 500, color: errorColor, letterSpacing: "-0.005em" }}>
 							Eliminar
 						</Typography>
 					</MenuItem>
@@ -652,26 +675,25 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 					<>
 						<EmptyState />
 						{canCreate && (
-							<Stack direction="row" spacing={2} sx={{ mt: 3 }}>
+							<Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ mt: 2 }}>
 								<Button
 									variant="contained"
 									fullWidth
-									color="primary"
-									startIcon={<UserAdd size={18} />}
+									startIcon={<UserAdd size={16} variant="Bulk" />}
 									onClick={handleAdd}
 									disabled={isLoader}
+									sx={ctaButtonSx}
 								>
-									Nuevo Interviniente
+									Nuevo interviniente
 								</Button>
 								<Button
-									variant="outlined"
 									fullWidth
-									color="primary"
-									startIcon={<Link1 size={18} />}
+									startIcon={<Link1 size={16} variant="Bulk" />}
 									onClick={handleOpen}
 									disabled={isLoader}
+									sx={ghostCtaSx}
 								>
-									Vincular Existente
+									Vincular existente
 								</Button>
 							</Stack>
 						)}
@@ -679,15 +701,47 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 				) : (
 					<Box sx={{ display: "flex", flexDirection: "column", height: { xs: "60vh", sm: "500px" } }}>
 						<>
-							{/* Tabs para cambiar vista solo si hay intervinientes */}
+							{/* Tabs — brand */}
 							{hasIntervinientes && (
 								<Tabs
 									value={viewMode}
 									onChange={(_, newValue) => setViewMode(newValue)}
-									sx={{ mb: 2, borderBottom: 1, borderColor: "divider" }}
+									TabIndicatorProps={{
+										sx: {
+											height: 2,
+											borderRadius: "2px 2px 0 0",
+											bgcolor: BRAND_BLUE,
+										},
+									}}
+									sx={{
+										mb: 2,
+										borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+										minHeight: 40,
+										"& .MuiTab-root": {
+											minHeight: 40,
+											textTransform: "none",
+											fontSize: "0.82rem",
+											fontWeight: 600,
+											letterSpacing: "-0.005em",
+											px: 1.5,
+											color: theme.palette.text.secondary,
+											"&:hover": { color: BRAND_BLUE },
+											"&.Mui-selected": { color: BRAND_BLUE },
+										},
+									}}
 								>
-									<Tab value="accordion" label="Vista por Partes" icon={<User size={16} />} iconPosition="start" sx={{ minHeight: 48 }} />
-									<Tab value="list" label="Lista Completa" icon={<Briefcase size={16} />} iconPosition="start" sx={{ minHeight: 48 }} />
+									<Tab
+										value="accordion"
+										label="Vista por partes"
+										icon={<User size={14} variant={viewMode === "accordion" ? "Bulk" : "Linear"} />}
+										iconPosition="start"
+									/>
+									<Tab
+										value="list"
+										label="Lista completa"
+										icon={<Briefcase size={14} variant={viewMode === "list" ? "Bulk" : "Linear"} />}
+										iconPosition="start"
+									/>
 								</Tabs>
 							)}
 
@@ -1107,28 +1161,26 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 									{archivedByFolderCount} contacto{archivedByFolderCount > 1 ? "s" : ""} archivado{archivedByFolderCount > 1 ? "s" : ""}
 								</Alert>
 							)}
-							{/* Action Buttons - Fixed at bottom (solo para usuarios con permisos de crear) */}
 							{canCreate && (
-								<Stack direction="row" spacing={2} sx={{ mt: 2, flexShrink: 0 }}>
+								<Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ mt: 2, flexShrink: 0 }}>
 									<Button
 										variant="contained"
 										fullWidth
-										color="primary"
-										startIcon={<UserAdd size={18} />}
+										startIcon={<UserAdd size={16} variant="Bulk" />}
 										onClick={handleAdd}
 										disabled={isLoader}
+										sx={ctaButtonSx}
 									>
-										Nuevo Interviniente
+										Nuevo interviniente
 									</Button>
 									<Button
-										variant="outlined"
 										fullWidth
-										color="primary"
-										startIcon={<Link1 size={18} />}
+										startIcon={<Link1 size={16} variant="Bulk" />}
 										onClick={handleOpen}
 										disabled={isLoader}
+										sx={ghostCtaSx}
 									>
-										Vincular Existente
+										Vincular existente
 									</Button>
 								</Stack>
 							)}

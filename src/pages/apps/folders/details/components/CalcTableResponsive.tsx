@@ -1,10 +1,9 @@
 import React from "react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useParams } from "react-router";
 import dayjs from "utils/dayjs-config";
 import {
 	Skeleton,
-	CardContent,
 	Grid,
 	Stack,
 	Table,
@@ -16,19 +15,15 @@ import {
 	Typography,
 	IconButton,
 	Box,
-	Chip,
-	Paper,
 	useTheme,
 	alpha,
-	Divider,
-	Card,
 	useMediaQuery,
 	Collapse,
 	Button,
 } from "@mui/material";
 import MainCard from "components/MainCard";
 import SimpleBar from "components/third-party/SimpleBar";
-import { Calculator, TrendUp, TrendDown, Trash, Add, ArrowDown2, ArrowUp2 } from "iconsax-react";
+import { Calculator, TrendUp, TrendDown, Trash, Add, ArrowDown2, ArrowUp2, Coin } from "iconsax-react";
 import ModalCalcTable from "../modals/ModalCalcTable";
 import ModalCalcData from "../modals/ModalCalcData";
 import { dispatch, useSelector } from "store";
@@ -37,101 +32,145 @@ import { enqueueSnackbar } from "notistack";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTeam } from "contexts/TeamContext";
 
-// types
-import { CalculatorType, LoadingContentProps } from "types/calculator";
+import { CalculatorType } from "types/calculator";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 const formatAmount = (amount: number | null | undefined): string => {
-	if (amount == null) return "No Disponible";
+	if (amount == null) return "No disponible";
 	return `$${amount.toLocaleString("es-AR")}`;
 };
 
-const LoadingContent = ({ isLoader, content, skeleton }: LoadingContentProps): JSX.Element => (isLoader ? <>{skeleton}</> : <>{content}</>);
-
-// Animation variants
 const cardVariants = {
-	hidden: { opacity: 0, y: 20 },
+	hidden: { opacity: 0, y: 16 },
 	visible: { opacity: 1, y: 0 },
-	exit: { opacity: 0, y: -20 },
+	exit: { opacity: 0, y: -16 },
 };
 
-interface CompactStatsCardProps {
-	title: string;
-	value: string | number;
-	trend?: number;
-	icon?: React.ReactNode;
-	color?: "success" | "error" | "warning" | "primary";
+// Pill mapping: type → brand accent
+const getTypeAccent = (type: string, errorMain: string): string => {
+	switch (type) {
+		case "Reclamado":
+			return BRAND_BLUE;
+		case "Ofertado":
+			return LIVE_GREEN;
+		case "Actualizado":
+			return STALE_AMBER;
+		default:
+			return errorMain;
+	}
+};
+
+// Stat card — brand
+const StatCard: React.FC<{
+	eyebrow: string;
+	value: React.ReactNode;
+	icon: React.ReactNode;
 	subtitle?: string;
+	trend?: number;
+	accent: string;
 	isLoading?: boolean;
-}
-
-const CompactStatsCard: React.FC<CompactStatsCardProps> = ({ title, value, trend, icon, color = "primary", subtitle, isLoading }) => {
-	const theme = useTheme();
-	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-	return (
-		<Paper
-			elevation={0}
-			sx={{
-				p: isMobile ? 1.5 : 2,
-				bgcolor: alpha(theme.palette[color].main, 0.08),
-				border: `1px solid ${alpha(theme.palette[color].main, 0.2)}`,
-				borderRadius: 2,
-				position: "relative",
-				overflow: "hidden",
-				transition: "all 0.3s ease",
-				minHeight: isMobile ? 80 : 88,
-				"&:hover": {
-					transform: "translateY(-2px)",
-					boxShadow: theme.shadows[2],
-					borderColor: theme.palette[color].main,
-				},
-			}}
-		>
-			<Stack direction="row" spacing={isMobile ? 1.5 : 2} alignItems="center" height="100%">
-				<Box sx={{ color: theme.palette[color].main, display: isMobile ? "none" : "block" }}>{icon}</Box>
-				<Box flex={1}>
-					<Typography variant="caption" color="text.secondary" fontWeight={500}>
-						{title}
+	isDark: boolean;
+}> = ({ eyebrow, value, icon, subtitle, trend, accent, isLoading, isDark }) => (
+	<Box
+		sx={{
+			p: 1.75,
+			borderRadius: 1.5,
+			bgcolor: alpha(accent, isDark ? 0.06 : 0.03),
+			border: `1px solid ${alpha(accent, isDark ? 0.22 : 0.14)}`,
+			height: "100%",
+		}}
+	>
+		<Stack direction="row" spacing={1.25} alignItems="flex-start">
+			<Box
+				sx={{
+					width: 36,
+					height: 36,
+					borderRadius: 1,
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					bgcolor: alpha(accent, isDark ? 0.18 : 0.1),
+					border: `1px solid ${alpha(accent, isDark ? 0.32 : 0.22)}`,
+					color: accent,
+					flexShrink: 0,
+				}}
+			>
+				{icon}
+			</Box>
+			<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+				<Stack direction="row" spacing={0.5} alignItems="center">
+					<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: accent }} />
+					<Typography
+						sx={{
+							fontSize: "0.6rem",
+							fontWeight: 600,
+							letterSpacing: "0.08em",
+							textTransform: "uppercase",
+							color: "text.secondary",
+						}}
+					>
+						{eyebrow}
 					</Typography>
-					{isLoading ? (
-						<Skeleton width="80%" height={28} />
-					) : (
-						<Typography variant={isMobile ? "h6" : "h5"} fontWeight={600} color={theme.palette[color].main}>
-							{value}
-						</Typography>
-					)}
-					{!isMobile && subtitle && (
-						<Typography variant="caption" color="text.secondary" display="block">
-							{subtitle}
-						</Typography>
-					)}
-				</Box>
-				{!isMobile && trend !== undefined && (
-					<Stack alignItems="center" spacing={0.5}>
+				</Stack>
+				{isLoading ? (
+					<Skeleton width="80%" height={28} />
+				) : (
+					<Typography
+						sx={{
+							fontSize: "1.15rem",
+							fontWeight: 700,
+							color: accent,
+							letterSpacing: "-0.015em",
+							fontVariantNumeric: "tabular-nums",
+							lineHeight: 1.2,
+						}}
+					>
+						{value}
+					</Typography>
+				)}
+				{subtitle && (
+					<Typography
+						sx={{
+							fontSize: "0.68rem",
+							color: "text.secondary",
+							letterSpacing: "-0.005em",
+							overflow: "hidden",
+							textOverflow: "ellipsis",
+							whiteSpace: "nowrap",
+						}}
+					>
+						{subtitle}
+					</Typography>
+				)}
+			</Stack>
+			{trend !== undefined && (
+				<Box sx={{ flexShrink: 0 }}>
+					<Stack direction="row" spacing={0.375} alignItems="center">
 						{trend === 0 ? (
-							<Box sx={{ width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
-								<Box sx={{ width: 8, height: 2, bgcolor: theme.palette.grey[400], borderRadius: 1 }} />
-							</Box>
+							<Box sx={{ width: 8, height: 2, bgcolor: "text.disabled", borderRadius: 1 }} />
 						) : trend > 0 ? (
-							<TrendUp size={16} color={theme.palette.success.main} />
+							<TrendUp size={12} variant="Bulk" color={LIVE_GREEN} />
 						) : (
-							<TrendDown size={16} color={theme.palette.error.main} />
+							<TrendDown size={12} variant="Bulk" color={LIVE_GREEN === accent ? STALE_AMBER : LIVE_GREEN} />
 						)}
 						<Typography
-							variant="caption"
-							fontWeight={600}
-							color={trend === 0 ? "text.secondary" : trend > 0 ? "success.main" : "error.main"}
+							sx={{
+								fontSize: "0.7rem",
+								fontWeight: 700,
+								color: trend === 0 ? "text.secondary" : trend > 0 ? LIVE_GREEN : STALE_AMBER,
+								letterSpacing: "-0.005em",
+								fontVariantNumeric: "tabular-nums",
+							}}
 						>
 							{trend === 0 ? "Base" : `${Math.abs(trend).toFixed(0)}%`}
 						</Typography>
 					</Stack>
-				)}
-			</Stack>
-		</Paper>
-	);
-};
+				</Box>
+			)}
+		</Stack>
+	</Box>
+);
 
-// Mobile Card Component for Table Rows
 interface MobileCalcCardProps {
 	row: CalculatorType;
 	index: number;
@@ -140,61 +179,72 @@ interface MobileCalcCardProps {
 	canDelete?: boolean;
 }
 
-const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, index, onDelete, previousAmount, canDelete = true }) => {
+const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, onDelete, previousAmount, canDelete = true }) => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const errorColor = theme.palette.error.main;
 	const [expanded, setExpanded] = useState(false);
-
-	const getTypeColor = (type: string) => {
-		switch (type) {
-			case "Reclamado":
-				return "primary";
-			case "Ofertado":
-				return "success";
-			case "Actualizado":
-				return "warning";
-			default:
-				return "default";
-		}
-	};
-
+	const typeAccent = getTypeAccent(row.type || "", errorColor);
 	const percentageChange = previousAmount && row.amount ? ((row.amount - previousAmount) / previousAmount) * 100 : null;
 
 	return (
-		<Card
-			variant="outlined"
+		<Box
 			sx={{
-				mb: 1.5,
-				borderColor: theme.palette.divider,
+				mb: 1.25,
+				borderRadius: 1.25,
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+				bgcolor: theme.palette.background.paper,
+				transition: "all 180ms ease",
 				"&:hover": {
-					bgcolor: alpha(theme.palette.primary.main, 0.02),
-					borderColor: theme.palette.primary.main,
+					borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 				},
 			}}
 		>
-			<Box
-				sx={{
-					p: 2,
-					cursor: "pointer",
-				}}
-				onClick={() => setExpanded(!expanded)}
-			>
-				<Stack spacing={1.5}>
-					{/* Header Row */}
+			<Box sx={{ p: 1.5, cursor: "pointer" }} onClick={() => setExpanded(!expanded)}>
+				<Stack spacing={1.25}>
 					<Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-						<Stack spacing={0.5}>
-							<Stack direction="row" spacing={1} alignItems="center">
-								<Chip
-									label={row.type || "N/D"}
-									size="small"
-									color={getTypeColor(row.type || "")}
-									variant="filled"
-									sx={{ fontWeight: 500 }}
-								/>
-								<Typography variant="caption" color="text.secondary">
+						<Stack spacing={0.5} sx={{ minWidth: 0 }}>
+							<Stack direction="row" spacing={0.75} alignItems="center">
+								<Box
+									sx={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 0.5,
+										px: 0.75,
+										py: 0.125,
+										borderRadius: 0.625,
+										bgcolor: alpha(typeAccent, isDark ? 0.16 : 0.1),
+										border: `1px solid ${alpha(typeAccent, isDark ? 0.32 : 0.22)}`,
+									}}
+								>
+									<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: typeAccent }} />
+									<Typography
+										sx={{
+											fontSize: "0.62rem",
+											fontWeight: 600,
+											color: typeAccent,
+											letterSpacing: "0.04em",
+											textTransform: "uppercase",
+											lineHeight: 1,
+										}}
+									>
+										{row.type || "N/D"}
+									</Typography>
+								</Box>
+								<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 									{row.date ? dayjs(row.date).fromNow() : "N/D"}
 								</Typography>
 							</Stack>
-							<Typography variant="h6" fontWeight={600}>
+							<Typography
+								sx={{
+									fontSize: "1rem",
+									fontWeight: 700,
+									color: "text.primary",
+									letterSpacing: "-0.015em",
+									fontVariantNumeric: "tabular-nums",
+								}}
+							>
 								{formatAmount(row.amount)}
 							</Typography>
 						</Stack>
@@ -206,30 +256,42 @@ const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, index, onDelete, p
 									onDelete(row._id);
 								}}
 								sx={{
-									color: theme.palette.error.main,
+									width: 28,
+									height: 28,
+									borderRadius: 0.75,
+									color: errorColor,
+									bgcolor: alpha(errorColor, isDark ? 0.08 : 0.04),
+									border: `1px solid ${alpha(errorColor, isDark ? 0.22 : 0.14)}`,
 									"&:hover": {
-										bgcolor: alpha(theme.palette.error.main, 0.1),
+										bgcolor: alpha(errorColor, isDark ? 0.18 : 0.1),
 									},
 								}}
 							>
-								<Trash size={20} />
+								<Trash size={14} variant="Bulk" />
 							</IconButton>
 						)}
 					</Stack>
 
-					{/* Additional Info */}
 					<Stack direction="row" justifyContent="space-between" alignItems="center">
-						<Typography variant="body2" color="text.secondary">
+						<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 							{row.date ? dayjs(row.date).format("DD/MM/YYYY") : "N/D"}
 						</Typography>
 						{percentageChange !== null && (
-							<Stack direction="row" spacing={0.5} alignItems="center">
+							<Stack direction="row" spacing={0.375} alignItems="center">
 								{percentageChange > 0 ? (
-									<TrendUp size={14} color={theme.palette.success.main} />
+									<TrendUp size={12} variant="Bulk" color={LIVE_GREEN} />
 								) : (
-									<TrendDown size={14} color={theme.palette.error.main} />
+									<TrendDown size={12} variant="Bulk" color={STALE_AMBER} />
 								)}
-								<Typography variant="caption" color={percentageChange > 0 ? "success.main" : "error.main"} fontWeight={500}>
+								<Typography
+									sx={{
+										fontSize: "0.7rem",
+										fontWeight: 600,
+										color: percentageChange > 0 ? LIVE_GREEN : STALE_AMBER,
+										letterSpacing: "-0.005em",
+										fontVariantNumeric: "tabular-nums",
+									}}
+								>
 									{Math.abs(percentageChange).toFixed(1)}%
 								</Typography>
 							</Stack>
@@ -239,21 +301,32 @@ const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, index, onDelete, p
 			</Box>
 
 			<Collapse in={expanded}>
-				<Divider />
-				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.grey[500], 0.05) }}>
-					<Stack spacing={1}>
-						<Stack direction="row" justifyContent="space-between">
-							<Typography variant="caption" color="text.secondary">
-								Parte:
-							</Typography>
-							<Typography variant="caption" fontWeight={500}>
-								{row.user || "N/D"}
-							</Typography>
-						</Stack>
+				<Box
+					sx={{
+						borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.12 : 0.08)}`,
+						p: 1.5,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+					}}
+				>
+					<Stack direction="row" justifyContent="space-between">
+						<Typography
+							sx={{
+								fontSize: "0.6rem",
+								fontWeight: 600,
+								letterSpacing: "0.08em",
+								textTransform: "uppercase",
+								color: "text.secondary",
+							}}
+						>
+							Parte
+						</Typography>
+						<Typography sx={{ fontSize: "0.78rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em" }}>
+							{row.user || "—"}
+						</Typography>
 					</Stack>
 				</Box>
 			</Collapse>
-		</Card>
+		</Box>
 	);
 };
 
@@ -264,7 +337,10 @@ const CalcTableResponsive = ({
 	title: string;
 	folderData: { folderName: string; monto: number; groupId?: string };
 }) => {
+	void title;
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const errorColor = theme.palette.error.main;
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 	const [open, setOpen] = useState(false);
@@ -284,7 +360,6 @@ const CalcTableResponsive = ({
 		return latestOffered?.amount ?? null;
 	}, [sortedData]);
 
-	// Calculate trends
 	const calculateTrend = useMemo(() => {
 		if (sortedData.length < 2) return undefined;
 		const latest = sortedData[0]?.amount || 0;
@@ -293,7 +368,6 @@ const CalcTableResponsive = ({
 		return ((latest - previous) / previous) * 100;
 	}, [sortedData]);
 
-	// Get first claimed calculation data (date and amount)
 	const firstClaimedData = useMemo(() => {
 		const claimedCalcs = sortedData.filter((item: any) => item.type === "Reclamado");
 		if (claimedCalcs.length === 0) return null;
@@ -304,15 +378,11 @@ const CalcTableResponsive = ({
 		};
 	}, [sortedData]);
 
-	// Calculate difference percentage
 	const differencePercentage = useMemo(() => {
 		const claimedAmount = firstClaimedData?.amount ?? folderData?.monto;
 		if (!claimedAmount || !latestOfferedAmount) return null;
 		return ((latestOfferedAmount / claimedAmount) * 100).toFixed(1);
 	}, [firstClaimedData?.amount, folderData?.monto, latestOfferedAmount]);
-
-	// Note: Data fetching is handled by the parent component (GestionTabImproved)
-	// to avoid duplicate API calls. The selectedCalculators come from Redux store.
 
 	const showEmptyState = !isLoader && sortedData.length === 0;
 
@@ -338,117 +408,161 @@ const CalcTableResponsive = ({
 		}
 	};
 
-	const getTypeChip = (type: string) => {
-		const getColor = () => {
-			switch (type) {
-				case "Reclamado":
-					return "primary";
-				case "Ofertado":
-					return "success";
-				case "Actualizado":
-					return "warning";
-				default:
-					return "default";
-			}
-		};
-
+	const TypePill = ({ type }: { type: string }) => {
+		const accent = getTypeAccent(type, errorColor);
 		return (
-			<Chip
-				label={type}
-				size="small"
-				color={getColor()}
-				variant="filled"
+			<Box
 				sx={{
-					fontWeight: 500,
-					"& .MuiChip-label": {
-						px: 1.5,
-					},
+					display: "inline-flex",
+					alignItems: "center",
+					gap: 0.5,
+					px: 0.75,
+					py: 0.125,
+					borderRadius: 0.625,
+					bgcolor: alpha(accent, isDark ? 0.16 : 0.1),
+					border: `1px solid ${alpha(accent, isDark ? 0.32 : 0.22)}`,
 				}}
-			/>
+			>
+				<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: accent }} />
+				<Typography
+					sx={{
+						fontSize: "0.62rem",
+						fontWeight: 600,
+						color: accent,
+						letterSpacing: "0.04em",
+						textTransform: "uppercase",
+						lineHeight: 1,
+					}}
+				>
+					{type}
+				</Typography>
+			</Box>
 		);
 	};
 
 	const EmptyState = () => (
 		<Box
 			sx={{
-				py: 4,
-				display: "flex",
-				flexDirection: "column",
-				alignItems: "center",
-				justifyContent: "center",
+				p: 3.5,
+				textAlign: "center",
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+				border: `1px dashed ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.2)}`,
+				borderRadius: 1.5,
 			}}
 		>
-			<Calculator size={48} color={theme.palette.text.secondary} style={{ opacity: 0.5 }} />
-			<Typography variant="subtitle1" color="textSecondary" sx={{ mt: 2, mb: 1 }}>
-				No hay cálculos registrados
+			<Box
+				sx={{
+					width: 56,
+					height: 56,
+					borderRadius: 1.5,
+					display: "inline-flex",
+					alignItems: "center",
+					justifyContent: "center",
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+					color: BRAND_BLUE,
+					mb: 1.5,
+				}}
+			>
+				<Calculator size={28} variant="Bulk" />
+			</Box>
+			<Typography sx={{ fontSize: "1rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.015em" }}>
+				Sin cálculos registrados
 			</Typography>
-			<Typography variant="body2" color="textSecondary" sx={{ maxWidth: 320, mx: "auto", textAlign: "center" }}>
-				Comienza agregando tu primer cálculo o registro
+			<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", letterSpacing: "-0.005em", mt: 0.5, maxWidth: 320, mx: "auto" }}>
+				Empezá agregando tu primer cálculo o registro.
 			</Typography>
 		</Box>
 	);
 
+	const ctaButtonSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		borderRadius: 1.25,
+		py: 1,
+		boxShadow: "none",
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+	};
+	const ghostCtaSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: BRAND_BLUE,
+		borderRadius: 1.25,
+		py: 1,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+		bgcolor: "transparent",
+		"&:hover": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+		},
+	};
+
 	return (
 		<MainCard
-			title={title}
 			content={false}
 			sx={{
-				"& .MuiCardContent-root": {
-					p: isMobile ? 1.5 : 2.5,
-				},
+				"& .MuiCardContent-root": { p: 0 },
+				borderRadius: 1.5,
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+				boxShadow: "none",
+				overflow: "hidden",
 			}}
 		>
-			{/* Modales */}
 			<ModalCalcData open={openItemModal} setOpen={setOpenItemModal} folderId={id} folderName={folderData?.folderName} />
 			<ModalCalcTable open={open} setOpen={setOpen} folderName={folderData?.folderName} folderId={id} />
 
-			<Box sx={{ p: 2.5 }}>
-				{/* Compact Stats Cards */}
-				<Grid container spacing={isMobile ? 1.5 : 2} sx={{ mb: isMobile ? 2 : 3 }}>
+			<Box sx={{ p: 2 }}>
+				{/* Stats */}
+				<Grid container spacing={1.5} sx={{ mb: 2 }}>
 					<Grid item xs={12} sm={6}>
-						<CompactStatsCard
-							title="Monto Reclamado"
+						<StatCard
+							eyebrow="Monto reclamado"
 							value={formatAmount(firstClaimedData?.amount ?? folderData?.monto ?? null)}
-							icon={<Calculator size={24} />}
-							color="primary"
+							icon={<Calculator size={18} variant="Bulk" />}
+							accent={BRAND_BLUE}
 							subtitle={
 								firstClaimedData?.date ? `Registrado el ${dayjs(firstClaimedData.date).format("DD/MM/YYYY")}` : "Monto inicial del reclamo"
 							}
 							trend={0}
 							isLoading={isLoader}
+							isDark={isDark}
 						/>
 					</Grid>
 					<Grid item xs={12} sm={6}>
-						<CompactStatsCard
-							title="Último Ofrecimiento"
+						<StatCard
+							eyebrow="Último ofrecimiento"
 							value={latestOfferedAmount !== null ? formatAmount(latestOfferedAmount) : "Sin ofertas"}
-							trend={calculateTrend}
-							icon={<TrendUp size={24} />}
-							color={latestOfferedAmount ? "success" : "warning"}
+							icon={<Coin size={18} variant="Bulk" />}
+							accent={latestOfferedAmount ? LIVE_GREEN : STALE_AMBER}
 							subtitle={differencePercentage ? `${differencePercentage}% del monto reclamado` : "Aún no hay ofertas registradas"}
+							trend={calculateTrend}
 							isLoading={isLoader}
+							isDark={isDark}
 						/>
 					</Grid>
 				</Grid>
 
-				{/* Content Area */}
+				{/* Content */}
 				{showEmptyState ? (
 					<>
 						<EmptyState />
 						{canCreate && (
-							<Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-								<Button variant="contained" fullWidth startIcon={<Add />} onClick={() => setOpenItemModal(true)}>
-									Nuevo Monto
+							<Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ mt: 2 }}>
+								<Button variant="contained" fullWidth startIcon={<Add size={16} variant="Bulk" />} onClick={() => setOpenItemModal(true)} sx={ctaButtonSx}>
+									Nuevo monto
 								</Button>
-								<Button variant="outlined" fullWidth onClick={() => setOpen(true)}>
-									Gestionar Cálculos
+								<Button fullWidth onClick={() => setOpen(true)} sx={ghostCtaSx}>
+									Gestionar cálculos
 								</Button>
 							</Stack>
 						)}
 					</>
 				) : (
 					<>
-						{/* Mobile View - Cards */}
 						{isMobile ? (
 							<Box sx={{ maxHeight: 400, overflow: "auto" }}>
 								<AnimatePresence>
@@ -459,7 +573,7 @@ const CalcTableResponsive = ({
 											initial="hidden"
 											animate="visible"
 											exit="exit"
-											transition={{ delay: index * 0.05 }}
+											transition={{ delay: index * 0.04 }}
 										>
 											<MobileCalcCard
 												row={row}
@@ -473,129 +587,160 @@ const CalcTableResponsive = ({
 								</AnimatePresence>
 							</Box>
 						) : (
-							/* Desktop/Tablet View - Table */
-							<Paper
-								elevation={0}
+							<Box
 								sx={{
-									border: `1px solid ${theme.palette.divider}`,
-									borderRadius: 2,
+									borderRadius: 1.5,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 									overflow: "hidden",
 								}}
 							>
 								<SimpleBar sx={{ maxHeight: 400 }}>
 									<TableContainer>
-										<Table
-											sx={{
-												"& .MuiTableCell-root": {
-													py: isTablet ? 1 : 1.5,
-													px: isTablet ? 1.5 : 2,
-												},
-												"& .MuiTableRow-root": {
-													transition: "all 0.2s ease",
-													cursor: "pointer",
-													"&:hover": {
-														bgcolor: alpha(theme.palette.primary.main, 0.04),
-													},
-												},
-											}}
-										>
+										<Table size="small">
 											<TableHead>
-												<TableRow>
-													{["Fecha", "Tipo", "Parte", "Monto", ""].map((header, index) => (
-														<TableCell
-															key={header}
-															align={index >= 3 ? "right" : "left"}
-															sx={{
-																fontWeight: 600,
-																color: "text.secondary",
-																fontSize: isTablet ? "0.75rem" : "0.875rem",
-																bgcolor: theme.palette.grey[50],
-															}}
-														>
-															<LoadingContent isLoader={isLoader} content={header} skeleton={<Skeleton />} />
-														</TableCell>
-													))}
+												<TableRow
+													sx={{
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+														"& th": {
+															borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+															fontSize: "0.6rem",
+															fontWeight: 600,
+															letterSpacing: "0.08em",
+															textTransform: "uppercase",
+															color: "text.secondary",
+															py: 1,
+															px: isTablet ? 1.5 : 2,
+														},
+													}}
+												>
+													<TableCell>Fecha</TableCell>
+													<TableCell>Tipo</TableCell>
+													<TableCell>Parte</TableCell>
+													<TableCell align="right">Monto</TableCell>
+													<TableCell align="right" sx={{ width: 56 }}></TableCell>
 												</TableRow>
 											</TableHead>
 											<TableBody>
-												{sortedData.map((row: CalculatorType, index: number) => (
-													<TableRow key={row._id}>
-														<TableCell>
-															<Stack spacing={0.25}>
-																<Typography variant="body2" fontWeight={500}>
-																	{row.date ? dayjs(row.date).format("DD/MM/YYYY") : "N/D"}
+												{sortedData.map((row: CalculatorType, index: number) => {
+													const prevAmount = index < sortedData.length - 1 ? sortedData[index + 1].amount : null;
+													return (
+														<TableRow
+															key={row._id}
+															sx={{
+																"& td": {
+																	borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.12 : 0.08)}`,
+																	py: 1.25,
+																	px: isTablet ? 1.5 : 2,
+																},
+																"&:last-child td": { borderBottom: "none" },
+																transition: "background 180ms ease",
+																"&:hover": {
+																	bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+																},
+															}}
+														>
+															<TableCell>
+																<Stack spacing={0.125}>
+																	<Typography
+																		sx={{
+																			fontSize: "0.82rem",
+																			fontWeight: 600,
+																			color: "text.primary",
+																			letterSpacing: "-0.005em",
+																			fontVariantNumeric: "tabular-nums",
+																		}}
+																	>
+																		{row.date ? dayjs(row.date).format("DD/MM/YYYY") : "N/D"}
+																	</Typography>
+																	<Typography sx={{ fontSize: "0.68rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+																		{row.date ? dayjs(row.date).fromNow() : "N/D"}
+																	</Typography>
+																</Stack>
+															</TableCell>
+															<TableCell>
+																<TypePill type={row.type || "N/D"} />
+															</TableCell>
+															<TableCell>
+																<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+																	{row.user || "—"}
 																</Typography>
-																<Typography variant="caption" color="text.secondary">
-																	{row.date ? dayjs(row.date).fromNow() : "N/D"}
-																</Typography>
-															</Stack>
-														</TableCell>
-														<TableCell>{getTypeChip(row.type || "N/D")}</TableCell>
-														<TableCell>
-															<Typography variant="body2" color="text.secondary">
-																{row.user || "N/D"}
-															</Typography>
-														</TableCell>
-														<TableCell align="right">
-															<Stack spacing={0.25} alignItems="flex-end">
-																<Typography variant="body2" fontWeight={600}>
-																	{formatAmount(row.amount)}
-																</Typography>
-																{index > 0 && row.amount && sortedData[index - 1].amount && (
-																	<Stack direction="row" spacing={0.5} alignItems="center">
-																		{row.amount > sortedData[index - 1].amount ? (
-																			<ArrowUp2 size={12} color={theme.palette.success.main} />
-																		) : (
-																			<ArrowDown2 size={12} color={theme.palette.error.main} />
-																		)}
-																		<Typography
-																			variant="caption"
-																			color={row.amount > sortedData[index - 1].amount ? "success.main" : "error.main"}
-																		>
-																			{Math.abs(((row.amount - sortedData[index - 1].amount) / sortedData[index - 1].amount) * 100).toFixed(
-																				1,
+															</TableCell>
+															<TableCell align="right">
+																<Stack spacing={0.125} alignItems="flex-end">
+																	<Typography
+																		sx={{
+																			fontSize: "0.88rem",
+																			fontWeight: 700,
+																			color: "text.primary",
+																			letterSpacing: "-0.005em",
+																			fontVariantNumeric: "tabular-nums",
+																		}}
+																	>
+																		{formatAmount(row.amount)}
+																	</Typography>
+																	{prevAmount !== null && row.amount && prevAmount && (
+																		<Stack direction="row" spacing={0.375} alignItems="center">
+																			{row.amount > prevAmount ? (
+																				<ArrowUp2 size={10} variant="Bulk" color={LIVE_GREEN} />
+																			) : (
+																				<ArrowDown2 size={10} variant="Bulk" color={STALE_AMBER} />
 																			)}
-																			%
-																		</Typography>
-																	</Stack>
+																			<Typography
+																				sx={{
+																					fontSize: "0.68rem",
+																					fontWeight: 600,
+																					color: row.amount > prevAmount ? LIVE_GREEN : STALE_AMBER,
+																					letterSpacing: "-0.005em",
+																					fontVariantNumeric: "tabular-nums",
+																				}}
+																			>
+																				{Math.abs(((row.amount - prevAmount) / prevAmount) * 100).toFixed(1)}%
+																			</Typography>
+																		</Stack>
+																	)}
+																</Stack>
+															</TableCell>
+															<TableCell align="right">
+																{canDelete && (
+																	<IconButton
+																		size="small"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			handleDelete(row._id);
+																		}}
+																		sx={{
+																			width: 28,
+																			height: 28,
+																			borderRadius: 0.75,
+																			color: errorColor,
+																			bgcolor: alpha(errorColor, isDark ? 0.08 : 0.04),
+																			border: `1px solid ${alpha(errorColor, isDark ? 0.22 : 0.14)}`,
+																			"&:hover": {
+																				bgcolor: alpha(errorColor, isDark ? 0.18 : 0.1),
+																			},
+																		}}
+																	>
+																		<Trash size={14} variant="Bulk" />
+																	</IconButton>
 																)}
-															</Stack>
-														</TableCell>
-														<TableCell align="right">
-															{canDelete && (
-																<IconButton
-																	size="small"
-																	onClick={(e) => {
-																		e.stopPropagation();
-																		handleDelete(row._id);
-																	}}
-																	sx={{
-																		color: theme.palette.error.main,
-																		"&:hover": {
-																			bgcolor: alpha(theme.palette.error.main, 0.1),
-																		},
-																	}}
-																>
-																	<Trash size={18} />
-																</IconButton>
-															)}
-														</TableCell>
-													</TableRow>
-												))}
+															</TableCell>
+														</TableRow>
+													);
+												})}
 											</TableBody>
 										</Table>
 									</TableContainer>
 								</SimpleBar>
-							</Paper>
+							</Box>
 						)}
-						{/* Action Buttons */}
+
 						{canCreate && (
-							<Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-								<Button variant="contained" fullWidth startIcon={<Add />} onClick={() => setOpenItemModal(true)}>
-									Nuevo Monto
+							<Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ mt: 2 }}>
+								<Button variant="contained" fullWidth startIcon={<Add size={16} variant="Bulk" />} onClick={() => setOpenItemModal(true)} sx={ctaButtonSx}>
+									Nuevo monto
 								</Button>
-								<Button variant="outlined" fullWidth onClick={() => setOpen(true)}>
-									Gestionar Cálculos
+								<Button fullWidth onClick={() => setOpen(true)} sx={ghostCtaSx}>
+									Gestionar cálculos
 								</Button>
 							</Stack>
 						)}

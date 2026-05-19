@@ -1,26 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import {
-	Stack,
-	Skeleton,
-	Button,
-	LinearProgress,
-	Typography,
-	IconButton,
-	Checkbox,
-	Box,
-	Paper,
-	useTheme,
-	useMediaQuery,
-	alpha,
-	List,
-	ListItem,
-	ListItemAvatar,
-	ListItemText,
-	Avatar,
-	Tooltip,
-} from "@mui/material";
+import { Stack, Skeleton, Button, Typography, IconButton, Checkbox, Box, useTheme, useMediaQuery, alpha, Tooltip } from "@mui/material";
 import MainCard from "components/MainCard";
-import { Add, TaskSquare, Trash, TickCircle, CloseCircle, Calendar, Filter, Edit2 } from "iconsax-react";
+import { Add, TaskSquare, Trash, TickCircle, Calendar, Filter, Edit2, Clock } from "iconsax-react";
 import SimpleBar from "components/third-party/SimpleBar";
 import dayjs from "utils/dayjs-config";
 import { useParams } from "react-router";
@@ -39,39 +20,38 @@ import { useTeam } from "contexts/TeamContext";
 
 // Types
 import { TaskListProps, TaskType } from "types/task";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
+	void title;
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const errorColor = theme.palette.error.main;
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const { id } = useParams<{ id: string }>();
 	const { canDelete, canUpdate, canCreate } = useTeam();
 
-	// Redux state
 	const tasks = useSelector((state: RootState) => state.tasksReducer?.selectedTasks || []) as TaskType[];
 	const isLoading = useSelector((state: RootState) => state.tasksReducer?.isLoader || false);
 
-	// Local state
 	const [open, setOpen] = useState(false);
 	const [editTask, setEditTask] = useState<TaskType | null>(null);
 	const [showCompleted, setShowCompleted] = useState(true);
 	const [parent] = useAutoAnimate({ duration: 200 });
 	const [linkModalOpen, setLinkModalOpen] = useState(false);
 
-	// Fetch tasks on mount
 	useEffect(() => {
 		if (id) {
 			dispatch(getTasksByFolderId(id));
 		}
 	}, [id]);
 
-	// Memoized calculations
 	const taskStats = useMemo(() => {
 		const completed = tasks.filter((task) => task.checked).length;
 		const pending = tasks.filter((task) => !task.checked).length;
 		const total = tasks.length;
 		const percentage = total > 0 ? (completed / total) * 100 : 0;
 
-		// Tasks by date
 		const overdue = tasks.filter((task) => {
 			if (task.checked) return false;
 			const taskDate = dayjs(task.dueDate || task.date);
@@ -91,23 +71,18 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 		return { completed, pending, total, percentage, overdue, today, thisWeek };
 	}, [tasks]);
 
-	// Sorted and filtered tasks
 	const displayTasks = useMemo(() => {
 		let filtered = [...tasks];
 
-		// Sort by date (newest first) and completion status
 		filtered.sort((a, b) => {
-			// Uncompleted tasks first
 			if (a.checked !== b.checked) {
 				return a.checked ? 1 : -1;
 			}
-			// Then by date
 			const dateA = dayjs(a.dueDate || a.date);
 			const dateB = dayjs(b.dueDate || b.date);
 			return dateB.diff(dateA);
 		});
 
-		// Filter completed tasks if needed
 		if (!showCompleted) {
 			filtered = filtered.filter((task) => !task.checked);
 		}
@@ -115,7 +90,6 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 		return filtered;
 	}, [tasks, showCompleted]);
 
-	// Handlers
 	const handleOpen = useCallback(() => {
 		if (!isLoading) {
 			setOpen(true);
@@ -191,30 +165,108 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 		}
 	}, []);
 
-	// Components
-	const EmptyState = () => (
-		<Box sx={{ textAlign: "center", py: 4 }}>
-			<motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 260, damping: 20 }}>
-				<Avatar
-					color="error"
-					variant="rounded"
+	const brandIconButtonSx = (accent: string = BRAND_BLUE) => ({
+		width: 28,
+		height: 28,
+		borderRadius: 0.75,
+		border: `1px solid ${alpha(accent, isDark ? 0.22 : 0.14)}`,
+		bgcolor: alpha(accent, isDark ? 0.08 : 0.04),
+		color: accent,
+		transition: "all 180ms ease",
+		"&:hover": {
+			bgcolor: alpha(accent, isDark ? 0.18 : 0.1),
+			borderColor: alpha(accent, isDark ? 0.38 : 0.28),
+		},
+	});
+
+	const StatCard = ({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: number; accent: string }) => (
+		<Box
+			sx={{
+				flex: "1 1 auto",
+				minWidth: 140,
+				p: 1.5,
+				borderRadius: 1.25,
+				bgcolor: alpha(accent, isDark ? 0.08 : 0.04),
+				border: `1px solid ${alpha(accent, isDark ? 0.24 : 0.16)}`,
+			}}
+		>
+			<Stack direction="row" alignItems="center" spacing={1.25}>
+				<Box
 					sx={{
-						width: 64,
-						height: 64,
-						bgcolor: alpha(theme.palette.error.main, 0.1),
-						color: "error.main",
-						mx: "auto",
-						mb: 2,
+						width: 32,
+						height: 32,
+						borderRadius: 0.875,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						bgcolor: alpha(accent, isDark ? 0.16 : 0.1),
+						border: `1px solid ${alpha(accent, isDark ? 0.32 : 0.22)}`,
+						color: accent,
+						flexShrink: 0,
 					}}
 				>
-					<TaskSquare variant="Bold" size={32} />
-				</Avatar>
-			</motion.div>
-			<Typography variant="subtitle1" color="textSecondary" gutterBottom>
-				No hay tareas registradas
+					{icon}
+				</Box>
+				<Stack spacing={0}>
+					<Typography
+						sx={{
+							fontSize: "1.15rem",
+							fontWeight: 700,
+							color: accent,
+							letterSpacing: "-0.015em",
+							fontVariantNumeric: "tabular-nums",
+							lineHeight: 1.1,
+						}}
+					>
+						{value}
+					</Typography>
+					<Typography
+						sx={{
+							fontSize: "0.6rem",
+							fontWeight: 600,
+							letterSpacing: "0.08em",
+							textTransform: "uppercase",
+							color: "text.secondary",
+						}}
+					>
+						{label}
+					</Typography>
+				</Stack>
+			</Stack>
+		</Box>
+	);
+
+	const EmptyState = () => (
+		<Box
+			sx={{
+				p: 3.5,
+				textAlign: "center",
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+				border: `1px dashed ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.2)}`,
+				borderRadius: 1.5,
+			}}
+		>
+			<Box
+				sx={{
+					width: 56,
+					height: 56,
+					borderRadius: 1.5,
+					display: "inline-flex",
+					alignItems: "center",
+					justifyContent: "center",
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+					color: BRAND_BLUE,
+					mb: 1.5,
+				}}
+			>
+				<TaskSquare size={28} variant="Bulk" />
+			</Box>
+			<Typography sx={{ fontSize: "1rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.015em" }}>
+				Sin tareas registradas
 			</Typography>
-			<Typography variant="body2" color="textSecondary" sx={{ maxWidth: 320, mx: "auto" }}>
-				Comienza creando una tarea nueva o vincula una existente
+			<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", letterSpacing: "-0.005em", mt: 0.5, maxWidth: 320, mx: "auto" }}>
+				Empezá creando una tarea nueva o vinculá una existente.
 			</Typography>
 		</Box>
 	);
@@ -225,156 +277,151 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 		const isToday = taskDate.isSame(dayjs(), "day");
 		const isTomorrow = taskDate.isSame(dayjs().add(1, "day"), "day");
 
+		const accentBorder = task.checked
+			? alpha(BRAND_BLUE, isDark ? 0.12 : 0.08)
+			: isOverdue
+			? alpha(errorColor, isDark ? 0.32 : 0.22)
+			: isToday
+			? alpha(STALE_AMBER, isDark ? 0.32 : 0.22)
+			: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1);
+		const accentBg = task.checked
+			? alpha(BRAND_BLUE, isDark ? 0.02 : 0.01)
+			: isOverdue
+			? alpha(errorColor, isDark ? 0.04 : 0.02)
+			: isToday
+			? alpha(STALE_AMBER, isDark ? 0.04 : 0.02)
+			: theme.palette.background.paper;
+
+		const dateColor = isOverdue ? errorColor : isToday ? STALE_AMBER : theme.palette.text.secondary;
+
 		return (
-			<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-				<Paper
-					elevation={0}
+			<motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}>
+				<Box
 					sx={{
-						p: 2,
-						mb: 1.5,
-						border: `1px solid ${
-							isOverdue && !task.checked
-								? alpha(theme.palette.error.main, 0.3)
-								: isToday && !task.checked
-								? alpha(theme.palette.warning.main, 0.3)
-								: theme.palette.divider
-						}`,
-						borderRadius: 2,
-						transition: "all 0.2s ease",
-						opacity: task.checked ? 0.7 : 1,
-						bgcolor: task.checked
-							? alpha(theme.palette.action.selected, 0.02)
-							: isOverdue
-							? alpha(theme.palette.error.main, 0.02)
-							: isToday
-							? alpha(theme.palette.warning.main, 0.02)
-							: "background.paper",
+						p: 1.5,
+						mb: 1.25,
+						borderRadius: 1.25,
+						border: `1px solid ${accentBorder}`,
+						bgcolor: accentBg,
+						opacity: task.checked ? 0.75 : 1,
+						transition: "all 180ms ease",
 						"&:hover": {
-							borderColor: theme.palette.primary.main,
-							bgcolor: alpha(theme.palette.primary.main, 0.02),
-							transform: "translateY(-2px)",
-							boxShadow: theme.shadows[2],
+							borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 						},
 					}}
 				>
-					<Stack direction="row" alignItems="center" spacing={2}>
+					<Stack direction="row" alignItems="center" spacing={1.5}>
 						<Checkbox
 							checked={task.checked}
 							onChange={() => handleCheckboxChange(task._id)}
 							disabled={!canUpdate}
-							color="primary"
 							sx={{
-								"&.Mui-checked": {
-									color: theme.palette.success.main,
-								},
+								p: 0.5,
+								color: alpha(BRAND_BLUE, 0.5),
+								"&.Mui-checked": { color: LIVE_GREEN },
 							}}
 						/>
-						<Box flex={1}>
+						<Box flex={1} sx={{ minWidth: 0 }}>
 							<Typography
-								variant="body1"
 								sx={{
+									fontSize: "0.9rem",
 									textDecoration: task.checked ? "line-through" : "none",
 									color: task.checked ? "text.secondary" : "text.primary",
-									fontWeight: task.checked ? 400 : 500,
+									fontWeight: task.checked ? 400 : 600,
+									letterSpacing: "-0.005em",
 								}}
 							>
 								{task.name}
 							</Typography>
 							{task.description && (
 								<Typography
-									variant="caption"
-									color="text.secondary"
 									sx={{
-										display: "block",
-										mt: 0.5,
-										opacity: 0.8,
+										fontSize: "0.74rem",
+										color: "text.secondary",
+										letterSpacing: "-0.005em",
+										mt: 0.375,
+										opacity: 0.85,
 									}}
 								>
 									{task.description}
 								</Typography>
 							)}
-							<Stack direction="row" spacing={1} alignItems="center" mt={0.5}>
-								<Calendar size={14} color={theme.palette.text.secondary} />
+							<Stack direction="row" spacing={0.5} alignItems="center" mt={0.5}>
+								<Calendar size={12} variant="Bulk" color={dateColor} />
 								<Typography
-									variant="caption"
-									color={isOverdue ? "error.main" : isToday ? "warning.main" : "text.secondary"}
-									fontWeight={isOverdue || isToday ? 600 : 400}
+									sx={{
+										fontSize: "0.72rem",
+										color: dateColor,
+										fontWeight: isOverdue || isToday ? 600 : 400,
+										letterSpacing: "-0.005em",
+									}}
 								>
 									{taskDate.format("DD/MM/YYYY")}
-									{isOverdue && " • Vencida"}
-									{isToday && " • Hoy"}
-									{isTomorrow && " • Mañana"}
+									{isOverdue && " · Vencida"}
+									{isToday && " · Hoy"}
+									{isTomorrow && " · Mañana"}
 								</Typography>
 							</Stack>
 						</Box>
-						<Stack direction="row" spacing={0.5}>
+						<Stack direction="row" spacing={0.625} sx={{ flexShrink: 0 }}>
 							{canUpdate && (
 								<Tooltip title="Editar">
-									<IconButton
-										size="small"
-										onClick={() => handleEditTask(task)}
-										sx={{
-											color: "text.secondary",
-											"&:hover": {
-												bgcolor: alpha(theme.palette.primary.main, 0.1),
-												color: "primary.main",
-											},
-										}}
-									>
-										<Edit2 size={16} />
+									<IconButton size="small" onClick={() => handleEditTask(task)} sx={brandIconButtonSx(BRAND_BLUE)}>
+										<Edit2 size={14} variant="Bulk" />
 									</IconButton>
 								</Tooltip>
 							)}
 							{canDelete && (
 								<Tooltip title="Eliminar">
-									<IconButton
-										size="small"
-										onClick={() => handleDeleteTask(task._id)}
-										sx={{
-											color: "text.secondary",
-											"&:hover": {
-												bgcolor: alpha(theme.palette.error.main, 0.1),
-												color: "error.main",
-											},
-										}}
-									>
-										<Trash size={16} />
+									<IconButton size="small" onClick={() => handleDeleteTask(task._id)} sx={brandIconButtonSx(errorColor)}>
+										<Trash size={14} variant="Bulk" />
 									</IconButton>
 								</Tooltip>
 							)}
 						</Stack>
 					</Stack>
-				</Paper>
+				</Box>
 			</motion.div>
 		);
 	};
 
+	const ctaButtonSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		borderRadius: 1.25,
+		py: 1,
+		boxShadow: "none",
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+	};
+
+	const ghostCtaSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: BRAND_BLUE,
+		borderRadius: 1.25,
+		py: 1,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+		bgcolor: "transparent",
+		"&:hover": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+		},
+	};
+
 	return (
 		<MainCard
-			shadow={3}
-			title={
-				title ? (
-					<List disablePadding>
-						<ListItem sx={{ p: 0 }}>
-							<ListItemAvatar>
-								<Avatar color="warning" variant="rounded">
-									<TaskSquare variant="Bold" />
-								</Avatar>
-							</ListItemAvatar>
-							<ListItemText
-								sx={{ my: 0 }}
-								primary="Tareas"
-								secondary={<Typography variant="subtitle1">Actividades y recordatorios del expediente</Typography>}
-							/>
-						</ListItem>
-					</List>
-				) : null
-			}
 			content={false}
 			sx={{
-				"& .MuiCardContent-root": {
-					p: 2.5,
-				},
+				"& .MuiCardContent-root": { p: 0 },
+				borderRadius: 1.5,
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+				boxShadow: "none",
+				overflow: "hidden",
 			}}
 		>
 			<ModalTasks
@@ -390,227 +437,201 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 				}}
 			/>
 
-			<Box sx={{ p: 2.5 }}>
+			<Box sx={{ p: 2 }}>
 				{isLoading ? (
-					<Stack spacing={2}>
+					<Stack spacing={1.25}>
 						{[1, 2, 3].map((index) => (
-							<Paper key={index} sx={{ p: 2 }}>
-								<Stack direction="row" spacing={2} alignItems="center">
-									<Skeleton variant="circular" width={24} height={24} />
-									<Box flex={1}>
-										<Skeleton width="70%" height={20} sx={{ mb: 0.5 }} />
-										<Skeleton width="30%" height={16} />
-									</Box>
-									<Skeleton variant="circular" width={30} height={30} />
-								</Stack>
-							</Paper>
+							<Skeleton key={index} variant="rectangular" height={80} sx={{ borderRadius: 1.25 }} />
 						))}
 					</Stack>
 				) : tasks.length === 0 ? (
-					// Empty state - compact view
 					<>
 						<EmptyState />
-						{/* Task Action Buttons (solo para usuarios con permisos de crear) */}
 						{canCreate && (
-							<Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 1 : 2} sx={{ mt: 3 }}>
+							<Stack direction={isMobile ? "column" : "row"} spacing={1.25} sx={{ mt: 2 }}>
 								<ResponsiveButton
-									variant="contained"
 									fullWidth={!isMobile}
-									color="primary"
-									startIcon={<Add size={18} />}
+									startIcon={<Add size={16} variant="Bulk" />}
 									onClick={handleOpen}
 									disabled={isLoading}
 									mobileText="Nueva"
-									desktopText="Nueva Tarea"
+									desktopText="Nueva tarea"
 									hideTextOnMobile={false}
+									sx={ctaButtonSx}
 								>
-									Nueva Tarea
+									Nueva tarea
 								</ResponsiveButton>
 								<ResponsiveButton
-									variant="outlined"
 									fullWidth={!isMobile}
-									color="primary"
-									startIcon={<TaskSquare size={18} />}
+									startIcon={<TaskSquare size={16} variant="Bulk" />}
 									onClick={() => setLinkModalOpen(true)}
 									disabled={isLoading}
 									mobileText="Vincular"
-									desktopText="Vincular Tarea"
+									desktopText="Vincular tarea"
 									hideTextOnMobile={false}
+									sx={ghostCtaSx}
 								>
-									Vincular Tarea
+									Vincular tarea
 								</ResponsiveButton>
 							</Stack>
 						)}
 					</>
 				) : (
-					// Tasks view - with fixed height and scroll
 					<Box sx={{ display: "flex", flexDirection: "column", maxWidth: "100%", overflow: "hidden" }}>
-						<>
-							{/* Stats Overview - Fixed */}
-							<Stack spacing={2} sx={{ flexShrink: 0, mb: 2 }}>
-								<Stack direction="row" spacing={2} sx={{ flexWrap: "wrap" }}>
-									<Paper
-										elevation={0}
-										sx={{
-											flex: "1 1 auto",
-											minWidth: "140px",
-											p: 2,
-											bgcolor: alpha(theme.palette.success.main, 0.08),
-											border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
-											borderRadius: 2,
-										}}
-									>
-										<Stack direction="row" alignItems="center" spacing={1}>
-											<TickCircle size={20} color={theme.palette.success.main} />
-											<Box>
-												<Typography variant="h5" color="success.main">
-													{taskStats.completed}
-												</Typography>
-												<Typography variant="caption" color="text.secondary">
-													Completadas
-												</Typography>
-											</Box>
-										</Stack>
-									</Paper>
-									<Paper
-										elevation={0}
-										sx={{
-											flex: "1 1 auto",
-											minWidth: "140px",
-											p: 2,
-											bgcolor: alpha(theme.palette.warning.main, 0.08),
-											border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`,
-											borderRadius: 2,
-										}}
-									>
-										<Stack direction="row" alignItems="center" spacing={1}>
-											<CloseCircle size={20} color={theme.palette.warning.main} />
-											<Box>
-												<Typography variant="h5" color="warning.main">
-													{taskStats.pending}
-												</Typography>
-												<Typography variant="caption" color="text.secondary">
-													Pendientes
-												</Typography>
-											</Box>
-										</Stack>
-									</Paper>
-									{taskStats.overdue > 0 && (
-										<Paper
-											elevation={0}
+						{/* Stats */}
+						<Stack spacing={1.5} sx={{ flexShrink: 0, mb: 1.5 }}>
+							<Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }} useFlexGap>
+								<StatCard icon={<TickCircle size={16} variant="Bulk" />} label="Completadas" value={taskStats.completed} accent={LIVE_GREEN} />
+								<StatCard icon={<Clock size={16} variant="Bulk" />} label="Pendientes" value={taskStats.pending} accent={STALE_AMBER} />
+								{taskStats.overdue > 0 && (
+									<StatCard icon={<Calendar size={16} variant="Bulk" />} label="Vencidas" value={taskStats.overdue} accent={errorColor} />
+								)}
+							</Stack>
+
+							{/* Progress */}
+							<Box>
+								<Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.625}>
+									<Stack direction="row" spacing={0.5} alignItems="center">
+										<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+										<Typography
 											sx={{
-												flex: "1 1 auto",
-												minWidth: "140px",
-												p: 2,
-												bgcolor: alpha(theme.palette.error.main, 0.08),
-												border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
-												borderRadius: 2,
+												fontSize: "0.6rem",
+												fontWeight: 600,
+												letterSpacing: "0.08em",
+												textTransform: "uppercase",
+												color: "text.secondary",
 											}}
 										>
-											<Stack direction="row" alignItems="center" spacing={1}>
-												<Calendar size={20} color={theme.palette.error.main} />
-												<Box>
-													<Typography variant="h5" color="error.main">
-														{taskStats.overdue}
-													</Typography>
-													<Typography variant="caption" color="text.secondary">
-														Vencidas
-													</Typography>
-												</Box>
-											</Stack>
-										</Paper>
-									)}
-								</Stack>
-
-								{/* Progress Bar */}
-								<Box>
-									<Stack direction="row" justifyContent="space-between" mb={1}>
-										<Typography variant="body2" color="text.secondary">
 											Progreso general
 										</Typography>
-										<Typography variant="body2" fontWeight={600}>
-											{Math.round(taskStats.percentage)}%
-										</Typography>
 									</Stack>
-									<LinearProgress
-										variant="determinate"
-										value={taskStats.percentage}
+									<Typography
 										sx={{
-											height: 8,
-											borderRadius: 4,
-											bgcolor: "grey.200",
-											"& .MuiLinearProgress-bar": {
-												borderRadius: 4,
-												bgcolor: "success.main",
-											},
+											fontSize: "0.82rem",
+											fontWeight: 700,
+											color: taskStats.percentage === 100 ? LIVE_GREEN : BRAND_BLUE,
+											letterSpacing: "-0.005em",
+											fontVariantNumeric: "tabular-nums",
+										}}
+									>
+										{Math.round(taskStats.percentage)}%
+									</Typography>
+								</Stack>
+								<Box
+									sx={{
+										width: "100%",
+										height: 6,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08),
+										borderRadius: 1,
+										overflow: "hidden",
+									}}
+								>
+									<Box
+										sx={{
+											width: `${taskStats.percentage}%`,
+											height: "100%",
+											bgcolor: taskStats.percentage === 100 ? LIVE_GREEN : BRAND_BLUE,
+											transition: "width 300ms ease",
 										}}
 									/>
 								</Box>
-							</Stack>
+							</Box>
+						</Stack>
 
-							{/* Filter - Fixed */}
-							<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 2, flexShrink: 0 }}>
-								<Typography variant="subtitle2" color="text.secondary">
-									{displayTasks.length} {displayTasks.length === 1 ? "tarea" : "tareas"}
-								</Typography>
+						{/* Filter */}
+						<Stack
+							direction="row"
+							justifyContent="space-between"
+							alignItems="center"
+							sx={{
+								py: 1.25,
+								flexShrink: 0,
+								borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+							}}
+						>
+							<Typography
+								sx={{
+									fontSize: "0.7rem",
+									fontWeight: 600,
+									letterSpacing: "0.04em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+								}}
+							>
+								{displayTasks.length} {displayTasks.length === 1 ? "tarea" : "tareas"}
+							</Typography>
+							<Button
+								size="small"
+								startIcon={
+									showCompleted ? (
+										<TickCircle size={14} variant="Bulk" color={BRAND_BLUE} />
+									) : (
+										<Filter size={14} variant="Bulk" color={BRAND_BLUE} />
+									)
+								}
+								onClick={() => setShowCompleted(!showCompleted)}
+								sx={{
+									textTransform: "none",
+									fontWeight: 600,
+									fontSize: "0.78rem",
+									letterSpacing: "-0.005em",
+									color: BRAND_BLUE,
+									borderRadius: 1,
+									px: 1,
+									"&:hover": {
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+									},
+								}}
+							>
+								{showCompleted ? "Ocultar completadas" : "Mostrar todas"}
+							</Button>
+						</Stack>
+
+						{/* Tasks List */}
+						<Box sx={{ maxWidth: "100%", overflow: "hidden" }}>
+							<SimpleBar style={{ maxHeight: 400 }}>
+								<Box ref={parent}>
+									<AnimatePresence>
+										{displayTasks.map((task, index) => (
+											<TaskItem key={task._id} task={task} index={index} />
+										))}
+									</AnimatePresence>
+								</Box>
+							</SimpleBar>
+						</Box>
+
+						{/* CTA buttons */}
+						{canCreate && (
+							<Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ mt: 2, flexShrink: 0 }}>
 								<Button
-									size="small"
-									startIcon={showCompleted ? <TickCircle size={16} /> : <Filter size={16} />}
-									onClick={() => setShowCompleted(!showCompleted)}
-									sx={{ color: "text.secondary" }}
+									variant="contained"
+									fullWidth
+									startIcon={<Add size={16} variant="Bulk" />}
+									onClick={handleOpen}
+									disabled={isLoading}
+									sx={ctaButtonSx}
 								>
-									{showCompleted ? "Ocultar completadas" : "Mostrar todas"}
+									Nueva tarea
+								</Button>
+								<Button
+									fullWidth
+									startIcon={<TaskSquare size={16} variant="Bulk" />}
+									onClick={() => setLinkModalOpen(true)}
+									disabled={isLoading}
+									sx={ghostCtaSx}
+								>
+									Vincular tarea
 								</Button>
 							</Stack>
-
-							{/* Tasks List - Scrollable */}
-							<Box sx={{ maxWidth: "100%", overflow: "hidden" }}>
-								<SimpleBar style={{ maxHeight: "400px" }}>
-									<Box ref={parent}>
-										<AnimatePresence>
-											{displayTasks.map((task, index) => (
-												<TaskItem key={task._id} task={task} index={index} />
-											))}
-										</AnimatePresence>
-									</Box>
-								</SimpleBar>
-							</Box>
-							{/* Task Action Buttons - Fixed at bottom (solo para usuarios con permisos de crear) */}
-							{canCreate && (
-								<Stack direction="row" spacing={2} sx={{ mt: 2, flexShrink: 0 }}>
-									<Button
-										variant="contained"
-										fullWidth
-										color="primary"
-										startIcon={<Add size={18} />}
-										onClick={handleOpen}
-										disabled={isLoading}
-									>
-										Nueva Tarea
-									</Button>
-									<Button
-										variant="outlined"
-										fullWidth
-										color="primary"
-										startIcon={<TaskSquare size={18} />}
-										onClick={() => setLinkModalOpen(true)}
-										disabled={isLoading}
-									>
-										Vincular Tarea
-									</Button>
-								</Stack>
-							)}
-						</>
+						)}
 					</Box>
 				)}
 			</Box>
 
-			{/* Link Task Modal */}
 			<LinkTaskModal
 				open={linkModalOpen}
 				onClose={() => {
 					setLinkModalOpen(false);
-					// Refresh tasks after linking
 					if (id) {
 						dispatch(getTasksByFolderId(id));
 					}
