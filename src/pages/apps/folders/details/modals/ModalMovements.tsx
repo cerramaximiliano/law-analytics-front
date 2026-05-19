@@ -1,17 +1,6 @@
 import React from "react";
-import {
-	DialogTitle,
-	Divider,
-	Button,
-	Stack,
-	DialogContent,
-	Typography,
-	DialogActions,
-	Zoom,
-	useTheme,
-	InputLabel,
-	Grid,
-} from "@mui/material";
+import { Box, DialogTitle, Button, Stack, DialogContent, Typography, DialogActions, Zoom, useTheme, InputLabel, Grid } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
@@ -25,6 +14,7 @@ import { Movement } from "types/movements";
 import { enqueueSnackbar } from "notistack";
 import dayjs from "utils/dayjs-config";
 import { useTeam } from "contexts/TeamContext";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 // types
 import { MovementsModalType } from "types/movements";
 
@@ -39,6 +29,7 @@ const ModalMovements = ({
 	dialogSx,
 }: MovementsModalType) => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const auth = useSelector((state) => state.auth);
 	const userId = auth.user?._id;
 	const { getRequestHeaders } = useTeam();
@@ -230,10 +221,12 @@ const ModalMovements = ({
 					sx: {
 						p: 0,
 						borderRadius: 2,
-						boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+						boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
 						display: "flex",
 						flexDirection: "column",
 						maxHeight: "90vh",
+						overflow: "hidden",
 					},
 				}}
 			>
@@ -242,35 +235,59 @@ const ModalMovements = ({
 						<>
 							<DialogTitle
 								sx={{
-									bgcolor: theme.palette.primary.lighter,
-									p: 3,
-									borderBottom: `1px solid ${theme.palette.divider}`,
+									display: "flex",
+									alignItems: "center",
+									gap: 1.25,
+									px: 2.5,
+									py: 1.75,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+									borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 								}}
 							>
-								<Stack direction="row" justifyContent="space-between" alignItems="center">
-									<Stack direction="row" alignItems="center" spacing={1}>
-										<TableDocument size={24} color={theme.palette.primary.main} />
+								<Box
+									sx={{
+										width: 32,
+										height: 32,
+										borderRadius: 1,
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+										color: BRAND_BLUE,
+									}}
+								>
+									<TableDocument size={18} variant="Bulk" />
+								</Box>
+								<Stack spacing={0.125} sx={{ minWidth: 0, flex: 1 }}>
+									<Stack direction="row" spacing={0.5} alignItems="center">
+										<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
 										<Typography
-											variant="h5"
 											sx={{
-												color: theme.palette.primary.main,
+												fontSize: "0.6rem",
 												fontWeight: 600,
+												letterSpacing: "0.08em",
+												textTransform: "uppercase",
+												color: "text.secondary",
 											}}
 										>
-											{editMode ? "Editar Movimiento" : "Agregar Movimiento"}
+											{editMode ? "Editar" : "Nuevo"}
 										</Typography>
 									</Stack>
+									<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+										{editMode ? "Editar movimiento" : "Agregar movimiento"}
+									</Typography>
 									<Typography
-										color="textSecondary"
-										variant="subtitle2"
 										sx={{
-											maxWidth: "30%",
+											fontSize: "0.72rem",
+											color: "text.secondary",
+											letterSpacing: "-0.005em",
 											overflow: "hidden",
 											textOverflow: "ellipsis",
 											whiteSpace: "nowrap",
 										}}
 									>
-										Carpeta: {folderName}
+										{folderName}
 									</Typography>
 								</Stack>
 							</DialogTitle>
@@ -413,23 +430,47 @@ const ModalMovements = ({
 									</Grid>
 								</DialogContent>
 
-								<DialogActions
-									sx={{
-										p: 2.5,
-										bgcolor: theme.palette.background.default,
-										borderTop: `1px solid ${theme.palette.divider}`,
-									}}
-								>
+								<DialogActions sx={{ px: 2.5, py: 1.75, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}>
 									<Button
-										color="error"
 										onClick={() => {
 											setOpen(false);
 											resetForm();
 										}}
+										sx={{
+											textTransform: "none",
+											fontWeight: 600,
+											letterSpacing: "-0.005em",
+											color: "text.secondary",
+											borderRadius: 1.25,
+											px: 2,
+											py: 0.875,
+											border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+											"&:hover": {
+												color: BRAND_BLUE,
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+												borderColor: alpha(BRAND_BLUE, 0.28),
+											},
+										}}
 									>
 										Cancelar
 									</Button>
-									<Button type="submit" variant="contained" disabled={isSubmitting}>
+									<Button
+										type="submit"
+										variant="contained"
+										disabled={isSubmitting}
+										sx={{
+											textTransform: "none",
+											fontWeight: 600,
+											letterSpacing: "-0.005em",
+											bgcolor: BRAND_BLUE,
+											color: "#fff",
+											borderRadius: 1.25,
+											px: 2,
+											py: 0.875,
+											boxShadow: "none",
+											"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+										}}
+									>
 										Guardar
 									</Button>
 								</DialogActions>
