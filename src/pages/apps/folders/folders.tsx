@@ -35,6 +35,7 @@ import {
 	Select,
 	SelectChangeEvent,
 	CardActions,
+	CircularProgress,
 } from "@mui/material";
 
 import { useFilters, useExpanded, useGlobalFilter, useRowSelect, useSortBy, useTable, usePagination, Row, HeaderProps } from "react-table";
@@ -87,6 +88,7 @@ import {
 	Filter,
 	ArrowUp2,
 	ArrowDown2,
+	ArrowRight2,
 } from "iconsax-react";
 
 // types
@@ -1302,11 +1304,17 @@ function ReactTable({
 							<Card
 								key={row.id}
 								variant="outlined"
-								onClick={disableRowSelection ? undefined : () => row.toggleRowSelected()}
+								onClick={
+									disableRowSelection
+										? disableRowNavigation
+											? undefined
+											: () => navigate(`../details/${folder._id}`)
+										: () => row.toggleRowSelected()
+								}
 								sx={{
 									borderColor: isSelected ? "primary.main" : "divider",
 									bgcolor: isSelected ? alpha(theme.palette.primary.lighter, 0.25) : "background.paper",
-									cursor: disableRowSelection ? "default" : "pointer",
+									cursor: disableRowSelection && disableRowNavigation ? "default" : "pointer",
 									transition: "border-color 0.15s, background-color 0.15s",
 								}}
 							>
@@ -1341,47 +1349,65 @@ function ReactTable({
 											</Stack>
 										</Stack>
 
-										{/* Fuero y Jurisdicción */}
-										{(folder.folderFuero || folder.folderJuris?.label) && (
-											<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-												{folder.folderFuero && (
+										{/* Metadata preview — blur en modo preview para indicar que los
+										    datos son indicativos; el detalle real está al tap. */}
+										<Box
+											sx={
+												disableRowSelection
+													? {
+															display: "flex",
+															flexDirection: "column",
+															gap: 0.75,
+															filter: "blur(2.5px)",
+															opacity: 0.55,
+															userSelect: "none",
+															pointerEvents: "none",
+													  }
+													: { display: "flex", flexDirection: "column", gap: 0.75 }
+											}
+										>
+											{/* Fuero y Jurisdicción */}
+											{(folder.folderFuero || folder.folderJuris?.label) && (
+												<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+													{folder.folderFuero && (
+														<Typography variant="caption" color="text.secondary">
+															{folder.folderFuero}
+														</Typography>
+													)}
+													{folder.folderFuero && folder.folderJuris?.label && (
+														<Typography variant="caption" color="text.secondary">
+															·
+														</Typography>
+													)}
+													{folder.folderJuris?.label && (
+														<Typography variant="caption" color="text.secondary">
+															{folder.folderJuris.label}
+														</Typography>
+													)}
+												</Stack>
+											)}
+
+											{/* Parte */}
+											{folder.orderStatus && (
+												<Typography variant="caption" color="text.secondary">
+													Parte: <strong>{folder.orderStatus}</strong>
+												</Typography>
+											)}
+
+											{/* Fechas */}
+											<Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+												{initDateStr && (
 													<Typography variant="caption" color="text.secondary">
-														{folder.folderFuero}
+														Inicio: {initDateStr}
 													</Typography>
 												)}
-												{folder.folderFuero && folder.folderJuris?.label && (
+												{lastMovStr && (
 													<Typography variant="caption" color="text.secondary">
-														·
-													</Typography>
-												)}
-												{folder.folderJuris?.label && (
-													<Typography variant="caption" color="text.secondary">
-														{folder.folderJuris.label}
+														Últ. mov.: {lastMovStr}
 													</Typography>
 												)}
 											</Stack>
-										)}
-
-										{/* Parte */}
-										{folder.orderStatus && (
-											<Typography variant="caption" color="text.secondary">
-												Parte: <strong>{folder.orderStatus}</strong>
-											</Typography>
-										)}
-
-										{/* Fechas */}
-										<Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
-											{initDateStr && (
-												<Typography variant="caption" color="text.secondary">
-													Inicio: {initDateStr}
-												</Typography>
-											)}
-											{lastMovStr && (
-												<Typography variant="caption" color="text.secondary">
-													Últ. mov.: {lastMovStr}
-												</Typography>
-											)}
-										</Stack>
+										</Box>
 									</Stack>
 								</CardContent>
 
@@ -1420,7 +1446,12 @@ function ReactTable({
 											{...row.getRowProps()}
 											onClick={
 												disableRowSelection
-													? undefined
+													? // En modo preview, el single-click navega al detalle: como la
+													  // selección está apagada, el click ya no toglea nada y aprovechamos
+													  // el gesto para llevar al usuario directo a las opciones.
+													  disableRowNavigation
+														? undefined
+														: () => navigate(`../details/${row.original._id}`)
 													: () => {
 															row.toggleRowSelected();
 													  }
@@ -1436,6 +1467,23 @@ function ReactTable({
 												cursor: disableRowSelection && disableRowNavigation ? "default" : "pointer",
 												transition: "background-color 0.15s ease",
 												bgcolor: row.isSelected ? alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) : "inherit",
+												// Modo preview (tabla de "Carpetas que requieren tu atención"):
+												// blureamos las celdas de datos del medio, dejamos limpias la
+												// carátula (primera) y las acciones (última). Comunica visualmente
+												// "esto es una preview, no contenido interactivo".
+												...(disableRowSelection && {
+													"& > .MuiTableCell-root:not(:first-of-type):not(:last-of-type)": {
+														filter: "blur(3px)",
+														opacity: 0.5,
+														userSelect: "none",
+														pointerEvents: "none",
+														transition: "filter 0.2s ease, opacity 0.2s ease",
+													},
+													"&:hover > .MuiTableCell-root:not(:first-of-type):not(:last-of-type)": {
+														filter: "blur(3.5px)",
+														opacity: 0.4,
+													},
+												}),
 												"&:hover": {
 													bgcolor: row.isSelected
 														? alpha(BRAND_BLUE, isDark ? 0.18 : 0.11)
@@ -1803,6 +1851,10 @@ const FoldersLayout = () => {
 	const [causaSelectorOpen, setCausaSelectorOpen] = useState(false);
 	const [causaSelectorFolder, setCausaSelectorFolder] = useState<{ id: string; name: string }>({ id: "", name: "" });
 
+	// Filas en proceso de "Actualizar estado de verificación".
+	// Loading scoped a la fila: evita el skeleton global cuando se refresca una sola.
+	const [verifyingFolderIds, setVerifyingFolderIds] = useState<Set<string>>(() => new Set());
+
 	// Estados para filtros de carpetas
 	const [folderTypeFilter, setFolderTypeFilter] = useState<"all" | "manual" | "pjn" | "eje" | "mev">("all");
 	const [statusFilter, setStatusFilter] = useState<"all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada">("all");
@@ -2080,6 +2132,52 @@ const FoldersLayout = () => {
 		setAddFolderMode("edit");
 		setFolder(folderData);
 	}, []);
+
+	// Refetch puntual de una sola fila pendiente de verificación.
+	// Mantiene un Set de IDs en vuelo para mostrar spinner localizado en
+	// el botón sin disparar el skeleton global de las tablas.
+	const handleVerifyFolder = useCallback(
+		async (folderId: string) => {
+			if (verifyingFolderIds.has(folderId)) return;
+
+			setVerifyingFolderIds((prev) => {
+				const next = new Set(prev);
+				next.add(folderId);
+				return next;
+			});
+
+			try {
+				const result = await dispatch(getFolderById(folderId, true));
+
+				if (result.success && result.folder) {
+					if (result.folder.causaAssociationStatus === "pending_selection") {
+						setSnackbarMessage("Hay múltiples resultados. Seleccione el expediente correcto.");
+						setSnackbarSeverity("info");
+						setSnackbarOpen(true);
+					} else if (result.folder.causaVerified && result.folder.causaIsValid) {
+						setSnackbarMessage("La carpeta fue sincronizada correctamente");
+						setSnackbarSeverity("success");
+						setSnackbarOpen(true);
+					} else if (result.folder.causaVerified && result.folder.causaIsValid === false) {
+						setSnackbarMessage("La carpeta no existe o no es pública");
+						setSnackbarSeverity("error");
+						setSnackbarOpen(true);
+					}
+				} else if (!result.success) {
+					setSnackbarMessage(result.message || "Error al verificar la carpeta. Intente nuevamente");
+					setSnackbarSeverity("error");
+					setSnackbarOpen(true);
+				}
+			} finally {
+				setVerifyingFolderIds((prev) => {
+					const next = new Set(prev);
+					next.delete(folderId);
+					return next;
+				});
+			}
+		},
+		[verifyingFolderIds],
+	);
 
 	const handleClose = useCallback(() => {
 		setOpen((prev) => !prev);
@@ -2677,44 +2775,29 @@ const FoldersLayout = () => {
 										Pendiente de verificación
 									</Typography>
 								</Box>
-								<Tooltip title="Actualizar estado de verificación">
-									<IconButton
-										size="small"
-										onClick={async (e) => {
-											e.stopPropagation();
-											const result = await dispatch(getFolderById(folder._id, true));
-
-											if (result.success && result.folder) {
-												if (result.folder.causaAssociationStatus === "pending_selection") {
-													// Múltiples resultados - requiere selección
-													setSnackbarMessage("Hay múltiples resultados. Seleccione el expediente correcto.");
-													setSnackbarSeverity("info");
-													setSnackbarOpen(true);
-												} else if (result.folder.causaVerified && result.folder.causaIsValid) {
-													setSnackbarMessage("La carpeta fue sincronizada correctamente");
-													setSnackbarSeverity("success");
-													setSnackbarOpen(true);
-												} else if (result.folder.causaVerified && result.folder.causaIsValid === false) {
-													// Solo si es explícitamente false (no null)
-													setSnackbarMessage("La carpeta no existe o no es pública");
-													setSnackbarSeverity("error");
-													setSnackbarOpen(true);
-												}
-											} else if (!result.success) {
-												setSnackbarMessage(result.message || "Error al verificar la carpeta. Intente nuevamente");
-												setSnackbarSeverity("error");
-												setSnackbarOpen(true);
-											}
-										}}
-										sx={{
-											padding: 0.5,
-											"&:hover": {
-												backgroundColor: "warning.lighter",
-											},
-										}}
-									>
-										<Refresh size={16} />
-									</IconButton>
+								<Tooltip title={verifyingFolderIds.has(folder._id) ? "Verificando…" : "Actualizar estado de verificación"}>
+									<span>
+										<IconButton
+											size="small"
+											disabled={verifyingFolderIds.has(folder._id)}
+											onClick={(e) => {
+												e.stopPropagation();
+												handleVerifyFolder(folder._id);
+											}}
+											sx={{
+												padding: 0.5,
+												"&:hover": {
+													backgroundColor: "warning.lighter",
+												},
+											}}
+										>
+											{verifyingFolderIds.has(folder._id) ? (
+												<CircularProgress size={14} thickness={5} sx={{ color: STALE_AMBER }} />
+											) : (
+												<Refresh size={16} />
+											)}
+										</IconButton>
+									</span>
 								</Tooltip>
 							</Stack>
 						);
@@ -2781,44 +2864,29 @@ const FoldersLayout = () => {
 										Pendiente de verificación
 									</Typography>
 								</Box>
-								<Tooltip title="Actualizar estado de verificación">
-									<IconButton
-										size="small"
-										onClick={async (e) => {
-											e.stopPropagation();
-											const result = await dispatch(getFolderById(folder._id, true));
-
-											if (result.success && result.folder) {
-												if (result.folder.causaAssociationStatus === "pending_selection") {
-													// Múltiples resultados - requiere selección
-													setSnackbarMessage("Hay múltiples resultados. Seleccione el expediente correcto.");
-													setSnackbarSeverity("info");
-													setSnackbarOpen(true);
-												} else if (result.folder.causaVerified && result.folder.causaIsValid) {
-													setSnackbarMessage("La carpeta fue sincronizada correctamente");
-													setSnackbarSeverity("success");
-													setSnackbarOpen(true);
-												} else if (result.folder.causaVerified && result.folder.causaIsValid === false) {
-													// Solo si es explícitamente false (no null)
-													setSnackbarMessage("La carpeta no existe o no es pública");
-													setSnackbarSeverity("error");
-													setSnackbarOpen(true);
-												}
-											} else if (!result.success) {
-												setSnackbarMessage(result.message || "Error al verificar la carpeta. Intente nuevamente");
-												setSnackbarSeverity("error");
-												setSnackbarOpen(true);
-											}
-										}}
-										sx={{
-											padding: 0.5,
-											"&:hover": {
-												backgroundColor: "warning.lighter",
-											},
-										}}
-									>
-										<Refresh size={16} />
-									</IconButton>
+								<Tooltip title={verifyingFolderIds.has(folder._id) ? "Verificando…" : "Actualizar estado de verificación"}>
+									<span>
+										<IconButton
+											size="small"
+											disabled={verifyingFolderIds.has(folder._id)}
+											onClick={(e) => {
+												e.stopPropagation();
+												handleVerifyFolder(folder._id);
+											}}
+											sx={{
+												padding: 0.5,
+												"&:hover": {
+													backgroundColor: "warning.lighter",
+												},
+											}}
+										>
+											{verifyingFolderIds.has(folder._id) ? (
+												<CircularProgress size={14} thickness={5} sx={{ color: STALE_AMBER }} />
+											) : (
+												<Refresh size={16} />
+											)}
+										</IconButton>
+									</span>
 								</Tooltip>
 							</Stack>
 						);
@@ -3091,8 +3159,12 @@ const FoldersLayout = () => {
 					// Deshabilitar acciones principales para pendientes y errores
 					const disableMainActions = isPendingVerification || isErrorFolder;
 
-					// Tooltip según el estado
+					// Tooltip según el estado.
+					// "Abrir" en una causa pendiente/inválida sigue siendo una acción
+					// útil ahora que /details/:id renderiza la PendingVerificationView,
+					// así que cambiamos la copy para anunciar el destino concreto.
 					const getTooltipText = (action: string) => {
+						if (action === "Abrir" && (isPendingVerification || isErrorFolder)) return "Revisar verificación";
 						if (isPendingVerification) return "Pendiente de verificación";
 						if (isErrorFolder) return action === "Eliminar" ? "Eliminar" : "Causa con error";
 						return action;
@@ -3125,14 +3197,49 @@ const FoldersLayout = () => {
 						},
 					} as const;
 
+					// Para filas en estado de verificación reemplazamos la grilla de íconos
+					// por un único botón explícito que lleva al PendingVerificationView.
+					// Más visible, menos ruido, comunica "esto es lo único que podés hacer".
+					if (isPendingVerification || isErrorFolder) {
+						const ctaTone = isErrorFolder ? theme.palette.error.main : STALE_AMBER;
+						return (
+							<Stack direction="row" alignItems="center" justifyContent="center" sx={{ width: "100%" }}>
+								<Button
+									size="small"
+									variant="contained"
+									disableElevation
+									onClick={(e) => handleRowAction(e, () => navigate(`../details/${row.values._id}`))}
+									endIcon={<ArrowRight2 size={14} />}
+									sx={{
+										textTransform: "none",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										fontSize: "0.74rem",
+										py: 0.5,
+										px: 1.25,
+										minHeight: 30,
+										borderRadius: 1,
+										bgcolor: ctaTone,
+										color: "#fff",
+										boxShadow: "none",
+										whiteSpace: "nowrap",
+										"&:hover": { bgcolor: alpha(ctaTone, 0.88), boxShadow: "none" },
+									}}
+								>
+									Revisar verificación
+								</Button>
+							</Stack>
+						);
+					}
+
 					return (
 						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0.25}>
+							{/* "Abrir" estándar para causas verificadas. */}
 							<Tooltip title={getTooltipText("Abrir")}>
 								<span>
 									<IconButton
 										size="small"
 										sx={actionIconSx}
-										disabled={disableMainActions}
 										onClick={(e) => handleRowAction(e, () => navigate(`../details/${row.values._id}`))}
 									>
 										<Maximize variant="Bulk" size={18} />
@@ -3192,7 +3299,19 @@ const FoldersLayout = () => {
 				},
 			},
 		],
-		[theme, mode, handleEditContact, handleClose, navigate, handleRowAction, handleMenuOpen, canUpdate, canDelete],
+		[
+			theme,
+			mode,
+			handleEditContact,
+			handleClose,
+			navigate,
+			handleRowAction,
+			handleMenuOpen,
+			canUpdate,
+			canDelete,
+			verifyingFolderIds,
+			handleVerifyFolder,
+		],
 	);
 
 	// Row sub component memoizado
@@ -3565,7 +3684,6 @@ const FoldersLayout = () => {
 								menuRowId={menuRowId}
 								handleMenuOpen={handleMenuOpen}
 								handleMenuClose={handleMenuClose}
-								disableRowNavigation
 								disableRowSelection
 							/>
 						</ScrollX>

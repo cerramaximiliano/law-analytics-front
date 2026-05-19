@@ -57,6 +57,14 @@ interface SupportModalProps {
 	open: boolean;
 	onClose: () => void;
 	defaultSubject?: string;
+	defaultMessage?: string;
+	defaultPriority?: "low" | "medium" | "high" | "urgent";
+	// Bloque de contexto que SIEMPRE se envía al backend, no editable por el
+	// usuario. Se renderiza como un panel read-only arriba del textarea y
+	// queda prepended al mensaje en el payload. Cuando está seteado, el
+	// textarea pasa a ser opcional ("agregar más contexto").
+	// Tiene precedencia sobre defaultMessage.
+	lockedHeader?: string;
 	// `landing` (default) → motion spring, blur backdrop, blob brand-blue,
 	//   icono en cuadrado tintado + X close. Estética del hero rediseñado.
 	// `dashboard` → look pre-rediseño (commit anterior a `adf7edb`): DialogTitle
@@ -91,7 +99,16 @@ const MAX_FILE_SIZE_MB = 10;
 
 // ============================== SUPPORT MODAL ============================== //
 
-const SupportModal = ({ open, onClose, defaultSubject = "", variant = "landing" }: SupportModalProps) => {
+const SupportModal = ({
+	open,
+	onClose,
+	defaultSubject = "",
+	defaultMessage = "",
+	defaultPriority = "medium",
+	lockedHeader,
+	variant = "landing",
+}: SupportModalProps) => {
+	const hasLockedHeader = Boolean(lockedHeader && lockedHeader.trim().length > 0);
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const isDashboard = variant === "dashboard";
@@ -106,8 +123,10 @@ const SupportModal = ({ open, onClose, defaultSubject = "", variant = "landing" 
 		name: userName,
 		email: userEmail,
 		subject: defaultSubject,
-		priority: "medium",
-		message: "",
+		priority: defaultPriority,
+		// Si hay lockedHeader, el textarea arranca vacío: ese campo es para
+		// contexto adicional del usuario. El header se concatena al enviar.
+		message: hasLockedHeader ? "" : defaultMessage,
 	});
 
 	const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
@@ -120,9 +139,11 @@ const SupportModal = ({ open, onClose, defaultSubject = "", variant = "landing" 
 				name: userName,
 				email: userEmail,
 				...(defaultSubject ? { subject: defaultSubject } : {}),
+				...(hasLockedHeader ? { message: "" } : defaultMessage ? { message: defaultMessage } : {}),
+				...(defaultPriority ? { priority: defaultPriority } : {}),
 			}));
 		}
-	}, [open, defaultSubject, userName, userEmail]);
+	}, [open, defaultSubject, defaultMessage, defaultPriority, hasLockedHeader, userName, userEmail]);
 
 	const [errors, setErrors] = useState({
 		name: false,
@@ -188,7 +209,8 @@ const SupportModal = ({ open, onClose, defaultSubject = "", variant = "landing" 
 			name: false,
 			email: false,
 			subject: !formData.subject.trim(),
-			message: !formData.message.trim(),
+			// Con lockedHeader el contexto ya viene completo; el textarea es opcional.
+			message: hasLockedHeader ? false : !formData.message.trim(),
 		};
 		setErrors(newErrors);
 		return !Object.values(newErrors).some(Boolean);
@@ -205,7 +227,13 @@ const SupportModal = ({ open, onClose, defaultSubject = "", variant = "landing" 
 			payload.append("email", formData.email);
 			payload.append("subject", formData.subject);
 			payload.append("priority", formData.priority);
-			payload.append("message", formData.message);
+			// Cuando hay lockedHeader, lo concatenamos al texto adicional del
+			// usuario en un único campo `message`. El header siempre va primero
+			// para que soporte vea el contexto técnico antes de la nota humana.
+			const composedMessage = hasLockedHeader
+				? `${lockedHeader}\n\n---\nContexto adicional del usuario:\n${formData.message.trim() || "(sin contexto adicional)"}`
+				: formData.message;
+			payload.append("message", composedMessage);
 			if (attachmentFile) {
 				payload.append("attachment", attachmentFile);
 			}
@@ -591,21 +619,78 @@ const SupportModal = ({ open, onClose, defaultSubject = "", variant = "landing" 
 											</Select>
 										</FormControl>
 
+										{/* Contexto fijo (lockedHeader) — se envía siempre, sin edición */}
+										{hasLockedHeader && (
+											<Stack spacing={0.75}>
+												<Stack direction="row" spacing={0.75} alignItems="center">
+													<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+													<Typography
+														sx={{
+															fontSize: "0.68rem",
+															fontWeight: 600,
+															letterSpacing: "0.08em",
+															textTransform: "uppercase",
+															color: "text.secondary",
+														}}
+													>
+														Contexto que se envía a soporte
+													</Typography>
+												</Stack>
+												<Box
+													sx={{
+														p: 1.5,
+														borderRadius: 1.25,
+														border: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.025),
+														maxHeight: 180,
+														overflowY: "auto",
+													}}
+												>
+													<Typography
+														component="pre"
+														sx={{
+															m: 0,
+															fontFamily:
+																'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
+															fontSize: "0.74rem",
+															lineHeight: 1.55,
+															color: "text.primary",
+															whiteSpace: "pre-wrap",
+															wordBreak: "break-word",
+														}}
+													>
+														{lockedHeader}
+													</Typography>
+												</Box>
+												<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
+													Este bloque se envía siempre. Si querés agregar algo más, escribilo abajo.
+												</Typography>
+											</Stack>
+										)}
+
 										{/* Mensaje */}
 										<TextField
 											fullWidth
-											label="Describí tu consulta"
+											label={hasLockedHeader ? "Agregar más contexto (opcional)" : "Describí tu consulta"}
 											name="message"
 											multiline
-											rows={4}
+											rows={hasLockedHeader ? 3 : 4}
 											value={formData.message}
 											onChange={handleChange}
 											error={errors.message}
-											helperText={errors.message ? "El mensaje es requerido" : "Proporcioná todos los detalles posibles"}
+											helperText={
+												errors.message
+													? "El mensaje es requerido"
+													: hasLockedHeader
+													? "Sumá cualquier dato extra que ayude a entender el caso (opcional)."
+													: "Proporcioná todos los detalles posibles"
+											}
 											disabled={submitting}
-											required
+											required={!hasLockedHeader}
 											placeholder={
-												isTemplateRequest
+												hasLockedHeader
+													? "Ej.: 'verifiqué el número en la cédula y figura igual', 'el expediente sí aparece si lo busco manualmente en el portal'..."
+													: isTemplateRequest
 													? "Describí el tipo de documento, para qué fuero/jurisdicción se usa y qué campos deberían ser autocompletables..."
 													: "Describí detalladamente tu consulta o problema..."
 											}

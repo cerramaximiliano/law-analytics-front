@@ -13,7 +13,6 @@ import {
 	ToggleButtonGroup,
 	Tooltip,
 	useMediaQuery,
-	Paper,
 } from "@mui/material";
 import {
 	ExportSquare,
@@ -35,6 +34,7 @@ import { useBreadcrumb } from "contexts/BreadcrumbContext";
 import useSubscription from "hooks/useSubscription";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { formatFolderName } from "utils/formatFolderName";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // Components
 import FolderDataCompact from "./components/FolderDataCompact";
@@ -56,6 +56,7 @@ import { getFolderById } from "store/reducers/folder";
 import { filterContactsByFolder, getContactsByUserId } from "store/reducers/contacts";
 import GestionTabImproved from "./alternatives/GestionTabImproved";
 import FolderRecursosTab from "./components/FolderRecursosTab";
+import PendingVerificationView, { VerificationGate } from "sections/apps/folders/PendingVerificationView";
 
 interface StateType {
 	folder: {
@@ -324,323 +325,171 @@ const Details = () => {
 	// figure como privada en el modelo.
 	const isPjnPrivateRestricted = folder?.pjn === true && folder?.causaIsPrivate === true && folder?.source !== "pjn-login";
 
-	// Memoized judicial link button
-	const renderJudicialLink = useMemo(
-		() =>
-			isLoader ? (
-				<Skeleton variant="rectangular" width={180} height={36} sx={{ borderRadius: 0.5 }} />
-			) : (
-				<Box>
-					{folder?.pjn ? (
-						<Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
-							<Box sx={{ position: "relative", display: "inline-flex" }}>
-								<Tooltip
-									title={
-										isPjnPrivateRestricted
-											? "Esta causa fue marcada como reservada — el tribunal restringió la consulta web pública. El sistema sigue verificando si vuelve a estar accesible."
-											: isListRemovedPjn
-											? "Esta causa ya no aparece en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal."
-											: ""
-									}
-									disableHoverListener={!isPjnPrivateRestricted && !isListRemovedPjn}
-								>
-									<Box
-										sx={{
-											px: 2,
-											py: 0.75,
-											height: 36,
-											display: "flex",
-											alignItems: "center",
-											gap: 0.75,
-											bgcolor: isPjnPrivateRestricted
-												? alpha(theme.palette.error.main, 0.1)
-												: isListRemovedPjn
-												? alpha(theme.palette.warning.main, 0.1)
-												: alpha(theme.palette.success.main, 0.1),
-											border: `1px solid ${
-												isPjnPrivateRestricted
-													? theme.palette.error.main
-													: isListRemovedPjn
-													? theme.palette.warning.main
-													: theme.palette.success.main
-											}`,
-											borderRadius: 0.5,
-										}}
-									>
-										{isPjnPrivateRestricted ? (
-											<Warning2 size={16} variant="Bold" color={theme.palette.error.main} />
-										) : isListRemovedPjn ? (
-											<Warning2 size={16} variant="Bold" color={theme.palette.warning.main} />
-										) : (
-											<ExportSquare size={16} variant="Bold" color={theme.palette.success.main} />
-										)}
-										<Typography
-											variant="body2"
-											sx={{
-												fontWeight: 500,
-												color: isPjnPrivateRestricted
-													? theme.palette.error.dark
-													: isListRemovedPjn
-													? theme.palette.warning.dark
-													: theme.palette.success.dark,
-												fontSize: "0.8125rem",
-											}}
-										>
-											{isPjnPrivateRestricted
-												? "PJN — Causa reservada"
-												: isListRemovedPjn
-												? "PJN — Ya no en la lista"
-												: "Vinculado con PJN"}
-										</Typography>
-									</Box>
-								</Tooltip>
-								{/* Ícono de estado de verificación */}
-								{(folder?.causaVerified === false || (folder?.causaVerified === true && folder?.causaIsValid !== undefined)) && (
-									<Tooltip
-										title={
-											folder?.causaVerified === false
-												? "Pendiente de verificación"
-												: folder.causaIsValid
-												? "Causa válida"
-												: "Causa inválida"
-										}
-									>
-										<Box
-											sx={{
-												position: "absolute",
-												bottom: -8,
-												right: -8,
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												width: 20,
-												height: 20,
-												bgcolor: theme.palette.background.paper,
-												borderRadius: "50%",
-												boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-											}}
-										>
-											{folder?.causaVerified === false ? (
-												<InfoCircle size={18} variant="Bold" color={theme.palette.warning.main} />
-											) : folder.causaIsValid ? (
-												<TickCircle size={18} variant="Bold" color={theme.palette.success.main} />
-											) : (
-												<CloseCircle size={18} variant="Bold" color={theme.palette.error.main} />
-											)}
-										</Box>
-									</Tooltip>
-								)}
-							</Box>
-						</Box>
-					) : folder?.mev ? (
-						<Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
-							<Box sx={{ position: "relative", display: "inline-flex" }}>
-								<Tooltip
-									title={
-										isListRemovedMev
-											? "Esta causa ya no aparece en tu lista de Mis Causas del portal MEV. Puede haber sido archivada o desvinculada por el tribunal."
-											: ""
-									}
-									disableHoverListener={!isListRemovedMev}
-								>
-									<Box
-										sx={{
-											px: 2,
-											py: 0.75,
-											height: 36,
-											display: "flex",
-											alignItems: "center",
-											gap: 0.75,
-											bgcolor: isListRemovedMev ? alpha(theme.palette.warning.main, 0.1) : alpha(theme.palette.success.main, 0.1),
-											border: `1px solid ${isListRemovedMev ? theme.palette.warning.main : theme.palette.success.main}`,
-											borderRadius: 0.5,
-										}}
-									>
-										{isListRemovedMev ? (
-											<Warning2 size={16} variant="Bold" color={theme.palette.warning.main} />
-										) : (
-											<ExportSquare size={16} variant="Bold" color={theme.palette.success.main} />
-										)}
-										<Typography
-											variant="body2"
-											sx={{
-												fontWeight: 500,
-												color: isListRemovedMev ? theme.palette.warning.dark : theme.palette.success.dark,
-												fontSize: "0.8125rem",
-											}}
-										>
-											{isListRemovedMev ? "MEV — Ya no en la lista" : "Vinculado con MEV"}
-										</Typography>
-									</Box>
-								</Tooltip>
-								{/* Ícono de estado de verificación */}
-								{(folder?.causaVerified === false || (folder?.causaVerified === true && folder?.causaIsValid !== undefined)) && (
-									<Tooltip
-										title={
-											folder?.causaVerified === false
-												? "Pendiente de verificación"
-												: folder.causaIsValid
-												? "Causa válida"
-												: "Causa inválida"
-										}
-									>
-										<Box
-											sx={{
-												position: "absolute",
-												bottom: -8,
-												right: -8,
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												width: 20,
-												height: 20,
-												bgcolor: theme.palette.background.paper,
-												borderRadius: "50%",
-												boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-											}}
-										>
-											{folder?.causaVerified === false ? (
-												<InfoCircle size={18} variant="Bold" color={theme.palette.warning.main} />
-											) : folder.causaIsValid ? (
-												<TickCircle size={18} variant="Bold" color={theme.palette.success.main} />
-											) : (
-												<CloseCircle size={18} variant="Bold" color={theme.palette.error.main} />
-											)}
-										</Box>
-									</Tooltip>
-								)}
-							</Box>
-						</Box>
-					) : folder?.scba ? (
-						<Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
-							<Box sx={{ position: "relative", display: "inline-flex" }}>
-								<Tooltip
-									title={
-										isListRemovedScba
-											? 'Esta causa ya no aparece en "Mis Causas" del portal SCBA. Puede haber sido archivada o desvinculada por el tribunal.'
-											: ""
-									}
-									disableHoverListener={!isListRemovedScba}
-								>
-									<Box
-										sx={{
-											px: 2,
-											py: 0.75,
-											height: 36,
-											display: "flex",
-											alignItems: "center",
-											gap: 0.75,
-											bgcolor: isListRemovedScba ? alpha(theme.palette.warning.main, 0.1) : alpha(theme.palette.success.main, 0.1),
-											border: `1px solid ${isListRemovedScba ? theme.palette.warning.main : theme.palette.success.main}`,
-											borderRadius: 0.5,
-										}}
-									>
-										{isListRemovedScba ? (
-											<Warning2 size={16} variant="Bold" color={theme.palette.warning.main} />
-										) : (
-											<ExportSquare size={16} variant="Bold" color={theme.palette.success.main} />
-										)}
-										<Typography
-											variant="body2"
-											sx={{
-												fontWeight: 500,
-												color: isListRemovedScba ? theme.palette.warning.dark : theme.palette.success.dark,
-												fontSize: "0.8125rem",
-											}}
-										>
-											{isListRemovedScba ? "SCBA — Ya no en la lista" : "Vinculado con SCBA"}
-										</Typography>
-									</Box>
-								</Tooltip>
-								{/* Ícono de estado de verificación */}
-								{(folder?.causaVerified === false || (folder?.causaVerified === true && folder?.causaIsValid !== undefined)) && (
-									<Tooltip
-										title={
-											folder?.causaVerified === false
-												? "Pendiente de verificación"
-												: folder.causaIsValid
-												? "Causa válida"
-												: "Causa inválida"
-										}
-									>
-										<Box
-											sx={{
-												position: "absolute",
-												bottom: -8,
-												right: -8,
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												width: 20,
-												height: 20,
-												bgcolor: theme.palette.background.paper,
-												borderRadius: "50%",
-												boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-											}}
-										>
-											{folder?.causaVerified === false ? (
-												<InfoCircle size={18} variant="Bold" color={theme.palette.warning.main} />
-											) : folder.causaIsValid ? (
-												<TickCircle size={18} variant="Bold" color={theme.palette.success.main} />
-											) : (
-												<CloseCircle size={18} variant="Bold" color={theme.palette.error.main} />
-											)}
-										</Box>
-									</Tooltip>
-								)}
-							</Box>
-						</Box>
+	const isDark = theme.palette.mode === "dark";
+
+	// Unified binding pill — replaces rainbow PJN/MEV/SCBA boxes with brand pattern.
+	// Includes optional verification dot indicator at bottom-right (válida/inválida/pendiente).
+	const renderJudicialLink = useMemo(() => {
+		if (isLoader) {
+			return <Skeleton variant="rectangular" width={180} height={36} sx={{ borderRadius: 1 }} />;
+		}
+
+		type BindingState = {
+			label: string;
+			accent: string;
+			icon: React.ReactNode;
+			tooltip?: string;
+			onClick?: () => void;
+		};
+
+		let state: BindingState;
+
+		if (folder?.pjn) {
+			const accent = isPjnPrivateRestricted ? theme.palette.error.main : isListRemovedPjn ? STALE_AMBER : LIVE_GREEN;
+			state = {
+				label: isPjnPrivateRestricted ? "PJN — Causa reservada" : isListRemovedPjn ? "PJN — Ya no en la lista" : "Vinculado con PJN",
+				accent,
+				icon:
+					isPjnPrivateRestricted || isListRemovedPjn ? (
+						<Warning2 size={14} variant="Bulk" color={accent} />
 					) : (
-						<Box
-							onClick={handleOpenLinkJudicial}
-							sx={{
-								px: 2,
-								py: 0.75,
-								height: 36,
-								display: "flex",
-								alignItems: "center",
-								gap: 0.75,
-								cursor: "pointer",
-								bgcolor: "transparent",
-								border: `1px solid ${theme.palette.divider}`,
-								borderRadius: 0.5,
-								transition: "all 0.2s ease",
+						<ExportSquare size={14} variant="Bulk" color={accent} />
+					),
+				tooltip: isPjnPrivateRestricted
+					? "Esta causa fue marcada como reservada — el tribunal restringió la consulta web pública. El sistema sigue verificando si vuelve a estar accesible."
+					: isListRemovedPjn
+					? "Esta causa ya no aparece en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal."
+					: undefined,
+			};
+		} else if (folder?.mev) {
+			const accent = isListRemovedMev ? STALE_AMBER : LIVE_GREEN;
+			state = {
+				label: isListRemovedMev ? "MEV — Ya no en la lista" : "Vinculado con MEV",
+				accent,
+				icon: isListRemovedMev ? (
+					<Warning2 size={14} variant="Bulk" color={accent} />
+				) : (
+					<ExportSquare size={14} variant="Bulk" color={accent} />
+				),
+				tooltip: isListRemovedMev
+					? "Esta causa ya no aparece en tu lista de Mis Causas del portal MEV. Puede haber sido archivada o desvinculada por el tribunal."
+					: undefined,
+			};
+		} else if (folder?.scba) {
+			const accent = isListRemovedScba ? STALE_AMBER : LIVE_GREEN;
+			state = {
+				label: isListRemovedScba ? "SCBA — Ya no en la lista" : "Vinculado con SCBA",
+				accent,
+				icon: isListRemovedScba ? (
+					<Warning2 size={14} variant="Bulk" color={accent} />
+				) : (
+					<ExportSquare size={14} variant="Bulk" color={accent} />
+				),
+				tooltip: isListRemovedScba
+					? 'Esta causa ya no aparece en "Mis Causas" del portal SCBA. Puede haber sido archivada o desvinculada por el tribunal.'
+					: undefined,
+			};
+		} else {
+			state = {
+				label: "Vincular con Poder Judicial",
+				accent: BRAND_BLUE,
+				icon: <ExportSquare size={14} variant="Linear" color={BRAND_BLUE} />,
+				onClick: handleOpenLinkJudicial,
+			};
+		}
+
+		const showVerify =
+			(folder?.pjn || folder?.mev || folder?.scba) &&
+			(folder?.causaVerified === false || (folder?.causaVerified === true && folder?.causaIsValid !== undefined));
+		const verifyTooltip =
+			folder?.causaVerified === false ? "Pendiente de verificación" : folder?.causaIsValid ? "Causa válida" : "Causa inválida";
+		const verifyIcon =
+			folder?.causaVerified === false ? (
+				<InfoCircle size={14} variant="Bold" color={STALE_AMBER} />
+			) : folder?.causaIsValid ? (
+				<TickCircle size={14} variant="Bold" color={LIVE_GREEN} />
+			) : (
+				<CloseCircle size={14} variant="Bold" color={theme.palette.error.main} />
+			);
+
+		return (
+			<Box sx={{ position: "relative", display: "inline-flex" }}>
+				<Tooltip title={state.tooltip ?? ""} disableHoverListener={!state.tooltip}>
+					<Box
+						onClick={state.onClick}
+						sx={{
+							display: "inline-flex",
+							alignItems: "center",
+							gap: 0.75,
+							px: 1.25,
+							py: 0.625,
+							height: 36,
+							borderRadius: 1,
+							cursor: state.onClick ? "pointer" : "default",
+							bgcolor: alpha(state.accent, isDark ? 0.14 : 0.08),
+							border: `1px solid ${alpha(state.accent, isDark ? 0.32 : 0.22)}`,
+							transition: "all 180ms ease",
+							...(state.onClick && {
 								"&:hover": {
-									borderColor: theme.palette.primary.main,
-									bgcolor: alpha(theme.palette.primary.main, 0.04),
+									bgcolor: alpha(state.accent, isDark ? 0.22 : 0.14),
+									borderColor: alpha(state.accent, isDark ? 0.48 : 0.36),
 								},
+							}),
+						}}
+					>
+						{state.icon}
+						<Typography
+							sx={{
+								fontSize: "0.78rem",
+								fontWeight: 600,
+								color: state.accent,
+								letterSpacing: "-0.005em",
+								lineHeight: 1.4,
 							}}
 						>
-							<ExportSquare size={16} variant="Linear" color={theme.palette.text.secondary} />
-							<Typography
-								variant="body2"
-								sx={{
-									fontWeight: 400,
-									color: theme.palette.text.secondary,
-									fontSize: "0.8125rem",
-								}}
-							>
-								Vincular con Poder Judicial
-							</Typography>
+							{state.label}
+						</Typography>
+					</Box>
+				</Tooltip>
+				{showVerify && (
+					<Tooltip title={verifyTooltip}>
+						<Box
+							sx={{
+								position: "absolute",
+								bottom: -6,
+								right: -6,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								width: 18,
+								height: 18,
+								bgcolor: theme.palette.background.paper,
+								borderRadius: "50%",
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+								boxShadow: `0 2px 4px ${alpha("#000", 0.08)}`,
+							}}
+						>
+							{verifyIcon}
 						</Box>
-					)}
-				</Box>
-			),
-		[
-			folder?.pjn,
-			folder?.mev,
-			folder?.scba,
-			isListRemovedPjn,
-			isListRemovedMev,
-			isListRemovedScba,
-			isPjnPrivateRestricted,
-			folder?.causaVerified,
-			folder?.causaIsValid,
-			handleOpenLinkJudicial,
-			isLoader,
-			theme,
-		],
-	);
+					</Tooltip>
+				)}
+			</Box>
+		);
+	}, [
+		folder?.pjn,
+		folder?.mev,
+		folder?.scba,
+		isListRemovedPjn,
+		isListRemovedMev,
+		isListRemovedScba,
+		isPjnPrivateRestricted,
+		folder?.causaVerified,
+		folder?.causaIsValid,
+		handleOpenLinkJudicial,
+		isLoader,
+		theme,
+		isDark,
+	]);
 
 	// Memoized components - switch between compact and improved based on isDetailedView
 	const MemoizedFolderData = useMemo(
@@ -673,8 +522,34 @@ const Details = () => {
 		[isLoader, folder, isDetailedView],
 	);
 
+	// Verification gate: si la carpeta es automática (PJN/MEV/EJE/SCBA) y todavía
+	// no fue verificada/asociada/válida, bloqueamos la vista de detalle y
+	// mostramos PendingVerificationView con acciones acotadas (reintentar,
+	// soporte, eliminar). Esto evita que un usuario acceda al detalle por URL
+	// directa cuando no hay datos sincronizados que mostrar.
+	// Importante: sólo evaluamos cuando ya cargó el folder correcto (folder._id === id)
+	// y no está en loading — caso contrario el gate puede ser un falso positivo
+	// mientras llega la respuesta del backend.
+	const verificationGate: VerificationGate | null = useMemo(() => {
+		if (!folder || folder._id !== id || isLoader) return null;
+		const isAutoFolder =
+			folder.source === "auto" || folder.pjn === true || folder.mev === true || folder.eje === true || folder.scba === true;
+		if (!isAutoFolder) return null;
+
+		if (folder.causaAssociationStatus === "pending_selection") return "pending_selection";
+		if (folder.causaAssociationStatus === "failed") return "failed";
+		if (folder.causaVerified === true && folder.causaIsValid === false) return "invalid";
+		if (folder.causaVerified !== true) return "pending";
+		return null;
+	}, [folder, id, isLoader]);
+
+	if (verificationGate) {
+		return <PendingVerificationView folder={folder} gate={verificationGate} />;
+	}
+
 	// Show folder not found message
 	if (folderNotFound) {
+		const errorColor = theme.palette.error.main;
 		return (
 			<Box
 				sx={{
@@ -683,85 +558,116 @@ const Details = () => {
 					alignItems: "center",
 					minHeight: "60vh",
 					px: 2,
+					position: "relative",
+					overflow: "hidden",
 				}}
 			>
-				<Paper
-					elevation={0}
+				{/* Atmospheric backdrop */}
+				<Box
 					sx={{
-						maxWidth: 500,
+						position: "absolute",
+						inset: 0,
+						pointerEvents: "none",
+						background: `radial-gradient(circle at 50% 30%, ${alpha(errorColor, isDark ? 0.1 : 0.05)} 0%, transparent 60%)`,
+					}}
+				/>
+				<Box
+					sx={{
+						position: "relative",
 						width: "100%",
+						maxWidth: 480,
+						p: { xs: 3, md: 4 },
 						borderRadius: 2,
-						overflow: "hidden",
-						border: `1px solid ${theme.palette.divider}`,
-						backgroundColor: theme.palette.background.paper,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.025),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
 					}}
 				>
-					<Box sx={{ p: 4, textAlign: "center" }}>
-						{/* Icon */}
+					<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2.5 }}>
+						{/* Icon ring — sober destructive */}
 						<Box
 							sx={{
-								display: "inline-flex",
+								width: 64,
+								height: 64,
+								borderRadius: 1.5,
+								display: "flex",
 								alignItems: "center",
 								justifyContent: "center",
-								width: 80,
-								height: 80,
-								borderRadius: "50%",
-								backgroundColor: alpha(theme.palette.error.main, 0.08),
-								mb: 3,
+								bgcolor: alpha(errorColor, isDark ? 0.16 : 0.08),
+								border: `1px solid ${alpha(errorColor, isDark ? 0.32 : 0.2)}`,
+								color: errorColor,
 							}}
 						>
-							<FolderCross size={40} color={theme.palette.error.main} variant="Bulk" />
+							<FolderCross size={28} variant="Bulk" />
 						</Box>
 
-						{/* Title */}
-						<Typography
-							variant="h4"
-							sx={{
-								fontWeight: 600,
-								color: theme.palette.text.primary,
-								mb: 1.5,
-							}}
-						>
-							Carpeta no encontrada
-						</Typography>
+						{/* Eyebrow + title + body */}
+						<Box sx={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+							<Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.625 }}>
+								<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: errorColor }} />
+								<Typography
+									sx={{
+										fontSize: "0.6rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+									}}
+								>
+									Sin acceso al recurso
+								</Typography>
+							</Box>
+							<Typography
+								sx={{
+									fontSize: { xs: "1.1rem", md: "1.2rem" },
+									fontWeight: 600,
+									letterSpacing: "-0.015em",
+									color: "text.primary",
+									textWrap: "balance" as any,
+								}}
+							>
+								Carpeta no encontrada
+							</Typography>
+							<Typography
+								sx={{
+									fontSize: "0.85rem",
+									color: "text.secondary",
+									letterSpacing: "-0.005em",
+									lineHeight: 1.5,
+									textWrap: "pretty" as any,
+									maxWidth: 380,
+								}}
+							>
+								La carpeta a la que intentás acceder no existe o no tenés permisos para verla.
+							</Typography>
+						</Box>
 
-						{/* Description */}
-						<Typography
-							variant="body1"
-							sx={{
-								color: theme.palette.text.secondary,
-								mb: 3,
-								lineHeight: 1.6,
-							}}
-						>
-							La carpeta que intentas acceder no existe o no tienes permisos para verla.
-						</Typography>
-
-						{/* Redirect message with icon */}
+						{/* Redirect notice */}
 						<Box
 							sx={{
 								display: "inline-flex",
 								alignItems: "center",
-								gap: 1,
-								px: 2.5,
-								py: 1,
+								gap: 0.875,
+								px: 1.5,
+								py: 0.875,
 								borderRadius: 1,
-								backgroundColor: alpha(theme.palette.primary.main, 0.08),
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
 							}}
 						>
-							<ArrowLeft size={18} color={theme.palette.primary.main} />
+							<ArrowLeft size={16} variant="Bulk" color={BRAND_BLUE} />
 							<Typography
-								variant="body2"
 								sx={{
-									color: theme.palette.primary.main,
-									fontWeight: 500,
+									fontSize: "0.78rem",
+									fontWeight: 600,
+									color: BRAND_BLUE,
+									letterSpacing: "-0.005em",
 								}}
 							>
-								Redirigiendo a la lista de carpetas...
+								Redirigiendo a la lista de carpetas…
 							</Typography>
 						</Box>
 					</Box>
-				</Paper>
+				</Box>
 			</Box>
 		);
 	}
@@ -800,127 +706,148 @@ const Details = () => {
 
 			{/* Mobile Drawer for Navigation - Removed: Now using icon tabs */}
 
-			<MainCard content={false} sx={{ "& .MuiCardContent-root": { p: 0 } }}>
+			<MainCard
+				content={false}
+				sx={{
+					"& .MuiCardContent-root": { p: 0 },
+					borderRadius: 2,
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+					boxShadow: "none",
+				}}
+			>
 				<Box sx={{ width: "100%", position: "relative" }}>
-					{/* Tab Header with buttons - responsive layout */}
-					<Box sx={{ borderBottom: 1, borderColor: "divider", px: 2, pt: 2 }}>
-						{/* On mobile, stack vertically */}
+					{/* Tab header — brand-tinted chrome */}
+					<Box
+						sx={{
+							borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+							px: { xs: 1.5, sm: 2 },
+							pt: { xs: 1.5, sm: 2 },
+						}}
+					>
 						<Box
 							sx={{
 								display: "flex",
 								flexDirection: { xs: "column", sm: "column", md: "row" },
 								justifyContent: { md: "space-between" },
 								alignItems: { xs: "stretch", md: "center" },
-								gap: { xs: 2, md: 0 },
-								mb: { xs: 2, md: 0 },
+								gap: { xs: 1.5, md: 0 },
+								mb: { xs: 1.5, md: 0 },
 							}}
 						>
-							{/* Mobile Icon Tabs */}
+							{/* Mobile icon tabs */}
 							{isMobile ? (
 								<Box sx={{ display: "flex", alignItems: "center", width: "100%", justifyContent: "center" }}>
-									<Box
-										sx={{
-											display: "flex",
-											gap: 0,
-											"& > *:not(:last-child)": {
-												borderRight: `1px solid ${theme.palette.divider}`,
-											},
-										}}
-									>
-										{tabItems.map((tab) => (
-											<Tooltip key={tab.value} title={tab.label} arrow>
-												<Box
-													onClick={() => setTabValue(tab.value)}
-													sx={{
-														display: "flex",
-														alignItems: "center",
-														justifyContent: "center",
-														px: 3,
-														py: 1.5,
-														cursor: "pointer",
-														color: tabValue === tab.value ? theme.palette.primary.main : theme.palette.text.secondary,
-														transition: "all 0.2s ease",
-														position: "relative",
-														"&:hover": {
-															color: theme.palette.primary.main,
-														},
-														"&::after": {
-															content: '""',
-															position: "absolute",
-															bottom: 0,
-															left: "50%",
-															transform: "translateX(-50%)",
-															width: tabValue === tab.value ? "60%" : "0%",
-															height: 2,
-															backgroundColor: theme.palette.primary.main,
-															transition: "width 0.3s ease",
-														},
-													}}
-													aria-label={tab.ariaLabel}
-													role="tab"
-													aria-selected={tabValue === tab.value}
-													tabIndex={0}
-													onKeyDown={(e) => {
-														if (e.key === "Enter" || e.key === " ") {
-															e.preventDefault();
-															setTabValue(tab.value);
-														}
-													}}
-												>
-													{React.cloneElement(tab.icon, {
-														size: 28,
-														variant: tabValue === tab.value ? "Bold" : "Linear",
-													})}
-												</Box>
-											</Tooltip>
-										))}
+									<Box sx={{ display: "flex", gap: 0.5 }}>
+										{tabItems.map((tab) => {
+											const active = tabValue === tab.value;
+											return (
+												<Tooltip key={tab.value} title={tab.label} arrow>
+													<Box
+														onClick={() => setTabValue(tab.value)}
+														sx={{
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															width: 44,
+															height: 44,
+															borderRadius: 1,
+															cursor: "pointer",
+															color: active ? BRAND_BLUE : theme.palette.text.secondary,
+															bgcolor: active ? alpha(BRAND_BLUE, isDark ? 0.16 : 0.08) : "transparent",
+															border: `1px solid ${active ? alpha(BRAND_BLUE, isDark ? 0.32 : 0.22) : "transparent"}`,
+															transition: "all 180ms ease",
+															"&:hover": {
+																color: BRAND_BLUE,
+																bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+															},
+														}}
+														aria-label={tab.ariaLabel}
+														role="tab"
+														aria-selected={active}
+														tabIndex={0}
+														onKeyDown={(e) => {
+															if (e.key === "Enter" || e.key === " ") {
+																e.preventDefault();
+																setTabValue(tab.value);
+															}
+														}}
+													>
+														{React.cloneElement(tab.icon, {
+															size: 22,
+															variant: active ? "Bulk" : "Linear",
+														})}
+													</Box>
+												</Tooltip>
+											);
+										})}
 									</Box>
 								</Box>
 							) : (
-								/* Desktop/Tablet Tabs */
 								<Tabs
 									value={tabValue}
 									onChange={handleTabChange}
 									aria-label="folder detail tabs"
 									variant="scrollable"
 									scrollButtons="auto"
+									TabIndicatorProps={{
+										sx: {
+											height: 2,
+											borderRadius: "2px 2px 0 0",
+											bgcolor: BRAND_BLUE,
+										},
+									}}
 									sx={{
+										minHeight: 44,
 										"& .MuiTab-root": {
-											minHeight: 48,
+											minHeight: 44,
 											textTransform: "none",
-											fontSize: { xs: "0.75rem", sm: "0.875rem" },
-											fontWeight: 500,
-											px: { xs: 1.5, sm: 2 },
-											minWidth: { xs: "auto", sm: 120 },
+											fontSize: { xs: "0.78rem", sm: "0.82rem" },
+											fontWeight: 600,
+											letterSpacing: "-0.005em",
+											px: { xs: 1.25, sm: 1.75 },
+											py: 1,
+											minWidth: { xs: "auto", sm: 110 },
+											color: theme.palette.text.secondary,
+											transition: "color 180ms ease",
+											"&:hover": { color: BRAND_BLUE },
+											"&.Mui-selected": { color: BRAND_BLUE },
 										},
 										"& .MuiTab-iconWrapper": {
-											marginRight: { xs: 0.5, sm: 1 },
+											marginRight: { xs: 0.5, sm: 0.875 },
 										},
 									}}
 								>
-									{tabItems.map((tab) => (
-										<Tab
-											key={tab.value}
-											label={isTablet ? tab.shortLabel : tab.label}
-											icon={React.cloneElement(tab.icon, { size: isTablet ? 18 : 20 })}
-											iconPosition="start"
-											{...a11yProps(tab.value)}
-										/>
-									))}
+									{tabItems.map((tab) => {
+										const active = tabValue === tab.value;
+										return (
+											<Tab
+												key={tab.value}
+												label={isTablet ? tab.shortLabel : tab.label}
+												icon={React.cloneElement(tab.icon, {
+													size: isTablet ? 16 : 18,
+													variant: active ? "Bulk" : "Linear",
+												})}
+												iconPosition="start"
+												{...a11yProps(tab.value)}
+											/>
+										);
+									})}
 								</Tabs>
 							)}
 
-							{/* View Mode Selector and Judicial Link Button */}
+							{/* View mode toggle + judicial link */}
 							<Box
 								sx={{
 									display: "flex",
-									gap: 2,
+									gap: 1.25,
 									alignItems: "center",
 									justifyContent: { xs: "center", sm: "flex-start", md: "flex-end" },
 									flexWrap: { xs: "wrap", sm: "nowrap" },
+									pb: { xs: 1, md: 0.75 },
 								}}
 							>
-								{/* View Mode Toggle - Only show on Info tab */}
+								{/* View Mode Toggle — only on Info tab */}
 								{tabValue === 0 && (
 									<ToggleButtonGroup
 										value={viewMode}
@@ -928,35 +855,54 @@ const Details = () => {
 										onChange={(_, newViewMode) => newViewMode && setViewMode(newViewMode)}
 										size="small"
 										sx={{
+											bgcolor: theme.palette.background.paper,
+											borderRadius: 1,
 											"& .MuiToggleButton-root": {
-												px: 2,
-												py: 0.75,
-												height: 36,
-												borderRadius: 0.5,
+												px: 1.25,
+												py: 0.625,
+												height: 32,
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+												color: theme.palette.text.secondary,
+												textTransform: "none",
+												letterSpacing: "-0.005em",
+												transition: "all 180ms ease",
+												"&:first-of-type": {
+													borderTopLeftRadius: 8,
+													borderBottomLeftRadius: 8,
+												},
+												"&:last-of-type": {
+													borderTopRightRadius: 8,
+													borderBottomRightRadius: 8,
+												},
+												"&:hover": {
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+													borderColor: alpha(BRAND_BLUE, isDark ? 0.32 : 0.22),
+													color: BRAND_BLUE,
+												},
 												"&.Mui-selected": {
-													bgcolor: alpha(theme.palette.primary.main, 0.08),
-													borderColor: theme.palette.primary.main,
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+													borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.3),
+													color: BRAND_BLUE,
+													"&:hover": {
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.12),
+													},
 												},
 											},
 										}}
 									>
 										<ToggleButton value="compact">
 											<Tooltip title="Vista compacta">
-												<Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-													<TableDocument size={16} />
-													<Typography variant="body2" sx={{ fontSize: "0.8125rem" }}>
-														Compacta
-													</Typography>
+												<Box sx={{ display: "flex", alignItems: "center", gap: 0.625 }}>
+													<TableDocument size={14} variant="Bulk" />
+													<Typography sx={{ fontSize: "0.74rem", fontWeight: 600, letterSpacing: "-0.005em" }}>Compacta</Typography>
 												</Box>
 											</Tooltip>
 										</ToggleButton>
 										<ToggleButton value="detailed">
 											<Tooltip title="Vista detallada con mejor aprovechamiento del espacio">
-												<Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-													<Category size={16} />
-													<Typography variant="body2" sx={{ fontSize: "0.8125rem" }}>
-														Detallada
-													</Typography>
+												<Box sx={{ display: "flex", alignItems: "center", gap: 0.625 }}>
+													<Category size={14} variant="Bulk" />
+													<Typography sx={{ fontSize: "0.74rem", fontWeight: 600, letterSpacing: "-0.005em" }}>Detallada</Typography>
 												</Box>
 											</Tooltip>
 										</ToggleButton>

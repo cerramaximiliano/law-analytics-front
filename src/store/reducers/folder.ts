@@ -305,8 +305,15 @@ export const getFolderById =
 				return { success: true, folder: currentFolder };
 			}
 
-			// Si es diferente o no hay folder, hacer la petición
-			dispatch({ type: SET_FOLDER_LOADING });
+			// Si es diferente o no hay folder, hacer la petición.
+			// Cuando forceRefresh=true se trata de un refetch silencioso (p. ej.
+			// el botón "Actualizar estado de verificación" en la fila): no
+			// queremos disparar el loader global, que repinta las tablas como
+			// skeleton completo. El merge a state.folders ocurre igual via
+			// GET_FOLDER_BY_ID.
+			if (!forceRefresh) {
+				dispatch({ type: SET_FOLDER_LOADING });
+			}
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/${folderId}`);
 			if (response.data.success) {
 				dispatch({
@@ -390,6 +397,58 @@ export const deleteFoldersByIds = (folderIds: string[], options?: { headers?: Re
 		return { success: false, message: errorMessage };
 	}
 };
+
+// Solicita una reverificación manual al backend. Devuelve la carpeta
+// actualizada con los contadores y timestamps nuevos, además de los códigos
+// de error ("REVERIFY_LIMIT_REACHED" / "REVERIFY_IN_FLIGHT") cuando aplica
+// para que la UI pueda diferenciar el motivo del bloqueo.
+export interface ReverifyResult {
+	success: boolean;
+	folder?: FolderData;
+	verificationAttempts?: number;
+	maxAttempts?: number;
+	lastReverifyRequestedAt?: string;
+	message?: string;
+	code?: "REVERIFY_LIMIT_REACHED" | "REVERIFY_IN_FLIGHT" | string;
+}
+
+export const reverifyFolderById =
+	(folderId: string) =>
+	async (dispatch: Dispatch): Promise<ReverifyResult> => {
+		try {
+			const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/folders/${folderId}/reverify`);
+			if (response.data?.success && response.data.folder) {
+				// Merge en state.folders sin disparar el loader global. Misma
+				// estrategia que GET_FOLDER_BY_ID para que la tabla se actualice
+				// si está montada y la vista de detalle lo refleje en vivo.
+				dispatch({
+					type: GET_FOLDER_BY_ID,
+					payload: response.data.folder,
+				});
+				return {
+					success: true,
+					folder: response.data.folder,
+					verificationAttempts: response.data.verificationAttempts,
+					maxAttempts: response.data.maxAttempts,
+					lastReverifyRequestedAt: response.data.lastReverifyRequestedAt,
+				};
+			}
+			return { success: false, message: response.data?.message || "No se pudo solicitar la reverificación" };
+		} catch (error) {
+			if (axios.isAxiosError(error) && error.response?.data) {
+				const data = error.response.data;
+				return {
+					success: false,
+					message: data.message || "Error al solicitar la reverificación",
+					code: data.code,
+					verificationAttempts: data.verificationAttempts,
+					maxAttempts: data.maxAttempts,
+					lastReverifyRequestedAt: data.lastReverifyRequestedAt,
+				};
+			}
+			return { success: false, message: "Error al solicitar la reverificación" };
+		}
+	};
 
 export const updateFolderById = (folderId: string, updatedData: Partial<FolderData>) => async (dispatch: Dispatch) => {
 	try {
