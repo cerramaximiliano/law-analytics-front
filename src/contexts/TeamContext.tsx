@@ -357,8 +357,15 @@ export function useTeam() {
 // Hook for checking feature availability (teams feature requires paid plan)
 export function useTeamsFeature() {
 	const auth = useSelector((state) => state.auth);
+	const teamsState = useSelector((state) => state.teams);
 	// Subscription is a top-level field in auth state, not inside user
 	const subscription = auth.subscription;
+
+	// Disponibilidad global del servicio (toggle de admin vía IntegrationsConfig).
+	// Cuando el servicio está apagado, sólo se bloquea la creación de equipos nuevos —
+	// los grupos existentes siguen operando con normalidad.
+	const isServiceAvailable = teamsState.serviceAvailable;
+	const serviceMessage = teamsState.serviceMessage;
 
 	const isTeamsEnabled = useMemo(() => {
 		if (!subscription) {
@@ -419,6 +426,8 @@ export function useTeamsFeature() {
 		isTeamsEnabled,
 		maxTeamMembers,
 		planName,
+		isServiceAvailable,
+		serviceMessage,
 	};
 }
 

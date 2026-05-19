@@ -14,7 +14,7 @@ interface CreateTeamDialogProps {
 export default function CreateTeamDialog({ open, onClose, onSuccess }: CreateTeamDialogProps) {
 	const dispatch = useDispatch();
 	const { refreshTeams } = useTeam();
-	const { isTeamsEnabled } = useTeamsFeature();
+	const { isTeamsEnabled, isServiceAvailable, serviceMessage } = useTeamsFeature();
 
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
@@ -70,6 +70,23 @@ export default function CreateTeamDialog({ open, onClose, onSuccess }: CreateTea
 			setIsSubmitting(false);
 		}
 	};
+
+	// Disponibilidad del servicio es el primer control — independiente del plan.
+	if (!isServiceAvailable) {
+		return (
+			<Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
+				<DialogTitle>Crear Equipo</DialogTitle>
+				<DialogContent>
+					<Alert severity="warning">
+						{serviceMessage || "La creación de equipos está temporalmente deshabilitada. Volvé a intentarlo en unos minutos."}
+					</Alert>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleClose}>Cerrar</Button>
+				</DialogActions>
+			</Dialog>
+		);
+	}
 
 	if (!isTeamsEnabled) {
 		return (

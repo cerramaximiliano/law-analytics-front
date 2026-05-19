@@ -43,7 +43,7 @@ const TabRole = () => {
 		refreshTeams,
 		refreshActiveTeam,
 	} = useTeam();
-	const { isTeamsEnabled, maxTeamMembers, planName } = useTeamsFeature();
+	const { isTeamsEnabled, maxTeamMembers, planName, isServiceAvailable, serviceMessage } = useTeamsFeature();
 
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
 	const [showLeaveDialog, setShowLeaveDialog] = useState(false);
@@ -433,6 +433,94 @@ const TabRole = () => {
 				</Box>
 
 				<LeaveTeamDialog open={showLeaveDialog} onClose={() => setShowLeaveDialog(false)} onSuccess={() => refreshTeams()} />
+				<GuideTeams open={guideOpen} onClose={() => setGuideOpen(false)} />
+			</>
+		);
+	}
+
+	// Servicio deshabilitado globalmente (toggle de admin vía IntegrationsConfig).
+	// Es el primer control — independiente del plan. Sólo aplica a usuarios sin
+	// equipos: los grupos existentes siguen operando con normalidad.
+	if (!isServiceAvailable && teams.length === 0) {
+		return (
+			<>
+				<Box
+					sx={{
+						position: "relative",
+						overflow: "hidden",
+						borderRadius: 2,
+						p: { xs: 3, md: 4 },
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)}`,
+						textAlign: "center",
+					}}
+				>
+					<Box
+						sx={{
+							position: "absolute",
+							top: -80,
+							left: "50%",
+							transform: "translateX(-50%)",
+							width: 360,
+							height: 360,
+							borderRadius: "50%",
+							background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)} 0%, transparent 70%)`,
+							pointerEvents: "none",
+						}}
+					/>
+					<Stack spacing={2} alignItems="center" sx={{ position: "relative" }}>
+						<Box
+							sx={{
+								width: 64,
+								height: 64,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+							}}
+						>
+							<People size={28} variant="Bulk" />
+						</Box>
+						<Stack direction="row" alignItems="center" spacing={0.75}>
+							<Typography sx={{ fontSize: "1.2rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+								Gestión de equipos
+							</Typography>
+							<Tooltip title="Ver guía de equipos">
+								<IconButton onClick={() => setGuideOpen(true)} sx={iconBtnSx}>
+									<InfoCircle size={16} variant="Bulk" />
+								</IconButton>
+							</Tooltip>
+						</Stack>
+
+						<Box
+							sx={{
+								p: 2,
+								mt: 1,
+								borderRadius: 1.5,
+								bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05),
+								border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+								maxWidth: 520,
+								width: "100%",
+							}}
+						>
+							<Stack direction="row" spacing={1} alignItems="flex-start">
+								<Warning2 size={16} variant="Bulk" color={STALE_AMBER} style={{ marginTop: 2, flexShrink: 0 }} />
+								<Stack spacing={0.5} sx={{ textAlign: "left" }}>
+									<Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+										Servicio no disponible
+									</Typography>
+									<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+										{serviceMessage || "La creación de equipos está temporalmente deshabilitada. Volvé a intentarlo en unos minutos."}
+									</Typography>
+								</Stack>
+							</Stack>
+						</Box>
+					</Stack>
+				</Box>
+
 				<GuideTeams open={guideOpen} onClose={() => setGuideOpen(false)} />
 			</>
 		);
