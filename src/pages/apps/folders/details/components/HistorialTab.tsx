@@ -70,6 +70,7 @@ import {
 	formatPerformedBy,
 	ActivityLogQueryParams,
 } from "types/activityLog";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // State interface
 interface ActivityLogState {
@@ -237,7 +238,7 @@ const getFieldLabel = (fieldName: string): string => {
 	return FIELD_LABELS[fieldName] || fieldName;
 };
 
-// Color mapping for MUI
+// Color mapping for MUI (legacy fallback for timeline dot)
 const getMuiColor = (color: string): "success" | "info" | "warning" | "error" | "primary" | "secondary" => {
 	switch (color) {
 		case "success":
@@ -250,6 +251,21 @@ const getMuiColor = (color: string): "success" | "info" | "warning" | "error" | 
 			return "error";
 		default:
 			return "primary";
+	}
+};
+
+// Brand accent mapping for action types
+const getBrandAccent = (color: string, errorMain: string): string => {
+	switch (color) {
+		case "success":
+			return LIVE_GREEN;
+		case "warning":
+			return STALE_AMBER;
+		case "error":
+			return errorMain;
+		case "info":
+		default:
+			return BRAND_BLUE;
 	}
 };
 
@@ -406,15 +422,28 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 		}
 	};
 
-	// Render change details
+	// Render change details — brand
 	const renderChanges = (changes?: Array<{ field: string; oldValue: any; newValue: any }>) => {
 		if (!changes || changes.length === 0) return null;
 
+		const isDarkLocal = theme.palette.mode === "dark";
+
 		return (
-			<Box sx={{ mt: 1.5, pl: 1 }}>
-				<Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.5 }}>
-					Cambios realizados:
-				</Typography>
+			<Box sx={{ mt: 1, pl: 0.5 }}>
+				<Stack direction="row" spacing={0.5} alignItems="center" mb={0.75}>
+					<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+					<Typography
+						sx={{
+							fontSize: "0.6rem",
+							fontWeight: 600,
+							letterSpacing: "0.08em",
+							textTransform: "uppercase",
+							color: "text.secondary",
+						}}
+					>
+						Cambios realizados
+					</Typography>
+				</Stack>
 				{changes.map((change, index) => (
 					<Box
 						key={index}
@@ -423,20 +452,30 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 							alignItems: "flex-start",
 							gap: 1,
 							py: 0.5,
-							borderBottom: index < changes.length - 1 ? `1px dashed ${theme.palette.divider}` : "none",
+							borderBottom:
+								index < changes.length - 1 ? `1px dashed ${alpha(BRAND_BLUE, isDarkLocal ? 0.18 : 0.12)}` : "none",
 						}}
 					>
-						<Typography variant="caption" sx={{ fontWeight: 500, minWidth: 120 }}>
-							{getFieldLabel(change.field)}:
+						<Typography
+							sx={{
+								fontSize: "0.7rem",
+								fontWeight: 600,
+								color: "text.primary",
+								letterSpacing: "-0.005em",
+								minWidth: 120,
+							}}
+						>
+							{getFieldLabel(change.field)}
 						</Typography>
 						<Box sx={{ flex: 1 }}>
 							{change.oldValue !== undefined && change.oldValue !== null && (
 								<Typography
-									variant="caption"
 									sx={{
+										fontSize: "0.7rem",
 										color: theme.palette.error.main,
 										textDecoration: "line-through",
 										display: "block",
+										letterSpacing: "-0.005em",
 									}}
 								>
 									{String(change.oldValue).substring(0, 100)}
@@ -444,7 +483,15 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 								</Typography>
 							)}
 							{change.newValue !== undefined && change.newValue !== null && (
-								<Typography variant="caption" sx={{ color: theme.palette.success.main, display: "block" }}>
+								<Typography
+									sx={{
+										fontSize: "0.7rem",
+										color: LIVE_GREEN,
+										display: "block",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+									}}
+								>
 									{String(change.newValue).substring(0, 100)}
 									{String(change.newValue).length > 100 && "..."}
 								</Typography>
@@ -456,12 +503,14 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 		);
 	};
 
-	// Render activity item
+	const isDark = theme.palette.mode === "dark";
+
+	// Render activity item — brand-aligned
 	const renderActivityItem = (entry: ActivityLogEntry, isLast: boolean) => {
 		const ResourceIcon = RESOURCE_ICONS[entry.resourceType] || Document;
 		const ActionIcon = ACTION_ICONS[entry.action] || Edit2;
 		const actionColor = ACTION_COLORS[entry.action] || "default";
-		const muiColor = getMuiColor(actionColor);
+		const accent = getBrandAccent(actionColor, theme.palette.error.main);
 		const timestamp = formatTimestamp(entry.createdAt);
 		const isExpanded = expandedItems.has(entry._id);
 		const hasChanges = entry.changes && entry.changes.length > 0;
@@ -476,86 +525,143 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 					}}
 				>
 					<Tooltip title={timestamp.absolute}>
-						<Typography variant="caption" color="text.secondary" sx={{ display: "block", textAlign: "right" }}>
+						<Typography
+							sx={{
+								fontSize: "0.7rem",
+								color: "text.secondary",
+								letterSpacing: "-0.005em",
+								display: "block",
+								textAlign: "right",
+							}}
+						>
 							{timestamp.relative}
 						</Typography>
 					</Tooltip>
 				</TimelineOppositeContent>
 
 				<TimelineSeparator>
-					<TimelineDot
-						color={muiColor}
+					<Box
 						sx={{
-							boxShadow: `0 0 0 4px ${alpha(theme.palette[muiColor].main, 0.15)}`,
+							width: 26,
+							height: 26,
+							borderRadius: "50%",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(accent, isDark ? 0.18 : 0.1),
+							border: `1px solid ${alpha(accent, isDark ? 0.32 : 0.22)}`,
+							color: accent,
+							flexShrink: 0,
+							boxShadow: `0 0 0 3px ${alpha(accent, isDark ? 0.08 : 0.04)}`,
 						}}
 					>
-						<ActionIcon size={16} variant="Bold" />
-					</TimelineDot>
-					{!isLast && <TimelineConnector sx={{ bgcolor: alpha(theme.palette.divider, 0.5) }} />}
+						<ActionIcon size={12} variant="Bulk" />
+					</Box>
+					{!isLast && <TimelineConnector sx={{ bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.12), width: 1.5 }} />}
 				</TimelineSeparator>
 
-				<TimelineContent sx={{ py: 1.5, px: 2 }}>
-					<Paper
-						elevation={0}
+				<TimelineContent sx={{ py: 1.25, px: 2 }}>
+					<Box
 						sx={{
-							p: 2,
-							bgcolor: alpha(theme.palette.background.default, 0.5),
-							border: `1px solid ${theme.palette.divider}`,
-							borderRadius: 2,
-							transition: "all 0.2s",
+							p: 1.75,
+							borderRadius: 1.5,
+							bgcolor: theme.palette.background.paper,
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+							transition: "all 180ms ease",
 							"&:hover": {
-								bgcolor: alpha(theme.palette.primary.main, 0.02),
-								borderColor: alpha(theme.palette.primary.main, 0.2),
+								borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 							},
 						}}
 					>
 						{/* Header */}
 						<Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1 }}>
-							<Box sx={{ flex: 1 }}>
-								{/* User info */}
-								<Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+							<Box sx={{ flex: 1, minWidth: 0 }}>
+								<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary", mb: 0.5 }}>
 									{formatPerformedBy(entry.performedByInfo)}
 								</Typography>
 
-								{/* Action description */}
-								<Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
-									<Chip
-										label={ACTION_LABELS[entry.action] || entry.action}
-										size="small"
-										color={muiColor}
-										variant="outlined"
-										sx={{ height: 22, fontSize: "0.7rem" }}
-									/>
+								<Box sx={{ display: "flex", alignItems: "center", gap: 0.625, flexWrap: "wrap" }}>
+									{/* Action pill brand-accented */}
+									<Box
+										sx={{
+											display: "inline-flex",
+											alignItems: "center",
+											gap: 0.5,
+											px: 0.75,
+											py: 0.125,
+											borderRadius: 0.625,
+											bgcolor: alpha(accent, isDark ? 0.16 : 0.1),
+											border: `1px solid ${alpha(accent, isDark ? 0.32 : 0.22)}`,
+										}}
+									>
+										<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: accent }} />
+										<Typography
+											sx={{
+												fontSize: "0.62rem",
+												fontWeight: 600,
+												color: accent,
+												letterSpacing: "0.04em",
+												textTransform: "uppercase",
+												lineHeight: 1,
+											}}
+										>
+											{ACTION_LABELS[entry.action] || entry.action}
+										</Typography>
+									</Box>
 									<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-										<ResourceIcon size={14} color={theme.palette.text.secondary} />
-										<Typography variant="body2" color="text.secondary">
+										<ResourceIcon size={12} variant="Bulk" color={theme.palette.text.secondary} />
+										<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 											{RESOURCE_TYPE_LABELS[entry.resourceType] || entry.resourceType}
 										</Typography>
 									</Box>
 									{entry.resourceName && (
-										<Typography variant="body2" sx={{ fontWeight: 500 }}>
+										<Typography
+											sx={{
+												fontSize: "0.78rem",
+												fontWeight: 600,
+												color: "text.primary",
+												letterSpacing: "-0.005em",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+											}}
+										>
 											"{entry.resourceName}"
 										</Typography>
 									)}
 								</Box>
 							</Box>
 
-							{/* Expand button for changes */}
+							{/* Expand button */}
 							{hasChanges && (
-								<IconButton size="small" onClick={() => toggleExpand(entry._id)} sx={{ mt: -0.5 }}>
-									{isExpanded ? <ArrowUp2 size={16} /> : <ArrowDown2 size={16} />}
+								<IconButton
+									size="small"
+									onClick={() => toggleExpand(entry._id)}
+									sx={{
+										width: 24,
+										height: 24,
+										borderRadius: 0.75,
+										color: BRAND_BLUE,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+										"&:hover": {
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+										},
+									}}
+								>
+									{isExpanded ? <ArrowUp2 size={12} variant="Bulk" /> : <ArrowDown2 size={12} variant="Bulk" />}
 								</IconButton>
 							)}
 						</Box>
 
-						{/* Expandable changes section */}
+						{/* Expandable changes */}
 						{hasChanges && (
 							<Collapse in={isExpanded}>
-								<Divider sx={{ my: 1.5 }} />
+								<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1), my: 1.25 }} />
 								{renderChanges(entry.changes)}
 							</Collapse>
 						)}
-					</Paper>
+					</Box>
 				</TimelineContent>
 			</TimelineItem>
 		);
@@ -609,7 +715,7 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 
 	return (
 		<Box sx={{ p: { xs: 1, sm: 2 } }}>
-			{/* Header */}
+			{/* Header — brand */}
 			<Box
 				sx={{
 					display: "flex",
@@ -620,41 +726,133 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 					gap: 1,
 				}}
 			>
-				<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-					<Clock size={24} color={theme.palette.primary.main} />
-					<Typography variant="h5" sx={{ fontWeight: 600 }}>
-						Historial de Actividad
-					</Typography>
-					{pagination && <Chip label={`${pagination.total} registros`} size="small" variant="outlined" sx={{ ml: 1 }} />}
-				</Box>
+				<Stack direction="row" spacing={1.25} alignItems="center">
+					<Box
+						sx={{
+							width: 36,
+							height: 36,
+							borderRadius: 1,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+							color: BRAND_BLUE,
+						}}
+					>
+						<Clock size={18} variant="Bulk" />
+					</Box>
+					<Stack spacing={0.125}>
+						<Stack direction="row" spacing={0.5} alignItems="center">
+							<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+							<Typography
+								sx={{
+									fontSize: "0.6rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+								}}
+							>
+								Historial
+							</Typography>
+						</Stack>
+						<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+							<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+								Actividad
+							</Typography>
+							{pagination && (
+								<Box
+									sx={{
+										display: "inline-flex",
+										alignItems: "center",
+										px: 0.875,
+										py: 0.25,
+										borderRadius: 0.75,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+									}}
+								>
+									<Typography
+										sx={{
+											fontSize: "0.7rem",
+											fontWeight: 700,
+											color: BRAND_BLUE,
+											letterSpacing: "-0.005em",
+											fontVariantNumeric: "tabular-nums",
+										}}
+									>
+										{pagination.total}{" "}
+										<Box component="span" sx={{ fontSize: "0.66rem", fontWeight: 500, opacity: 0.85 }}>
+											registros
+										</Box>
+									</Typography>
+								</Box>
+							)}
+						</Stack>
+					</Stack>
+				</Stack>
 
-				<Stack direction="row" spacing={1}>
+				<Stack direction="row" spacing={0.75}>
 					<Tooltip title="Actualizar">
-						<IconButton onClick={() => fetchActivityLog(true)} disabled={isLoading} size="small">
-							<Refresh2 size={20} />
+						<IconButton
+							onClick={() => fetchActivityLog(true)}
+							disabled={isLoading}
+							size="small"
+							sx={{
+								width: 32,
+								height: 32,
+								borderRadius: 1,
+								color: BRAND_BLUE,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+								"&:hover": {
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+									borderColor: alpha(BRAND_BLUE, isDark ? 0.38 : 0.28),
+								},
+								"&:disabled": {
+									bgcolor: alpha(theme.palette.text.disabled, 0.06),
+									color: theme.palette.text.disabled,
+								},
+							}}
+						>
+							<Refresh2 size={16} variant="Bulk" />
 						</IconButton>
 					</Tooltip>
 					<Tooltip title={showFilters ? "Ocultar filtros" : "Mostrar filtros"}>
-						<IconButton onClick={() => setShowFilters(!showFilters)} size="small" color={showFilters ? "primary" : "default"}>
-							<Filter size={20} />
+						<IconButton
+							onClick={() => setShowFilters(!showFilters)}
+							size="small"
+							sx={{
+								width: 32,
+								height: 32,
+								borderRadius: 1,
+								color: BRAND_BLUE,
+								bgcolor: showFilters ? alpha(BRAND_BLUE, isDark ? 0.18 : 0.1) : alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+								border: `1px solid ${alpha(BRAND_BLUE, showFilters ? (isDark ? 0.38 : 0.28) : isDark ? 0.22 : 0.14)}`,
+								"&:hover": {
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
+								},
+							}}
+						>
+							<Filter size={16} variant="Bulk" />
 						</IconButton>
 					</Tooltip>
 				</Stack>
 			</Box>
 
-			{/* Filters */}
+			{/* Filters — brand */}
 			<Collapse in={showFilters}>
-				<Paper
-					elevation={0}
+				<Box
 					sx={{
-						p: 2,
+						p: 1.75,
 						mb: 2,
-						bgcolor: alpha(theme.palette.primary.main, 0.02),
-						border: `1px solid ${theme.palette.divider}`,
-						borderRadius: 2,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+						borderRadius: 1.5,
 					}}
 				>
-					<Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="flex-end">
+					<Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems="flex-end">
 						<FormControl size="small" sx={{ minWidth: 150 }}>
 							<InputLabel>Tipo de recurso</InputLabel>
 							<Select value={resourceTypeFilter} onChange={handleResourceTypeChange} label="Tipo de recurso">
@@ -672,13 +870,33 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 						</FormControl>
 
 						{(resourceTypeFilter || actionFilter) && (
-							<Chip label="Limpiar filtros" size="small" onDelete={clearFilters} onClick={clearFilters} />
+							<Box
+								onClick={clearFilters}
+								sx={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: 0.5,
+									px: 1,
+									py: 0.5,
+									borderRadius: 0.875,
+									cursor: "pointer",
+									bgcolor: alpha(STALE_AMBER, isDark ? 0.12 : 0.08),
+									border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.28 : 0.2)}`,
+									"&:hover": {
+										bgcolor: alpha(STALE_AMBER, isDark ? 0.2 : 0.14),
+									},
+								}}
+							>
+								<Typography sx={{ fontSize: "0.7rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "-0.005em" }}>
+									Limpiar filtros
+								</Typography>
+							</Box>
 						)}
 					</Stack>
-				</Paper>
+				</Box>
 			</Collapse>
 
-			{/* Loading overlay for pagination */}
+			{/* Loading overlay */}
 			{isLoading && logs.length > 0 && (
 				<Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
 					<Stack direction="row" spacing={1} alignItems="center">
@@ -688,28 +906,42 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 				</Box>
 			)}
 
-			{/* Empty state */}
+			{/* Empty state — brand */}
 			{!isLoading && logs.length === 0 && (
-				<Paper
-					elevation={0}
+				<Box
 					sx={{
-						p: 4,
+						p: 3.5,
 						textAlign: "center",
-						bgcolor: alpha(theme.palette.background.default, 0.5),
-						border: `1px dashed ${theme.palette.divider}`,
-						borderRadius: 2,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+						border: `1px dashed ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.2)}`,
+						borderRadius: 1.5,
 					}}
 				>
-					<Clock size={48} color={theme.palette.text.disabled} />
-					<Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
-						No hay actividad registrada
+					<Box
+						sx={{
+							width: 56,
+							height: 56,
+							borderRadius: 1.5,
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+							color: BRAND_BLUE,
+							mb: 1.5,
+						}}
+					>
+						<Clock size={28} variant="Bulk" />
+					</Box>
+					<Typography sx={{ fontSize: "1rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.015em" }}>
+						Sin actividad registrada
 					</Typography>
-					<Typography variant="body2" color="text.disabled">
+					<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", letterSpacing: "-0.005em", mt: 0.5 }}>
 						{resourceTypeFilter || actionFilter
-							? "No se encontraron registros con los filtros seleccionados"
-							: "Las acciones realizadas en esta causa aparecerán aquí"}
+							? "No se encontraron registros con los filtros seleccionados."
+							: "Las acciones realizadas en esta causa aparecerán acá."}
 					</Typography>
-				</Paper>
+				</Box>
 			)}
 
 			{/* Timeline */}

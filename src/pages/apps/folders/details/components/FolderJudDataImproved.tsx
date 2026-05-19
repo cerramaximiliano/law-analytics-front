@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { dispatch } from "store";
-import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, Paper, useTheme, alpha, Chip, Avatar, LinearProgress } from "@mui/material";
+import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, useTheme, alpha } from "@mui/material";
 import dayjs from "utils/dayjs-config";
 import data from "data/folder.json";
-import { Edit2, Calendar, DollarCircle, HashtagSquare, Judge, Building, DocumentText, TickCircle, ArrowRight2 } from "iconsax-react";
+import { Edit2, Calendar, DollarCircle, HashtagSquare, Judge, Building, DocumentText, TickCircle, ExportSquare } from "iconsax-react";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
@@ -17,6 +17,7 @@ import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
 import { getJuzgadosByJurisdiction, Juzgado } from "api/juzgados";
 import { useTeam } from "contexts/TeamContext";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -51,99 +52,115 @@ const JudicialInfoCard: React.FC<JudicialInfoCardProps> = ({
 	important = false,
 }) => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const hasValue = value && value !== "-";
 
 	if (isLoading) {
-		return <Skeleton variant="rectangular" height={80} sx={{ borderRadius: 1 }} />;
+		return <Skeleton variant="rectangular" height={80} sx={{ borderRadius: 1.5 }} />;
 	}
 
 	return (
-		<Paper
-			elevation={0}
+		<Box
 			sx={{
-				p: 2.5,
+				p: 1.75,
 				height: "100%",
-				border: `1px solid ${hasValue ? theme.palette.divider : alpha(theme.palette.divider, 0.3)}`,
+				border: `1px solid ${hasValue ? alpha(BRAND_BLUE, isDark ? 0.18 : 0.1) : alpha(theme.palette.text.disabled, 0.12)}`,
 				borderRadius: 1.5,
-				transition: "all 0.2s ease",
+				bgcolor: hasValue ? theme.palette.background.paper : alpha(theme.palette.text.disabled, isDark ? 0.04 : 0.02),
+				transition: "all 180ms ease",
 				position: "relative",
-				bgcolor: hasValue ? "background.paper" : alpha(theme.palette.grey[50], 0.5),
 				"&:hover": hasValue
 					? {
-							transform: "translateY(-2px)",
-							boxShadow: theme.shadows[2],
-							borderColor: theme.palette.info.main,
+							borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 					  }
-					: {},
+					: undefined,
 			}}
 		>
 			{important && hasValue && (
 				<Box
 					sx={{
 						position: "absolute",
-						top: -1,
-						right: -1,
+						top: -3,
+						right: -3,
 						width: 8,
 						height: 8,
 						borderRadius: "50%",
-						bgcolor: theme.palette.info.main,
+						bgcolor: LIVE_GREEN,
 						boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
 					}}
 				/>
 			)}
 
-			<Stack spacing={2}>
-				<Stack direction="row" spacing={1.5} alignItems="flex-start">
-					<Avatar
-						sx={{
-							bgcolor: hasValue ? alpha(theme.palette.info.main, 0.1) : alpha(theme.palette.grey[500], 0.1),
-							width: 40,
-							height: 40,
-						}}
-					>
-						{React.cloneElement(icon as React.ReactElement, {
-							size: 20,
-							color: hasValue ? theme.palette.info.main : theme.palette.grey[500],
-							variant: hasValue ? "Bold" : "Linear",
-						})}
-					</Avatar>
-					<Box flex={1}>
-						<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem", fontWeight: 500 }}>
+			<Stack direction="row" spacing={1.25} alignItems="flex-start">
+				<Box
+					sx={{
+						width: 36,
+						height: 36,
+						borderRadius: 1,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						bgcolor: hasValue ? alpha(BRAND_BLUE, isDark ? 0.16 : 0.08) : alpha(theme.palette.text.disabled, 0.08),
+						border: `1px solid ${hasValue ? alpha(BRAND_BLUE, isDark ? 0.28 : 0.18) : alpha(theme.palette.text.disabled, 0.16)}`,
+						color: hasValue ? BRAND_BLUE : theme.palette.text.disabled,
+						flexShrink: 0,
+					}}
+				>
+					{React.cloneElement(icon as React.ReactElement, {
+						size: 16,
+						variant: hasValue ? "Bulk" : "Linear",
+					})}
+				</Box>
+				<Box flex={1} sx={{ minWidth: 0 }}>
+					<Stack direction="row" spacing={0.5} alignItems="center">
+						<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: hasValue ? BRAND_BLUE : theme.palette.text.disabled }} />
+						<Typography
+							sx={{
+								fontSize: "0.6rem",
+								fontWeight: 600,
+								letterSpacing: "0.08em",
+								textTransform: "uppercase",
+								color: hasValue ? "text.secondary" : "text.disabled",
+							}}
+						>
 							{label}
 						</Typography>
-						{isEditing && editComponent ? (
-							<Box mt={1}>{editComponent}</Box>
-						) : (
-							<>
-								<Typography
-									variant="h6"
-									sx={{
-										fontWeight: hasValue ? 600 : 400,
-										color: valueColor || (hasValue ? "text.primary" : "text.disabled"),
-										fontSize: important ? "1.25rem" : "1.125rem",
-										mt: 0.5,
-									}}
-								>
-									{value || "-"}
+					</Stack>
+					{isEditing && editComponent ? (
+						<Box mt={1}>{editComponent}</Box>
+					) : (
+						<>
+							<Typography
+								sx={{
+									fontWeight: hasValue ? 600 : 400,
+									color: valueColor || (hasValue ? "text.primary" : "text.disabled"),
+									fontSize: important ? "1.1rem" : "1rem",
+									letterSpacing: "-0.005em",
+									mt: 0.25,
+									lineHeight: 1.4,
+								}}
+							>
+								{value || "—"}
+							</Typography>
+							{helper && hasValue && (
+								<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em", mt: 0.25 }}>
+									{helper}
 								</Typography>
-								{helper && hasValue && (
-									<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
-										{helper}
-									</Typography>
-								)}
-							</>
-						)}
-					</Box>
-					{hasValue && !isEditing && <TickCircle size={16} variant="Bold" color={theme.palette.success.main} style={{ opacity: 0.8 }} />}
-				</Stack>
+							)}
+						</>
+					)}
+				</Box>
+				{hasValue && !isEditing && <TickCircle size={14} variant="Bold" color={LIVE_GREEN} />}
 			</Stack>
-		</Paper>
+		</Box>
 	);
 };
 
 const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boolean }) => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const { canUpdate } = useTeam();
 
 	const formatDate = (date: string | null | undefined) => {
@@ -275,27 +292,53 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 		}),
 	});
 
-	const getStatusColor = (status: string) => {
+	const getStatusAccent = (status: string) => {
 		switch (status) {
 			case "Inicio Demanda":
-				return "info";
 			case "Contestación Demanda":
-				return "primary";
-			case "Abierto a Prueba":
-				return "warning";
-			case "Sentencia":
-				return "success";
-			case "Apelación":
-				return "error";
 			case "Sentencia Cámara":
-				return "secondary";
-			case "Recurso ante Cámara":
-				return "error";
+				return BRAND_BLUE;
+			case "Abierto a Prueba":
+				return STALE_AMBER;
+			case "Sentencia":
 			case "Sentencia Corte":
-				return "success";
+				return LIVE_GREEN;
+			case "Apelación":
+			case "Recurso ante Cámara":
+				return theme.palette.error.main;
 			default:
-				return "default";
+				return theme.palette.text.secondary as string;
 		}
+	};
+
+	const StatusPill = ({ label }: { label: string }) => {
+		const accent = getStatusAccent(label);
+		return (
+			<Box
+				sx={{
+					display: "inline-flex",
+					alignItems: "center",
+					gap: 0.5,
+					px: 1,
+					py: 0.375,
+					borderRadius: 0.875,
+					bgcolor: alpha(accent, isDark ? 0.16 : 0.1),
+					border: `1px solid ${alpha(accent, isDark ? 0.32 : 0.22)}`,
+				}}
+			>
+				<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: accent }} />
+				<Typography
+					sx={{
+						fontSize: "0.72rem",
+						fontWeight: 600,
+						color: accent,
+						letterSpacing: "-0.005em",
+					}}
+				>
+					{label}
+				</Typography>
+			</Box>
+		);
 	};
 
 	// Calculate completeness
@@ -324,131 +367,263 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 			<Formik initialValues={initialValues} onSubmit={_handleSubmit} enableReinitialize validationSchema={ValidationSchema}>
 				{({ isSubmitting, values }) => (
 					<Form autoComplete="off" noValidate>
-						<Stack spacing={3}>
-							{/* Header with Status */}
-							<Paper
-								elevation={0}
+						<Stack spacing={2.5}>
+							{/* Header — brand-tinted */}
+							<Box
 								sx={{
-									p: 3,
-									border: `1px solid ${theme.palette.divider}`,
+									p: 2.5,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 									borderRadius: 2,
-									bgcolor: alpha(theme.palette.info.main, 0.02),
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
 								}}
 							>
-								<Grid container spacing={3} alignItems="center">
+								<Grid container spacing={2.5} alignItems="center">
 									<Grid item xs={12} md={8}>
 										<Stack spacing={2}>
-											<Stack direction="row" spacing={2} alignItems="center">
-												<Judge size={24} variant="Bold" color={theme.palette.info.main} />
+											<Stack direction="row" spacing={1.5} alignItems="center">
+												<Box
+													sx={{
+														width: 40,
+														height: 40,
+														borderRadius: 1,
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+														border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+														color: BRAND_BLUE,
+														flexShrink: 0,
+													}}
+												>
+													<Judge size={20} variant="Bulk" />
+												</Box>
 												<Box flex={1}>
-													<Typography variant="h5" fontWeight={600}>
-														Proceso Judicial
+													<Stack direction="row" spacing={0.5} alignItems="center">
+														<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+														<Typography
+															sx={{
+																fontSize: "0.6rem",
+																fontWeight: 600,
+																letterSpacing: "0.08em",
+																textTransform: "uppercase",
+																color: "text.secondary",
+															}}
+														>
+															Etapa judicial
+														</Typography>
+													</Stack>
+													<Typography sx={{ fontSize: "1.25rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.015em" }}>
+														Proceso judicial
 													</Typography>
-													<Stack direction="row" spacing={2} alignItems="center" mt={0.5}>
+													<Stack direction="row" spacing={1.25} alignItems="center" mt={0.5} flexWrap="wrap" useFlexGap>
 														{hasData && (
-															<Typography variant="caption" color="success.main" display="flex" alignItems="center" gap={0.5}>
-																<TickCircle size={14} variant="Bold" />
-																Información registrada
-															</Typography>
+															<Stack direction="row" spacing={0.5} alignItems="center">
+																<TickCircle size={12} variant="Bold" color={LIVE_GREEN} />
+																<Typography
+																	sx={{
+																		fontSize: "0.66rem",
+																		fontWeight: 600,
+																		color: LIVE_GREEN,
+																		letterSpacing: "0.04em",
+																		textTransform: "uppercase",
+																	}}
+																>
+																	Información registrada
+																</Typography>
+															</Stack>
 														)}
 														{folder?.pjn && (
-															<Chip
-																icon={<ArrowRight2 size={14} />}
-																label="Vinculado con PJN"
-																color="success"
-																size="small"
-																variant="outlined"
-															/>
+															<Box
+																sx={{
+																	display: "inline-flex",
+																	alignItems: "center",
+																	gap: 0.5,
+																	px: 0.875,
+																	py: 0.25,
+																	borderRadius: 0.75,
+																	bgcolor: alpha(LIVE_GREEN, isDark ? 0.14 : 0.08),
+																	border: `1px solid ${alpha(LIVE_GREEN, isDark ? 0.32 : 0.22)}`,
+																}}
+															>
+																<ExportSquare size={11} variant="Bulk" color={LIVE_GREEN} />
+																<Typography sx={{ fontSize: "0.66rem", fontWeight: 600, color: LIVE_GREEN, letterSpacing: "-0.005em" }}>
+																	Vinculado con PJN
+																</Typography>
+															</Box>
 														)}
 													</Stack>
 												</Box>
 											</Stack>
 
-											{/* Progress */}
+											{/* Progress — brand */}
 											<Box>
-												<Stack direction="row" justifyContent="space-between" mb={1}>
-													<Typography variant="caption" color="text.secondary">
-														Información completa
-													</Typography>
-													<Typography variant="caption" fontWeight={600} color="info.main">
+												<Stack direction="row" justifyContent="space-between" mb={0.75}>
+													<Stack direction="row" spacing={0.5} alignItems="center">
+														<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+														<Typography
+															sx={{
+																fontSize: "0.62rem",
+																fontWeight: 600,
+																letterSpacing: "0.08em",
+																textTransform: "uppercase",
+																color: "text.secondary",
+															}}
+														>
+															Información completa
+														</Typography>
+													</Stack>
+													<Typography
+														sx={{
+															fontSize: "0.82rem",
+															fontWeight: 700,
+															color: completeness === 100 ? LIVE_GREEN : BRAND_BLUE,
+															letterSpacing: "-0.005em",
+															fontVariantNumeric: "tabular-nums",
+														}}
+													>
 														{completeness.toFixed(0)}%
 													</Typography>
 												</Stack>
-												<LinearProgress
-													variant="determinate"
-													value={completeness}
+												<Box
 													sx={{
+														width: "100%",
 														height: 6,
-														borderRadius: 3,
-														bgcolor: alpha(theme.palette.info.main, 0.1),
-														"& .MuiLinearProgress-bar": {
-															borderRadius: 3,
-															bgcolor: theme.palette.info.main,
-														},
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08),
+														borderRadius: 1,
+														overflow: "hidden",
 													}}
-												/>
+												>
+													<Box
+														sx={{
+															width: `${completeness}%`,
+															height: "100%",
+															bgcolor: completeness === 100 ? LIVE_GREEN : BRAND_BLUE,
+															transition: "width 300ms ease",
+														}}
+													/>
+												</Box>
 											</Box>
 										</Stack>
 									</Grid>
 									<Grid item xs={12} md={4}>
-										<Stack spacing={2} alignItems={{ xs: "flex-start", md: "flex-end" }}>
+										<Stack spacing={1.5} alignItems={{ xs: "flex-start", md: "flex-end" }}>
 											{!isEditing && canUpdate && (
 												<Button
 													variant="contained"
 													onClick={handleEdit}
-													startIcon={<Edit2 size={18} />}
+													startIcon={<Edit2 size={16} variant="Bulk" />}
 													fullWidth
 													sx={{
 														maxWidth: { md: 200 },
-														bgcolor: theme.palette.info.main,
-														"&:hover": {
-															bgcolor: theme.palette.info.dark,
-														},
+														textTransform: "none",
+														fontWeight: 600,
+														letterSpacing: "-0.005em",
+														bgcolor: BRAND_BLUE,
+														color: "#fff",
+														borderRadius: 1,
+														py: 1,
+														boxShadow: "none",
+														"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
 													}}
 												>
-													Editar Información
+													Editar información
 												</Button>
 											)}
 											{duration !== null && (
 												<Box textAlign={{ xs: "left", md: "right" }}>
-													<Typography variant="caption" color="text.secondary">
+													<Typography
+														sx={{
+															fontSize: "0.6rem",
+															fontWeight: 600,
+															letterSpacing: "0.08em",
+															textTransform: "uppercase",
+															color: "text.secondary",
+														}}
+													>
 														Duración del proceso
 													</Typography>
-													<Typography variant="h6" fontWeight={600} color="info.main">
-														{duration} días
+													<Typography
+														sx={{
+															fontSize: "1.1rem",
+															fontWeight: 700,
+															color: BRAND_BLUE,
+															letterSpacing: "-0.015em",
+															fontVariantNumeric: "tabular-nums",
+														}}
+													>
+														{duration}{" "}
+														<Box component="span" sx={{ fontSize: "0.78rem", fontWeight: 500, color: "text.secondary" }}>
+															días
+														</Box>
 													</Typography>
 												</Box>
 											)}
 										</Stack>
 									</Grid>
 								</Grid>
-							</Paper>
+							</Box>
 
-							{/* Court Information - Always visible */}
-							<Paper
-								elevation={0}
+							{/* Court Information */}
+							<Box
 								sx={{
-									p: 3,
-									border: `1px solid ${theme.palette.divider}`,
-									borderRadius: 2,
-									bgcolor: hasCourtInfo ? alpha(theme.palette.info.main, 0.04) : alpha(theme.palette.grey[100], 0.3),
+									p: 2.5,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+									borderRadius: 1.5,
+									bgcolor: hasCourtInfo
+										? alpha(BRAND_BLUE, isDark ? 0.04 : 0.02)
+										: alpha(theme.palette.text.disabled, isDark ? 0.04 : 0.02),
 								}}
 							>
 								<Stack spacing={2}>
-									<Typography variant="h6" fontWeight={600} display="flex" alignItems="center" gap={1}>
-										<Building size={20} color={hasCourtInfo ? theme.palette.info.main : theme.palette.text.secondary} />
-										Información del Tribunal
-									</Typography>
-									<Grid container spacing={3}>
-										<Grid item xs={12} md={6}>
-											<Stack spacing={1}>
-												<Typography variant="caption" color="text.secondary" fontWeight={500}>
-													JURISDICCIÓN
+									<Stack direction="row" spacing={1} alignItems="center">
+										<Box
+											sx={{
+												width: 28,
+												height: 28,
+												borderRadius: 0.75,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+												color: hasCourtInfo ? BRAND_BLUE : theme.palette.text.disabled,
+											}}
+										>
+											<Building size={14} variant="Bulk" />
+										</Box>
+										<Stack spacing={0.125}>
+											<Stack direction="row" spacing={0.5} alignItems="center">
+												<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+												<Typography
+													sx={{
+														fontSize: "0.58rem",
+														fontWeight: 600,
+														letterSpacing: "0.08em",
+														textTransform: "uppercase",
+														color: "text.secondary",
+													}}
+												>
+													Tribunal
 												</Typography>
-												{isEditing ? (
+											</Stack>
+											<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+												Información del tribunal
+											</Typography>
+										</Stack>
+									</Stack>
+									<Grid container spacing={2.5}>
+										{[
+											{
+												label: "Jurisdicción",
+												value: folder?.folderJuris
+													? typeof folder.folderJuris === "string"
+														? folder.folderJuris
+														: folder.folderJuris.item
+													: null,
+												editComponent: (
 													<GroupedAutocomplete
 														data={data.jurisdicciones}
-														placeholder="Seleccione una jurisdicción"
+														placeholder="Seleccioná una jurisdicción"
 														name="folderJuris"
 														sx={customInputStyles}
 														onChange={(value: any) => {
@@ -459,65 +634,82 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 															}
 														}}
 													/>
-												) : (
-													<Typography variant="h6" fontWeight={600} color={folder?.folderJuris ? "text.primary" : "text.disabled"}>
-														{folder?.folderJuris
-															? typeof folder.folderJuris === "string"
-																? folder.folderJuris
-																: folder.folderJuris.item
-															: "No especificada"}
-													</Typography>
-												)}
-											</Stack>
-										</Grid>
-										<Grid item xs={12} md={6}>
-											<Stack spacing={1}>
-												<Typography variant="caption" color="text.secondary" fontWeight={500}>
-													JUZGADO
-												</Typography>
-												{isEditing ? (
+												),
+											},
+											{
+												label: "Juzgado",
+												value: values.judFolder.courtNumber,
+												editComponent: (
 													<JuzgadoAutocomplete
 														options={juzgadosOptions}
 														loading={loadingJuzgados}
 														disabled={!values.folderJuris}
-														placeholder="Buscar juzgado..."
+														placeholder="Buscar juzgado…"
 														name="judFolder.courtNumber"
 														sx={customInputStyles}
 													/>
-												) : (
-													<Typography variant="h6" fontWeight={600} color={values.judFolder.courtNumber ? "text.primary" : "text.disabled"}>
-														{values.judFolder.courtNumber || "No especificado"}
-													</Typography>
-												)}
-											</Stack>
-										</Grid>
-										<Grid item xs={12} md={6}>
-											<Stack spacing={1}>
-												<Typography variant="caption" color="text.secondary" fontWeight={500}>
-													SECRETARÍA
-												</Typography>
-												{isEditing ? (
+												),
+											},
+											{
+												label: "Secretaría",
+												value: values.judFolder.secretaryNumber || folder?.secretaria,
+												editComponent: (
 													<InputField
 														size="small"
 														fullWidth
-														placeholder="Número de Secretaría"
+														placeholder="Número de secretaría"
 														name="judFolder.secretaryNumber"
 														sx={customInputStyles}
 													/>
-												) : (
-													<Typography
-														variant="h6"
-														fontWeight={600}
-														color={values.judFolder.secretaryNumber || folder?.secretaria ? "text.primary" : "text.disabled"}
-													>
-														{values.judFolder.secretaryNumber || folder?.secretaria || "No especificada"}
-													</Typography>
-												)}
-											</Stack>
-										</Grid>
+												),
+											},
+										].map((field) => {
+											const hasValue = field.value && field.value !== "-";
+											return (
+												<Grid item xs={12} md={6} key={field.label}>
+													<Stack spacing={0.5}>
+														<Stack direction="row" spacing={0.5} alignItems="center">
+															<Box
+																sx={{
+																	width: 3,
+																	height: 3,
+																	borderRadius: "50%",
+																	bgcolor: hasValue ? BRAND_BLUE : theme.palette.text.disabled,
+																}}
+															/>
+															<Typography
+																sx={{
+																	fontSize: "0.6rem",
+																	fontWeight: 600,
+																	letterSpacing: "0.08em",
+																	textTransform: "uppercase",
+																	color: hasValue ? "text.secondary" : "text.disabled",
+																}}
+															>
+																{field.label}
+															</Typography>
+														</Stack>
+														{isEditing ? (
+															field.editComponent
+														) : (
+															<Typography
+																sx={{
+																	fontSize: "1rem",
+																	fontWeight: 600,
+																	color: hasValue ? "text.primary" : "text.disabled",
+																	letterSpacing: "-0.005em",
+																}}
+															>
+																{field.value || "—"}
+															</Typography>
+														)}
+													</Stack>
+												</Grid>
+											);
+										})}
 									</Grid>
 								</Stack>
-							</Paper>
+							</Box>
 
 							{/* Main Information Grid */}
 							<Grid container spacing={2.5}>
@@ -584,19 +776,29 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 
 								{/* Estado del proceso */}
 								<Grid item xs={12}>
-									<Paper
-										elevation={0}
+									<Box
 										sx={{
-											p: 2.5,
-											border: `1px solid ${theme.palette.divider}`,
+											p: 2,
+											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 											borderRadius: 1.5,
-											bgcolor: "background.paper",
+											bgcolor: theme.palette.background.paper,
 										}}
 									>
-										<Stack spacing={2}>
-											<Typography variant="subtitle2" fontWeight={600}>
-												Estado del Proceso
-											</Typography>
+										<Stack spacing={1.25}>
+											<Stack direction="row" spacing={0.5} alignItems="center">
+												<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+												<Typography
+													sx={{
+														fontSize: "0.6rem",
+														fontWeight: 600,
+														letterSpacing: "0.08em",
+														textTransform: "uppercase",
+														color: "text.secondary",
+													}}
+												>
+													Estado del proceso
+												</Typography>
+											</Stack>
 											{isEditing ? (
 												<SelectField
 													label=""
@@ -607,54 +809,69 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 												/>
 											) : (
 												<Box>
-													<Chip
-														label={values.judFolder.statusJudFolder}
-														color={getStatusColor(values.judFolder.statusJudFolder)}
-														size="medium"
-														sx={{ fontWeight: 600 }}
-													/>
+													<StatusPill label={values.judFolder.statusJudFolder} />
 												</Box>
 											)}
 										</Stack>
-									</Paper>
+									</Box>
 								</Grid>
 
 								{/* Fecha de finalización */}
 								{(values.judFolder.finalDateJudFolder || isEditing) && (
 									<Grid item xs={12}>
-										<Paper
-											elevation={0}
+										<Box
 											sx={{
-												p: 2.5,
-												border: `1px solid ${theme.palette.divider}`,
+												p: 2,
+												border: `1px solid ${alpha(LIVE_GREEN, isDark ? 0.22 : 0.16)}`,
 												borderRadius: 1.5,
-												bgcolor: alpha(theme.palette.success.main, 0.04),
+												bgcolor: alpha(LIVE_GREEN, isDark ? 0.06 : 0.03),
 											}}
 										>
-											<Stack direction="row" spacing={2} alignItems="center">
-												<Avatar
+											<Stack direction="row" spacing={1.25} alignItems="center">
+												<Box
 													sx={{
-														bgcolor: alpha(theme.palette.success.main, 0.1),
-														color: theme.palette.success.main,
-														width: 44,
-														height: 44,
+														width: 40,
+														height: 40,
+														borderRadius: 1,
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														bgcolor: alpha(LIVE_GREEN, isDark ? 0.18 : 0.1),
+														border: `1px solid ${alpha(LIVE_GREEN, isDark ? 0.32 : 0.22)}`,
+														color: LIVE_GREEN,
+														flexShrink: 0,
 													}}
 												>
-													<Calendar size={20} color={theme.palette.success.main} variant="Bold" />
-												</Avatar>
+													<Calendar size={18} variant="Bulk" />
+												</Box>
 												<Box flex={1}>
-													<Typography variant="caption" color="text.secondary" fontWeight={500}>
-														FECHA DE FINALIZACIÓN
-													</Typography>
+													<Stack direction="row" spacing={0.5} alignItems="center">
+														<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: LIVE_GREEN }} />
+														<Typography
+															sx={{
+																fontSize: "0.6rem",
+																fontWeight: 600,
+																letterSpacing: "0.08em",
+																textTransform: "uppercase",
+																color: "text.secondary",
+															}}
+														>
+															Fecha de finalización
+														</Typography>
+													</Stack>
 													{isEditing ? (
-														<DateInputField customInputStyles={customInputStyles} name="judFolder.finalDateJudFolder" />
+														<Box mt={1}>
+															<DateInputField customInputStyles={customInputStyles} name="judFolder.finalDateJudFolder" />
+														</Box>
 													) : (
 														<>
-															<Typography variant="h6" fontWeight={600} color="success.main">
-																{values.judFolder.finalDateJudFolder || "-"}
+															<Typography
+																sx={{ fontSize: "1.1rem", fontWeight: 700, color: LIVE_GREEN, letterSpacing: "-0.015em", mt: 0.25 }}
+															>
+																{values.judFolder.finalDateJudFolder || "—"}
 															</Typography>
 															{values.judFolder.finalDateJudFolder && (
-																<Typography variant="caption" color="text.secondary">
+																<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 																	{dayjs(values.judFolder.finalDateJudFolder, "DD/MM/YYYY").format("dddd, D [de] MMMM [de] YYYY")}
 																</Typography>
 															)}
@@ -662,34 +879,52 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 													)}
 												</Box>
 											</Stack>
-										</Paper>
+										</Box>
 									</Grid>
 								)}
 
-								{/* Additional dates if they exist */}
+								{/* Additional info — Sentencia / Apelación / Fecha pago */}
 								{(folder?.sentencia || folder?.apelacion || folder?.fechaPago) && (
 									<Grid item xs={12}>
-										<Paper
-											elevation={0}
+										<Box
 											sx={{
-												p: 2.5,
-												border: `1px solid ${theme.palette.divider}`,
+												p: 2,
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 												borderRadius: 1.5,
-												bgcolor: alpha(theme.palette.info.main, 0.02),
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 											}}
 										>
-											<Stack spacing={2}>
-												<Typography variant="subtitle2" fontWeight={600}>
-													Información Adicional del Proceso
-												</Typography>
-												<Grid container spacing={3}>
+											<Stack spacing={1.5}>
+												<Stack direction="row" spacing={0.5} alignItems="center">
+													<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+													<Typography
+														sx={{
+															fontSize: "0.6rem",
+															fontWeight: 600,
+															letterSpacing: "0.08em",
+															textTransform: "uppercase",
+															color: "text.secondary",
+														}}
+													>
+														Información adicional
+													</Typography>
+												</Stack>
+												<Grid container spacing={2.5}>
 													{folder?.sentencia && (
 														<Grid item xs={12} md={4}>
 															<Stack spacing={0.5}>
-																<Typography variant="caption" color="text.secondary" fontWeight={500}>
-																	SENTENCIA
+																<Typography
+																	sx={{
+																		fontSize: "0.6rem",
+																		fontWeight: 600,
+																		letterSpacing: "0.08em",
+																		textTransform: "uppercase",
+																		color: "text.secondary",
+																	}}
+																>
+																	Sentencia
 																</Typography>
-																<Typography variant="body1" fontWeight={600}>
+																<Typography sx={{ fontSize: "0.92rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
 																	{folder.sentencia}
 																</Typography>
 															</Stack>
@@ -698,10 +933,25 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 													{folder?.apelacion && (
 														<Grid item xs={12} md={4}>
 															<Stack spacing={0.5}>
-																<Typography variant="caption" color="text.secondary" fontWeight={500}>
-																	APELACIÓN
+																<Typography
+																	sx={{
+																		fontSize: "0.6rem",
+																		fontWeight: 600,
+																		letterSpacing: "0.08em",
+																		textTransform: "uppercase",
+																		color: "text.secondary",
+																	}}
+																>
+																	Apelación
 																</Typography>
-																<Typography variant="body1" fontWeight={600} color="error.main">
+																<Typography
+																	sx={{
+																		fontSize: "0.92rem",
+																		fontWeight: 600,
+																		color: theme.palette.error.main,
+																		letterSpacing: "-0.005em",
+																	}}
+																>
 																	{folder.apelacion}
 																</Typography>
 															</Stack>
@@ -710,10 +960,20 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 													{folder?.fechaPago && (
 														<Grid item xs={12} md={4}>
 															<Stack spacing={0.5}>
-																<Typography variant="caption" color="text.secondary" fontWeight={500}>
-																	FECHA DE PAGO
+																<Typography
+																	sx={{
+																		fontSize: "0.6rem",
+																		fontWeight: 600,
+																		letterSpacing: "0.08em",
+																		textTransform: "uppercase",
+																		color: "text.secondary",
+																	}}
+																>
+																	Fecha de pago
 																</Typography>
-																<Typography variant="body1" fontWeight={600} color="success.main">
+																<Typography
+																	sx={{ fontSize: "0.92rem", fontWeight: 600, color: LIVE_GREEN, letterSpacing: "-0.005em" }}
+																>
 																	{formatDate(folder.fechaPago)}
 																</Typography>
 															</Stack>
@@ -721,88 +981,120 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 													)}
 												</Grid>
 											</Stack>
-										</Paper>
+										</Box>
 									</Grid>
 								)}
 
 								{/* Observaciones */}
 								{(values.judFolder.descriptionJudFolder || isEditing) && (
 									<Grid item xs={12}>
-										<Paper
-											elevation={0}
+										<Box
 											sx={{
-												p: 2.5,
-												border: `1px solid ${theme.palette.divider}`,
+												p: 2,
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 												borderRadius: 1.5,
-												bgcolor: values.judFolder.descriptionJudFolder ? "background.paper" : alpha(theme.palette.grey[100], 0.3),
+												bgcolor: values.judFolder.descriptionJudFolder
+													? theme.palette.background.paper
+													: alpha(theme.palette.text.disabled, isDark ? 0.04 : 0.02),
 											}}
 										>
-											<Stack spacing={1.5}>
-												<Typography
-													variant="subtitle2"
-													sx={{
-														color: "text.secondary",
-														fontWeight: 600,
-														display: "flex",
-														alignItems: "center",
-														gap: 1,
-													}}
-												>
-													<DocumentText size={16} />
-													OBSERVACIONES DEL PROCESO JUDICIAL
-												</Typography>
+											<Stack spacing={1}>
+												<Stack direction="row" spacing={0.625} alignItems="center">
+													<DocumentText size={12} variant="Bulk" color={BRAND_BLUE} />
+													<Typography
+														sx={{
+															fontSize: "0.6rem",
+															fontWeight: 600,
+															letterSpacing: "0.08em",
+															textTransform: "uppercase",
+															color: "text.secondary",
+														}}
+													>
+														Observaciones del proceso judicial
+													</Typography>
+												</Stack>
 												{isEditing ? (
 													<InputField
 														name="judFolder.descriptionJudFolder"
 														multiline
 														rows={3}
 														fullWidth
-														placeholder="Notas sobre el desarrollo del proceso judicial..."
+														placeholder="Notas sobre el desarrollo del proceso judicial…"
 														sx={customInputStyles}
 													/>
 												) : (
-													<Typography variant="body1" sx={{ whiteSpace: "pre-wrap", pl: 3 }}>
+													<Typography
+														sx={{
+															fontSize: "0.88rem",
+															color: "text.primary",
+															letterSpacing: "-0.005em",
+															lineHeight: 1.6,
+															whiteSpace: "pre-wrap",
+															pl: 2.5,
+															textWrap: "pretty" as any,
+														}}
+													>
 														{values.judFolder.descriptionJudFolder}
 													</Typography>
 												)}
 											</Stack>
-										</Paper>
+										</Box>
 									</Grid>
 								)}
 							</Grid>
 
-							{/* Actions */}
+							{/* Actions — ghost cancel + sober brand submit */}
 							{isEditing && (
-								<Paper
-									elevation={0}
+								<Box
 									sx={{
-										p: 2,
-										border: `1px solid ${theme.palette.divider}`,
+										p: 1.75,
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 										borderRadius: 1.5,
-										bgcolor: alpha(theme.palette.info.main, 0.02),
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
 									}}
 								>
-									<Stack direction="row" spacing={2} justifyContent="flex-end">
-										<Button size="large" variant="outlined" onClick={() => setIsEditing(false)} sx={{ minWidth: 120 }}>
+									<Stack direction="row" spacing={1.25} justifyContent="flex-end">
+										<Button
+											onClick={() => setIsEditing(false)}
+											sx={{
+												minWidth: 120,
+												textTransform: "none",
+												fontWeight: 600,
+												letterSpacing: "-0.005em",
+												color: "text.secondary",
+												borderRadius: 1.25,
+												py: 1,
+												border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+												"&:hover": {
+													color: BRAND_BLUE,
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+													borderColor: alpha(BRAND_BLUE, 0.28),
+												},
+											}}
+										>
 											Cancelar
 										</Button>
 										<Button
-											size="large"
 											type="submit"
 											variant="contained"
 											disabled={isSubmitting}
 											sx={{
 												minWidth: 120,
-												bgcolor: theme.palette.info.main,
-												"&:hover": {
-													bgcolor: theme.palette.info.dark,
-												},
+												textTransform: "none",
+												fontWeight: 600,
+												letterSpacing: "-0.005em",
+												bgcolor: BRAND_BLUE,
+												color: "#fff",
+												borderRadius: 1.25,
+												py: 1,
+												boxShadow: "none",
+												"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
 											}}
 										>
-											Guardar Cambios
+											Guardar cambios
 										</Button>
 									</Stack>
-								</Paper>
+								</Box>
 							)}
 						</Stack>
 					</Form>

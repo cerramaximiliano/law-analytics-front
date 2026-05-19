@@ -1,10 +1,10 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { dispatch } from "store";
-import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, Paper, useTheme, alpha, Chip, Divider, useMediaQuery } from "@mui/material";
+import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, useTheme, alpha, useMediaQuery } from "@mui/material";
 import dayjs from "utils/dayjs-config";
 import data from "data/folder.json";
-import { Edit2, Clock } from "iconsax-react";
+import { Edit2, Clock, Folder2 } from "iconsax-react";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
@@ -19,6 +19,7 @@ import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
 import { getJuzgadosByJurisdiction, Juzgado } from "api/juzgados";
 import { useTeam } from "contexts/TeamContext";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -41,19 +42,38 @@ interface CompactFieldProps {
 
 const CompactField: React.FC<CompactFieldProps> = ({ label, value, isLoading, editComponent, isEditing, width = "auto" }) => {
 	if (isLoading) {
-		return <Skeleton width={width === "auto" ? 120 : width} height={40} />;
+		return <Skeleton width={width === "auto" ? 120 : width} height={40} sx={{ borderRadius: 1 }} />;
 	}
+
+	const hasValue = value && value !== "-";
 
 	return (
 		<Box sx={{ width }}>
-			<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
+			<Typography
+				sx={{
+					fontSize: "0.6rem",
+					fontWeight: 600,
+					letterSpacing: "0.08em",
+					textTransform: "uppercase",
+					color: "text.secondary",
+					lineHeight: 1.4,
+				}}
+			>
 				{label}
 			</Typography>
 			{isEditing && editComponent ? (
 				<Box sx={{ mt: 0.5 }}>{editComponent}</Box>
 			) : (
-				<Typography variant="body2" fontWeight={value && value !== "-" ? 500 : 400}>
-					{value || "-"}
+				<Typography
+					sx={{
+						fontSize: "0.85rem",
+						fontWeight: hasValue ? 500 : 400,
+						color: hasValue ? "text.primary" : "text.disabled",
+						letterSpacing: "-0.005em",
+						mt: 0.25,
+					}}
+				>
+					{value || "—"}
 				</Typography>
 			)}
 		</Box>
@@ -63,6 +83,7 @@ const CompactField: React.FC<CompactFieldProps> = ({ label, value, isLoading, ed
 const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: boolean; type: string }) => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 	const { canUpdate } = useTeam();
@@ -176,19 +197,51 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 		description: Yup.string().max(500),
 	});
 
-	const getStatusColor = (status: string) => {
+	const getStatusAccent = (status: string) => {
 		switch (status) {
 			case "Nueva":
-				return "success";
+				return LIVE_GREEN;
 			case "En Progreso":
-				return "primary";
+				return BRAND_BLUE;
 			case "Cerrada":
-				return "error";
+				return theme.palette.text.disabled as string;
 			case "Pendiente":
-				return "warning";
+				return STALE_AMBER;
 			default:
-				return "default";
+				return theme.palette.text.secondary as string;
 		}
+	};
+
+	const StatusPill = ({ label }: { label: string }) => {
+		const accent = getStatusAccent(label);
+		return (
+			<Box
+				sx={{
+					display: "inline-flex",
+					alignItems: "center",
+					gap: 0.5,
+					px: 0.75,
+					py: 0.125,
+					borderRadius: 0.625,
+					bgcolor: alpha(accent, isDark ? 0.16 : 0.1),
+					border: `1px solid ${alpha(accent, isDark ? 0.32 : 0.22)}`,
+				}}
+			>
+				<Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: accent }} />
+				<Typography
+					sx={{
+						fontSize: "0.62rem",
+						fontWeight: 600,
+						color: accent,
+						letterSpacing: "0.04em",
+						textTransform: "uppercase",
+						lineHeight: 1,
+					}}
+				>
+					{label}
+				</Typography>
+			</Box>
+		);
 	};
 
 	return (
@@ -197,57 +250,118 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 				{({ isSubmitting, values }) => (
 					<Form autoComplete="off" noValidate>
 						<Stack spacing={2}>
-							{/* Compact Header */}
-							<Paper
-								elevation={0}
+							{/* Header — brand-tinted */}
+							<Box
 								sx={{
-									p: 2,
-									border: `1px solid ${theme.palette.divider}`,
+									p: 1.75,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 									borderRadius: 1.5,
-									bgcolor: alpha(theme.palette.primary.main, 0.02),
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
 								}}
 							>
-								<Stack direction="row" justifyContent="space-between" alignItems="center">
-									<Box>
-										<Typography
-											variant={isMobile ? "body1" : "subtitle1"}
-											fontWeight={600}
+								<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
+									<Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
+										<Box
 											sx={{
-												fontSize: isMobile ? "0.875rem" : isTablet ? "1rem" : "1.125rem",
-												lineHeight: 1.3,
+												width: 32,
+												height: 32,
+												borderRadius: 1,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+												color: BRAND_BLUE,
+												flexShrink: 0,
 											}}
 										>
-											{isLoader ? <Skeleton width={200} /> : folder?.folderName || "Sin carátula"}
-										</Typography>
-										<Stack direction="row" spacing={1.5} alignItems="center" mt={0.5}>
-											{type === "general" && (
-												<Chip
-													label={folder?.status || "Nueva"}
-													color={getStatusColor(folder?.status)}
-													size="small"
-													sx={{ height: 20, fontSize: "0.75rem" }}
-												/>
-											)}
-											{!isLoader && folder?.updatedAt && (
-												<Stack direction="row" spacing={0.5} alignItems="center">
-													<Clock size={12} />
-													<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
-														{dayjs(folder.updatedAt).fromNow()}
-													</Typography>
-												</Stack>
-											)}
+											<Folder2 size={16} variant="Bulk" />
+										</Box>
+										<Stack spacing={0.125} sx={{ minWidth: 0 }}>
+											<Stack direction="row" spacing={0.5} alignItems="center">
+												<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+												<Typography
+													sx={{
+														fontSize: "0.58rem",
+														fontWeight: 600,
+														letterSpacing: "0.08em",
+														textTransform: "uppercase",
+														color: "text.secondary",
+													}}
+												>
+													Carátula
+												</Typography>
+											</Stack>
+											<Typography
+												sx={{
+													fontSize: isMobile ? "0.88rem" : isTablet ? "0.95rem" : "1rem",
+													fontWeight: 600,
+													letterSpacing: "-0.015em",
+													lineHeight: 1.3,
+													color: "text.primary",
+													overflow: "hidden",
+													textOverflow: "ellipsis",
+													whiteSpace: "nowrap",
+												}}
+											>
+												{isLoader ? <Skeleton width={200} /> : folder?.folderName || "Sin carátula"}
+											</Typography>
+											<Stack direction="row" spacing={0.875} alignItems="center" mt={0.375} flexWrap="wrap" useFlexGap>
+												{type === "general" && <StatusPill label={folder?.status || "Nueva"} />}
+												{!isLoader && folder?.updatedAt && (
+													<Stack direction="row" spacing={0.5} alignItems="center">
+														<Clock size={11} variant="Linear" color={theme.palette.text.secondary} />
+														<Typography
+															sx={{
+																fontSize: "0.68rem",
+																color: "text.secondary",
+																letterSpacing: "-0.005em",
+															}}
+														>
+															{dayjs(folder.updatedAt).fromNow()}
+														</Typography>
+													</Stack>
+												)}
+											</Stack>
 										</Stack>
-									</Box>
+									</Stack>
 									{!isEditing && canUpdate && (
-										<Button size="small" variant="text" onClick={handleEdit} startIcon={<Edit2 size={16} />}>
+										<Button
+											size="small"
+											onClick={handleEdit}
+											startIcon={<Edit2 size={14} variant="Bulk" />}
+											sx={{
+												textTransform: "none",
+												fontWeight: 600,
+												fontSize: "0.78rem",
+												letterSpacing: "-0.005em",
+												color: BRAND_BLUE,
+												borderRadius: 1,
+												px: 1.25,
+												py: 0.5,
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+												bgcolor: "transparent",
+												"&:hover": {
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.06),
+													borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+												},
+											}}
+										>
 											Editar
 										</Button>
 									)}
 								</Stack>
-							</Paper>
+							</Box>
 
-							{/* Compact Data Grid */}
-							<Paper elevation={0} sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 1.5 }}>
+							{/* Data grid — brand-bordered */}
+							<Box
+								sx={{
+									p: 2,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+									borderRadius: 1.5,
+									bgcolor: theme.palette.background.paper,
+								}}
+							>
 								<Grid container spacing={2}>
 									{/* Row 1 */}
 									<Grid item xs={6} md={3}>
@@ -391,7 +505,7 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 									{folder?.description && (
 										<>
 											<Grid item xs={12}>
-												<Divider sx={{ my: 0.5 }} />
+												<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1), my: 0.5 }} />
 											</Grid>
 											<Grid item xs={12}>
 												<CompactField
@@ -407,18 +521,62 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 									)}
 								</Grid>
 
-								{/* Actions */}
+								{/* Actions — ghost cancel + sober brand submit */}
 								{isEditing && (
-									<Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 2 }}>
-										<Button size="small" variant="outlined" onClick={() => setIsEditing(false)}>
+									<Box
+										sx={{
+											display: "flex",
+											justifyContent: "flex-end",
+											gap: 1,
+											mt: 2,
+											pt: 1.5,
+											borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+										}}
+									>
+										<Button
+											size="small"
+											onClick={() => setIsEditing(false)}
+											sx={{
+												textTransform: "none",
+												fontWeight: 600,
+												letterSpacing: "-0.005em",
+												color: "text.secondary",
+												borderRadius: 1,
+												px: 1.5,
+												py: 0.625,
+												border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+												"&:hover": {
+													color: BRAND_BLUE,
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+													borderColor: alpha(BRAND_BLUE, 0.28),
+												},
+											}}
+										>
 											Cancelar
 										</Button>
-										<Button size="small" type="submit" variant="contained" disabled={isSubmitting}>
+										<Button
+											size="small"
+											type="submit"
+											variant="contained"
+											disabled={isSubmitting}
+											sx={{
+												textTransform: "none",
+												fontWeight: 600,
+												letterSpacing: "-0.005em",
+												bgcolor: BRAND_BLUE,
+												color: "#fff",
+												borderRadius: 1,
+												px: 1.75,
+												py: 0.625,
+												boxShadow: "none",
+												"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+											}}
+										>
 											Guardar
 										</Button>
 									</Box>
 								)}
-							</Paper>
+							</Box>
 						</Stack>
 					</Form>
 				)}

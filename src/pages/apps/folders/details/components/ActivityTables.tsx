@@ -75,6 +75,7 @@ import { useTeam } from "contexts/TeamContext";
 import { toggleMovementComplete } from "store/reducers/movements";
 import ModalTasks from "../modals/MoldalTasks";
 import ModalNotes from "../modals/ModalNotes";
+import { BRAND_BLUE, LIVE_GREEN } from "themes/dashboardTokens";
 
 // Types
 interface ActivityTablesProps {
@@ -93,6 +94,7 @@ interface TabConfig {
 
 const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const { id } = useParams<{ id: string }>();
 	const { canCreate } = useTeam();
@@ -219,34 +221,34 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		}
 	}, [scrapingProgress?.status]);
 
-	// Tab configuration
+	// Tab configuration — all brand-aligned (no rainbow)
 	const tabs: TabConfig[] = [
 		{
 			value: "movements",
 			label: "Movimientos",
 			icon: <TableDocument size={20} />,
-			color: theme.palette.success.main,
+			color: BRAND_BLUE,
 			description: "Escritos y despachos judiciales",
 		},
 		{
 			value: "notifications",
 			label: "Notificaciones",
 			icon: <NotificationStatus size={20} />,
-			color: theme.palette.primary.main,
+			color: BRAND_BLUE,
 			description: "Cédulas y notificaciones",
 		},
 		{
 			value: "calendar",
 			label: "Calendario",
 			icon: <Calendar size={20} />,
-			color: theme.palette.warning.main,
+			color: BRAND_BLUE,
 			description: "Eventos y audiencias",
 		},
 		{
 			value: "combined",
-			label: "Vista Combinada",
+			label: "Vista combinada",
 			icon: <Link21 size={20} />,
-			color: theme.palette.secondary.main,
+			color: BRAND_BLUE,
 			description: "Todas las actividades unificadas",
 		},
 	];
@@ -711,6 +713,34 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	};
 
 	// Sidebar content
+	const StatRow = ({ label, count }: { label: string; count: number }) => (
+		<Stack
+			direction="row"
+			alignItems="center"
+			justifyContent="space-between"
+			sx={{
+				px: 1,
+				py: 0.625,
+				borderRadius: 0.75,
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+			}}
+		>
+			<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>{label}</Typography>
+			<Typography
+				sx={{
+					fontSize: "0.78rem",
+					fontWeight: 700,
+					color: count > 0 ? BRAND_BLUE : "text.disabled",
+					letterSpacing: "-0.005em",
+					fontVariantNumeric: "tabular-nums",
+				}}
+			>
+				{count}
+			</Typography>
+		</Stack>
+	);
+
 	const sidebarContent = (
 		<Box
 			sx={{
@@ -718,80 +748,177 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 				display: "flex",
 				flexDirection: "column",
 				height: "100%",
-				bgcolor: theme.palette.mode === "dark" ? alpha(theme.palette.background.paper, 0.8) : theme.palette.grey[50],
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+				borderRight: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
 			}}
 		>
-			<Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
-				<Typography variant="h5" gutterBottom>
-					Actividad
-				</Typography>
-				<Typography variant="caption" color="textSecondary">
-					{folderName || "Carpeta"}
-				</Typography>
+			{/* Header */}
+			<Box sx={{ p: 1.75, borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}>
+				<Stack direction="row" spacing={1.25} alignItems="center">
+					<Box
+						sx={{
+							width: 32,
+							height: 32,
+							borderRadius: 1,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+							color: BRAND_BLUE,
+						}}
+					>
+						<TableDocument size={16} variant="Bulk" />
+					</Box>
+					<Stack spacing={0.125} sx={{ minWidth: 0 }}>
+						<Stack direction="row" spacing={0.5} alignItems="center">
+							<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+							<Typography
+								sx={{
+									fontSize: "0.58rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+								}}
+							>
+								Actividad
+							</Typography>
+						</Stack>
+						<Typography
+							sx={{
+								fontSize: "0.82rem",
+								fontWeight: 600,
+								letterSpacing: "-0.005em",
+								color: "text.primary",
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
+							{folderName || "Carpeta"}
+						</Typography>
+					</Stack>
+				</Stack>
 			</Box>
 
+			{/* Tabs verticales */}
 			<Tabs
 				orientation="vertical"
 				variant="scrollable"
 				value={activeTab}
 				onChange={handleTabChange}
+				TabIndicatorProps={{
+					sx: {
+						left: 0,
+						width: 3,
+						borderRadius: "0 2px 2px 0",
+						bgcolor: BRAND_BLUE,
+						transition: "all 200ms ease",
+					},
+				}}
 				sx={{
 					flex: 1,
-					"& .MuiTabs-indicator": {
-						left: 0,
-						width: 4,
-					},
 					"& .MuiTab-root": {
-						minHeight: 72,
+						minHeight: 68,
 						justifyContent: "flex-start",
 						textAlign: "left",
 						alignItems: "flex-start",
-						px: 2,
-						py: 1.5,
+						px: 1.75,
+						py: 1.25,
 						borderRadius: 0,
 						textTransform: "none",
+						transition: "all 180ms ease",
 						"&.Mui-selected": {
-							bgcolor: alpha(theme.palette.primary.main, 0.08),
-							color: theme.palette.primary.main,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
 						},
 						"&:hover": {
-							bgcolor: alpha(theme.palette.primary.main, 0.04),
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
 						},
 					},
 				}}
 			>
-				{tabs.map((tab) => (
-					<Tab
-						key={tab.value}
-						value={tab.value}
-						label={
-							<Stack spacing={0.5} alignItems="flex-start" width="100%">
-								<Stack direction="row" spacing={1} alignItems="center">
-									<Box sx={{ color: tab.color }}>{tab.icon}</Box>
-									<Typography variant="subtitle1" fontWeight={500}>
-										{tab.label}
+				{tabs.map((tab) => {
+					const active = activeTab === tab.value;
+					return (
+						<Tab
+							key={tab.value}
+							value={tab.value}
+							disableRipple
+							label={
+								<Stack spacing={0.5} alignItems="flex-start" width="100%">
+									<Stack direction="row" spacing={1.25} alignItems="center">
+										<Box
+											sx={{
+												width: 26,
+												height: 26,
+												borderRadius: 0.75,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												bgcolor: active ? alpha(BRAND_BLUE, isDark ? 0.18 : 0.1) : alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+												border: `1px solid ${active ? alpha(BRAND_BLUE, isDark ? 0.32 : 0.22) : alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+												color: BRAND_BLUE,
+												flexShrink: 0,
+												transition: "all 180ms ease",
+											}}
+										>
+											{React.cloneElement(tab.icon, {
+												size: 14,
+												variant: active ? "Bulk" : "Linear",
+											})}
+										</Box>
+										<Typography
+											sx={{
+												fontSize: "0.82rem",
+												fontWeight: active ? 600 : 500,
+												letterSpacing: "-0.005em",
+												color: active ? "text.primary" : "text.secondary",
+											}}
+										>
+											{tab.label}
+										</Typography>
+									</Stack>
+									<Typography
+										sx={{
+											fontSize: "0.68rem",
+											color: "text.secondary",
+											letterSpacing: "-0.005em",
+											pl: 4.625,
+											opacity: 0.85,
+										}}
+									>
+										{tab.description}
 									</Typography>
 								</Stack>
-								<Typography variant="caption" color="textSecondary" sx={{ lineHeight: 1.2 }}>
-									{tab.description}
-								</Typography>
-							</Stack>
-						}
-					/>
-				))}
+							}
+						/>
+					);
+				})}
 			</Tabs>
 
-			{/* Stats or Quick Info */}
-			<Box sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-				<Typography variant="caption" color="textSecondary">
-					Total de registros
-				</Typography>
-				<Stack spacing={0.5} mt={1}>
+			{/* Stats footer — brand StatRows */}
+			<Box sx={{ p: 1.75, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}>
+				<Stack direction="row" spacing={0.5} alignItems="center" mb={1}>
+					<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+					<Typography
+						sx={{
+							fontSize: "0.58rem",
+							fontWeight: 600,
+							letterSpacing: "0.08em",
+							textTransform: "uppercase",
+							color: "text.secondary",
+						}}
+					>
+						Total de registros
+					</Typography>
+				</Stack>
+				<Stack spacing={0.625}>
 					{movementsData.isLoading || notificationsData.isLoading || eventsData.isLoading ? (
 						<>
-							<Skeleton variant="rectangular" height={24} />
-							<Skeleton variant="rectangular" height={24} />
-							<Skeleton variant="rectangular" height={24} />
+							<Skeleton variant="rectangular" height={28} sx={{ borderRadius: 0.75 }} />
+							<Skeleton variant="rectangular" height={28} sx={{ borderRadius: 0.75 }} />
+							<Skeleton variant="rectangular" height={28} sx={{ borderRadius: 0.75 }} />
 						</>
 					) : (
 						<>
@@ -800,12 +927,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 								arrow
 								placement="right"
 							>
-								<Chip
-									size="small"
-									label={`${movementsData.pagination?.total || movementsData.movements?.length || 0} movimientos`}
-									variant="outlined"
-									sx={{ justifyContent: "flex-start", width: "100%" }}
-								/>
+								<Box>
+									<StatRow label="Movimientos" count={movementsData.pagination?.total || movementsData.movements?.length || 0} />
+								</Box>
 							</Tooltip>
 							<Tooltip
 								title={
@@ -816,24 +940,21 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 								arrow
 								placement="right"
 							>
-								<Chip
-									size="small"
-									label={`${notificationsData.pagination?.total || notificationsData.notifications?.length || 0} notificaciones`}
-									variant="outlined"
-									sx={{ justifyContent: "flex-start", width: "100%" }}
-								/>
+								<Box>
+									<StatRow
+										label="Notificaciones"
+										count={notificationsData.pagination?.total || notificationsData.notifications?.length || 0}
+									/>
+								</Box>
 							</Tooltip>
 							<Tooltip
 								title={eventsData.pagination ? `Mostrando ${eventsData.events?.length} de ${eventsData.pagination.total}` : ""}
 								arrow
 								placement="right"
 							>
-								<Chip
-									size="small"
-									label={`${eventsData.pagination?.total || eventsData.events?.length || 0} eventos`}
-									variant="outlined"
-									sx={{ justifyContent: "flex-start", width: "100%" }}
-								/>
+								<Box>
+									<StatRow label="Eventos" count={eventsData.pagination?.total || eventsData.events?.length || 0} />
+								</Box>
 							</Tooltip>
 						</>
 					)}
@@ -842,15 +963,32 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		</Box>
 	);
 
+	const brandIconButtonSx = {
+		width: 32,
+		height: 32,
+		borderRadius: 1,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+		bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+		color: BRAND_BLUE,
+		transition: "all 180ms ease",
+		"&:hover": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.38 : 0.28),
+		},
+	};
+
 	return (
 		<MainCard
-			shadow={3}
 			content={false}
 			sx={{
 				"& .MuiCardContent-root": { p: 0 },
 				height: "100%",
 				display: "flex",
 				flexDirection: "column",
+				borderRadius: 1.5,
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+				boxShadow: "none",
+				overflow: "hidden",
 			}}
 		>
 			<Box sx={{ display: "flex", height: "100%", minHeight: 600 }}>
@@ -858,145 +996,182 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 					<>
 						{/* Mobile Layout */}
 						<Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-							{/* Header Toolbar with Menu Button */}
+							{/* Header Toolbar */}
 							<Box
 								sx={{
-									p: 2,
-									borderBottom: `1px solid ${theme.palette.divider}`,
-									bgcolor: theme.palette.background.paper,
+									p: 1.5,
+									borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 								}}
 							>
-								<Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
-									<Stack direction="row" spacing={2} alignItems="center" flex={1}>
-										{/* Menu Button */}
-										<IconButton onClick={() => setMobileOpen(true)} sx={{ mr: 1 }}>
-											<Menu />
+								<Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+									<Stack direction="row" spacing={1} alignItems="center" flex={1}>
+										{/* Menu */}
+										<IconButton onClick={() => setMobileOpen(true)} size="small" sx={brandIconButtonSx}>
+											<Menu size={16} variant="Bulk" />
 										</IconButton>
 
-										{/* Current Tab Indicator */}
+										{/* Current tab pill */}
 										<Box
 											sx={{
-												display: "flex",
+												display: "inline-flex",
 												alignItems: "center",
-												gap: 1,
-												px: 2,
-												py: 1,
+												gap: 0.625,
+												px: 1,
+												py: 0.5,
 												borderRadius: 1,
-												bgcolor: alpha(currentTab?.color || theme.palette.primary.main, 0.1),
-												color: currentTab?.color,
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+												color: BRAND_BLUE,
 											}}
 										>
-											{currentTab?.icon}
-											<Typography variant="subtitle2" fontWeight={600}>
+											{React.cloneElement(currentTab?.icon || <TableDocument />, { size: 14, variant: "Bulk" })}
+											<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, letterSpacing: "-0.005em", color: BRAND_BLUE }}>
 												{currentTab?.label}
 											</Typography>
 										</Box>
 									</Stack>
 
-									{/* Action Buttons (solo para usuarios con permisos de crear) */}
-									<Stack direction="row" spacing={1}>
+									{/* Action buttons */}
+									<Stack direction="row" spacing={0.75}>
 										{activeTab !== "combined" && canCreate && (
 											<Tooltip title={`Agregar ${currentTab?.label.toLowerCase().slice(0, -1)}`}>
 												<IconButton
 													size="small"
-													color="primary"
 													onClick={() => {
 														if (activeTab === "movements") handleAddMovement();
 														else if (activeTab === "notifications") handleAddNotification();
 														else if (activeTab === "calendar") handleAddEvent();
 													}}
+													sx={brandIconButtonSx}
 												>
-													<Add />
+													<Add size={16} variant="Bulk" />
 												</IconButton>
 											</Tooltip>
 										)}
 									</Stack>
 								</Stack>
 
-								{/* Search Bar - Full width on mobile */}
-								<Box sx={{ mt: 2 }}>
+								{/* Search */}
+								<Box sx={{ mt: 1.5 }}>
 									<TextField
 										size="small"
 										fullWidth
-										placeholder={`Buscar en ${currentTab?.label.toLowerCase()}...`}
+										placeholder={`Buscar en ${currentTab?.label.toLowerCase()}…`}
 										value={searchQuery}
 										onChange={(e) => setSearchQuery(e.target.value)}
 										InputProps={{
 											startAdornment: (
 												<InputAdornment position="start">
-													<SearchNormal1 size={18} />
+													<SearchNormal1 size={16} variant="Bulk" color={BRAND_BLUE} />
 												</InputAdornment>
 											),
+											sx: {
+												bgcolor: theme.palette.background.paper,
+												borderRadius: 1,
+												"& .MuiOutlinedInput-notchedOutline": {
+													borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
+												},
+												"&:hover .MuiOutlinedInput-notchedOutline": {
+													borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+												},
+												"&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+													borderColor: BRAND_BLUE,
+												},
+											},
 										}}
 									/>
 								</Box>
 
-								{/* Controles específicos para movimientos */}
+								{/* Controles para movimientos — mobile */}
 								{activeTab === "movements" && (
 									<Box
 										sx={{
-											mt: 2,
+											mt: 1.5,
 											p: 1.5,
-											bgcolor: alpha(theme.palette.primary.main, 0.04),
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
 											borderRadius: 1,
-											border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 										}}
 									>
-										<Stack spacing={1.5}>
-											<Typography variant="caption" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
-												OPCIONES DE VISUALIZACIÓN
-											</Typography>
+										<Stack spacing={1.25}>
+											<Stack direction="row" spacing={0.5} alignItems="center">
+												<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+												<Typography
+													sx={{
+														fontSize: "0.6rem",
+														fontWeight: 600,
+														letterSpacing: "0.08em",
+														textTransform: "uppercase",
+														color: "text.secondary",
+													}}
+												>
+													Opciones de visualización
+												</Typography>
+											</Stack>
 
-											{/* Checkbox para filtrar solo movimientos con documento */}
+											{/* Checkbox */}
 											<FormControlLabel
 												control={
 													<Checkbox
 														checked={filters.onlyWithDocuments}
-														onChange={(e) => {
-															// Solo actualizar el estado, el useEffect se encargará del dispatch
-															setFilters({ ...filters, onlyWithDocuments: e.target.checked });
-														}}
+														onChange={(e) => setFilters({ ...filters, onlyWithDocuments: e.target.checked })}
 														size="small"
-														color="primary"
+														sx={{
+															color: alpha(BRAND_BLUE, 0.5),
+															"&.Mui-checked": { color: BRAND_BLUE },
+														}}
 													/>
 												}
 												label={
-													<Stack direction="row" alignItems="center" spacing={1}>
-														<DocumentText size={18} color={theme.palette.primary.main} />
-														<Typography variant="body2">
+													<Stack direction="row" alignItems="center" spacing={0.875}>
+														<DocumentText size={16} variant="Bulk" color={BRAND_BLUE} />
+														<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>
 															Solo movimientos con documento
-															{movementsData.totalWithLinks > 0 && (
-																<Chip size="small" label={movementsData.totalWithLinks} color="primary" sx={{ ml: 1, height: 20 }} />
-															)}
 														</Typography>
+														{movementsData.totalWithLinks > 0 && (
+															<Box
+																sx={{
+																	display: "inline-flex",
+																	alignItems: "center",
+																	px: 0.625,
+																	py: 0.125,
+																	borderRadius: 0.5,
+																	bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+																	border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.22)}`,
+																}}
+															>
+																<Typography sx={{ fontSize: "0.66rem", fontWeight: 700, color: BRAND_BLUE, fontVariantNumeric: "tabular-nums" }}>
+																	{movementsData.totalWithLinks}
+																</Typography>
+															</Box>
+														)}
 													</Stack>
 												}
 											/>
 
-											{/* Texto compacto cuando hay más movimientos disponibles */}
 											{filters.onlyWithDocuments &&
 												(movementsData.pagination?.totalAvailable ?? 0) > (movementsData.pagination?.total ?? 0) && (
-													<Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+													<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 														{movementsData.pagination.total || 0} de {movementsData.pagination.totalAvailable} ·{" "}
-														<Typography
+														<Box
 															component="span"
-															variant="caption"
-															sx={{ color: "primary.main", cursor: "pointer", fontWeight: 600 }}
+															sx={{ color: BRAND_BLUE, cursor: "pointer", fontWeight: 600 }}
 															onClick={() => setFilters({ ...filters, onlyWithDocuments: false })}
 														>
 															Ver todos
-														</Typography>
+														</Box>
 													</Typography>
 												)}
 
-											<Divider sx={{ my: 1 }} />
+											<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1) }} />
 
-											{/* Botón para navegación secuencial de documentos */}
+											{/* Expediente digital — sober brand */}
 											<Button
 												variant="contained"
 												size="small"
 												fullWidth
-												startIcon={<Gallery size={18} />}
+												startIcon={<Gallery size={16} variant="Bulk" />}
 												onClick={() => {
 													const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
 													if (movementsWithLinks.length > 0) {
@@ -1006,15 +1181,18 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												}}
 												disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
 												sx={{
-													bgcolor: theme.palette.primary.main,
-													color: "white",
-													"&:hover": {
-														bgcolor: theme.palette.primary.dark,
-													},
+													textTransform: "none",
+													fontWeight: 600,
+													letterSpacing: "-0.005em",
+													bgcolor: BRAND_BLUE,
+													color: "#fff",
+													borderRadius: 1,
+													py: 0.875,
+													boxShadow: "none",
+													"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
 													"&.Mui-disabled": {
-														bgcolor: theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)",
-														color: theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.26)",
-														opacity: 1,
+														bgcolor: alpha(theme.palette.text.disabled, 0.12),
+														color: theme.palette.text.disabled,
 													},
 												}}
 											>
@@ -1025,17 +1203,16 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 									</Box>
 								)}
 
-								{/* Filters Section (Collapsible) */}
+								{/* Filtros — brand */}
 								<Collapse in={showFilters} timeout="auto" unmountOnExit>
 									<Fade in={showFilters} timeout={350}>
 										<Box
 											sx={{
-												mt: 2,
-												p: 2,
-												bgcolor: theme.palette.grey[50],
+												mt: 1.5,
+												p: 1.75,
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 												borderRadius: 1,
-												border: `1px solid ${theme.palette.divider}`,
-												transition: "all 0.3s ease-in-out",
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 											}}
 										>
 											<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
@@ -1072,7 +1249,15 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 											</>
 										)}
 
-										<Paper elevation={0} sx={{ height: "100%", border: `1px solid ${theme.palette.divider}` }}>
+										<Paper
+											elevation={0}
+											sx={{
+												height: "100%",
+												borderRadius: 1,
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+												overflow: "hidden",
+											}}
+										>
 											{activeTab === "movements" && (
 												<MovementsTable
 													movements={movementsData.movements}
@@ -1142,14 +1327,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 				) : (
 					<>
 						{/* Desktop Layout */}
-						<Paper
-							elevation={0}
-							sx={{
-								borderRight: `1px solid ${theme.palette.divider}`,
-							}}
-						>
-							{sidebarContent}
-						</Paper>
+						{sidebarContent}
 
 						{/* Main Content Area */}
 						<Box
@@ -1163,151 +1341,192 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 							{/* Header Toolbar */}
 							<Box
 								sx={{
-									p: 2,
-									borderBottom: `1px solid ${theme.palette.divider}`,
-									bgcolor: theme.palette.background.paper,
+									p: 1.5,
+									borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 								}}
 							>
-								<Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
-									<Stack direction="row" spacing={2} alignItems="center" flex={1}>
-										{/* Current Tab Indicator */}
+								<Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
+									<Stack direction="row" spacing={1.25} alignItems="center" flex={1}>
+										{/* Current tab pill */}
 										<Box
 											sx={{
-												display: "flex",
+												display: "inline-flex",
 												alignItems: "center",
-												gap: 1,
-												px: 2,
-												py: 1,
+												gap: 0.625,
+												px: 1.25,
+												py: 0.625,
 												borderRadius: 1,
-												bgcolor: alpha(currentTab?.color || theme.palette.primary.main, 0.1),
-												color: currentTab?.color,
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+												color: BRAND_BLUE,
 											}}
 										>
-											{currentTab?.icon}
-											<Typography variant="subtitle2" fontWeight={600}>
+											{React.cloneElement(currentTab?.icon || <TableDocument />, { size: 14, variant: "Bulk" })}
+											<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, letterSpacing: "-0.005em", color: BRAND_BLUE }}>
 												{currentTab?.label}
 											</Typography>
 										</Box>
 
-										{/* Search Bar */}
+										{/* Search */}
 										<TextField
 											size="small"
-											placeholder={`Buscar en ${currentTab?.label.toLowerCase()}...`}
+											placeholder={`Buscar en ${currentTab?.label.toLowerCase()}…`}
 											value={searchQuery}
 											onChange={(e) => setSearchQuery(e.target.value)}
 											sx={{ minWidth: 300 }}
 											InputProps={{
 												startAdornment: (
 													<InputAdornment position="start">
-														<SearchNormal1 size={18} />
+														<SearchNormal1 size={16} variant="Bulk" color={BRAND_BLUE} />
 													</InputAdornment>
 												),
+												sx: {
+													bgcolor: theme.palette.background.paper,
+													borderRadius: 1,
+													"& .MuiOutlinedInput-notchedOutline": {
+														borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
+													},
+													"&:hover .MuiOutlinedInput-notchedOutline": {
+														borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+													},
+													"&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+														borderColor: BRAND_BLUE,
+													},
+												},
 											}}
 										/>
 									</Stack>
 
-									{/* Action Buttons */}
-									<Stack direction="row" spacing={1}>
+									{/* Action buttons — brand */}
+									<Stack direction="row" spacing={0.75}>
 										<Tooltip title="Exportar">
-											<IconButton size="small" onClick={handleExport}>
-												<ExportSquare />
+											<IconButton size="small" onClick={handleExport} sx={brandIconButtonSx}>
+												<ExportSquare size={16} variant="Bulk" />
 											</IconButton>
 										</Tooltip>
 										{activeTab !== "combined" && canCreate && (
 											<Tooltip title={`Agregar ${currentTab?.label.toLowerCase().slice(0, -1)}`}>
 												<IconButton
 													size="small"
-													color="primary"
 													onClick={() => {
 														if (activeTab === "movements") handleAddMovement();
 														else if (activeTab === "notifications") handleAddNotification();
 														else if (activeTab === "calendar") handleAddEvent();
 													}}
+													sx={brandIconButtonSx}
 												>
-													<Add />
+													<Add size={16} variant="Bulk" />
 												</IconButton>
 											</Tooltip>
 										)}
 									</Stack>
 								</Stack>
 
-								{/* Controles específicos para movimientos - Desktop */}
+								{/* Controles para movimientos — desktop */}
 								{activeTab === "movements" ? (
 									<Box
 										sx={{
-											mt: 2,
+											mt: 1.5,
 											p: 1.5,
-											bgcolor: alpha(theme.palette.primary.main, 0.04),
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
 											borderRadius: 1,
-											border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 										}}
 									>
-										<Stack spacing={1.5}>
+										<Stack spacing={1.25}>
 											<Stack direction="row" justifyContent="space-between" alignItems="center">
-												<Typography variant="caption" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
-													OPCIONES DE VISUALIZACIÓN
-												</Typography>
+												<Stack direction="row" spacing={0.5} alignItems="center">
+													<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+													<Typography
+														sx={{
+															fontSize: "0.6rem",
+															fontWeight: 600,
+															letterSpacing: "0.08em",
+															textTransform: "uppercase",
+															color: "text.secondary",
+														}}
+													>
+														Opciones de visualización
+													</Typography>
+												</Stack>
 												<Tooltip title={showFilters ? "Ocultar filtros avanzados" : "Mostrar filtros avanzados"}>
 													<Badge
-														color="primary"
 														variant="dot"
 														invisible={!hasActiveFilters()}
 														sx={{
 															"& .MuiBadge-dot": {
 																right: 2,
 																top: 2,
+																bgcolor: LIVE_GREEN,
 															},
 														}}
 													>
 														<IconButton
 															size="small"
 															onClick={() => setShowFilters(!showFilters)}
-															color={showFilters ? "primary" : hasActiveFilters() ? "primary" : "default"}
 															sx={{
-																transition: "all 0.3s ease",
+																...brandIconButtonSx,
+																...(showFilters && {
+																	bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+																	borderColor: alpha(BRAND_BLUE, isDark ? 0.38 : 0.28),
+																}),
+																transition: "all 200ms ease",
 																transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
 															}}
 														>
-															<Filter size={18} />
+															<Filter size={14} variant="Bulk" />
 														</IconButton>
 													</Badge>
 												</Tooltip>
 											</Stack>
 
-											<Stack direction="row" spacing={3} alignItems="center">
-												{/* Checkbox para filtrar solo movimientos con documento */}
+											<Stack direction="row" spacing={2} alignItems="center">
 												<FormControlLabel
 													control={
 														<Checkbox
 															checked={filters.onlyWithDocuments}
-															onChange={(e) => {
-																// Solo actualizar el estado, el useEffect se encargará del dispatch
-																setFilters({ ...filters, onlyWithDocuments: e.target.checked });
-															}}
+															onChange={(e) => setFilters({ ...filters, onlyWithDocuments: e.target.checked })}
 															size="small"
-															color="primary"
+															sx={{
+																color: alpha(BRAND_BLUE, 0.5),
+																"&.Mui-checked": { color: BRAND_BLUE },
+															}}
 														/>
 													}
 													label={
-														<Stack direction="row" alignItems="center" spacing={1}>
-															<DocumentText size={18} color={theme.palette.primary.main} />
-															<Typography variant="body2">
+														<Stack direction="row" alignItems="center" spacing={0.875}>
+															<DocumentText size={16} variant="Bulk" color={BRAND_BLUE} />
+															<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>
 																Solo con documento
-																{movementsData.totalWithLinks > 0 && (
-																	<Chip size="small" label={movementsData.totalWithLinks} color="primary" sx={{ ml: 1, height: 20 }} />
-																)}
 															</Typography>
+															{movementsData.totalWithLinks > 0 && (
+																<Box
+																	sx={{
+																		display: "inline-flex",
+																		alignItems: "center",
+																		px: 0.625,
+																		py: 0.125,
+																		borderRadius: 0.5,
+																		bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+																		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.22)}`,
+																	}}
+																>
+																	<Typography sx={{ fontSize: "0.66rem", fontWeight: 700, color: BRAND_BLUE, fontVariantNumeric: "tabular-nums" }}>
+																		{movementsData.totalWithLinks}
+																	</Typography>
+																</Box>
+															)}
 														</Stack>
 													}
 												/>
 
-												<Divider orientation="vertical" flexItem />
+												<Box sx={{ width: 1, height: 20, bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.12) }} />
 
-												{/* Botón para navegación secuencial de documentos */}
 												<Button
 													variant="contained"
 													size="small"
-													startIcon={<Gallery size={18} />}
+													startIcon={<Gallery size={16} variant="Bulk" />}
 													onClick={() => {
 														const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
 														if (movementsWithLinks.length > 0) {
@@ -1317,15 +1536,19 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													}}
 													disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
 													sx={{
-														bgcolor: theme.palette.primary.main,
-														color: "white",
-														"&:hover": {
-															bgcolor: theme.palette.primary.dark,
-														},
+														textTransform: "none",
+														fontWeight: 600,
+														letterSpacing: "-0.005em",
+														bgcolor: BRAND_BLUE,
+														color: "#fff",
+														borderRadius: 1,
+														px: 1.5,
+														py: 0.75,
+														boxShadow: "none",
+														"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
 														"&.Mui-disabled": {
-															bgcolor: theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)",
-															color: theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.26)",
-															opacity: 1,
+															bgcolor: alpha(theme.palette.text.disabled, 0.12),
+															color: theme.palette.text.disabled,
 														},
 													}}
 												>
@@ -1334,26 +1557,23 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												</Button>
 											</Stack>
 
-											{/* Texto compacto cuando hay más movimientos disponibles */}
 											{filters.onlyWithDocuments &&
 												(movementsData.pagination?.totalAvailable ?? 0) > (movementsData.pagination?.total ?? 0) && (
-													<Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+													<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 														{movementsData.pagination.total || 0} de {movementsData.pagination.totalAvailable} ·{" "}
-														<Typography
+														<Box
 															component="span"
-															variant="caption"
-															sx={{ color: "primary.main", cursor: "pointer", fontWeight: 600 }}
+															sx={{ color: BRAND_BLUE, cursor: "pointer", fontWeight: 600 }}
 															onClick={() => setFilters({ ...filters, onlyWithDocuments: false })}
 														>
 															Ver todos
-														</Typography>
+														</Box>
 													</Typography>
 												)}
 
-											{/* Filtros avanzados - Collapsible */}
 											<Collapse in={showFilters} timeout="auto" unmountOnExit>
-												<Box sx={{ pt: 1.5 }}>
-													<Divider sx={{ mb: 1.5 }} />
+												<Box sx={{ pt: 1.25 }}>
+													<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1), mb: 1.25 }} />
 													<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
 												</Box>
 											</Collapse>
@@ -1362,29 +1582,33 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 								) : (
 									/* Filtros para otras pestañas */
 									<>
-										<Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
+										<Box sx={{ mt: 1.5, display: "flex", justifyContent: "flex-end" }}>
 											<Tooltip title={showFilters ? "Ocultar filtros" : "Mostrar filtros"}>
 												<Badge
-													color="primary"
 													variant="dot"
 													invisible={!hasActiveFilters()}
 													sx={{
 														"& .MuiBadge-dot": {
 															right: 2,
 															top: 2,
+															bgcolor: LIVE_GREEN,
 														},
 													}}
 												>
 													<IconButton
 														size="small"
 														onClick={() => setShowFilters(!showFilters)}
-														color={showFilters ? "primary" : hasActiveFilters() ? "primary" : "default"}
 														sx={{
-															transition: "all 0.3s ease",
+															...brandIconButtonSx,
+															...(showFilters && {
+																bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+																borderColor: alpha(BRAND_BLUE, isDark ? 0.38 : 0.28),
+															}),
+															transition: "all 200ms ease",
 															transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
 														}}
 													>
-														<Filter />
+														<Filter size={14} variant="Bulk" />
 													</IconButton>
 												</Badge>
 											</Tooltip>
@@ -1393,12 +1617,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 											<Fade in={showFilters} timeout={350}>
 												<Box
 													sx={{
-														mt: 2,
-														p: 2,
-														bgcolor: theme.palette.grey[50],
+														mt: 1.5,
+														p: 1.75,
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 														borderRadius: 1,
-														border: `1px solid ${theme.palette.divider}`,
-														transition: "all 0.3s ease-in-out",
+														border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 													}}
 												>
 													<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
@@ -1437,7 +1660,15 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 											</>
 										)}
 
-										<Paper elevation={0} sx={{ height: "100%", border: `1px solid ${theme.palette.divider}` }}>
+										<Paper
+											elevation={0}
+											sx={{
+												height: "100%",
+												borderRadius: 1,
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+												overflow: "hidden",
+											}}
+										>
 											{activeTab === "movements" && (
 												<MovementsTable
 													movements={movementsData.movements}

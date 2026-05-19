@@ -1,20 +1,19 @@
 import React from "react";
 import { useState } from "react";
 import { dispatch } from "store";
-import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, Paper, useTheme, alpha, Chip } from "@mui/material";
+import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, useTheme, alpha } from "@mui/material";
 import dayjs from "utils/dayjs-config";
-// import data from "data/folder.json";
-import { Edit2, User, Calendar, DollarCircle, HashtagSquare } from "iconsax-react";
+import { Edit2, User, Calendar, DollarCircle, HashtagSquare, DocumentText, TickCircle } from "iconsax-react";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
-// import SelectField from "components/UI/SelectField";
 import { Formik, Form } from "formik";
 import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
 import { useTeam } from "contexts/TeamContext";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -37,22 +36,41 @@ interface CompactFieldProps {
 
 const CompactField: React.FC<CompactFieldProps> = ({ label, value, isLoading, editComponent, isEditing, icon }) => {
 	if (isLoading) {
-		return <Skeleton width={120} height={40} />;
+		return <Skeleton width={120} height={40} sx={{ borderRadius: 1 }} />;
 	}
+
+	const hasValue = value && value !== "-";
 
 	return (
 		<Box>
 			<Stack direction="row" spacing={0.5} alignItems="center" mb={0.25}>
 				{icon}
-				<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
+				<Typography
+					sx={{
+						fontSize: "0.6rem",
+						fontWeight: 600,
+						letterSpacing: "0.08em",
+						textTransform: "uppercase",
+						color: "text.secondary",
+						lineHeight: 1.4,
+					}}
+				>
 					{label}
 				</Typography>
 			</Stack>
 			{isEditing && editComponent ? (
 				<Box>{editComponent}</Box>
 			) : (
-				<Typography variant="body2" fontWeight={value && value !== "-" ? 500 : 400}>
-					{value || "-"}
+				<Typography
+					sx={{
+						fontSize: "0.85rem",
+						fontWeight: hasValue ? 500 : 400,
+						color: hasValue ? "text.primary" : "text.disabled",
+						letterSpacing: "-0.005em",
+						mt: 0.25,
+					}}
+				>
+					{value || "—"}
 				</Typography>
 			)}
 		</Box>
@@ -62,7 +80,9 @@ const CompactField: React.FC<CompactFieldProps> = ({ label, value, isLoading, ed
 const FolderPreJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: boolean; type: string }) => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const { canUpdate } = useTeam();
+	void type;
 
 	const formatDate = (date: string | null | undefined) => {
 		if (!date) return "";
@@ -151,19 +171,51 @@ const FolderPreJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLo
 		}),
 	});
 
-	const getStatusColor = (status: string) => {
+	const getStatusAccent = (status: string) => {
 		switch (status) {
 			case "Nueva":
-				return "warning";
+				return STALE_AMBER;
 			case "En Progreso":
-				return "info";
+				return BRAND_BLUE;
 			case "Cerrada":
-				return "success";
+				return LIVE_GREEN;
 			case "Pendiente":
-				return "primary";
+				return STALE_AMBER;
 			default:
-				return "default";
+				return theme.palette.text.secondary as string;
 		}
+	};
+
+	const StatusPill = ({ label }: { label: string }) => {
+		const accent = getStatusAccent(label);
+		return (
+			<Box
+				sx={{
+					display: "inline-flex",
+					alignItems: "center",
+					gap: 0.5,
+					px: 0.75,
+					py: 0.125,
+					borderRadius: 0.625,
+					bgcolor: alpha(accent, isDark ? 0.16 : 0.1),
+					border: `1px solid ${alpha(accent, isDark ? 0.32 : 0.22)}`,
+				}}
+			>
+				<Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: accent }} />
+				<Typography
+					sx={{
+						fontSize: "0.62rem",
+						fontWeight: 600,
+						color: accent,
+						letterSpacing: "0.04em",
+						textTransform: "uppercase",
+						lineHeight: 1,
+					}}
+				>
+					{label}
+				</Typography>
+			</Box>
+		);
 	};
 
 	const hasData = folder?.preFolder && Object.values(folder.preFolder).some((value) => value && value !== "");
@@ -173,45 +225,100 @@ const FolderPreJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLo
 			<Formik initialValues={initialValues} onSubmit={_handleSubmit} enableReinitialize validationSchema={ValidationSchema}>
 				{({ isSubmitting, values }) => (
 					<Form autoComplete="off" noValidate>
-						<Paper
-							elevation={0}
+						<Box
 							sx={{
-								border: `1px solid ${theme.palette.divider}`,
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 								borderRadius: 1.5,
 								overflow: "hidden",
+								bgcolor: theme.palette.background.paper,
 							}}
 						>
-							{/* Compact Header */}
+							{/* Header — brand-tinted */}
 							<Box
 								sx={{
-									px: 2,
-									py: 1.5,
-									bgcolor: alpha(theme.palette.warning.main, 0.08),
-									borderBottom: `1px solid ${theme.palette.divider}`,
+									px: 1.75,
+									py: 1.25,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
+									borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
 								}}
 							>
-								<Stack direction="row" justifyContent="space-between" alignItems="center">
-									<Stack direction="row" spacing={1.5} alignItems="center">
-										<Typography variant="subtitle2" fontWeight={600}>
-											Proceso de Mediación
-										</Typography>
-										{values.preFolder.statusPreFolder && (
-											<Chip
-												label={values.preFolder.statusPreFolder}
-												color={getStatusColor(values.preFolder.statusPreFolder)}
-												size="small"
-												sx={{ height: 18, fontSize: "0.7rem" }}
-											/>
-										)}
-										{hasData && (
-											<Typography variant="caption" color="success.main" sx={{ fontSize: "0.7rem" }}>
-												✓ Con datos
-											</Typography>
-										)}
+								<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+									<Stack direction="row" spacing={1.25} alignItems="center">
+										<Box
+											sx={{
+												width: 28,
+												height: 28,
+												borderRadius: 0.75,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+												color: BRAND_BLUE,
+												flexShrink: 0,
+											}}
+										>
+											<DocumentText size={14} variant="Bulk" />
+										</Box>
+										<Stack spacing={0.125}>
+											<Stack direction="row" spacing={0.5} alignItems="center">
+												<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+												<Typography
+													sx={{
+														fontSize: "0.58rem",
+														fontWeight: 600,
+														letterSpacing: "0.08em",
+														textTransform: "uppercase",
+														color: "text.secondary",
+													}}
+												>
+													Etapa previa
+												</Typography>
+											</Stack>
+											<Stack direction="row" spacing={0.875} alignItems="center" flexWrap="wrap" useFlexGap>
+												<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+													Proceso de mediación
+												</Typography>
+												{values.preFolder.statusPreFolder && <StatusPill label={values.preFolder.statusPreFolder} />}
+												{hasData && (
+													<Stack direction="row" spacing={0.375} alignItems="center">
+														<TickCircle size={12} variant="Bold" color={LIVE_GREEN} />
+														<Typography
+															sx={{
+																fontSize: "0.66rem",
+																fontWeight: 600,
+																color: LIVE_GREEN,
+																letterSpacing: "0.04em",
+																textTransform: "uppercase",
+															}}
+														>
+															Con datos
+														</Typography>
+													</Stack>
+												)}
+											</Stack>
+										</Stack>
 									</Stack>
 									{!isEditing && canUpdate && (
-										<Button size="small" variant="text" onClick={handleEdit} sx={{ minWidth: "auto", px: 1 }}>
-											<Edit2 size={16} />
+										<Button
+											size="small"
+											onClick={handleEdit}
+											sx={{
+												minWidth: "auto",
+												width: 28,
+												height: 28,
+												borderRadius: 1,
+												p: 0,
+												color: BRAND_BLUE,
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.05),
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+												"&:hover": {
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+													borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+												},
+											}}
+										>
+											<Edit2 size={14} variant="Bulk" />
 										</Button>
 									)}
 								</Stack>
@@ -299,19 +406,61 @@ const FolderPreJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLo
 									)}
 								</Grid>
 
-								{/* Actions */}
+								{/* Actions — ghost cancel + sober brand submit */}
 								{isEditing && (
-									<Stack direction="row" spacing={1} justifyContent="flex-end" mt={2}>
-										<Button size="small" variant="outlined" onClick={() => setIsEditing(false)}>
+									<Stack
+										direction="row"
+										spacing={1}
+										justifyContent="flex-end"
+										mt={2}
+										pt={1.5}
+										sx={{ borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}
+									>
+										<Button
+											size="small"
+											onClick={() => setIsEditing(false)}
+											sx={{
+												textTransform: "none",
+												fontWeight: 600,
+												letterSpacing: "-0.005em",
+												color: "text.secondary",
+												borderRadius: 1,
+												px: 1.5,
+												py: 0.625,
+												border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+												"&:hover": {
+													color: BRAND_BLUE,
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+													borderColor: alpha(BRAND_BLUE, 0.28),
+												},
+											}}
+										>
 											Cancelar
 										</Button>
-										<Button size="small" type="submit" variant="contained" disabled={isSubmitting}>
+										<Button
+											size="small"
+											type="submit"
+											variant="contained"
+											disabled={isSubmitting}
+											sx={{
+												textTransform: "none",
+												fontWeight: 600,
+												letterSpacing: "-0.005em",
+												bgcolor: BRAND_BLUE,
+												color: "#fff",
+												borderRadius: 1,
+												px: 1.75,
+												py: 0.625,
+												boxShadow: "none",
+												"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+											}}
+										>
 											Guardar
 										</Button>
 									</Stack>
 								)}
 							</Box>
-						</Paper>
+						</Box>
 					</Form>
 				)}
 			</Formik>
