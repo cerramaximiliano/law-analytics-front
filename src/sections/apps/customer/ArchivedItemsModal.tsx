@@ -3,42 +3,35 @@ import { useEffect, useState, useMemo, SyntheticEvent } from "react";
 
 // material-ui
 import {
-	Dialog,
-	DialogTitle,
-	DialogContent,
-	DialogActions,
+	Box,
 	Button,
+	Checkbox,
+	CircularProgress,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	FormControl,
+	IconButton,
+	MenuItem,
+	Pagination,
+	Select,
+	Stack,
 	Table,
 	TableBody,
 	TableCell,
 	TableContainer,
 	TableHead,
 	TableRow,
-	Checkbox,
 	Typography,
-	Stack,
-	Divider,
-	CircularProgress,
-	Paper,
-	Alert,
-	AlertTitle,
-	Box,
-	Chip,
-	useTheme,
-	alpha,
-	Grid,
-	Pagination,
-	Select,
-	MenuItem,
-	FormControl,
 } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 
 // project-imports
 import { PopupTransition } from "components/@extended/Transitions";
 import EmptyResults from "./EmptyResults";
-import { Archive, Warning2 } from "iconsax-react"; // Assuming you're using iconsax-react for icons
+import { Archive, CloseSquare, InfoCircle, Warning2 } from "iconsax-react";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
-// types
 interface PaginationInfo {
 	total: number;
 	page: number;
@@ -73,11 +66,11 @@ const ArchivedItemsModal = ({
 	onPageChange,
 	onPageSizeChange,
 }: ArchivedItemsModalProps) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const [selected, setSelected] = useState<string[]>([]);
 	const [error, setError] = useState<string | null>(null);
-	const theme = useTheme();
 
-	// Reset selection when modal changes
 	useEffect(() => {
 		if (open) {
 			setSelected([]);
@@ -85,7 +78,6 @@ const ArchivedItemsModal = ({
 		}
 	}, [open]);
 
-	// Columns for the table based on item type
 	const columns = useMemo(() => {
 		if (itemType === "contacts") {
 			return [
@@ -93,52 +85,148 @@ const ArchivedItemsModal = ({
 				{ id: "email", label: "Email", minWidth: 170 },
 				{ id: "phone", label: "Teléfono", minWidth: 100 },
 			];
-		} else {
-			return [
-				{ id: "folderName", label: "Carátula", minWidth: 170 },
-				{ id: "materia", label: "Materia", minWidth: 100 },
-				{ id: "status", label: "Estado", minWidth: 100 },
-			];
 		}
+		return [
+			{ id: "folderName", label: "Carátula", minWidth: 170 },
+			{ id: "materia", label: "Materia", minWidth: 100 },
+			{ id: "status", label: "Estado", minWidth: 100 },
+		];
 	}, [itemType]);
 
-	// Handle selection change
 	const handleClick = (id: string) => {
-		const selectedIndex = selected.indexOf(id);
-		let newSelected: string[] = [];
-
-		if (selectedIndex === -1) {
-			newSelected = [...selected, id];
-		} else {
-			newSelected = selected.filter((itemId) => itemId !== id);
-		}
-
-		setSelected(newSelected);
+		const idx = selected.indexOf(id);
+		setSelected(idx === -1 ? [...selected, id] : selected.filter((itemId) => itemId !== id));
 	};
 
-	// Select/deselect all elements
 	const handleSelectAllClick = (event: SyntheticEvent) => {
 		if ((event.target as HTMLInputElement).checked) {
-			const newSelecteds = items.map((item) => item._id);
-			setSelected(newSelecteds);
+			setSelected(items.map((item) => item._id));
 			return;
 		}
 		setSelected([]);
 	};
 
-	// Function to confirm unarchiving
 	const handleUnarchive = () => {
 		if (selected.length === 0) {
-			setError("Debes seleccionar al menos un elemento para desarchivar.");
+			setError("Debés seleccionar al menos un elemento para desarchivar.");
 			return;
 		}
-
 		setError(null);
 		onUnarchive(selected);
 	};
 
-	// Check if an element is selected
 	const isSelected = (id: string) => selected.indexOf(id) !== -1;
+
+	// ── Brand helpers ───────────────────────────────────────────────────────
+	const dialogPaperSx = {
+		borderRadius: 2,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+		boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+		overflow: "hidden",
+	};
+	const ghostBtnSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: "text.secondary",
+		borderRadius: 1.25,
+		border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+		px: 2,
+		py: 0.75,
+		transition: "color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease",
+		"&:hover": {
+			color: BRAND_BLUE,
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+			borderColor: alpha(BRAND_BLUE, 0.28),
+		},
+	};
+	const brandPrimarySx = {
+		minWidth: 130,
+		textTransform: "none" as const,
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		borderRadius: 1.25,
+		boxShadow: "none",
+		transition: "background-color 0.15s ease",
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+		"&.Mui-disabled": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.24 : 0.4), color: alpha("#fff", 0.9) },
+	};
+	const selectSx = {
+		borderRadius: 1.25,
+		fontSize: "0.82rem",
+		"& fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.14) },
+		"&:hover fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.28) },
+		"&.Mui-focused fieldset": { borderColor: BRAND_BLUE },
+	};
+	const checkboxSx = {
+		color: alpha(BRAND_BLUE, isDark ? 0.4 : 0.32),
+		"&.Mui-checked": { color: BRAND_BLUE },
+		"&.MuiCheckbox-indeterminate": { color: BRAND_BLUE },
+	};
+	const paginationSx = {
+		"& .MuiPaginationItem-root": {
+			fontWeight: 600,
+			color: "text.secondary",
+			borderRadius: 1,
+			"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.06), color: BRAND_BLUE },
+		},
+		"& .Mui-selected": {
+			bgcolor: `${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)} !important`,
+			color: BRAND_BLUE,
+			border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.4 : 0.28)}`,
+		},
+	};
+	const tableSx = {
+		"& .MuiTableHead-root .MuiTableCell-root": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+			color: "text.secondary",
+			fontSize: "0.68rem",
+			fontWeight: 600,
+			letterSpacing: "0.06em",
+			textTransform: "uppercase",
+			borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+			py: 1.25,
+		},
+		"& .MuiTableBody-root .MuiTableCell-root": {
+			borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.1 : 0.06)}`,
+			fontSize: "0.82rem",
+		},
+		"& .MuiTableBody-root .MuiTableRow-root": { transition: "background-color 0.12s ease" },
+		"& .MuiTableBody-root .MuiTableRow-root:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035), cursor: "pointer" },
+		"& .MuiTableBody-root .MuiTableRow-root.Mui-selected, & .MuiTableBody-root .MuiTableRow-root.Mui-selected:hover": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+		},
+	};
+
+	const StatusPill = ({ value }: { value: string }) => {
+		const isActive = value === "Activo";
+		const color = isActive ? LIVE_GREEN : theme.palette.text.secondary;
+		return (
+			<Box
+				sx={{
+					display: "inline-flex",
+					alignItems: "center",
+					gap: 0.625,
+					px: 0.875,
+					py: 0.25,
+					borderRadius: 0.75,
+					bgcolor: alpha(color, isDark ? 0.16 : 0.1),
+					border: `1px solid ${alpha(color, isDark ? 0.32 : 0.22)}`,
+				}}
+			>
+				<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: color }} />
+				<Typography sx={{ fontSize: "0.66rem", fontWeight: 600, color, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>
+					{value}
+				</Typography>
+			</Box>
+		);
+	};
+
+	const itemLabelPlural = itemType === "contacts" ? "contactos" : "causas";
+	const itemLabelArticle = itemType === "contacts" ? "los contactos" : "las causas";
+	const itemLabelArticleShort = itemType === "contacts" ? "los" : "las";
 
 	return (
 		<Dialog
@@ -149,136 +237,172 @@ const ArchivedItemsModal = ({
 			maxWidth="md"
 			fullWidth
 			aria-labelledby="archived-items-modal-title"
-			PaperProps={{
-				elevation: 5,
-				sx: {
-					borderRadius: 2,
-					overflow: "hidden",
-				},
-			}}
+			PaperProps={{ sx: dialogPaperSx }}
 		>
-			<DialogTitle
-				id="archived-items-modal-title"
+			{/* Header brand atmosférico */}
+			<Box
 				sx={{
-					bgcolor: theme.palette.primary.lighter,
-					p: 3,
-					borderBottom: `1px solid ${theme.palette.divider}`,
+					position: "relative",
+					overflow: "hidden",
+					p: { xs: 2.25, sm: 2.5 },
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+					borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 				}}
 			>
-				<Stack spacing={1}>
-					<Stack direction="row" alignItems="center" spacing={1}>
-						<Archive size={24} color={theme.palette.primary.main} />
-						<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
-							{title}
-						</Typography>
-					</Stack>
-					<Typography variant="body2" color="textSecondary">
-						{itemType === "contacts"
-							? "Selecciona los contactos archivados para recuperarlos"
-							: "Selecciona las causas archivadas para recuperarlas"}
-					</Typography>
-				</Stack>
-			</DialogTitle>
-			<Divider />
-
-			<DialogContent sx={{ p: 2.5, height: 650, display: "flex", flexDirection: "column" }}>
-				{/* Notification alert */}
-				<Alert
-					severity="info"
-					icon={<Warning2 variant="Bulk" />}
+				<Box
 					sx={{
-						mb: 3,
-						borderRadius: 1.5,
-						border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-						bgcolor: alpha(theme.palette.info.main, 0.1),
-						flexShrink: 0,
+						position: "absolute",
+						top: -60,
+						right: -40,
+						width: 220,
+						height: 220,
+						borderRadius: "50%",
+						background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
+						pointerEvents: "none",
 					}}
-				>
-					<AlertTitle>{itemType === "contacts" ? "Selección de contactos" : "Selección de causas"}</AlertTitle>
-					Selecciona {itemType === "contacts" ? "los contactos" : "las causas"} que deseas desarchivar marcando las casillas
-					correspondientes.
-				</Alert>
-
-				{error && (
-					<Alert
-						severity="error"
+				/>
+				<Stack direction="row" alignItems="center" spacing={1.5} sx={{ position: "relative" }}>
+					<Box
 						sx={{
-							mb: 2,
+							width: 40,
+							height: 40,
 							borderRadius: 1.5,
-							border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
-							bgcolor: alpha(theme.palette.error.main, 0.1),
-							"& .MuiAlert-icon": {
-								alignItems: "center",
-							},
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+							color: BRAND_BLUE,
 							flexShrink: 0,
 						}}
 					>
-						{error}
-					</Alert>
+						<Archive size={20} variant="Bulk" />
+					</Box>
+					<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+						<Stack direction="row" spacing={0.75} alignItems="center">
+							<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+							<Typography
+								sx={{
+									fontSize: "0.6rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+								}}
+							>
+								Archivo
+							</Typography>
+						</Stack>
+						<Typography
+							id="archived-items-modal-title"
+							sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}
+						>
+							{title}
+						</Typography>
+						<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+							Seleccioná {itemLabelArticle} archivad{itemType === "contacts" ? "os" : "as"} para recuperar{itemLabelArticleShort}.
+						</Typography>
+					</Stack>
+					<IconButton
+						onClick={onClose}
+						disabled={loading}
+						sx={{
+							color: "text.secondary",
+							borderRadius: 1,
+							"&:hover": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) },
+						}}
+						aria-label="cerrar"
+					>
+						<CloseSquare size={20} variant="Linear" />
+					</IconButton>
+				</Stack>
+			</Box>
+
+			<DialogContent sx={{ p: { xs: 2, sm: 2.5 }, height: 600, display: "flex", flexDirection: "column" }}>
+				{/* Aviso info brand */}
+				<Box
+					sx={{
+						p: 1.5,
+						mb: 2,
+						borderRadius: 1.25,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+						flexShrink: 0,
+					}}
+				>
+					<Stack direction="row" spacing={1} alignItems="flex-start">
+						<InfoCircle size={16} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
+						<Stack spacing={0.25}>
+							<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+								Selección de {itemLabelPlural}
+							</Typography>
+							<Typography sx={{ fontSize: "0.76rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+								Marcá las casillas de {itemLabelArticle} que querés desarchivar.
+							</Typography>
+						</Stack>
+					</Stack>
+				</Box>
+
+				{error && (
+					<Box
+						sx={{
+							p: 1.5,
+							mb: 2,
+							borderRadius: 1.25,
+							bgcolor: alpha(theme.palette.error.main, isDark ? 0.08 : 0.04),
+							border: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.32 : 0.22)}`,
+							flexShrink: 0,
+						}}
+					>
+						<Stack direction="row" spacing={1} alignItems="center">
+							<Warning2 size={16} variant="Bulk" color={theme.palette.error.main} />
+							<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>{error}</Typography>
+						</Stack>
+					</Box>
 				)}
 
 				<Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
 					{loading ? (
-						<Stack alignItems="center" justifyContent="center" sx={{ flex: 1 }}>
-							<CircularProgress />
+						<Stack alignItems="center" justifyContent="center" sx={{ flex: 1 }} spacing={1.25}>
+							<CircularProgress size={28} sx={{ color: BRAND_BLUE }} />
+							<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+								Cargando archivados…
+							</Typography>
 						</Stack>
 					) : items.length === 0 ? (
 						<Stack alignItems="center" justifyContent="center" sx={{ flex: 1 }}>
-							<EmptyResults message={`No hay ${itemType === "contacts" ? "contactos" : "causas"} archivados`} />
+							<EmptyResults message={`No hay ${itemLabelPlural} archivad${itemType === "contacts" ? "os" : "as"}`} />
 						</Stack>
 					) : (
-						<Paper
+						<Box
 							sx={{
-								width: "100%",
+								borderRadius: 1.5,
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
 								overflow: "hidden",
-								borderRadius: 2,
-								boxShadow: theme.shadows[2],
 								flex: 1,
 								display: "flex",
 								flexDirection: "column",
+								bgcolor: "background.paper",
 							}}
 						>
-							<TableContainer sx={{ maxHeight: 400 }}>
-								<Table stickyHeader aria-label="sticky table">
+							<TableContainer sx={{ flex: 1, minHeight: 0 }}>
+								<Table stickyHeader sx={tableSx}>
 									<TableHead>
 										<TableRow>
-											<TableCell
-												padding="checkbox"
-												sx={{
-													backgroundColor: theme.palette.background.default,
-													borderBottom: `1px solid ${theme.palette.divider}`,
-													position: "sticky !important",
-													top: 0,
-													zIndex: 2,
-												}}
-											>
+											<TableCell padding="checkbox" sx={{ position: "sticky !important", top: 0, zIndex: 2 }}>
 												<Checkbox
 													indeterminate={selected.length > 0 && selected.length < items.length}
 													checked={items.length > 0 && selected.length === items.length}
 													onChange={handleSelectAllClick}
 													inputProps={{ "aria-label": "select all items" }}
-													sx={{
-														"&.Mui-checked": {
-															color: theme.palette.primary.main,
-														},
-														"&.MuiCheckbox-indeterminate": {
-															color: theme.palette.primary.main,
-														},
-													}}
+													sx={checkboxSx}
 												/>
 											</TableCell>
 											{columns.map((column) => (
 												<TableCell
 													key={column.id}
 													style={{ minWidth: column.minWidth }}
-													sx={{
-														py: 2,
-														backgroundColor: theme.palette.background.default,
-														borderBottom: `1px solid ${theme.palette.divider}`,
-														position: "sticky !important",
-														top: 0,
-														zIndex: 2,
-													}}
+													sx={{ position: "sticky !important", top: 0, zIndex: 2 }}
 												>
 													{column.label}
 												</TableCell>
@@ -288,7 +412,6 @@ const ArchivedItemsModal = ({
 									<TableBody>
 										{items.map((item) => {
 											const isItemSelected = isSelected(item._id);
-
 											return (
 												<TableRow
 													hover
@@ -298,63 +421,43 @@ const ArchivedItemsModal = ({
 													tabIndex={-1}
 													key={item._id}
 													selected={isItemSelected}
-													sx={{
-														cursor: "pointer",
-														"&.Mui-selected": {
-															bgcolor: alpha(theme.palette.primary.main, 0.12),
-															"&:hover": {
-																bgcolor: alpha(theme.palette.primary.main, 0.16),
-															},
-														},
-														"&:hover": {
-															bgcolor: alpha(theme.palette.primary.main, 0.04),
-														},
-													}}
 												>
 													<TableCell padding="checkbox">
-														<Checkbox
-															checked={isItemSelected}
-															sx={{
-																"&.Mui-checked": {
-																	color: theme.palette.primary.main,
-																},
-															}}
-														/>
+														<Checkbox checked={isItemSelected} sx={checkboxSx} />
 													</TableCell>
 
 													{itemType === "contacts" ? (
 														<>
 															<TableCell>
-																<Typography variant="body2" fontWeight={500}>{`${item.name} ${item.lastName || ""}`}</Typography>
-															</TableCell>
-															<TableCell>
-																<Typography variant="body2" color="text.secondary">
-																	{item.email}
+																<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+																	{`${item.name} ${item.lastName || ""}`.trim()}
 																</Typography>
 															</TableCell>
 															<TableCell>
-																<Typography variant="body2">{item.phone}</Typography>
+																<Typography sx={{ fontSize: "0.8rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+																	{item.email || "—"}
+																</Typography>
+															</TableCell>
+															<TableCell>
+																<Typography sx={{ fontSize: "0.8rem", color: "text.primary", fontVariantNumeric: "tabular-nums" }}>
+																	{item.phone || "—"}
+																</Typography>
 															</TableCell>
 														</>
 													) : (
 														<>
 															<TableCell>
-																<Typography variant="body2" fontWeight={500}>
+																<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
 																	{item.folderName}
 																</Typography>
 															</TableCell>
 															<TableCell>
-																<Typography variant="body2" color="text.secondary">
-																	{item.materia}
+																<Typography sx={{ fontSize: "0.8rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+																	{item.materia || "—"}
 																</Typography>
 															</TableCell>
 															<TableCell>
-																<Chip
-																	label={item.status}
-																	size="small"
-																	color={item.status === "Activo" ? "success" : "default"}
-																	sx={{ borderRadius: 1 }}
-																/>
+																<StatusPill value={item.status} />
 															</TableCell>
 														</>
 													)}
@@ -364,21 +467,34 @@ const ArchivedItemsModal = ({
 									</TableBody>
 								</Table>
 							</TableContainer>
-						</Paper>
+						</Box>
 					)}
 				</Box>
 
-				{/* Pagination controls */}
 				{pagination && (
-					<Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-						<Stack direction="row" spacing={2} alignItems="center">
-							<Typography variant="body2" color="textSecondary">
-								Mostrando {items.length > 0 ? (pagination.page - 1) * pagination.limit + 1 : 0} -{" "}
-								{Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total}
+					<Stack
+						direction={{ xs: "column", sm: "row" }}
+						alignItems={{ xs: "stretch", sm: "center" }}
+						justifyContent="space-between"
+						spacing={1.5}
+						sx={{ mt: 2, flexShrink: 0 }}
+					>
+						<Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+							<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+								{items.length > 0 ? (pagination.page - 1) * pagination.limit + 1 : 0}–
+								{Math.min(pagination.page * pagination.limit, pagination.total)} de{" "}
+								<Box component="span" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "text.primary" }}>
+									{pagination.total}
+								</Box>
 							</Typography>
 							{onPageSizeChange && (
 								<FormControl size="small" sx={{ minWidth: 120 }}>
-									<Select value={pagination.limit} onChange={(e) => onPageSizeChange(Number(e.target.value))} disabled={loading}>
+									<Select
+										value={pagination.limit}
+										onChange={(e) => onPageSizeChange(Number(e.target.value))}
+										disabled={loading}
+										sx={selectSx}
+									>
 										<MenuItem value={5}>5 por página</MenuItem>
 										<MenuItem value={10}>10 por página</MenuItem>
 										<MenuItem value={25}>25 por página</MenuItem>
@@ -392,44 +508,30 @@ const ArchivedItemsModal = ({
 								count={pagination.totalPages}
 								page={pagination.page}
 								onChange={(_event, page) => onPageChange(page)}
-								color="primary"
 								disabled={loading}
 								showFirstButton
 								showLastButton
+								size="small"
+								sx={paginationSx}
 							/>
 						)}
-					</Box>
+					</Stack>
 				)}
 			</DialogContent>
 
-			<Divider />
-
-			<DialogActions
-				sx={{
-					p: 2.5,
-					bgcolor: theme.palette.background.default,
-					borderTop: `1px solid ${theme.palette.divider}`,
-				}}
-			>
-				<Grid container justifyContent="flex-end" alignItems="center">
-					<Grid item>
-						<Stack direction="row" spacing={2} alignItems="center">
-							<Button onClick={onClose} disabled={loading} color="error" sx={{ minWidth: 100 }}>
-								Cancelar
-							</Button>
-							<Button
-								onClick={handleUnarchive}
-								variant="contained"
-								color="primary"
-								disabled={selected.length === 0 || loading}
-								startIcon={loading && <CircularProgress size={16} color="inherit" />}
-								sx={{ minWidth: 100 }}
-							>
-								{loading ? "Procesando..." : `Desarchivar ${selected.length > 0 ? `(${selected.length})` : ""}`}
-							</Button>
-						</Stack>
-					</Grid>
-				</Grid>
+			<DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
+				<Button onClick={onClose} disabled={loading} sx={ghostBtnSx}>
+					Cancelar
+				</Button>
+				<Button
+					variant="contained"
+					onClick={handleUnarchive}
+					disabled={selected.length === 0 || loading}
+					startIcon={loading ? <CircularProgress size={14} color="inherit" /> : <Archive size={15} variant="Linear" />}
+					sx={brandPrimarySx}
+				>
+					{loading ? "Procesando…" : `Desarchivar${selected.length > 0 ? ` (${selected.length})` : ""}`}
+				</Button>
 			</DialogActions>
 		</Dialog>
 	);
