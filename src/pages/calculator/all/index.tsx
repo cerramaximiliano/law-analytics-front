@@ -31,7 +31,21 @@ import { useTheme } from "@mui/material/styles";
 // project imports
 import MainCard from "components/MainCard";
 import { useNavigate } from "react-router-dom";
-import { Calculator, Chart2, Coin, Warning2, Eye, Trash, Add, DocumentText, Archive, DocumentDownload, Refresh, More, InfoCircle } from "iconsax-react";
+import {
+	Calculator,
+	Chart2,
+	Coin,
+	Warning2,
+	Eye,
+	Trash,
+	Add,
+	DocumentText,
+	Archive,
+	DocumentDownload,
+	Refresh,
+	More,
+	InfoCircle,
+} from "iconsax-react";
 import { Checkbox, Menu, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
 import ScrollX from "components/ScrollX";
 
@@ -289,114 +303,270 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 		return subClassType || "No especificado";
 	};
 
-	const getTypeChipColor = (type: string) => {
-		switch (type) {
-			case "Calculado":
-				return "primary";
-			case "Ofertado":
-				return "success";
-			case "Reclamado":
-				return "warning";
-			default:
-				return "default";
-		}
+	const isDarkLocal = theme.palette.mode === "dark";
+
+	const TypePill = ({ value }: { value: string }) => {
+		const map: Record<string, string> = {
+			Calculado: BRAND_BLUE,
+			Ofertado: LIVE_GREEN,
+			Reclamado: STALE_AMBER,
+		};
+		const color = map[value] ?? theme.palette.text.secondary;
+		return (
+			<Box
+				sx={{
+					display: "inline-flex",
+					alignItems: "center",
+					gap: 0.625,
+					px: 0.875,
+					py: 0.25,
+					borderRadius: 0.75,
+					bgcolor: alpha(color, isDarkLocal ? 0.16 : 0.1),
+					border: `1px solid ${alpha(color, isDarkLocal ? 0.32 : 0.22)}`,
+				}}
+			>
+				<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: color }} />
+				<Typography
+					sx={{ fontSize: "0.66rem", fontWeight: 600, color, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}
+				>
+					{getTypeTitle(value)}
+				</Typography>
+			</Box>
+		);
 	};
 
-	return (
-		<Box sx={{ p: 2, backgroundColor: (theme) => alpha(theme.palette.primary.lighter, 0.1) }}>
-			<Box mb={2} display="flex" alignItems="center" gap={2}>
-				<Typography variant="h5" fontWeight="medium">
-					Detalles del Cálculo
-				</Typography>
-				<Chip label={getTypeTitle(data.type)} color={getTypeChipColor(data.type) as any} size="small" variant="light" />
-				{data.folderName && <Chip icon={<DocumentText size="16" />} label={data.folderName} variant="light" color="default" size="small" />}
-			</Box>
-
-			<Grid container spacing={3}>
-				<Grid item xs={12} md={6}>
-					<MainCard title="Información General" elevation={0}>
-						<Stack spacing={1.5}>
-							<Stack direction="row" justifyContent="space-between">
-								<Typography variant="subtitle2">Fecha:</Typography>
-								<Typography variant="body2">{dayjs(data.date).format("DD/MM/YYYY")}</Typography>
-							</Stack>
-							<Stack direction="row" justifyContent="space-between">
-								<Typography variant="subtitle2">Categoría:</Typography>
-								<Typography variant="body2">{getClassTypeTitle(data.classType)}</Typography>
-							</Stack>
-							<Stack direction="row" justifyContent="space-between">
-								<Typography variant="subtitle2">Subcategoría:</Typography>
-								<Typography variant="body2">{getSubClassTypeTitle(data.subClassType, data.classType)}</Typography>
-							</Stack>
-						</Stack>
-					</MainCard>
-				</Grid>
-				<Grid item xs={12} md={6}>
-					<MainCard
-						title="Importes"
-						elevation={0}
-						sx={{
-							"& .MuiCardContent-root": {
-								bgcolor: alpha(theme.palette.success.lighter, 0.2),
-							},
-						}}
-					>
-						<Stack spacing={1.5}>
-							<Stack direction="row" justifyContent="space-between">
-								<Typography variant="subtitle2">Capital:</Typography>
-								<Typography variant="body2" fontWeight="bold">
-									{new Intl.NumberFormat("es-AR", {
-										style: "currency",
-										currency: "ARS",
-									}).format(data.capital !== undefined ? data.capital : data.amount - (data.interest || 0))}
+	const InfoSection = ({
+		eyebrow,
+		title,
+		icon,
+		children,
+		highlight = false,
+	}: {
+		eyebrow: string;
+		title: string;
+		icon: React.ReactNode;
+		children: React.ReactNode;
+		highlight?: boolean;
+	}) => {
+		const accent = highlight ? LIVE_GREEN : BRAND_BLUE;
+		return (
+			<Box
+				sx={{
+					height: "100%",
+					borderRadius: 1.5,
+					border: `1px solid ${alpha(accent, isDarkLocal ? 0.18 : 0.1)}`,
+					bgcolor: theme.palette.background.paper,
+					overflow: "hidden",
+				}}
+			>
+				<Box
+					sx={{
+						px: 1.75,
+						py: 1.25,
+						bgcolor: alpha(accent, isDarkLocal ? 0.05 : 0.025),
+						borderBottom: `1px solid ${alpha(accent, isDarkLocal ? 0.16 : 0.1)}`,
+					}}
+				>
+					<Stack direction="row" spacing={1} alignItems="center">
+						<Box
+							sx={{
+								width: 26,
+								height: 26,
+								borderRadius: 0.75,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(accent, isDarkLocal ? 0.16 : 0.08),
+								border: `1px solid ${alpha(accent, isDarkLocal ? 0.28 : 0.18)}`,
+								color: accent,
+								flexShrink: 0,
+							}}
+						>
+							{icon}
+						</Box>
+						<Stack spacing={0.125}>
+							<Stack direction="row" spacing={0.5} alignItems="center">
+								<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: accent }} />
+								<Typography
+									sx={{
+										fontSize: "0.58rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+									}}
+								>
+									{eyebrow}
 								</Typography>
 							</Stack>
-							{/* Mostrar intereses: usar lastUpdate si keepUpdated está activo, o el interest normal */}
+							<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+								{title}
+							</Typography>
+						</Stack>
+					</Stack>
+				</Box>
+				<Box sx={{ p: 1.75 }}>{children}</Box>
+			</Box>
+		);
+	};
+
+	const Row = ({ label, value, emphasize = false }: { label: string; value: React.ReactNode; emphasize?: boolean }) => (
+		<Stack direction="row" justifyContent="space-between" alignItems="baseline" spacing={1}>
+			<Typography
+				sx={{
+					fontSize: "0.7rem",
+					fontWeight: 600,
+					letterSpacing: "0.04em",
+					textTransform: "uppercase",
+					color: "text.secondary",
+				}}
+			>
+				{label}
+			</Typography>
+			<Typography
+				sx={{
+					fontSize: emphasize ? "0.95rem" : "0.82rem",
+					fontWeight: emphasize ? 700 : 500,
+					color: emphasize ? LIVE_GREEN : "text.primary",
+					letterSpacing: "-0.005em",
+					fontVariantNumeric: "tabular-nums",
+				}}
+			>
+				{value}
+			</Typography>
+		</Stack>
+	);
+
+	return (
+		<Box
+			sx={{
+				m: 1.5,
+				p: 2,
+				borderRadius: 2,
+				bgcolor: alpha(BRAND_BLUE, isDarkLocal ? 0.04 : 0.025),
+				border: `1px solid ${alpha(BRAND_BLUE, isDarkLocal ? 0.16 : 0.1)}`,
+			}}
+		>
+			{/* Header */}
+			<Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
+				<Box
+					sx={{
+						width: 36,
+						height: 36,
+						borderRadius: 1,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						bgcolor: alpha(BRAND_BLUE, isDarkLocal ? 0.18 : 0.1),
+						border: `1px solid ${alpha(BRAND_BLUE, isDarkLocal ? 0.28 : 0.18)}`,
+						color: BRAND_BLUE,
+					}}
+				>
+					<Calculator size={20} variant="Bulk" />
+				</Box>
+				<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+					<Stack direction="row" spacing={0.625} alignItems="center">
+						<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+						<Typography
+							sx={{
+								fontSize: "0.6rem",
+								fontWeight: 600,
+								letterSpacing: "0.08em",
+								textTransform: "uppercase",
+								color: "text.secondary",
+							}}
+						>
+							Detalle del cálculo
+						</Typography>
+					</Stack>
+					<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+						{getClassTypeTitle(data.classType)} · {getSubClassTypeTitle(data.subClassType, data.classType)}
+					</Typography>
+				</Stack>
+				<Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
+					<TypePill value={data.type} />
+					{data.folderName && (
+						<Box
+							sx={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: 0.625,
+								px: 0.875,
+								py: 0.25,
+								borderRadius: 0.75,
+								bgcolor: alpha(BRAND_BLUE, isDarkLocal ? 0.1 : 0.05),
+								border: `1px solid ${alpha(BRAND_BLUE, isDarkLocal ? 0.22 : 0.16)}`,
+							}}
+						>
+							<DocumentText size={12} variant="Linear" color={BRAND_BLUE} />
+							<Typography
+								sx={{
+									fontSize: "0.7rem",
+									fontWeight: 600,
+									color: BRAND_BLUE,
+									letterSpacing: "-0.005em",
+									lineHeight: 1.4,
+									maxWidth: 240,
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									whiteSpace: "nowrap",
+								}}
+							>
+								{data.folderName}
+							</Typography>
+						</Box>
+					)}
+				</Stack>
+			</Stack>
+
+			<Grid container spacing={2}>
+				<Grid item xs={12} md={6}>
+					<InfoSection eyebrow="Datos" title="Información general" icon={<DocumentText size={14} variant="Bulk" />}>
+						<Stack spacing={1.25}>
+							<Row label="Fecha" value={dayjs(data.date).format("DD/MM/YYYY")} />
+							<Row label="Categoría" value={getClassTypeTitle(data.classType)} />
+							<Row label="Subcategoría" value={getSubClassTypeTitle(data.subClassType, data.classType)} />
+						</Stack>
+					</InfoSection>
+				</Grid>
+				<Grid item xs={12} md={6}>
+					<InfoSection eyebrow="Monetario" title="Importes" icon={<DocumentText size={14} variant="Bulk" />} highlight>
+						<Stack spacing={1.25}>
+							<Row
+								label="Capital"
+								value={new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(
+									data.capital !== undefined ? data.capital : data.amount - (data.interest || 0),
+								)}
+							/>
 							{(() => {
 								const interestValue = data.keepUpdated && data.lastUpdate?.interest ? data.lastUpdate.interest : data.interest;
 								const hasInterest = interestValue !== undefined && interestValue !== null && interestValue > 0;
-
 								if (!hasInterest) return null;
-
 								return (
-									<Stack direction="row" justifyContent="space-between">
-										<Typography variant="subtitle2">Intereses:</Typography>
-										<Typography variant="body2">
-											{new Intl.NumberFormat("es-AR", {
-												style: "currency",
-												currency: "ARS",
-											}).format(interestValue)}
-										</Typography>
-									</Stack>
+									<Row
+										label="Intereses"
+										value={new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(interestValue)}
+									/>
 								);
 							})()}
-							{/* Mostrar total si hay intereses */}
 							{(() => {
 								const interestValue = data.keepUpdated && data.lastUpdate?.interest ? data.lastUpdate.interest : data.interest;
 								const totalValue = data.keepUpdated && data.lastUpdate?.amount ? data.lastUpdate.amount : data.amount;
 								const hasInterest = interestValue !== undefined && interestValue !== null && interestValue > 0;
-
 								if (!hasInterest) return null;
-
 								return (
 									<>
-										<Divider />
-										<Stack direction="row" justifyContent="space-between">
-											<Typography variant="subtitle1" fontWeight="bold">
-												Total:
-											</Typography>
-											<Typography variant="body1" fontWeight="bold" color="primary.main">
-												{new Intl.NumberFormat("es-AR", {
-													style: "currency",
-													currency: "ARS",
-												}).format(totalValue)}
-											</Typography>
-										</Stack>
+										<Box sx={{ height: 1, bgcolor: alpha(LIVE_GREEN, isDarkLocal ? 0.18 : 0.12) }} />
+										<Row
+											label="Total"
+											value={new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(totalValue)}
+											emphasize
+										/>
 									</>
 								);
 							})()}
 						</Stack>
-					</MainCard>
+					</InfoSection>
 				</Grid>
 			</Grid>
 		</Box>
@@ -685,7 +855,13 @@ function ReactTable({
 							/>
 						</Box>
 						<Stack direction="row" spacing={1} alignItems="center">
-							<Button variant="contained" size="small" startIcon={<Add />} onClick={scrollToCalculators} sx={{ ...brandPrimaryButtonSx, flex: 1 }}>
+							<Button
+								variant="contained"
+								size="small"
+								startIcon={<Add />}
+								onClick={scrollToCalculators}
+								sx={{ ...brandPrimaryButtonSx, flex: 1 }}
+							>
 								Nuevo cálculo
 							</Button>
 							<Tooltip title="Más opciones">
@@ -751,7 +927,9 @@ function ReactTable({
 									title={
 										Object.keys(selectedRowIds).length === 0
 											? "Seleccioná al menos un cálculo para eliminar"
-											: `Eliminar ${Object.keys(selectedRowIds).length} ${Object.keys(selectedRowIds).length === 1 ? "cálculo" : "cálculos"}`
+											: `Eliminar ${Object.keys(selectedRowIds).length} ${
+													Object.keys(selectedRowIds).length === 1 ? "cálculo" : "cálculos"
+											  }`
 									}
 								>
 									<span>
@@ -871,9 +1049,7 @@ function ReactTable({
 											transition: "background-color 0.15s ease",
 											bgcolor: isRowActive ? alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) : "inherit",
 											"&:hover": {
-												bgcolor: isRowActive
-													? alpha(BRAND_BLUE, isDark ? 0.18 : 0.11)
-													: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+												bgcolor: isRowActive ? alpha(BRAND_BLUE, isDark ? 0.18 : 0.11) : alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
 											},
 										}}
 									>
@@ -1533,11 +1709,7 @@ const AllCalculators = () => {
 				disableSortBy: true,
 				Cell: ({ row }: { row: Row<CalculatorType> }) => {
 					const isDarkMode = theme.palette.mode === "dark";
-					const collapseIcon = row.isExpanded ? (
-						<Add size={18} style={{ transform: "rotate(45deg)" }} />
-					) : (
-						<Eye variant="Bulk" size={18} />
-					);
+					const collapseIcon = row.isExpanded ? <Add size={18} style={{ transform: "rotate(45deg)" }} /> : <Eye variant="Bulk" size={18} />;
 
 					// Monocromo + intent: brand-blue para acciones normales,
 					// red sólo para destructive.
@@ -1622,251 +1794,251 @@ const AllCalculators = () => {
 
 	return (
 		<Stack spacing={{ xs: 1, sm: 2.5 }}>
-				{/* ── HEADER DE SECCIÓN ─────────────────────────────────────────── */}
+			{/* ── HEADER DE SECCIÓN ─────────────────────────────────────────── */}
+			<Box
+				sx={{
+					position: "relative",
+					overflow: "hidden",
+					bgcolor: theme.palette.background.paper,
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+					boxShadow: `0 4px 18px ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)}`,
+					borderRadius: 1.5,
+					px: { xs: 0.5, sm: 2.5 },
+					py: { xs: 0.25, sm: 1.75 },
+				}}
+			>
 				<Box
+					aria-hidden
 					sx={{
-						position: "relative",
-						overflow: "hidden",
-						bgcolor: theme.palette.background.paper,
-						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
-						boxShadow: `0 4px 18px ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)}`,
-						borderRadius: 1.5,
-						px: { xs: 0.5, sm: 2.5 },
-						py: { xs: 0.25, sm: 1.75 },
+						display: { xs: "none", md: "block" },
+						position: "absolute",
+						top: "-80%",
+						right: "-10%",
+						width: 280,
+						height: 280,
+						borderRadius: "50%",
+						background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.15 : 0.09)} 0%, transparent 65%)`,
+						filter: "blur(50px)",
+						pointerEvents: "none",
+						zIndex: 0,
 					}}
+				/>
+				<Box
+					aria-hidden
+					sx={{
+						display: { xs: "none", md: "block" },
+						position: "absolute",
+						inset: 0,
+						backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDark ? 0.06 : 0.04)} 1px, transparent 1px)`,
+						backgroundSize: "22px 22px",
+						maskImage: "radial-gradient(ellipse 50% 100% at 90% 50%, #000 0%, transparent 70%)",
+						WebkitMaskImage: "radial-gradient(ellipse 50% 100% at 90% 50%, #000 0%, transparent 70%)",
+						pointerEvents: "none",
+						zIndex: 0,
+					}}
+				/>
+
+				<Stack
+					direction={{ xs: "column", md: "row" }}
+					alignItems={{ xs: "stretch", md: "center" }}
+					spacing={{ xs: 1.5, md: 3 }}
+					sx={{ position: "relative", zIndex: 1 }}
 				>
-					<Box
-						aria-hidden
-						sx={{
-							display: { xs: "none", md: "block" },
-							position: "absolute",
-							top: "-80%",
-							right: "-10%",
-							width: 280,
-							height: 280,
-							borderRadius: "50%",
-							background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.15 : 0.09)} 0%, transparent 65%)`,
-							filter: "blur(50px)",
-							pointerEvents: "none",
-							zIndex: 0,
-						}}
-					/>
-					<Box
-						aria-hidden
-						sx={{
-							display: { xs: "none", md: "block" },
-							position: "absolute",
-							inset: 0,
-							backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDark ? 0.06 : 0.04)} 1px, transparent 1px)`,
-							backgroundSize: "22px 22px",
-							maskImage: "radial-gradient(ellipse 50% 100% at 90% 50%, #000 0%, transparent 70%)",
-							WebkitMaskImage: "radial-gradient(ellipse 50% 100% at 90% 50%, #000 0%, transparent 70%)",
-							pointerEvents: "none",
-							zIndex: 0,
-						}}
-					/>
-
 					<Stack
-						direction={{ xs: "column", md: "row" }}
-						alignItems={{ xs: "stretch", md: "center" }}
-						spacing={{ xs: 1.5, md: 3 }}
-						sx={{ position: "relative", zIndex: 1 }}
+						direction="row"
+						alignItems="center"
+						spacing={1.5}
+						sx={{ flex: { md: 1 }, minWidth: 0, display: { xs: "none", md: "flex" } }}
 					>
-						<Stack
-							direction="row"
-							alignItems="center"
-							spacing={1.5}
-							sx={{ flex: { md: 1 }, minWidth: 0, display: { xs: "none", md: "flex" } }}
-						>
-							<Box
-								sx={{
-									display: "inline-flex",
-									alignItems: "center",
-									px: 1.25,
-									py: 0.4,
-									borderRadius: 1,
-									bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
-									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.2)}`,
-									flexShrink: 0,
-								}}
-							>
-								<Typography
-									sx={{
-										fontSize: "0.68rem",
-										fontWeight: 600,
-										letterSpacing: "0.14em",
-										textTransform: "uppercase",
-										color: BRAND_BLUE,
-										fontVariantNumeric: "tabular-nums",
-									}}
-								>
-									Cálculos
-								</Typography>
-							</Box>
-							<Typography sx={{ fontSize: "0.875rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>
-								Liquidaciones, intereses y daños — calculá, guardá y vinculá los resultados a tus expedientes.
-							</Typography>
-						</Stack>
-
 						<Box
 							sx={{
+								display: "inline-flex",
+								alignItems: "center",
+								px: 1.25,
+								py: 0.4,
+								borderRadius: 1,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.2)}`,
 								flexShrink: 0,
-								width: { xs: "100%", md: "auto" },
-								minWidth: { md: 440 },
-								pl: { md: 2 },
-								borderLeft: { md: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` },
 							}}
 						>
-							<ResourceUsageBar resourceType="calculators" compact disableContainerPadding />
-						</Box>
-					</Stack>
-				</Box>
-
-				<DowngradeGracePeriodAlert />
-
-				{/* PRIMERO: Tabla de cálculos guardados */}
-				<MainCard
-					title={
-						<Box display="flex" alignItems="center" gap={1}>
-							<DocumentText variant="Bulk" size={20} style={{ color: BRAND_BLUE }} />
-							<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>
-								Mis cálculos guardados
-							</Typography>
-						</Box>
-					}
-					content={false}
-				>
-					<ScrollX>
-						<ReactTable
-							columns={columns}
-							data={calculators || []}
-							isLoading={isLoader || loading}
-							renderRowSubComponent={renderRowSubComponent}
-							handleSelectedRows={handleSelectedRows}
-							handleDeleteSelected={canDelete ? handleDeleteSelectedCalculators : undefined}
-							processingAction={processingArchiveAction}
-							onOpenArchivedModal={() => setOpenArchivedModal(true)}
-							onArchiveCalculators={canUpdate ? handleArchiveCalculators : undefined}
-							selectedCalculatorIds={selectedCalculatorIds}
-							scrollToCalculators={scrollToCalculators}
-							canUpdate={canUpdate}
-							canDelete={canDelete}
-						/>
-					</ScrollX>
-				</MainCard>
-
-				{/* Notice brand-aware en lugar del Alert info MUI default */}
-				<Box
-					sx={{
-						position: "relative",
-						borderRadius: 1.5,
-						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.24 : 0.16)}`,
-						bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
-						px: { xs: 2, sm: 2.5 },
-						py: { xs: 1.25, sm: 1.5 },
-					}}
-				>
-					<Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 1.25, sm: 2 }} alignItems={{ xs: "flex-start", sm: "center" }}>
-						<Stack direction="row" alignItems="center" spacing={1.25} sx={{ flex: 1, minWidth: 0 }}>
-							<Box
+							<Typography
 								sx={{
-									width: 32,
-									height: 32,
-									borderRadius: 1,
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-									bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+									fontSize: "0.68rem",
+									fontWeight: 600,
+									letterSpacing: "0.14em",
+									textTransform: "uppercase",
 									color: BRAND_BLUE,
-									flexShrink: 0,
+									fontVariantNumeric: "tabular-nums",
 								}}
 							>
-								<InfoCircle size={18} variant="Bulk" />
-							</Box>
-							<Stack spacing={0.25}>
-								<Typography sx={{ fontSize: "0.9rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary", lineHeight: 1.25 }}>
-									Herramientas para tu trabajo legal
-								</Typography>
-								<Typography sx={{ fontSize: "0.825rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>
-									Calculadoras especializadas para liquidaciones laborales, intereses y daños civiles.
-								</Typography>
-							</Stack>
-						</Stack>
-						<Button
-							size="small"
-							variant="text"
-							onClick={() => setGuideSelectorOpen(true)}
-							sx={{
-								color: BRAND_BLUE,
-								fontWeight: 600,
-								textTransform: "none",
-								fontSize: "0.82rem",
-								flexShrink: 0,
-								"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.08) },
-							}}
-						>
-							Ver guía →
-						</Button>
-					</Stack>
-				</Box>
-
-				<MainCard
-					title={
-						<Box display="flex" alignItems="center" gap={1}>
-							<Calculator variant="Bulk" size={20} style={{ color: BRAND_BLUE }} />
-							<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>
-								Calculadoras disponibles
+								Cálculos
 							</Typography>
 						</Box>
-					}
-					ref={calculatorsSectionRef}
-				>
-					<Grid container spacing={3}>
-						{loading
-							? // Plantillas de carga que mantienen el mismo tamaño que las tarjetas reales
-							  [...Array(3)].map((_, index) => (
-									<Grid item xs={12} sm={6} md={4} key={index}>
-										<Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-											<CardContent sx={{ flexGrow: 1, p: 3 }}>
-												<Box mb={2} display="flex" justifyContent="center">
-													<Skeleton variant="circular" width={48} height={48} />
-												</Box>
-												<Skeleton variant="text" height={32} width="60%" sx={{ mx: "auto" }} />
-												<Skeleton variant="text" height={20} />
-												<Skeleton variant="text" height={20} />
-											</CardContent>
-											<CardActions sx={{ p: 3, pt: 1, justifyContent: "center" }}>
-												<Skeleton variant="rectangular" height={36} width="100%" />
-											</CardActions>
-										</Card>
-									</Grid>
-							  ))
-							: // Tarjetas reales
-							  calculatorCards.map((calc, index) => (
-									<Grid item xs={12} sm={6} md={4} key={index}>
-										<CalculatorCard {...calc} />
-									</Grid>
-							  ))}
-					</Grid>
-				</MainCard>
+						<Typography sx={{ fontSize: "0.875rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>
+							Liquidaciones, intereses y daños — calculá, guardá y vinculá los resultados a tus expedientes.
+						</Typography>
+					</Stack>
 
-				{/* Componente selector de guías */}
-				<GuideSelector open={guideSelectorOpen} onClose={() => setGuideSelectorOpen(false)} />
+					<Box
+						sx={{
+							flexShrink: 0,
+							width: { xs: "100%", md: "auto" },
+							minWidth: { md: 440 },
+							pl: { md: 2 },
+							borderLeft: { md: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` },
+						}}
+					>
+						<ResourceUsageBar resourceType="calculators" compact disableContainerPadding />
+					</Box>
+				</Stack>
+			</Box>
 
-				{/* Modales */}
-				<ArchivedCalculatorsModal
-					open={openArchivedModal}
-					onClose={() => {
-						setOpenArchivedModal(false);
-						setArchivedPage(1); // Reset page on close
-					}}
-					items={archivedCalculators || []}
-					onUnarchive={handleUnarchiveCalculators}
-					loading={isLoader || processingArchiveAction}
-					pagination={archivedPagination}
-					onPageChange={handleArchivedPageChange}
-					onPageSizeChange={handleArchivedPageSizeChange}
-				/>
+			<DowngradeGracePeriodAlert />
+
+			{/* PRIMERO: Tabla de cálculos guardados */}
+			<MainCard
+				title={
+					<Box display="flex" alignItems="center" gap={1}>
+						<DocumentText variant="Bulk" size={20} style={{ color: BRAND_BLUE }} />
+						<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>
+							Mis cálculos guardados
+						</Typography>
+					</Box>
+				}
+				content={false}
+			>
+				<ScrollX>
+					<ReactTable
+						columns={columns}
+						data={calculators || []}
+						isLoading={isLoader || loading}
+						renderRowSubComponent={renderRowSubComponent}
+						handleSelectedRows={handleSelectedRows}
+						handleDeleteSelected={canDelete ? handleDeleteSelectedCalculators : undefined}
+						processingAction={processingArchiveAction}
+						onOpenArchivedModal={() => setOpenArchivedModal(true)}
+						onArchiveCalculators={canUpdate ? handleArchiveCalculators : undefined}
+						selectedCalculatorIds={selectedCalculatorIds}
+						scrollToCalculators={scrollToCalculators}
+						canUpdate={canUpdate}
+						canDelete={canDelete}
+					/>
+				</ScrollX>
+			</MainCard>
+
+			{/* Notice brand-aware en lugar del Alert info MUI default */}
+			<Box
+				sx={{
+					position: "relative",
+					borderRadius: 1.5,
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.24 : 0.16)}`,
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+					px: { xs: 2, sm: 2.5 },
+					py: { xs: 1.25, sm: 1.5 },
+				}}
+			>
+				<Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 1.25, sm: 2 }} alignItems={{ xs: "flex-start", sm: "center" }}>
+					<Stack direction="row" alignItems="center" spacing={1.25} sx={{ flex: 1, minWidth: 0 }}>
+						<Box
+							sx={{
+								width: 32,
+								height: 32,
+								borderRadius: 1,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								color: BRAND_BLUE,
+								flexShrink: 0,
+							}}
+						>
+							<InfoCircle size={18} variant="Bulk" />
+						</Box>
+						<Stack spacing={0.25}>
+							<Typography sx={{ fontSize: "0.9rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary", lineHeight: 1.25 }}>
+								Herramientas para tu trabajo legal
+							</Typography>
+							<Typography sx={{ fontSize: "0.825rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>
+								Calculadoras especializadas para liquidaciones laborales, intereses y daños civiles.
+							</Typography>
+						</Stack>
+					</Stack>
+					<Button
+						size="small"
+						variant="text"
+						onClick={() => setGuideSelectorOpen(true)}
+						sx={{
+							color: BRAND_BLUE,
+							fontWeight: 600,
+							textTransform: "none",
+							fontSize: "0.82rem",
+							flexShrink: 0,
+							"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.08) },
+						}}
+					>
+						Ver guía →
+					</Button>
+				</Stack>
+			</Box>
+
+			<MainCard
+				title={
+					<Box display="flex" alignItems="center" gap={1}>
+						<Calculator variant="Bulk" size={20} style={{ color: BRAND_BLUE }} />
+						<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>
+							Calculadoras disponibles
+						</Typography>
+					</Box>
+				}
+				ref={calculatorsSectionRef}
+			>
+				<Grid container spacing={3}>
+					{loading
+						? // Plantillas de carga que mantienen el mismo tamaño que las tarjetas reales
+						  [...Array(3)].map((_, index) => (
+								<Grid item xs={12} sm={6} md={4} key={index}>
+									<Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+										<CardContent sx={{ flexGrow: 1, p: 3 }}>
+											<Box mb={2} display="flex" justifyContent="center">
+												<Skeleton variant="circular" width={48} height={48} />
+											</Box>
+											<Skeleton variant="text" height={32} width="60%" sx={{ mx: "auto" }} />
+											<Skeleton variant="text" height={20} />
+											<Skeleton variant="text" height={20} />
+										</CardContent>
+										<CardActions sx={{ p: 3, pt: 1, justifyContent: "center" }}>
+											<Skeleton variant="rectangular" height={36} width="100%" />
+										</CardActions>
+									</Card>
+								</Grid>
+						  ))
+						: // Tarjetas reales
+						  calculatorCards.map((calc, index) => (
+								<Grid item xs={12} sm={6} md={4} key={index}>
+									<CalculatorCard {...calc} />
+								</Grid>
+						  ))}
+				</Grid>
+			</MainCard>
+
+			{/* Componente selector de guías */}
+			<GuideSelector open={guideSelectorOpen} onClose={() => setGuideSelectorOpen(false)} />
+
+			{/* Modales */}
+			<ArchivedCalculatorsModal
+				open={openArchivedModal}
+				onClose={() => {
+					setOpenArchivedModal(false);
+					setArchivedPage(1); // Reset page on close
+				}}
+				items={archivedCalculators || []}
+				onUnarchive={handleUnarchiveCalculators}
+				loading={isLoader || processingArchiveAction}
+				pagination={archivedPagination}
+				onPageChange={handleArchivedPageChange}
+				onPageSizeChange={handleArchivedPageSizeChange}
+			/>
 
 			<AlertCalculatorDelete title={deleteTitle} open={openDeleteModal} handleClose={handleCloseDeleteModal} id={deleteId} />
 		</Stack>
