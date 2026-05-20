@@ -28,6 +28,7 @@ interface ResourceUsageBarProps {
 	barWidth?: number;
 	onCabaClick?: () => void;
 	onBaClick?: () => void;
+	onPjnClick?: () => void;
 	/** Deshabilita el padding horizontal interno cuando el contenedor padre ya provee el suyo. */
 	disableContainerPadding?: boolean;
 }
@@ -216,7 +217,11 @@ const JurisdictionPill = ({ logoSrc, alt, logoBg, label, tooltip, state, onClick
 
 // ==============================|| FOLDERS SYNC BADGES (NAMED EXPORT) ||============================== //
 
-export const FoldersSyncBadges = ({ onCabaClick, onBaClick }: { onCabaClick?: () => void; onBaClick?: () => void } = {}) => {
+export const FoldersSyncBadges = ({
+	onCabaClick,
+	onBaClick,
+	onPjnClick,
+}: { onCabaClick?: () => void; onBaClick?: () => void; onPjnClick?: () => void } = {}) => {
 	const navigate = useNavigate();
 	const [pjnSynced, setPjnSynced] = useState<boolean | null>(null);
 	const [scbaSynced, setScbaSynced] = useState<boolean | null>(null);
@@ -260,6 +265,8 @@ export const FoldersSyncBadges = ({ onCabaClick, onBaClick }: { onCabaClick?: ()
 			? "PJN · Poder Judicial de la Nación — Cargando estado…"
 			: pjnSynced
 			? "PJN · Cuenta conectada — Click para administrar"
+			: onPjnClick
+			? "PJN · Cuenta no conectada — Click para agregar una causa del Poder Judicial de la Nación"
 			: "PJN · Cuenta no conectada — Click para conectar y sincronizar tus causas";
 
 	const scbaTooltip =
@@ -283,7 +290,7 @@ export const FoldersSyncBadges = ({ onCabaClick, onBaClick }: { onCabaClick?: ()
 				label="PJN"
 				tooltip={pjnTooltip}
 				state={pjnState}
-				onClick={() => navigate("/apps/profiles/account/pjn")}
+				onClick={onPjnClick ?? (() => navigate("/apps/profiles/account/pjn"))}
 			/>
 			<JurisdictionPill
 				logoSrc={logoPJBuenosAires}
@@ -319,6 +326,7 @@ export const ResourceUsageBar = ({
 	barWidth,
 	onCabaClick,
 	onBaClick,
+	onPjnClick,
 	disableContainerPadding = false,
 }: ResourceUsageBarProps) => {
 	const theme = useTheme();
@@ -417,7 +425,7 @@ export const ResourceUsageBar = ({
 			    línea. Escala bien cuando se sumen más jurisdicciones. */}
 			{isFolders && compact && (
 				<Box sx={{ mt: 1.25, display: "flex", justifyContent: { xs: "flex-start", md: "flex-end" } }}>
-					<FoldersSyncBadges onCabaClick={onCabaClick} onBaClick={onBaClick} />
+					<FoldersSyncBadges onCabaClick={onCabaClick} onBaClick={onBaClick} onPjnClick={onPjnClick} />
 				</Box>
 			)}
 		</Box>

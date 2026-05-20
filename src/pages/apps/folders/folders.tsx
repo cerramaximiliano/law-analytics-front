@@ -2210,6 +2210,15 @@ const FoldersLayout = () => {
 		setFolder(null);
 	}, []);
 
+	// Abrir modal AddFolder en el paso de importar causa desde Poder Judicial Nacional (PJN)
+	const handleOpenPjnFolder = useCallback(() => {
+		setAddFolderInitialStep(2);
+		setAddFolderInitialFormValues({ entryMethod: "automatic", judicialPower: "nacional" });
+		setAdd(true);
+		setAddFolderMode("add");
+		setFolder(null);
+	}, []);
+
 	const handleArchiveSelected = useCallback(
 		async (selectedRows: Row<any>[]) => {
 			if (!user?._id || selectedRows.length === 0 || loadingRef.current) return;
@@ -3503,6 +3512,7 @@ const FoldersLayout = () => {
 								disableContainerPadding
 								onCabaClick={canCreate ? handleOpenCabaFolder : undefined}
 								onBaClick={canCreate ? handleOpenBaFolder : undefined}
+								onPjnClick={canCreate ? handleOpenPjnFolder : undefined}
 							/>
 						</Box>
 					</Stack>
