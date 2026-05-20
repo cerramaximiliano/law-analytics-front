@@ -25,13 +25,20 @@ import {
 	CardContent,
 	Chip,
 	Tooltip,
+	Dialog,
+	DialogContent,
+	Avatar,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import { Link1, Eye, EyeSlash, TickCircle, CloseCircle, Refresh2, InfoCircle, DocumentText, ShieldTick } from "iconsax-react";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import { enqueueSnackbar } from "notistack";
 import { Zoom } from "@mui/material";
-import scbaCredentialsService, { ScbaCredentialsData } from "api/scbaCredentials";
+import { PopupTransition } from "components/@extended/Transitions";
+import scbaCredentialsService, { ScbaCredentialsData, ScbaUnlinkImpact } from "api/scbaCredentials";
+import { dispatch as storeDispatch } from "store";
+import { getFoldersByUserId } from "store/reducers/folder";
+import { fetchUserStats, incrementUserStat } from "store/reducers/userStats";
 import { useScbaSiteStatus } from "hooks/useScbaSiteStatus";
 import { scbaSiteStatusUpdated } from "store/reducers/scbaSiteStatus";
 import ScbaMaintenanceAlert from "components/ScbaMaintenanceAlert";
@@ -76,6 +83,16 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 
 		// Polling cleanup
 		const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
+
+		// Estado del diálogo de desvinculación (mirror del flujo PJN)
+		const [unlinkDialogOpen, setUnlinkDialogOpen] = useState(false);
+		const [unlinkImpact, setUnlinkImpact] = useState<ScbaUnlinkImpact | null>(null);
+		const [isLoadingImpact, setIsLoadingImpact] = useState(false);
+		const [isUnlinking, setIsUnlinking] = useState(false);
+
+		// Folders state para hacer optimistic cleanup tras delete mode
+		const folders = useSelector((state: any) => state.folder?.folders || []);
+		const authUser = useSelector((state: any) => state.auth?.user);
 
 		// Estado real-time del worker SCBA (eventos WS → reducer scbaSync).
 		// Tiene prioridad sobre el polling: cuando hay eventos WS activos,
@@ -395,14 +412,33 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 			}
 		};
 
-		// Desvincular
-		const handleUnlink = async () => {
+		// Abre el dialog y carga el análisis de impacto (mirror del flujo PJN)
+		const handleUnlinkClick = async () => {
 			if (!credentialsStatus?.id) return;
-
+			setUnlinkDialogOpen(true);
+			setUnlinkImpact(null);
+			setIsLoadingImpact(true);
 			try {
-				const response = await scbaCredentialsService.unlinkCredentials(credentialsStatus.id);
+				const response = await scbaCredentialsService.getUnlinkImpact();
+				if (response.success && response.data) {
+					setUnlinkImpact(response.data);
+				}
+			} catch {
+				// Si falla el análisis, el dialog igual permite elegir modo
+			} finally {
+				setIsLoadingImpact(false);
+			}
+		};
+
+		// Ejecuta la desvinculación con el modo elegido (keep/delete)
+		const handleUnlink = async (mode: "keep" | "delete") => {
+			if (!credentialsStatus?.id) return;
+			setIsUnlinking(true);
+			try {
+				const response = await scbaCredentialsService.unlinkCredentials(credentialsStatus.id, mode);
 				if (response.success) {
-					enqueueSnackbar("Cuenta SCBA desvinculada correctamente", {
+					setUnlinkDialogOpen(false);
+					enqueueSnackbar(response.message || "Cuenta SCBA desvinculada correctamente", {
 						variant: "success",
 						anchorOrigin: { vertical: "bottom", horizontal: "right" },
 						TransitionComponent: Zoom,
@@ -411,6 +447,23 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 					setHasCredentials(false);
 					setCredentialsStatus(null);
 					if (stopPolling) stopPolling();
+
+					if (mode === "delete") {
+						// Optimistic cleanup: remover folders SCBA del store local
+						// para que la UI los oculte de inmediato sin esperar el refetch.
+						const scbaIds = folders.filter((f: any) => f.scba || f.source === "scba-login").map((f: any) => f._id);
+						if (scbaIds.length > 0) {
+							storeDispatch({ type: "DELETE_FOLDERS", payload: scbaIds });
+							storeDispatch(incrementUserStat("folders", -scbaIds.length) as any);
+						}
+					}
+
+					// Refetch de folders + stats para confirmar el estado final del server
+					const userId = authUser?._id || authUser?.id;
+					if (userId) {
+						storeDispatch(getFoldersByUserId(userId, true) as any);
+						storeDispatch(fetchUserStats() as any);
+					}
 				} else {
 					enqueueSnackbar(response.error || "Error al desvincular cuenta", {
 						variant: "error",
@@ -426,8 +479,90 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 					TransitionComponent: Zoom,
 					autoHideDuration: 4000,
 				});
+			} finally {
+				setIsUnlinking(false);
 			}
 		};
+
+		// Dialog de confirmación de desvinculación
+		const unlinkDialog = (
+			<Dialog
+				open={unlinkDialogOpen}
+				onClose={() => !isUnlinking && setUnlinkDialogOpen(false)}
+				keepMounted
+				TransitionComponent={PopupTransition}
+				maxWidth="xs"
+				fullWidth
+			>
+				<DialogContent sx={{ mt: 2, my: 1 }}>
+					<Stack alignItems="center" spacing={2.5}>
+						<Avatar color="error" sx={{ width: 64, height: 64, fontSize: "1.5rem" }}>
+							<CloseCircle variant="Bold" size={32} />
+						</Avatar>
+
+						<Typography variant="h5" align="center">
+							¿Cómo deseas desvincular la cuenta SCBA?
+						</Typography>
+
+						{isLoadingImpact ? (
+							<CircularProgress size={24} />
+						) : unlinkImpact ? (
+							<Stack spacing={1} sx={{ width: "100%" }}>
+								<Alert severity="warning" sx={{ "& .MuiAlert-message": { fontSize: "0.8rem" } }}>
+									{unlinkImpact.folders.total} carpetas afectadas ({unlinkImpact.folders.active} activas,{" "}
+									{unlinkImpact.folders.archived} archivadas)
+								</Alert>
+								{unlinkImpact.folders.names.length > 0 && (
+									<Box
+										sx={{
+											maxHeight: 160,
+											overflowY: "auto",
+											border: `1px solid ${theme.palette.divider}`,
+											borderRadius: 1,
+											p: 1,
+										}}
+									>
+										<Stack spacing={0.25}>
+											{unlinkImpact.folders.names.map((name, idx) => (
+												<Typography key={idx} variant="caption" color="text.secondary" noWrap>
+													• {name}
+												</Typography>
+											))}
+										</Stack>
+									</Box>
+								)}
+							</Stack>
+						) : null}
+
+						<Stack spacing={1} sx={{ width: "100%" }}>
+							<Button
+								fullWidth
+								variant="outlined"
+								color="warning"
+								onClick={() => handleUnlink("keep")}
+								disabled={isUnlinking}
+								startIcon={isUnlinking ? <CircularProgress size={14} color="inherit" /> : undefined}
+							>
+								Conservar sin sincronización
+							</Button>
+							<Button
+								fullWidth
+								variant="contained"
+								color="error"
+								onClick={() => handleUnlink("delete")}
+								disabled={isUnlinking}
+								startIcon={isUnlinking ? <CircularProgress size={14} color="inherit" /> : undefined}
+							>
+								Eliminar carpetas
+							</Button>
+							<Button fullWidth variant="text" color="secondary" onClick={() => setUnlinkDialogOpen(false)} disabled={isUnlinking}>
+								Cancelar
+							</Button>
+						</Stack>
+					</Stack>
+				</DialogContent>
+			</Dialog>
+		);
 
 		// ========== RENDERS ==========
 
@@ -706,7 +841,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 
 						<Button
 							size="small"
-							onClick={handleUnlink}
+							onClick={handleUnlinkClick}
 							startIcon={<CloseCircle size={14} />}
 							sx={{
 								alignSelf: "flex-start",
@@ -723,6 +858,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 							Desvincular cuenta
 						</Button>
 					</Stack>
+					{unlinkDialog}
 				</Box>
 			);
 		}

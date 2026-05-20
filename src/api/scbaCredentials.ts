@@ -101,6 +101,19 @@ export interface GenericScbaResponse {
 	scbaSiteStatus?: ScbaSiteStatusSnapshot;
 }
 
+export interface ScbaUnlinkImpact {
+	folders: {
+		total: number;
+		active: number;
+		archived: number;
+		names: string[];
+	};
+	causas: {
+		totalToDelete: number;
+		totalToUnlink: number;
+	};
+}
+
 class ScbaCredentialsService {
 	/**
 	 * Vincula credenciales SCBA a la cuenta del usuario
@@ -191,11 +204,30 @@ class ScbaCredentialsService {
 	}
 
 	/**
-	 * Elimina credenciales SCBA
+	 * Análisis previo a desvincular: cuenta cuántos folders/causas se afectarán
+	 * por cada modo. Útil para mostrar diálogo informado en la UI.
 	 */
-	async unlinkCredentials(id: string): Promise<GenericScbaResponse> {
+	async getUnlinkImpact(): Promise<{ success: boolean; data?: ScbaUnlinkImpact; error?: string }> {
 		try {
-			const response = await axios.delete(`${BASE_URL}/api/scba-credentials/${id}`, { withCredentials: true });
+			const response = await axios.get(`${BASE_URL}/api/scba-credentials/unlink-impact`, { withCredentials: true });
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "Error al analizar impacto de desvinculación" };
+		}
+	}
+
+	/**
+	 * Desvincula credenciales SCBA del usuario.
+	 * @param id - ID del documento de credenciales
+	 * @param mode - "keep" conserva carpetas como manuales (default), "delete" elimina folders + causas sin otros vínculos
+	 */
+	async unlinkCredentials(id: string, mode: "keep" | "delete" = "keep"): Promise<GenericScbaResponse> {
+		try {
+			const response = await axios.delete(`${BASE_URL}/api/scba-credentials/${id}`, {
+				data: { mode },
+				withCredentials: true,
+			});
 			return response.data;
 		} catch (error) {
 			const axiosError = error as AxiosError<any>;
