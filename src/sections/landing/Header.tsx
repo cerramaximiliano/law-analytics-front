@@ -93,7 +93,7 @@ const INTEGRATIONS: Integration[] = [
 	},
 	{
 		key: "pjsalta",
-		shortName: "PJSALTA",
+		shortName: "SALTA",
 		fullName: "Poder Judicial de la\nProv. de Salta",
 		tooltipTitle: "Poder Judicial de la Provincia de Salta - Próximamente",
 		status: "comingSoon",
