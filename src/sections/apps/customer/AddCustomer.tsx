@@ -630,7 +630,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 									</Stack>
 
 									{/* Form Content */}
-									<Box>{getStepContent(activeStep, values, isImportedFromPjn)}</Box>
+									<Box sx={{ width: "100%", display: "block" }}>{getStepContent(activeStep, values, isImportedFromPjn)}</Box>
 								</DialogContent>
 
 								<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1) }} />
