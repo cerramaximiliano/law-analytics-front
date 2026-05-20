@@ -244,7 +244,7 @@ export const getFoldersByUserId =
 			dispatch({ type: SET_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación y timestamps
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,judFolder,createdAt,updatedAt,lastMovementDate";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,source,previousSyncSource,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,judFolder,createdAt,updatedAt,lastMovementDate";
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/user/${userId}`, {
 				params: { fields },
 			});

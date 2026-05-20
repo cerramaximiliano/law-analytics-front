@@ -15,12 +15,18 @@ export type Movement = {
 	source?: "pjn" | "mev" | "scba"; // Origen del movimiento sincronizado
 	completed?: boolean; // Nueva propiedad para indicar si el movimiento está completado
 	attachments?: Array<{
-		// Arreglo de adjuntos para movimientos de MEV
+		// Arreglo de adjuntos del movimiento (MEV/SCBA: múltiples, PJN: típicamente 1).
+		// Los URLs pueden requerir autenticación al portal de origen.
 		name: string;
 		url: string;
 		type?: string;
 		size?: number;
 	}>;
+	// Cómo renderizar el "Documento" del movimiento.
+	//   - 'pdf': PDFViewer (link directo embedable, caso PJN).
+	//   - 'text': MovementTextViewer (texto extraído + lista de adjuntos,
+	//     caso SCBA/MEV donde no hay PDF público accesible sin login).
+	documentType?: "pdf" | "text";
 };
 
 // Tipos para paginación

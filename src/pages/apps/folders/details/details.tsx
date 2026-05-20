@@ -389,6 +389,19 @@ const Details = () => {
 					? 'Esta causa ya no aparece en "Mis Causas" del portal SCBA. Puede haber sido archivada o desvinculada por el tribunal.'
 					: undefined,
 			};
+		} else if (folder?.previousSyncSource) {
+			// Folder desvinculado via modo "keep" (PJN/SCBA). Bloqueamos la
+			// re-vinculación individual: el matching por fuero+numero+año
+			// puede asociar a una causa distinta de la original (sobre todo
+			// en PJN colapsado) y los workers de PJN-login/SCBA-login
+			// requieren credenciales que se gestionan desde Perfil.
+			const sourceLabel = folder.previousSyncSource.toUpperCase();
+			state = {
+				label: `Sincronización pausada (era ${sourceLabel})`,
+				accent: STALE_AMBER,
+				icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
+				tooltip: `Esta carpeta fue desvinculada de ${sourceLabel}. Conserva el histórico de movimientos pero no recibe actualizaciones. Para reanudar la sincronización, vinculá tu cuenta desde Perfil → Cuentas Judiciales.`,
+			};
 		} else {
 			state = {
 				label: "Vincular con Poder Judicial",
