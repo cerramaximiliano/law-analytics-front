@@ -69,7 +69,8 @@ import { exportActivityData } from "./utils/exportUtils";
 import PDFViewer from "components/shared/PDFViewer";
 import DocumentExplorer from "components/shared/DocumentExplorer";
 import ScrapingProgressBanner from "./ScrapingProgressBanner";
-import PjnSyncStatus from "./PjnSyncStatus";
+import FolderSyncStatus from "./FolderSyncStatus";
+import SyncPendingEmptyState from "./SyncPendingEmptyState";
 import { useScrapingProgress } from "hooks/useScrapingProgress";
 import { useTeam } from "contexts/TeamContext";
 import { toggleMovementComplete } from "store/reducers/movements";
@@ -171,6 +172,16 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	// Detectar origen del scraping por la presencia del *Access correspondiente
 	// (el server solo devuelve scbaAccess/pjnAccess cuando el folder es de ese tipo).
 	const scrapingSource: "mev" | "pjn" | "scba" = movementsData.scbaAccess ? "scba" : movementsData.pjnAccess ? "pjn" : "mev";
+
+	// SCBA recién vinculado pero todavía sin primer scrap: el worker SCBA corre
+	// cada ~5min y hasta que termine no hay movimientos ni causaLastSyncDate.
+	// En esa ventana mostramos un empty state contextual en lugar de tabla vacía.
+	// (Si scrapingProgress está en vuelo, ScrapingProgressBanner ya cubre el caso.)
+	const isScbaFirstSyncPending =
+		!!movementsData.scbaAccess &&
+		!movementsData.causaLastSyncDate &&
+		(movementsData.movements?.length ?? 0) === 0 &&
+		!scrapingProgress;
 
 	// Load data on mount y cuando cambien los filtros
 	useEffect(() => {
@@ -1243,8 +1254,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														/>
 													</Box>
 												)}
-												{!scrapingProgress && (movementsData.pjnAccess || movementsData.scbaAccess) && (
-													<PjnSyncStatus causaLastSyncDate={movementsData.causaLastSyncDate} />
+												{!scrapingProgress && !isScbaFirstSyncPending && (movementsData.pjnAccess || movementsData.scbaAccess) && (
+													<FolderSyncStatus source={scrapingSource} causaLastSyncDate={movementsData.causaLastSyncDate} />
 												)}
 											</>
 										)}
@@ -1258,22 +1269,29 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												overflow: "hidden",
 											}}
 										>
-											{activeTab === "movements" && (
-												<MovementsTable
-													movements={movementsData.movements}
-													searchQuery={searchQuery}
-													onEdit={handleEditMovement}
-													onDelete={handleDeleteMovement}
-													onView={handleViewMovement}
-													filters={filters}
-													pagination={movementsData.pagination}
-													isLoading={movementsData.isLoading}
-													totalWithLinks={movementsData.totalWithLinks}
-													documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
-													documentsInThisPage={movementsData.documentsInThisPage}
-													pjnAccess={movementsData.pjnAccess ?? movementsData.scbaAccess}
-												/>
-											)}
+											{activeTab === "movements" &&
+												(isScbaFirstSyncPending ? (
+													<SyncPendingEmptyState
+														source={scrapingSource}
+														onRefresh={handleRefreshMovements}
+														isRefreshing={movementsData.isLoading}
+													/>
+												) : (
+													<MovementsTable
+														movements={movementsData.movements}
+														searchQuery={searchQuery}
+														onEdit={handleEditMovement}
+														onDelete={handleDeleteMovement}
+														onView={handleViewMovement}
+														filters={filters}
+														pagination={movementsData.pagination}
+														isLoading={movementsData.isLoading}
+														totalWithLinks={movementsData.totalWithLinks}
+														documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
+														documentsInThisPage={movementsData.documentsInThisPage}
+														pjnAccess={movementsData.pjnAccess ?? movementsData.scbaAccess}
+													/>
+												))}
 											{activeTab === "notifications" && (
 												<NotificationsTable
 													notifications={notificationsData.notifications}
@@ -1654,8 +1672,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														/>
 													</Box>
 												)}
-												{!scrapingProgress && (movementsData.pjnAccess || movementsData.scbaAccess) && (
-													<PjnSyncStatus causaLastSyncDate={movementsData.causaLastSyncDate} />
+												{!scrapingProgress && !isScbaFirstSyncPending && (movementsData.pjnAccess || movementsData.scbaAccess) && (
+													<FolderSyncStatus source={scrapingSource} causaLastSyncDate={movementsData.causaLastSyncDate} />
 												)}
 											</>
 										)}
@@ -1669,23 +1687,30 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												overflow: "hidden",
 											}}
 										>
-											{activeTab === "movements" && (
-												<MovementsTable
-													movements={movementsData.movements}
-													searchQuery={searchQuery}
-													onEdit={handleEditMovement}
-													onDelete={handleDeleteMovement}
-													onView={handleViewMovement}
-													onOpenExplorer={handleOpenExplorer}
-													filters={filters}
-													pagination={movementsData.pagination}
-													isLoading={movementsData.isLoading}
-													totalWithLinks={movementsData.totalWithLinks}
-													documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
-													documentsInThisPage={movementsData.documentsInThisPage}
-													pjnAccess={movementsData.pjnAccess ?? movementsData.scbaAccess}
-												/>
-											)}
+											{activeTab === "movements" &&
+												(isScbaFirstSyncPending ? (
+													<SyncPendingEmptyState
+														source={scrapingSource}
+														onRefresh={handleRefreshMovements}
+														isRefreshing={movementsData.isLoading}
+													/>
+												) : (
+													<MovementsTable
+														movements={movementsData.movements}
+														searchQuery={searchQuery}
+														onEdit={handleEditMovement}
+														onDelete={handleDeleteMovement}
+														onView={handleViewMovement}
+														onOpenExplorer={handleOpenExplorer}
+														filters={filters}
+														pagination={movementsData.pagination}
+														isLoading={movementsData.isLoading}
+														totalWithLinks={movementsData.totalWithLinks}
+														documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
+														documentsInThisPage={movementsData.documentsInThisPage}
+														pjnAccess={movementsData.pjnAccess ?? movementsData.scbaAccess}
+													/>
+												))}
 											{activeTab === "notifications" && (
 												<NotificationsTable
 													notifications={notificationsData.notifications}
