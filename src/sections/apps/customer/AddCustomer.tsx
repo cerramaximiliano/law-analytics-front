@@ -219,7 +219,21 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 		return () => window.removeEventListener("planRestrictionError", handlePlanRestriction);
 	}, [onCancel]);
 
+	// Ref para detectar transición de open: solo queremos disparar el flujo de
+	// chequeo de límite al abrir el modal (false → true), no en cada re-render
+	// disparado por cambios de identidad de onCancel/handleAdd del parent.
+	// Antes, un re-render del parent durante el flujo reseteaba
+	// showAddCustomerModal a false y dejaba el modal vacío hasta que llegaba
+	// la respuesta de la API (race con renders intermedios).
+	const prevOpenRef = React.useRef<boolean>(false);
+
 	useEffect(() => {
+		const wasOpen = prevOpenRef.current;
+		prevOpenRef.current = open;
+
+		// Solo actuamos en transiciones reales (open cambia de valor).
+		if (open === wasOpen) return;
+
 		if (open) {
 			setActiveStep(0);
 
@@ -280,7 +294,8 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 			setIsCheckingLimit(false);
 			if (formikRef.current) formikRef.current.resetForm();
 		}
-	}, [open, mode, customer, isCreating, onCancel]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [open]);
 
 	const handleAlertClose = () => {
 		setOpenAlert(!openAlert);
