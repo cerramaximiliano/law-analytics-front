@@ -489,7 +489,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 
 			{/* Contenido principal */}
 			{!isCheckingLimit && showAddCustomerModal && (
-				<Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+				<Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, width: "100%", overflow: "hidden" }}>
 					{/* Header brand atmosférico */}
 					<Box
 						sx={{
