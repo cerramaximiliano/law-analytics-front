@@ -76,7 +76,7 @@ import { useTeam } from "contexts/TeamContext";
 import { toggleMovementComplete } from "store/reducers/movements";
 import ModalTasks from "../modals/MoldalTasks";
 import ModalNotes from "../modals/ModalNotes";
-import { BRAND_BLUE, LIVE_GREEN } from "themes/dashboardTokens";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // Types
 interface ActivityTablesProps {
@@ -1797,302 +1797,348 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			/>
 
 			{/* View Movement Details Dialog */}
-			{viewMovementDetails && (
+			{viewMovementDetails && (() => {
+				// Mapeo de tipo de movimiento a brand accent
+				const movementAccentMap: Record<string, string> = {
+					"Escrito-Actor": LIVE_GREEN,
+					"Escrito-Demandado": theme.palette.error.main,
+					Despacho: BRAND_BLUE,
+					Cédula: BRAND_BLUE,
+					Oficio: BRAND_BLUE,
+					Evento: STALE_AMBER,
+				};
+				const movementAccent = movementAccentMap[viewMovementDetails.movement || ""] ?? theme.palette.text.secondary;
+
+				// Reusable: tarjeta de campo (eyebrow + value box)
+				const FieldRow = ({
+					label,
+					children,
+				}: {
+					label: string;
+					children: React.ReactNode;
+				}) => (
+					<Box>
+						<Stack direction="row" spacing={0.5} alignItems="center" mb={0.625}>
+							<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+							<Typography
+								sx={{
+									fontSize: "0.6rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+								}}
+							>
+								{label}
+							</Typography>
+						</Stack>
+						<Box
+							sx={{
+								p: 1.25,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+								borderRadius: 1.25,
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+							}}
+						>
+							{children}
+						</Box>
+					</Box>
+				);
+
+				return (
 				<Dialog
 					maxWidth="sm"
+					fullWidth
 					open={!!viewMovementDetails}
 					onClose={() => setViewMovementDetails(null)}
 					TransitionComponent={PopupTransition}
 					PaperProps={{
 						sx: {
-							width: "600px",
-							maxWidth: "600px",
+							width: 600,
+							maxWidth: 600,
 							p: 0,
 							borderRadius: 2,
-							boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+							boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+							overflow: "hidden",
 							display: "flex",
 							flexDirection: "column",
 							maxHeight: { xs: "90vh", sm: "85vh" },
 						},
 					}}
-					sx={{
-						"& .MuiBackdrop-root": {
-							opacity: "0.5 !important",
-						},
-					}}
+					sx={{ "& .MuiBackdrop-root": { opacity: "0.5 !important" } }}
 				>
-					{/* Dialog Title - Fixed */}
+					{/* Header brand */}
 					<Box
 						sx={{
-							bgcolor: theme.palette.primary.lighter,
-							p: 3,
-							borderBottom: `1px solid ${theme.palette.divider}`,
+							display: "flex",
+							alignItems: "center",
+							gap: 1.25,
+							px: 2.5,
+							py: 1.75,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+							borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 							flexShrink: 0,
 						}}
 					>
-						<Stack direction="row" justifyContent="space-between" alignItems="center">
-							<Stack direction="row" alignItems="center" spacing={1}>
-								<TableDocument size={24} color={theme.palette.primary.main} />
+						<Box
+							sx={{
+								width: 32,
+								height: 32,
+								borderRadius: 1,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+								flexShrink: 0,
+							}}
+						>
+							<TableDocument size={18} variant="Bulk" />
+						</Box>
+						<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+							<Stack direction="row" spacing={0.5} alignItems="center">
+								<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
 								<Typography
-									variant="h5"
 									sx={{
-										color: theme.palette.primary.main,
+										fontSize: "0.6rem",
 										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
 									}}
 								>
-									Detalles del Movimiento
+									Detalle
 								</Typography>
 							</Stack>
-							<Typography
-								color="textSecondary"
-								variant="subtitle2"
-								sx={{
-									maxWidth: "30%",
-									overflow: "hidden",
-									textOverflow: "ellipsis",
-									whiteSpace: "nowrap",
-								}}
-							>
-								Carpeta: {folderName}
+							<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+								Detalles del movimiento
 							</Typography>
+							{folderName && (
+								<Typography
+									sx={{
+										fontSize: "0.72rem",
+										color: "text.secondary",
+										letterSpacing: "-0.005em",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+										whiteSpace: "nowrap",
+									}}
+								>
+									{folderName}
+								</Typography>
+							)}
 						</Stack>
 					</Box>
 
-					<Divider />
-
-					{/* Dialog Content - Scrollable */}
-					<Box
-						sx={{
-							p: 3,
-							overflowY: "auto",
-							flex: 1,
-						}}
-					>
-						<Stack spacing={2.5}>
+					{/* Content scrollable */}
+					<Box sx={{ p: 2.5, overflowY: "auto", flex: 1 }}>
+						<Stack spacing={1.75}>
 							{/* Título */}
-							<Box>
-								<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-									Título
+							<FieldRow label="Título">
+								<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+									{viewMovementDetails.title}
 								</Typography>
-								<Box
-									sx={{
-										p: 1.5,
-										bgcolor: theme.palette.grey[50],
-										borderRadius: 1,
-										border: `1px solid ${theme.palette.divider}`,
-									}}
-								>
-									<Typography variant="body1">{viewMovementDetails.title}</Typography>
-								</Box>
-							</Box>
+							</FieldRow>
 
-							{/* Tipo de Movimiento */}
-							<Box>
-								<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-									Tipo de Movimiento
-								</Typography>
-								<Box
-									sx={{
-										p: 1.5,
-										bgcolor: theme.palette.grey[50],
-										borderRadius: 1,
-										border: `1px solid ${theme.palette.divider}`,
-									}}
-								>
-									<Chip
-										label={viewMovementDetails.movement}
-										size="small"
-										variant="outlined"
-										color={
-											viewMovementDetails.movement === "Escrito-Actor"
-												? "success"
-												: viewMovementDetails.movement === "Escrito-Demandado"
-												? "error"
-												: viewMovementDetails.movement === "Despacho"
-												? "secondary"
-												: viewMovementDetails.movement === "Cédula" || viewMovementDetails.movement === "Oficio"
-												? "primary"
-												: viewMovementDetails.movement === "Evento"
-												? "warning"
-												: "default"
-										}
-									/>
-								</Box>
-							</Box>
+							{/* Tipo de Movimiento — pill brand-aligned */}
+							{viewMovementDetails.movement && (
+								<FieldRow label="Tipo de movimiento">
+									<Box
+										sx={{
+											display: "inline-flex",
+											alignItems: "center",
+											gap: 0.625,
+											px: 0.875,
+											py: 0.25,
+											borderRadius: 0.75,
+											bgcolor: alpha(movementAccent, isDark ? 0.16 : 0.1),
+											border: `1px solid ${alpha(movementAccent, isDark ? 0.32 : 0.22)}`,
+										}}
+									>
+										<Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: movementAccent }} />
+										<Typography
+											sx={{
+												fontSize: "0.66rem",
+												fontWeight: 600,
+												color: movementAccent,
+												letterSpacing: "0.04em",
+												textTransform: "uppercase",
+												lineHeight: 1,
+											}}
+										>
+											{viewMovementDetails.movement}
+										</Typography>
+									</Box>
+								</FieldRow>
+							)}
 
 							{/* Fecha de Dictado */}
-							<Box>
-								<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-									Fecha de Dictado
-								</Typography>
-								<Box
-									sx={{
-										p: 1.5,
-										bgcolor: theme.palette.grey[50],
-										borderRadius: 1,
-										border: `1px solid ${theme.palette.divider}`,
-										display: "flex",
-										alignItems: "center",
-										gap: 1,
-									}}
-								>
-									<Calendar size={16} color={theme.palette.text.secondary} />
-									<Typography variant="body1">{formatDate(viewMovementDetails.time)}</Typography>
-								</Box>
-							</Box>
+							<FieldRow label="Fecha de dictado">
+								<Stack direction="row" spacing={0.875} alignItems="center">
+									<Calendar size={14} variant="Bulk" color={BRAND_BLUE} />
+									<Typography
+										sx={{
+											fontSize: "0.88rem",
+											fontWeight: 500,
+											color: "text.primary",
+											letterSpacing: "-0.005em",
+											fontVariantNumeric: "tabular-nums",
+										}}
+									>
+										{formatDate(viewMovementDetails.time)}
+									</Typography>
+								</Stack>
+							</FieldRow>
 
 							{/* Fecha de Vencimiento */}
 							{viewMovementDetails.dateExpiration && (
-								<Box>
-									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-										Fecha de Vencimiento
-									</Typography>
-									<Box
-										sx={{
-											p: 1.5,
-											bgcolor: theme.palette.grey[50],
-											borderRadius: 1,
-											border: `1px solid ${theme.palette.divider}`,
-											display: "flex",
-											alignItems: "center",
-											gap: 1,
-										}}
-									>
-										<Calendar size={16} color={theme.palette.text.secondary} />
-										<Typography variant="body1">{formatDate(viewMovementDetails.dateExpiration)}</Typography>
-									</Box>
-								</Box>
+								<FieldRow label="Fecha de vencimiento">
+									<Stack direction="row" spacing={0.875} alignItems="center">
+										<Calendar size={14} variant="Bulk" color={STALE_AMBER} />
+										<Typography
+											sx={{
+												fontSize: "0.88rem",
+												fontWeight: 500,
+												color: "text.primary",
+												letterSpacing: "-0.005em",
+												fontVariantNumeric: "tabular-nums",
+											}}
+										>
+											{formatDate(viewMovementDetails.dateExpiration)}
+										</Typography>
+									</Stack>
+								</FieldRow>
 							)}
 
 							{/* Estado de Completitud */}
 							{viewMovementDetails.completed !== undefined && viewMovementDetails.completed !== null && (
-								<Box>
-									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-										Estado
-									</Typography>
-									<Box
-										sx={{
-											p: 1.5,
-											bgcolor: theme.palette.grey[50],
-											borderRadius: 1,
-											border: `1px solid ${theme.palette.divider}`,
-											display: "flex",
-											alignItems: "center",
-											gap: 1,
-										}}
-									>
-										<TickCircle
-											size={20}
-											variant={viewMovementDetails.completed ? "Bold" : "Linear"}
-											color={viewMovementDetails.completed ? theme.palette.success.main : theme.palette.text.secondary}
-										/>
-										<Typography
-											variant="body1"
+								<FieldRow label="Estado">
+									<Stack direction="row" spacing={0.875} alignItems="center">
+										<Box
 											sx={{
-												color: viewMovementDetails.completed ? theme.palette.success.main : theme.palette.text.primary,
-												fontWeight: viewMovementDetails.completed ? 500 : 400,
+												width: 18,
+												height: 18,
+												borderRadius: "50%",
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												bgcolor: alpha(
+													viewMovementDetails.completed ? LIVE_GREEN : STALE_AMBER,
+													isDark ? 0.16 : 0.1,
+												),
+												border: `1px solid ${alpha(
+													viewMovementDetails.completed ? LIVE_GREEN : STALE_AMBER,
+													isDark ? 0.32 : 0.22,
+												)}`,
+												color: viewMovementDetails.completed ? LIVE_GREEN : STALE_AMBER,
+											}}
+										>
+											<TickCircle size={11} variant="Bulk" />
+										</Box>
+										<Typography
+											sx={{
+												fontSize: "0.85rem",
+												fontWeight: 600,
+												color: viewMovementDetails.completed ? LIVE_GREEN : STALE_AMBER,
+												letterSpacing: "-0.005em",
 											}}
 										>
 											{viewMovementDetails.completed ? "Completado" : "Pendiente"}
 										</Typography>
-									</Box>
-								</Box>
+									</Stack>
+								</FieldRow>
 							)}
 
 							{/* Descripción */}
 							{viewMovementDetails.description && (
-								<Box>
-									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-										Descripción
-									</Typography>
-									<Box
+								<FieldRow label="Descripción">
+									<Typography
 										sx={{
-											p: 1.5,
-											bgcolor: theme.palette.grey[50],
-											borderRadius: 1,
-											border: `1px solid ${theme.palette.divider}`,
+											fontSize: "0.85rem",
+											color: "text.primary",
+											letterSpacing: "-0.005em",
+											lineHeight: 1.6,
+											whiteSpace: "pre-wrap",
+											textWrap: "pretty" as any,
 										}}
 									>
-										<Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
-											{viewMovementDetails.description}
-										</Typography>
-									</Box>
-								</Box>
+										{viewMovementDetails.description}
+									</Typography>
+								</FieldRow>
 							)}
 
 							{/* Link */}
 							{viewMovementDetails.link && (
-								<Box>
-									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-										Documento
-									</Typography>
+								<FieldRow label="Documento">
 									<Box
+										onClick={() => {
+											setPdfUrlFromDetails(viewMovementDetails.link || "");
+											setPdfTitleFromDetails(viewMovementDetails.title || "Documento");
+											setPdfViewerFromDetailsOpen(true);
+										}}
 										sx={{
-											p: 1.5,
-											bgcolor: theme.palette.grey[50],
-											borderRadius: 1,
-											border: `1px solid ${theme.palette.divider}`,
-											display: "flex",
+											display: "inline-flex",
 											alignItems: "center",
-											gap: 1,
+											gap: 0.75,
+											cursor: "pointer",
+											color: BRAND_BLUE,
+											"&:hover": { textDecoration: "underline" },
 										}}
 									>
-										<Link21 size={16} color={theme.palette.primary.main} />
+										<Link21 size={14} variant="Bulk" color={BRAND_BLUE} />
 										<Typography
-											variant="body2"
 											sx={{
-												color: theme.palette.primary.main,
-												textDecoration: "underline",
-												cursor: "pointer",
+												fontSize: "0.85rem",
+												fontWeight: 600,
+												color: BRAND_BLUE,
+												letterSpacing: "-0.005em",
 												wordBreak: "break-all",
-											}}
-											onClick={() => {
-												setPdfUrlFromDetails(viewMovementDetails.link || "");
-												setPdfTitleFromDetails(viewMovementDetails.title || "Documento");
-												setPdfViewerFromDetailsOpen(true);
 											}}
 										>
 											Ver documento adjunto
 										</Typography>
 									</Box>
-								</Box>
+								</FieldRow>
 							)}
 
-							{/* Origen */}
-							{viewMovementDetails.source === "pjn" && (
+							{/* Origen — sync notice brand */}
+							{(viewMovementDetails.source === "pjn" || viewMovementDetails.source === "mev") && (
 								<Box>
-									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-										Origen
-									</Typography>
-									<Box
-										sx={{
-											p: 1.5,
-											bgcolor: theme.palette.info.lighter,
-											borderRadius: 1,
-											border: `1px solid ${theme.palette.info.light}`,
-										}}
-									>
-										<Typography variant="body2" sx={{ fontStyle: "italic", color: theme.palette.info.dark }}>
-											Sincronizado desde Poder Judicial de la Nación (PJN)
+									<Stack direction="row" spacing={0.5} alignItems="center" mb={0.625}>
+										<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+										<Typography
+											sx={{
+												fontSize: "0.6rem",
+												fontWeight: 600,
+												letterSpacing: "0.08em",
+												textTransform: "uppercase",
+												color: "text.secondary",
+											}}
+										>
+											Origen
 										</Typography>
-									</Box>
-								</Box>
-							)}
-							{viewMovementDetails.source === "mev" && (
-								<Box>
-									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-										Origen
-									</Typography>
+									</Stack>
 									<Box
 										sx={{
-											p: 1.5,
-											bgcolor: theme.palette.info.lighter,
-											borderRadius: 1,
-											border: `1px solid ${theme.palette.info.light}`,
+											display: "flex",
+											alignItems: "center",
+											gap: 0.875,
+											p: 1.25,
+											borderRadius: 1.25,
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
 										}}
 									>
-										<Typography variant="body2" sx={{ fontStyle: "italic", color: theme.palette.info.dark }}>
-											Sincronizado desde Poder Judicial de la provincia de Buenos Aires (MEV)
+										<ExportSquare size={14} variant="Bulk" color={BRAND_BLUE} />
+										<Typography sx={{ fontSize: "0.78rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em" }}>
+											Sincronizado desde{" "}
+											<Box component="span" sx={{ fontWeight: 700, color: BRAND_BLUE }}>
+												{viewMovementDetails.source === "pjn"
+													? "Poder Judicial de la Nación (PJN)"
+													: "Poder Judicial de Buenos Aires (MEV)"}
+											</Box>
 										</Typography>
 									</Box>
 								</Box>
@@ -2100,24 +2146,41 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 						</Stack>
 					</Box>
 
-					<Divider />
-
-					{/* Dialog Actions - Fixed */}
+					{/* Actions — ghost brand */}
 					<Box
 						sx={{
-							p: 2,
+							px: 2.5,
+							py: 1.75,
 							display: "flex",
 							justifyContent: "flex-end",
-							bgcolor: theme.palette.grey[50],
+							borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
 							flexShrink: 0,
 						}}
 					>
-						<Button onClick={() => setViewMovementDetails(null)} variant="contained" color="primary">
+						<Button
+							onClick={() => setViewMovementDetails(null)}
+							sx={{
+								textTransform: "none",
+								fontWeight: 600,
+								letterSpacing: "-0.005em",
+								color: "text.secondary",
+								borderRadius: 1.25,
+								px: 2,
+								py: 0.875,
+								border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+								"&:hover": {
+									color: BRAND_BLUE,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+									borderColor: alpha(BRAND_BLUE, 0.28),
+								},
+							}}
+						>
 							Cerrar
 						</Button>
 					</Box>
 				</Dialog>
-			)}
+				);
+			})()}
 
 			{/* View Notification Details Dialog */}
 			{viewNotificationDetails && (
