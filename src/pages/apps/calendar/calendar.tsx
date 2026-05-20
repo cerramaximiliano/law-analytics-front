@@ -1503,7 +1503,7 @@ const Calendar = () => {
 				fullWidth
 				onClose={handleModalClose}
 				open={localModalOpen}
-				sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: alpha(BRAND_BLUE, 0.035) } }}
+				sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: "background.paper" } }}
 			>
 				{isViewingEvent ? (
 					<EventDetailsView
