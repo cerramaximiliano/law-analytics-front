@@ -306,7 +306,9 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 		dispatch({ type: SET_LOADING });
 
 		// Campos optimizados para listas y vistas
-		const fields = "_id,title,time,movement,description,dateExpiration,link,source,completed,attachments,documentType";
+		const fields =
+			"_id,title,time,movement,description,dateExpiration,link,source,completed,attachments,documentType";
+		// Nota: attachments incluye s3Key/s3Bucket (subdoc completo se envía).
 
 		// Construir parámetros de consulta
 		const queryParams: any = { fields };

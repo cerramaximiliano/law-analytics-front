@@ -16,9 +16,14 @@ export type Movement = {
 	completed?: boolean; // Nueva propiedad para indicar si el movimiento está completado
 	attachments?: Array<{
 		// Arreglo de adjuntos del movimiento (MEV/SCBA: múltiples, PJN: típicamente 1).
-		// Los URLs pueden requerir autenticación al portal de origen.
+		// Resolución al hacer click:
+		//   - Si tiene s3Key → endpoint proxy /api/movements/:movId/attachments/:idx/download
+		//     (presigned URL S3, 5 min, controlado por nosotros).
+		//   - Si no, `url` legacy (puede requerir login del portal de origen).
 		name: string;
-		url: string;
+		url?: string;
+		s3Bucket?: string;
+		s3Key?: string;
 		type?: string;
 		size?: number;
 	}>;

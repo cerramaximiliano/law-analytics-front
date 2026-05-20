@@ -15,6 +15,22 @@ import {
 import { Add, ArrowLeft2, ArrowRight2, DocumentText, Paperclip2 } from "iconsax-react";
 import { Movement } from "types/movements";
 
+const BASE_URL = import.meta.env.VITE_BASE_URL;
+
+type AttachmentLike = NonNullable<Movement["attachments"]>[number];
+
+/**
+ * Resuelve el URL a usar al hacer click en un attachment:
+ *   - Si tiene s3Key → endpoint proxy del server (presigned URL S3, 5 min).
+ *   - Si no, fallback a url externa (puede requerir login del portal).
+ */
+function resolveAttachmentHref(movementId: string | undefined, idx: number, att: AttachmentLike): string {
+	if (att.s3Key && movementId) {
+		return `${BASE_URL}/api/movements/${movementId}/attachments/${idx}/download`;
+	}
+	return att.url || "";
+}
+
 interface MovementTextViewerProps {
 	open: boolean;
 	onClose: () => void;
@@ -203,53 +219,64 @@ const MovementTextViewer: React.FC<MovementTextViewerProps> = ({
 							Adjuntos ({movement?.attachments?.length})
 						</Typography>
 						<Stack spacing={1}>
-							{movement?.attachments?.map((att, idx) => (
-								<Box
-									key={idx}
-									sx={{
-										display: "flex",
-										alignItems: "center",
-										gap: 1.5,
-										p: 1.5,
-										border: `1px solid ${theme.palette.divider}`,
-										borderRadius: 1,
-										transition: "border-color 180ms ease, background-color 180ms ease",
-										"&:hover": {
-											borderColor: theme.palette.primary.main,
-											bgcolor: alpha(theme.palette.primary.main, 0.04),
-										},
-									}}
-								>
-									<Paperclip2 size={18} color={theme.palette.text.secondary} />
-									<Link
-										href={att.url}
-										target="_blank"
-										rel="noopener noreferrer"
-										underline="none"
+							{movement?.attachments?.map((att, idx) => {
+								const href = resolveAttachmentHref(movement._id, idx, att);
+								const fromS3 = !!att.s3Key;
+								return (
+									<Box
+										key={idx}
 										sx={{
-											flex: 1,
-											color: "text.primary",
-											fontSize: "0.85rem",
-											fontWeight: 500,
-											"&:hover": { color: "primary.main" },
-											overflow: "hidden",
-											textOverflow: "ellipsis",
-											whiteSpace: "nowrap",
+											display: "flex",
+											alignItems: "center",
+											gap: 1.5,
+											p: 1.5,
+											border: `1px solid ${theme.palette.divider}`,
+											borderRadius: 1,
+											transition: "border-color 180ms ease, background-color 180ms ease",
+											"&:hover": {
+												borderColor: theme.palette.primary.main,
+												bgcolor: alpha(theme.palette.primary.main, 0.04),
+											},
 										}}
 									>
-										{att.name}
-									</Link>
-									{att.type && (
-										<Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase" }}>
-											{att.type}
-										</Typography>
-									)}
-								</Box>
-							))}
+										<Paperclip2 size={18} color={theme.palette.text.secondary} />
+										<Link
+											href={href}
+											target="_blank"
+											rel="noopener noreferrer"
+											underline="none"
+											sx={{
+												flex: 1,
+												color: "text.primary",
+												fontSize: "0.85rem",
+												fontWeight: 500,
+												"&:hover": { color: "primary.main" },
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												whiteSpace: "nowrap",
+											}}
+										>
+											{att.name}
+										</Link>
+										{att.type && (
+											<Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase" }}>
+												{att.type}
+											</Typography>
+										)}
+										{!fromS3 && att.url && (
+											<Typography variant="caption" color="warning.main" sx={{ fontSize: "0.65rem" }}>
+												externo
+											</Typography>
+										)}
+									</Box>
+								);
+							})}
 						</Stack>
-						<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1.5, fontStyle: "italic" }}>
-							Los adjuntos pueden requerir acceso al portal original para descargarse.
-						</Typography>
+						{movement?.attachments?.some((a) => !a.s3Key && a.url) && (
+							<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1.5, fontStyle: "italic" }}>
+								Adjuntos marcados como "externo" requieren acceso al portal original para descargarse.
+							</Typography>
+						)}
 					</Box>
 				)}
 			</DialogContent>
