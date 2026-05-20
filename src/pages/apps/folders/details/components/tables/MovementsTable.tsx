@@ -20,9 +20,11 @@ import {
 	Popover,
 	Link,
 } from "@mui/material";
-import { Edit, Trash, Eye, Link2, Clock, TickCircle, DocumentDownload, Link1 } from "iconsax-react";
+import { alpha } from "@mui/material/styles";
+import { Edit, Trash, Eye, Link2, Clock, TickCircle, DocumentDownload, Link1, TableDocument } from "iconsax-react";
 import { Movement, PaginationInfo, PjnAccess } from "types/movements";
 import dayjs from "utils/dayjs-config";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 import { visuallyHidden } from "@mui/utils";
 import { dispatch } from "store";
 import { getMovementsByFolderId, toggleMovementComplete } from "store/reducers/movements";
@@ -100,6 +102,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 }) => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const { canDelete, canUpdate } = useTeam();
 	const [order, setOrder] = useState<Order>("desc");
@@ -414,10 +417,32 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 								))
 							) : movements.length === 0 ? (
 								<TableRow key="no-data-row">
-									<TableCell colSpan={headCells.length} align="center">
-										<Typography variant="subtitle1" color="textSecondary" sx={{ py: 3 }}>
-											No se encontraron movimientos
-										</Typography>
+									<TableCell colSpan={headCells.length} align="center" sx={{ py: 5, border: "none" }}>
+										<Stack alignItems="center" spacing={1.5}>
+											<Box
+												sx={{
+													width: 56,
+													height: 56,
+													borderRadius: 1.5,
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+													border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+													color: BRAND_BLUE,
+												}}
+											>
+												<TableDocument size={28} variant="Bulk" />
+											</Box>
+											<Stack alignItems="center" spacing={0.375}>
+												<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.015em" }}>
+													Sin movimientos registrados
+												</Typography>
+												<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", maxWidth: 360, textAlign: "center" }}>
+													Los escritos y despachos judiciales aparecerán acá cuando se sincronicen o agreguen.
+												</Typography>
+											</Stack>
+										</Stack>
 									</TableCell>
 								</TableRow>
 							) : (
@@ -745,21 +770,20 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 					</Table>
 				</TableContainer>
 			</ScrollX>
-			{/* Barra de paginación personalizada */}
+			{/* Barra de paginación */}
 			<Box
 				sx={{
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "space-between",
 					flexDirection: isMobile ? "column" : "row",
-					gap: 2,
-					p: 2,
-					borderTop: 1,
-					borderColor: "divider",
+					gap: 1.5,
+					px: 1.5,
+					py: 1,
+					borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
 				}}
 			>
-				{/* Controles de filas por página y información */}
-				<Stack direction="row" spacing={isMobile ? 2 : 3} alignItems="center" flexWrap="wrap" sx={{ width: isMobile ? "100%" : "auto" }}>
+				<Stack direction="row" spacing={isMobile ? 1.5 : 2} alignItems="center" flexWrap="wrap" sx={{ width: isMobile ? "100%" : "auto" }}>
 					<TablePagination
 						rowsPerPageOptions={[5, 10, 25, 50]}
 						component="div"
@@ -768,23 +792,35 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 						page={page}
 						onPageChange={handleChangePage}
 						onRowsPerPageChange={handleChangeRowsPerPage}
-						labelRowsPerPage={isMobile ? "Filas:" : "Filas por página:"}
+						labelRowsPerPage={isMobile ? "Filas" : "Filas por página"}
 						labelDisplayedRows={({ from, to, count }) =>
-							isMobile ? `${from}-${to} / ${count}` : `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
+							isMobile ? `${from}–${to} / ${count}` : `${from}–${to} de ${count !== -1 ? count : `más de ${to}`}`
 						}
 						sx={{
 							"& .MuiTablePagination-toolbar": {
 								paddingLeft: 0,
-								minHeight: isMobile ? 40 : 52,
+								minHeight: isMobile ? 40 : 44,
 							},
-							"& .MuiTablePagination-actions": {
-								display: "none", // Ocultar las flechas predeterminadas
+							"& .MuiTablePagination-actions": { display: "none" },
+							"& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
+								fontSize: "0.74rem",
+								fontWeight: 500,
+								letterSpacing: "-0.005em",
+								color: "text.secondary",
+								fontVariantNumeric: "tabular-nums",
+							},
+							"& .MuiTablePagination-select": {
+								fontSize: "0.78rem",
+								fontWeight: 600,
+								color: BRAND_BLUE,
+								fontVariantNumeric: "tabular-nums",
+								borderRadius: 0.875,
+								"&:focus": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04) },
 							},
 						}}
 					/>
 				</Stack>
 
-				{/* Paginación con números */}
 				{pagination && pagination.pages > 1 && (
 					<PaginationWithJump page={page} totalPages={pagination.pages} onPageChange={handlePageChange} disabled={isLoading} />
 				)}
