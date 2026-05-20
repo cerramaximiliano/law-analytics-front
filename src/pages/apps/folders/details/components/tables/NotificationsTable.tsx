@@ -421,12 +421,20 @@ const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, 
 							minHeight: 44,
 							px: 0,
 						},
-						"& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
+						"& .MuiTablePagination-spacer": { display: "none" },
+						"& .MuiTablePagination-displayedRows": {
+							marginRight: "auto",
 							fontSize: "0.74rem",
 							fontWeight: 500,
 							letterSpacing: "-0.005em",
 							color: "text.secondary",
 							fontVariantNumeric: "tabular-nums",
+						},
+						"& .MuiTablePagination-selectLabel": {
+							fontSize: "0.74rem",
+							fontWeight: 500,
+							letterSpacing: "-0.005em",
+							color: "text.secondary",
 						},
 						"& .MuiTablePagination-select": {
 							fontSize: "0.78rem",
