@@ -1,10 +1,11 @@
 import React from "react";
 import {
+	Box,
 	Button,
+	CircularProgress,
 	DialogActions,
 	DialogContent,
 	DialogTitle,
-	Divider,
 	FormControl,
 	FormControlLabel,
 	FormHelperText,
@@ -21,6 +22,7 @@ import {
 	useTheme,
 	Checkbox,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { LocalizationProvider, MobileDateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import * as Yup from "yup";
@@ -36,6 +38,7 @@ import { useMemo, useState } from "react";
 import { createGoogleEvent, updateGoogleEvent } from "store/reducers/googleCalendar";
 import googleCalendarService from "services/googleCalendarService";
 import { useTeam } from "contexts/TeamContext";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 const getInitialValues = (event: FormikValues | null, range: DateRange | null) => {
 	if (event) {
@@ -82,6 +85,8 @@ export interface AddEventFormProps {
 
 const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: AddEventFormProps) => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const errorColor = theme.palette.error.main;
 	const isCreating = useMemo(() => event == null || Object.keys(event).length === 0, [event]);
 	const { isConnected: isGoogleConnected } = useSelector((state: any) => state.googleCalendar);
 	const [syncWithGoogle, setSyncWithGoogle] = useState(isGoogleConnected);
@@ -264,248 +269,446 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 
 	const { values, errors, touched, handleSubmit, isSubmitting, getFieldProps, setFieldValue } = formik;
 
+	// Input sx común — brand border + focus brand
+	const inputBrandSx = {
+		"& .MuiOutlinedInput-root": {
+			borderRadius: 1,
+			"& fieldset": {
+				borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
+			},
+			"&:hover fieldset": {
+				borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+			},
+			"&.Mui-focused fieldset": {
+				borderColor: BRAND_BLUE,
+			},
+		},
+		"& .MuiInputBase-input": {
+			fontSize: "0.85rem",
+		},
+		"& .MuiInputBase-input::placeholder": {
+			color: theme.palette.text.secondary,
+			opacity: 0.6,
+		},
+	};
+
+	// Eyebrow label brand-styled
+	const eyebrowLabelSx = {
+		fontSize: "0.78rem",
+		fontWeight: 500,
+		color: "text.primary",
+		letterSpacing: "-0.005em",
+		mb: 0.5,
+	};
+
+	// Accent map por tipo de evento
+	const typeAccentMap: Record<string, string> = {
+		audiencia: BRAND_BLUE,
+		vencimiento: errorColor,
+		reunion: LIVE_GREEN,
+		google: "#4285f4",
+		otro: STALE_AMBER,
+	};
+
 	return (
 		<FormikProvider value={formik}>
 			<LocalizationProvider dateAdapter={AdapterDateFns}>
 				<Form autoComplete="off" noValidate onSubmit={handleSubmit}>
+					{/* Header brand */}
 					<DialogTitle
 						sx={{
-							bgcolor: theme.palette.primary.lighter,
-							p: 3,
-							borderBottom: `1px solid ${theme.palette.divider}`,
+							display: "flex",
+							alignItems: "center",
+							gap: 1.25,
+							px: 2.5,
+							py: 1.75,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+							borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 						}}
 					>
-						<Stack direction="row" justifyContent="space-between" alignItems="center">
-							<Stack direction="row" alignItems="center" spacing={1}>
-								<Calendar size={24} color={theme.palette.primary.main} />
-								{event ? (
-									<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-										Editar Evento
-									</Typography>
-								) : (
-									<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-										Agregar Evento
-									</Typography>
-								)}
+						<Box
+							sx={{
+								width: 32,
+								height: 32,
+								borderRadius: 1,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+								flexShrink: 0,
+							}}
+						>
+							<Calendar size={18} variant="Bulk" />
+						</Box>
+						<Stack spacing={0.125} sx={{ minWidth: 0, flex: 1 }}>
+							<Stack direction="row" spacing={0.5} alignItems="center">
+								<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+								<Typography
+									sx={{
+										fontSize: "0.6rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+									}}
+								>
+									{event ? "Editar" : "Nuevo"}
+								</Typography>
 							</Stack>
-							<Typography
-								color="textSecondary"
-								variant="subtitle2"
-								sx={{
-									maxWidth: "30%",
-									overflow: "hidden",
-									textOverflow: "ellipsis",
-									whiteSpace: "nowrap",
-								}}
-							>
-								Carpeta: {folderName}
+							<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+								{event ? "Editar evento" : "Agregar evento"}
 							</Typography>
+							{folderName && (
+								<Typography
+									sx={{
+										fontSize: "0.72rem",
+										color: "text.secondary",
+										letterSpacing: "-0.005em",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+										whiteSpace: "nowrap",
+									}}
+								>
+									{folderName}
+								</Typography>
+							)}
 						</Stack>
 					</DialogTitle>
-					<Divider />
+
 					<DialogContent
 						sx={{
-							p: 3,
+							p: 2.5,
 							display: "flex",
 							flexDirection: "column",
-							gap: { xs: 1.5, sm: 2, md: 3 },
+							gap: 2,
 						}}
 					>
-						<TextField
-							fullWidth
-							label="Título"
-							placeholder="Agregue un título"
-							{...getFieldProps("title")}
-							error={Boolean(touched.title && errors.title)}
-							helperText={touched.title && typeof errors.title === "string" ? errors.title : ""}
-							sx={{
-								"& .MuiInputBase-root": {
-									height: 39.91,
-									fontSize: 12,
-								},
-								"& .MuiInputBase-input::placeholder": {
-									color: theme.palette.text.secondary,
-									opacity: 0.6,
-								},
-							}}
-						/>
-						<TextField
-							fullWidth
-							label="Descripción"
-							multiline
-							rows={3}
-							placeholder="Agregue una descripción"
-							{...getFieldProps("description")}
-							error={Boolean(touched.description && errors.description)}
-							helperText={touched.description && typeof errors.description === "string" ? errors.description : ""}
-							sx={{
-								"& .MuiInputBase-input": {
-									fontSize: 12,
-								},
-								"& .MuiInputBase-input::placeholder": {
-									color: theme.palette.text.secondary,
-									opacity: 0.6,
-								},
-							}}
-						/>
+						{/* Título */}
+						<Stack spacing={0.5}>
+							<InputLabel htmlFor="event-title" sx={eyebrowLabelSx}>
+								Título <Box component="span" sx={{ color: errorColor }}>*</Box>
+							</InputLabel>
+							<TextField
+								id="event-title"
+								fullWidth
+								placeholder="Agregá un título"
+								{...getFieldProps("title")}
+								error={Boolean(touched.title && errors.title)}
+								helperText={touched.title && typeof errors.title === "string" ? errors.title : ""}
+								sx={inputBrandSx}
+							/>
+						</Stack>
 
-						<Grid container spacing={3}>
-							<Grid item xs={12} md={6}>
-								<FormControlLabel control={<Switch checked={values.allDay} {...getFieldProps("allDay")} />} label="Todo el día" />
-							</Grid>
-							{isGoogleConnected && (
-								<Grid item xs={12} md={6}>
-									<FormControlLabel
-										control={
-											<Checkbox
-												checked={syncWithGoogle}
-												onChange={(e) => setSyncWithGoogle(e.target.checked)}
-												icon={<Google size={20} />}
-												checkedIcon={<Google size={20} variant="Bold" />}
-											/>
-										}
-										label="Sincronizar con Google Calendar"
+						{/* Descripción */}
+						<Stack spacing={0.5}>
+							<InputLabel htmlFor="event-description" sx={eyebrowLabelSx}>
+								Descripción
+							</InputLabel>
+							<TextField
+								id="event-description"
+								fullWidth
+								multiline
+								rows={3}
+								placeholder="Agregá una descripción"
+								{...getFieldProps("description")}
+								error={Boolean(touched.description && errors.description)}
+								helperText={touched.description && typeof errors.description === "string" ? errors.description : ""}
+								sx={inputBrandSx}
+							/>
+						</Stack>
+
+						{/* Toggles: Todo el día + Google sync */}
+						<Stack
+							direction={{ xs: "column", sm: "row" }}
+							spacing={1.25}
+							sx={{
+								p: 1.25,
+								borderRadius: 1.25,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+							}}
+						>
+							<FormControlLabel
+								sx={{ m: 0 }}
+								control={
+									<Switch
+										checked={values.allDay}
+										{...getFieldProps("allDay")}
+										size="small"
+										sx={{
+											"& .MuiSwitch-thumb": {
+												backgroundColor: values.allDay ? BRAND_BLUE : undefined,
+											},
+											"& .MuiSwitch-track": {
+												backgroundColor: values.allDay ? `${alpha(BRAND_BLUE, 0.5)} !important` : undefined,
+											},
+										}}
 									/>
-								</Grid>
+								}
+								label={
+									<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em", ml: 0.5 }}>
+										Todo el día
+									</Typography>
+								}
+							/>
+							{isGoogleConnected && (
+								<FormControlLabel
+									sx={{ m: 0 }}
+									control={
+										<Checkbox
+											checked={syncWithGoogle}
+											onChange={(e) => setSyncWithGoogle(e.target.checked)}
+											icon={<Google size={18} />}
+											checkedIcon={<Google size={18} variant="Bold" />}
+											size="small"
+											sx={{
+												color: alpha(BRAND_BLUE, 0.5),
+												"&.Mui-checked": { color: BRAND_BLUE },
+											}}
+										/>
+									}
+									label={
+										<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em", ml: 0.5 }}>
+											Sincronizar con Google Calendar
+										</Typography>
+									}
+								/>
 							)}
+						</Stack>
+
+						{/* Grid: tipo + fechas */}
+						<Grid container spacing={2}>
+							{/* Tipo */}
 							<Grid item xs={12} md={6}>
-								<Stack spacing={1.25}>
-									<InputLabel id="demo-simple-select-label">Seleccione un tipo</InputLabel>
+								<Stack spacing={0.5}>
+									<InputLabel id="event-type-label" sx={eyebrowLabelSx}>
+										Tipo <Box component="span" sx={{ color: errorColor }}>*</Box>
+									</InputLabel>
 									<FormControl fullWidth error={Boolean(touched.type && errors.type)}>
 										<Select
 											fullWidth
-											labelId="demo-simple-select-label"
-											id="demo-simple-select"
+											labelId="event-type-label"
+											id="event-type"
+											displayEmpty
 											{...getFieldProps("type")}
+											renderValue={(value: any) => {
+												if (!value) {
+													return (
+														<Typography sx={{ fontSize: "0.85rem", color: "text.secondary" }}>Seleccioná un tipo</Typography>
+													);
+												}
+												const selected = eventTypes.find((t) => t.value === value);
+												if (!selected) return value;
+												return (
+													<Stack direction="row" spacing={0.875} alignItems="center">
+														<Box
+															sx={{
+																width: 8,
+																height: 8,
+																borderRadius: "50%",
+																bgcolor: selected.color,
+																flexShrink: 0,
+															}}
+														/>
+														<Typography sx={{ fontSize: "0.85rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+															{selected.label}
+														</Typography>
+													</Stack>
+												);
+											}}
 											onChange={(e) => {
 												const selectedType = eventTypes.find((type) => type.value === e.target.value);
 												setFieldValue("type", selectedType?.value || "");
 												setFieldValue("color", selectedType?.color || "#1890ff");
 											}}
 											sx={{
-												"& .MuiInputBase-root": {
-													height: 39.91,
-													fontSize: 12,
+												borderRadius: 1,
+												"& .MuiOutlinedInput-notchedOutline": {
+													borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
 												},
-												"& .MuiSelect-select": {
-													fontSize: 12,
+												"&:hover .MuiOutlinedInput-notchedOutline": {
+													borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
 												},
-												"& .MuiInputLabel-root": {
-													fontSize: 12,
+												"&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+													borderColor: BRAND_BLUE,
 												},
 											}}
 										>
-											{eventTypes.map((type) => (
-												<MenuItem value={type.value} key={type.value}>
-													<Grid container alignItems="center" justifyContent="space-between">
-														<Typography>{type.label}</Typography>
-														<div
-															style={{
-																width: "12px",
-																height: "12px",
-																borderRadius: "50%",
-																backgroundColor: type.color,
-															}}
-														></div>
-													</Grid>
-												</MenuItem>
-											))}
+											{eventTypes.map((type) => {
+												const accent = typeAccentMap[type.value] ?? type.color;
+												return (
+													<MenuItem value={type.value} key={type.value} sx={{ py: 1 }}>
+														<Stack direction="row" spacing={1} alignItems="center" sx={{ width: "100%" }}>
+															<Box
+																sx={{
+																	width: 8,
+																	height: 8,
+																	borderRadius: "50%",
+																	bgcolor: accent,
+																	flexShrink: 0,
+																}}
+															/>
+															<Typography sx={{ fontSize: "0.85rem", letterSpacing: "-0.005em", flex: 1 }}>
+																{type.label}
+															</Typography>
+														</Stack>
+													</MenuItem>
+												);
+											})}
 										</Select>
-										{touched.type && typeof errors.type === "string" && <FormHelperText error>{errors.type}</FormHelperText>}
+										{touched.type && typeof errors.type === "string" && (
+											<FormHelperText error sx={{ ml: 0 }}>
+												{errors.type}
+											</FormHelperText>
+										)}
 									</FormControl>
 								</Stack>
 							</Grid>
+
+							{/* Fecha inicio */}
 							<Grid item xs={12} md={6}>
-								<Stack spacing={1.25}>
-									<InputLabel htmlFor="cal-start-date">Fecha Inicio</InputLabel>
+								<Stack spacing={0.5}>
+									<InputLabel htmlFor="cal-start-date" sx={eyebrowLabelSx}>
+										Fecha de inicio <Box component="span" sx={{ color: errorColor }}>*</Box>
+									</InputLabel>
 									<MobileDateTimePicker
 										value={values.start}
 										format="dd/MM/yyyy hh:mm a"
 										onChange={(date) => setFieldValue("start", date)}
 										slotProps={{
 											textField: {
+												fullWidth: true,
 												InputProps: {
 													endAdornment: (
 														<InputAdornment position="end" sx={{ cursor: "pointer" }}>
-															<Calendar />
+															<Calendar size={16} variant="Bulk" color={BRAND_BLUE} />
 														</InputAdornment>
 													),
-													sx: {
-														height: 39.91,
-														fontSize: 12,
-														"::placeholder": {
-															color: theme.palette.text.secondary,
-															opacity: 0.6,
-														},
-													},
 												},
+												sx: inputBrandSx,
 											},
 										}}
 									/>
-									{touched.start && typeof errors.start === "string" && <FormHelperText>{errors.start as string}</FormHelperText>}
+									{touched.start && typeof errors.start === "string" && (
+										<FormHelperText error sx={{ ml: 0 }}>
+											{errors.start as string}
+										</FormHelperText>
+									)}
 								</Stack>
 							</Grid>
+
+							{/* Fecha fin */}
 							<Grid item xs={12} md={6}>
-								<Stack spacing={1.25}>
-									<InputLabel htmlFor="cal-end-date">Fecha Fin</InputLabel>
+								<Stack spacing={0.5}>
+									<InputLabel htmlFor="cal-end-date" sx={eyebrowLabelSx}>
+										Fecha de fin <Box component="span" sx={{ color: errorColor }}>*</Box>
+									</InputLabel>
 									<MobileDateTimePicker
 										value={values.end}
 										format="dd/MM/yyyy hh:mm a"
 										onChange={(date) => setFieldValue("end", date)}
 										slotProps={{
 											textField: {
+												fullWidth: true,
 												InputProps: {
 													endAdornment: (
 														<InputAdornment position="end" sx={{ cursor: "pointer" }}>
-															<Calendar />
+															<Calendar size={16} variant="Bulk" color={BRAND_BLUE} />
 														</InputAdornment>
 													),
-													sx: {
-														height: 39.91,
-														fontSize: 12,
-														"::placeholder": {
-															color: theme.palette.text.secondary,
-															opacity: 0.6,
-														},
-													},
 												},
+												sx: inputBrandSx,
 											},
 										}}
 									/>
-									{touched.end && typeof errors.end === "string" && <FormHelperText error={true}>{errors.end}</FormHelperText>}
+									{touched.end && typeof errors.end === "string" && (
+										<FormHelperText error sx={{ ml: 0 }}>
+											{errors.end}
+										</FormHelperText>
+									)}
 								</Stack>
 							</Grid>
 						</Grid>
 					</DialogContent>
-					<Divider />
+
+					{/* Actions footer brand */}
 					<DialogActions
 						sx={{
-							p: 2.5,
-							bgcolor: theme.palette.background.default,
-							borderTop: `1px solid ${theme.palette.divider}`,
+							px: 2.5,
+							py: 1.75,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+							borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
 						}}
 					>
-						<Grid container justifyContent="space-between" alignItems="center">
-							<Grid item>
+						<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: "100%" }}>
+							<Box>
 								{!isCreating && (
-									<Tooltip title="Eliminar Evento" placement="top">
-										<IconButton onClick={deleteHandler} size="large" color="error">
-											<Trash variant="Bold" />
+									<Tooltip title="Eliminar evento" placement="top">
+										<IconButton
+											onClick={deleteHandler}
+											sx={{
+												width: 36,
+												height: 36,
+												borderRadius: 1,
+												color: errorColor,
+												transition: "all 180ms ease",
+												"&:hover": {
+													color: errorColor,
+													bgcolor: alpha(errorColor, isDark ? 0.14 : 0.08),
+												},
+											}}
+										>
+											<Trash size={18} variant="Bulk" />
 										</IconButton>
 									</Tooltip>
 								)}
-							</Grid>
-							<Grid item>
-								<Stack direction="row" spacing={2} alignItems="center">
-									<Button color="error" onClick={onCancel}>
-										Cancelar
-									</Button>
-									<Button type="submit" variant="contained" disabled={isSubmitting}>
-										{event ? "Editar" : "Agregar"}
-									</Button>
-								</Stack>
-							</Grid>
-						</Grid>
+							</Box>
+							<Stack direction="row" spacing={1.25} alignItems="center">
+								<Button
+									onClick={onCancel}
+									sx={{
+										textTransform: "none",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										color: "text.secondary",
+										borderRadius: 1.25,
+										px: 2,
+										py: 0.875,
+										border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+										"&:hover": {
+											color: BRAND_BLUE,
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+											borderColor: alpha(BRAND_BLUE, 0.28),
+										},
+									}}
+								>
+									Cancelar
+								</Button>
+								<Button
+									type="submit"
+									variant="contained"
+									disabled={isSubmitting}
+									startIcon={isSubmitting ? <CircularProgress size={14} sx={{ color: "#fff" }} /> : undefined}
+									sx={{
+										minWidth: 110,
+										textTransform: "none",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										bgcolor: BRAND_BLUE,
+										color: "#fff",
+										borderRadius: 1.25,
+										px: 2,
+										py: 0.875,
+										boxShadow: "none",
+										"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+									}}
+								>
+									{isSubmitting ? "Guardando…" : event ? "Guardar cambios" : "Agregar evento"}
+								</Button>
+							</Stack>
+						</Stack>
 					</DialogActions>
 				</Form>
 			</LocalizationProvider>
