@@ -8,7 +8,6 @@ import {
 	Button,
 	Stack,
 	Typography,
-	Alert,
 	InputLabel,
 	Grid,
 	MenuItem,
@@ -16,24 +15,21 @@ import {
 	FormControl,
 	SelectChangeEvent,
 	Box,
-	Divider,
 	TextField,
-	alpha,
 	Checkbox,
 	FormControlLabel,
-	ListItemButton,
-	ListItemIcon,
-	ListItemText,
+	CircularProgress,
 } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 import { PopupTransition } from "components/@extended/Transitions";
-import { DocumentUpload, ArrowLeft2, ArrowRight } from "iconsax-react";
-import { useTheme } from "@mui/material/styles";
+import { DocumentUpload, ArrowLeft2, ArrowRight2, ExportSquare, InfoCircle, TickCircle, CloseCircle, Warning2 } from "iconsax-react";
 import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
 import { linkFolderToCausa } from "store/reducers/folder";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import PjnGuardedButton from "components/PjnGuardedButton";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 interface LinkToJudicialPowerProps {
 	openLink: boolean;
@@ -41,48 +37,33 @@ interface LinkToJudicialPowerProps {
 	folderId: string;
 	folderName: string;
 	onSelectBuenosAires?: () => void;
+	onSelectCaba?: () => void;
 }
+
+const LOGO_EJE = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
+const LOGO_PJN = "https://res.cloudinary.com/dqyoeolib/image/upload/v1746884259/xndhymcmzv3kk0f62v0y.png";
 
 // Lista de jurisdicciones del Poder Judicial de la Nación
 const jurisdicciones = [
-	{
-		value: "",
-		nombre: "Seleccione una jurisdicción",
-	},
-	{
-		value: "1",
-		nombre: "CIV - Cámara Nacional de Apelaciones en lo Civil",
-	},
-	{
-		value: "5",
-		nombre: "CSS - Camara Federal de la Seguridad Social",
-	},
-	{
-		value: "7",
-		nombre: "CNT - Cámara Nacional de Apelaciones del Trabajo",
-	},
-	{
-		value: "10",
-		nombre: "COM - Cámara Nacional de Apelaciones en lo Comercial",
-	},
+	{ value: "", nombre: "Seleccione una jurisdicción" },
+	{ value: "1", nombre: "CIV - Cámara Nacional de Apelaciones en lo Civil" },
+	{ value: "5", nombre: "CSS - Camara Federal de la Seguridad Social" },
+	{ value: "7", nombre: "CNT - Cámara Nacional de Apelaciones del Trabajo" },
+	{ value: "10", nombre: "COM - Cámara Nacional de Apelaciones en lo Comercial" },
 ];
 
-const customInputStyles = {
-	"& .MuiInputBase-root": {
-		height: 39.91,
-	},
-	"& .MuiInputBase-input": {
-		fontSize: 12,
-	},
-	"& input::placeholder": {
-		color: "#000000",
-		opacity: 0.6,
-	},
-};
-
-const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onSelectBuenosAires }: LinkToJudicialPowerProps) => {
+const LinkToJudicialPower = ({
+	openLink,
+	onCancelLink,
+	folderId,
+	folderName,
+	onSelectBuenosAires,
+	onSelectCaba,
+}: LinkToJudicialPowerProps) => {
 	const theme = useTheme();
-	const [selectedPower, setSelectedPower] = useState<"nacional" | "buenosaires" | null>(null);
+	const isDark = theme.palette.mode === "dark";
+	const errorColor = theme.palette.error.main;
+	const [selectedPower, setSelectedPower] = useState<"nacional" | "buenosaires" | "caba" | null>(null);
 	const [expedientNumber, setExpedientNumber] = useState("");
 	const [expedientYear, setExpedientYear] = useState("");
 	const [jurisdiction, setJurisdiction] = useState("");
@@ -92,43 +73,34 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 	const [jurisdictionError, setJurisdictionError] = useState("");
 	const [numberError, setNumberError] = useState("");
 	const [error, setError] = useState("");
-	const [overwriteData, setOverwriteData] = useState(true); // Por defecto true para mantener comportamiento actual
+	const [overwriteData, setOverwriteData] = useState(true);
 	const [touched, setTouched] = useState({
 		jurisdiction: false,
 		expedientNumber: false,
 		expedientYear: false,
 	});
 
-	// Referencia para detectar el intento de envío
 	const formSubmitAttempted = useRef<boolean>(false);
 
-	// Función para validar el año
 	const validateYear = (year: string) => {
 		if (!year || year.trim() === "") {
 			setYearError("El año es requerido");
 			return false;
 		}
-
 		const currentYear = new Date().getFullYear();
 		const yearNumber = parseInt(year);
-
-		// Verificamos que tenga 4 dígitos
 		if (year.length !== 4) {
 			setYearError("El año debe tener 4 dígitos");
 			return false;
 		}
-
-		// Verificamos que esté en el rango correcto
 		if (yearNumber < 2000 || yearNumber > currentYear) {
 			setYearError(`El año debe estar entre 2000 y ${currentYear}`);
 			return false;
 		}
-
 		setYearError("");
 		return true;
 	};
 
-	// Validar el número de expediente
 	const validateExpedientNumber = (number: string) => {
 		if (!number || number.trim() === "") {
 			setNumberError("El número de expediente es requerido");
@@ -138,7 +110,6 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 		return true;
 	};
 
-	// Validar la jurisdicción
 	const validateJurisdiction = (jurisdictionValue: string) => {
 		if (!jurisdictionValue || jurisdictionValue === "") {
 			setJurisdictionError("Debe seleccionar una jurisdicción");
@@ -148,40 +119,29 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 		return true;
 	};
 
-	// Validar todos los campos
 	const validateAllFields = () => {
 		const isJurisdictionValid = validateJurisdiction(jurisdiction);
 		const isNumberValid = validateExpedientNumber(expedientNumber);
 		const isYearValid = validateYear(expedientYear);
-
-		setTouched({
-			jurisdiction: true,
-			expedientNumber: true,
-			expedientYear: true,
-		});
-
+		setTouched({ jurisdiction: true, expedientNumber: true, expedientYear: true });
 		return isJurisdictionValid && isNumberValid && isYearValid;
 	};
 
 	const handleSubmit = async () => {
 		formSubmitAttempted.current = true;
-
-		if (!validateAllFields()) {
-			return;
-		}
+		if (!validateAllFields()) return;
 
 		setLoading(true);
 		setError("");
 
 		try {
-			// Llamar a la acción del store para vincular la causa
 			const result = await dispatch(
 				linkFolderToCausa(folderId, {
-					pjnCode: jurisdiction, // El código de jurisdicción se usa como pjnCode
+					pjnCode: jurisdiction,
 					number: expedientNumber,
 					year: expedientYear,
-					overwrite: overwriteData, // Usar el valor del checkbox
-					pjn: selectedPower === "nacional", // true si es Poder Judicial de la Nación
+					overwrite: overwriteData,
+					pjn: selectedPower === "nacional",
 				}),
 			);
 
@@ -189,29 +149,27 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 				setLoading(false);
 				setSuccess(true);
 
-				// Determinar el tipo de mensaje según el estado de asociación
-				let message = "Causa vinculada exitosamente con el Poder Judicial de la Nación";
-				if (result.causaInfo?.associationStatus === "pending") {
-					message = "Causa vinculada. Pendiente de verificación en el sistema judicial.";
-				}
-
-				// Mostrar notificación de éxito
-				enqueueSnackbar(message, {
+				enqueueSnackbar("Causa vinculada exitosamente", {
 					variant: "success",
-					anchorOrigin: { vertical: "top", horizontal: "right" },
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					autoHideDuration: 4000,
 				});
 
-				// Esperar un momento antes de cerrar
 				setTimeout(() => {
+					setExpedientNumber("");
+					setExpedientYear("");
+					setJurisdiction("");
+					setSuccess(false);
+					setSelectedPower(null);
 					onCancelLink();
 				}, 1500);
 			} else {
-				setError(result.message || "Error al vincular la causa. Por favor intente nuevamente.");
 				setLoading(false);
+				setError(result.message || "Error al vincular la causa");
 			}
 		} catch (err) {
-			setError("Error inesperado al vincular la causa. Por favor intente nuevamente.");
 			setLoading(false);
+			setError("Ocurrió un error inesperado");
 		}
 	};
 
@@ -221,53 +179,38 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 			setExpedientYear("");
 			setJurisdiction("");
 			setError("");
+			setSuccess(false);
 			setYearError("");
 			setNumberError("");
 			setJurisdictionError("");
-			setSuccess(false);
-			setOverwriteData(true); // Reiniciar a true por defecto
 			formSubmitAttempted.current = false;
-			setTouched({
-				jurisdiction: false,
-				expedientNumber: false,
-				expedientYear: false,
-			});
+			setTouched({ jurisdiction: false, expedientNumber: false, expedientYear: false });
 			setSelectedPower(null);
 			onCancelLink();
 		}
 	};
 
-	// Manejar cambio en el campo de año
 	const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value;
 		setExpedientYear(value);
 		setTouched({ ...touched, expedientYear: true });
-		if (touched.expedientYear || formSubmitAttempted.current) {
-			validateYear(value);
-		}
+		if (touched.expedientYear || formSubmitAttempted.current) validateYear(value);
 	};
 
-	// Manejar cambio en el campo de jurisdicción
 	const handleJurisdictionChange = (e: SelectChangeEvent) => {
 		const value = e.target.value as string;
 		setJurisdiction(value);
 		setTouched({ ...touched, jurisdiction: true });
-		if (touched.jurisdiction || formSubmitAttempted.current) {
-			validateJurisdiction(value);
-		}
+		if (touched.jurisdiction || formSubmitAttempted.current) validateJurisdiction(value);
 	};
 
-	// Manejar cambio en el campo de número de expediente
 	const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value;
 		setExpedientNumber(value);
 		setTouched({ ...touched, expedientNumber: true });
-		if (touched.expedientNumber || formSubmitAttempted.current) {
-			validateExpedientNumber(value);
-		}
+		if (touched.expedientNumber || formSubmitAttempted.current) validateExpedientNumber(value);
 	};
 
-	// Validar cuando se envía el formulario
 	useEffect(() => {
 		if (formSubmitAttempted.current) {
 			validateJurisdiction(jurisdiction);
@@ -276,27 +219,231 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 		}
 	}, [jurisdiction, expedientNumber, expedientYear]);
 
-	// Escuchar evento de restricción del plan
 	useEffect(() => {
 		const handlePlanRestriction = (_event: Event) => {
-			// Cerrar el modal inmediatamente
 			onCancelLink();
-
-			// Importante: Detener cualquier solicitud pendiente o efecto secundario
 			setLoading(false);
 		};
-
-		// Agregar listener para el evento personalizado
 		window.addEventListener("planRestrictionError", handlePlanRestriction);
-
-		// Limpieza al desmontar
 		return () => {
 			window.removeEventListener("planRestrictionError", handlePlanRestriction);
 		};
 	}, [onCancelLink]);
 
-	// Ya no es necesario verificar la característica aquí,
-	// ahora lo hacemos desde el componente padre mediante useSubscription
+	// Brand styles reutilizables
+	const inputBrandSx = {
+		"& .MuiOutlinedInput-root": {
+			borderRadius: 1,
+			"& fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14) },
+			"&:hover fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26) },
+			"&.Mui-focused fieldset": { borderColor: BRAND_BLUE },
+		},
+		"& .MuiInputBase-input": { fontSize: "0.85rem" },
+	};
+
+	const eyebrowLabelSx = {
+		fontSize: "0.78rem",
+		fontWeight: 500,
+		color: "text.primary",
+		letterSpacing: "-0.005em",
+	};
+
+	const ghostBtnSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: "text.secondary",
+		borderRadius: 1.25,
+		px: 2,
+		py: 0.875,
+		border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+		"&:hover": {
+			color: BRAND_BLUE,
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+			borderColor: alpha(BRAND_BLUE, 0.28),
+		},
+	};
+
+	const soberBrandBtnSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		borderRadius: 1.25,
+		px: 2,
+		py: 0.875,
+		boxShadow: "none",
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+	};
+
+	// Header brand reutilizable
+	const renderHeader = (title: string, subtitle: string, eyebrow: string) => (
+		<DialogTitle
+			sx={{
+				display: "flex",
+				alignItems: "center",
+				gap: 1.25,
+				px: 2.5,
+				py: 1.75,
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+				borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+			}}
+		>
+			<Box
+				sx={{
+					width: 32,
+					height: 32,
+					borderRadius: 1,
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+					color: BRAND_BLUE,
+					flexShrink: 0,
+				}}
+			>
+				<DocumentUpload size={18} variant="Bulk" />
+			</Box>
+			<Stack spacing={0.125} sx={{ minWidth: 0, flex: 1 }}>
+				<Stack direction="row" spacing={0.5} alignItems="center">
+					<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+					<Typography
+						sx={{
+							fontSize: "0.6rem",
+							fontWeight: 600,
+							letterSpacing: "0.08em",
+							textTransform: "uppercase",
+							color: "text.secondary",
+						}}
+					>
+						{eyebrow}
+					</Typography>
+				</Stack>
+				<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>{title}</Typography>
+				<Typography
+					sx={{
+						fontSize: "0.72rem",
+						color: "text.secondary",
+						letterSpacing: "-0.005em",
+						overflow: "hidden",
+						textOverflow: "ellipsis",
+						whiteSpace: "nowrap",
+					}}
+				>
+					{subtitle}
+				</Typography>
+			</Stack>
+		</DialogTitle>
+	);
+
+	// Tarjeta brand de selección de poder judicial
+	const PowerCard = ({
+		onClick,
+		logoBg,
+		logoSrc,
+		logoAlt,
+		hasLogoBorder,
+		title,
+		description,
+	}: {
+		onClick: () => void;
+		logoBg: string;
+		logoSrc: string;
+		logoAlt: string;
+		hasLogoBorder?: boolean;
+		title: string;
+		description: string;
+	}) => (
+		<Box
+			role="button"
+			onClick={onClick}
+			sx={{
+				width: "100%",
+				display: "flex",
+				alignItems: "center",
+				gap: 1.5,
+				p: 1.5,
+				borderRadius: 1.25,
+				cursor: "pointer",
+				bgcolor: theme.palette.background.paper,
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+				transition: "all 180ms ease",
+				"&:hover": {
+					borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+				},
+			}}
+		>
+			<Box
+				sx={{
+					width: 56,
+					height: 56,
+					borderRadius: 1,
+					p: 0.75,
+					bgcolor: logoBg,
+					border: hasLogoBorder ? `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.12 : 0.08)}` : "none",
+					display: "flex",
+					justifyContent: "center",
+					alignItems: "center",
+					flexShrink: 0,
+				}}
+			>
+				<img src={logoSrc} alt={logoAlt} style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
+			</Box>
+			<Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+				<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em", lineHeight: 1.3 }}>
+					{title}
+				</Typography>
+				<Typography sx={{ fontSize: "0.74rem", color: "text.secondary", letterSpacing: "-0.005em", lineHeight: 1.4 }}>
+					{description}
+				</Typography>
+			</Stack>
+			<Box
+				sx={{
+					width: 28,
+					height: 28,
+					borderRadius: 0.875,
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.05),
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+					color: BRAND_BLUE,
+					flexShrink: 0,
+				}}
+			>
+				<ArrowRight2 size={14} variant="Bulk" />
+			</Box>
+		</Box>
+	);
+
+	// Banner inline brand-tinted
+	const InlineBanner = ({
+		accent,
+		icon,
+		children,
+	}: {
+		accent: string;
+		icon: React.ReactNode;
+		children: React.ReactNode;
+	}) => (
+		<Box
+			sx={{
+				display: "flex",
+				alignItems: "flex-start",
+				gap: 1.25,
+				p: 1.25,
+				borderRadius: 1.25,
+				bgcolor: alpha(accent, isDark ? 0.1 : 0.06),
+				border: `1px solid ${alpha(accent, isDark ? 0.32 : 0.22)}`,
+			}}
+		>
+			<Box sx={{ color: accent, flexShrink: 0, mt: 0.125 }}>{icon}</Box>
+			<Box sx={{ flex: 1, fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em", lineHeight: 1.5 }}>{children}</Box>
+		</Box>
+	);
 
 	return (
 		<Dialog
@@ -305,397 +452,320 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 			TransitionComponent={PopupTransition}
 			maxWidth="sm"
 			fullWidth
-			sx={{ "& .MuiDialog-paper": { p: 0 } }}
+			PaperProps={{
+				sx: {
+					borderRadius: 2,
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+					boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+					overflow: "hidden",
+				},
+			}}
 		>
 			{selectedPower === null ? (
-				// Vista de selección del poder judicial
+				// ─────── Vista de selección ───────
 				<>
-					<DialogTitle
-						sx={{
-							p: 2.5,
-							bgcolor: theme.palette.background.paper,
-							borderBottom: `1px solid ${theme.palette.divider}`,
-						}}
-					>
-						<Stack spacing={1}>
-							<Stack direction="row" alignItems="center" spacing={1}>
-								<DocumentUpload size={24} color={theme.palette.primary.main} />
-								<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
-									Vincular con Poder Judicial
-								</Typography>
-							</Stack>
-							<Typography variant="body2" color="textSecondary">
-								Seleccione el poder judicial
-							</Typography>
-						</Stack>
-					</DialogTitle>
+					{renderHeader("Vincular con Poder Judicial", folderName, "Vinculación")}
 
 					<DialogContent sx={{ p: 2.5 }}>
-						<Grid container spacing={3}>
-							<Grid item xs={12}>
-								<Typography variant="h6" color="textPrimary" sx={{ mb: 1 }}>
-									Seleccione el poder judicial
+						<Stack spacing={1.5}>
+							<Box>
+								<Stack direction="row" spacing={0.5} alignItems="center" mb={0.625}>
+									<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+									<Typography
+										sx={{
+											fontSize: "0.6rem",
+											fontWeight: 600,
+											letterSpacing: "0.08em",
+											textTransform: "uppercase",
+											color: "text.secondary",
+										}}
+									>
+										Elegí el poder judicial
+									</Typography>
+								</Stack>
+								<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", lineHeight: 1.5 }}>
+									Seleccioná el sistema con el que querés vincular esta causa.
 								</Typography>
-								<Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
-									Elija el poder judicial con el que desea vincular esta causa
-								</Typography>
-							</Grid>
+							</Box>
 
-							{/* Poder Judicial de la Nación */}
-							<Grid item xs={12}>
-								<ListItemButton
-									onClick={() => setSelectedPower("nacional")}
-									sx={{
-										border: 1,
-										borderColor: selectedPower === "nacional" ? theme.palette.primary.main : theme.palette.divider,
-										borderRadius: 2,
-										p: 2,
-										display: "flex",
-										alignItems: "center",
-										backgroundColor: selectedPower === "nacional" ? alpha(theme.palette.primary.main, 0.05) : "transparent",
-										"&:hover": {
-											backgroundColor: alpha(theme.palette.primary.main, 0.08),
-											borderColor: theme.palette.primary.main,
-										},
-									}}
-								>
-									<ListItemIcon sx={{ minWidth: 80 }}>
-										<Box
-											sx={{
-												backgroundColor: "#222E43",
-												borderRadius: 1,
-												p: 1,
-												width: 60,
-												height: 60,
-												display: "flex",
-												justifyContent: "center",
-												alignItems: "center",
-											}}
-										>
-											<img
-												src="https://res.cloudinary.com/dqyoeolib/image/upload/v1746884259/xndhymcmzv3kk0f62v0y.png"
-												alt="Poder Judicial de la Nación"
-												style={{
-													maxHeight: "100%",
-													maxWidth: "100%",
-													objectFit: "contain",
-												}}
-											/>
-										</Box>
-									</ListItemIcon>
-									<ListItemText
-										primary="Poder Judicial de la Nación"
-										secondary="Acceda a causas federales y nacionales"
-										primaryTypographyProps={{ fontWeight: 600 }}
-									/>
-									<Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
-										<ArrowRight size={24} color={theme.palette.text.secondary} />
-									</Box>
-								</ListItemButton>
-							</Grid>
+							<PowerCard
+								onClick={() => setSelectedPower("nacional")}
+								logoBg="#222E43"
+								logoSrc={LOGO_PJN}
+								logoAlt="Poder Judicial de la Nación"
+								title="Poder Judicial de la Nación"
+								description="Causas federales y nacionales"
+							/>
 
-							{/* Poder Judicial de Buenos Aires */}
-							<Grid item xs={12}>
-								<ListItemButton
-									onClick={() => {
-										// Cerrar este modal y abrir el de Buenos Aires
-										if (onSelectBuenosAires) {
-											// Solo cerrar el modal, sin resetear estados internos
-											onCancelLink();
-											// Abrir el modal de Buenos Aires inmediatamente
-											onSelectBuenosAires();
-										}
-									}}
-									sx={{
-										border: 1,
-										borderColor: selectedPower === "buenosaires" ? theme.palette.primary.main : theme.palette.divider,
-										borderRadius: 2,
-										p: 2,
-										display: "flex",
-										alignItems: "center",
-										backgroundColor: selectedPower === "buenosaires" ? alpha(theme.palette.primary.main, 0.05) : "transparent",
-										"&:hover": {
-											backgroundColor: alpha(theme.palette.primary.main, 0.08),
-											borderColor: theme.palette.primary.main,
-										},
-									}}
-								>
-									<ListItemIcon sx={{ minWidth: 80 }}>
-										<Box
-											sx={{
-												backgroundColor: "#f8f8f8",
-												borderRadius: 1,
-												p: 1,
-												width: 60,
-												height: 60,
-												display: "flex",
-												justifyContent: "center",
-												alignItems: "center",
-											}}
-										>
-											<img
-												src={logoPJBuenosAires}
-												alt="Poder Judicial de Buenos Aires"
-												style={{
-													maxHeight: "100%",
-													maxWidth: "100%",
-													objectFit: "contain",
-												}}
-											/>
-										</Box>
-									</ListItemIcon>
-									<ListItemText
-										primary="Poder Judicial de la Provincia de Buenos Aires"
-										secondary="Vincule causas del fuero provincial"
-										primaryTypographyProps={{ fontWeight: 600 }}
-									/>
-									<Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
-										<ArrowRight size={24} color={theme.palette.text.secondary} />
-									</Box>
-								</ListItemButton>
-							</Grid>
-						</Grid>
+							<PowerCard
+								onClick={() => {
+									if (onSelectBuenosAires) {
+										onCancelLink();
+										onSelectBuenosAires();
+									}
+								}}
+								logoBg="#f8f8f8"
+								logoSrc={logoPJBuenosAires}
+								logoAlt="Poder Judicial de Buenos Aires"
+								hasLogoBorder
+								title="Poder Judicial de la Provincia de Buenos Aires"
+								description="Causas del fuero provincial"
+							/>
+
+							<PowerCard
+								onClick={() => {
+									if (onSelectCaba) {
+										onCancelLink();
+										onSelectCaba();
+									}
+								}}
+								logoBg="#FFFFFF"
+								logoSrc={LOGO_EJE}
+								logoAlt="EJE - Expediente Judicial Electrónico"
+								hasLogoBorder
+								title="Poder Judicial de la Ciudad de Buenos Aires"
+								description="Sistema EJE — buscá por CUIJ o número/año"
+							/>
+						</Stack>
 					</DialogContent>
 
-					<DialogActions
-						sx={{
-							p: 2.5,
-							bgcolor: theme.palette.background.default,
-							borderTop: `1px solid ${theme.palette.divider}`,
-						}}
-					>
-						<Grid container justifyContent="flex-end">
-							<Grid item>
-								<Button onClick={handleClose} color="error" sx={{ minWidth: 100 }}>
-									Cancelar
-								</Button>
-							</Grid>
-						</Grid>
+					<DialogActions sx={{ px: 2.5, py: 1.75, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}>
+						<Button onClick={handleClose} sx={ghostBtnSx}>
+							Cancelar
+						</Button>
 					</DialogActions>
 				</>
 			) : (
-				// Vista del formulario para Poder Judicial de la Nación
+				// ─────── Vista del formulario PJN nacional ───────
 				<>
-					<DialogTitle
-						sx={{
-							p: 2.5,
-							bgcolor: theme.palette.background.paper,
-							borderBottom: `1px solid ${theme.palette.divider}`,
-						}}
-					>
-						<Stack spacing={1}>
-							<Stack direction="row" alignItems="center" spacing={1}>
-								<DocumentUpload size={24} color={theme.palette.primary.main} />
-								<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
-									Vincular con Poder Judicial de la Nación
-								</Typography>
-							</Stack>
-							<Typography variant="body2" color="textSecondary">
-								Complete los datos del expediente
-							</Typography>
-						</Stack>
-					</DialogTitle>
+					{renderHeader("Vincular con Poder Judicial de la Nación", folderName, "Completá los datos")}
 
 					<DialogContent sx={{ p: 2.5 }}>
-						<Grid container spacing={3}>
-							<Grid item xs={12}>
-								<PjnMaintenanceAlert
-									compact
-									contextHint="No vas a poder vincular la causa hasta que el portal vuelva."
-								/>
-							</Grid>
-							{/* Logo del Poder Judicial de la Nación */}
-							<Grid item xs={12}>
-								<Box
-									sx={{
-										backgroundColor: "#222E43",
-										borderRadius: 2,
-										p: 2,
-										display: "flex",
-										justifyContent: "center",
-										alignItems: "center",
-										height: 100,
-										mb: 2,
-									}}
-								>
-									<img
-										src="https://res.cloudinary.com/dqyoeolib/image/upload/v1746884259/xndhymcmzv3kk0f62v0y.png"
-										alt="Poder Judicial de la Nación"
-										style={{
-											maxHeight: "100%",
-											maxWidth: "100%",
-											objectFit: "contain",
-										}}
-									/>
-								</Box>
-							</Grid>
+						<Stack spacing={2}>
+							<PjnMaintenanceAlert compact contextHint="No vas a poder vincular la causa hasta que el portal vuelva." />
 
-							<Grid item xs={12}>
-								<Stack spacing={0.5}>
-									<Typography variant="body2" color="textSecondary">
-										Causa a vincular:
-									</Typography>
-									<Typography variant="h6" color="primary">
-										{folderName}
+							{/* Logo PJN */}
+							<Box
+								sx={{
+									backgroundColor: "#222E43",
+									borderRadius: 1.5,
+									p: 1.5,
+									display: "flex",
+									justifyContent: "center",
+									alignItems: "center",
+									height: 80,
+								}}
+							>
+								<img src={LOGO_PJN} alt="Poder Judicial de la Nación" style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
+							</Box>
+
+							{/* Causa a vincular */}
+							<Box
+								sx={{
+									p: 1.5,
+									borderRadius: 1.25,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+								}}
+							>
+								<Stack direction="row" spacing={0.5} alignItems="center" mb={0.5}>
+									<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+									<Typography
+										sx={{
+											fontSize: "0.6rem",
+											fontWeight: 600,
+											letterSpacing: "0.08em",
+											textTransform: "uppercase",
+											color: "text.secondary",
+										}}
+									>
+										Causa a vincular
 									</Typography>
 								</Stack>
-							</Grid>
+								<Typography
+									sx={{
+										fontSize: "0.95rem",
+										fontWeight: 600,
+										color: BRAND_BLUE,
+										letterSpacing: "-0.005em",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+										whiteSpace: "nowrap",
+									}}
+								>
+									{folderName}
+								</Typography>
+							</Box>
 
+							{/* Mensajes contextuales */}
 							{error && (
-								<Grid item xs={12}>
-									<Alert severity="error" onClose={() => setError("")}>
-										{error}
-									</Alert>
-								</Grid>
+								<InlineBanner accent={errorColor} icon={<CloseCircle size={16} variant="Bulk" />}>
+									{error}
+								</InlineBanner>
 							)}
 
 							{success && (
-								<Grid item xs={12}>
-									<Alert severity="success">Vinculación exitosa. Los datos de la causa se actualizarán automáticamente.</Alert>
-								</Grid>
+								<InlineBanner accent={LIVE_GREEN} icon={<TickCircle size={16} variant="Bulk" />}>
+									Vinculación exitosa. Los datos de la causa se actualizarán automáticamente.
+								</InlineBanner>
 							)}
 
-							<Grid item xs={12}>
-								<Alert severity="warning">La causa debe ser de acceso público en el sistema del Poder Judicial.</Alert>
-							</Grid>
+							<InlineBanner accent={STALE_AMBER} icon={<Warning2 size={16} variant="Bulk" />}>
+								La causa debe ser de acceso público en el sistema del Poder Judicial.
+							</InlineBanner>
 
 							{/* Jurisdicción */}
-							<Grid item xs={12}>
-								<Stack spacing={1.25}>
-									<InputLabel htmlFor="jurisdiction">Jurisdicción</InputLabel>
-									<FormControl fullWidth error={Boolean(jurisdictionError && (touched.jurisdiction || formSubmitAttempted.current))}>
-										<Select
-											id="jurisdiction"
-											name="jurisdiction"
-											value={jurisdiction}
-											onChange={handleJurisdictionChange}
-											displayEmpty
-											size="small"
-											disabled={loading}
-											renderValue={(selected) => {
-												if (!selected) {
-													return <em>Seleccione una jurisdicción</em>;
-												}
-												const selectedJurisdiction = jurisdicciones.find((j) => j.value === selected);
-												return selectedJurisdiction ? selectedJurisdiction.nombre : "";
-											}}
-											sx={{
-												"& .MuiInputBase-root": { height: 39.91 },
-												"& .MuiInputBase-input": { fontSize: 12 },
-											}}
-										>
-											<MenuItem value="" disabled>
-												<em>Seleccione una jurisdicción</em>
-											</MenuItem>
-											{jurisdicciones
-												.filter((j) => j.value !== "")
-												.map((jurisdiccion) => (
-													<MenuItem key={jurisdiccion.value} value={jurisdiccion.value}>
-														{jurisdiccion.nombre}
-													</MenuItem>
-												))}
-										</Select>
-										{jurisdictionError && (touched.jurisdiction || formSubmitAttempted.current) && (
-											<Typography color="error" variant="caption" sx={{ mt: 0.5, display: "block" }}>
-												{jurisdictionError}
-											</Typography>
-										)}
-									</FormControl>
-								</Stack>
-							</Grid>
-
-							{/* Número de Expediente y Año */}
-							<Grid item xs={12} sm={6}>
-								<Stack spacing={1.25}>
-									<InputLabel htmlFor="expedientNumber">Número de Expediente</InputLabel>
-									<TextField
-										fullWidth
-										sx={customInputStyles}
-										id="expedient-number"
-										placeholder="Ej. 123456"
-										name="expedientNumber"
-										type="number"
-										value={expedientNumber}
-										onChange={handleNumberChange}
-										disabled={loading}
-										error={Boolean(numberError && (touched.expedientNumber || formSubmitAttempted.current))}
-										helperText={touched.expedientNumber || formSubmitAttempted.current ? numberError : ""}
+							<Stack spacing={0.5}>
+								<InputLabel htmlFor="jurisdiction" sx={eyebrowLabelSx}>
+									Jurisdicción <Box component="span" sx={{ color: errorColor }}>*</Box>
+								</InputLabel>
+								<FormControl fullWidth error={Boolean(jurisdictionError && (touched.jurisdiction || formSubmitAttempted.current))}>
+									<Select
+										id="jurisdiction"
+										name="jurisdiction"
+										value={jurisdiction}
+										onChange={handleJurisdictionChange}
+										displayEmpty
 										size="small"
-									/>
-								</Stack>
-							</Grid>
-
-							<Grid item xs={12} sm={6}>
-								<Stack spacing={1.25}>
-									<InputLabel htmlFor="expedientYear">Año</InputLabel>
-									<TextField
-										fullWidth
-										sx={customInputStyles}
-										id="expedient-year"
-										placeholder="Ej. 2024"
-										name="expedientYear"
-										type="number"
-										value={expedientYear}
-										onChange={handleYearChange}
 										disabled={loading}
-										error={Boolean(yearError && (touched.expedientYear || formSubmitAttempted.current))}
-										helperText={touched.expedientYear || formSubmitAttempted.current ? yearError : ""}
-										size="small"
-									/>
-								</Stack>
-							</Grid>
-
-							<Grid item xs={12}>
-								<FormControlLabel
-									control={<Checkbox checked={overwriteData} onChange={(e) => setOverwriteData(e.target.checked)} color="primary" />}
-									label={
-										<Typography variant="body2">
-											Sobrescribir datos actuales de la causa (carátula, juzgado y número de expediente) con los datos obtenidos del Poder
-											Judicial
+										renderValue={(selected) => {
+											if (!selected) {
+												return (
+													<Typography sx={{ fontSize: "0.85rem", color: "text.secondary" }}>Seleccioná una jurisdicción</Typography>
+												);
+											}
+											const selectedJurisdiction = jurisdicciones.find((j) => j.value === selected);
+											return (
+												<Typography sx={{ fontSize: "0.85rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+													{selectedJurisdiction ? selectedJurisdiction.nombre : ""}
+												</Typography>
+											);
+										}}
+										sx={{
+											borderRadius: 1,
+											"& .MuiOutlinedInput-notchedOutline": { borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14) },
+											"&:hover .MuiOutlinedInput-notchedOutline": { borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26) },
+											"&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: BRAND_BLUE },
+										}}
+									>
+										{jurisdicciones
+											.filter((j) => j.value !== "")
+											.map((jurisdiccion) => (
+												<MenuItem key={jurisdiccion.value} value={jurisdiccion.value} sx={{ fontSize: "0.85rem" }}>
+													{jurisdiccion.nombre}
+												</MenuItem>
+											))}
+									</Select>
+									{jurisdictionError && (touched.jurisdiction || formSubmitAttempted.current) && (
+										<Typography sx={{ fontSize: "0.72rem", color: errorColor, mt: 0.5, letterSpacing: "-0.005em" }}>
+											{jurisdictionError}
 										</Typography>
-									}
-								/>
+									)}
+								</FormControl>
+							</Stack>
+
+							{/* Número + Año */}
+							<Grid container spacing={1.5}>
+								<Grid item xs={12} sm={6}>
+									<Stack spacing={0.5}>
+										<InputLabel htmlFor="expedient-number" sx={eyebrowLabelSx}>
+											Número de expediente <Box component="span" sx={{ color: errorColor }}>*</Box>
+										</InputLabel>
+										<TextField
+											fullWidth
+											sx={inputBrandSx}
+											id="expedient-number"
+											placeholder="Ej. 123456"
+											name="expedientNumber"
+											type="number"
+											value={expedientNumber}
+											onChange={handleNumberChange}
+											disabled={loading}
+											error={Boolean(numberError && (touched.expedientNumber || formSubmitAttempted.current))}
+											helperText={touched.expedientNumber || formSubmitAttempted.current ? numberError : ""}
+											size="small"
+										/>
+									</Stack>
+								</Grid>
+
+								<Grid item xs={12} sm={6}>
+									<Stack spacing={0.5}>
+										<InputLabel htmlFor="expedient-year" sx={eyebrowLabelSx}>
+											Año <Box component="span" sx={{ color: errorColor }}>*</Box>
+										</InputLabel>
+										<TextField
+											fullWidth
+											sx={inputBrandSx}
+											id="expedient-year"
+											placeholder="Ej. 2024"
+											name="expedientYear"
+											type="number"
+											value={expedientYear}
+											onChange={handleYearChange}
+											disabled={loading}
+											error={Boolean(yearError && (touched.expedientYear || formSubmitAttempted.current))}
+											helperText={touched.expedientYear || formSubmitAttempted.current ? yearError : ""}
+											size="small"
+										/>
+									</Stack>
+								</Grid>
 							</Grid>
 
-							<Grid item xs={12}>
-								<Alert severity="info">
-									Al vincular esta causa, se descargará y actualizará automáticamente la información desde el sistema del Poder Judicial de
-									la Nación.
-								</Alert>
-							</Grid>
-						</Grid>
+							{/* Checkbox sobrescribir */}
+							<FormControlLabel
+								sx={{ m: 0, alignItems: "flex-start" }}
+								control={
+									<Checkbox
+										checked={overwriteData}
+										onChange={(e) => setOverwriteData(e.target.checked)}
+										size="small"
+										sx={{
+											color: alpha(BRAND_BLUE, 0.5),
+											"&.Mui-checked": { color: BRAND_BLUE },
+											pt: 0,
+										}}
+									/>
+								}
+								label={
+									<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em", lineHeight: 1.5, ml: 0.5 }}>
+										Sobrescribir datos actuales de la causa (carátula, juzgado y número de expediente) con los datos obtenidos del Poder
+										Judicial.
+									</Typography>
+								}
+							/>
+
+							<InlineBanner accent={BRAND_BLUE} icon={<InfoCircle size={16} variant="Bulk" />}>
+								Al vincular esta causa, se descargará y actualizará automáticamente la información desde el sistema del Poder Judicial de la
+								Nación.
+							</InlineBanner>
+						</Stack>
 					</DialogContent>
 
-					<DialogActions
-						sx={{
-							p: 2.5,
-							bgcolor: theme.palette.background.default,
-							borderTop: `1px solid ${theme.palette.divider}`,
-						}}
-					>
-						<Grid container justifyContent="space-between" alignItems="center">
-							<Grid item></Grid>
-							<Grid item>
-								<Stack direction="row" spacing={2} alignItems="center">
-									<Button onClick={() => setSelectedPower(null)} disabled={loading} startIcon={<ArrowLeft2 size={18} />}>
-										Atrás
-									</Button>
-									<Button onClick={handleClose} disabled={loading} color="error" sx={{ minWidth: 100 }}>
-										Cancelar
-									</Button>
-									<PjnGuardedButton
-										variant="contained"
-										onClick={handleSubmit}
-										disabled={
-											loading || !jurisdiction || !expedientNumber || !expedientYear || !!yearError || !!numberError || !!jurisdictionError
-										}
-										sx={{ minWidth: 100 }}
-									>
-										{loading ? "Vinculando..." : "Vincular"}
-									</PjnGuardedButton>
-								</Stack>
-							</Grid>
-						</Grid>
+					<DialogActions sx={{ px: 2.5, py: 1.75, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}>
+						<Stack direction="row" spacing={1.25} alignItems="center" sx={{ width: "100%", justifyContent: "flex-end" }}>
+							<Button
+								onClick={() => setSelectedPower(null)}
+								disabled={loading}
+								startIcon={<ArrowLeft2 size={14} variant="Bulk" />}
+								sx={ghostBtnSx}
+							>
+								Atrás
+							</Button>
+							<Button onClick={handleClose} disabled={loading} sx={ghostBtnSx}>
+								Cancelar
+							</Button>
+							<PjnGuardedButton
+								variant="contained"
+								onClick={handleSubmit}
+								disabled={
+									loading || !jurisdiction || !expedientNumber || !expedientYear || !!yearError || !!numberError || !!jurisdictionError
+								}
+								startIcon={loading ? <CircularProgress size={14} sx={{ color: "#fff" }} /> : <ExportSquare size={14} variant="Bulk" />}
+								sx={{ ...soberBrandBtnSx, minWidth: 120 }}
+							>
+								{loading ? "Vinculando…" : "Vincular"}
+							</PjnGuardedButton>
+						</Stack>
 					</DialogActions>
 				</>
 			)}
