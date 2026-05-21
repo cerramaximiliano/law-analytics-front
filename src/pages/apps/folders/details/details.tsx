@@ -32,6 +32,7 @@ import {
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
 import useSubscription from "hooks/useSubscription";
+import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { formatFolderName } from "utils/formatFolderName";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
@@ -327,6 +328,10 @@ const Details = () => {
 
 	const isDark = theme.palette.mode === "dark";
 
+	// Estado de la cred SCBA del user: si está en error, los folders SCBA del user
+	// quedan sin sync hasta que actualice. Se muestra en la pill como warning.
+	const scbaCredError = useScbaCredentialError();
+
 	// Unified binding pill — replaces rainbow PJN/MEV/SCBA boxes with brand pattern.
 	// Includes optional verification dot indicator at bottom-right (válida/inválida/pendiente).
 	const renderJudicialLink = useMemo(() => {
@@ -376,19 +381,33 @@ const Details = () => {
 					: undefined,
 			};
 		} else if (folder?.scba) {
-			const accent = isListRemovedScba ? STALE_AMBER : LIVE_GREEN;
-			state = {
-				label: isListRemovedScba ? "SCBA — Ya no en la lista" : "Vinculado con SCBA",
-				accent,
-				icon: isListRemovedScba ? (
-					<Warning2 size={14} variant="Bulk" color={accent} />
-				) : (
-					<ExportSquare size={14} variant="Bulk" color={accent} />
-				),
-				tooltip: isListRemovedScba
-					? 'Esta causa ya no aparece en "Mis Causas" del portal SCBA. Puede haber sido archivada o desvinculada por el tribunal.'
-					: undefined,
-			};
+			// Prioridad de estados: removida del listado > credenciales en error > OK.
+			// "Cred en error" es por user (afecta a todos sus folders SCBA), no por
+			// folder. La señal viene de `useScbaCredentialError` que lee el estado
+			// global de la cred SCBA del user.
+			if (isListRemovedScba) {
+				state = {
+					label: "SCBA — Ya no en la lista",
+					accent: STALE_AMBER,
+					icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
+					tooltip:
+						'Esta causa ya no aparece en "Mis Causas" del portal SCBA. Puede haber sido archivada o desvinculada por el tribunal.',
+				};
+			} else if (scbaCredError.hasError) {
+				state = {
+					label: "SCBA — Sincronización pausada",
+					accent: STALE_AMBER,
+					icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
+					tooltip:
+						"Tus credenciales SCBA fueron rechazadas por el portal. Actualizalas desde Perfil → Cuentas Judiciales para reanudar la sincronización.",
+				};
+			} else {
+				state = {
+					label: "Vinculado con SCBA",
+					accent: LIVE_GREEN,
+					icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
+				};
+			}
 		} else if (folder?.previousSyncSource) {
 			// Folder desvinculado via modo "keep" (PJN/SCBA). Bloqueamos la
 			// re-vinculación individual: el matching por fuero+numero+año
@@ -492,6 +511,7 @@ const Details = () => {
 		folder?.pjn,
 		folder?.mev,
 		folder?.scba,
+		folder?.previousSyncSource,
 		isListRemovedPjn,
 		isListRemovedMev,
 		isListRemovedScba,
@@ -502,6 +522,7 @@ const Details = () => {
 		isLoader,
 		theme,
 		isDark,
+		scbaCredError.hasError,
 	]);
 
 	// Memoized components - switch between compact and improved based on isDetailedView
