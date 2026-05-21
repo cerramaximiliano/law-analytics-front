@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosInstance } from "axios";
 import authTokenService from "services/authTokenService";
 import Cookies from "js-cookie";
+import { refreshAccessToken } from "utils/refreshToken";
 
 const EJE_BASE_URL = import.meta.env.VITE_EJE_URL || "https://eje.lawanalytics.app";
 
@@ -48,12 +49,8 @@ ejeAxios.interceptors.response.use(
 			originalRequest._retry = true;
 
 			try {
-				// Intentar refrescar el token en la API principal
-				const mainRefreshResponse = await axios.post(
-					`${import.meta.env.VITE_BASE_URL}/api/auth/refresh-token`,
-					{},
-					{ withCredentials: true },
-				);
+				// Intentar refrescar el token en la API principal (dedup compartida)
+				const mainRefreshResponse = await refreshAccessToken();
 
 				if (mainRefreshResponse.status === 200) {
 					const sources = {

@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosInstance } from "axios";
 import authTokenService from "services/authTokenService";
 import Cookies from "js-cookie";
+import { refreshAccessToken } from "utils/refreshToken";
 
 const MEV_BASE_URL = import.meta.env.VITE_MEV_URL || "https://mev.lawanalytics.app";
 
@@ -90,11 +91,7 @@ mevAxios.interceptors.response.use(
 			try {
 				// Primero intentar refrescar el token en la API principal
 				console.log("MEV API indicates needRefresh, triggering main API token refresh...");
-				const mainRefreshResponse = await axios.post(
-					`${import.meta.env.VITE_BASE_URL}/api/auth/refresh-token`,
-					{},
-					{ withCredentials: true },
-				);
+				const mainRefreshResponse = await refreshAccessToken();
 
 				if (mainRefreshResponse.status === 200) {
 					// Token principal refrescado exitosamente
@@ -143,11 +140,7 @@ mevAxios.interceptors.response.use(
 				try {
 					// Primero refrescar el token en la API principal
 					console.log("MEV API 401 with needRefresh, triggering main API token refresh...");
-					const mainRefreshResponse = await axios.post(
-						`${import.meta.env.VITE_BASE_URL}/api/auth/refresh-token`,
-						{},
-						{ withCredentials: true },
-					);
+					const mainRefreshResponse = await refreshAccessToken();
 
 					if (mainRefreshResponse.status === 200) {
 						// Token principal refrescado exitosamente

@@ -1,8 +1,8 @@
-import axios from "axios";
-import { WS_BASE_URL, API_BASE_URL } from "../../config";
+import { WS_BASE_URL } from "../../config";
 import { io, Socket } from "socket.io-client";
 import { Alert } from "types/alert";
 import secureStorage from "../../services/secureStorage";
+import { refreshAccessToken } from "../../utils/refreshToken";
 
 // Tipos para los eventos y mensajes
 export type WSMessageType = "NOTIFICATION" | "FOLDER_UPDATE" | "TASK_UPDATE" | "USER_ACTIVITY" | "CONNECTION_STATE" | "SYNC_PROGRESS" | "SYSTEM_STATUS";
@@ -522,14 +522,8 @@ class WebSocketService {
 	 */
 	public static async refreshAuthToken(): Promise<string | null> {
 		try {
-			// Intenta obtener un token actualizado del servidor
-			const response = await axios.post(
-				`${API_BASE_URL}/api/auth/refresh-token`,
-				{},
-				{
-					withCredentials: true,
-				},
-			);
+			// Intenta obtener un token actualizado del servidor (dedup compartida)
+			const response = await refreshAccessToken();
 
 			if (response.data && response.data.success) {
 				return response.data.token || null;

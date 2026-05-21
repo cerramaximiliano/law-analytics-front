@@ -21,6 +21,7 @@ import secureStorage from "services/secureStorage";
 import { getAttributionPayload } from "utils/attribution";
 import { requestQueueService } from "services/requestQueueService";
 import authTokenService from "services/authTokenService";
+import { refreshAccessToken } from "utils/refreshToken";
 import { extractErrorMessage } from "utils/errorMessages";
 import webSocketService from "store/reducers/WebSocketService";
 import { APP_DEFAULT_PATH } from "config";
@@ -35,6 +36,7 @@ const initialState: AuthProps = {
 	needsVerification: false,
 	email: "",
 };
+
 
 // Definir el contexto de autenticación unificado
 const AuthContext = createContext<ServerContextType | null>(null);
@@ -336,7 +338,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					// Intentar refrescar el token automáticamente ante cualquier 401
 					if (!originalRequest._queued && !originalRequest._retry) {
 						try {
-							const refreshResponse = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/auth/refresh-token`);
+							const refreshResponse = await refreshAccessToken();
 
 							// Si el refresh es exitoso, reintentar la petición original
 							if (refreshResponse.status === 200) {
