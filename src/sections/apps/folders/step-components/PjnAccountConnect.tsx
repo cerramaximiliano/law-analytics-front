@@ -244,13 +244,10 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 					}
 
 					if (syncStatus === "error") {
+						// El snackbar lo dispara `GlobalSyncErrorListener` (App.tsx)
+						// para que se vea desde cualquier ruta — no solo cuando este
+						// componente está montado. Solo dispatcheamos el slice.
 						dispatch(pjnSyncError({ message: lastError?.message || "Error en sincronización" }));
-						enqueueSnackbar(`Error en sincronización: ${lastError?.message || "Error desconocido"}`, {
-							variant: "error",
-							anchorOrigin: { vertical: "bottom", horizontal: "right" },
-							TransitionComponent: Zoom,
-							autoHideDuration: 5000,
-						});
 					} else {
 						const foldersCreated = response.data.foldersCreatedCount ?? 0;
 						dispatch(pjnSyncCompleted({ foldersCreated, newCausas: 0 }));
@@ -486,21 +483,30 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 			}
 		};
 
-		// Abre el dialog y carga el análisis de impacto
+		// Abre el dialog y carga el análisis de impacto.
+		// Bypass del dialog si no hay nada que conservar/borrar: cred sin sync exitoso
+		// (típicamente fallida desde el principio) — preguntar "conservar carpetas"
+		// es ruido porque no hay carpetas. Desvincula directo en modo delete.
 		const handleUnlinkClick = async () => {
-			setUnlinkDialogOpen(true);
-			setUnlinkImpact(null);
 			setIsLoadingImpact(true);
 			try {
 				const response = await pjnCredentialsService.getUnlinkImpact();
 				if (response.success && response.data) {
+					if (response.data.folders.total === 0) {
+						setIsLoadingImpact(false);
+						await handleUnlink("delete");
+						return;
+					}
 					setUnlinkImpact(response.data);
+				} else {
+					setUnlinkImpact(null);
 				}
 			} catch {
-				// Si falla el análisis de impacto, igual se puede continuar con el dialog
+				setUnlinkImpact(null);
 			} finally {
 				setIsLoadingImpact(false);
 			}
+			setUnlinkDialogOpen(true);
 		};
 
 		// Ejecuta la desvinculación con el modo elegido

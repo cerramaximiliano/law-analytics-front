@@ -173,13 +173,21 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 			if (scbaSync.hasError && scbaSync.errorMessage) {
 				setIsSyncing(false);
 				setSyncMessage("");
-				enqueueSnackbar(`Error en sincronización: ${scbaSync.errorMessage}`, {
-					variant: "error",
-					anchorOrigin: { vertical: "bottom", horizontal: "right" },
-					TransitionComponent: Zoom,
-					autoHideDuration: 5000,
-				});
-				dispatch(scbaSyncReset());
+				// Detener el polling: si seguía corriendo, va a ver hasCredentials:false
+				// (cred deshabilitada por error) y emitir un snackbar "Error obteniendo
+				// estado" que pisa el mensaje real del WS.
+				if (stopPolling) {
+					stopPolling();
+					setStopPolling(null);
+				}
+				// Refrescar credentialsStatus para que la card transite al estado de
+				// error (syncStatus='error' + lastError.message visible) en lugar de
+				// quedar stuck en "Sincronizando causas... 0%".
+				loadCredentialsStatus();
+				// Nota: el snackbar lo dispara `GlobalSyncErrorListener` (a nivel
+				// App) para que se vea desde cualquier ruta — incluido el caso de
+				// un user que estaba en otra vista cuando ocurrió el error. El reset
+				// del slice también lo maneja el listener global.
 			}
 			// eslint-disable-next-line react-hooks/exhaustive-deps
 		}, [
@@ -424,22 +432,31 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 			}
 		};
 
-		// Abre el dialog y carga el análisis de impacto (mirror del flujo PJN)
+		// Abre el dialog y carga el análisis de impacto (mirror del flujo PJN).
+		// Bypass del dialog si no hay nada que conservar/borrar: cred sin sync exitoso
+		// (típicamente fallida desde el principio) — preguntar "conservar carpetas"
+		// es ruido porque no hay carpetas. Desvincula directo en modo delete.
 		const handleUnlinkClick = async () => {
 			if (!credentialsStatus?.id) return;
-			setUnlinkDialogOpen(true);
-			setUnlinkImpact(null);
 			setIsLoadingImpact(true);
 			try {
 				const response = await scbaCredentialsService.getUnlinkImpact();
 				if (response.success && response.data) {
+					if (response.data.folders.total === 0) {
+						setIsLoadingImpact(false);
+						await handleUnlink("delete");
+						return;
+					}
 					setUnlinkImpact(response.data);
+				} else {
+					setUnlinkImpact(null);
 				}
 			} catch {
-				// Si falla el análisis, el dialog igual permite elegir modo
+				setUnlinkImpact(null);
 			} finally {
 				setIsLoadingImpact(false);
 			}
+			setUnlinkDialogOpen(true);
 		};
 
 		// Ejecuta la desvinculación con el modo elegido (keep/delete)

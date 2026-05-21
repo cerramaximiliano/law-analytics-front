@@ -266,8 +266,17 @@ class ScbaCredentialsService {
 			try {
 				const response = await this.getCredentialsStatus();
 
-				if (!response.success || !response.data) {
+				if (!response.success) {
 					onError(response.error || "Error obteniendo estado");
+					return;
+				}
+
+				// data ausente = la cred ya no existe (eliminada o desvinculada
+				// mientras polleabamos). No es un error de "obtener estado" — el
+				// componente debe re-renderizar con hasCredentials:false. Detenemos
+				// silenciosamente para no disparar el snackbar genérico.
+				if (!response.data) {
+					isPolling = false;
 					return;
 				}
 
