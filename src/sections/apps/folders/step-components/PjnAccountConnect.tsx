@@ -161,7 +161,18 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 					// calledAfterCompletion=true: el WS ya confirmó el fin del sync.
 					// Si el DB devuelve syncStatus=in_progress (stale), no redisparar pjnSyncStarted.
 					loadCredentialsStatus(true);
-					if (pjnSync.completedAt) onSyncComplete?.();
+					if (pjnSync.completedAt) {
+						// Auto-refresh interno: algunos hosts (ej. TabPjnIntegration en
+						// Perfil) no pasan onSyncComplete y dependerían exclusivamente
+						// del callback. Forzamos refresh local para que los folders
+						// recién creados aparezcan sin requerir hard refresh.
+						const uid = authUser?._id || authUser?.id;
+						if (uid) {
+							storeDispatch(getFoldersByUserId(uid, true) as any);
+							storeDispatch(fetchUserStats() as any);
+						}
+						onSyncComplete?.();
+					}
 				}
 			}
 			prevIsActiveRef.current = pjnSync.isActive;

@@ -232,6 +232,18 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 						},
 					);
 
+					// Auto-refresh de folders + stats. Sin esto, el user queda con la
+					// lista vieja en Redux hasta que haga hard refresh — y los folders
+					// recién creados por el worker no aparecen. Hacemos el refresh
+					// internamente (independiente del callback externo) porque algunos
+					// hosts del componente — ej. TabPjnIntegration — no pasan
+					// onSyncComplete y dependerían exclusivamente del callback.
+					const userId = authUser?._id || authUser?.id;
+					if (userId) {
+						storeDispatch(getFoldersByUserId(userId, true) as any);
+						storeDispatch(fetchUserStats() as any);
+					}
+
 					if (onSyncComplete) onSyncComplete();
 				},
 				// onError
