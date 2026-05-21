@@ -1120,6 +1120,9 @@ const Calendar = () => {
 		letterSpacing: "-0.005em",
 		borderRadius: 1.25,
 		boxShadow: "none",
+		whiteSpace: "nowrap",
+		flexShrink: 0,
+		px: 1.5,
 		transition: "background-color 0.15s ease",
 		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
 	} as const;
@@ -1352,7 +1355,7 @@ const Calendar = () => {
 											);
 										})}
 									</Stack>
-									<Box sx={{ width: 1, alignSelf: "stretch", mx: 0.5, bgcolor: alpha(BRAND_BLUE, 0.18) }} />
+									<Box sx={{ width: "1px", alignSelf: "stretch", mx: 0.75, my: 0.5, bgcolor: alpha(BRAND_BLUE, 0.22) }} />
 								</>
 							)}
 
@@ -1503,7 +1506,7 @@ const Calendar = () => {
 				fullWidth
 				onClose={handleModalClose}
 				open={localModalOpen}
-				sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: alpha(BRAND_BLUE, 0.035) } }}
+				sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: "background.paper" } }}
 			>
 				{isViewingEvent ? (
 					<EventDetailsView

@@ -25,13 +25,20 @@ import {
 	CardContent,
 	Chip,
 	Tooltip,
+	Dialog,
+	DialogContent,
+	Avatar,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import { Link1, Eye, EyeSlash, TickCircle, CloseCircle, Refresh2, InfoCircle, DocumentText, ShieldTick } from "iconsax-react";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import { enqueueSnackbar } from "notistack";
 import { Zoom } from "@mui/material";
-import scbaCredentialsService, { ScbaCredentialsData } from "api/scbaCredentials";
+import { PopupTransition } from "components/@extended/Transitions";
+import scbaCredentialsService, { ScbaCredentialsData, ScbaUnlinkImpact } from "api/scbaCredentials";
+import { dispatch as storeDispatch } from "store";
+import { getFoldersByUserId } from "store/reducers/folder";
+import { fetchUserStats, incrementUserStat } from "store/reducers/userStats";
 import { useScbaSiteStatus } from "hooks/useScbaSiteStatus";
 import { scbaSiteStatusUpdated } from "store/reducers/scbaSiteStatus";
 import ScbaMaintenanceAlert from "components/ScbaMaintenanceAlert";
@@ -76,6 +83,16 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 
 		// Polling cleanup
 		const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
+
+		// Estado del diálogo de desvinculación (mirror del flujo PJN)
+		const [unlinkDialogOpen, setUnlinkDialogOpen] = useState(false);
+		const [unlinkImpact, setUnlinkImpact] = useState<ScbaUnlinkImpact | null>(null);
+		const [isLoadingImpact, setIsLoadingImpact] = useState(false);
+		const [isUnlinking, setIsUnlinking] = useState(false);
+
+		// Folders state para hacer optimistic cleanup tras delete mode
+		const folders = useSelector((state: any) => state.folder?.folders || []);
+		const authUser = useSelector((state: any) => state.auth?.user);
 
 		// Estado real-time del worker SCBA (eventos WS → reducer scbaSync).
 		// Tiene prioridad sobre el polling: cuando hay eventos WS activos,
@@ -214,6 +231,18 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 							autoHideDuration: 5000,
 						},
 					);
+
+					// Auto-refresh de folders + stats. Sin esto, el user queda con la
+					// lista vieja en Redux hasta que haga hard refresh — y los folders
+					// recién creados por el worker no aparecen. Hacemos el refresh
+					// internamente (independiente del callback externo) porque algunos
+					// hosts del componente — ej. TabPjnIntegration — no pasan
+					// onSyncComplete y dependerían exclusivamente del callback.
+					const userId = authUser?._id || authUser?.id;
+					if (userId) {
+						storeDispatch(getFoldersByUserId(userId, true) as any);
+						storeDispatch(fetchUserStats() as any);
+					}
 
 					if (onSyncComplete) onSyncComplete();
 				},
@@ -395,14 +424,33 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 			}
 		};
 
-		// Desvincular
-		const handleUnlink = async () => {
+		// Abre el dialog y carga el análisis de impacto (mirror del flujo PJN)
+		const handleUnlinkClick = async () => {
 			if (!credentialsStatus?.id) return;
-
+			setUnlinkDialogOpen(true);
+			setUnlinkImpact(null);
+			setIsLoadingImpact(true);
 			try {
-				const response = await scbaCredentialsService.unlinkCredentials(credentialsStatus.id);
+				const response = await scbaCredentialsService.getUnlinkImpact();
+				if (response.success && response.data) {
+					setUnlinkImpact(response.data);
+				}
+			} catch {
+				// Si falla el análisis, el dialog igual permite elegir modo
+			} finally {
+				setIsLoadingImpact(false);
+			}
+		};
+
+		// Ejecuta la desvinculación con el modo elegido (keep/delete)
+		const handleUnlink = async (mode: "keep" | "delete") => {
+			if (!credentialsStatus?.id) return;
+			setIsUnlinking(true);
+			try {
+				const response = await scbaCredentialsService.unlinkCredentials(credentialsStatus.id, mode);
 				if (response.success) {
-					enqueueSnackbar("Cuenta SCBA desvinculada correctamente", {
+					setUnlinkDialogOpen(false);
+					enqueueSnackbar(response.message || "Cuenta SCBA desvinculada correctamente", {
 						variant: "success",
 						anchorOrigin: { vertical: "bottom", horizontal: "right" },
 						TransitionComponent: Zoom,
@@ -411,6 +459,23 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 					setHasCredentials(false);
 					setCredentialsStatus(null);
 					if (stopPolling) stopPolling();
+
+					if (mode === "delete") {
+						// Optimistic cleanup: remover folders SCBA del store local
+						// para que la UI los oculte de inmediato sin esperar el refetch.
+						const scbaIds = folders.filter((f: any) => f.scba || f.source === "scba-login").map((f: any) => f._id);
+						if (scbaIds.length > 0) {
+							storeDispatch({ type: "DELETE_FOLDERS", payload: scbaIds });
+							storeDispatch(incrementUserStat("folders", -scbaIds.length) as any);
+						}
+					}
+
+					// Refetch de folders + stats para confirmar el estado final del server
+					const userId = authUser?._id || authUser?.id;
+					if (userId) {
+						storeDispatch(getFoldersByUserId(userId, true) as any);
+						storeDispatch(fetchUserStats() as any);
+					}
 				} else {
 					enqueueSnackbar(response.error || "Error al desvincular cuenta", {
 						variant: "error",
@@ -426,8 +491,243 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 					TransitionComponent: Zoom,
 					autoHideDuration: 4000,
 				});
+			} finally {
+				setIsUnlinking(false);
 			}
 		};
+
+		// Dialog de confirmación de desvinculación — brand sober destructive
+		const isDarkDialog = theme.palette.mode === "dark";
+		const errorColor = theme.palette.error.main;
+		const unlinkDialog = (
+			<Dialog
+				open={unlinkDialogOpen}
+				onClose={() => !isUnlinking && setUnlinkDialogOpen(false)}
+				keepMounted
+				TransitionComponent={PopupTransition}
+				maxWidth="xs"
+				fullWidth
+				PaperProps={{
+					sx: {
+						borderRadius: 2,
+						border: `1px solid ${alpha(BRAND_BLUE, isDarkDialog ? 0.22 : 0.14)}`,
+						boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDarkDialog ? 0.32 : 0.18)}`,
+						overflow: "hidden",
+					},
+				}}
+			>
+				<DialogContent sx={{ p: { xs: 3, sm: 3.5 }, position: "relative" }}>
+					{/* Radial blob destructivo */}
+					<Box
+						sx={{
+							position: "absolute",
+							top: -80,
+							left: "50%",
+							transform: "translateX(-50%)",
+							width: 280,
+							height: 280,
+							borderRadius: "50%",
+							background: `radial-gradient(circle, ${alpha(errorColor, isDarkDialog ? 0.18 : 0.1)} 0%, transparent 70%)`,
+							pointerEvents: "none",
+						}}
+					/>
+					<Stack alignItems="center" spacing={2.25} sx={{ position: "relative" }}>
+						{/* Icon ring sober destructivo */}
+						<Box
+							sx={{
+								width: 60,
+								height: 60,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(errorColor, isDarkDialog ? 0.16 : 0.08),
+								border: `1px solid ${alpha(errorColor, isDarkDialog ? 0.32 : 0.2)}`,
+								color: errorColor,
+							}}
+						>
+							<Link1 size={26} variant="Bulk" />
+						</Box>
+
+						{/* Eyebrow + title + body */}
+						<Stack spacing={1} alignItems="center">
+							<Stack direction="row" spacing={0.5} alignItems="center">
+								<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: errorColor }} />
+								<Typography
+									sx={{
+										fontSize: "0.6rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+									}}
+								>
+									Desvincular cuenta
+								</Typography>
+							</Stack>
+							<Typography
+								sx={{
+									fontSize: "1.05rem",
+									fontWeight: 600,
+									letterSpacing: "-0.015em",
+									color: "text.primary",
+									textAlign: "center",
+									textWrap: "balance" as any,
+								}}
+							>
+								¿Cómo querés desvincular la cuenta SCBA?
+							</Typography>
+							<Typography
+								sx={{
+									fontSize: "0.82rem",
+									color: "text.secondary",
+									letterSpacing: "-0.005em",
+									textAlign: "center",
+									textWrap: "pretty" as any,
+									lineHeight: 1.5,
+								}}
+							>
+								Tus carpetas sincronizadas se pueden conservar como solo lectura o eliminar de forma permanente.
+							</Typography>
+						</Stack>
+
+						{/* Impact: carpetas afectadas */}
+						{isLoadingImpact ? (
+							<Box sx={{ py: 0.5 }}>
+								<CircularProgress size={20} sx={{ color: BRAND_BLUE }} />
+							</Box>
+						) : unlinkImpact ? (
+							<Stack spacing={1} sx={{ width: "100%" }}>
+								<Box
+									sx={{
+										display: "flex",
+										alignItems: "center",
+										gap: 1,
+										p: 1.25,
+										borderRadius: 1.25,
+										bgcolor: alpha(STALE_AMBER, isDarkDialog ? 0.1 : 0.06),
+										border: `1px solid ${alpha(STALE_AMBER, isDarkDialog ? 0.32 : 0.22)}`,
+									}}
+								>
+									<InfoCircle size={16} variant="Bulk" color={STALE_AMBER} />
+									<Stack spacing={0.125}>
+										<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+											{unlinkImpact.folders.total}{" "}
+											{unlinkImpact.folders.total === 1 ? "carpeta afectada" : "carpetas afectadas"}
+										</Typography>
+										<Typography
+											sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em", fontVariantNumeric: "tabular-nums" }}
+										>
+											{unlinkImpact.folders.active} {unlinkImpact.folders.active === 1 ? "activa" : "activas"} ·{" "}
+											{unlinkImpact.folders.archived} {unlinkImpact.folders.archived === 1 ? "archivada" : "archivadas"}
+										</Typography>
+									</Stack>
+								</Box>
+								{unlinkImpact.folders.names.length > 0 && (
+									<Box
+										sx={{
+											maxHeight: 160,
+											overflowY: "auto",
+											border: `1px solid ${alpha(BRAND_BLUE, isDarkDialog ? 0.18 : 0.1)}`,
+											borderRadius: 1.25,
+											p: 1.25,
+											bgcolor: alpha(BRAND_BLUE, isDarkDialog ? 0.04 : 0.02),
+										}}
+									>
+										<Stack spacing={0.5}>
+											{unlinkImpact.folders.names.map((name, idx) => (
+												<Stack key={idx} direction="row" spacing={0.625} alignItems="center">
+													<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE, flexShrink: 0 }} />
+													<Typography
+														sx={{
+															fontSize: "0.72rem",
+															color: "text.secondary",
+															letterSpacing: "-0.005em",
+															overflow: "hidden",
+															textOverflow: "ellipsis",
+															whiteSpace: "nowrap",
+														}}
+													>
+														{name}
+													</Typography>
+												</Stack>
+											))}
+										</Stack>
+									</Box>
+								)}
+							</Stack>
+						) : null}
+
+						{/* Acciones — 2 opciones primarias + Cancelar ghost */}
+						<Stack spacing={1} sx={{ width: 1, mt: 0.5 }}>
+							<Button
+								fullWidth
+								onClick={() => handleUnlink("keep")}
+								disabled={isUnlinking}
+								startIcon={isUnlinking ? <CircularProgress size={14} sx={{ color: STALE_AMBER }} /> : undefined}
+								sx={{
+									textTransform: "none",
+									fontWeight: 600,
+									letterSpacing: "-0.005em",
+									color: STALE_AMBER,
+									borderRadius: 1.25,
+									py: 1,
+									border: `1px solid ${alpha(STALE_AMBER, isDarkDialog ? 0.32 : 0.22)}`,
+									bgcolor: alpha(STALE_AMBER, isDarkDialog ? 0.08 : 0.04),
+									"&:hover": {
+										bgcolor: alpha(STALE_AMBER, isDarkDialog ? 0.16 : 0.1),
+										borderColor: alpha(STALE_AMBER, isDarkDialog ? 0.48 : 0.36),
+									},
+								}}
+							>
+								Conservar sin sincronización
+							</Button>
+							<Button
+								fullWidth
+								variant="contained"
+								onClick={() => handleUnlink("delete")}
+								disabled={isUnlinking}
+								startIcon={isUnlinking ? <CircularProgress size={14} sx={{ color: "#fff" }} /> : undefined}
+								sx={{
+									textTransform: "none",
+									fontWeight: 600,
+									letterSpacing: "-0.005em",
+									bgcolor: errorColor,
+									color: "#fff",
+									borderRadius: 1.25,
+									py: 1,
+									boxShadow: "none",
+									"&:hover": { bgcolor: alpha(errorColor, 0.88), boxShadow: "none" },
+								}}
+							>
+								Eliminar carpetas
+							</Button>
+							<Button
+								fullWidth
+								onClick={() => setUnlinkDialogOpen(false)}
+								disabled={isUnlinking}
+								sx={{
+									textTransform: "none",
+									fontWeight: 600,
+									letterSpacing: "-0.005em",
+									color: "text.secondary",
+									borderRadius: 1.25,
+									py: 1,
+									border: `1px solid ${alpha(theme.palette.text.primary, isDarkDialog ? 0.14 : 0.1)}`,
+									"&:hover": {
+										color: BRAND_BLUE,
+										bgcolor: alpha(BRAND_BLUE, isDarkDialog ? 0.08 : 0.04),
+										borderColor: alpha(BRAND_BLUE, 0.28),
+									},
+								}}
+							>
+								Cancelar
+							</Button>
+						</Stack>
+					</Stack>
+				</DialogContent>
+			</Dialog>
+		);
 
 		// ========== RENDERS ==========
 
@@ -706,7 +1006,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 
 						<Button
 							size="small"
-							onClick={handleUnlink}
+							onClick={handleUnlinkClick}
 							startIcon={<CloseCircle size={14} />}
 							sx={{
 								alignSelf: "flex-start",
@@ -723,6 +1023,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 							Desvincular cuenta
 						</Button>
 					</Stack>
+					{unlinkDialog}
 				</Box>
 			);
 		}

@@ -5,6 +5,7 @@ import {
 	CircularProgress,
 	DialogActions,
 	DialogContent,
+	DialogTitle,
 	IconButton,
 	Stack,
 	Tooltip,
@@ -219,7 +220,21 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 		return () => window.removeEventListener("planRestrictionError", handlePlanRestriction);
 	}, [onCancel]);
 
+	// Ref para detectar transición de open: solo queremos disparar el flujo de
+	// chequeo de límite al abrir el modal (false → true), no en cada re-render
+	// disparado por cambios de identidad de onCancel/handleAdd del parent.
+	// Antes, un re-render del parent durante el flujo reseteaba
+	// showAddCustomerModal a false y dejaba el modal vacío hasta que llegaba
+	// la respuesta de la API (race con renders intermedios).
+	const prevOpenRef = React.useRef<boolean>(false);
+
 	useEffect(() => {
+		const wasOpen = prevOpenRef.current;
+		prevOpenRef.current = open;
+
+		// Solo actuamos en transiciones reales (open cambia de valor).
+		if (open === wasOpen) return;
+
 		if (open) {
 			setActiveStep(0);
 
@@ -280,7 +295,8 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 			setIsCheckingLimit(false);
 			if (formikRef.current) formikRef.current.resetForm();
 		}
-	}, [open, mode, customer, isCreating, onCancel]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [open]);
 
 	const handleAlertClose = () => {
 		setOpenAlert(!openAlert);
@@ -472,77 +488,68 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 				</Stack>
 			)}
 
-			{/* Contenido principal */}
+			{/* Contenido principal — estructura espejo de AddFolder */}
 			{!isCheckingLimit && showAddCustomerModal && (
 				<Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-					{/* Header brand atmosférico */}
-					<Box
+					<DialogTitle
 						sx={{
-							position: "relative",
-							overflow: "hidden",
-							px: { xs: 2, sm: 2.5 },
-							py: 1.75,
-							bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
-							borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+							p: { xs: 1.75, sm: 2 },
+							borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
 							flexShrink: 0,
 						}}
 					>
-						<Box
-							sx={{
-								position: "absolute",
-								top: -60,
-								right: -40,
-								width: 220,
-								height: 220,
-								borderRadius: "50%",
-								background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
-								pointerEvents: "none",
-							}}
-						/>
-						<Stack direction="row" alignItems="center" spacing={1.5} sx={{ position: "relative" }}>
+						<Stack direction="row" alignItems="center" spacing={1.25}>
 							<Box
 								sx={{
-									width: 40,
-									height: 40,
-									borderRadius: 1.5,
+									width: 36,
+									height: 36,
+									borderRadius: 1.25,
 									display: "flex",
 									alignItems: "center",
 									justifyContent: "center",
 									bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
-									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
 									color: BRAND_BLUE,
 									flexShrink: 0,
 								}}
 							>
 								<Profile2User size={20} variant="Bulk" />
 							</Box>
-							<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
-								<Stack direction="row" spacing={0.75} alignItems="center">
-									<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
-									<Typography
-										sx={{
-											fontSize: "0.6rem",
-											fontWeight: 600,
-											letterSpacing: "0.08em",
-											textTransform: "uppercase",
-											color: "text.secondary",
-										}}
-									>
-										{isCreating ? "Nuevo contacto" : "Editar contacto"}
-									</Typography>
-								</Stack>
-								<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+							<Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+								<Typography
+									sx={{
+										fontSize: "1.05rem",
+										fontWeight: 600,
+										letterSpacing: "-0.015em",
+										lineHeight: 1.2,
+										color: "text.primary",
+									}}
+								>
 									{isCreating ? "Agregar nuevo contacto" : "Editar contacto"}
 								</Typography>
-								<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
-									Paso {activeStep + 1} de {steps.length} · {steps[activeStep]}
-								</Typography>
+								<Stack direction="row" alignItems="center" spacing={0.75}>
+									<Typography
+										sx={{
+											fontSize: "0.62rem",
+											fontWeight: 600,
+											letterSpacing: "0.14em",
+											textTransform: "uppercase",
+											color: BRAND_BLUE,
+											fontVariantNumeric: "tabular-nums",
+											lineHeight: 1,
+										}}
+									>
+										Paso {activeStep + 1} / {steps.length}
+									</Typography>
+									<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1 }}>·</Typography>
+									<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1 }}>{steps[activeStep]}</Typography>
+								</Stack>
 							</Stack>
 							<IconButton onClick={handleCancel} sx={closeIconBtnSx} aria-label="cerrar">
 								<CloseSquare size={20} variant="Linear" />
 							</IconButton>
 						</Stack>
-					</Box>
+					</DialogTitle>
 
 					<Formik
 						initialValues={initialValues}
@@ -553,74 +560,68 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 					>
 						{({ isSubmitting, values }) => (
 							<Form autoComplete="off" noValidate style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
-								<DialogContent sx={{ p: { xs: 2, sm: 2.5 }, flex: 1, overflow: "auto" }}>
-									{/* Progress Steps brand */}
-									<Stack spacing={0.875} sx={{ mb: 2.5 }}>
-										<Stack direction="row" spacing={1}>
-											{steps.map((_, index) => {
-												const isActive = index <= activeStep;
-												return (
-													<Box
-														key={index}
-														sx={{
-															flex: 1,
-															height: 3,
-															borderRadius: 1,
-															bgcolor: isActive ? BRAND_BLUE : alpha(theme.palette.text.primary, isDark ? 0.12 : 0.08),
-															transition: "background-color 0.3s ease",
-														}}
-													/>
-												);
-											})}
-										</Stack>
-										<Stack direction="row" spacing={1}>
+								<DialogContent sx={{ p: 2, overflow: "auto", flex: 1 }}>
+									<Box>
+										{/* Steps progress — bars + labels overlap, sticky para mantenerse arriba al scrollear */}
+										<Stack
+											direction="row"
+											spacing={1.5}
+											sx={{
+												mb: 2,
+												pb: 3.5,
+												position: "sticky",
+												top: -16,
+												zIndex: 1,
+												bgcolor: "background.paper",
+												pt: 2,
+											}}
+										>
 											{steps.map((label, index) => {
 												const isActive = index <= activeStep;
-												const isCurrent = index === activeStep;
 												return (
-													<Stack key={label} direction="row" alignItems="center" spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+													<Box key={label} sx={{ position: "relative", width: "100%" }}>
+														<Box
+															sx={{
+																height: 3,
+																bgcolor: isActive ? BRAND_BLUE : alpha(theme.palette.text.primary, isDark ? 0.12 : 0.08),
+																borderRadius: 1,
+																transition: "background-color 0.3s ease",
+															}}
+														/>
 														<Typography
 															sx={{
-																fontSize: "0.58rem",
+																position: "absolute",
+																top: 8,
+																fontSize: "0.6rem",
 																fontWeight: 600,
 																letterSpacing: "0.08em",
-																color: isActive ? BRAND_BLUE : "text.secondary",
-																fontVariantNumeric: "tabular-nums",
-																opacity: isCurrent ? 1 : 0.7,
-																flexShrink: 0,
-															}}
-														>
-															{`0${index + 1}`.slice(-2)}
-														</Typography>
-														<Typography
-															sx={{
-																fontSize: "0.68rem",
-																fontWeight: isCurrent ? 600 : 500,
-																letterSpacing: "0.04em",
 																textTransform: "uppercase",
 																color: isActive ? BRAND_BLUE : "text.secondary",
+																fontVariantNumeric: "tabular-nums",
 																transition: "color 0.3s ease",
-																overflow: "hidden",
-																textOverflow: "ellipsis",
-																whiteSpace: "nowrap",
-																display: { xs: "none", sm: "block" },
 															}}
 														>
-															{label}
+															{`0${index + 1}`.slice(-2)} · {label}
 														</Typography>
-													</Stack>
+													</Box>
 												);
 											})}
 										</Stack>
-									</Stack>
 
-									{/* Form Content */}
-									<Box>{getStepContent(activeStep, values, isImportedFromPjn)}</Box>
+										{/* Form Content */}
+										<Box sx={{ py: 1 }}>{getStepContent(activeStep, values, isImportedFromPjn)}</Box>
+									</Box>
 								</DialogContent>
 
-								<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1) }} />
-
-								<DialogActions sx={{ px: { xs: 2, sm: 2.5 }, py: 1.75, flexShrink: 0 }}>
+								<DialogActions
+									sx={{
+										px: { xs: 2, sm: 2.5 },
+										py: 1.75,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+										borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+										flexShrink: 0,
+									}}
+								>
 									<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: "100%" }}>
 										<Box>
 											{!isCreating && (

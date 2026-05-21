@@ -30,6 +30,7 @@ import { dispatch } from "store";
 import { getMovementsByFolderId, toggleMovementComplete } from "store/reducers/movements";
 import { useParams } from "react-router";
 import PDFViewer from "components/shared/PDFViewer";
+import MovementTextViewer from "components/shared/MovementTextViewer";
 import PaginationWithJump from "components/shared/PaginationWithJump";
 import PjnAccessAlert from "components/shared/PjnAccessAlert";
 import ScrollX from "components/ScrollX";
@@ -118,6 +119,10 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	const [selectedPdfTitle, setSelectedPdfTitle] = useState<string>("");
 	const [selectedMovementId, setSelectedMovementId] = useState<string>("");
 	const [isLoadingMoreForPdf, setIsLoadingMoreForPdf] = useState(false);
+	// Estado para el visor de texto (SCBA/MEV: no hay PDF embedable, el
+	// "documento" es el texto extraído + lista de adjuntos)
+	const [textViewerOpen, setTextViewerOpen] = useState(false);
+	const [textViewerMovement, setTextViewerMovement] = useState<Movement | null>(null);
 
 	// Estados para el popover de attachments
 	const [attachmentsAnchor, setAttachmentsAnchor] = useState<HTMLElement | null>(null);
@@ -247,6 +252,36 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	const handlePdfNavigate = (movement: Movement) => {
 		setSelectedPdfUrl(movement.link || "");
 		setSelectedPdfTitle(movement.title || "Documento");
+		setSelectedMovementId(movement._id || "");
+	};
+
+	// Decide qué viewer abrir según el tipo de documento del movimiento.
+	//   - documentType='text' (SCBA migrado vía keep, o cualquier mov que el
+	//     backend marque explícitamente): MovementTextViewer.
+	//   - documentType='pdf' o sin marcar pero con link: PDFViewer (PJN, MEV
+	//     con su endpoint /api/movements/mev/.../documento, links manuales).
+	//
+	// Importante: NO usamos source='mev' como trigger de TextViewer porque
+	// MEV legacy ya renderiza vía PDFViewer (link interno que sirve un HTML).
+	// Para que MEV use TextViewer hay que adaptar también el mapper MEV del
+	// backend para que pueble description + attachments con el shape esperado.
+	const openMovementDocument = (movement: Movement) => {
+		const isTextDoc = movement.documentType === "text";
+		if (isTextDoc) {
+			setTextViewerMovement(movement);
+			setSelectedMovementId(movement._id || "");
+			setTextViewerOpen(true);
+		} else {
+			setSelectedPdfUrl(movement.link || "");
+			setSelectedPdfTitle(movement.title || "Documento");
+			setSelectedMovementId(movement._id || "");
+			setPdfViewerOpen(true);
+		}
+	};
+
+	// Navegación dentro del TextViewer entre movs visibles
+	const handleTextNavigate = (movement: Movement) => {
+		setTextViewerMovement(movement);
 		setSelectedMovementId(movement._id || "");
 	};
 
@@ -601,25 +636,31 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 														: "-"}
 												</TableCell>
 												<TableCell>
-													{movement.link ? (
-														<Tooltip title="Ver documento">
-															<IconButton
-																size="small"
-																color="primary"
-																onClick={(e) => {
-																	e.stopPropagation();
-																	setSelectedPdfUrl(movement.link || "");
-																	setSelectedPdfTitle(movement.title || "Documento");
-																	setSelectedMovementId(movement._id || "");
-																	setPdfViewerOpen(true);
-																}}
-															>
-																<Link2 size={18} />
-															</IconButton>
-														</Tooltip>
-													) : (
-														"-"
-													)}
+													{(() => {
+														// Mostrar el botón si hay algo que ver:
+														//   - documentType='text': texto extraído o adjuntos.
+														//   - otro caso (PJN/MEV/manual): link directo (comportamiento legacy).
+														const isText = movement.documentType === "text";
+														const hasContent = isText
+															? !!(movement.description?.trim() || (movement.attachments && movement.attachments.length > 0))
+															: !!movement.link;
+														return hasContent ? (
+															<Tooltip title="Ver documento">
+																<IconButton
+																	size="small"
+																	color="primary"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		openMovementDocument(movement);
+																	}}
+																>
+																	<Link2 size={18} />
+																</IconButton>
+															</Tooltip>
+														) : (
+															"-"
+														);
+													})()}
 												</TableCell>
 												<TableCell>
 													<Stack direction="row" spacing={0.5}>
@@ -826,7 +867,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 				)}
 			</Box>
 
-			{/* PDF Viewer Dialog con navegación */}
+			{/* PDF Viewer Dialog con navegación (PJN o cualquier link directo a PDF) */}
 			<PDFViewer
 				open={pdfViewerOpen}
 				onClose={() => setPdfViewerOpen(false)}
@@ -855,6 +896,23 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 						  }
 						: undefined
 				}
+			/>
+
+			{/* Text Viewer Dialog (SCBA/MEV: texto extraído + lista de adjuntos) */}
+			<MovementTextViewer
+				open={textViewerOpen}
+				onClose={() => setTextViewerOpen(false)}
+				movement={textViewerMovement}
+				movements={movements}
+				currentMovementId={selectedMovementId}
+				onNavigate={handleTextNavigate}
+				onRequestNextPage={handleRequestNextPageForPdf}
+				onRequestPreviousPage={handleRequestPreviousPageForPdf}
+				hasNextPage={pagination?.hasNext || false}
+				hasPreviousPage={pagination?.hasPrev || false}
+				isLoadingMore={isLoadingMoreForPdf}
+				totalWithLinks={totalWithLinks}
+				documentsBeforeThisPage={documentsBeforeThisPage}
 			/>
 
 			{/* Popover para mostrar archivos adjuntos */}
