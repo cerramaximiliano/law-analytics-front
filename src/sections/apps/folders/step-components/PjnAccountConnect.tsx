@@ -46,7 +46,7 @@ interface PjnAccountConnectProps {
 	onConnectionSuccess?: () => void;
 	onSyncComplete?: () => void;
 	onServiceAvailableChange?: (available: boolean, message?: string) => void;
-	onConnectionStatusChange?: (connected: boolean) => void;
+	onConnectionStatusChange?: (status: "connected" | "error" | "disconnected") => void;
 }
 
 // Interface para exponer métodos al componente padre
@@ -81,6 +81,9 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 		const [password, setPassword] = useState("");
 		const [showPassword, setShowPassword] = useState(false);
 		const [isSubmitting, setIsSubmitting] = useState(false);
+		// Modo "actualizar contraseña" cuando hay cred con error/expired — abre
+		// form inline para re-link sin tener que desvincular primero.
+		const [showUpdateForm, setShowUpdateForm] = useState(false);
 
 		// Estado de credenciales existentes
 		const [credentialsStatus, setCredentialsStatus] = useState<PjnCredentialsStatus | null>(null);
@@ -283,12 +286,20 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 			loadCredentialsStatus();
 		}, []);
 
-		// Notificar al padre cuando el estado de conexión cambia (después de que cargó)
+		// Notificar al padre cuando el estado de conexión cambia (después de que cargó).
+		// Distingue "error" (cred existe pero con syncStatus=error, requiere acción
+		// del user) de "connected" (todo OK). El padre puede mostrar un pill amber
+		// en lugar de "Conectado" verde.
 		useEffect(() => {
-			if (!isLoadingStatus) {
-				onConnectionStatusChange?.(hasCredentials);
+			if (isLoadingStatus) return;
+			if (!hasCredentials) {
+				onConnectionStatusChange?.("disconnected");
+			} else if (credentialsStatus?.syncStatus === "error") {
+				onConnectionStatusChange?.("error");
+			} else {
+				onConnectionStatusChange?.("connected");
 			}
-		}, [hasCredentials, isLoadingStatus]);
+		}, [hasCredentials, isLoadingStatus, credentialsStatus?.syncStatus]);
 
 		// calledAfterCompletion=true cuando se invoca desde la transición isActive: true→false.
 		// En ese contexto, el DB puede devolver syncStatus=in_progress stale (ya que el WS
@@ -403,6 +414,11 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 					// Limpiar formulario
 					setCuil("");
 					setPassword("");
+					// Si veníamos del modo "actualizar contraseña" (cred en error),
+					// cerrar el form inline para volver al estado normal de la card.
+					setShowUpdateForm(false);
+					setCuilError("");
+					setPasswordError("");
 
 					// Actualizar estado
 					setHasCredentials(true);
@@ -829,12 +845,19 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 		}
 
 		// Renderizar estado de sincronización en progreso
-		// Incluye "pending" para evitar flash de "Cuenta conectada" entre requestSync y el evento WS "started"
+		// Incluye "pending" para evitar flash de "Cuenta conectada" entre requestSync y el evento WS "started".
+		// Guard: si `credentialsStatus.syncStatus` ya está en estado terminal (completed/error),
+		// NO mostramos loading aunque `pjnSync.isActive` haya quedado stuck — el state de DB es
+		// la fuente de verdad y evita loading bar perpetuo cuando el WS de phase=completed no
+		// llega al componente.
+		const dbSyncTerminal =
+			credentialsStatus?.syncStatus === "completed" || credentialsStatus?.syncStatus === "error";
 		if (
-			pjnSync.isActive ||
-			showCompletionSummary ||
-			(credentialsStatus?.syncStatus === "in_progress" && !pjnSync.completedAt && !pjnSync.hasError) ||
-			credentialsStatus?.syncStatus === "pending"
+			!dbSyncTerminal &&
+			(pjnSync.isActive ||
+				showCompletionSummary ||
+				(credentialsStatus?.syncStatus === "in_progress" && !pjnSync.completedAt && !pjnSync.hasError) ||
+				credentialsStatus?.syncStatus === "pending")
 		) {
 			const isCompleted = pjnSync.phase === "completed";
 			const isRetrying = pjnSync.phase === "retrying";
@@ -1135,6 +1158,127 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 									>
 										Reintentar sincronización
 									</PjnGuardedButton>
+								)}
+
+								{isCredentialError && !showUpdateForm && (
+									<Button
+										variant="outlined"
+										size="small"
+										onClick={() => {
+											// Pre-popular el CUIL con el actual de la cred. El
+											// handleSubmit envía `cuil` state al endpoint; sin
+											// esto, mandaría vacío.
+											setCuil((credentialsStatus as any).cuil || "");
+											setShowUpdateForm(true);
+										}}
+										startIcon={<Refresh2 size={14} />}
+										sx={{
+											alignSelf: "flex-start",
+											textTransform: "none",
+											fontSize: "0.78rem",
+											fontWeight: 600,
+											letterSpacing: "-0.005em",
+											borderColor: alpha(BRAND_BLUE, isDarkConnected ? 0.4 : 0.32),
+											color: BRAND_BLUE,
+											"&:hover": {
+												borderColor: BRAND_BLUE,
+												bgcolor: alpha(BRAND_BLUE, isDarkConnected ? 0.12 : 0.06),
+											},
+										}}
+									>
+										Actualizar contraseña
+									</Button>
+								)}
+
+								{isCredentialError && showUpdateForm && (
+									<Stack spacing={1.25} sx={{ pt: 0.5 }}>
+										<TextField
+											fullWidth
+											label="CUIL"
+											placeholder="20-12345678-9"
+											// Pre-populado con el CUIL actual; bloqueado solo si el
+											// backend lo devolvió. Si viene vacío — server sin el fix
+											// nuevo — dejamos editable como fallback.
+											value={formatCuil(cuil)}
+											onChange={
+												(credentialsStatus as any).cuil
+													? undefined
+													: (e) => {
+															const value = e.target.value.replace(/\D/g, "");
+															setCuil(value);
+															if (cuilError) validateCuil(value);
+													  }
+											}
+											onBlur={
+												(credentialsStatus as any).cuil ? undefined : () => validateCuil(cuil)
+											}
+											error={Boolean(cuilError)}
+											helperText={
+												cuilError || ((credentialsStatus as any).cuil ? "Esta es tu cuenta PJN conectada" : undefined)
+											}
+											disabled={isSubmitting || Boolean((credentialsStatus as any).cuil)}
+											inputProps={{ maxLength: 13, inputMode: "numeric" }}
+											autoComplete="username"
+											size="small"
+										/>
+										<TextField
+											fullWidth
+											label="Contraseña"
+											type={showPassword ? "text" : "password"}
+											value={password}
+											onChange={(e) => {
+												setPassword(e.target.value);
+												if (passwordError) validatePassword(e.target.value);
+											}}
+											onBlur={() => validatePassword(password)}
+											error={Boolean(passwordError)}
+											helperText={passwordError || undefined}
+											disabled={isSubmitting}
+											size="small"
+											InputProps={{
+												endAdornment: (
+													<InputAdornment position="end">
+														<IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
+															{showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
+														</IconButton>
+													</InputAdornment>
+												),
+											}}
+										/>
+										<Stack direction="row" spacing={1} justifyContent="flex-end">
+											<Button
+												variant="text"
+												size="small"
+												onClick={() => {
+													setShowUpdateForm(false);
+													setCuil("");
+													setPassword("");
+													setCuilError("");
+													setPasswordError("");
+												}}
+												disabled={isSubmitting}
+												sx={{ textTransform: "none", fontSize: "0.78rem", color: "text.secondary" }}
+											>
+												Cancelar
+											</Button>
+											<Button
+												variant="contained"
+												size="small"
+												onClick={handleSubmit}
+												disabled={isSubmitting || !cuil || !password}
+												startIcon={isSubmitting ? <CircularProgress size={14} color="inherit" /> : undefined}
+												sx={{
+													textTransform: "none",
+													fontSize: "0.78rem",
+													fontWeight: 600,
+													bgcolor: BRAND_BLUE,
+													"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+												}}
+											>
+												{isSubmitting ? "Guardando…" : "Guardar"}
+											</Button>
+										</Stack>
+									</Stack>
 								)}
 
 								<Box sx={{ height: 1, bgcolor: alpha(accent, isDarkConnected ? 0.16 : 0.1) }} />

@@ -30,8 +30,9 @@ const TabPjnIntegration = () => {
 	const [serviceAvailable, setServiceAvailable] = useState(true);
 	const [serviceMessage, setServiceMessage] = useState("");
 
-	const [isConnected, setIsConnected] = useState<boolean | null>(null);
-	const [isScbaConnected, setIsScbaConnected] = useState<boolean | null>(null);
+	type ConnectionStatus = "connected" | "error" | "disconnected" | null;
+	const [isConnected, setIsConnected] = useState<ConnectionStatus>(null);
+	const [isScbaConnected, setIsScbaConnected] = useState<ConnectionStatus>(null);
 
 	const [view, setView] = useState<"pjn" | "scba">("pjn");
 
@@ -104,8 +105,15 @@ const TabPjnIntegration = () => {
 		"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.05) },
 	};
 
-	const ViewStatusDot = ({ status }: { status: boolean | null }) => {
-		const color = status === true ? LIVE_GREEN : status === false ? theme.palette.text.disabled : "transparent";
+	const ViewStatusDot = ({ status }: { status: ConnectionStatus }) => {
+		const color =
+			status === "connected"
+				? LIVE_GREEN
+				: status === "error"
+				? STALE_AMBER
+				: status === "disconnected"
+				? theme.palette.text.disabled
+				: "transparent";
 		return (
 			<Box
 				sx={{
@@ -196,8 +204,13 @@ const TabPjnIntegration = () => {
 		</Box>
 	);
 
-	const StatusPill = ({ connected }: { connected: boolean }) => {
-		const color = connected ? LIVE_GREEN : theme.palette.text.secondary;
+	const StatusPill = ({ status }: { status: Exclude<ConnectionStatus, null> }) => {
+		const { color, label } =
+			status === "connected"
+				? { color: LIVE_GREEN, label: "Conectado" }
+				: status === "error"
+				? { color: STALE_AMBER, label: "Requiere atención" }
+				: { color: theme.palette.text.secondary, label: "No conectado" };
 		return (
 			<Box
 				sx={{
@@ -213,7 +226,7 @@ const TabPjnIntegration = () => {
 			>
 				<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: color }} />
 				<Typography sx={{ fontSize: "0.66rem", fontWeight: 600, color, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>
-					{connected ? "Conectado" : "No conectado"}
+					{label}
 				</Typography>
 			</Box>
 		);
@@ -256,7 +269,7 @@ const TabPjnIntegration = () => {
 							title="Cuenta PJN"
 							subtitle="Vincula tu cuenta del Poder Judicial de la Nación para sincronizar automáticamente todas tus causas."
 							icon={<Link1 size={16} variant="Bulk" />}
-							rightSlot={isConnected !== null ? <StatusPill connected={isConnected} /> : undefined}
+							rightSlot={isConnected !== null ? <StatusPill status={isConnected} /> : undefined}
 						>
 							<PjnAccountConnect
 								onServiceAvailableChange={(available, message) => {
@@ -371,7 +384,7 @@ const TabPjnIntegration = () => {
 							title="Cuenta SCBA"
 							subtitle="Vincula tu domicilio electrónico de la Suprema Corte de Buenos Aires para sincronizar tus causas provinciales."
 							icon={<Link1 size={16} variant="Bulk" />}
-							rightSlot={isScbaConnected !== null ? <StatusPill connected={isScbaConnected} /> : undefined}
+							rightSlot={isScbaConnected !== null ? <StatusPill status={isScbaConnected} /> : undefined}
 						>
 							<ScbaAccountConnect onConnectionStatusChange={(connected) => setIsScbaConnected(connected)} />
 						</SectionCard>

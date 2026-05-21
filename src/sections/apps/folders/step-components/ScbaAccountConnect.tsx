@@ -47,7 +47,7 @@ interface ScbaAccountConnectProps {
 	onConnectionSuccess?: () => void;
 	onSyncComplete?: () => void;
 	onServiceAvailableChange?: (available: boolean, message?: string) => void;
-	onConnectionStatusChange?: (connected: boolean) => void;
+	onConnectionStatusChange?: (status: "connected" | "error" | "disconnected") => void;
 }
 
 export interface ScbaAccountConnectRef {
@@ -62,6 +62,9 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		// Estado del formulario
 		const [username, setUsername] = useState("");
 		const [password, setPassword] = useState("");
+		// Modo "actualizar contraseña" cuando hay cred con error/expired — abre
+		// form inline para re-link sin tener que desvincular primero.
+		const [showUpdateForm, setShowUpdateForm] = useState(false);
 		const [showPassword, setShowPassword] = useState(false);
 		const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -113,12 +116,20 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 			};
 		}, []);
 
-		// Notificar al padre cuando el estado de conexión cambia (después de cargar)
+		// Notificar al padre cuando el estado de conexión cambia (después de cargar).
+		// Distingue "error" (cred existe pero con syncStatus=error, requiere acción
+		// del user) de "connected" (todo OK). El padre puede mostrar un pill amber
+		// en lugar de "Conectado" verde.
 		useEffect(() => {
-			if (!isLoadingStatus) {
-				onConnectionStatusChange?.(hasCredentials);
+			if (isLoadingStatus) return;
+			if (!hasCredentials) {
+				onConnectionStatusChange?.("disconnected");
+			} else if (credentialsStatus?.syncStatus === "error") {
+				onConnectionStatusChange?.("error");
+			} else {
+				onConnectionStatusChange?.("connected");
 			}
-		}, [hasCredentials, isLoadingStatus]);
+		}, [hasCredentials, isLoadingStatus, credentialsStatus?.syncStatus]);
 
 		const loadCredentialsStatus = async () => {
 			setIsLoadingStatus(true);
@@ -334,6 +345,11 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 					setUsername("");
 					setPassword("");
 					setHasCredentials(true);
+					// Si veníamos del modo "actualizar contraseña" (cred en error),
+					// cerrar el form inline para volver al estado normal de la card.
+					setShowUpdateForm(false);
+					setUsernameError("");
+					setPasswordError("");
 
 					if (response.data) {
 						setCredentialsStatus({
@@ -765,8 +781,17 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 			);
 		}
 
-		// Sincronización en progreso
-		if (isSyncing || credentialsStatus?.syncStatus === "in_progress" || credentialsStatus?.syncStatus === "pending") {
+		// Sincronización en progreso. Guard: si `credentialsStatus.syncStatus` ya
+		// está en estado terminal (completed / error), NO mostramos "Sincronizando"
+		// aunque `isSyncing` local haya quedado stuck en true — el state de DB es
+		// la fuente de verdad y evita el caso de loading bar perpetuo cuando el
+		// WS de phase=completed no llega al componente.
+		const dbSyncTerminal =
+			credentialsStatus?.syncStatus === "completed" || credentialsStatus?.syncStatus === "error";
+		if (
+			!dbSyncTerminal &&
+			(isSyncing || credentialsStatus?.syncStatus === "in_progress" || credentialsStatus?.syncStatus === "pending")
+		) {
 			const isDark = theme.palette.mode === "dark";
 			return (
 				<Box
@@ -985,8 +1010,129 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 						{!isComplete && !hasError && credentialsStatus.syncStatus === "never_synced" &&
 							renderInlineNotice("Tu cuenta está vinculada pero aún no se sincronizó. Apretá el botón de re-sincronizar para iniciar.", BRAND_BLUE)}
 
-						{credentialsStatus.isExpired &&
-							renderInlineNotice("Tus credenciales expiraron. Desvinculá tu cuenta y vinculala con la contraseña actualizada.", STALE_AMBER)}
+						{credentialsStatus.isExpired && !hasError &&
+							renderInlineNotice("Tus credenciales expiraron. Actualizá tu contraseña para reanudar la sincronización.", STALE_AMBER)}
+
+						{(hasError || credentialsStatus.isExpired) && !showUpdateForm && (
+							<Button
+								variant="outlined"
+								size="small"
+								onClick={() => {
+									// Pre-popular el username con el actual de la cred. El
+									// handleSubmit envía `username` state al endpoint; sin
+									// esto, mandaría vacío.
+									setUsername((credentialsStatus as any).username || "");
+									setShowUpdateForm(true);
+								}}
+								startIcon={<Refresh2 size={14} />}
+								sx={{
+									alignSelf: "flex-start",
+									textTransform: "none",
+									fontSize: "0.78rem",
+									fontWeight: 600,
+									letterSpacing: "-0.005em",
+									borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.32),
+									color: BRAND_BLUE,
+									"&:hover": {
+										borderColor: BRAND_BLUE,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.06),
+									},
+								}}
+							>
+								Actualizar contraseña
+							</Button>
+						)}
+
+						{(hasError || credentialsStatus.isExpired) && showUpdateForm && (
+							<Stack spacing={1.25} sx={{ pt: 0.5 }}>
+								<TextField
+									fullWidth
+									label="Domicilio electrónico"
+									placeholder="20XXXXXXXX7@notificaciones.scba.gov.ar"
+									// Pre-populado con el username actual; bloqueado solo si el
+									// backend lo devolvió (caso normal). Si viene vacío — server
+									// sin el fix nuevo — dejamos el field editable como fallback
+									// para que el user pueda completarlo manualmente.
+									value={username}
+									onChange={
+										(credentialsStatus as any).username
+											? undefined
+											: (e) => {
+													setUsername(e.target.value);
+													if (usernameError) validateUsername(e.target.value);
+											  }
+									}
+									onBlur={
+										(credentialsStatus as any).username
+											? undefined
+											: () => validateUsername(username)
+									}
+									error={Boolean(usernameError)}
+									helperText={
+										usernameError || ((credentialsStatus as any).username ? "Esta es tu cuenta SCBA conectada" : undefined)
+									}
+									disabled={isSubmitting || Boolean((credentialsStatus as any).username)}
+									size="small"
+								/>
+								<TextField
+									fullWidth
+									label="Contraseña"
+									type={showPassword ? "text" : "password"}
+									value={password}
+									onChange={(e) => {
+										setPassword(e.target.value);
+										if (passwordError) validatePassword(e.target.value);
+									}}
+									onBlur={() => validatePassword(password)}
+									error={Boolean(passwordError)}
+									helperText={passwordError || undefined}
+									disabled={isSubmitting}
+									size="small"
+									InputProps={{
+										endAdornment: (
+											<InputAdornment position="end">
+												<IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
+													{showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
+												</IconButton>
+											</InputAdornment>
+										),
+									}}
+								/>
+								<Stack direction="row" spacing={1} justifyContent="flex-end">
+									<Button
+										variant="text"
+										size="small"
+										onClick={() => {
+											setShowUpdateForm(false);
+											setUsername("");
+											setPassword("");
+											setUsernameError("");
+											setPasswordError("");
+										}}
+										disabled={isSubmitting}
+										sx={{ textTransform: "none", fontSize: "0.78rem", color: "text.secondary" }}
+									>
+										Cancelar
+									</Button>
+									<Button
+										variant="contained"
+										size="small"
+										onClick={handleSubmit}
+										disabled={isSubmitting || !username || !password || isPortalDown}
+										startIcon={isSubmitting ? <CircularProgress size={14} color="inherit" /> : undefined}
+										sx={{
+											textTransform: "none",
+											fontSize: "0.78rem",
+											fontWeight: 600,
+											bgcolor: BRAND_BLUE,
+											"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+										}}
+									>
+										{isSubmitting ? "Guardando…" : "Guardar"}
+									</Button>
+								</Stack>
+							</Stack>
+						)}
 
 						{isComplete && (
 							<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
