@@ -4161,38 +4161,125 @@ const FoldersLayout = () => {
 					</Alert>
 				</Snackbar>
 
-				{/* Diálogo de confirmación de eliminación */}
+				{/* Diálogo de confirmación de eliminación — brand sober destructive */}
 				<Dialog
 					open={deleteDialogOpen}
 					onClose={handleCancelDelete}
 					keepMounted
 					TransitionComponent={PopupTransition}
 					maxWidth="xs"
-					aria-labelledby="delete-dialog-title"
-					aria-describedby="delete-dialog-description"
+					fullWidth
+					aria-labelledby="folders-delete-title"
+					aria-describedby="folders-delete-description"
+					PaperProps={{
+						sx: {
+							borderRadius: 2,
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+							boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+							overflow: "hidden",
+						},
+					}}
 				>
-					<DialogContent sx={{ mt: 2, my: 1 }}>
-						<Stack alignItems="center" spacing={3.5}>
-							<Avatar color="error" sx={{ width: 72, height: 72, fontSize: "1.75rem" }}>
-								<Trash variant="Bold" />
-							</Avatar>
-							<Stack spacing={2}>
-								<Typography variant="h4" align="center">
-									¿Estás seguro que deseas eliminarlo?
+					<DialogContent sx={{ p: { xs: 3, sm: 3.5 }, position: "relative" }}>
+						<Box
+							sx={{
+								position: "absolute",
+								top: -80,
+								left: "50%",
+								transform: "translateX(-50%)",
+								width: 280,
+								height: 280,
+								borderRadius: "50%",
+								background: `radial-gradient(circle, ${alpha(theme.palette.error.main, isDark ? 0.18 : 0.1)} 0%, transparent 70%)`,
+								pointerEvents: "none",
+							}}
+						/>
+						<Stack alignItems="center" spacing={2.25} sx={{ position: "relative" }}>
+							<Box
+								sx={{
+									width: 60,
+									height: 60,
+									borderRadius: 1.5,
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									bgcolor: alpha(theme.palette.error.main, isDark ? 0.16 : 0.08),
+									border: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.32 : 0.2)}`,
+									color: theme.palette.error.main,
+								}}
+							>
+								<Trash size={26} variant="Bulk" />
+							</Box>
+							<Stack spacing={1} alignItems="center">
+								<Typography
+									id="folders-delete-title"
+									sx={{
+										fontSize: "1.05rem",
+										fontWeight: 600,
+										letterSpacing: "-0.015em",
+										color: "text.primary",
+										textAlign: "center",
+										textWrap: "balance" as any,
+									}}
+								>
+									{foldersToDelete.length === 1 ? "¿Eliminar esta carpeta?" : `¿Eliminar ${foldersToDelete.length} carpetas?`}
 								</Typography>
-								<Typography align="center">
-									Eliminando{" "}
-									<Typography variant="subtitle1" component="span">
+								<Typography
+									id="folders-delete-description"
+									sx={{
+										fontSize: "0.85rem",
+										color: "text.secondary",
+										letterSpacing: "-0.005em",
+										textAlign: "center",
+										textWrap: "pretty" as any,
+									}}
+								>
+									Vas a eliminar{" "}
+									<Box component="span" sx={{ fontWeight: 600, color: "text.primary", fontVariantNumeric: "tabular-nums" }}>
 										{foldersToDelete.length} {foldersToDelete.length === 1 ? "carpeta" : "carpetas"}
-									</Typography>{" "}
-									no podrás luego recuperar sus datos.
+									</Box>{" "}
+									de forma permanente. Esta acción no se puede deshacer.
 								</Typography>
 							</Stack>
-							<Stack direction="row" spacing={2} sx={{ width: 1 }}>
-								<Button fullWidth onClick={handleCancelDelete} color="secondary" variant="outlined">
+
+							<Stack direction="row" spacing={1.25} sx={{ width: 1, mt: 0.5 }}>
+								<Button
+									fullWidth
+									onClick={handleCancelDelete}
+									sx={{
+										textTransform: "none",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										color: "text.secondary",
+										borderRadius: 1.25,
+										py: 1,
+										border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+										"&:hover": {
+											color: BRAND_BLUE,
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+											borderColor: alpha(BRAND_BLUE, 0.28),
+										},
+									}}
+								>
 									Cancelar
 								</Button>
-								<Button fullWidth onClick={handleConfirmDelete} color="error" variant="contained" autoFocus>
+								<Button
+									fullWidth
+									onClick={handleConfirmDelete}
+									autoFocus
+									variant="contained"
+									sx={{
+										textTransform: "none",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										bgcolor: theme.palette.error.main,
+										color: "#fff",
+										borderRadius: 1.25,
+										py: 1,
+										boxShadow: "none",
+										"&:hover": { bgcolor: alpha(theme.palette.error.main, 0.88), boxShadow: "none" },
+									}}
+								>
 									Eliminar
 								</Button>
 							</Stack>
