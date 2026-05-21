@@ -5,15 +5,22 @@ import { Grid, Stack, TableCell, TableRow, Typography, Box, Tooltip, alpha, useT
 // project-imports
 import LinkToJudicialPower from "./LinkToJudicialPower";
 import LinkToPJBuenosAires from "./LinkToPJBuenosAires";
+import LinkToPJCaba from "./LinkToPJCaba";
 import CausaSelector from "./CausaSelector";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import useSubscription from "hooks/useSubscription";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
+import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 
 // assets
 import { Calendar, FolderOpen, Profile, Clock, NoteText, ExportSquare, TickCircle, CloseCircle, InfoCircle, Warning2 } from "iconsax-react";
 import { memo, useState } from "react";
 import dayjs from "utils/dayjs-config";
+
+// Whitelist de jurisdicciones que tienen worker de sincronización.
+// "Nacional" → PJN, "Buenos Aires" → SCBA/MEV, "CABA" → EJE.
+// Debe quedar alineada con la del detalle del folder (pages/apps/folders/details/details.tsx).
+const SYNCABLE_JURISDICCION_LABELS = ["Nacional", "Buenos Aires", "CABA"];
 
 // ==============================|| FOLDER - VIEW ||============================== //
 
@@ -23,6 +30,7 @@ const FolderView = memo(({ data }: any) => {
 	const notAvailableMsg = "No disponible";
 	const [openLinkJudicial, setOpenLinkJudicial] = useState(false);
 	const [openLinkPJBA, setOpenLinkPJBA] = useState(false);
+	const [openLinkPJCaba, setOpenLinkPJCaba] = useState(false);
 	const [openCausaSelector, setOpenCausaSelector] = useState(false);
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
@@ -36,18 +44,13 @@ const FolderView = memo(({ data }: any) => {
 	const isListRemovedScba = isScbaFromMisCausas && data.listRemoved === true && data.listRemovedSource === "scba";
 	const listRemovedCopyPjn =
 		"Esta causa no fue encontrada en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal.";
-	const listRemovedCopyScba =
-		'Esta causa ya no aparece en "Mis Causas" del portal SCBA. Puede haber sido archivada o desvinculada por el tribunal.';
 
 	const isPjnPrivateRestricted = data.pjn === true && data.causaIsPrivate === true && data.source !== "pjn-login";
 	const privateRestrictedCopyPjn =
 		"Causa reservada — el tribunal restringió la consulta web pública. El sistema sigue verificando si vuelve a estar accesible.";
 
-	// Voids: silence unused var warnings while preserving the semantics in source
-	void isListRemovedScba;
-	void listRemovedCopyScba;
-
 	const { canVinculateFolders } = useSubscription();
+	const scbaCredError = useScbaCredentialError();
 
 	// Map status → brand-aligned accent
 	const getStatusAccent = (status: string) => {
@@ -260,6 +263,18 @@ const FolderView = memo(({ data }: any) => {
 	};
 
 	const handleCancelLinkPJBA = () => setOpenLinkPJBA(false);
+
+	const handleOpenLinkPJCaba = () => {
+		const { canAccess, featureInfo } = canVinculateFolders();
+		if (canAccess) {
+			setOpenLinkPJCaba(true);
+		} else {
+			setLimitErrorInfo(featureInfo);
+			setLimitErrorOpen(true);
+		}
+	};
+
+	const handleCancelLinkPJCaba = () => setOpenLinkPJCaba(false);
 	const handleCloseLimitErrorModal = () => setLimitErrorOpen(false);
 
 	// Binding pill — composable across PJN / EJE / MEV / "Vincular"
@@ -429,6 +444,73 @@ const FolderView = memo(({ data }: any) => {
 					accent={LIVE_GREEN}
 					verifyIcon={showVerify ? verifyIcon : undefined}
 					verifyTooltip={showVerify ? verifyTooltip : undefined}
+				/>
+			);
+		}
+
+		if (data.scba) {
+			// Prioridad: removida del listado > credenciales en error > OK.
+			// "Cred en error" es por user (afecta a todos sus folders SCBA), no por folder.
+			if (isListRemovedScba) {
+				return (
+					<BindingPill
+						label="SCBA — Ya no en la lista"
+						accent={STALE_AMBER}
+						icon={<Warning2 size={14} variant="Bulk" color={STALE_AMBER} />}
+					/>
+				);
+			}
+			if (scbaCredError.hasError) {
+				return (
+					<BindingPill
+						label="SCBA — Sincronización pausada"
+						accent={STALE_AMBER}
+						icon={<Warning2 size={14} variant="Bulk" color={STALE_AMBER} />}
+					/>
+				);
+			}
+			const showVerify = data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined);
+			const verifyIcon =
+				data.causaVerified === false ? (
+					<InfoCircle size={14} variant="Bold" color={STALE_AMBER} />
+				) : data.causaIsValid ? (
+					<TickCircle size={14} variant="Bold" color={LIVE_GREEN} />
+				) : (
+					<CloseCircle size={14} variant="Bold" color={theme.palette.error.main} />
+				);
+			const verifyTooltip =
+				data.causaVerified === false ? "Pendiente de verificación" : data.causaIsValid ? "Causa válida" : "Causa inválida";
+			return (
+				<BindingPill
+					label="Vinculado con SCBA"
+					accent={LIVE_GREEN}
+					verifyIcon={showVerify ? verifyIcon : undefined}
+					verifyTooltip={showVerify ? verifyTooltip : undefined}
+				/>
+			);
+		}
+
+		if (data.previousSyncSource) {
+			// Folder desvinculado via modo "keep" (PJN/SCBA). Bloqueamos la re-vinculación
+			// individual: matching por fuero+numero+año puede asociar a una causa distinta,
+			// y workers PJN-login/SCBA-login requieren credenciales gestionadas desde Perfil.
+			const sourceLabel = data.previousSyncSource.toUpperCase();
+			return (
+				<BindingPill
+					label={`Sincronización pausada (era ${sourceLabel})`}
+					accent={STALE_AMBER}
+					icon={<Warning2 size={14} variant="Bulk" color={STALE_AMBER} />}
+				/>
+			);
+		}
+
+		if (data.folderJuris?.label && !SYNCABLE_JURISDICCION_LABELS.includes(data.folderJuris.label)) {
+			// Folder manual con jurisdicción fuera de las cubiertas por scrapers.
+			return (
+				<BindingPill
+					label="Jurisdicción no cubierta"
+					accent={STALE_AMBER}
+					icon={<Warning2 size={14} variant="Bulk" color={STALE_AMBER} />}
 				/>
 			);
 		}
@@ -655,6 +737,8 @@ const FolderView = memo(({ data }: any) => {
 					folderId={data._id}
 					folderName={data.folderName}
 					onSelectBuenosAires={handleOpenLinkPJBA}
+					onSelectCaba={handleOpenLinkPJCaba}
+					folderJurisLabel={data.folderJuris?.label}
 				/>
 
 				<LinkToPJBuenosAires
@@ -662,6 +746,17 @@ const FolderView = memo(({ data }: any) => {
 					onCancel={handleCancelLinkPJBA}
 					onBack={() => {
 						setOpenLinkPJBA(false);
+						setOpenLinkJudicial(true);
+					}}
+					folderId={data._id}
+					folderName={data.folderName}
+				/>
+
+				<LinkToPJCaba
+					open={openLinkPJCaba}
+					onCancel={handleCancelLinkPJCaba}
+					onBack={() => {
+						setOpenLinkPJCaba(false);
 						setOpenLinkJudicial(true);
 					}}
 					folderId={data._id}

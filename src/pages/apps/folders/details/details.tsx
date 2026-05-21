@@ -48,6 +48,7 @@ import ActivityTables from "./components/ActivityTables";
 import HistorialTab from "./components/HistorialTab";
 import LinkToJudicialPower from "sections/apps/folders/LinkToJudicialPower";
 import LinkToPJBuenosAires from "sections/apps/folders/LinkToPJBuenosAires";
+import LinkToPJCaba from "sections/apps/folders/LinkToPJCaba";
 import NavigationControls from "./components/NavigationControls";
 import InfoTabsVertical from "./components/InfoTabsVertical";
 
@@ -94,6 +95,13 @@ function TabPanel(props: TabPanelProps) {
 	);
 }
 
+// Whitelist de jurisdicciones que tienen worker de sincronización.
+// "Nacional" → PJN, "Buenos Aires" → SCBA/MEV, "CABA" → EJE.
+// Estos labels matchean los que aparecen en folderJuris.label (data/folder.json
+// para folders manuales, y los que setean los controllers de link-causa cuando
+// se asocia con un worker automático).
+const SYNCABLE_JURISDICCION_LABELS = ["Nacional", "Buenos Aires", "CABA"];
+
 function a11yProps(index: number) {
 	return {
 		id: `folder-tab-${index}`,
@@ -109,6 +117,7 @@ const Details = () => {
 	const isDetailedView = viewMode === "detailed";
 	const [openLinkJudicial, setOpenLinkJudicial] = useState(false);
 	const [openLinkPJBA, setOpenLinkPJBA] = useState(false);
+	const [openLinkPJCaba, setOpenLinkPJCaba] = useState(false);
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
 	const [tabValue, setTabValue] = useState(0);
@@ -242,6 +251,21 @@ const Details = () => {
 
 	const handleCloseLinkPJBA = useCallback(() => {
 		setOpenLinkPJBA(false);
+	}, []);
+
+	const handleOpenLinkPJCaba = useCallback(() => {
+		const { canAccess, featureInfo } = canVinculateFolders();
+
+		if (canAccess) {
+			setOpenLinkPJCaba(true);
+		} else {
+			setLimitErrorInfo(featureInfo);
+			setLimitErrorOpen(true);
+		}
+	}, []);
+
+	const handleCloseLinkPJCaba = useCallback(() => {
+		setOpenLinkPJCaba(false);
 	}, []);
 
 	const handleCloseLimitErrorModal = useCallback(() => {
@@ -390,8 +414,7 @@ const Details = () => {
 					label: "SCBA — Ya no en la lista",
 					accent: STALE_AMBER,
 					icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
-					tooltip:
-						'Esta causa ya no aparece en "Mis Causas" del portal SCBA. Puede haber sido archivada o desvinculada por el tribunal.',
+					tooltip: 'Esta causa ya no aparece en "Mis Causas" del portal SCBA. Puede haber sido archivada o desvinculada por el tribunal.',
 				};
 			} else if (scbaCredError.hasError) {
 				state = {
@@ -420,6 +443,19 @@ const Details = () => {
 				accent: STALE_AMBER,
 				icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
 				tooltip: `Esta carpeta fue desvinculada de ${sourceLabel}. Conserva el histórico de movimientos pero no recibe actualizaciones. Para reanudar la sincronización, vinculá tu cuenta desde Perfil → Cuentas Judiciales.`,
+			};
+		} else if (folder?.folderJuris?.label && !SYNCABLE_JURISDICCION_LABELS.includes(folder.folderJuris.label)) {
+			// Folder manual con jurisdicción fuera de las cubiertas por scrapers.
+			// Hoy sincronizamos solo PJN (Nacional), SCBA/MEV (Buenos Aires) y
+			// EJE (CABA). Si la jurisdicción del folder es otra (Jujuy, Córdoba,
+			// etc.), bloqueamos "Vincular" porque el modal solo ofrece esos 3
+			// destinos y elegir cualquiera asociaría la causa a un expediente
+			// distinto del original.
+			state = {
+				label: "Jurisdicción no cubierta",
+				accent: STALE_AMBER,
+				icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
+				tooltip: `Hoy solo sincronizamos causas de Nacional (PJN), Buenos Aires (SCBA/MEV) y CABA (EJE). Esta carpeta es de ${folder.folderJuris.label} — solo podés actualizarla manualmente.`,
 			};
 		} else {
 			state = {
@@ -512,6 +548,7 @@ const Details = () => {
 		folder?.mev,
 		folder?.scba,
 		folder?.previousSyncSource,
+		folder?.folderJuris?.label,
 		isListRemovedPjn,
 		isListRemovedMev,
 		isListRemovedScba,
@@ -987,6 +1024,8 @@ const Details = () => {
 						folderId={id}
 						folderName={folder.folderName}
 						onSelectBuenosAires={handleOpenLinkPJBA}
+						onSelectCaba={handleOpenLinkPJCaba}
+						folderJurisLabel={folder.folderJuris?.label}
 					/>
 				)}
 
@@ -997,6 +1036,20 @@ const Details = () => {
 						onCancel={handleCloseLinkPJBA}
 						onBack={() => {
 							setOpenLinkPJBA(false);
+							setOpenLinkJudicial(true);
+						}}
+						folderId={id}
+						folderName={folder.folderName}
+					/>
+				)}
+
+				{/* LinkToPJCaba Modal */}
+				{id && folder && (
+					<LinkToPJCaba
+						open={openLinkPJCaba}
+						onCancel={handleCloseLinkPJCaba}
+						onBack={() => {
+							setOpenLinkPJCaba(false);
 							setOpenLinkJudicial(true);
 						}}
 						folderId={id}

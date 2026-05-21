@@ -38,6 +38,13 @@ interface LinkToJudicialPowerProps {
 	folderName: string;
 	onSelectBuenosAires?: () => void;
 	onSelectCaba?: () => void;
+	// Label de jurisdicción del folder (data/folder.json) usada para filtrar las
+	// tarjetas del selector. Si el folder fue creado manualmente con una
+	// jurisdicción específica, solo se ofrece el sistema compatible:
+	// "Nacional" → PJN, "Buenos Aires" → MEV/SCBA, "CABA" → EJE. Si la prop es
+	// undefined / vacía, se muestran las 3 opciones (folders legacy o sin
+	// jurisdicción declarada).
+	folderJurisLabel?: string;
 }
 
 const LOGO_EJE = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
@@ -59,7 +66,13 @@ const LinkToJudicialPower = ({
 	folderName,
 	onSelectBuenosAires,
 	onSelectCaba,
+	folderJurisLabel,
 }: LinkToJudicialPowerProps) => {
+	// Si el folder tiene jurisdicción declarada, solo mostrar la tarjeta
+	// correspondiente. Sin jurisdicción → mostrar las 3 (legacy).
+	const showNacional = !folderJurisLabel || folderJurisLabel === "Nacional";
+	const showBuenosAires = !folderJurisLabel || folderJurisLabel === "Buenos Aires";
+	const showCaba = !folderJurisLabel || folderJurisLabel === "CABA";
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const errorColor = theme.palette.error.main;
@@ -420,15 +433,7 @@ const LinkToJudicialPower = ({
 	);
 
 	// Banner inline brand-tinted
-	const InlineBanner = ({
-		accent,
-		icon,
-		children,
-	}: {
-		accent: string;
-		icon: React.ReactNode;
-		children: React.ReactNode;
-	}) => (
+	const InlineBanner = ({ accent, icon, children }: { accent: string; icon: React.ReactNode; children: React.ReactNode }) => (
 		<Box
 			sx={{
 				display: "flex",
@@ -488,44 +493,50 @@ const LinkToJudicialPower = ({
 								</Typography>
 							</Box>
 
-							<PowerCard
-								onClick={() => setSelectedPower("nacional")}
-								logoBg="#222E43"
-								logoSrc={LOGO_PJN}
-								logoAlt="Poder Judicial de la Nación"
-								title="Poder Judicial de la Nación"
-								description="Causas federales y nacionales"
-							/>
+							{showNacional && (
+								<PowerCard
+									onClick={() => setSelectedPower("nacional")}
+									logoBg="#222E43"
+									logoSrc={LOGO_PJN}
+									logoAlt="Poder Judicial de la Nación"
+									title="Poder Judicial de la Nación"
+									description="Causas federales y nacionales"
+								/>
+							)}
 
-							<PowerCard
-								onClick={() => {
-									if (onSelectBuenosAires) {
-										onCancelLink();
-										onSelectBuenosAires();
-									}
-								}}
-								logoBg="#f8f8f8"
-								logoSrc={logoPJBuenosAires}
-								logoAlt="Poder Judicial de Buenos Aires"
-								hasLogoBorder
-								title="Poder Judicial de la Provincia de Buenos Aires"
-								description="Causas del fuero provincial"
-							/>
+							{showBuenosAires && (
+								<PowerCard
+									onClick={() => {
+										if (onSelectBuenosAires) {
+											onCancelLink();
+											onSelectBuenosAires();
+										}
+									}}
+									logoBg="#f8f8f8"
+									logoSrc={logoPJBuenosAires}
+									logoAlt="Poder Judicial de Buenos Aires"
+									hasLogoBorder
+									title="Poder Judicial de la Provincia de Buenos Aires"
+									description="Causas del fuero provincial"
+								/>
+							)}
 
-							<PowerCard
-								onClick={() => {
-									if (onSelectCaba) {
-										onCancelLink();
-										onSelectCaba();
-									}
-								}}
-								logoBg="#FFFFFF"
-								logoSrc={LOGO_EJE}
-								logoAlt="EJE - Expediente Judicial Electrónico"
-								hasLogoBorder
-								title="Poder Judicial de la Ciudad de Buenos Aires"
-								description="Sistema EJE — buscá por CUIJ o número/año"
-							/>
+							{showCaba && (
+								<PowerCard
+									onClick={() => {
+										if (onSelectCaba) {
+											onCancelLink();
+											onSelectCaba();
+										}
+									}}
+									logoBg="#FFFFFF"
+									logoSrc={LOGO_EJE}
+									logoAlt="EJE - Expediente Judicial Electrónico"
+									hasLogoBorder
+									title="Poder Judicial de la Ciudad de Buenos Aires"
+									description="Sistema EJE — buscá por CUIJ o número/año"
+								/>
+							)}
 						</Stack>
 					</DialogContent>
 
@@ -556,7 +567,11 @@ const LinkToJudicialPower = ({
 									height: 80,
 								}}
 							>
-								<img src={LOGO_PJN} alt="Poder Judicial de la Nación" style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
+								<img
+									src={LOGO_PJN}
+									alt="Poder Judicial de la Nación"
+									style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }}
+								/>
 							</Box>
 
 							{/* Causa a vincular */}
@@ -617,7 +632,10 @@ const LinkToJudicialPower = ({
 							{/* Jurisdicción */}
 							<Stack spacing={0.5}>
 								<InputLabel htmlFor="jurisdiction" sx={eyebrowLabelSx}>
-									Jurisdicción <Box component="span" sx={{ color: errorColor }}>*</Box>
+									Jurisdicción{" "}
+									<Box component="span" sx={{ color: errorColor }}>
+										*
+									</Box>
 								</InputLabel>
 								<FormControl fullWidth error={Boolean(jurisdictionError && (touched.jurisdiction || formSubmitAttempted.current))}>
 									<Select
@@ -630,9 +648,7 @@ const LinkToJudicialPower = ({
 										disabled={loading}
 										renderValue={(selected) => {
 											if (!selected) {
-												return (
-													<Typography sx={{ fontSize: "0.85rem", color: "text.secondary" }}>Seleccioná una jurisdicción</Typography>
-												);
+												return <Typography sx={{ fontSize: "0.85rem", color: "text.secondary" }}>Seleccioná una jurisdicción</Typography>;
 											}
 											const selectedJurisdiction = jurisdicciones.find((j) => j.value === selected);
 											return (
@@ -669,7 +685,10 @@ const LinkToJudicialPower = ({
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={0.5}>
 										<InputLabel htmlFor="expedient-number" sx={eyebrowLabelSx}>
-											Número de expediente <Box component="span" sx={{ color: errorColor }}>*</Box>
+											Número de expediente{" "}
+											<Box component="span" sx={{ color: errorColor }}>
+												*
+											</Box>
 										</InputLabel>
 										<TextField
 											fullWidth
@@ -691,7 +710,10 @@ const LinkToJudicialPower = ({
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={0.5}>
 										<InputLabel htmlFor="expedient-year" sx={eyebrowLabelSx}>
-											Año <Box component="span" sx={{ color: errorColor }}>*</Box>
+											Año{" "}
+											<Box component="span" sx={{ color: errorColor }}>
+												*
+											</Box>
 										</InputLabel>
 										<TextField
 											fullWidth

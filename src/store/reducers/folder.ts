@@ -972,6 +972,52 @@ export const linkFolderToPJBA =
 		}
 	};
 
+// Vincular carpeta con Poder Judicial de CABA (EJE)
+export const linkFolderToEJE =
+	(folderId: string, linkData: { cuij?: string; number?: string; year?: string; overwrite?: boolean }) => async (dispatch: Dispatch) => {
+		try {
+			dispatch({ type: SET_FOLDER_LOADING });
+
+			const requestBody = {
+				...linkData,
+				eje: true,
+			};
+
+			const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/folders/link-causa/${folderId}`, requestBody);
+
+			if (response.data.success) {
+				dispatch({
+					type: UPDATE_FOLDER,
+					payload: response.data.folder,
+				});
+
+				return {
+					success: true,
+					message: response.data.message,
+					folder: response.data.folder,
+					causaInfo: response.data.causaInfo,
+					eje: response.data.eje,
+				};
+			} else {
+				return {
+					success: false,
+					message: response.data.message || "No se pudo vincular la causa.",
+				};
+			}
+		} catch (error) {
+			const errorMessage = axios.isAxiosError(error)
+				? error.response?.data?.message || "Error al vincular la causa."
+				: "Error desconocido al vincular la causa.";
+
+			dispatch({
+				type: SET_FOLDER_ERROR,
+				payload: errorMessage,
+			});
+
+			return { success: false, message: errorMessage };
+		}
+	};
+
 // Action para guardar el ordenamiento seleccionado
 export const setFolderSort = (sortBy: string, sortDesc: boolean) => ({
 	type: SET_FOLDER_SORT,
