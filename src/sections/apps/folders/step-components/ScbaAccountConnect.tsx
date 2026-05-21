@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { scbaSyncReset, ScbaSyncState } from "store/reducers/scbaSync";
+import { scbaSyncReset, scbaCredentialsInvalidated, ScbaSyncState } from "store/reducers/scbaSync";
 import {
 	Box,
 	Stack,
@@ -342,6 +342,9 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 						autoHideDuration: 4000,
 					});
 
+					// Bump credentialsChangedAt: consumidores externos (FoldersSyncBadges) refetchean.
+					dispatch(scbaCredentialsInvalidated());
+
 					setUsername("");
 					setPassword("");
 					setHasCredentials(true);
@@ -492,6 +495,8 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 					setHasCredentials(false);
 					setCredentialsStatus(null);
 					if (stopPolling) stopPolling();
+					// Bump credentialsChangedAt: consumidores externos (FoldersSyncBadges) refetchean.
+					dispatch(scbaCredentialsInvalidated());
 
 					if (mode === "delete") {
 						// Optimistic cleanup: remover folders SCBA del store local

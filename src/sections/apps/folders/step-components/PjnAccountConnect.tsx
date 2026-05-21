@@ -34,7 +34,7 @@ import { dispatch as storeDispatch } from "store";
 import { RootState } from "store";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { incrementUserStat, fetchUserStats } from "store/reducers/userStats";
-import { pjnSyncStarted, pjnSyncReset, pjnSyncCompleted, pjnSyncError } from "store/reducers/pjnSync";
+import { pjnSyncStarted, pjnSyncReset, pjnSyncCompleted, pjnSyncError, pjnCredentialsInvalidated } from "store/reducers/pjnSync";
 import { PopupTransition } from "components/@extended/Transitions";
 import Avatar from "components/@extended/Avatar";
 import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
@@ -403,6 +403,8 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 					// Si hay un render entre estos dos calls, pjnSync.isActive=true toma prioridad
 					// force=true: acción explícita del usuario, ignora el grace period del reducer.
 					dispatch(pjnSyncStarted({ progress: 0, message: "Sincronizando causas...", force: true }));
+					// Bump credentialsChangedAt: consumidores externos (FoldersSyncBadges) refetchean.
+					dispatch(pjnCredentialsInvalidated());
 
 					enqueueSnackbar("Cuenta vinculada. Iniciando sincronización...", {
 						variant: "success",
@@ -543,6 +545,8 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 					setHasCredentials(false);
 					setCredentialsStatus(null);
 					dispatch(pjnSyncReset());
+					// Bump credentialsChangedAt: consumidores externos (FoldersSyncBadges) refetchean.
+					dispatch(pjnCredentialsInvalidated());
 
 					if (mode === "delete") {
 						// Eliminar inmediatamente del store los folders PJN para que no

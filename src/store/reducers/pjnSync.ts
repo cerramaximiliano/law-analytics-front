@@ -13,6 +13,9 @@ export interface PjnSyncState {
 	newCausas: number;
 	hasError: boolean;
 	errorMessage: string | null;
+	// Timestamp bump cada vez que el front muta la credencial (link/unlink/toggle/password).
+	// Los consumidores que dependen del estado real (no del sync) hacen refetch cuando cambia.
+	credentialsChangedAt: string | null;
 	// Datos adicionales para UI rica por fase
 	currentPage?: number;
 	totalPages?: number;
@@ -28,6 +31,7 @@ export const PJN_SYNC_PROGRESS = "pjnSync/PROGRESS";
 export const PJN_SYNC_COMPLETED = "pjnSync/COMPLETED";
 export const PJN_SYNC_ERROR = "pjnSync/ERROR";
 export const PJN_SYNC_RESET = "pjnSync/RESET";
+export const PJN_CREDENTIALS_INVALIDATED = "pjnSync/CREDENTIALS_INVALIDATED";
 
 const initialState: PjnSyncState = {
 	isActive: false,
@@ -40,6 +44,7 @@ const initialState: PjnSyncState = {
 	newCausas: 0,
 	hasError: false,
 	errorMessage: null,
+	credentialsChangedAt: null,
 };
 
 // Action creators
@@ -75,6 +80,12 @@ export const pjnSyncError = (payload: { message: string }) => ({
 
 export const pjnSyncReset = () => ({
 	type: PJN_SYNC_RESET as typeof PJN_SYNC_RESET,
+});
+
+// Señaliza que la credencial PJN cambió por una acción del usuario (link/unlink/toggle/password).
+// El badge u otros consumidores escuchan este timestamp para refetchear el estado real.
+export const pjnCredentialsInvalidated = () => ({
+	type: PJN_CREDENTIALS_INVALIDATED as typeof PJN_CREDENTIALS_INVALIDATED,
 });
 
 const pjnSyncReducer = (state = initialState, action: any): PjnSyncState => {
@@ -174,6 +185,12 @@ const pjnSyncReducer = (state = initialState, action: any): PjnSyncState => {
 
 		case PJN_SYNC_RESET:
 			return initialState;
+
+		case PJN_CREDENTIALS_INVALIDATED:
+			return {
+				...state,
+				credentialsChangedAt: new Date().toISOString(),
+			};
 
 		default:
 			return state;

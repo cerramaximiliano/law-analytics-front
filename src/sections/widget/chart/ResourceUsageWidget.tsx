@@ -226,6 +226,19 @@ export const FoldersSyncBadges = ({
 	const [pjnSynced, setPjnSynced] = useState<boolean | null>(null);
 	const [scbaSynced, setScbaSynced] = useState<boolean | null>(null);
 
+	// Reactivity: cuando la sync termina o falla, el endpoint quedó stale respecto
+	// del estado real. Leemos pjnSync/scbaSync del store para actualizar el chip
+	// sin esperar a que el usuario recargue.
+	const pjnSync = useSelector((state: any) => state.pjnSync);
+	const scbaSync = useSelector((state: any) => state.scbaSync);
+
+	// Fetch del endpoint:
+	//   - en mount (un user ya conectado desde sesión anterior tiene Redux vacío
+	//     pero credencial válida en backend);
+	//   - cuando credentialsChangedAt cambia (mutación local: link/unlink/...).
+	// El status real de la credencial sólo lo sabe el backend tras link/unlink,
+	// por eso esa rama requiere HTTP. Para sync completed/error usamos el slice
+	// directo (ver useEffects más abajo).
 	useEffect(() => {
 		pjnCredentialsService
 			.getCredentialsStatus()
@@ -235,13 +248,12 @@ export const FoldersSyncBadges = ({
 			.catch(() => {
 				setPjnSynced(false);
 			});
+	}, [pjnSync?.credentialsChangedAt]);
 
+	useEffect(() => {
 		scbaCredentialsService
 			.getCredentialsStatus()
 			.then((response) => {
-				// Sincronizada + válida + vigente:
-				// enabled (el usuario no la deshabilitó), no expirada, verified
-				// (worker pudo loguear al menos una vez) y última sync completada.
 				const data = response.data;
 				setScbaSynced(
 					!!(
@@ -258,7 +270,22 @@ export const FoldersSyncBadges = ({
 			.catch(() => {
 				setScbaSynced(false);
 			});
-	}, []);
+	}, [scbaSync?.credentialsChangedAt]);
+
+	// Reactividad post-sync: aplicar el resultado directamente desde Redux sin HTTP.
+	// completedAt cambia → connected. hasError cambia → disconnected.
+	useEffect(() => {
+		if (pjnSync?.completedAt) setPjnSynced(true);
+	}, [pjnSync?.completedAt]);
+	useEffect(() => {
+		if (pjnSync?.hasError) setPjnSynced(false);
+	}, [pjnSync?.hasError]);
+	useEffect(() => {
+		if (scbaSync?.completedAt) setScbaSynced(true);
+	}, [scbaSync?.completedAt]);
+	useEffect(() => {
+		if (scbaSync?.hasError) setScbaSynced(false);
+	}, [scbaSync?.hasError]);
 
 	const pjnTooltip =
 		pjnSynced === null

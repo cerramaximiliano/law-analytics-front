@@ -14,6 +14,9 @@ export interface ScbaSyncState {
 	newCausas: number;
 	hasError: boolean;
 	errorMessage: string | null;
+	// Timestamp bump cada vez que el front muta la credencial (link/unlink/toggle/password).
+	// Los consumidores que dependen del estado real (no del sync) hacen refetch cuando cambia.
+	credentialsChangedAt: string | null;
 	currentPage?: number;
 	totalPages?: number;
 	causasProcessed?: number;
@@ -26,6 +29,7 @@ export const SCBA_SYNC_PROGRESS = "scbaSync/PROGRESS";
 export const SCBA_SYNC_COMPLETED = "scbaSync/COMPLETED";
 export const SCBA_SYNC_ERROR = "scbaSync/ERROR";
 export const SCBA_SYNC_RESET = "scbaSync/RESET";
+export const SCBA_CREDENTIALS_INVALIDATED = "scbaSync/CREDENTIALS_INVALIDATED";
 
 const initialState: ScbaSyncState = {
 	isActive: false,
@@ -38,6 +42,7 @@ const initialState: ScbaSyncState = {
 	newCausas: 0,
 	hasError: false,
 	errorMessage: null,
+	credentialsChangedAt: null,
 };
 
 export const scbaSyncStarted = (payload?: { progress?: number; message?: string; force?: boolean }) => ({
@@ -71,6 +76,12 @@ export const scbaSyncError = (payload: { message: string }) => ({
 
 export const scbaSyncReset = () => ({
 	type: SCBA_SYNC_RESET as typeof SCBA_SYNC_RESET,
+});
+
+// Señaliza que la credencial SCBA cambió por una acción del usuario (link/unlink/toggle/password).
+// El badge u otros consumidores escuchan este timestamp para refetchear el estado real.
+export const scbaCredentialsInvalidated = () => ({
+	type: SCBA_CREDENTIALS_INVALIDATED as typeof SCBA_CREDENTIALS_INVALIDATED,
 });
 
 const scbaSyncReducer = (state = initialState, action: any): ScbaSyncState => {
@@ -160,6 +171,12 @@ const scbaSyncReducer = (state = initialState, action: any): ScbaSyncState => {
 
 		case SCBA_SYNC_RESET:
 			return initialState;
+
+		case SCBA_CREDENTIALS_INVALIDATED:
+			return {
+				...state,
+				credentialsChangedAt: new Date().toISOString(),
+			};
 
 		default:
 			return state;
