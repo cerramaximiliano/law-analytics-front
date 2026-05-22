@@ -7,6 +7,7 @@ import { dispatch } from "store";
 import { scbaSyncReset } from "store/reducers/scbaSync";
 import { pjnSyncReset } from "store/reducers/pjnSync";
 import { invalidateScbaCredentialErrorCache } from "hooks/useScbaCredentialError";
+import { invalidatePjnCredentialErrorCache } from "hooks/usePjnCredentialError";
 
 /**
  * Escucha errores de sincronización (SCBA, PJN) a nivel global y dispara
@@ -49,6 +50,9 @@ const GlobalSyncErrorListener = () => {
 			TransitionComponent: Zoom,
 			autoHideDuration: 6000,
 		});
+		// Invalidar cache para que los chips/pills de folders PJN pidan el
+		// estado actualizado y muestren "Sincronización pausada".
+		invalidatePjnCredentialErrorCache();
 		dispatch(pjnSyncReset());
 	}, [pjnHasError, pjnErrorMessage, enqueueSnackbar]);
 

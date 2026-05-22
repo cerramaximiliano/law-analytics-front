@@ -131,6 +131,7 @@ import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
 import { ResourceUsageBar } from "sections/widget/chart/ResourceUsageWidget";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER, LIVE_PULSE_KEYFRAMES } from "themes/dashboardTokens";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
+import { usePjnCredentialError } from "hooks/usePjnCredentialError";
 
 // ==============================|| STATUS PILL ||============================== //
 // Píldora de estado con dot + label — uniforme para Nueva / En Proceso /
@@ -1814,6 +1815,7 @@ const FoldersLayout = () => {
 	// Estado de la cred SCBA del user: afecta el render del badge de folders SCBA
 	// (warning amber en lugar de tick azul cuando la cred del user está en error).
 	const scbaCredError = useScbaCredentialError();
+	const pjnCredError = usePjnCredentialError();
 
 	// Detectar si venimos desde onboarding
 	const isOnboarding = searchParams.get("onboarding") === "true";
@@ -2928,6 +2930,8 @@ const FoldersLayout = () => {
 									title={
 										folder.scba === true && scbaCredError.hasError
 											? "SCBA — Sincronización pausada: tus credenciales fueron rechazadas. Actualizalas desde Perfil → Cuentas Judiciales."
+											: folder.pjn === true && folder.source === "pjn-login" && pjnCredError.hasError
+											? "PJN — Sincronización pausada: tus credenciales fueron rechazadas. Actualizalas desde Perfil → Cuentas Judiciales."
 											: folder.pjn === true
 											? "Causa vinculada a PJN"
 											: folder.mev === true
@@ -2948,7 +2952,8 @@ const FoldersLayout = () => {
 											height: 18,
 										}}
 									>
-										{folder.scba === true && scbaCredError.hasError ? (
+										{(folder.scba === true && scbaCredError.hasError) ||
+										(folder.pjn === true && folder.source === "pjn-login" && pjnCredError.hasError) ? (
 											<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
 										) : (
 											<TickCircle size={16} variant="Bold" color={BRAND_BLUE} />

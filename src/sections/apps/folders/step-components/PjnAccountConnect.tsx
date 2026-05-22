@@ -998,7 +998,15 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 			// hasError solo cuando hay error Y las credenciales no están en estado completo
 			// (si isValid && verified, la cuenta sigue conectada a pesar del error de seguimiento)
 			const hasError = syncErrored && !isComplete;
-			const isCredentialError = hasError && credentialsStatus.lastError?.code === "CREDENTIAL_INVALID";
+			// El worker emite REQUIRED_ACTION cuando el portal pide acción del user
+			// (cambio de contraseña obligatorio, 2FA, captcha persistente). Es semánticamente
+			// equivalente a CREDENTIAL_INVALID para la UI: ambos requieren que el user actualice
+			// la pass desde el botón inline. Sin esta segunda condición, REQUIRED_ACTION caía en
+			// el branch genérico "Tus credenciales son válidas — podés reintentar".
+			const isCredentialError = hasError && (
+				credentialsStatus.lastError?.code === "CREDENTIAL_INVALID" ||
+				credentialsStatus.lastError?.code === "REQUIRED_ACTION"
+			);
 			// Error con credenciales válidas → error de seguimiento o transitorio (ej. DocumentNotFoundError)
 			const isTrackingError = hasError && !isCredentialError && credentialsStatus.isValid;
 
