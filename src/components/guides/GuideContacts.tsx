@@ -1,28 +1,12 @@
 import React from "react";
-import { useState } from "react";
 
 // material-ui
-import {
-	Typography,
-	Button,
-	Box,
-	Alert,
-	AlertTitle,
-	Stack,
-	Step,
-	Stepper,
-	StepLabel,
-	Dialog,
-	DialogContent,
-	DialogTitle,
-	DialogActions,
-	useMediaQuery,
-} from "@mui/material";
+import { Typography, Box, Alert, AlertTitle, Stack } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
 // project imports
-import { ArrowRight2, Next, ArrowLeft, ArrowRight, Profile2User } from "iconsax-react";
-import { PopupTransition } from "components/@extended/Transitions";
+import { ArrowRight2, Profile2User } from "iconsax-react";
+import GuideShell from "./GuideShell";
 
 // ==============================|| CONTENIDOS DE CONTACTOS ||============================== //
 
@@ -242,111 +226,24 @@ interface GuideContactsProps {
 }
 
 const GuideContacts: React.FC<GuideContactsProps> = ({ open, onClose }) => {
-	const [activeStep, setActiveStep] = useState(0);
-	const theme = useTheme();
-	const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
-
-	const handleNext = () => {
-		setActiveStep((prevStep) => prevStep + 1);
-	};
-
-	const handleBack = () => {
-		setActiveStep((prevStep) => prevStep - 1);
-	};
-
-	// Reiniciar el paso activo cuando se cierra el diálogo
-	const handleCloseWithReset = () => {
-		onClose();
-		// Reiniciamos el paso después de que se cierre el diálogo
-		setTimeout(() => setActiveStep(0), 300);
-	};
-
 	const steps = [
-		{
-			title: "Gestión de Contactos",
-			content: <IntroductionContent />,
-		},
-		{
-			title: "Creación y Edición de Contactos",
-			content: <CreationEditingContent />,
-		},
-		{
-			title: "Búsqueda y Organización",
-			content: <SearchOrganizationContent />,
-		},
-		{
-			title: "Vinculación con Carpetas y Casos",
-			content: <LinkingContent />,
-		},
-		{
-			title: "Exportación e Importación",
-			content: <ImportExportContent />,
-		},
+		{ title: "Gestión de Contactos", content: <IntroductionContent /> },
+		{ title: "Creación y Edición de Contactos", content: <CreationEditingContent /> },
+		{ title: "Búsqueda y Organización", content: <SearchOrganizationContent /> },
+		{ title: "Vinculación con Carpetas y Casos", content: <LinkingContent /> },
+		{ title: "Exportación e Importación", content: <ImportExportContent /> },
 	];
 
 	return (
-		<Dialog
+		<GuideShell
 			open={open}
-			onClose={handleCloseWithReset}
-			fullScreen={fullScreen}
-			maxWidth="md"
-			fullWidth
-			TransitionComponent={PopupTransition}
-			sx={{ "& .MuiDialog-paper": { borderRadius: 2 } }}
-		>
-			<DialogTitle
-				sx={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					p: 2,
-					borderBottom: `1px solid ${theme.palette.divider}`,
-				}}
-			>
-				<Box sx={{ display: "flex", alignItems: "center" }}>
-					<Profile2User variant="Bulk" size={28} style={{ marginRight: 12, color: theme.palette.info.dark }} />
-					<Typography variant="h3">Guía de Contactos</Typography>
-				</Box>
-			</DialogTitle>
-
-			<DialogContent sx={{ p: 0 }}>
-				<Stepper activeStep={activeStep} alternativeLabel sx={{ p: 3, pb: 1, pt: 3 }}>
-					{steps.map((step, index) => (
-						<Step key={index}>
-							<StepLabel>{step.title}</StepLabel>
-						</Step>
-					))}
-				</Stepper>
-
-				<Box sx={{ p: 0, height: 400, overflowY: "auto" }}>
-					<Box sx={{ p: 3 }}>
-						<Typography variant="h4" gutterBottom color="primary">
-							{steps[activeStep].title}
-						</Typography>
-						<Box sx={{ mb: 3 }}>{steps[activeStep].content}</Box>
-					</Box>
-				</Box>
-			</DialogContent>
-
-			<DialogActions sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-				<Button onClick={handleBack} disabled={activeStep === 0} startIcon={<ArrowLeft />}>
-					Anterior
-				</Button>
-				<Box sx={{ flex: "1 1 auto" }} />
-				<Button onClick={handleCloseWithReset} sx={{ color: "text.secondary" }}>
-					Cerrar
-				</Button>
-				{activeStep === steps.length - 1 ? (
-					<Button variant="contained" color="primary" onClick={handleCloseWithReset} endIcon={<Next />}>
-						Finalizar
-					</Button>
-				) : (
-					<Button variant="contained" color="primary" onClick={handleNext} endIcon={<ArrowRight />}>
-						Siguiente
-					</Button>
-				)}
-			</DialogActions>
-		</Dialog>
+			onClose={onClose}
+			icon={<Profile2User size={18} variant="Bulk" />}
+			eyebrow="Guía"
+			title="Guía de Contactos"
+			subtitle="Aprendé a gestionar clientes, oponentes y testigos"
+			steps={steps}
+		/>
 	);
 };
 

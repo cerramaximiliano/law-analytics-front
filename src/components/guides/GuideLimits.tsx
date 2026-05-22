@@ -1,21 +1,12 @@
 import React from "react";
-import { useState } from "react";
 
 // material-ui
 import {
 	Typography,
-	Button,
 	Box,
 	Alert,
 	AlertTitle,
 	Stack,
-	Dialog,
-	DialogTitle,
-	DialogContent,
-	DialogActions,
-	Step,
-	Stepper,
-	StepLabel,
 	Paper,
 	Grid,
 	styled,
@@ -36,11 +27,8 @@ import {
 import { useTheme } from "@mui/material/styles";
 
 // project imports
-import { PopupTransition } from "components/@extended/Transitions";
 import {
 	ArrowRight2,
-	ArrowLeft,
-	ArrowRight,
 	InfoCircle,
 	FolderOpen,
 	Calculator,
@@ -56,6 +44,7 @@ import {
 	DocumentText,
 	Setting2,
 } from "iconsax-react";
+import GuideShell from "./GuideShell";
 
 // ==============================|| GUÍA LÍMITES - ESTILOS ||============================== //
 
@@ -685,108 +674,25 @@ interface GuideLimitsProps {
 }
 
 const GuideLimits = ({ open, onClose }: GuideLimitsProps) => {
-	const theme = useTheme();
-	const [activeStep, setActiveStep] = useState(0);
-
 	const steps = [
-		{
-			title: "Introducción",
-			content: <IntroductionContent />,
-		},
-		{
-			title: "Comparación de Planes",
-			content: <PlansComparisonContent />,
-		},
-		{
-			title: "Activos vs Archivados",
-			content: <ActiveVsArchivedContent />,
-		},
-		{
-			title: "Sistema de Almacenamiento",
-			content: <StorageSystemContent />,
-		},
-		{
-			title: "Período de Gracia",
-			content: <GracePeriodContent />,
-		},
-		{
-			title: "Consejos de Optimización",
-			content: <OptimizationTipsContent />,
-		},
+		{ title: "Introducción", content: <IntroductionContent /> },
+		{ title: "Comparación de Planes", content: <PlansComparisonContent /> },
+		{ title: "Activos vs Archivados", content: <ActiveVsArchivedContent /> },
+		{ title: "Sistema de Almacenamiento", content: <StorageSystemContent /> },
+		{ title: "Período de Gracia", content: <GracePeriodContent /> },
+		{ title: "Consejos de Optimización", content: <OptimizationTipsContent /> },
 	];
 
-	const handleNext = () => {
-		setActiveStep((prevStep) => prevStep + 1);
-	};
-
-	const handleBack = () => {
-		setActiveStep((prevStep) => prevStep - 1);
-	};
-
-	const handleReset = () => {
-		setActiveStep(0);
-	};
-
 	return (
-		<Dialog
+		<GuideShell
 			open={open}
 			onClose={onClose}
-			TransitionComponent={PopupTransition}
-			maxWidth="md"
-			fullWidth
-			PaperProps={{
-				sx: {
-					maxHeight: "90vh",
-				},
-			}}
-		>
-			<DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>
-				<Stack direction="row" alignItems="center" spacing={2}>
-					<Cloud size={28} color={theme.palette.primary.main} />
-					<Box>
-						<Typography variant="h5">Guía de Límites y Almacenamiento</Typography>
-						<Typography variant="caption" color="text.secondary">
-							Comprende y optimiza tu uso de Law Analytics
-						</Typography>
-					</Box>
-				</Stack>
-			</DialogTitle>
-
-			<DialogContent sx={{ p: 0 }}>
-				<Box sx={{ p: 3 }}>
-					<Stepper activeStep={activeStep} alternativeLabel>
-						{steps.map((step) => (
-							<Step key={step.title}>
-								<StepLabel>{step.title}</StepLabel>
-							</Step>
-						))}
-					</Stepper>
-
-					<StyledPaper>
-						<Box sx={{ p: 3, height: 400, overflowY: "auto" }}>{steps[activeStep].content}</Box>
-					</StyledPaper>
-				</Box>
-			</DialogContent>
-
-			<DialogActions sx={{ borderTop: 1, borderColor: "divider", px: 3, py: 2 }}>
-				<Button onClick={onClose} color="secondary">
-					Cerrar
-				</Button>
-				<Box sx={{ flex: "1 1 auto" }} />
-				<Button disabled={activeStep === 0} onClick={handleBack} startIcon={<ArrowLeft size={18} />}>
-					Anterior
-				</Button>
-				{activeStep === steps.length - 1 ? (
-					<Button variant="contained" onClick={handleReset} startIcon={<Crown size={18} />}>
-						Volver al inicio
-					</Button>
-				) : (
-					<Button variant="contained" onClick={handleNext} endIcon={<ArrowRight size={18} />}>
-						Siguiente
-					</Button>
-				)}
-			</DialogActions>
-		</Dialog>
+			icon={<Cloud size={18} variant="Bulk" />}
+			eyebrow="Guía"
+			title="Guía de Límites y Almacenamiento"
+			subtitle="Comprendé y optimizá tu uso de Law Analytics"
+			steps={steps}
+		/>
 	);
 };
 
