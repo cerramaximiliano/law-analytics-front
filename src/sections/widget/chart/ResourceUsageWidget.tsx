@@ -243,7 +243,24 @@ export const FoldersSyncBadges = ({
 		pjnCredentialsService
 			.getCredentialsStatus()
 			.then((response) => {
-				setPjnSynced(!!(response.success && response.hasCredentials && response.data?.isValid));
+				// "Conectada" no es solo "isValid=true en este instante" — un error
+				// transitorio (NETWORK_ERROR, PORTAL_TIMEOUT) deja la cred enabled +
+				// verified pero baja isValid temporalmente. Si fuéramos estrictos con
+				// isValid, el badge diría "no conectada" cuando la cred sí está vinculada
+				// y operativa, solo con error técnico. Criterio: tiene cred + enabled +
+				// verified (login funcionó alguna vez) + no marcada como inválida.
+				// CREDENTIAL_INVALID y REQUIRED_ACTION sí marcan credentialInvalid=true
+				// → caen al branch "no conectada", correcto.
+				const d = response.data;
+				setPjnSynced(
+					!!(
+						response.success &&
+						response.hasCredentials &&
+						d?.enabled === true &&
+						d?.verified === true &&
+						d?.credentialInvalid !== true
+					),
+				);
 			})
 			.catch(() => {
 				setPjnSynced(false);
@@ -308,6 +325,34 @@ export const FoldersSyncBadges = ({
 	const pjnState: JurisdictionState = pjnSynced === null ? "loading" : pjnSynced ? "connected" : "disconnected";
 	const scbaState: JurisdictionState = scbaSynced === null ? "loading" : scbaSynced ? "connected" : "disconnected";
 
+	// Ruta de la vista de Integraciones donde se administra cada cuenta vinculada
+	// (mismo tab para PJN y SCBA — TabPjnIntegration renderiza ambos cards).
+	const integrationsPath = "/apps/profiles/account/pjn";
+
+	// Click handler PJN:
+	//   - Conectada → siempre ir a integraciones (para administrar).
+	//   - No conectada → usar callback del padre (típicamente abre modal "agregar
+	//     causa"); si no hay callback, fallback a integraciones igual.
+	const handlePjnClick = () => {
+		if (pjnSynced === true) {
+			navigate(integrationsPath);
+		} else if (onPjnClick) {
+			onPjnClick();
+		} else {
+			navigate(integrationsPath);
+		}
+	};
+
+	// Click handler SCBA: mismo patrón. Si está desconectada y no hay onBaClick,
+	// no se hace nada (el botón queda inerte — caso edge que el padre ya manejaba así).
+	const handleScbaClick = () => {
+		if (scbaSynced === true) {
+			navigate(integrationsPath);
+		} else if (onBaClick) {
+			onBaClick();
+		}
+	};
+
 	return (
 		<Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap" useFlexGap>
 			<JurisdictionPill
@@ -317,7 +362,7 @@ export const FoldersSyncBadges = ({
 				label="PJN"
 				tooltip={pjnTooltip}
 				state={pjnState}
-				onClick={onPjnClick ?? (() => navigate("/apps/profiles/account/pjn"))}
+				onClick={handlePjnClick}
 			/>
 			<JurisdictionPill
 				logoSrc={logoPJBuenosAires}
@@ -326,7 +371,7 @@ export const FoldersSyncBadges = ({
 				label="BA"
 				tooltip={scbaTooltip}
 				state={scbaState}
-				onClick={onBaClick}
+				onClick={scbaSynced === true || onBaClick ? handleScbaClick : undefined}
 			/>
 			<JurisdictionPill
 				logoSrc={CABA_LOGO_URL}

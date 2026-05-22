@@ -45,6 +45,12 @@ export interface PjnCredentialsStatus {
 	verifiedAt: string | null;
 	isValid: boolean;
 	isValidAt: string | null;
+	// true cuando la cred fue marcada como inválida (CREDENTIAL_INVALID o
+	// REQUIRED_ACTION acumulados). Se limpia cuando el próximo sync OK marca
+	// isValid=true. Es distinto de isValid: isValid también baja por errores
+	// transitorios (NETWORK_ERROR mid-sync), pero credentialInvalid solo se
+	// pone true cuando el portal rechaza la cred o pide acción del user.
+	credentialInvalid?: boolean;
 	syncStatus: "pending" | "in_progress" | "completed" | "error" | "never_synced";
 	lastSync: string | null;
 	lastSyncAttempt: string | null;
