@@ -3336,6 +3336,12 @@ const FoldersLayout = () => {
 			canDelete,
 			verifyingFolderIds,
 			handleVerifyFolder,
+			// Cred-error hooks: la columna Carátula usa pjnCredError.hasError /
+			// scbaCredError.hasError para mostrar el ícono ámbar Warning2. Sin estas
+			// deps, el useMemo retorna columnas con closure viejo y el ícono solo se
+			// actualiza al desmontar/montar (navegar a otra ruta y volver).
+			scbaCredError.hasError,
+			pjnCredError.hasError,
 		],
 	);
 

@@ -998,15 +998,16 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 			// hasError solo cuando hay error Y las credenciales no están en estado completo
 			// (si isValid && verified, la cuenta sigue conectada a pesar del error de seguimiento)
 			const hasError = syncErrored && !isComplete;
-			// El worker emite REQUIRED_ACTION cuando el portal pide acción del user
-			// (cambio de contraseña obligatorio, 2FA, captcha persistente). Es semánticamente
-			// equivalente a CREDENTIAL_INVALID para la UI: ambos requieren que el user actualice
-			// la pass desde el botón inline. Sin esta segunda condición, REQUIRED_ACTION caía en
-			// el branch genérico "Tus credenciales son válidas — podés reintentar".
-			const isCredentialError = hasError && (
-				credentialsStatus.lastError?.code === "CREDENTIAL_INVALID" ||
-				credentialsStatus.lastError?.code === "REQUIRED_ACTION"
-			);
+			// Dos sub-casos de error de credencial, con UX distinta:
+			//   - CREDENTIAL_INVALID: pass cambió en el portal sin actualizar acá.
+			//     Resoluble desde el front (form inline con CUIT readonly + input pass).
+			//   - REQUIRED_ACTION: portal exige acción del user (cambio obligatorio, 2FA,
+			//     captcha persistente). NO resoluble desde el front — el user tiene que
+			//     ir al portal del PJN y resolverlo allí; después puede reintentar sync.
+			const errCode = credentialsStatus.lastError?.code;
+			const isInvalidPassword = hasError && errCode === "CREDENTIAL_INVALID";
+			const isRequiredAction = hasError && errCode === "REQUIRED_ACTION";
+			const isCredentialError = isInvalidPassword || isRequiredAction;
 			// Error con credenciales válidas → error de seguimiento o transitorio (ej. DocumentNotFoundError)
 			const isTrackingError = hasError && !isCredentialError && credentialsStatus.isValid;
 
@@ -1115,14 +1116,16 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 
 								{hasError &&
 									renderInlineNotice(
-										isCredentialError
+										isInvalidPassword
 											? !credentialsStatus.enabled
 												? "Cuenta desactivada: la contraseña del PJN falló en múltiples intentos. Actualizá tu contraseña y volvé a intentar."
-												: "Contraseña del PJN incorrecta o expirada. Verificá tus credenciales en el portal del Poder Judicial."
+												: "Contraseña del PJN incorrecta. Si la cambiaste en el portal, actualizala acá para reanudar la sincronización."
+											: isRequiredAction
+											? "El portal del PJN requiere una acción tuya (cambio de contraseña obligatorio, 2FA o captcha). Resolvelo ingresando al portal y volvé a intentar la sincronización."
 											: "Error durante la sincronización. Tus credenciales son válidas — podés reintentar o verificar el estado.",
 										errorAccent,
 										<>
-											{isCredentialError && credentialsStatus.consecutiveErrors > 1 && credentialsStatus.enabled && (
+											{isInvalidPassword && credentialsStatus.consecutiveErrors > 1 && credentialsStatus.enabled && (
 												<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", opacity: 0.8, fontVariantNumeric: "tabular-nums" }}>
 													Intentos fallidos: {credentialsStatus.consecutiveErrors} / 5
 												</Typography>
@@ -1172,7 +1175,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 									</PjnGuardedButton>
 								)}
 
-								{isCredentialError && !showUpdateForm && (
+								{isInvalidPassword && !showUpdateForm && (
 									<Button
 										variant="outlined"
 										size="small"
@@ -1202,7 +1205,24 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 									</Button>
 								)}
 
-								{isCredentialError && showUpdateForm && (
+								{isRequiredAction && credentialsStatus.enabled && (
+									<PjnGuardedButton
+										variant="outlined"
+										size="small"
+										startIcon={<Refresh2 size={14} />}
+										onClick={handleResync}
+										sx={{
+											alignSelf: "flex-start",
+											textTransform: "none",
+											fontSize: "0.78rem",
+											fontWeight: 600,
+										}}
+									>
+										Reintentar sincronización
+									</PjnGuardedButton>
+								)}
+
+								{isInvalidPassword && showUpdateForm && (
 									<Stack spacing={1.25} sx={{ pt: 0.5 }}>
 										<TextField
 											fullWidth
