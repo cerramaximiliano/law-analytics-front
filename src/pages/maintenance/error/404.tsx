@@ -34,12 +34,12 @@ function Error404() {
 				</Grid>
 				<Grid item xs={12}>
 					<Stack spacing={2} justifyContent="center" alignItems="center">
-						<Typography variant="h1">Página No Encontrada</Typography>
+						<Typography variant="h1">Página no encontrada</Typography>
 						<Typography color="textSecondary" align="center" sx={{ width: { xs: "73%", sm: "61%" } }}>
-							!La página que buscas ha sido removida, renombrada o jamás existió!
+							¡La página que buscas ha sido removida, renombrada o jamás existió!
 						</Typography>
 						<Button component={Link} to={APP_DEFAULT_PATH} variant="contained">
-							Volver al Inicio
+							Volver al inicio
 						</Button>
 					</Stack>
 				</Grid>

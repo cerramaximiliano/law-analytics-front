@@ -44,6 +44,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 import { getContactsByUserId } from "store/reducers/contacts";
 import axios from "axios";
 import LinkCauseModal from "sections/forms/wizard/calc-laboral/components/linkCauseModal";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 interface ResultItem {
 	key: string;
@@ -384,141 +385,73 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 		return data.type === "Calculado" && hasInterest;
 	};
 
+	const isDark = theme.palette.mode === "dark";
+
+	const brandIconButtonSx = {
+		width: 32,
+		height: 32,
+		borderRadius: 1,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+		bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+		color: BRAND_BLUE,
+		transition: "all 180ms ease",
+		"&:hover": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.38 : 0.28),
+		},
+		"&:disabled": {
+			bgcolor: alpha(theme.palette.text.disabled, 0.06),
+			borderColor: alpha(theme.palette.text.disabled, 0.16),
+			color: theme.palette.text.disabled,
+		},
+	};
+
 	const renderActionButtons = () => (
-		<Stack direction="row" spacing={1} sx={{ mb: 2 }} justifyContent="center" className="no-print">
+		<Stack direction="row" spacing={0.875} sx={{ mb: 2 }} justifyContent="center" className="no-print" flexWrap="wrap" useFlexGap>
 			<Tooltip title="Copiar al portapapeles">
-				<IconButton
-					onClick={handleCopyToClipboard}
-					size="small"
-					sx={{
-						border: "1px solid",
-						borderColor: "divider",
-						bgcolor: "background.paper",
-						"&:hover": {
-							bgcolor: "action.hover",
-							borderColor: "primary.main",
-						},
-					}}
-				>
-					<Copy size={18} />
+				<IconButton onClick={handleCopyToClipboard} size="small" sx={brandIconButtonSx}>
+					<Copy size={16} variant="Bulk" />
 				</IconButton>
 			</Tooltip>
 			<Tooltip title="Enviar por email">
-				<IconButton
-					onClick={() => setEmailModalOpen(true)}
-					size="small"
-					sx={{
-						border: "1px solid",
-						borderColor: "divider",
-						bgcolor: "background.paper",
-						"&:hover": {
-							bgcolor: "action.hover",
-							borderColor: "primary.main",
-						},
-					}}
-				>
-					<Sms size={18} />
+				<IconButton onClick={() => setEmailModalOpen(true)} size="small" sx={brandIconButtonSx}>
+					<Sms size={16} variant="Bulk" />
 				</IconButton>
 			</Tooltip>
 			<Tooltip title="Imprimir">
-				<IconButton
-					onClick={handlePrint}
-					size="small"
-					sx={{
-						border: "1px solid",
-						borderColor: "divider",
-						bgcolor: "background.paper",
-						"&:hover": {
-							bgcolor: "action.hover",
-							borderColor: "primary.main",
-						},
-					}}
-				>
-					<Printer size={18} />
+				<IconButton onClick={handlePrint} size="small" sx={brandIconButtonSx}>
+					<Printer size={16} variant="Bulk" />
 				</IconButton>
 			</Tooltip>
 			<Tooltip title="Vincular a causa">
-				<IconButton
-					onClick={() => setLinkModalOpen(true)}
-					size="small"
-					sx={{
-						border: "1px solid",
-						borderColor: "divider",
-						bgcolor: "background.paper",
-						"&:hover": {
-							bgcolor: "action.hover",
-							borderColor: "primary.main",
-						},
-					}}
-				>
-					<Link21 size={18} />
+				<IconButton onClick={() => setLinkModalOpen(true)} size="small" sx={brandIconButtonSx}>
+					<Link21 size={16} variant="Bulk" />
 				</IconButton>
 			</Tooltip>
 			{!hideInterestButton && (
 				<Tooltip title="Actualizar con intereses">
-					<IconButton
-						onClick={() => setUpdateModalOpen(true)}
-						size="small"
-						sx={{
-							border: "1px solid",
-							borderColor: "divider",
-							bgcolor: "background.paper",
-							"&:hover": {
-								bgcolor: "action.hover",
-								borderColor: "primary.main",
-							},
-						}}
-					>
-						<Calculator size={18} />
+					<IconButton onClick={() => setUpdateModalOpen(true)} size="small" sx={brandIconButtonSx}>
+						<Calculator size={16} variant="Bulk" />
 					</IconButton>
 				</Tooltip>
 			)}
 			{showInfoButton && onInfoClick && (
 				<Tooltip title="Información sobre los cálculos">
-					<IconButton
-						onClick={onInfoClick}
-						size="small"
-						sx={{
-							border: "1px solid",
-							borderColor: "divider",
-							bgcolor: "background.paper",
-							"&:hover": {
-								bgcolor: "action.hover",
-								borderColor: "primary.main",
-							},
-						}}
-					>
-						<Information size={18} />
+					<IconButton onClick={onInfoClick} size="small" sx={brandIconButtonSx}>
+						<Information size={16} variant="Bulk" />
 					</IconButton>
 				</Tooltip>
 			)}
 			{showSaveButton && onSaveClick && (
 				<Tooltip title={isSaved ? "El cálculo ya fue guardado" : isSaving ? "Guardando..." : "Guardar cálculo"}>
 					<span>
-						<IconButton
-							onClick={onSaveClick}
-							disabled={isSaved || isSaving}
-							size="small"
-							sx={{
-								border: "1px solid",
-								borderColor: "divider",
-								bgcolor: "background.paper",
-								"&:hover": {
-									bgcolor: "action.hover",
-									borderColor: "primary.main",
-								},
-								"&:disabled": {
-									bgcolor: "action.disabledBackground",
-									borderColor: "divider",
-								},
-							}}
-						>
-							{isSaving ? <CircularProgress size={18} /> : <Save2 size={18} />}
+						<IconButton onClick={onSaveClick} disabled={isSaved || isSaving} size="small" sx={brandIconButtonSx}>
+							{isSaving ? <CircularProgress size={16} sx={{ color: BRAND_BLUE }} /> : <Save2 size={16} variant="Bulk" />}
 						</IconButton>
 					</span>
 				</Tooltip>
 			)}
-			{/* Toggle keepUpdated - solo visible cuando el cálculo está guardado y es elegible */}
+			{/* Toggle keepUpdated — visible cuando el cálculo está guardado y es elegible */}
 			{isSaved && isEligibleForKeepUpdated() && onKeepUpdatedChange && (
 				<Tooltip
 					title={
@@ -529,22 +462,34 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 						onClick={() => onKeepUpdatedChange(!data.keepUpdated)}
 						disabled={isKeepUpdatedLoading}
 						size="small"
-						sx={{
-							border: "1px solid",
-							borderColor: data.keepUpdated ? "primary.main" : "divider",
-							bgcolor: data.keepUpdated ? alpha(theme.palette.primary.main, 0.08) : "background.paper",
-							color: data.keepUpdated ? "primary.main" : "text.secondary",
-							"&:hover": {
-								bgcolor: data.keepUpdated ? alpha(theme.palette.primary.main, 0.15) : "action.hover",
-								borderColor: "primary.main",
-							},
-							"&:disabled": {
-								bgcolor: "action.disabledBackground",
-								borderColor: "divider",
-							},
-						}}
+						sx={
+							data.keepUpdated
+								? {
+										width: 32,
+										height: 32,
+										borderRadius: 1,
+										border: `1px solid ${alpha(LIVE_GREEN, isDark ? 0.4 : 0.3)}`,
+										bgcolor: alpha(LIVE_GREEN, isDark ? 0.16 : 0.1),
+										color: LIVE_GREEN,
+										transition: "all 180ms ease",
+										"&:hover": {
+											bgcolor: alpha(LIVE_GREEN, isDark ? 0.24 : 0.16),
+											borderColor: alpha(LIVE_GREEN, isDark ? 0.54 : 0.4),
+										},
+										"&:disabled": {
+											bgcolor: alpha(theme.palette.text.disabled, 0.06),
+											borderColor: alpha(theme.palette.text.disabled, 0.16),
+											color: theme.palette.text.disabled,
+										},
+								  }
+								: brandIconButtonSx
+						}
 					>
-						{isKeepUpdatedLoading ? <CircularProgress size={18} /> : <Refresh size={18} />}
+						{isKeepUpdatedLoading ? (
+							<CircularProgress size={16} sx={{ color: data.keepUpdated ? LIVE_GREEN : BRAND_BLUE }} />
+						) : (
+							<Refresh size={16} variant="Bulk" />
+						)}
 					</IconButton>
 				</Tooltip>
 			)}
@@ -624,34 +569,60 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 			<Paper
 				elevation={0}
 				sx={{
-					mb: 1.5,
+					mb: 1.25,
 					overflow: "hidden",
-					borderRadius: 2,
-					border: `1px solid ${theme.palette.divider}`,
+					borderRadius: 1.5,
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 					bgcolor: "background.paper",
-					boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+					boxShadow: "none",
 				}}
 			>
 				<Box
 					sx={{
 						display: "flex",
 						alignItems: "center",
-						px: 2,
-						py: 1.5,
-						borderBottom: `1px solid ${theme.palette.divider}`,
-						bgcolor: theme.palette.mode === "dark" ? "grey.900" : "grey.50",
+						px: 1.75,
+						py: 1.25,
+						borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
+						gap: 1,
 					}}
 				>
-					<Icon
-						size={18}
-						style={{
-							marginRight: theme.spacing(1),
-							color: theme.palette.primary.main,
+					<Box
+						sx={{
+							width: 26,
+							height: 26,
+							borderRadius: 0.75,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+							color: BRAND_BLUE,
+							flexShrink: 0,
 						}}
-					/>
-					<Typography variant="body1" fontWeight={600}>
-						{getSectionTitle(sectionKey)}
-					</Typography>
+					>
+						<Icon size={14} variant="Bulk" />
+					</Box>
+					<Stack spacing={0.125}>
+						<Stack direction="row" spacing={0.5} alignItems="center">
+							<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+							<Typography
+								sx={{
+									fontSize: "0.58rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+								}}
+							>
+								Sección
+							</Typography>
+						</Stack>
+						<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+							{getSectionTitle(sectionKey)}
+						</Typography>
+					</Stack>
 				</Box>
 				<Box sx={{ px: 2, py: 1.5 }}>
 					{(() => {
@@ -697,17 +668,17 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 													key={key}
 													sx={{
 														mt: 1,
-														p: 1.5,
-														bgcolor: alpha(theme.palette.warning.main, 0.1),
+														p: 1.25,
+														bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.06),
 														borderRadius: 1,
-														border: `1px solid ${alpha(theme.palette.warning.main, 0.3)}`,
+														border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
 														display: "flex",
 														alignItems: "flex-start",
 														gap: 1,
 													}}
 												>
-													<Warning2 size={18} color={theme.palette.warning.main} variant="Bold" style={{ flexShrink: 0, marginTop: 2 }} />
-													<Typography variant="body2" color="text.primary">
+													<Warning2 size={16} color={STALE_AMBER} variant="Bulk" style={{ flexShrink: 0, marginTop: 2 }} />
+													<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em", lineHeight: 1.5 }}>
 														{formatValue(key, value, formatType)}
 													</Typography>
 												</Box>
@@ -723,14 +694,23 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 													alignItems: "center",
 													py: 0.75,
 													"&:not(:last-child)": {
-														borderBottom: `1px solid ${theme.palette.divider}`,
+														borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.12 : 0.08)}`,
 													},
 												}}
 											>
-												<Typography variant="body2" color="text.secondary">
-													{getLabelForKey(key, customLabel)}:
+												<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+													{getLabelForKey(key, customLabel)}
 												</Typography>
-												<Typography variant="body2" fontWeight={500} sx={{ ml: 2 }}>
+												<Typography
+													sx={{
+														fontSize: "0.82rem",
+														fontWeight: 500,
+														ml: 2,
+														color: "text.primary",
+														letterSpacing: "-0.005em",
+														fontVariantNumeric: "tabular-nums",
+													}}
+												>
 													{formatValue(key, value, formatType)}
 												</Typography>
 											</Box>
@@ -742,11 +722,11 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 									<Box
 										key={`tramo-group-${idx}`}
 										sx={{
-											mb: 1.5,
+											mb: 1.25,
 											mt: idx === 0 ? 1 : 0,
-											bgcolor: theme.palette.mode === "dark" ? "grey.800" : "grey.50",
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
 											borderRadius: 1,
-											border: `1px solid ${theme.palette.divider}`,
+											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 											overflow: "hidden",
 										}}
 									>
@@ -758,51 +738,45 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 													justifyContent: "space-between",
 													alignItems: "center",
 													py: 0.75,
-													px: 1.5,
-													bgcolor: theme.palette.mode === "dark" ? "grey.700" : "grey.100",
-													borderBottom: `1px solid ${theme.palette.divider}`,
+													px: 1.25,
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.05),
+													borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
 												}}
 											>
-												<Typography variant="body2" fontWeight={600}>
+												<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
 													{getLabelForKey(tramo.header.key, tramo.header.customLabel)}
 												</Typography>
-												<Typography variant="body2" fontWeight={500} color="text.secondary">
+												<Typography sx={{ fontSize: "0.78rem", fontWeight: 500, color: "text.secondary", letterSpacing: "-0.005em" }}>
 													{formatValue(tramo.header.key, tramo.header.value, tramo.header.formatType)}
 												</Typography>
 											</Box>
 										)}
 										{/* Detalles del tramo */}
-										<Box sx={{ px: 1.5, py: 0.75 }}>
+										<Box sx={{ px: 1.25, py: 0.75 }}>
 											{tramo.tasa && (
-												<Box
-													sx={{
-														display: "flex",
-														justifyContent: "space-between",
-														alignItems: "center",
-														py: 0.5,
-													}}
-												>
-													<Typography variant="caption" color="text.secondary">
-														{getLabelForKey(tramo.tasa.key, tramo.tasa.customLabel)}:
+												<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.375 }}>
+													<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+														{getLabelForKey(tramo.tasa.key, tramo.tasa.customLabel)}
 													</Typography>
-													<Typography variant="caption" fontWeight={500}>
+													<Typography sx={{ fontSize: "0.72rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em" }}>
 														{formatValue(tramo.tasa.key, tramo.tasa.value, tramo.tasa.formatType)}
 													</Typography>
 												</Box>
 											)}
 											{tramo.interes && (
-												<Box
-													sx={{
-														display: "flex",
-														justifyContent: "space-between",
-														alignItems: "center",
-														py: 0.5,
-													}}
-												>
-													<Typography variant="caption" color="text.secondary">
-														{getLabelForKey(tramo.interes.key, tramo.interes.customLabel)}:
+												<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.375 }}>
+													<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+														{getLabelForKey(tramo.interes.key, tramo.interes.customLabel)}
 													</Typography>
-													<Typography variant="caption" fontWeight={500} color="success.main">
+													<Typography
+														sx={{
+															fontSize: "0.72rem",
+															fontWeight: 600,
+															color: LIVE_GREEN,
+															letterSpacing: "-0.005em",
+															fontVariantNumeric: "tabular-nums",
+														}}
+													>
 														{formatValue(tramo.interes.key, tramo.interes.value, tramo.interes.formatType)}
 													</Typography>
 												</Box>
@@ -824,13 +798,22 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 													alignItems: "center",
 													py: 0.75,
 													mt: 1,
-													borderTop: `1px solid ${theme.palette.divider}`,
+													borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
 												}}
 											>
-												<Typography variant="body2" color="text.secondary">
-													{getLabelForKey(key, customLabel)}:
+												<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+													{getLabelForKey(key, customLabel)}
 												</Typography>
-												<Typography variant="body2" fontWeight={500} sx={{ ml: 2 }}>
+												<Typography
+													sx={{
+														fontSize: "0.82rem",
+														fontWeight: 600,
+														ml: 2,
+														color: LIVE_GREEN,
+														letterSpacing: "-0.005em",
+														fontVariantNumeric: "tabular-nums",
+													}}
+												>
 													{formatValue(key, value, formatType)}
 												</Typography>
 											</Box>
@@ -843,147 +826,241 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 					{showSegmentsInCalculos && (
 						<>
 							{savedSegments.map((segment: any, segIndex: number) => (
-								<Box key={`saved-segment-${segIndex}`} sx={{ mb: 1.5, mt: segIndex === 0 ? 0 : 1 }}>
+								<Box
+									key={`saved-segment-${segIndex}`}
+									sx={{
+										mb: 1.25,
+										mt: segIndex === 0 ? 0 : 1,
+										borderRadius: 1,
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+										overflow: "hidden",
+									}}
+								>
 									<Box
 										sx={{
 											display: "flex",
 											justifyContent: "space-between",
 											alignItems: "center",
-											py: 0.5,
-											bgcolor: theme.palette.mode === "dark" ? "grey.800" : "grey.100",
-											px: 1,
-											borderRadius: 1,
-											mb: 0.5,
+											py: 0.75,
+											px: 1.25,
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.05),
+											borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
 										}}
 									>
-										<Typography variant="body2" fontWeight={600}>
+										<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
 											Tramo {segIndex + 1}: {segment.startDate} - {segment.endDate}
 										</Typography>
-										{segment.isExtension && <Chip label="Extensión" size="small" color="info" sx={{ height: 20, fontSize: "0.7rem" }} />}
+										{segment.isExtension && (
+											<Box
+												sx={{
+													display: "inline-flex",
+													alignItems: "center",
+													gap: 0.5,
+													px: 0.75,
+													py: 0.125,
+													borderRadius: 0.5,
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+													border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.22)}`,
+												}}
+											>
+												<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+												<Typography
+													sx={{
+														fontSize: "0.62rem",
+														fontWeight: 600,
+														color: BRAND_BLUE,
+														letterSpacing: "0.04em",
+														textTransform: "uppercase",
+													}}
+												>
+													Extensión
+												</Typography>
+											</Box>
+										)}
 									</Box>
-									<Box sx={{ pl: 1 }}>
-										<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.25 }}>
-											<Typography variant="caption" color="text.secondary">
-												Tasa:
-											</Typography>
-											<Typography variant="caption" fontWeight={500}>
+									<Box sx={{ px: 1.25, py: 0.75 }}>
+										<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.375 }}>
+											<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }}>Tasa</Typography>
+											<Typography sx={{ fontSize: "0.72rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em" }}>
 												{segment.rateName || segment.rate}
 											</Typography>
 										</Box>
-										<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.25 }}>
-											<Typography variant="caption" color="text.secondary">
-												Capital del tramo:
+										<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.375 }}>
+											<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+												Capital del tramo
 											</Typography>
-											<Typography variant="caption" fontWeight={500}>
+											<Typography
+												sx={{
+													fontSize: "0.72rem",
+													fontWeight: 500,
+													color: "text.primary",
+													letterSpacing: "-0.005em",
+													fontVariantNumeric: "tabular-nums",
+												}}
+											>
 												{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(segment.capital || 0)}
 											</Typography>
 										</Box>
-										<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.25 }}>
-											<Typography variant="caption" color="text.secondary">
-												Coeficiente:
-											</Typography>
-											<Typography variant="caption" fontWeight={500}>
+										<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.375 }}>
+											<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }}>Coeficiente</Typography>
+											<Typography
+												sx={{
+													fontSize: "0.72rem",
+													fontWeight: 500,
+													color: "text.primary",
+													letterSpacing: "-0.005em",
+													fontVariantNumeric: "tabular-nums",
+												}}
+											>
 												{((segment.coefficient || 0) * 100).toFixed(4)}%
 											</Typography>
 										</Box>
-										<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.25 }}>
-											<Typography variant="caption" color="text.secondary">
-												Interés generado:
+										<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.375 }}>
+											<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+												Interés generado
 											</Typography>
-											<Typography variant="caption" fontWeight={500} color="success.main">
+											<Typography
+												sx={{
+													fontSize: "0.72rem",
+													fontWeight: 600,
+													color: LIVE_GREEN,
+													letterSpacing: "-0.005em",
+													fontVariantNumeric: "tabular-nums",
+												}}
+											>
 												{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(getEffectiveInterest(segment))}
 											</Typography>
 										</Box>
-										{segment.cerComparison?.disponible &&
-											(() => {
-												const eff = getEffectiveInterest(segment);
-												const techo = segment.cerComparison.techo?.monto || 0;
-												const piso = segment.cerComparison.piso?.monto || 0;
-												const fmt = (v: number) =>
-													new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(v);
-												const aplicado =
-													eff === techo ? "(techo)" : eff === piso ? "(piso)" : "(dentro del rango)";
-												return (
-													<Box
-														sx={{
-															mt: 0.5,
-															p: 0.75,
-															bgcolor: alpha(theme.palette.info.main, 0.08),
-															borderRadius: 1,
-															border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-														}}
-													>
-														<Typography variant="caption" fontWeight={600} color="info.main" sx={{ display: "block" }}>
-															Comparativa CER (Ley 27.802):
-														</Typography>
-														<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.15 }}>
-															<Typography
-																variant="caption"
-																color="text.secondary"
-																sx={{ textDecoration: eff !== (segment.interest || 0) ? "line-through" : "none" }}
-															>
-																Calculado:
-															</Typography>
-															<Typography
-																variant="caption"
-																color="text.secondary"
-																sx={{ textDecoration: eff !== (segment.interest || 0) ? "line-through" : "none" }}
-															>
-																{fmt(segment.interest || 0)}
-															</Typography>
-														</Box>
-														<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.15 }}>
-															<Typography
-																variant="caption"
-																color={eff === piso ? "success.main" : "text.secondary"}
-																fontWeight={eff === piso ? 700 : 400}
-															>
-																{eff === piso && "▸ "}Piso (67% × CER+3%):
-															</Typography>
-															<Typography
-																variant="caption"
-																color={eff === piso ? "success.main" : "text.secondary"}
-																fontWeight={eff === piso ? 700 : 400}
-															>
-																{fmt(piso)}
-															</Typography>
-														</Box>
-														<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.15 }}>
-															<Typography
-																variant="caption"
-																color={eff === techo ? "warning.main" : "text.secondary"}
-																fontWeight={eff === techo ? 700 : 400}
-															>
-																{eff === techo && "▸ "}Techo (CER+3%):
-															</Typography>
-															<Typography
-																variant="caption"
-																color={eff === techo ? "warning.main" : "text.secondary"}
-																fontWeight={eff === techo ? 700 : 400}
-															>
-																{fmt(techo)}
-															</Typography>
-														</Box>
-														<Box
+									</Box>
+									{segment.cerComparison?.disponible &&
+										(() => {
+											const eff = getEffectiveInterest(segment);
+											const techo = segment.cerComparison.techo?.monto || 0;
+											const piso = segment.cerComparison.piso?.monto || 0;
+											const fmt = (v: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(v);
+											const aplicado = eff === techo ? "(techo)" : eff === piso ? "(piso)" : "(dentro del rango)";
+											return (
+												<Box
+													sx={{
+														mx: 1.25,
+														mb: 1,
+														p: 1,
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+														borderRadius: 1,
+														border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)}`,
+													}}
+												>
+													<Stack direction="row" spacing={0.5} alignItems="center" sx={{ mb: 0.5 }}>
+														<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+														<Typography
 															sx={{
-																display: "flex",
-																justifyContent: "space-between",
-																py: 0.25,
-																mt: 0.25,
-																borderTop: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+																fontSize: "0.58rem",
+																fontWeight: 600,
+																letterSpacing: "0.08em",
+																textTransform: "uppercase",
+																color: BRAND_BLUE,
 															}}
 														>
-															<Typography variant="caption" fontWeight={700} color="success.main">
-																Aplicado {aplicado}:
-															</Typography>
-															<Typography variant="caption" fontWeight={700} color="success.main">
-																{fmt(eff)}
-															</Typography>
-														</Box>
+															Comparativa CER (Ley 27.802)
+														</Typography>
+													</Stack>
+													<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.15 }}>
+														<Typography
+															sx={{
+																fontSize: "0.7rem",
+																color: "text.secondary",
+																letterSpacing: "-0.005em",
+																textDecoration: eff !== (segment.interest || 0) ? "line-through" : "none",
+															}}
+														>
+															Calculado
+														</Typography>
+														<Typography
+															sx={{
+																fontSize: "0.7rem",
+																color: "text.secondary",
+																letterSpacing: "-0.005em",
+																fontVariantNumeric: "tabular-nums",
+																textDecoration: eff !== (segment.interest || 0) ? "line-through" : "none",
+															}}
+														>
+															{fmt(segment.interest || 0)}
+														</Typography>
 													</Box>
-												);
-											})()}
-									</Box>
+													<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.15 }}>
+														<Typography
+															sx={{
+																fontSize: "0.7rem",
+																color: eff === piso ? LIVE_GREEN : "text.secondary",
+																fontWeight: eff === piso ? 700 : 400,
+																letterSpacing: "-0.005em",
+															}}
+														>
+															{eff === piso && "▸ "}Piso (67% × CER+3%)
+														</Typography>
+														<Typography
+															sx={{
+																fontSize: "0.7rem",
+																color: eff === piso ? LIVE_GREEN : "text.secondary",
+																fontWeight: eff === piso ? 700 : 400,
+																letterSpacing: "-0.005em",
+																fontVariantNumeric: "tabular-nums",
+															}}
+														>
+															{fmt(piso)}
+														</Typography>
+													</Box>
+													<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.15 }}>
+														<Typography
+															sx={{
+																fontSize: "0.7rem",
+																color: eff === techo ? STALE_AMBER : "text.secondary",
+																fontWeight: eff === techo ? 700 : 400,
+																letterSpacing: "-0.005em",
+															}}
+														>
+															{eff === techo && "▸ "}Techo (CER+3%)
+														</Typography>
+														<Typography
+															sx={{
+																fontSize: "0.7rem",
+																color: eff === techo ? STALE_AMBER : "text.secondary",
+																fontWeight: eff === techo ? 700 : 400,
+																letterSpacing: "-0.005em",
+																fontVariantNumeric: "tabular-nums",
+															}}
+														>
+															{fmt(techo)}
+														</Typography>
+													</Box>
+													<Box
+														sx={{
+															display: "flex",
+															justifyContent: "space-between",
+															py: 0.375,
+															mt: 0.25,
+															borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+														}}
+													>
+														<Typography sx={{ fontSize: "0.72rem", fontWeight: 700, color: LIVE_GREEN, letterSpacing: "-0.005em" }}>
+															Aplicado {aplicado}
+														</Typography>
+														<Typography
+															sx={{
+																fontSize: "0.72rem",
+																fontWeight: 700,
+																color: LIVE_GREEN,
+																letterSpacing: "-0.005em",
+																fontVariantNumeric: "tabular-nums",
+															}}
+														>
+															{fmt(eff)}
+														</Typography>
+													</Box>
+												</Box>
+											);
+										})()}
 								</Box>
 							))}
 							{/* Mostrar si hay capitalización */}
@@ -993,16 +1070,20 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 										display: "flex",
 										justifyContent: "space-between",
 										alignItems: "center",
-										py: 0.5,
+										py: 0.625,
 										mt: 1,
-										bgcolor: alpha(theme.palette.info.main, 0.1),
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
 										px: 1,
 										borderRadius: 1,
 									}}
 								>
-									<Typography variant="caption" color="info.main">
-										Capitalización de intereses activada
-									</Typography>
+									<Stack direction="row" spacing={0.625} alignItems="center">
+										<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+										<Typography sx={{ fontSize: "0.7rem", fontWeight: 600, color: BRAND_BLUE, letterSpacing: "0.02em" }}>
+											Capitalización de intereses activada
+										</Typography>
+									</Stack>
 								</Box>
 							)}
 						</>
@@ -1020,25 +1101,33 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 											display: "flex",
 											justifyContent: "space-between",
 											alignItems: "center",
-											py: 0.75,
-											borderBottom: `1px solid ${theme.palette.divider}`,
+											py: 0.875,
+											borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.12 : 0.08)}`,
 										}}
 									>
-										<Box>
-											<Typography variant="body2" color="text.secondary">
-												{segment.isExtension ? "Actualización automática" : `Tramo ${segIndex + 1}`} ({formatDateShort(segment.startDate)} -{" "}
-												{formatDateShort(segment.endDate)}):
-											</Typography>
-											{segment.rateName && (
-												<Typography variant="caption" color="text.disabled">
-													{segment.rateName}
+										<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+											{segment.isExtension && <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: BRAND_BLUE, flexShrink: 0 }} />}
+											<Box>
+												<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+													{segment.isExtension ? "Actualización automática" : `Tramo ${segIndex + 1}`} ({formatDateShort(segment.startDate)}{" "}
+													- {formatDateShort(segment.endDate)})
 												</Typography>
-											)}
+												{segment.rateName && (
+													<Typography sx={{ fontSize: "0.66rem", color: "text.disabled", letterSpacing: "-0.005em" }}>
+														{segment.rateName}
+													</Typography>
+												)}
+											</Box>
 										</Box>
 										<Typography
-											variant="body2"
-											fontWeight={500}
-											sx={{ ml: 2, color: segment.isExtension ? "primary.main" : "text.primary" }}
+											sx={{
+												fontSize: "0.82rem",
+												fontWeight: 600,
+												ml: 2,
+												letterSpacing: "-0.005em",
+												fontVariantNumeric: "tabular-nums",
+												color: segment.isExtension ? BRAND_BLUE : LIVE_GREEN,
+											}}
 										>
 											{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(getEffectiveInterest(segment))}
 										</Typography>
@@ -1054,21 +1143,30 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 											display: "flex",
 											justifyContent: "space-between",
 											alignItems: "center",
-											py: 0.75,
-											borderBottom: `1px solid ${theme.palette.divider}`,
+											py: 0.875,
+											borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.12 : 0.08)}`,
 										}}
 									>
 										<Box>
-											<Typography variant="body2" color="text.secondary">
-												Tramo {segIndex + 1} ({segment.startDate} - {segment.endDate}):
+											<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+												Tramo {segIndex + 1} ({segment.startDate} - {segment.endDate})
 											</Typography>
 											{segment.rateName && (
-												<Typography variant="caption" color="text.disabled">
+												<Typography sx={{ fontSize: "0.66rem", color: "text.disabled", letterSpacing: "-0.005em" }}>
 													{segment.rateName}
 												</Typography>
 											)}
 										</Box>
-										<Typography variant="body2" fontWeight={500} sx={{ ml: 2 }}>
+										<Typography
+											sx={{
+												fontSize: "0.82rem",
+												fontWeight: 600,
+												ml: 2,
+												letterSpacing: "-0.005em",
+												fontVariantNumeric: "tabular-nums",
+												color: LIVE_GREEN,
+											}}
+										>
 											{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(getEffectiveInterest(segment))}
 										</Typography>
 									</Box>
@@ -1128,22 +1226,35 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 									display: "flex",
 									justifyContent: "space-between",
 									alignItems: "center",
-									py: 0.75,
-									borderTop: `2px solid ${theme.palette.divider}`,
+									py: 1,
+									borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
 									mt: 1,
-									bgcolor: theme.palette.mode === "dark" ? "grey.800" : "grey.100",
-									mx: -2,
-									px: 2,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+									mx: -1.75,
+									px: 1.75,
 								}}
 							>
-								<Typography variant="body2" fontWeight={600} color="text.primary">
-									Subtotal:
+								<Typography
+									sx={{
+										fontSize: "0.7rem",
+										fontWeight: 600,
+										letterSpacing: "0.04em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+									}}
+								>
+									Subtotal
 								</Typography>
-								<Typography variant="body2" fontWeight={600} sx={{ ml: 2, color: "primary.main" }}>
-									{new Intl.NumberFormat("es-AR", {
-										style: "currency",
-										currency: "ARS",
-									}).format(subtotal)}
+								<Typography
+									sx={{
+										fontSize: "0.88rem",
+										fontWeight: 700,
+										letterSpacing: "-0.005em",
+										color: BRAND_BLUE,
+										fontVariantNumeric: "tabular-nums",
+									}}
+								>
+									{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(subtotal)}
 								</Typography>
 							</Box>
 						);
@@ -1219,14 +1330,11 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 
 				<Box
 					sx={{
-						bgcolor: theme.palette.mode === "dark" ? "grey.900" : "#f8f8f8",
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.025),
 						borderRadius: 2,
 						p: 2,
-						border: `1px solid ${theme.palette.divider}`,
-						boxShadow: "0 2px 4px rgba(0,0,0,0.03)",
-						"&:hover": {
-							bgcolor: theme.palette.mode === "dark" ? "grey.900" : "#f8f8f8",
-						},
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+						boxShadow: "none",
 						"@media print": {
 							bgcolor: "white !important",
 							border: "none !important",
@@ -1248,51 +1356,92 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 								<React.Fragment key={`section-${key}-${index}`}>{renderSection(key, items as ResultItem[], key, index)}</React.Fragment>
 							))}
 
-							{/* Card del total con diseño minimalista */}
+							{/* Card del total — destacado en verde brand */}
 							<Paper
 								elevation={0}
 								sx={{
 									mt: 1.5,
 									overflow: "hidden",
-									borderRadius: 2,
-									border: `1px solid ${theme.palette.divider}`,
+									borderRadius: 1.5,
+									border: `1px solid ${alpha(LIVE_GREEN, isDark ? 0.28 : 0.2)}`,
 									bgcolor: "background.paper",
-									boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+									boxShadow: "none",
 								}}
 							>
 								<Box
 									sx={{
 										display: "flex",
 										alignItems: "center",
-										px: 2,
-										py: 1.5,
-										borderBottom: `1px solid ${theme.palette.divider}`,
-										bgcolor: theme.palette.mode === "dark" ? "grey.900" : "grey.50",
+										gap: 1,
+										px: 1.75,
+										py: 1.25,
+										borderBottom: `1px solid ${alpha(LIVE_GREEN, isDark ? 0.22 : 0.14)}`,
+										bgcolor: alpha(LIVE_GREEN, isDark ? 0.06 : 0.03),
 									}}
 								>
-									<Typography variant="body1" fontWeight={600}>
-										{data.subClassType === "laboral" ? "Total" : "Capital Actualizado"}
-									</Typography>
-								</Box>
-								<Box sx={{ px: 2, py: 1.5 }}>
 									<Box
 										sx={{
+											width: 26,
+											height: 26,
+											borderRadius: 0.75,
 											display: "flex",
-											justifyContent: "space-between",
 											alignItems: "center",
-											py: 0.75,
+											justifyContent: "center",
+											bgcolor: alpha(LIVE_GREEN, isDark ? 0.18 : 0.1),
+											border: `1px solid ${alpha(LIVE_GREEN, isDark ? 0.32 : 0.22)}`,
+											color: LIVE_GREEN,
+											flexShrink: 0,
 										}}
 									>
-										<Typography variant="body2" color="text.secondary">
-											{data.subClassType === "laboral" ? "Total a pagar:" : "Capital actualizado:"}
-										</Typography>
-										<Typography variant="body2" fontWeight={700} sx={{ ml: 2, color: "primary.main" }}>
-											{new Intl.NumberFormat("es-AR", {
-												style: "currency",
-												currency: "ARS",
-											}).format(data.keepUpdated && data.lastUpdate?.amount ? data.lastUpdate.amount : data.amount)}
-										</Typography>
+										<Calculator size={14} variant="Bulk" />
 									</Box>
+									<Stack spacing={0.125}>
+										<Stack direction="row" spacing={0.5} alignItems="center">
+											<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: LIVE_GREEN }} />
+											<Typography
+												sx={{
+													fontSize: "0.58rem",
+													fontWeight: 600,
+													letterSpacing: "0.08em",
+													textTransform: "uppercase",
+													color: "text.secondary",
+												}}
+											>
+												Resultado
+											</Typography>
+										</Stack>
+										<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+											{data.subClassType === "laboral" ? "Total" : "Capital actualizado"}
+										</Typography>
+									</Stack>
+								</Box>
+								<Box sx={{ px: 1.75, py: 1.5 }}>
+									<Stack direction="row" justifyContent="space-between" alignItems="baseline" spacing={1}>
+										<Typography
+											sx={{
+												fontSize: "0.7rem",
+												fontWeight: 600,
+												letterSpacing: "0.04em",
+												textTransform: "uppercase",
+												color: "text.secondary",
+											}}
+										>
+											{data.subClassType === "laboral" ? "Total a pagar" : "Capital actualizado"}
+										</Typography>
+										<Typography
+											sx={{
+												fontSize: "1.05rem",
+												fontWeight: 700,
+												letterSpacing: "-0.015em",
+												color: LIVE_GREEN,
+												fontVariantNumeric: "tabular-nums",
+											}}
+										>
+											{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(
+												data.keepUpdated && data.lastUpdate?.amount ? data.lastUpdate.amount : data.amount,
+											)}
+										</Typography>
+									</Stack>
 								</Box>
 							</Paper>
 						</Stack>
@@ -1309,8 +1458,55 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 				}}
 				maxWidth="md"
 				fullWidth
+				PaperProps={{
+					sx: {
+						borderRadius: 2,
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+						boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+						overflow: "hidden",
+					},
+				}}
 			>
-				<DialogTitle>Enviar por Email</DialogTitle>
+				<DialogTitle
+					sx={{
+						display: "flex",
+						alignItems: "center",
+						gap: 1.25,
+						px: 2.5,
+						py: 1.75,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+						borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+					}}
+				>
+					<Box
+						sx={{
+							width: 32,
+							height: 32,
+							borderRadius: 1,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+							color: BRAND_BLUE,
+						}}
+					>
+						<Sms size={18} variant="Bulk" />
+					</Box>
+					<Stack spacing={0.125}>
+						<Stack direction="row" spacing={0.5} alignItems="center">
+							<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+							<Typography
+								sx={{ fontSize: "0.6rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}
+							>
+								Compartir cálculo
+							</Typography>
+						</Stack>
+						<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+							Enviar por email
+						</Typography>
+					</Stack>
+				</DialogTitle>
 				<DialogContent>
 					<Stack spacing={2} sx={{ mt: 1 }}>
 						<Stack direction="row" spacing={1}>
@@ -1437,9 +1633,8 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 						</Box>
 					</Stack>
 				</DialogContent>
-				<DialogActions>
+				<DialogActions sx={{ px: 2.5, py: 1.75, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}>
 					<Button
-						color="error"
 						onClick={() => {
 							setEmailModalOpen(false);
 							onEmailModalClose?.();
@@ -1449,6 +1644,21 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 							setCustomMessage("");
 						}}
 						disabled={isSendingEmail}
+						sx={{
+							textTransform: "none",
+							fontWeight: 600,
+							letterSpacing: "-0.005em",
+							color: "text.secondary",
+							borderRadius: 1.25,
+							px: 2,
+							py: 0.875,
+							border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+							"&:hover": {
+								color: BRAND_BLUE,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+								borderColor: alpha(BRAND_BLUE, 0.28),
+							},
+						}}
 					>
 						Cancelar
 					</Button>
@@ -1456,7 +1666,19 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 						onClick={handleEmailSend}
 						variant="contained"
 						disabled={isSendingEmail}
-						startIcon={isSendingEmail ? <CircularProgress size={20} /> : undefined}
+						startIcon={isSendingEmail ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : undefined}
+						sx={{
+							textTransform: "none",
+							fontWeight: 600,
+							letterSpacing: "-0.005em",
+							bgcolor: BRAND_BLUE,
+							color: "#fff",
+							borderRadius: 1.25,
+							px: 2,
+							py: 0.875,
+							boxShadow: "none",
+							"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+						}}
 					>
 						{isSendingEmail ? "Enviando..." : "Enviar"}
 					</Button>
@@ -1468,13 +1690,65 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 
 			{/* Interest Modal */}
 			{!hideInterestButton && (
-				<Dialog open={updateModalOpen} onClose={() => setUpdateModalOpen(false)}>
-					<DialogTitle>Actualizar con Intereses</DialogTitle>
-					<DialogContent>
+				<Dialog
+					open={updateModalOpen}
+					onClose={() => setUpdateModalOpen(false)}
+					maxWidth="xs"
+					fullWidth
+					PaperProps={{
+						sx: {
+							borderRadius: 2,
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+							boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+							overflow: "hidden",
+						},
+					}}
+				>
+					<DialogTitle
+						sx={{
+							display: "flex",
+							alignItems: "center",
+							gap: 1.25,
+							px: 2.5,
+							py: 1.75,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+							borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+						}}
+					>
+						<Box
+							sx={{
+								width: 32,
+								height: 32,
+								borderRadius: 1,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+							}}
+						>
+							<Calculator size={18} variant="Bulk" />
+						</Box>
+						<Stack spacing={0.125}>
+							<Stack direction="row" spacing={0.5} alignItems="center">
+								<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+								<Typography
+									sx={{ fontSize: "0.6rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}
+								>
+									Recalcular
+								</Typography>
+							</Stack>
+							<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+								Actualizar con intereses
+							</Typography>
+						</Stack>
+					</DialogTitle>
+					<DialogContent sx={{ pt: 3, pb: 1, px: 2.5 }}>
 						<TextField
 							autoFocus
 							margin="dense"
-							label="Tasa de Interés (%)"
+							label="Tasa de interés (%)"
 							type="number"
 							fullWidth
 							value={interestRate}
@@ -1482,9 +1756,43 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 							size="small"
 						/>
 					</DialogContent>
-					<DialogActions>
-						<Button onClick={() => setUpdateModalOpen(false)}>Cancelar</Button>
-						<Button onClick={handleUpdateWithInterest} variant="contained">
+					<DialogActions sx={{ px: 2.5, py: 1.75, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}>
+						<Button
+							onClick={() => setUpdateModalOpen(false)}
+							sx={{
+								textTransform: "none",
+								fontWeight: 600,
+								letterSpacing: "-0.005em",
+								color: "text.secondary",
+								borderRadius: 1.25,
+								px: 2,
+								py: 0.875,
+								border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+								"&:hover": {
+									color: BRAND_BLUE,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+									borderColor: alpha(BRAND_BLUE, 0.28),
+								},
+							}}
+						>
+							Cancelar
+						</Button>
+						<Button
+							onClick={handleUpdateWithInterest}
+							variant="contained"
+							sx={{
+								textTransform: "none",
+								fontWeight: 600,
+								letterSpacing: "-0.005em",
+								bgcolor: BRAND_BLUE,
+								color: "#fff",
+								borderRadius: 1.25,
+								px: 2,
+								py: 0.875,
+								boxShadow: "none",
+								"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+							}}
+						>
 							Actualizar
 						</Button>
 					</DialogActions>

@@ -14,7 +14,10 @@
  */
 
 import { test, expect, Page } from "@playwright/test";
-import { loginViaForm } from "./helpers/auth";
+
+// Reutiliza el auth state guardado por el setup global para no llamar al
+// login API (evita el rate-limiting del backend al final de la suite).
+test.use({ storageState: "tests/.auth/user.json" });
 
 /**
  * Abre el Drawer (si está cerrado) y luego hace click en el botón "Soporte".
@@ -43,7 +46,6 @@ async function openSupportModal(page: Page) {
 
 test.describe("GRUPO 1 — SupportModal: validación de campos requeridos", () => {
 	test.beforeEach(async ({ page }) => {
-		await loginViaForm(page);
 		await page.goto("/dashboard/default");
 		await openSupportModal(page);
 	});
@@ -93,7 +95,6 @@ test.describe("GRUPO 1 — SupportModal: validación de campos requeridos", () =
 
 test.describe("GRUPO 2 — SupportModal: apertura y cierre", () => {
 	test.beforeEach(async ({ page }) => {
-		await loginViaForm(page);
 		await page.goto("/dashboard/default");
 	});
 

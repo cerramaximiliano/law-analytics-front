@@ -1,5 +1,6 @@
 // @refresh reset
 import React from "react";
+import { Navigate } from "react-router-dom";
 
 // project-imports
 import MainLayout from "layout/MainLayout";
@@ -36,9 +37,9 @@ const UserTabProfessional = Loadable(lazyRetry(() => import("sections/apps/profi
 
 const AccountProfile = Loadable(lazyRetry(() => import("pages/apps/profiles/account")));
 const AccountTabAccount = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabAccount")));
-const AccountTabPassword = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabPassword")));
 const AccountTabRole = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabRole")));
 const AccountTabSettings = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabSettings")));
+const AccountTabPjnIntegration = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabPjnIntegration")));
 
 // render - folders
 const FoldersLayout = Loadable(lazyRetry(() => import("pages/apps/folders/folders")));
@@ -78,6 +79,9 @@ const SubscriptionError = Loadable(lazyRetry(() => import("pages/apps/subscripti
 // help page
 const HelpPage = Loadable(lazyRetry(() => import("pages/help")));
 
+// teams pages
+const AcceptInvitation = Loadable(lazyRetry(() => import("pages/teams/accept-invitation")));
+
 // admin pages
 const AdminNotificationsPage = Loadable(lazyRetry(() => import("pages/admin/notifications")));
 const AdminJudicialMovementsPage = Loadable(lazyRetry(() => import("pages/admin/notifications/judicial-movements")));
@@ -114,6 +118,15 @@ const MainRoutes = {
 		{
 			path: "manage-booking/:token",
 			element: <ManageBookingPage />,
+		},
+		{
+			path: "teams",
+			children: [
+				{
+					path: "invitation/:token",
+					element: <AcceptInvitation />,
+				},
+			],
 		},
 		{
 			path: "/",
@@ -252,16 +265,20 @@ const MainRoutes = {
 											element: <AccountTabAccount />,
 										},
 										{
-											path: "password",
-											element: <AccountTabPassword />,
-										},
-										{
 											path: "role",
 											element: <AccountTabRole />,
 										},
 										{
-											path: "settings",
+											path: "subscription",
 											element: <AccountTabSettings />,
+										},
+										{
+											path: "settings",
+											element: <Navigate to="/apps/profiles/account/subscription" replace />,
+										},
+										{
+											path: "pjn",
+											element: <AccountTabPjnIntegration />,
 										},
 									],
 								},
@@ -332,7 +349,7 @@ const MainRoutes = {
 						{
 							/* legacy — kept for bookmarks */
 							path: "plantillas",
-							element: <ModelosPage />,
+							element: <Navigate replace to="/documentos/modelos" />,
 						},
 					],
 				},

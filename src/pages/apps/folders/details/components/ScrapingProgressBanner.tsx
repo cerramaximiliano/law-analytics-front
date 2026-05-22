@@ -5,7 +5,7 @@ import { ScrapingProgress } from "types/movements";
 
 interface ScrapingProgressBannerProps {
 	scrapingProgress?: ScrapingProgress;
-	source?: "mev" | "pjn";
+	source?: "mev" | "pjn" | "scba";
 	onRefresh: () => void;
 	onClose?: () => void;
 }
@@ -26,15 +26,17 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 
 	const { status, totalExpected, totalProcessed } = scrapingProgress;
 
-	// Detectar si el total es desconocido (caso PJN)
-	const isTotalUnknown = totalExpected === 0 && totalProcessed > 0;
+	// Detectar si el total es desconocido (caso PJN: no hay total definido)
+	const isTotalUnknown = totalExpected === 0;
 
 	// Calcular porcentaje
 	const percentage = totalExpected > 0 ? Math.round((totalProcessed / totalExpected) * 100) : 0;
 
 	// Obtener texto de la fuente
 	const getSourceText = () => {
-		return source === "pjn" ? "PJN" : "MEV";
+		if (source === "pjn") return "PJN";
+		if (source === "scba") return "SCBA";
+		return "MEV";
 	};
 
 	// Determinar el tipo de alerta y mensaje según el estado

@@ -1,18 +1,46 @@
 import { useSelector } from "react-redux";
+import { useMemo } from "react";
 import { RootState } from "../store";
 import { Subscription } from "../types/user";
 import * as subscriptionUtils from "../utils/subscriptionUtils";
+import { useTeam } from "../contexts/TeamContext";
 
 /**
  * Hook to access subscription data and utility functions
+ * Supports team mode: when user is part of a team, features are inherited from the team owner's subscription
  */
 const useSubscription = () => {
-	// Get subscription directly from Redux store
-	const subscription = useSelector((state: RootState) => state.auth.subscription);
+	// Get personal subscription directly from Redux store
+	const personalSubscription = useSelector((state: RootState) => state.auth.subscription);
+
+	// Get team context for feature inheritance
+	const { isTeamMode, ownerSubscription, isOwner } = useTeam();
+
+	// Determine the effective subscription to use for feature checks
+	// In team mode (for non-owners), use the owner's subscription features
+	const effectiveSubscription = useMemo(() => {
+		// If in team mode and not the owner, inherit owner's subscription features
+		if (isTeamMode && !isOwner && ownerSubscription) {
+			return {
+				...personalSubscription,
+				// Override plan and features with owner's subscription
+				plan: ownerSubscription.planName,
+				features: ownerSubscription.features,
+				status: ownerSubscription.status,
+				// Mark this as a team subscription for UI purposes
+				isTeamSubscription: true,
+				ownerPlanName: ownerSubscription.planName,
+			};
+		}
+		// Otherwise use personal subscription
+		return personalSubscription;
+	}, [isTeamMode, isOwner, ownerSubscription, personalSubscription]);
 
 	// Return subscription data and utility functions
 	return {
-		subscription,
+		subscription: effectiveSubscription,
+		personalSubscription, // Original personal subscription for reference
+		isTeamSubscription: isTeamMode && !isOwner,
 		hasFeature: subscriptionUtils.hasFeature,
 		getLimit: subscriptionUtils.getLimit,
 		hasReachedLimit: subscriptionUtils.hasReachedLimit,
@@ -26,17 +54,23 @@ const useSubscription = () => {
 		canVinculateFolders: subscriptionUtils.canVinculateFolders,
 
 		/**
-		 * Checks if a feature is available in the user's current subscription
-		 * This version uses the local subscription state instead of getting it from Redux store
+		 * Checks if a feature is available in the effective subscription
+		 * In team mode, this checks the owner's subscription features
 		 * @param featureName The name of the feature to check
 		 * @returns Boolean indicating if the feature is available
 		 */
-		hasFeatureLocal: (featureName: keyof Subscription["features"]): boolean => {
-			if (!subscription || !subscription.features) {
+		hasFeatureLocal: (featureName: keyof Subscription["features"] | string): boolean => {
+			// In team mode for non-owners, check owner's subscription
+			if (isTeamMode && !isOwner && ownerSubscription) {
+				return !!ownerSubscription.features?.[featureName];
+			}
+
+			// Otherwise check personal subscription
+			if (!personalSubscription || !personalSubscription.features) {
 				return false;
 			}
 
-			return !!subscription.features[featureName];
+			return !!personalSubscription.features[featureName as keyof Subscription["features"]];
 		},
 
 		/**
@@ -46,11 +80,12 @@ const useSubscription = () => {
 		 * @returns The limit value or 0 if not available
 		 */
 		getLimitLocal: (limitName: keyof Subscription["limits"]): number => {
-			if (!subscription || !subscription.limits) {
+			// For limits, we always use personal subscription as team limits are shared pool
+			if (!personalSubscription || !personalSubscription.limits) {
 				return 0;
 			}
 
-			return subscription.limits[limitName] || 0;
+			return personalSubscription.limits[limitName] || 0;
 		},
 	};
 };

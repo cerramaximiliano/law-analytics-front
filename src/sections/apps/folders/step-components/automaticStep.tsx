@@ -13,13 +13,29 @@ import {
 	Collapse,
 	CircularProgress,
 	Box,
+	Divider,
+	ToggleButtonGroup,
+	ToggleButton,
+	Card,
+	CardContent,
+	RadioGroup,
+	FormControlLabel,
+	Radio,
+	Button,
+	Tooltip,
 } from "@mui/material";
-import { DocumentUpload } from "iconsax-react";
-import { useTheme } from "@mui/material/styles";
+import { DocumentUpload, Link1, DocumentText1, InfoCircle, SearchNormal1, ArrowRight2, TickCircle } from "iconsax-react";
+import { alpha, useTheme } from "@mui/material/styles";
+import { BRAND_BLUE, LIVE_GREEN } from "themes/dashboardTokens";
 import { useFormikContext } from "formik";
 import InputField from "components/UI/InputField";
 import { useState, useEffect, useRef } from "react";
 import mevWorkersService, { NavigationCode } from "api/workersMev";
+import ejeWorkersService from "api/workersEje";
+import PjnAccountConnect, { PjnAccountConnectRef } from "./PjnAccountConnect";
+import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
+import { usePjnSiteStatus } from "hooks/usePjnSiteStatus";
+import ScbaAccountConnect, { ScbaAccountConnectRef } from "./ScbaAccountConnect";
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -169,17 +185,26 @@ interface FormValues {
 	folderFuero?: string;
 	source?: string;
 	pjn?: boolean;
+	mev?: boolean;
+	eje?: boolean;
 	initialDateFolder?: string;
-	judicialPower?: string;
+	judicialPower?: "nacional" | "buenosaires" | "caba";
 	jurisdictionBA?: string;
 	organismoBA?: string;
 	navigationCode?: string;
+	// Campos específicos para EJE (CABA)
+	ejeSearchType?: "cuij" | "expediente";
+	ejeCuij?: string;
 }
+
+// Modos de importación para PJN Nacional y Buenos Aires
+type PjnImportMode = "connect" | "single";
+type BaImportMode = "connect" | "single";
 
 const AutomaticStep = () => {
 	const theme = useTheme();
 	const formik = useFormikContext<FormValues>();
-	const { setFieldValue, values, setFieldError, touched, setTouched } = formik;
+	const { setFieldValue, values, setFieldError, touched, setTouched, isSubmitting } = formik;
 
 	const [error, setError] = useState("");
 	const [success, setSuccess] = useState(false);
@@ -190,8 +215,27 @@ const AutomaticStep = () => {
 	const [loadingCodes, setLoadingCodes] = useState(false);
 	const [organismoError, setOrganismoError] = useState("");
 
+	// Si el portal del PJN está en mantenimiento, deshabilitamos el botón de
+	// importar — no tiene sentido permitir intentar cargar un expediente.
+	const { isInMaintenance: pjnInMaintenance } = usePjnSiteStatus();
+
+	// Modo de importación PJN: conectar cuenta o importar expediente individual
+	const [pjnImportMode, setPjnImportMode] = useState<PjnImportMode>("connect");
+
+	// Modo de importación Buenos Aires: conectar cuenta SCBA o importar expediente individual
+	const [baImportMode, setBaImportMode] = useState<BaImportMode>("connect");
+
+	// Estado para errores de EJE (CABA)
+	const [cuijError, setCuijError] = useState("");
+
 	// Referencia para detectar el botón de siguiente
 	const formSubmitAttempted = useRef<boolean>(false);
+
+	// Referencia al componente PjnAccountConnect para llamar submit desde el botón Siguiente
+	const pjnAccountConnectRef = useRef<PjnAccountConnectRef>(null);
+
+	// Referencia al componente ScbaAccountConnect para llamar submit desde el botón Siguiente
+	const scbaAccountConnectRef = useRef<ScbaAccountConnectRef>(null);
 
 	// Obtener jurisdicciones únicas de Buenos Aires
 	const jurisdictionsBA = React.useMemo(() => {
@@ -212,12 +256,14 @@ const AutomaticStep = () => {
 			.sort((a, b) => a.organismo.nombre.localeCompare(b.organismo.nombre));
 	}, [values.jurisdictionBA, navigationCodes]);
 
-	// Cargar códigos de navegación cuando sea Buenos Aires
+	// Cargar códigos de navegación cuando sea Buenos Aires en modo "Importar expediente".
+	// En modo "Conectar mi cuenta" no se necesitan, así que no los pedimos para evitar
+	// mostrar un error irrelevante si falla la API.
 	useEffect(() => {
-		if (values.judicialPower === "buenosaires") {
+		if (values.judicialPower === "buenosaires" && baImportMode === "single") {
 			loadNavigationCodes();
 		}
-	}, [values.judicialPower]);
+	}, [values.judicialPower, baImportMode]);
 
 	const loadNavigationCodes = async () => {
 		setLoadingCodes(true);
@@ -321,6 +367,19 @@ const AutomaticStep = () => {
 		// Si el organismo es válido, aseguramos de limpiar errores
 		setOrganismoError("");
 		setFieldError("organismoBA", ""); // Limpiamos el error en Formik
+		return true;
+	};
+
+	// Validar CUIJ para EJE (CABA)
+	const validateCuij = (cuij: string | undefined) => {
+		const validation = ejeWorkersService.validateCuij(cuij || "");
+		if (!validation.valid) {
+			setCuijError(validation.error || "CUIJ inválido");
+			setFieldError("ejeCuij", validation.error || "CUIJ inválido");
+			return false;
+		}
+		setCuijError("");
+		setFieldError("ejeCuij", "");
 		return true;
 	};
 
@@ -541,6 +600,74 @@ const AutomaticStep = () => {
 					}
 				}
 			}
+		} else if (values.judicialPower === "caba") {
+			// Para CABA (EJE), validar según el tipo de búsqueda
+			let isValid = false;
+
+			if (values.ejeSearchType === "cuij") {
+				// Validar CUIJ
+				if (touched.ejeCuij || formSubmitAttempted.current) {
+					isValid = validateCuij(values.ejeCuij);
+				} else if (values.ejeCuij && values.ejeCuij !== "") {
+					isValid = true;
+					setCuijError("");
+					setFieldError("ejeCuij", "");
+				}
+			} else {
+				// Validar número y año
+				let numberValid = false;
+				let yearValid = false;
+
+				if (touched.expedientNumber || formSubmitAttempted.current) {
+					numberValid = validateExpedientNumber(values.expedientNumber);
+				} else if (values.expedientNumber && values.expedientNumber !== "") {
+					numberValid = true;
+					setNumberError("");
+					setFieldError("expedientNumber", "");
+				}
+
+				if (touched.expedientYear || formSubmitAttempted.current) {
+					yearValid = validateYear(values.expedientYear);
+				} else if (values.expedientYear && values.expedientYear !== "") {
+					yearValid = true;
+					setYearError("");
+					setFieldError("expedientYear", "");
+				}
+
+				isValid = numberValid && yearValid;
+			}
+
+			if (isValid) {
+				// Establecer valores automáticos para CABA (EJE)
+				setFieldValue("source", "auto");
+				setFieldValue("eje", true);
+				setFieldValue("initialDateFolder", new Date().toLocaleDateString("es-AR"));
+
+				// Valores requeridos para la carpeta
+				if (!values.folderName || values.folderName === "") {
+					setFieldValue("folderName", "Pendiente");
+				}
+				if (!values.materia || values.materia === "") {
+					setFieldValue("materia", "No verificado");
+				}
+				if (!values.orderStatus || values.orderStatus === "") {
+					setFieldValue("orderStatus", "No verificado");
+				}
+				if (!values.status || values.status === "") {
+					setFieldValue("status", "Nueva");
+				}
+
+				// Descripción automática
+				const searchInfo =
+					values.ejeSearchType === "cuij" ? `CUIJ: ${values.ejeCuij}` : `Expediente: ${values.expedientNumber}/${values.expedientYear}`;
+
+				if (!values.description || values.description === "") {
+					setFieldValue("description", `Expediente importado desde EJE - Poder Judicial de la Ciudad de Buenos Aires (${searchInfo})`);
+				}
+
+				setSuccess(true);
+				setError("");
+			}
 		}
 
 		setAutomaticValues();
@@ -555,6 +682,9 @@ const AutomaticStep = () => {
 		touched.organismoBA,
 		touched.expedientNumber,
 		touched.expedientYear,
+		touched.ejeCuij,
+		values.ejeSearchType,
+		values.ejeCuij,
 		formSubmitAttempted.current,
 	]);
 
@@ -588,7 +718,42 @@ const AutomaticStep = () => {
 			document.querySelector('button[type="submit"]');
 
 		if (nextButton) {
-			const handleNextClick = (e: Event) => {
+			const handleNextClick = async (e: Event) => {
+				// Si estamos en modo "connect" de PJN, manejar según estado de credenciales
+				if (values.judicialPower === "nacional" && pjnImportMode === "connect") {
+					const canSubmit = pjnAccountConnectRef.current?.canSubmit();
+					const isConnected = pjnAccountConnectRef.current?.isConnected();
+
+					if (canSubmit) {
+						// Hay credenciales para enviar: interceptar y llamar al submit del componente
+						e.preventDefault();
+						e.stopPropagation();
+						await pjnAccountConnectRef.current!.submit();
+						return;
+					}
+
+					if (!isConnected) {
+						// No conectado y sin datos para enviar: bloquear avance
+						e.preventDefault();
+						e.stopPropagation();
+						return;
+					}
+
+					// isConnected=true y canSubmit=false → credenciales ya vinculadas, dejar avanzar el wizard
+					return;
+				}
+
+				// Si estamos en modo "connect" de Buenos Aires, llamar al submit del componente SCBA
+				if (values.judicialPower === "buenosaires" && baImportMode === "connect") {
+					e.preventDefault();
+					e.stopPropagation();
+
+					if (scbaAccountConnectRef.current?.canSubmit()) {
+						await scbaAccountConnectRef.current.submit();
+					}
+					return;
+				}
+
 				// Marcamos el formulario como intentado enviar
 				formSubmitAttempted.current = true;
 
@@ -597,6 +762,7 @@ const AutomaticStep = () => {
 				setNumberError("");
 				setJurisdictionError("");
 				setOrganismoError("");
+				setCuijError("");
 
 				// Validamos según el poder judicial seleccionado
 				if (values.judicialPower === "nacional") {
@@ -610,24 +776,46 @@ const AutomaticStep = () => {
 					validateOrganismo(values.organismoBA);
 					validateExpedientNumber(values.expedientNumber);
 					validateYear(values.expedientYear);
+				} else if (values.judicialPower === "caba") {
+					// Validar campos de CABA (EJE)
+					if (values.ejeSearchType === "cuij") {
+						validateCuij(values.ejeCuij);
+					} else {
+						validateExpedientNumber(values.expedientNumber);
+						validateYear(values.expedientYear);
+					}
 				}
 
 				// Marcamos todos los campos como tocados para mostrar los errores
-				const touchedFields =
-					values.judicialPower === "buenosaires"
-						? {
-								...touched,
-								jurisdictionBA: true,
-								organismoBA: true,
-								expedientNumber: true,
-								expedientYear: true,
-						  }
-						: {
-								...touched,
-								folderJuris: true,
-								expedientNumber: true,
-								expedientYear: true,
-						  };
+				let touchedFields;
+				if (values.judicialPower === "buenosaires") {
+					touchedFields = {
+						...touched,
+						jurisdictionBA: true,
+						organismoBA: true,
+						expedientNumber: true,
+						expedientYear: true,
+					};
+				} else if (values.judicialPower === "caba") {
+					touchedFields =
+						values.ejeSearchType === "cuij"
+							? {
+									...touched,
+									ejeCuij: true,
+							  }
+							: {
+									...touched,
+									expedientNumber: true,
+									expedientYear: true,
+							  };
+				} else {
+					touchedFields = {
+						...touched,
+						folderJuris: true,
+						expedientNumber: true,
+						expedientYear: true,
+					};
+				}
 
 				setTouched(touchedFields);
 			};
@@ -638,7 +826,18 @@ const AutomaticStep = () => {
 				nextButton.removeEventListener("click", handleNextClick);
 			};
 		}
-	}, [values.folderJuris, values.expedientNumber, values.expedientYear]);
+	}, [
+		values.folderJuris,
+		values.jurisdictionBA,
+		values.organismoBA,
+		values.expedientNumber,
+		values.expedientYear,
+		values.judicialPower,
+		values.ejeSearchType,
+		values.ejeCuij,
+		pjnImportMode,
+		baImportMode,
+	]);
 
 	// Manejar cambio en el campo de año
 	const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -666,277 +865,776 @@ const AutomaticStep = () => {
 		validateExpedientNumber(value);
 	};
 
+	const isDark = theme.palette.mode === "dark";
+
+	// Estilo brand-aware compartido para inputs/selects de este step.
+	const fieldSx = {
+		"& .MuiInputBase-root": { height: 39.91 },
+		"& .MuiInputBase-input": { fontSize: 13 },
+		"& input::placeholder": { color: "text.secondary", opacity: 0.7 },
+		"& .MuiOutlinedInput-notchedOutline": {
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.26 : 0.16),
+			transition: "border-color 0.15s ease",
+		},
+		"& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.46 : 0.32),
+		},
+		"& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+			borderColor: alpha(BRAND_BLUE, 0.55),
+			borderWidth: 1,
+		},
+	};
+
+	const labelSx = {
+		fontSize: "0.78rem",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: "text.primary",
+	};
+
+	// ToggleButton styling brand — selected en BRAND_BLUE, unselected text.secondary.
+	const toggleButtonSx = {
+		py: 1,
+		px: 1.5,
+		textTransform: "none" as const,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.24 : 0.16)} !important`,
+		color: "text.secondary",
+		transition: "background-color 0.15s ease, color 0.15s ease",
+		"&.Mui-selected": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+			color: BRAND_BLUE,
+			borderColor: `${alpha(BRAND_BLUE, isDark ? 0.45 : 0.32)} !important`,
+			"&:hover": {
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
+			},
+		},
+		"&:hover": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.05),
+		},
+	};
+
+	// Submit button brand sober — reusable.
+	const submitButtonSx = {
+		textTransform: "none" as const,
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		borderRadius: 1.25,
+		boxShadow: "none",
+		transition: "background-color 0.15s ease",
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+		"&.Mui-disabled": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.24 : 0.4),
+			color: alpha("#fff", 0.9),
+		},
+	};
+
+	// Brand-aware notice (reemplaza Alert MUI default).
+	const renderNotice = (
+		text: string,
+		variant: "info" | "warning" = "info",
+	) => {
+		const accent = variant === "info" ? BRAND_BLUE : theme.palette.warning.main;
+		return (
+			<Box
+				sx={{
+					display: "flex",
+					alignItems: "flex-start",
+					gap: 1,
+					px: 1.25,
+					py: 1,
+					borderRadius: 1.25,
+					border: `1px solid ${alpha(accent, isDark ? 0.28 : 0.18)}`,
+					bgcolor: alpha(accent, isDark ? 0.08 : 0.05),
+				}}
+			>
+				<Box sx={{ color: accent, display: "flex", mt: 0.125, flexShrink: 0 }}>
+					<InfoCircle size={14} variant="Bulk" />
+				</Box>
+				<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", lineHeight: 1.45, textWrap: "pretty" }}>
+					{text}
+				</Typography>
+			</Box>
+		);
+	};
+
+	// Mapeo de power → metadata para el header de sección.
+	const powerMeta = (() => {
+		switch (values.judicialPower) {
+			case "nacional":
+				return { code: "PJN", title: "Importar causa del Poder Judicial de la Nación", subtitle: "Conectá tu cuenta o importá un expediente puntual." };
+			case "buenosaires":
+				return { code: "BA", title: "Importar causa del Poder Judicial de Buenos Aires", subtitle: "Conectá tu cuenta SCBA o importá un expediente individual." };
+			case "caba":
+				return { code: "CABA", title: "Importar causa del Poder Judicial de CABA", subtitle: "Sistema EJE — buscá el expediente por número/año o por CUIJ." };
+			default:
+				return { code: "", title: "Importar causa", subtitle: "" };
+		}
+	})();
+
 	return (
-		<DialogContent sx={{ p: 2.5 }}>
-			<Grid container spacing={3} justifyContent="center">
-				<Grid item xs={12}>
-					<Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-						<DocumentUpload size={24} color={theme.palette.primary.main} />
-						<Typography variant="h6" color="textPrimary">
-							{values.judicialPower === "nacional"
-								? "Importar causa desde Poder Judicial de la Nación"
-								: values.judicialPower === "buenosaires"
-								? "Importar causa desde Poder Judicial de Buenos Aires"
-								: "Importar causa desde Poder Judicial"}
-						</Typography>
-					</Stack>
-				</Grid>
-
-				{error && (
-					<Grid item xs={12}>
-						<Alert severity="error" sx={{ mb: 2 }}>
-							{error}
-						</Alert>
-					</Grid>
-				)}
-
-				<Grid item xs={12} md={8}>
-					<Alert severity="warning" sx={{ mb: 2 }}>
-						El expediente debe ser de acceso público.
-					</Alert>
-
-					<Collapse in={success} timeout={500}>
-						<Grid item xs={12}>
-							<Alert
-								severity="success"
+		<DialogContent sx={{ p: { xs: 1, sm: 2 } }}>
+			<Stack spacing={2}>
+				{/* Header de sección brand — replica InitialStep/JudicialPower/FirstStep */}
+				<Stack spacing={0.5}>
+					<Stack direction="row" alignItems="center" spacing={0.875}>
+						<Box
+							sx={{
+								display: "inline-flex",
+								alignItems: "center",
+								px: 1,
+								py: 0.3,
+								borderRadius: 0.75,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.2)}`,
+							}}
+						>
+							<Typography
 								sx={{
-									mb: 2,
-									animation: success ? "fadeIn 0.5s ease-in-out" : "none",
-									"@keyframes fadeIn": {
-										"0%": {
-											opacity: 0,
-											transform: "translateY(-10px)",
-										},
-										"100%": {
-											opacity: 1,
-											transform: "translateY(0)",
-										},
-									},
+									fontSize: "0.62rem",
+									fontWeight: 600,
+									letterSpacing: "0.14em",
+									textTransform: "uppercase",
+									color: BRAND_BLUE,
+									lineHeight: 1,
+									fontVariantNumeric: "tabular-nums",
 								}}
 							>
-								Datos cargados exitosamente. Haga clic en el botón "Siguiente" para guardar el expediente.
-							</Alert>
-						</Grid>
+								Importar · {powerMeta.code}
+							</Typography>
+						</Box>
+					</Stack>
+					<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+						{powerMeta.title}
+					</Typography>
+					{powerMeta.subtitle && (
+						<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>
+							{powerMeta.subtitle}
+						</Typography>
+					)}
+				</Stack>
+
+				{/* Error y success — brand-aware */}
+				{error && (
+					<Box
+						sx={{
+							display: "flex",
+							alignItems: "flex-start",
+							gap: 1,
+							px: 1.5,
+							py: 1.25,
+							borderRadius: 1.5,
+							border: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.32 : 0.22)}`,
+							bgcolor: alpha(theme.palette.error.main, isDark ? 0.12 : 0.06),
+						}}
+					>
+						<Box sx={{ color: theme.palette.error.main, display: "flex", mt: 0.125, flexShrink: 0 }}>
+							<InfoCircle size={16} variant="Bulk" />
+						</Box>
+						<Typography sx={{ fontSize: "0.82rem", color: "text.primary", lineHeight: 1.5, fontWeight: 500 }}>
+							{error}
+						</Typography>
+					</Box>
+				)}
+
+				<Collapse in={success} timeout={500}>
+					<Box
+						sx={{
+							display: "flex",
+							alignItems: "flex-start",
+							gap: 1,
+							px: 1.5,
+							py: 1.25,
+							borderRadius: 1.5,
+							border: `1px solid ${alpha(LIVE_GREEN, isDark ? 0.32 : 0.22)}`,
+							bgcolor: alpha(LIVE_GREEN, isDark ? 0.12 : 0.06),
+							animation: success ? "la-fade-in 0.4s ease-out" : "none",
+							"@keyframes la-fade-in": {
+								"0%": { opacity: 0, transform: "translateY(-6px)" },
+								"100%": { opacity: 1, transform: "translateY(0)" },
+							},
+						}}
+					>
+						<Box sx={{ color: LIVE_GREEN, display: "flex", mt: 0.125, flexShrink: 0 }}>
+							<TickCircle size={16} variant="Bulk" />
+						</Box>
+						<Typography sx={{ fontSize: "0.82rem", color: "text.primary", lineHeight: 1.5, fontWeight: 500 }}>
+							Datos cargados. Apretá <strong>Siguiente</strong> para guardar el expediente.
+						</Typography>
+					</Box>
+				</Collapse>
+
+				<Box sx={{ width: "100%" }}>
+					<Collapse in={loadingCodes} timeout={300} sx={{ display: loadingCodes ? "block" : "none" }}>
+						<Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
+							<CircularProgress sx={{ color: BRAND_BLUE }} />
+						</Box>
 					</Collapse>
 
-					{loadingCodes ? (
-						<Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
-							<CircularProgress />
-						</Box>
-					) : (
-						<Grid container spacing={3}>
+					{!loadingCodes && (
+						<Grid container spacing={2}>
 							{values.judicialPower === "nacional" ? (
-								<Grid item xs={12}>
-									<Stack spacing={1.25}>
-										<InputLabel htmlFor="folderJuris">Jurisdicción</InputLabel>
-										<FormControl
-											fullWidth
-											style={{ maxHeight: "39.91px" }}
-											error={Boolean(jurisdictionError && (touched.folderJuris || formSubmitAttempted.current))}
-										>
-											<Select
-												id="folderJuris"
-												name="folderJuris"
-												value={values.folderJuris || ""}
-												onChange={handleJurisdictionChange}
-												displayEmpty
-												size="small"
-												renderValue={(selected) => {
-													if (!selected) {
-														return <em>Seleccione una jurisdicción</em>;
-													}
-													const selectedJurisdiction = jurisdicciones.find((j) => j.value === selected);
-													return selectedJurisdiction ? selectedJurisdiction.nombre : "";
-												}}
-												sx={{
-													"& .MuiInputBase-root": { height: 39.91 },
-													"& .MuiInputBase-input": { fontSize: 12 },
-													"& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input.Mui-disabled": {
-														color: "text.disabled",
-													},
-												}}
-											>
-												<MenuItem value="" disabled>
-													<em>Seleccione una jurisdicción</em>
-												</MenuItem>
-												{jurisdicciones
-													.filter((j) => j.value !== "")
-													.map((jurisdiccion) => (
-														<MenuItem key={jurisdiccion.value} value={jurisdiccion.value}>
-															{jurisdiccion.nombre}
-														</MenuItem>
-													))}
-											</Select>
-											{jurisdictionError && (touched.folderJuris || formSubmitAttempted.current) && (
-												<Typography color="error" variant="caption" sx={{ mt: 0.5 }}>
-													{jurisdictionError}
-												</Typography>
-											)}
-										</FormControl>
-									</Stack>
-								</Grid>
-							) : values.judicialPower === "buenosaires" ? (
 								<>
-									{/* Jurisdicción Buenos Aires */}
+									{/* Selector de modo de importación */}
 									<Grid item xs={12}>
-										<Stack spacing={1.25}>
-											<InputLabel htmlFor="jurisdictionBA">Jurisdicción</InputLabel>
-											<FormControl
+										<Stack spacing={2}>
+											<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", lineHeight: 1.5 }}>
+												¿Cómo querés importar tus causas?
+											</Typography>
+											<ToggleButtonGroup
+												value={pjnImportMode}
+												exclusive
+												onChange={(_, value) => {
+													if (value !== null) {
+														setPjnImportMode(value);
+														setFieldValue("pjnImportMode", value);
+													}
+												}}
 												fullWidth
-												style={{ maxHeight: "39.91px" }}
-												error={Boolean(jurisdictionError && (touched.jurisdictionBA || formSubmitAttempted.current))}
+												size="small"
 											>
-												<Select
-													id="jurisdictionBA"
-													name="jurisdictionBA"
-													value={values.jurisdictionBA || ""}
-													onChange={(e) => {
-														const value = e.target.value;
-														setFieldValue("jurisdictionBA", value);
-														setFieldValue("organismoBA", ""); // Reset organismo
-														setFieldValue("navigationCode", ""); // Reset navigationCode
-														setTouched({ ...touched, jurisdictionBA: true });
-														validateJurisdictionBA(value); // Usar la función correcta para Buenos Aires
-													}}
-													displayEmpty
-													size="small"
-													disabled={navigationCodes.length === 0}
-													renderValue={(selected) => {
-														if (!selected) {
-															return <em>Seleccione una jurisdicción</em>;
-														}
-														const selectedJurisdiction = jurisdictionsBA.find((j) => j.codigo === selected);
-														return selectedJurisdiction ? selectedJurisdiction.nombre : "";
-													}}
-													sx={{
-														"& .MuiInputBase-root": { height: 39.91 },
-														"& .MuiInputBase-input": { fontSize: 12 },
-													}}
-												>
-													<MenuItem value="" disabled>
-														<em>Seleccione una jurisdicción</em>
-													</MenuItem>
-													{jurisdictionsBA.map((jurisdiccion) => (
-														<MenuItem key={jurisdiccion.codigo} value={jurisdiccion.codigo}>
-															{jurisdiccion.nombre}
-														</MenuItem>
-													))}
-												</Select>
-												{jurisdictionError && (touched.jurisdictionBA || formSubmitAttempted.current) && (
-													<>
-														{console.log(
-															"MOSTRANDO ERROR BA:",
-															jurisdictionError,
-															"touched:",
-															touched.jurisdictionBA,
-															"attempted:",
-															formSubmitAttempted.current,
-														)}
-														<Typography color="error" variant="caption" sx={{ mt: 0.5 }}>
-															{jurisdictionError}
-														</Typography>
-													</>
-												)}
-											</FormControl>
+												<ToggleButton value="connect" sx={toggleButtonSx}>
+													<Stack direction="row" alignItems="center" spacing={0.875}>
+														<Link1 size={16} variant="Bulk" />
+														<Typography sx={{ fontSize: "0.82rem", fontWeight: 600 }}>Conectar mi cuenta</Typography>
+													</Stack>
+												</ToggleButton>
+												<ToggleButton value="single" sx={toggleButtonSx}>
+													<Stack direction="row" alignItems="center" spacing={0.875}>
+														<DocumentText1 size={16} variant="Bulk" />
+														<Typography sx={{ fontSize: "0.82rem", fontWeight: 600 }}>Importar expediente</Typography>
+													</Stack>
+												</ToggleButton>
+											</ToggleButtonGroup>
 										</Stack>
 									</Grid>
 
-									{/* Organismo Buenos Aires */}
-									<Grid item xs={12}>
-										<Stack spacing={1.25}>
-											<InputLabel htmlFor="organismoBA">Organismo</InputLabel>
-											<FormControl
-												fullWidth
-												style={{ maxHeight: "39.91px" }}
-												error={Boolean(organismoError && (touched.organismoBA || formSubmitAttempted.current))}
+									{/* Contenido según modo seleccionado */}
+									{pjnImportMode === "connect" ? (
+										<Grid item xs={12}>
+											<PjnAccountConnect
+												ref={pjnAccountConnectRef}
+												onConnectionSuccess={() => {
+													// Opcional: cerrar modal o mostrar mensaje
+												}}
+												onSyncComplete={() => {
+													// Opcional: recargar lista de carpetas
+												}}
+											/>
+										</Grid>
+									) : (
+										<Grid item xs={12}>
+											<Box
+												sx={{
+													borderRadius: 1.5,
+													border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+													p: { xs: 1.5, sm: 1.75 },
+												}}
 											>
-												<Select
-													id="organismoBA"
-													name="organismoBA"
-													value={values.organismoBA || ""}
-													onChange={(e) => {
-														const value = e.target.value;
-														setFieldValue("organismoBA", value);
+												<Stack spacing={1.5}>
+													<Stack direction="row" alignItems="center" spacing={0.875}>
+														<Box
+															sx={{
+																width: 28,
+																height: 28,
+																borderRadius: 1,
+																display: "flex",
+																alignItems: "center",
+																justifyContent: "center",
+																bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+																color: BRAND_BLUE,
+																flexShrink: 0,
+															}}
+														>
+															<DocumentText1 size={16} variant="Bulk" />
+														</Box>
+														<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+															Importar expediente individual
+														</Typography>
+													</Stack>
 
-														// Encontrar y guardar el navigationCode
-														const selectedCode = navigationCodes.find((c) => c._id === value);
-														if (selectedCode) {
-															setFieldValue("navigationCode", selectedCode.code);
-														}
+													<PjnMaintenanceAlert
+														compact
+														contextHint="No vas a poder importar el expediente hasta que el portal vuelva."
+													/>
 
-														setTouched({ ...touched, organismoBA: true });
-														validateOrganismo(value);
-													}}
-													displayEmpty
-													size="small"
-													disabled={!values.jurisdictionBA}
-													renderValue={(selected) => {
-														if (!selected) {
-															return <em>{values.jurisdictionBA ? "Seleccione un organismo" : "Seleccione primero una jurisdicción"}</em>;
+													<Stack spacing={0.625}>
+														<InputLabel htmlFor="folderJuris" sx={labelSx}>
+															Jurisdicción
+														</InputLabel>
+														<FormControl
+															fullWidth
+															size="small"
+															error={Boolean(jurisdictionError && (touched.folderJuris || formSubmitAttempted.current))}
+														>
+															<Select
+																id="folderJuris"
+																name="folderJuris"
+																value={values.folderJuris || ""}
+																onChange={handleJurisdictionChange}
+																displayEmpty
+																size="small"
+																renderValue={(selected) => {
+																	if (!selected) {
+																		return <em style={{ color: "rgba(0,0,0,0.55)" }}>Seleccioná una jurisdicción</em>;
+																	}
+																	const selectedJurisdiction = jurisdicciones.find((j) => j.value === selected);
+																	return selectedJurisdiction ? selectedJurisdiction.nombre : "";
+																}}
+																sx={fieldSx}
+															>
+																<MenuItem value="" disabled>
+																	<em>Seleccioná una jurisdicción</em>
+																</MenuItem>
+																{jurisdicciones
+																	.filter((j) => j.value !== "")
+																	.map((jurisdiccion) => (
+																		<MenuItem key={jurisdiccion.value} value={jurisdiccion.value}>
+																			{jurisdiccion.nombre}
+																		</MenuItem>
+																	))}
+															</Select>
+															{jurisdictionError && (touched.folderJuris || formSubmitAttempted.current) && (
+																<Typography color="error" variant="caption" sx={{ mt: 0.5 }}>
+																	{jurisdictionError}
+																</Typography>
+															)}
+														</FormControl>
+													</Stack>
+
+													<Stack direction="row" spacing={1.25}>
+														<Stack spacing={0.625} sx={{ flex: 1 }}>
+															<InputLabel htmlFor="expedient-number" sx={labelSx}>
+																Nº Expediente
+															</InputLabel>
+															<InputField
+																fullWidth
+																size="small"
+																id="expedient-number"
+																placeholder="Ej. 123456"
+																name="expedientNumber"
+																type="number"
+																onChange={handleNumberChange}
+																error={Boolean(numberError && touched.expedientNumber)}
+																helperText={touched.expedientNumber ? numberError : ""}
+																sx={fieldSx}
+															/>
+														</Stack>
+														<Stack spacing={0.625} sx={{ width: 120 }}>
+															<InputLabel htmlFor="expedient-year" sx={labelSx}>
+																Año
+															</InputLabel>
+															<InputField
+																fullWidth
+																size="small"
+																id="expedient-year"
+																placeholder="Ej. 2023"
+																name="expedientYear"
+																type="number"
+																onChange={handleYearChange}
+																error={Boolean(yearError && touched.expedientYear)}
+																helperText={touched.expedientYear ? yearError : ""}
+																sx={fieldSx}
+															/>
+														</Stack>
+													</Stack>
+
+													{renderNotice("El expediente debe ser de acceso público.", "warning")}
+
+													<Tooltip
+														title={pjnInMaintenance ? "Portal del PJN en mantenimiento — no podés importar hasta que vuelva." : ""}
+														arrow
+														placement="top"
+													>
+														<span>
+															<Button
+																type="submit"
+																variant="contained"
+																fullWidth
+																size="small"
+																disabled={isSubmitting || pjnInMaintenance}
+																startIcon={isSubmitting ? <CircularProgress size={14} color="inherit" /> : <ArrowRight2 size={14} />}
+																sx={submitButtonSx}
+															>
+																{isSubmitting ? "Procesando…" : "Siguiente"}
+															</Button>
+														</span>
+													</Tooltip>
+												</Stack>
+											</Box>
+										</Grid>
+									)}
+								</>
+							) : values.judicialPower === "buenosaires" ? (
+								<>
+									{/* Selector de modo de importación Buenos Aires */}
+									<Grid item xs={12}>
+										<Stack spacing={2}>
+											<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", lineHeight: 1.5 }}>
+												¿Cómo querés importar tus causas?
+											</Typography>
+											<ToggleButtonGroup
+												value={baImportMode}
+												exclusive
+												onChange={(_, value) => {
+													if (value !== null) {
+														setBaImportMode(value);
+														setFieldValue("baImportMode", value);
+														// Al cambiar a "Conectar mi cuenta" limpiamos errores que
+														// solo aplican a la carga de códigos de navegación.
+														if (value === "connect") {
+															setError("");
 														}
-														const selectedOrganismo = navigationCodes.find((c) => c._id === selected);
-														return selectedOrganismo ? selectedOrganismo.organismo.nombre : "";
-													}}
-													sx={{
-														"& .MuiInputBase-root": { height: 39.91 },
-														"& .MuiInputBase-input": { fontSize: 12 },
-													}}
-												>
-													<MenuItem value="" disabled>
-														<em>Seleccione un organismo</em>
-													</MenuItem>
-													{organismosBA.map((code) => (
-														<MenuItem key={code._id} value={code._id}>
-															{code.organismo.nombre}
-														</MenuItem>
-													))}
-												</Select>
-												{organismoError && (touched.organismoBA || formSubmitAttempted.current) && (
-													<Typography color="error" variant="caption" sx={{ mt: 0.5 }}>
-														{organismoError}
-													</Typography>
-												)}
-											</FormControl>
+													}
+												}}
+												fullWidth
+												size="small"
+											>
+												<ToggleButton value="connect" sx={toggleButtonSx}>
+													<Stack direction="row" alignItems="center" spacing={0.875}>
+														<Link1 size={16} variant="Bulk" />
+														<Typography sx={{ fontSize: "0.82rem", fontWeight: 600 }}>Conectar mi cuenta</Typography>
+													</Stack>
+												</ToggleButton>
+												<ToggleButton value="single" sx={toggleButtonSx}>
+													<Stack direction="row" alignItems="center" spacing={0.875}>
+														<DocumentText1 size={16} variant="Bulk" />
+														<Typography sx={{ fontSize: "0.82rem", fontWeight: 600 }}>Importar expediente</Typography>
+													</Stack>
+												</ToggleButton>
+											</ToggleButtonGroup>
 										</Stack>
+									</Grid>
+
+									{/* Contenido según modo seleccionado */}
+									{baImportMode === "connect" ? (
+										<Grid item xs={12}>
+											<ScbaAccountConnect
+												ref={scbaAccountConnectRef}
+												onConnectionSuccess={() => {
+													// Opcional: cerrar modal o mostrar mensaje
+												}}
+											/>
+										</Grid>
+									) : (
+										<>
+											<Grid item xs={12}>
+												<Stack spacing={0.625}>
+													<InputLabel htmlFor="jurisdictionBA" sx={labelSx}>
+														Jurisdicción
+													</InputLabel>
+													<FormControl
+														fullWidth
+														style={{ maxHeight: "39.91px" }}
+														error={Boolean(jurisdictionError && (touched.jurisdictionBA || formSubmitAttempted.current))}
+													>
+														<Select
+															id="jurisdictionBA"
+															name="jurisdictionBA"
+															value={values.jurisdictionBA || ""}
+															onChange={(e) => {
+																const value = e.target.value;
+																setFieldValue("jurisdictionBA", value);
+																setFieldValue("organismoBA", "");
+																setFieldValue("navigationCode", "");
+																setTouched({ ...touched, jurisdictionBA: true });
+																validateJurisdictionBA(value);
+															}}
+															displayEmpty
+															size="small"
+															disabled={navigationCodes.length === 0}
+															renderValue={(selected) => {
+																if (!selected) {
+																	return <em>Seleccioná una jurisdicción</em>;
+																}
+																const selectedJurisdiction = jurisdictionsBA.find((j) => j.codigo === selected);
+																return selectedJurisdiction ? selectedJurisdiction.nombre : "";
+															}}
+															sx={fieldSx}
+														>
+															<MenuItem value="" disabled>
+																<em>Seleccioná una jurisdicción</em>
+															</MenuItem>
+															{jurisdictionsBA.map((jurisdiccion) => (
+																<MenuItem key={jurisdiccion.codigo} value={jurisdiccion.codigo}>
+																	{jurisdiccion.nombre}
+																</MenuItem>
+															))}
+														</Select>
+														{jurisdictionError && (touched.jurisdictionBA || formSubmitAttempted.current) && (
+															<Typography color="error" variant="caption" sx={{ mt: 0.5 }}>
+																{jurisdictionError}
+															</Typography>
+														)}
+													</FormControl>
+												</Stack>
+											</Grid>
+
+											<Grid item xs={12}>
+												<Stack spacing={0.625}>
+													<InputLabel htmlFor="organismoBA" sx={labelSx}>
+														Organismo
+													</InputLabel>
+													<FormControl
+														fullWidth
+														style={{ maxHeight: "39.91px" }}
+														error={Boolean(organismoError && (touched.organismoBA || formSubmitAttempted.current))}
+													>
+														<Select
+															id="organismoBA"
+															name="organismoBA"
+															value={values.organismoBA || ""}
+															onChange={(e) => {
+																const value = e.target.value;
+																setFieldValue("organismoBA", value);
+																const selectedCode = navigationCodes.find((c) => c._id === value);
+																if (selectedCode) {
+																	setFieldValue("navigationCode", selectedCode.code);
+																}
+																setTouched({ ...touched, organismoBA: true });
+																validateOrganismo(value);
+															}}
+															displayEmpty
+															size="small"
+															disabled={!values.jurisdictionBA}
+															renderValue={(selected) => {
+																if (!selected) {
+																	return (
+																		<em>{values.jurisdictionBA ? "Seleccioná un organismo" : "Seleccioná primero una jurisdicción"}</em>
+																	);
+																}
+																const selectedOrganismo = navigationCodes.find((c) => c._id === selected);
+																return selectedOrganismo ? selectedOrganismo.organismo.nombre : "";
+															}}
+															sx={fieldSx}
+														>
+															<MenuItem value="" disabled>
+																<em>Seleccioná un organismo</em>
+															</MenuItem>
+															{organismosBA.map((code) => (
+																<MenuItem key={code._id} value={code._id}>
+																	{code.organismo.nombre}
+																</MenuItem>
+															))}
+														</Select>
+														{organismoError && (touched.organismoBA || formSubmitAttempted.current) && (
+															<Typography color="error" variant="caption" sx={{ mt: 0.5 }}>
+																{organismoError}
+															</Typography>
+														)}
+													</FormControl>
+												</Stack>
+											</Grid>
+										</>
+									)}
+								</>
+							) : values.judicialPower === "caba" ? (
+								<>
+									<Grid item xs={12}>
+										<Box
+											sx={{
+												borderRadius: 1.5,
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+												p: { xs: 1.5, sm: 1.75 },
+											}}
+										>
+											<Stack spacing={1.5}>
+												<Stack direction="row" alignItems="center" spacing={0.875}>
+													<Box
+														sx={{
+															width: 28,
+															height: 28,
+															borderRadius: 1,
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+															color: BRAND_BLUE,
+															flexShrink: 0,
+														}}
+													>
+														<SearchNormal1 size={16} variant="Bulk" />
+													</Box>
+													<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+														Buscar expediente en EJE
+													</Typography>
+												</Stack>
+
+												{/* Selector tipo de búsqueda */}
+												<Stack spacing={0.625}>
+													<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1.5 }}>
+														¿Cómo querés buscar el expediente?
+													</Typography>
+													<RadioGroup
+														row
+														value={values.ejeSearchType || "expediente"}
+														onChange={(e) => {
+															setFieldValue("ejeSearchType", e.target.value);
+															setCuijError("");
+															setNumberError("");
+															setYearError("");
+														}}
+														sx={{
+															"& .MuiFormControlLabel-root": { mr: 2 },
+															"& .MuiRadio-root": {
+																color: alpha(BRAND_BLUE, isDark ? 0.4 : 0.3),
+																"&.Mui-checked": { color: BRAND_BLUE },
+															},
+														}}
+													>
+														<FormControlLabel
+															value="expediente"
+															control={<Radio size="small" />}
+															label={<Typography sx={{ fontSize: "0.82rem", fontWeight: 500 }}>Por número y año</Typography>}
+														/>
+														<FormControlLabel
+															value="cuij"
+															control={<Radio size="small" />}
+															label={<Typography sx={{ fontSize: "0.82rem", fontWeight: 500 }}>Por CUIJ</Typography>}
+														/>
+													</RadioGroup>
+												</Stack>
+
+												<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1) }} />
+
+												{values.ejeSearchType === "cuij" ? (
+													<Stack spacing={0.625}>
+														<InputLabel htmlFor="eje-cuij" sx={labelSx}>
+															CUIJ
+														</InputLabel>
+														<InputField
+															fullWidth
+															size="small"
+															id="eje-cuij"
+															placeholder="J-01-00053687-9/2020-0"
+															name="ejeCuij"
+															onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+																setFieldValue("ejeCuij", e.target.value);
+																setTouched({ ...touched, ejeCuij: true });
+																if (e.target.value) {
+																	validateCuij(e.target.value);
+																}
+															}}
+															error={Boolean(cuijError && touched.ejeCuij)}
+															helperText={
+																touched.ejeCuij && cuijError
+																	? cuijError
+																	: "Formato: J-XX-XXXXXXXX-X/AAAA-X (ej: J-01-00053687-9/2020-0)"
+															}
+															sx={fieldSx}
+														/>
+													</Stack>
+												) : (
+													<Stack direction="row" spacing={1.25}>
+														<Stack spacing={0.625} sx={{ flex: 1 }}>
+															<InputLabel htmlFor="eje-expedient-number" sx={labelSx}>
+																Nº Expediente
+															</InputLabel>
+															<InputField
+																fullWidth
+																size="small"
+																id="eje-expedient-number"
+																placeholder="Ej. 123456"
+																name="expedientNumber"
+																type="number"
+																onChange={handleNumberChange}
+																error={Boolean(numberError && touched.expedientNumber)}
+																helperText={touched.expedientNumber ? numberError : ""}
+																sx={fieldSx}
+															/>
+														</Stack>
+														<Stack spacing={0.625} sx={{ width: 120 }}>
+															<InputLabel htmlFor="eje-expedient-year" sx={labelSx}>
+																Año
+															</InputLabel>
+															<InputField
+																fullWidth
+																size="small"
+																id="eje-expedient-year"
+																placeholder="Ej. 2023"
+																name="expedientYear"
+																type="number"
+																onChange={handleYearChange}
+																error={Boolean(yearError && touched.expedientYear)}
+																helperText={touched.expedientYear ? yearError : ""}
+																sx={fieldSx}
+															/>
+														</Stack>
+													</Stack>
+												)}
+
+												{renderNotice("Los datos del expediente se importan desde el sistema EJE de la Ciudad de Buenos Aires.")}
+											</Stack>
+										</Box>
 									</Grid>
 								</>
 							) : null}
-							<Grid item xs={12} sm={6}>
-								<Stack spacing={1.25}>
-									<InputLabel htmlFor="expedientNumber">Número de Expediente</InputLabel>
-									<InputField
-										fullWidth
-										sx={customInputStyles}
-										id="expedient-number"
-										placeholder="Ej. 123456"
-										name="expedientNumber"
-										type="number"
-										onChange={handleNumberChange}
-										error={Boolean(numberError && touched.expedientNumber)}
-										helperText={touched.expedientNumber ? numberError : ""}
-									/>
-								</Stack>
-							</Grid>
-							<Grid item xs={12} sm={6}>
-								<Stack spacing={1.25}>
-									<InputLabel htmlFor="expedientYear">Año</InputLabel>
-									<InputField
-										fullWidth
-										sx={customInputStyles}
-										id="expedient-year"
-										placeholder="Ej. 2023"
-										name="expedientYear"
-										type="number"
-										onChange={handleYearChange}
-										error={Boolean(yearError && touched.expedientYear)}
-										helperText={touched.expedientYear ? yearError : ""}
-									/>
-								</Stack>
-							</Grid>
+
+							{/* Campos de número y año — sólo BA modo single */}
+							{values.judicialPower === "buenosaires" && baImportMode === "single" && (
+								<>
+									<Grid item xs={12} sm={6}>
+										<Stack spacing={0.625}>
+											<InputLabel htmlFor="expedientNumber" sx={labelSx}>
+												Nº Expediente
+											</InputLabel>
+											<InputField
+												fullWidth
+												sx={fieldSx}
+												id="expedient-number"
+												placeholder="Ej. 123456"
+												name="expedientNumber"
+												type="number"
+												onChange={handleNumberChange}
+												error={Boolean(numberError && touched.expedientNumber)}
+												helperText={touched.expedientNumber ? numberError : ""}
+											/>
+										</Stack>
+									</Grid>
+									<Grid item xs={12} sm={6}>
+										<Stack spacing={0.625}>
+											<InputLabel htmlFor="expedientYear" sx={labelSx}>
+												Año
+											</InputLabel>
+											<InputField
+												fullWidth
+												sx={fieldSx}
+												id="expedient-year"
+												placeholder="Ej. 2023"
+												name="expedientYear"
+												type="number"
+												onChange={handleYearChange}
+												error={Boolean(yearError && touched.expedientYear)}
+												helperText={touched.expedientYear ? yearError : ""}
+											/>
+										</Stack>
+									</Grid>
+									<Grid item xs={12}>
+										{renderNotice("El expediente debe ser de acceso público.", "warning")}
+									</Grid>
+
+									<Grid item xs={12}>
+										<Button
+											type="submit"
+											variant="contained"
+											fullWidth
+											size="small"
+											disabled={isSubmitting}
+											startIcon={isSubmitting ? <CircularProgress size={14} color="inherit" /> : <ArrowRight2 size={14} />}
+											sx={submitButtonSx}
+										>
+											{isSubmitting ? "Procesando…" : "Siguiente"}
+										</Button>
+									</Grid>
+								</>
+							)}
 						</Grid>
 					)}
-				</Grid>
-			</Grid>
+				</Box>
+			</Stack>
 		</DialogContent>
 	);
 };

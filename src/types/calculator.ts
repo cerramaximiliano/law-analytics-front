@@ -73,10 +73,19 @@ export type CalculatorType = {
 	lastUpdate?: LastUpdate;
 };
 
+export interface CalculatorPaginationInfo {
+	total: number;
+	page: number;
+	limit: number;
+	totalPages: number;
+}
+
 export interface CalculatorState {
 	calculators: CalculatorType[];
 	selectedCalculators: CalculatorType[];
+	selectedFolderId?: string;
 	archivedCalculators: CalculatorType[];
+	archivedPagination: CalculatorPaginationInfo;
 	isLoader: boolean;
 	error: string | null;
 	isInitialized: boolean;

@@ -18,6 +18,8 @@ import {
 	Backdrop,
 	Skeleton,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 import merge from "lodash/merge";
 import * as Yup from "yup";
 import { Form, Formik, FormikValues } from "formik";
@@ -27,7 +29,7 @@ import AutomaticStep from "./step-components/automaticStep";
 import FirstStep from "./step-components/firstStep";
 import SecondStep from "./step-components/secondStep";
 import JudicialPowerSelection from "./step-components/judicialPowerSelection";
-import { useSelector, dispatch } from "store";
+import { dispatch } from "store";
 import { addFolder, updateFolderById } from "store/reducers/folder";
 import { enqueueSnackbar } from "notistack";
 import AlertFolderDelete from "./AlertFolderDelete";
@@ -36,8 +38,9 @@ import ApiService from "store/reducers/ApiService";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import dayjs from "utils/dayjs-config";
 import folderData from "data/folder.json";
+import { useTeam } from "contexts/TeamContext";
 
-const getInitialValues = (folder: FormikValues | null) => {
+const getInitialValues = (folder: FormikValues | null, overrides?: { entryMethod?: string; judicialPower?: string }) => {
 	const newFolder = {
 		folderName: "",
 		description: "",
@@ -50,11 +53,17 @@ const getInitialValues = (folder: FormikValues | null) => {
 		folderJurisLabel: "",
 		folderJuris: null,
 		folderFuero: null,
-		entryMethod: "manual", // Nuevo campo para seleccionar el método de ingreso
-		judicialPower: "", // Poder judicial seleccionado (nacional o buenosaires)
+		entryMethod: overrides?.entryMethod ?? "manual", // Nuevo campo para seleccionar el método de ingreso
+		judicialPower: overrides?.judicialPower ?? "", // Poder judicial seleccionado (nacional, buenosaires o caba)
 		expedientNumber: "", // Para ingreso automático
 		expedientYear: "", // Para ingreso automático
 		pjn: false, // Para indicar si los datos provienen del Poder Judicial de la Nación
+		mev: false, // Para indicar si los datos provienen del MEV (Buenos Aires)
+		eje: false, // Para indicar si los datos provienen del EJE (CABA)
+		ejeSearchType: "expediente", // Tipo de búsqueda para EJE: "cuij" o "expediente"
+		ejeCuij: "", // CUIJ para búsqueda en EJE
+		pjnImportMode: "connect", // Modo de importación PJN: "connect" o "single"
+		baImportMode: "connect", // Modo de importación BA: "connect" o "single"
 	};
 
 	if (folder) {
@@ -113,8 +122,8 @@ function getStepContent(step: number, values: any) {
 	}
 }
 
-const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder) => {
-	const auth = useSelector((state) => state.auth);
+const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, initialFormValues }: PropsAddFolder) => {
+	const { isTeamMode, activeTeam, getUserIdForResource, getTeamIdForResource, getRequestHeaders } = useTeam();
 	const isCreating = mode === "add";
 
 	// Estado para el modal de límite de recursos
@@ -133,7 +142,9 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 	});
 
 	const judicialPowerSchema = Yup.object().shape({
-		judicialPower: Yup.string().oneOf(["nacional", "buenosaires"], "Seleccione un poder judicial").required("Seleccione un poder judicial"),
+		judicialPower: Yup.string()
+			.oneOf(["nacional", "buenosaires", "caba"], "Seleccione un poder judicial")
+			.required("Seleccione un poder judicial"),
 	});
 
 	// Esquema para PJN
@@ -149,6 +160,26 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 		organismoBA: Yup.string().required("Seleccione un organismo"),
 		expedientNumber: Yup.string().required("Ingrese el número de expediente"),
 		expedientYear: Yup.string().required("Ingrese el año del expediente"),
+	});
+
+	// Esquema para CABA (EJE) - validación dinámica según tipo de búsqueda
+	const automaticEntryEjeSchema = Yup.object().shape({
+		ejeSearchType: Yup.string().oneOf(["cuij", "expediente"]).required(),
+		ejeCuij: Yup.string().when("ejeSearchType", {
+			is: "cuij",
+			then: (schema) => schema.required("Ingrese el CUIJ del expediente"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
+		expedientNumber: Yup.string().when("ejeSearchType", {
+			is: "expediente",
+			then: (schema) => schema.required("Ingrese el número de expediente"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
+		expedientYear: Yup.string().when("ejeSearchType", {
+			is: "expediente",
+			then: (schema) => schema.required("Ingrese el año del expediente"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
 	});
 
 	const manualStepOneSchema = Yup.object().shape({
@@ -178,7 +209,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 
 	// Esquemas para los pasos dependiendo de si estamos editando o creando
 
-	const [initialValues, setInitialValues] = useState(getInitialValues(folder));
+	const [initialValues, setInitialValues] = useState(getInitialValues(folder, !folder ? initialFormValues : undefined));
 	const [values, setValues] = useState<any>(initialValues);
 	const [isLoadingData, setIsLoadingData] = useState(!isCreating && !folder); // Loading solo cuando editamos y no hay datos
 	const stepsEditing = ["Datos requeridos", "Datos opcionales"];
@@ -209,6 +240,9 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 						// Usar el esquema correcto según el poder judicial
 						if (values.judicialPower === "buenosaires") {
 							return automaticEntryBASchema;
+						} else if (values.judicialPower === "caba") {
+							// Para CABA, usar esquema dinámico que valida según ejeSearchType
+							return automaticEntryEjeSchema;
 						} else {
 							return automaticEntryPJNSchema;
 						}
@@ -244,11 +278,6 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 	useEffect(() => {
 		const handlePlanRestriction = (event: Event) => {
 			const customEvent = event as CustomEvent;
-			console.log(
-				"Restricción de plan detectada, cerrando modal de nueva carpeta",
-				customEvent.detail ? `(Modales activos: ${customEvent.detail.openDialogsCount || 0})` : "",
-			);
-
 			// Cerrar el modal inmediatamente
 			onCancel();
 		};
@@ -277,6 +306,11 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 		if (open) {
 			// Si estamos creando, verificar límites
 			if (isCreating) {
+				// Resetear valores con overrides (entryMethod, judicialPower) para que steps sea correcto
+				const freshValues = getInitialValues(null, initialFormValues);
+				setInitialValues(freshValues);
+				setValues(freshValues);
+
 				// Resetear el estado del modal
 				setShowAddFolderModal(false);
 				setIsCheckingLimit(true);
@@ -284,7 +318,8 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 				// Verificar el límite de recursos para carpetas (folders)
 				const checkLimit = async () => {
 					try {
-						const response = await ApiService.checkResourceLimit("folders");
+						// Pasar headers del equipo si estamos en modo equipo
+						const response = await ApiService.checkResourceLimit("folders", { headers: getRequestHeaders() });
 						if (response.success && response.data) {
 							if (response.data.hasReachedLimit) {
 								// Si ha alcanzado el límite, mostrar el modal de error sin desmontar el componente
@@ -328,8 +363,17 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 			setIsCheckingLimit(false);
 			// Resetear el paso activo cuando se cierra el modal
 			setActiveStep(0);
+			// Restaurar initialValues con overrides para la próxima apertura
+			if (isCreating) setInitialValues(getInitialValues(null, initialFormValues));
 		}
 	}, [open, isCreating, onCancel]);
+
+	// Saltar al paso inicial cuando el modal esté listo y se haya indicado un paso de inicio
+	useEffect(() => {
+		if (showAddFolderModal && initialStep !== undefined) {
+			setActiveStep(initialStep);
+		}
+	}, [showAddFolderModal, initialStep]);
 
 	useEffect(() => {
 		if (folder) {
@@ -342,7 +386,9 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 	};
 
 	async function _submitForm(values: any, actions: any, mode: string | undefined) {
-		const userId = auth.user?._id;
+		// En modo equipo, usar el userId del owner del grupo
+		const userId = getUserIdForResource();
+		const groupId = getTeamIdForResource();
 		const id = values._id;
 
 		let results;
@@ -354,7 +400,8 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 		try {
 			if (mode === "add") {
 				// Preparar los datos según el tipo de poder judicial
-				let folderDataToSend = { ...values, userId };
+				// Incluir groupId si estamos en modo equipo
+				let folderDataToSend = { ...values, userId, ...(groupId && { groupId }) };
 
 				// Si es Poder Judicial de Buenos Aires (MEV), agregar campos específicos
 				if (values.judicialPower === "buenosaires") {
@@ -370,9 +417,23 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 						pjn: true,
 						// folderJuris se usa como pjnCode en el backend
 					};
+				} else if (values.judicialPower === "caba") {
+					// Poder Judicial de CABA (EJE)
+					folderDataToSend = {
+						...folderDataToSend,
+						eje: true,
+						ejeSearchType: values.ejeSearchType,
+						// Si es búsqueda por CUIJ, incluir el CUIJ
+						...(values.ejeSearchType === "cuij" && { ejeCuij: values.ejeCuij }),
+						// Si es búsqueda por número/año, incluir esos campos
+						...(values.ejeSearchType === "expediente" && {
+							expedientNumber: values.expedientNumber,
+							expedientYear: values.expedientYear,
+						}),
+					};
 				}
 
-				results = await dispatch(addFolder(folderDataToSend));
+				results = await dispatch(addFolder(folderDataToSend, { headers: getRequestHeaders() }));
 				message = "agregar";
 			}
 			if (mode === "edit") {
@@ -387,10 +448,8 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 					TransitionComponent: Zoom,
 					autoHideDuration: 3000,
 				});
-				// Pequeño delay para que el usuario vea el mensaje de éxito
 				setTimeout(() => {
 					setIsProcessing(false);
-					onAddFolder(values);
 				}, 500);
 			} else {
 				// Usar el mensaje específico del servidor si está disponible
@@ -492,22 +551,62 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 				<Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
 					<DialogTitle
 						sx={{
-							bgcolor: theme.palette.primary.lighter,
-							p: 2,
-							borderBottom: `1px solid ${theme.palette.divider}`,
+							bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.08 : 0.04),
+							p: { xs: 1.75, sm: 2 },
+							borderBottom: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.18 : 0.12)}`,
 							flexShrink: 0,
 						}}
 					>
-						<Stack spacing={0.5}>
-							<Stack direction="row" alignItems="center" spacing={1}>
-								<FolderAdd size={24} color={theme.palette.primary.main} />
-								<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
-									{isCreating ? "Nueva Carpeta" : "Editar Carpeta"}
+						<Stack direction="row" alignItems="center" spacing={1.25}>
+							{/* Ícono en círculo tintado brand */}
+							<Box
+								sx={{
+									width: 36,
+									height: 36,
+									borderRadius: 1.25,
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.18 : 0.1),
+									color: BRAND_BLUE,
+									flexShrink: 0,
+								}}
+							>
+								<FolderAdd size={20} variant="Bulk" />
+							</Box>
+							<Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+								<Typography
+									sx={{
+										fontSize: "1.05rem",
+										fontWeight: 600,
+										letterSpacing: "-0.015em",
+										lineHeight: 1.2,
+										color: "text.primary",
+									}}
+								>
+									{isCreating ? "Nueva carpeta" : "Editar carpeta"}
 								</Typography>
+								{/* Eyebrow del step actual con tabular-nums */}
+								<Stack direction="row" alignItems="center" spacing={0.75}>
+									<Typography
+										sx={{
+											fontSize: "0.62rem",
+											fontWeight: 600,
+											letterSpacing: "0.14em",
+											textTransform: "uppercase",
+											color: BRAND_BLUE,
+											fontVariantNumeric: "tabular-nums",
+											lineHeight: 1,
+										}}
+									>
+										Paso {activeStep + 1} / {steps.length}
+									</Typography>
+									<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1 }}>·</Typography>
+									<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1 }}>
+										{steps[activeStep]}
+									</Typography>
+								</Stack>
 							</Stack>
-							<Typography variant="body2" color="textSecondary">
-								{`Paso ${activeStep + 1} de ${steps.length}: ${steps[activeStep]}`}
-							</Typography>
 						</Stack>
 					</DialogTitle>
 
@@ -528,30 +627,52 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 										</Box>
 									) : (
 										<Box>
-											{/* Steps Progress */}
-											<Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-												{steps.map((label, index) => (
-													<Box key={label} sx={{ position: "relative", width: "100%" }}>
-														<Box
-															sx={{
-																height: 4,
-																bgcolor: index <= activeStep ? "primary.main" : "divider",
-																borderRadius: 1,
-																transition: "all 0.3s ease",
-															}}
-														/>
-														<Typography
-															variant="caption"
-															sx={{
-																position: "absolute",
-																top: 8,
-																color: index <= activeStep ? "primary.main" : "text.secondary",
-															}}
-														>
-															{label}
-														</Typography>
-													</Box>
-												))}
+											{/* Steps Progress — bars con BRAND_BLUE + labels tracked uppercase */}
+											<Stack
+												direction="row"
+												spacing={1.5}
+												sx={{
+													mb: 2,
+													pb: 3.5,
+													position: "sticky",
+													top: -16,
+													zIndex: 1,
+													bgcolor: "background.paper",
+													pt: 2,
+												}}
+											>
+												{steps.map((label, index) => {
+													const isActive = index <= activeStep;
+													return (
+														<Box key={label} sx={{ position: "relative", width: "100%" }}>
+															<Box
+																sx={{
+																	height: 3,
+																	bgcolor: isActive
+																		? BRAND_BLUE
+																		: alpha(theme.palette.text.primary, theme.palette.mode === "dark" ? 0.12 : 0.08),
+																	borderRadius: 1,
+																	transition: "background-color 0.3s ease",
+																}}
+															/>
+															<Typography
+																sx={{
+																	position: "absolute",
+																	top: 8,
+																	fontSize: "0.6rem",
+																	fontWeight: 600,
+																	letterSpacing: "0.08em",
+																	textTransform: "uppercase",
+																	color: isActive ? BRAND_BLUE : "text.secondary",
+																	fontVariantNumeric: "tabular-nums",
+																	transition: "color 0.3s ease",
+																}}
+															>
+																{`0${index + 1}`.slice(-2)} · {label}
+															</Typography>
+														</Box>
+													);
+												})}
 											</Stack>
 
 											{/* Form Content */}
@@ -562,50 +683,106 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 
 								<DialogActions
 									sx={{
-										p: 2,
-										bgcolor: theme.palette.background.default,
-										borderTop: `1px solid ${theme.palette.divider}`,
+										p: { xs: 1.5, sm: 2 },
+										bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.04 : 0.02),
+										borderTop: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.16 : 0.1)}`,
 										flexShrink: 0,
 									}}
 								>
 									<Grid container justifyContent="space-between" alignItems="center">
 										<Grid item>
 											{!isCreating && (
-												<Tooltip title="Eliminar Carpeta" placement="top">
+												<Tooltip title="Eliminar carpeta" placement="top" arrow>
 													<IconButton
 														onClick={() => setOpenAlert(true)}
-														size="large"
+														size="medium"
 														sx={{
-															color: "error.main",
+															color: "text.secondary",
+															transition: "background-color 0.15s ease, color 0.15s ease",
 															"&:hover": {
-																bgcolor: "error.lighter",
+																bgcolor: alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.18 : 0.1),
+																color: theme.palette.error.main,
 															},
 														}}
 													>
-														<Trash variant="Bold" />
+														<Trash variant="Bulk" size={20} />
 													</IconButton>
 												</Tooltip>
 											)}
 										</Grid>
 										<Grid item>
-											<Stack direction="row" spacing={2} alignItems="center">
+											<Stack direction="row" spacing={1.25} alignItems="center">
 												{activeStep > 0 && (
-													<Button onClick={handleBack} startIcon={<ArrowLeft2 size={18} />}>
+													<Button
+														onClick={handleBack}
+														startIcon={<ArrowLeft2 size={16} />}
+														sx={{
+															textTransform: "none",
+															color: "text.secondary",
+															fontWeight: 500,
+															"&:hover": {
+																bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.1 : 0.06),
+																color: BRAND_BLUE,
+															},
+														}}
+													>
 														Atrás
 													</Button>
 												)}
-												<Button color="error" onClick={onCancel} sx={{ minWidth: 100 }}>
+												{/* Cancelar — neutro, no rojo. Cerrar el modal no es destructive. */}
+												<Button
+													onClick={onCancel}
+													sx={{
+														minWidth: 90,
+														textTransform: "none",
+														color: "text.secondary",
+														fontWeight: 500,
+														"&:hover": {
+															bgcolor: alpha(theme.palette.text.primary, theme.palette.mode === "dark" ? 0.08 : 0.05),
+															color: "text.primary",
+														},
+													}}
+												>
 													Cancelar
 												</Button>
-												<Button
-													type="submit"
-													variant="contained"
-													disabled={isSubmitting || isProcessing}
-													endIcon={isProcessing ? <CircularProgress size={16} color="inherit" /> : !isLastStep && <ArrowRight2 size={18} />}
-													sx={{ minWidth: 100 }}
-												>
-													{isProcessing ? "Procesando..." : folder && isLastStep ? "Editar" : !folder && isLastStep ? "Crear" : "Siguiente"}
-												</Button>
+												{!(
+													activeStep === 2 &&
+													values.entryMethod === "automatic" &&
+													(values.judicialPower === "nacional" || values.judicialPower === "buenosaires")
+												) && (
+													<Button
+														type="submit"
+														variant="contained"
+														disabled={isSubmitting || isProcessing}
+														endIcon={
+															isProcessing ? <CircularProgress size={14} color="inherit" /> : !isLastStep && <ArrowRight2 size={16} />
+														}
+														sx={{
+															minWidth: 100,
+															textTransform: "none",
+															bgcolor: BRAND_BLUE,
+															color: "#fff",
+															fontWeight: 600,
+															letterSpacing: "-0.005em",
+															borderRadius: 1.25,
+															boxShadow: "none",
+															transition: "background-color 0.15s ease",
+															"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+															"&.Mui-disabled": {
+																bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.24 : 0.4),
+																color: alpha("#fff", 0.9),
+															},
+														}}
+													>
+														{isProcessing
+															? "Procesando…"
+															: folder && isLastStep
+															? "Editar"
+															: !folder && isLastStep
+															? "Crear"
+															: "Siguiente"}
+													</Button>
+												)}
 											</Stack>
 										</Grid>
 									</Grid>
@@ -616,7 +793,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 
 					{!isCreating && <AlertFolderDelete title={folder.folderName} open={openAlert} handleClose={handleAlertClose} id={folder._id} />}
 
-					{/* Backdrop con indicador de carga mientras se procesa */}
+					{/* Backdrop brand-aware mientras se procesa */}
 					<Backdrop
 						open={isProcessing}
 						sx={{
@@ -624,12 +801,34 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 							zIndex: (theme) => theme.zIndex.drawer + 1,
 							position: "absolute",
 							borderRadius: 2,
+							bgcolor: alpha(theme.palette.background.paper, theme.palette.mode === "dark" ? 0.88 : 0.85),
+							backdropFilter: "blur(4px)",
 						}}
 					>
-						<Stack spacing={2} alignItems="center">
-							<CircularProgress color="inherit" size={48} />
-							<Typography variant="h6" color="inherit">
-								{folder ? "Actualizando carpeta..." : "Creando carpeta..."}
+						<Stack spacing={2.5} alignItems="center">
+							<Box
+								sx={{
+									width: 56,
+									height: 56,
+									borderRadius: "50%",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.16 : 0.1),
+									border: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.32 : 0.2)}`,
+								}}
+							>
+								<CircularProgress size={28} sx={{ color: BRAND_BLUE }} />
+							</Box>
+							<Typography
+								sx={{
+									fontSize: "0.95rem",
+									fontWeight: 600,
+									letterSpacing: "-0.01em",
+									color: "text.primary",
+								}}
+							>
+								{folder ? "Actualizando carpeta…" : "Creando carpeta…"}
 							</Typography>
 						</Stack>
 					</Backdrop>

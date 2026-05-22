@@ -1,7 +1,7 @@
 import React from "react";
 // material-ui
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { alpha, useTheme } from "@mui/material/styles";
+import { alpha } from "@mui/material/styles";
 import { Grid, Stack, Typography, Snackbar, Alert, Skeleton, Fade, CircularProgress, Box } from "@mui/material";
 
 // project-imports
@@ -18,6 +18,7 @@ import ActiveFoldersWidget from "sections/widget/chart/ActiveFoldersWidget";
 import ProjectRelease from "sections/widget/chart/ProjectRelease";
 import AssignUsers from "sections/widget/chart/TaskWidget";
 import StorageWidget from "sections/widget/chart/StorageWidget";
+import ResourceUsageWidget from "sections/widget/chart/ResourceUsageWidget";
 
 // assets
 import { Calendar, CloudChange, FolderAdd, Task, Moneys } from "iconsax-react";
@@ -31,6 +32,7 @@ import { BRAND_BLUE } from "themes/dashboardTokens";
 
 // hooks
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useEffectiveUser } from "hooks/useEffectiveUser";
 
 // Limite de sesiones para mostrar onboarding
 const MAX_ONBOARDING_SESSIONS = 5;
@@ -44,7 +46,6 @@ const ONBOARDING_OVERRIDE_KEY = "dashboard_onboarding_override";
 // ==============================|| DASHBOARD - DEFAULT ||============================== //
 
 const DashboardDefault = () => {
-	const theme = useTheme();
 	const navigate = useNavigate();
 
 	// Override de la vista del WelcomeBanner para preview/dev. Solo lo usan
@@ -76,8 +77,11 @@ const DashboardDefault = () => {
 	const onboardingFetched = useRef(false);
 
 	const user = useSelector((state) => state.auth.user);
-	const userId = user?._id;
+	const personalUserId = user?._id; // For personal features like onboarding
 	const isAdmin = user?.role === "ADMIN_ROLE";
+
+	// Get effective user for team-aware data fetching
+	const { effectiveUserId, isReady: isTeamReady } = useEffectiveUser();
 
 	// Sync del query param al sessionStorage + state. Solo admin.
 	useEffect(() => {
@@ -107,9 +111,10 @@ const DashboardDefault = () => {
 	const dashboardData = unifiedData?.dashboard || null;
 
 	// Cargar estado de onboarding del backend (solo 1 vez por sesion del navegador)
+	// Onboarding es una feature personal, usa personalUserId
 	useEffect(() => {
 		const fetchOnboarding = async () => {
-			if (!userId || onboardingFetched.current) return;
+			if (!personalUserId || onboardingFetched.current) return;
 
 			// Marcar como fetched para evitar dobles llamadas
 			onboardingFetched.current = true;
@@ -118,11 +123,11 @@ const DashboardDefault = () => {
 				setOnboardingLoading(true);
 
 				// Verificar si ya se llamo en esta sesion del navegador
-				const sessionChecked = sessionStorage.getItem(`${ONBOARDING_SESSION_KEY}_${userId}`);
+				const sessionChecked = sessionStorage.getItem(`${ONBOARDING_SESSION_KEY}_${personalUserId}`);
 
 				if (sessionChecked) {
 					// Ya se llamo en esta sesion, usar datos cacheados
-					const cachedData = sessionStorage.getItem(`onboarding_data_${userId}`);
+					const cachedData = sessionStorage.getItem(`onboarding_data_${personalUserId}`);
 					if (cachedData) {
 						setOnboardingStatus(JSON.parse(cachedData));
 						setOnboardingLoading(false);
@@ -135,8 +140,8 @@ const DashboardDefault = () => {
 				if (response.success && response.onboarding) {
 					setOnboardingStatus(response.onboarding);
 					// Guardar en sessionStorage para evitar multiples llamadas
-					sessionStorage.setItem(`${ONBOARDING_SESSION_KEY}_${userId}`, "true");
-					sessionStorage.setItem(`onboarding_data_${userId}`, JSON.stringify(response.onboarding));
+					sessionStorage.setItem(`${ONBOARDING_SESSION_KEY}_${personalUserId}`, "true");
+					sessionStorage.setItem(`onboarding_data_${personalUserId}`, JSON.stringify(response.onboarding));
 				}
 			} catch (err) {
 				console.error("Error al obtener estado de onboarding:", err);
@@ -146,7 +151,7 @@ const DashboardDefault = () => {
 		};
 
 		fetchOnboarding();
-	}, [userId]);
+	}, [personalUserId]);
 
 	// Determinar si mostrar onboarding
 	const showOnboarding = useMemo(() => {
@@ -191,12 +196,12 @@ const DashboardDefault = () => {
 				// Actualizar estado local
 				setOnboardingStatus(response.onboarding);
 				// Actualizar cache en sessionStorage
-				if (userId) {
-					sessionStorage.setItem(`onboarding_data_${userId}`, JSON.stringify(response.onboarding));
+				if (personalUserId) {
+					sessionStorage.setItem(`onboarding_data_${personalUserId}`, JSON.stringify(response.onboarding));
 				}
 				setSnackbar({
 					open: true,
-					message: "No volveras a ver esta guia de inicio",
+					message: "No volverás a ver esta guía de inicio",
 					severity: "success",
 				});
 			}
@@ -210,21 +215,23 @@ const DashboardDefault = () => {
 		} finally {
 			setIsDismissing(false);
 		}
-	}, [userId]);
+	}, [personalUserId]);
 
 	// Cargar datos del dashboard usando el store unificado
+	// Usa effectiveUserId (owner's userId en modo equipo) para mostrar datos del equipo
 	useEffect(() => {
-		if (userId && !isInitialized) {
-			dispatch(getUnifiedStats(userId, "dashboard,folders"));
+		if (effectiveUserId && isTeamReady && !isInitialized) {
+			dispatch(getUnifiedStats(effectiveUserId, "dashboard,folders"));
 		}
-	}, [userId, isInitialized]);
+	}, [effectiveUserId, isTeamReady, isInitialized]);
 
 	// Cargar datos de userStats para el widget de almacenamiento
+	// Nota: userStats es personal, no del equipo
 	useEffect(() => {
-		if (userId) {
+		if (personalUserId) {
 			dispatch(fetchUserStats());
 		}
-	}, [userId]);
+	}, [personalUserId]);
 
 	// Manejar errores
 	useEffect(() => {
@@ -270,9 +277,10 @@ const DashboardDefault = () => {
 	const foldersTrend = dashboardData ? calculateTrend("newFolders") : { direction: "up", percentage: 0 };
 
 	// Funcion para reintentar la carga
+	// Usa effectiveUserId (owner's userId en modo equipo) para mantener consistencia
 	const handleRetry = () => {
-		if (userId) {
-			dispatch(getUnifiedStats(userId, "dashboard", true));
+		if (effectiveUserId && isTeamReady) {
+			dispatch(getUnifiedStats(effectiveUserId, "dashboard", true));
 		}
 	};
 
@@ -286,19 +294,21 @@ const DashboardDefault = () => {
 		<>
 			{[1, 2, 3, 4].map((item) => (
 				<Grid item xs={12} sm={6} lg={3} key={item}>
-					<Skeleton variant="rectangular" height={180} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1.5 }} />
 				</Grid>
 			))}
-			<Grid item xs={12} md={8} lg={9}>
+			<Grid item xs={12} md={6} lg={5}>
+				<Skeleton variant="rectangular" height={360} sx={{ borderRadius: 1.5 }} />
+			</Grid>
+			<Grid item xs={12} md={6} lg={3}>
 				<Stack spacing={3}>
-					<Skeleton variant="rectangular" height={300} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={170} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={100} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={70} sx={{ borderRadius: 1.5 }} />
 				</Stack>
 			</Grid>
-			<Grid item xs={12} md={4} lg={3}>
-				<Stack spacing={3}>
-					<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1.5 }} />
-					<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1.5 }} />
-				</Stack>
+			<Grid item xs={12} md={6} lg={4}>
+				<Skeleton variant="rectangular" height={360} sx={{ borderRadius: 1.5 }} />
 			</Grid>
 		</>
 	);
@@ -445,15 +455,14 @@ const DashboardDefault = () => {
 					{lastUpdated && !isFullyLoading && !error && !showOnboarding && (
 						<Typography
 							variant="caption"
+							color="text.secondary"
 							sx={{
 								display: "flex",
 								justifyContent: "flex-end",
 								mt: 1,
-								color: "text.secondary",
-								fontStyle: "italic",
 							}}
 						>
-							Ultima actualizacion:{" "}
+							Última actualización:{" "}
 							{new Date(lastUpdated).toLocaleString("es-AR", {
 								day: "2-digit",
 								month: "2-digit",
@@ -596,16 +605,17 @@ const DashboardDefault = () => {
 							</Grid>
 
 							{/* row 2 */}
-							<Grid item xs={12} md={6} lg={6}>
+							<Grid item xs={12} md={6} lg={5}>
 								<RepeatCustomerRate />
 							</Grid>
 							<Grid item xs={12} md={6} lg={3}>
 								<Stack spacing={3}>
+									<ResourceUsageWidget />
 									<StorageWidget />
 									<AssignUsers />
 								</Stack>
 							</Grid>
-							<Grid item xs={12} md={6} lg={3}>
+							<Grid item xs={12} md={6} lg={4}>
 								<ProjectRelease />
 							</Grid>
 						</Grid>

@@ -1,11 +1,10 @@
 import React from "react";
-import { useEffect, useMemo, useState, Fragment, MouseEvent, useCallback } from "react";
+import { useEffect, useMemo, useState, Fragment, MouseEvent, useCallback, useRef } from "react";
 
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
 import {
 	Button,
-	Chip,
 	Stack,
 	Table,
 	TableBody,
@@ -16,11 +15,14 @@ import {
 	useMediaQuery,
 	Skeleton,
 	Typography,
-	Container,
 	IconButton,
 	Box,
 	CircularProgress,
 	Collapse,
+	Menu,
+	MenuItem,
+	ListItemIcon,
+	ListItemText,
 } from "@mui/material";
 
 import {
@@ -45,29 +47,94 @@ import { IndeterminateCheckbox, HeaderSort, SortingSelect, TablePagination, Tabl
 import AlertTaskDelete from "sections/apps/tasks/AlertTaskDelete";
 import TaskModal from "sections/apps/tasks/TaskModal";
 import GuideTasks from "components/guides/GuideTasks";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
-import { Add, Task, Eye, Trash, Edit2, DocumentDownload, InfoCircle } from "iconsax-react";
-
-// sections
+import { Add, Task, Eye, Trash, Edit2, DocumentDownload, InfoCircle, More } from "iconsax-react";
 
 // types
 import { dispatch, useSelector } from "store";
-import { getTasksByUserId, deleteTask, getTaskDetail } from "store/reducers/tasks";
-import { getFoldersByUserId } from "store/reducers/folder";
+import { getTasksByUserId, getTasksByGroupId, deleteTask, getTaskDetail } from "store/reducers/tasks";
+import { getFoldersByUserId, getFoldersByGroupId } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
+import { useTeam } from "contexts/TeamContext";
 import { TaskType } from "types/task";
 import dayjs from "utils/dayjs-config";
 import { CSVLink } from "react-csv";
+
+// ==============================|| BRAND PILLS ||============================== //
+
+const TaskPriorityPill = ({ priority }: { priority?: string }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	if (!priority) return null;
+	const map: Record<string, { color: string; label: string }> = {
+		alta: { color: theme.palette.error.main, label: "Alta" },
+		media: { color: STALE_AMBER, label: "Media" },
+		baja: { color: LIVE_GREEN, label: "Baja" },
+	};
+	const cfg = map[priority] ?? { color: theme.palette.text.secondary, label: priority };
+	return (
+		<Box
+			sx={{
+				display: "inline-flex",
+				alignItems: "center",
+				gap: 0.625,
+				px: 0.875,
+				py: 0.25,
+				borderRadius: 0.75,
+				bgcolor: alpha(cfg.color, isDark ? 0.16 : 0.1),
+				border: `1px solid ${alpha(cfg.color, isDark ? 0.32 : 0.22)}`,
+			}}
+		>
+			<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: cfg.color }} />
+			<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: cfg.color, letterSpacing: "0.01em", lineHeight: 1 }}>
+				{cfg.label}
+			</Typography>
+		</Box>
+	);
+};
+
+const TaskStatusPill = ({ value }: { value?: string }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const map: Record<string, { color: string; label: string }> = {
+		completada: { color: LIVE_GREEN, label: "Completada" },
+		en_progreso: { color: BRAND_BLUE, label: "En progreso" },
+		revision: { color: STALE_AMBER, label: "Revisión" },
+		cancelada: { color: theme.palette.error.main, label: "Cancelada" },
+		pendiente: { color: theme.palette.text.secondary, label: "Pendiente" },
+	};
+	const cfg = map[value ?? "pendiente"] ?? { color: theme.palette.text.secondary, label: value || "Pendiente" };
+	return (
+		<Box
+			sx={{
+				display: "inline-flex",
+				alignItems: "center",
+				gap: 0.625,
+				px: 0.875,
+				py: 0.25,
+				borderRadius: 0.75,
+				bgcolor: alpha(cfg.color, isDark ? 0.16 : 0.1),
+				border: `1px solid ${alpha(cfg.color, isDark ? 0.32 : 0.22)}`,
+			}}
+		>
+			<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: cfg.color }} />
+			<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: cfg.color, letterSpacing: "0.01em", lineHeight: 1 }}>
+				{cfg.label}
+			</Typography>
+		</Box>
+	);
+};
 
 // ==============================|| REACT TABLE ||============================== //
 
 interface Props {
 	columns: Column<TaskType>[];
 	data: TaskType[];
-	handleAdd: () => void;
+	handleAdd?: () => void;
 	handleOpenGuide: () => void;
 	isLoading?: boolean;
 	expandedTaskId?: string | null;
@@ -99,6 +166,7 @@ function ReactTable({
 }: Props) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
+	const isDark = theme.palette.mode === "dark";
 	const [isColumnsReady, setIsColumnsReady] = useState(false);
 
 	const filterTypes = useMemo(() => renderFilterTypes, []);
@@ -175,7 +243,6 @@ function ReactTable({
 		setSortBy(sortBy);
 	}, [setSortBy, sortBy]);
 
-	// Sincronizar el estado de paginación con el controlador externo
 	useEffect(() => {
 		if (pageIndex !== controlledPageIndex) {
 			gotoPage(controlledPageIndex);
@@ -188,14 +255,13 @@ function ReactTable({
 		}
 	}, [controlledPageSize, setPageSize, pageSize]);
 
-	// Wrapper functions para manejar cambios de paginación
 	const handleGotoPage = (newPageIndex: number) => {
 		onPageChange(newPageIndex);
 	};
 
 	const handleSetPageSize = (newPageSize: number) => {
 		onPageSizeChange(newPageSize);
-		onPageChange(0); // Reset to first page when changing page size
+		onPageChange(0);
 	};
 
 	const csvHeaders = columns
@@ -205,80 +271,172 @@ function ReactTable({
 			key: column.accessor,
 		}));
 
+	// Brand helpers
+	const brandPrimaryButtonSx = {
+		minWidth: 130,
+		textTransform: "none" as const,
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		borderRadius: 1.25,
+		boxShadow: "none",
+		transition: "background-color 0.15s ease",
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+	};
+
+	const iconBtnSx = {
+		width: 34,
+		height: 34,
+		borderRadius: 1,
+		color: "text.secondary",
+		transition: "color 0.15s ease, background-color 0.15s ease",
+		"&:hover": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) },
+	};
+
+	const tableSx = {
+		"& .MuiTableHead-root .MuiTableCell-root": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+			color: "text.secondary",
+			fontSize: "0.68rem",
+			fontWeight: 600,
+			letterSpacing: "0.06em",
+			textTransform: "uppercase",
+			borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+			py: 1.25,
+		},
+		"& .MuiTableBody-root .MuiTableRow-root": {
+			transition: "background-color 0.12s ease",
+		},
+		"& .MuiTableBody-root .MuiTableRow-root:hover": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+		},
+		"& .MuiTableBody-root .MuiTableCell-root": {
+			borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.1 : 0.06)}`,
+		},
+	};
+
+	// Overflow menu
+	const [moreAnchor, setMoreAnchor] = useState<null | HTMLElement>(null);
+	const moreOpen = Boolean(moreAnchor);
+	const csvWrapperRef = useRef<HTMLDivElement>(null);
+
+	const handleCsvFromMenu = () => {
+		setMoreAnchor(null);
+		const link = csvWrapperRef.current?.querySelector("a");
+		link?.click();
+	};
+
+	const handleGuideFromMenu = () => {
+		setMoreAnchor(null);
+		handleOpenGuide();
+	};
+
 	return (
 		<>
 			<Stack gap={1} spacing={3}>
 				<TableRowSelection selected={Object.keys(selectedRowIds).length} />
-				{/* Controles FUERA del ScrollX para que siempre estén visibles */}
-				<Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
-					{/* Primera fila: buscador a la izquierda, botón principal a la derecha */}
-					<Stack
-						direction={matchDownSM ? "column" : "row"}
-						spacing={{ xs: 1.5, sm: 2 }}
-						justifyContent="space-between"
-						alignItems={matchDownSM ? "stretch" : "center"}
-					>
-						{/* Buscador (izquierda) */}
-						<Box sx={{ width: { xs: "100%", sm: "280px" } }}>
-							<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
-						</Box>
 
-						{/* Botón principal (derecha) */}
-						<Button variant="contained" size="small" startIcon={<Add />} onClick={handleAdd} fullWidth={matchDownSM}>
-							Nueva Tarea
-						</Button>
-					</Stack>
+				{/* Toolbar consolidada brand-aware */}
+				<Stack
+					direction={matchDownSM ? "column" : "row"}
+					spacing={{ xs: 1.25, sm: 1.5 }}
+					alignItems={matchDownSM ? "stretch" : "center"}
+					sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}
+				>
+					{/* Buscador */}
+					<Box sx={{ width: { xs: "100%", sm: 240 } }}>
+						<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
+					</Box>
 
-					{/* Segunda fila: selector de ordenamiento a la izquierda, botones secundarios a la derecha */}
-					<Stack
-						direction={matchDownSM ? "column" : "row"}
-						spacing={{ xs: 1.5, sm: 2 }}
-						justifyContent="space-between"
-						alignItems={matchDownSM ? "stretch" : "center"}
-					>
-						{/* Selector de ordenamiento (izquierda) */}
-						<Box sx={{ width: { xs: "100%", sm: "280px" } }}>
-							<SortingSelect
-								sortBy={sortBy[0]?.id || "name"}
-								setSortBy={(newSortBy: any) => {
-									setSortByState(newSortBy);
-									setSortBy(newSortBy);
-								}}
-								allColumns={allColumns}
-							/>
-						</Box>
+					{/* Sort */}
+					<Box sx={{ width: { xs: "100%", sm: 220 } }}>
+						<SortingSelect
+							sortBy={sortBy[0]?.id || "name"}
+							setSortBy={(newSortBy: any) => {
+								setSortByState(newSortBy);
+								setSortBy(newSortBy);
+							}}
+							allColumns={allColumns}
+						/>
+					</Box>
 
-						{/* Botones secundarios (derecha) */}
-						<Stack direction="row" spacing={1} alignItems="center" justifyContent={matchDownSM ? "flex-start" : "flex-end"}>
-							<Tooltip title="Exportar a CSV">
-								<IconButton color="primary" size="medium">
-									<CSVLink
-										data={data || []}
-										headers={csvHeaders}
-										filename={`tasks-${dayjs().format("DD-MM-YYYY")}.csv`}
-										style={{
-											color: "inherit",
-											display: "flex",
-											alignItems: "center",
-											textDecoration: "none",
-										}}
-									>
-										<DocumentDownload variant="Bulk" size={22} />
-									</CSVLink>
-								</IconButton>
-							</Tooltip>
-							<Tooltip title="Ver Guía">
-								<IconButton color="success" onClick={handleOpenGuide}>
-									<InfoCircle variant="Bulk" />
-								</IconButton>
-							</Tooltip>
-						</Stack>
+					{/* Spacer */}
+					<Box sx={{ flex: 1 }} />
+
+					{/* Acciones derecha */}
+					<Stack direction="row" spacing={1} alignItems="center" justifyContent={matchDownSM ? "flex-end" : "flex-end"}>
+						{handleAdd && (
+							<Button
+								variant="contained"
+								size="small"
+								startIcon={<Add size={16} variant="Linear" />}
+								onClick={handleAdd}
+								fullWidth={matchDownSM}
+								data-testid="tasks-add-btn"
+								sx={brandPrimaryButtonSx}
+							>
+								Nueva tarea
+							</Button>
+						)}
+						<Tooltip title="Más opciones">
+							<IconButton onClick={(e) => setMoreAnchor(e.currentTarget)} sx={iconBtnSx} aria-label="más opciones">
+								<More size={18} variant="Linear" />
+							</IconButton>
+						</Tooltip>
 					</Stack>
 				</Stack>
 
-				{/* Tabla con ScrollX */}
+				{/* Hairline brand */}
+				<Box sx={{ height: 1, mx: { xs: 2, sm: 3 }, bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />
+
+				<Menu
+					anchorEl={moreAnchor}
+					open={moreOpen}
+					onClose={() => setMoreAnchor(null)}
+					anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+					transformOrigin={{ vertical: "top", horizontal: "right" }}
+					PaperProps={{
+						elevation: 0,
+						sx: {
+							mt: 0.5,
+							minWidth: 200,
+							borderRadius: 1.5,
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+							boxShadow: `0 10px 28px ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)}`,
+							"& .MuiMenuItem-root": {
+								fontSize: "0.82rem",
+								letterSpacing: "-0.005em",
+								py: 0.875,
+								"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.06) },
+							},
+						},
+					}}
+				>
+					<MenuItem onClick={handleCsvFromMenu}>
+						<ListItemIcon sx={{ color: "text.secondary", minWidth: "32px !important" }}>
+							<DocumentDownload size={16} variant="Linear" />
+						</ListItemIcon>
+						<ListItemText primary="Exportar CSV" />
+					</MenuItem>
+					<MenuItem onClick={handleGuideFromMenu}>
+						<ListItemIcon sx={{ color: "text.secondary", minWidth: "32px !important" }}>
+							<InfoCircle size={16} variant="Linear" />
+						</ListItemIcon>
+						<ListItemText primary="Ver guía" />
+					</MenuItem>
+				</Menu>
+
+				{/* CSVLink oculto para disparar desde menu */}
+				<Box ref={csvWrapperRef} sx={{ display: "none" }}>
+					<CSVLink data={data || []} headers={csvHeaders} filename={`tasks-${dayjs().format("DD-MM-YYYY")}.csv`}>
+						{""}
+					</CSVLink>
+				</Box>
+
+				{/* Tabla */}
 				<ScrollX>
-					<Table {...getTableProps()}>
+					<Table {...getTableProps()} sx={tableSx}>
 						<TableHead>
 							{headerGroups.map((headerGroup: HeaderGroup<TaskType>, i: number) => (
 								<TableRow
@@ -312,10 +470,16 @@ function ReactTable({
 										<Fragment key={i}>
 											<TableRow
 												{...row.getRowProps()}
-												sx={{ cursor: "pointer", bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : "inherit" }}
+												sx={{
+													cursor: "pointer",
+													bgcolor: row.isSelected ? alpha(BRAND_BLUE, isDark ? 0.16 : 0.08) : "inherit",
+												}}
 											>
 												{row.cells.map((cell: Cell<TaskType>, k: number) => (
-													<TableCell key={`cell-${i}-${k}`} {...(cell.getCellProps([{ className: cell.column.className }]) as any)}>
+													<TableCell
+														key={`cell-${i}-${k}`}
+														{...(cell.getCellProps([{ className: cell.column.className }]) as any)}
+													>
 														{cell.render("Cell")}
 													</TableCell>
 												))}
@@ -327,7 +491,7 @@ function ReactTable({
 															<Box sx={{ margin: 1 }}>
 																{taskDetailsLoading[row.original._id] ? (
 																	<Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-																		<CircularProgress size={24} />
+																		<CircularProgress size={24} sx={{ color: BRAND_BLUE }} />
 																	</Box>
 																) : (
 																	<TaskDetailRow
@@ -350,15 +514,85 @@ function ReactTable({
 								})
 							) : (
 								<TableRow>
-									<TableCell sx={{ p: 2.5 }} colSpan={visibleColumns.length}>
-										<Stack>
-											<Typography variant="h5" align="center">
-												Sin tareas
-											</Typography>
-											<Typography variant="body2" color="textSecondary" align="center" sx={{ mt: 1 }}>
-												Comienza creando tu primera tarea
-											</Typography>
-										</Stack>
+									<TableCell sx={{ p: 0 }} colSpan={visibleColumns.length}>
+										<Box
+											sx={{
+												position: "relative",
+												overflow: "hidden",
+												px: 3,
+												py: { xs: 6, md: 8 },
+												textAlign: "center",
+											}}
+										>
+											{/* Radial blob */}
+											<Box
+												sx={{
+													position: "absolute",
+													top: "-20%",
+													left: "50%",
+													transform: "translateX(-50%)",
+													width: 360,
+													height: 360,
+													borderRadius: "50%",
+													background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)} 0%, transparent 70%)`,
+													pointerEvents: "none",
+												}}
+											/>
+											{/* Dot grid */}
+											<Box
+												sx={{
+													position: "absolute",
+													inset: 0,
+													backgroundImage: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)} 1px, transparent 1px)`,
+													backgroundSize: "20px 20px",
+													opacity: 0.5,
+													maskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
+													WebkitMaskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
+													pointerEvents: "none",
+												}}
+											/>
+											<Stack spacing={1.5} alignItems="center" sx={{ position: "relative" }}>
+												<Box
+													sx={{
+														width: 56,
+														height: 56,
+														borderRadius: 1.5,
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+														border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+														color: BRAND_BLUE,
+													}}
+												>
+													<Task size={26} variant="Bulk" />
+												</Box>
+												<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>
+													Sin tareas todavía
+												</Typography>
+												<Typography
+													sx={{
+														fontSize: "0.82rem",
+														color: "text.secondary",
+														maxWidth: 360,
+														textWrap: "pretty",
+													}}
+												>
+													Creá tu primera tarea para empezar a organizar el trabajo del estudio.
+												</Typography>
+												{handleAdd && (
+													<Button
+														variant="contained"
+														size="small"
+														startIcon={<Add size={16} variant="Linear" />}
+														onClick={handleAdd}
+														sx={{ ...brandPrimaryButtonSx, mt: 0.5 }}
+													>
+														Nueva tarea
+													</Button>
+												)}
+											</Stack>
+										</Box>
 									</TableCell>
 								</TableRow>
 							)}
@@ -367,6 +601,7 @@ function ReactTable({
 				</ScrollX>
 				<TablePagination gotoPage={handleGotoPage} rows={rows} setPageSize={handleSetPageSize} pageIndex={pageIndex} pageSize={pageSize} />
 			</Stack>
+
 		</>
 	);
 }
@@ -375,8 +610,11 @@ function ReactTable({
 
 const Tasks = () => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const { user } = useSelector((state) => state.auth);
 	const userId = user?._id;
+
+	const { activeTeam, isTeamMode, canCreate, canUpdate, canDelete, isInitialized: isTeamInitialized } = useTeam();
 
 	const { tasks, isLoader, taskDetails, taskDetailsLoading } = useSelector((state) => state.tasksReducer);
 	const { folders } = useSelector((state) => state.folder);
@@ -390,19 +628,25 @@ const Tasks = () => {
 		taskId: null,
 		taskName: "",
 	});
-	// Removed local snackbar state - using global Redux snackbar instead
 	const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 	const [openGuide, setOpenGuide] = useState(false);
-	// Agregar estado para controlar la paginación
 	const [pageIndex, setPageIndex] = useState(0);
 	const [pageSize, setPageSize] = useState(10);
 
 	useEffect(() => {
-		if (userId) {
+		if (!userId) return;
+		if (!isTeamInitialized) return;
+		if (isTeamMode && !activeTeam?._id) return;
+
+		if (isTeamMode && activeTeam?._id) {
+			dispatch(getTasksByGroupId(activeTeam._id));
+			dispatch(getFoldersByGroupId(activeTeam._id));
+		} else {
 			dispatch(getTasksByUserId(userId));
 			dispatch(getFoldersByUserId(userId));
 		}
-	}, [userId]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [userId, activeTeam?._id, isTeamMode, isTeamInitialized]);
 
 	useEffect(() => {
 		setTaskData(tasks);
@@ -450,26 +694,45 @@ const Tasks = () => {
 		setDeleteModal({ open: false, taskId: null, taskName: "" });
 	};
 
-	// Removed handleCloseSnackbar - handled by global snackbar
-
 	const handleViewTask = useCallback(
 		async (taskId: string) => {
-			// Si está colapsando
 			if (expandedTaskId === taskId) {
 				setExpandedTaskId(null);
 				return;
 			}
 
-			// Si está expandiendo, verificar si ya tenemos los detalles
 			if (!taskDetails[taskId]) {
-				// Si no tenemos los detalles, hacer la llamada a la API
 				await dispatch(getTaskDetail(taskId));
 			}
 
-			// Expandir la fila
 			setExpandedTaskId(taskId);
 		},
 		[expandedTaskId, taskDetails, dispatch],
+	);
+
+	// Brand action icon sx (compartido con columnas)
+	const actionIconSx = useMemo(
+		() => ({
+			width: 32,
+			height: 32,
+			borderRadius: 1,
+			color: "text.secondary",
+			transition: "color 0.15s ease, background-color 0.15s ease",
+			"&:hover": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) },
+		}),
+		[isDark],
+	);
+
+	const actionIconDestructiveSx = useMemo(
+		() => ({
+			width: 32,
+			height: 32,
+			borderRadius: 1,
+			color: "text.secondary",
+			transition: "color 0.15s ease, background-color 0.15s ease",
+			"&:hover": { color: theme.palette.error.main, bgcolor: alpha(theme.palette.error.main, isDark ? 0.14 : 0.08) },
+		}),
+		[isDark, theme.palette.error.main],
 	);
 
 	const columns = useMemo<Column<TaskType>[]>(
@@ -481,31 +744,10 @@ const Tasks = () => {
 					const priority = row.original.priority;
 					return (
 						<Stack direction="row" spacing={1} alignItems="center">
-							<Typography variant="subtitle1">{value}</Typography>
-							{priority && (
-								<Chip
-									size="small"
-									label={priority.charAt(0).toUpperCase() + priority.slice(1)}
-									color={priority === "alta" ? "error" : priority === "media" ? "warning" : priority === "baja" ? "success" : "default"}
-									sx={{
-										minWidth: 55,
-										...(priority === "baja" && {
-											backgroundColor: "success.main",
-											color: "success.contrastText",
-											"& .MuiChip-label": {
-												fontWeight: 600,
-											},
-										}),
-										...(priority === "media" && {
-											backgroundColor: "warning.main",
-											color: "black",
-											"& .MuiChip-label": {
-												fontWeight: 600,
-											},
-										}),
-									}}
-								/>
-							)}
+							<Typography sx={{ fontSize: "0.875rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+								{value}
+							</Typography>
+							<TaskPriorityPill priority={priority} />
 						</Stack>
 					);
 				},
@@ -517,56 +759,36 @@ const Tasks = () => {
 					const date = dayjs(value);
 					const isOverdue = date.isBefore(dayjs(), "day");
 					const isDueSoon = date.isAfter(dayjs()) && date.diff(dayjs(), "days") <= 3;
-					return <Typography color={isOverdue ? "error" : isDueSoon ? "warning" : "textPrimary"}>{date.format("DD/MM/YYYY")}</Typography>;
+					const color = isOverdue ? theme.palette.error.main : isDueSoon ? STALE_AMBER : theme.palette.text.primary;
+					return (
+						<Typography
+							sx={{
+								fontSize: "0.82rem",
+								color,
+								fontVariantNumeric: "tabular-nums",
+								fontWeight: isOverdue || isDueSoon ? 600 : 500,
+							}}
+						>
+							{date.format("DD/MM/YYYY")}
+						</Typography>
+					);
 				},
 			},
 			{
 				Header: "Estado",
 				accessor: "status",
-				Cell: ({ value }: any) => {
-					const getStatusColor = () => {
-						switch (value) {
-							case "completada":
-								return "success";
-							case "en_progreso":
-								return "warning";
-							case "revision":
-								return "secondary";
-							case "cancelada":
-								return "error";
-							default:
-								return "default";
-						}
-					};
-					const getStatusLabel = () => {
-						switch (value) {
-							case "completada":
-								return "Completada";
-							case "en_progreso":
-								return "En Progreso";
-							case "revision":
-								return "Revisión";
-							case "cancelada":
-								return "Cancelada";
-							case "pendiente":
-								return "Pendiente";
-							default:
-								return value || "Pendiente";
-						}
-					};
-					return <Chip size="small" label={getStatusLabel()} color={getStatusColor()} />;
-				},
+				Cell: ({ value }: any) => <TaskStatusPill value={value} />,
 			},
 			{
 				Header: "Carpeta",
 				accessor: "folderId",
 				Cell: ({ value }: any) => {
 					return value ? (
-						<Typography variant="body2">{folders?.find((f: any) => f._id === value)?.folderName || value}</Typography>
-					) : (
-						<Typography variant="body2" color="textSecondary">
-							-
+						<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+							{folders?.find((f: any) => f._id === value)?.folderName || value}
 						</Typography>
+					) : (
+						<Typography sx={{ fontSize: "0.82rem", color: "text.secondary" }}>—</Typography>
 					);
 				},
 			},
@@ -575,8 +797,18 @@ const Tasks = () => {
 				accessor: "description",
 				Cell: ({ value }: any) => {
 					return (
-						<Typography variant="body2" color="textSecondary">
-							{value || "-"}
+						<Typography
+							sx={{
+								fontSize: "0.8rem",
+								color: "text.secondary",
+								letterSpacing: "-0.005em",
+								maxWidth: 280,
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
+							{value || "—"}
 						</Typography>
 					);
 				},
@@ -586,78 +818,207 @@ const Tasks = () => {
 				className: "cell-center",
 				disableSortBy: true,
 				Cell: ({ row }: any) => {
-					const collapseIcon =
-						expandedTaskId === row.original._id ? (
-							<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} />
-						) : (
-							<Eye variant="Bulk" />
-						);
-
+					const isExpanded = expandedTaskId === row.original._id;
 					return (
-						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0}>
-							<Tooltip title={expandedTaskId === row.original._id ? "Cerrar" : "Ver"}>
+						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0.25}>
+							<Tooltip title={isExpanded ? "Cerrar" : "Ver"}>
 								<IconButton
-									color={expandedTaskId === row.original._id ? "primary" : "secondary"}
+									sx={actionIconSx}
 									onClick={(e: MouseEvent<HTMLButtonElement>) => {
 										e.stopPropagation();
 										handleViewTask(row.original._id);
 									}}
 								>
-									{collapseIcon}
+									{isExpanded ? (
+										<Add size={16} variant="Linear" style={{ transform: "rotate(45deg)" }} />
+									) : (
+										<Eye size={16} variant="Linear" />
+									)}
 								</IconButton>
 							</Tooltip>
-							<Tooltip title="Editar">
-								<IconButton
-									color="primary"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => {
-										e.stopPropagation();
-										handleEditTask(row.original);
-									}}
-								>
-									<Edit2 variant="Bulk" />
-								</IconButton>
-							</Tooltip>
-							<Tooltip title="Eliminar">
-								<IconButton
-									color="error"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => {
-										e.stopPropagation();
-										handleDeleteClick(row.original._id, row.original.name);
-									}}
-								>
-									<Trash variant="Bulk" />
-								</IconButton>
-							</Tooltip>
+							{canUpdate && (
+								<Tooltip title="Editar">
+									<IconButton
+										sx={actionIconSx}
+										data-testid="task-edit-btn"
+										onClick={(e: MouseEvent<HTMLButtonElement>) => {
+											e.stopPropagation();
+											handleEditTask(row.original);
+										}}
+									>
+										<Edit2 size={16} variant="Linear" />
+									</IconButton>
+								</Tooltip>
+							)}
+							{canDelete && (
+								<Tooltip title="Eliminar">
+									<IconButton
+										sx={actionIconDestructiveSx}
+										data-testid="task-delete-btn"
+										onClick={(e: MouseEvent<HTMLButtonElement>) => {
+											e.stopPropagation();
+											handleDeleteClick(row.original._id, row.original.name);
+										}}
+									>
+										<Trash size={16} variant="Linear" />
+									</IconButton>
+								</Tooltip>
+							)}
 						</Stack>
 					);
 				},
 			},
 		],
-		[theme, folders, expandedTaskId, handleViewTask, handleEditTask],
+		[theme, folders, expandedTaskId, handleViewTask, handleEditTask, canUpdate, canDelete, actionIconSx, actionIconDestructiveSx],
 	);
 
 	const filteredData = useMemo(() => {
 		return taskData.filter((task) => !task.archived);
 	}, [taskData]);
 
-	// No necesitamos más el renderRowSubComponent
+	const totalTasks = filteredData.length;
+	const pendingTasks = useMemo(
+		() => filteredData.filter((t: any) => t.status !== "completada" && t.status !== "cancelada").length,
+		[filteredData],
+	);
+	const overdueTasks = useMemo(() => {
+		const today = dayjs();
+		return filteredData.filter((t: any) => t.dueDate && dayjs(t.dueDate).isBefore(today, "day") && t.status !== "completada" && t.status !== "cancelada")
+			.length;
+	}, [filteredData]);
 
 	return (
-		<Container sx={{ mt: 2 }}>
-			<MainCard
-				title={
-					<Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ width: "100%" }}>
-						<Stack direction="row" spacing={1} alignItems="center">
-							<Task variant="Bulk" />
-							<Typography variant="h4">Mis Tareas</Typography>
+		<Stack spacing={2.5} sx={{ mt: 1 }}>
+			{/* Header brand atmosférico */}
+			<Box
+				sx={{
+					position: "relative",
+					overflow: "hidden",
+					borderRadius: 2,
+					p: { xs: 2, md: 2.5 },
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)}`,
+				}}
+			>
+				{/* Radial blob */}
+				<Box
+					sx={{
+						position: "absolute",
+						top: -60,
+						right: -40,
+						width: 280,
+						height: 280,
+						borderRadius: "50%",
+						background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
+						pointerEvents: "none",
+					}}
+				/>
+				{/* Dot grid */}
+				<Box
+					sx={{
+						position: "absolute",
+						inset: 0,
+						backgroundImage: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)} 1px, transparent 1px)`,
+						backgroundSize: "22px 22px",
+						maskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+						WebkitMaskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+						opacity: 0.6,
+						pointerEvents: "none",
+					}}
+				/>
+
+				<Stack
+					direction={{ xs: "column", md: "row" }}
+					alignItems={{ xs: "flex-start", md: "center" }}
+					spacing={{ xs: 1.5, md: 3 }}
+					sx={{ position: "relative" }}
+				>
+					{/* Identidad */}
+					<Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+						<Box
+							sx={{
+								width: 44,
+								height: 44,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+								flexShrink: 0,
+							}}
+						>
+							<Task size={22} variant="Bulk" />
+						</Box>
+						<Stack spacing={0.25} sx={{ minWidth: 0 }}>
+							<Stack
+								direction="row"
+								spacing={0.875}
+								alignItems="center"
+								sx={{ display: { xs: "none", md: "flex" }, color: "text.secondary" }}
+							>
+								<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+								<Typography
+									sx={{
+										fontSize: "0.62rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+									}}
+								>
+									Productividad
+								</Typography>
+							</Stack>
+							<Typography
+								sx={{
+									fontSize: { xs: "1.05rem", md: "1.25rem" },
+									fontWeight: 600,
+									letterSpacing: "-0.015em",
+									color: "text.primary",
+									textWrap: "balance",
+								}}
+							>
+								Tus tareas
+							</Typography>
+							<Typography
+								sx={{
+									display: { xs: "none", md: "block" },
+									fontSize: "0.82rem",
+									color: "text.secondary",
+									letterSpacing: "-0.005em",
+									textWrap: "pretty",
+								}}
+							>
+								Organizá el trabajo del estudio por prioridad, estado y carpeta vinculada.
+							</Typography>
 						</Stack>
 					</Stack>
-				}
-			>
+
+					{/* Métricas inline */}
+					<Stack
+						direction="row"
+						spacing={{ xs: 1, md: 1.5 }}
+						alignItems="center"
+						sx={{
+							flexShrink: 0,
+							display: { xs: "none", sm: "flex" },
+						}}
+					>
+						<HeaderStat label="Totales" value={totalTasks} tone="primary" />
+						<HeaderStat label="Pendientes" value={pendingTasks} tone="amber" />
+						<HeaderStat label="Vencidas" value={overdueTasks} tone="error" />
+					</Stack>
+				</Stack>
+			</Box>
+
+			{/* Card de contenido sin título duplicado */}
+			<MainCard content={false} sx={{ borderRadius: 2, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
 				<ReactTable
 					columns={columns}
 					data={filteredData}
-					handleAdd={handleAddTask}
+					handleAdd={canCreate ? handleAddTask : undefined}
 					handleOpenGuide={() => setOpenGuide(true)}
 					isLoading={isLoader}
 					expandedTaskId={expandedTaskId}
@@ -671,8 +1032,6 @@ const Tasks = () => {
 					onPageSizeChange={setPageSize}
 				/>
 			</MainCard>
-
-			{/* Snackbar now handled globally by Redux */}
 
 			<AlertTaskDelete title={deleteModal.taskName} open={deleteModal.open} handleClose={handleDeleteConfirm} />
 
@@ -694,7 +1053,51 @@ const Tasks = () => {
 			/>
 
 			<GuideTasks open={openGuide} onClose={() => setOpenGuide(false)} />
-		</Container>
+		</Stack>
+	);
+};
+
+// Mini stat tile usado en header
+const HeaderStat = ({ label, value, tone }: { label: string; value: number; tone: "primary" | "amber" | "error" }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const color = tone === "primary" ? BRAND_BLUE : tone === "amber" ? STALE_AMBER : theme.palette.error.main;
+	return (
+		<Stack
+			spacing={0.25}
+			sx={{
+				px: 1.25,
+				py: 0.875,
+				borderRadius: 1.25,
+				bgcolor: alpha(color, isDark ? 0.12 : 0.06),
+				border: `1px solid ${alpha(color, isDark ? 0.26 : 0.16)}`,
+				minWidth: 86,
+			}}
+		>
+			<Typography
+				sx={{
+					fontSize: "0.58rem",
+					fontWeight: 600,
+					letterSpacing: "0.08em",
+					textTransform: "uppercase",
+					color: "text.secondary",
+				}}
+			>
+				{label}
+			</Typography>
+			<Typography
+				sx={{
+					fontSize: "1.05rem",
+					fontWeight: 700,
+					letterSpacing: "-0.015em",
+					color,
+					fontVariantNumeric: "tabular-nums",
+					lineHeight: 1.1,
+				}}
+			>
+				{value}
+			</Typography>
+		</Stack>
 	);
 };
 

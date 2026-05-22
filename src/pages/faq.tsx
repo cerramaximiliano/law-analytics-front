@@ -2,7 +2,25 @@ import { useState } from "react";
 
 // material-ui
 import { useTheme, alpha } from "@mui/material/styles";
-import { Box, Card, CardActionArea, CardContent, Chip, Collapse, Container, Grid, Paper, Stack, Typography } from "@mui/material";
+import {
+	Box,
+	Button,
+	Card,
+	CardActionArea,
+	CardContent,
+	Chip,
+	Collapse,
+	Container,
+	Fab,
+	Grid,
+	InputAdornment,
+	Paper,
+	Stack,
+	TextField,
+	Typography,
+	useScrollTrigger,
+	Zoom,
+} from "@mui/material";
 
 // third-party
 import { motion } from "framer-motion";
@@ -10,6 +28,7 @@ import { motion } from "framer-motion";
 // icons
 import {
 	ArrowRight2,
+	ArrowUp2,
 	Calculator,
 	Calendar,
 	CalendarTick,
@@ -17,6 +36,7 @@ import {
 	InfoCircle,
 	MessageQuestion,
 	Profile2User,
+	SearchNormal1,
 } from "iconsax-react";
 
 // project-imports
@@ -209,6 +229,18 @@ const FaqPage = () => {
 	const isDark = theme.palette.mode === "dark";
 	const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 	const [activeCategory, setActiveCategory] = useState<string | null>(null);
+	const [searchQuery, setSearchQuery] = useState<string>("");
+
+	const scrollTrigger = useScrollTrigger({ disableHysteresis: true, threshold: 300 });
+
+	const handleScrollToTop = () => {
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	};
+
+	const handleClearSearch = () => {
+		setSearchQuery("");
+		setActiveCategory(null);
+	};
 
 	const breadcrumbItems = [{ title: "Inicio", to: "/" }, { title: "Preguntas Frecuentes" }];
 
@@ -220,7 +252,11 @@ const FaqPage = () => {
 		setActiveCategory(categoryId === activeCategory ? null : categoryId);
 	};
 
-	const filteredFaqs = activeCategory ? FAQS.filter((faq) => faq.category === activeCategory) : FAQS;
+	const filteredFaqs = FAQS.filter((faq) => (activeCategory ? faq.category === activeCategory : true)).filter((faq) => {
+		const q = searchQuery.trim().toLowerCase();
+		if (!q) return true;
+		return faq.question.toLowerCase().includes(q) || faq.answer.toLowerCase().includes(q);
+	});
 
 	return (
 		<Box
@@ -300,6 +336,27 @@ const FaqPage = () => {
 
 					<Grid item xs={12}>
 						<MainCard>
+							{/* Búsqueda */}
+							<Box sx={{ mb: 2 }}>
+								<TextField
+									value={searchQuery}
+									onChange={(e) => setSearchQuery(e.target.value)}
+									placeholder="Buscar en preguntas frecuentes..."
+									label="Buscar"
+									variant="outlined"
+									size="small"
+									fullWidth
+									InputProps={{
+										startAdornment: (
+											<InputAdornment position="start">
+												<SearchNormal1 size={18} style={{ color: theme.palette.text.secondary }} />
+											</InputAdornment>
+										),
+									}}
+									sx={{ maxWidth: { xs: "100%", sm: 500 } }}
+								/>
+							</Box>
+
 							{/* Filtros de categoría — monocromos */}
 							<Box sx={{ mb: 4 }}>
 								<Typography
@@ -474,11 +531,20 @@ const FaqPage = () => {
 												mb: 0.5,
 											}}
 										>
-											No hay preguntas en esta categoría
+											{searchQuery.trim()
+												? "No encontramos preguntas que coincidan con tu búsqueda"
+												: "No hay preguntas en esta categoría"}
 										</Typography>
-										<Typography sx={{ fontSize: "0.88rem", color: theme.palette.text.secondary }}>
-											Probá con otra categoría o mostrá todas las preguntas.
+										<Typography sx={{ fontSize: "0.88rem", color: theme.palette.text.secondary, mb: searchQuery.trim() ? 2 : 0 }}>
+											{searchQuery.trim()
+												? "Intentá con otras palabras o explorá las categorías disponibles."
+												: "Probá con otra categoría o mostrá todas las preguntas."}
 										</Typography>
+										{searchQuery.trim() && (
+											<Button variant="outlined" size="small" onClick={handleClearSearch}>
+												Limpiar búsqueda
+											</Button>
+										)}
 									</Paper>
 								)}
 							</Stack>
@@ -486,6 +552,19 @@ const FaqPage = () => {
 					</Grid>
 				</Grid>
 			</Container>
+
+			{/* FAB back-to-top — aparece tras 300px de scroll (FQ3) */}
+			<Zoom in={scrollTrigger}>
+				<Fab
+					onClick={handleScrollToTop}
+					size="medium"
+					color="primary"
+					aria-label="Volver al inicio"
+					sx={{ position: "fixed", bottom: { xs: 24, md: 32 }, right: { xs: 16, md: 32 }, zIndex: 1200 }}
+				>
+					<ArrowUp2 size={20} />
+				</Fab>
+			</Zoom>
 		</Box>
 	);
 };

@@ -9,12 +9,25 @@ import { motion } from "framer-motion";
 import MainCard from "components/MainCard";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
+import { LEGAL_LAST_UPDATED } from "config/legalDates";
+import LegalPageTOC, { TocItem } from "components/legal/LegalPageTOC";
 
 // ============================== TOKENS ============================== //
 // Mantener en sync con sections/landing/Planes.tsx
 const BRAND_BLUE = "#3A7BFF";
 
 // ==============================|| PRIVACY POLICY PAGE ||============================== //
+
+const PRIVACY_TOC_ITEMS: TocItem[] = [
+	{ id: "informacion-recopilamos", label: "Información que recopilamos" },
+	{ id: "uso-informacion", label: "Uso de la información recogida" },
+	{ id: "cookies", label: "Cookies" },
+	{ id: "seguridad", label: "Seguridad" },
+	{ id: "integracion-google-calendar", label: "Integración con Google Calendar" },
+	{ id: "enlaces-terceros", label: "Enlaces a terceros" },
+	{ id: "control-informacion", label: "Control de su información personal" },
+	{ id: "cambios-politica", label: "Cambios en la política de privacidad" },
+];
 
 const PrivacyPolicy = () => {
 	const theme = useTheme();
@@ -38,8 +51,9 @@ const PrivacyPolicy = () => {
 	};
 
 	// Helpers para jerarquía editorial — h3 secciones, h4 sub-secciones
-	const sectionHeading = (text: string) => (
+	const sectionHeading = (text: string, id?: string) => (
 		<Typography
+			id={id}
 			variant="h3"
 			sx={{
 				mt: 5,
@@ -134,13 +148,23 @@ const PrivacyPolicy = () => {
 										letterSpacing: "0.01em",
 									}}
 								>
-									Última actualización: 21 de Agosto de 2025
+									Última actualización: {LEGAL_LAST_UPDATED}
 								</Typography>
 							</motion.div>
 						</Box>
 					</Grid>
 
-					<Grid item xs={12}>
+					{/* Mobile TOC — rendered above the card, only visible on xs/sm */}
+					<Grid item xs={12} sx={{ display: { xs: "block", md: "none" } }}>
+						<LegalPageTOC items={PRIVACY_TOC_ITEMS} ariaLabel="Índice de Política de Privacidad" />
+					</Grid>
+
+					{/* Desktop TOC sidebar */}
+					<Grid item md={3} sx={{ display: { xs: "none", md: "block" } }}>
+						<LegalPageTOC items={PRIVACY_TOC_ITEMS} ariaLabel="Índice de Política de Privacidad" />
+					</Grid>
+
+					<Grid item xs={12} md={9}>
 						<MainCard sx={{ overflow: "hidden" }}>
 							<Typography paragraph sx={bodySx}>
 								La presente Política de Privacidad establece los términos en que Law||Analytics usa y protege la información que es
@@ -149,7 +173,7 @@ const PrivacyPolicy = () => {
 								identificado, lo hacemos asegurando que solo se empleará de acuerdo con los términos de este documento.
 							</Typography>
 
-							{sectionHeading("Información que recopilamos")}
+							{sectionHeading("Información que recopilamos", "informacion-recopilamos")}
 							<Typography paragraph sx={bodySx}>
 								Nuestro sitio web y aplicación podrán recoger información personal, por ejemplo:
 							</Typography>
@@ -161,7 +185,7 @@ const PrivacyPolicy = () => {
 								"Datos específicos relacionados con su práctica legal",
 							])}
 
-							{sectionHeading("Uso de la información recogida")}
+							{sectionHeading("Uso de la información recogida", "uso-informacion")}
 							<Typography paragraph sx={bodySx}>
 								Nuestro sitio web y aplicación emplean la información con el fin de proporcionar el mejor servicio posible, particularmente
 								para:
@@ -174,7 +198,7 @@ const PrivacyPolicy = () => {
 								"Administrar promociones, encuestas u otras características del sitio, sin utilizar datos obtenidos desde Google Calendar",
 							])}
 
-							{sectionHeading("Cookies")}
+							{sectionHeading("Cookies", "cookies")}
 							<Typography paragraph sx={bodySx}>
 								Una cookie se refiere a un fichero que es enviado con la finalidad de solicitar permiso para almacenarse en su ordenador. Al
 								aceptar, dicho fichero se crea y la cookie sirve entonces para tener información respecto al tráfico web, y también facilita
@@ -185,13 +209,13 @@ const PrivacyPolicy = () => {
 								.
 							</Typography>
 
-							{sectionHeading("Seguridad")}
+							{sectionHeading("Seguridad", "seguridad")}
 							<Typography paragraph sx={bodySx}>
 								Law||Analytics se compromete a proteger su información personal. Utilizamos sistemas seguros para la protección de la
 								información y la actualizamos constantemente para asegurarnos de que no exista ningún acceso no autorizado.
 							</Typography>
 
-							{sectionHeading("Integración con Google Calendar")}
+							{sectionHeading("Integración con Google Calendar", "integracion-google-calendar")}
 							<Typography paragraph sx={bodySx}>
 								Law||Analytics ofrece integración opcional con Google Calendar para mejorar la gestión de eventos y audiencias legales. Esta
 								integración es completamente voluntaria y puede ser activada o desactivada en cualquier momento por el usuario.
@@ -314,14 +338,14 @@ const PrivacyPolicy = () => {
 								.
 							</Typography>
 
-							{sectionHeading("Enlaces a terceros")}
+							{sectionHeading("Enlaces a terceros", "enlaces-terceros")}
 							<Typography paragraph sx={bodySx}>
 								Este sitio web puede contener enlaces a otros sitios que pudieran ser de su interés. Una vez que usted hace clic en estos
 								enlaces y abandona nuestra página, ya no tenemos control sobre el sitio al que es redirigido y, por lo tanto, no somos
 								responsables de los términos o privacidad ni de la protección de sus datos en esos otros sitios terceros.
 							</Typography>
 
-							{sectionHeading("Control de su información personal")}
+							{sectionHeading("Control de su información personal", "control-informacion")}
 							<Typography paragraph sx={bodySx}>
 								En cualquier momento usted puede restringir la recopilación o el uso de la información personal que es proporcionada a
 								nuestro sitio web. Puede acceder a su información personal almacenada en su cuenta para corregirla o eliminarla.
@@ -334,7 +358,7 @@ const PrivacyPolicy = () => {
 								proporcionar la sincronización de calendario dentro de nuestra aplicación.
 							</Typography>
 
-							{sectionHeading("Cambios en la Política de Privacidad")}
+							{sectionHeading("Cambios en la Política de Privacidad", "cambios-politica")}
 							<Typography paragraph sx={bodySx}>
 								Law||Analytics se reserva el derecho de cambiar los términos de la presente Política de Privacidad en cualquier momento. Le
 								notificaremos cualquier cambio significativo en la forma en que tratamos su información personal enviando un aviso a la

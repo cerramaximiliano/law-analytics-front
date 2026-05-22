@@ -21,6 +21,7 @@ import { useNavigate } from "react-router";
 import despidoFormModel from "./formModel/despidoFormModel";
 import dayjs from "utils/dayjs-config";
 import { enqueueSnackbar } from "notistack";
+import { useTeam } from "contexts/TeamContext";
 
 // Tipos
 interface ResultItem {
@@ -48,6 +49,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 	const { formField } = despidoFormModel;
 
 	const userFromRedux = useSelector((state: RootState) => state.auth.user);
+	const { getRequestHeaders } = useTeam();
 	const interestRates = useSelector((state: RootState) => state.interestRates.rates);
 
 	// No longer used but keeping for potential future use
@@ -512,7 +514,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 			};
 
 			// Utilizar la acción asíncrona addCalculator
-			const result = await dispatch(addCalculator(calculatorData));
+			const result = await dispatch(addCalculator(calculatorData, { headers: getRequestHeaders() }));
 
 			if (result.success) {
 				enqueueSnackbar("Cálculo guardado correctamente", {

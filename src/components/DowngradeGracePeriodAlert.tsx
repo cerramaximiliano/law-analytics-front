@@ -44,7 +44,7 @@ const DowngradeGracePeriodAlert: React.FC = () => {
 	};
 
 	const handleSettingsClick = () => {
-		navigate("/apps/profiles/account/settings");
+		navigate("/apps/profiles/account/subscription");
 	};
 
 	return (

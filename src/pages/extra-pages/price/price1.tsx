@@ -1,38 +1,34 @@
 import React from "react";
-import { useState, useEffect, Fragment } from "react";
+import { useState, useEffect } from "react";
 
 // material-ui
-import { useTheme } from "@mui/material/styles";
+import { alpha, useTheme } from "@mui/material/styles";
 import {
 	Box,
 	Button,
-	Chip,
 	Grid,
-	List,
-	ListItem,
-	ListItemText,
-	Divider,
 	Stack,
-	Switch,
 	Typography,
 	CircularProgress,
-	Alert,
-	Link,
 	Dialog,
 	DialogContent,
 	DialogActions,
-	DialogTitle,
 	Radio,
 	RadioGroup,
 	FormControl,
-	Paper,
+	Table,
+	TableBody,
+	TableCell,
+	TableContainer,
+	TableHead,
+	TableRow,
+	IconButton,
 } from "@mui/material";
 
 // icons
-import { Lock } from "iconsax-react";
+import { CloseSquare, Lock, People, Crown, InfoCircle, Warning2 } from "iconsax-react";
 
 // project-imports
-import MainCard from "components/MainCard";
 import PlanCard from "components/cards/PlanCard";
 import ApiService, { Plan, ResourceLimit, PlanFeature } from "store/reducers/ApiService";
 import { dispatch } from "store";
@@ -41,6 +37,7 @@ import TabLegalDocuments from "./TabPanel";
 import { getPlanPricing, getBillingPeriodText, getCurrentEnvironment, cleanPlanDisplayName } from "utils/planPricingUtils";
 import { useTeam } from "contexts/TeamContext";
 import { ROLE_CONFIG } from "types/teams";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // ==============================|| PRICING ||============================== //
 
@@ -93,12 +90,6 @@ const Pricing = () => {
 			cancelAtPeriodEnd: subscriptionData?.cancelAtPeriodEnd ?? prev?.cancelAtPeriodEnd ?? false,
 			currentPeriodEnd: subscriptionData?.currentPeriodEnd ?? prev?.currentPeriodEnd,
 		}));
-
-		console.log("📋 Suscripción actualizada:", {
-			plan: newPlanId,
-			cancelAtPeriodEnd: subscriptionData?.cancelAtPeriodEnd,
-			currentPeriodEnd: subscriptionData?.currentPeriodEnd,
-		});
 	};
 
 	// Obtener los planes al cargar el componente
@@ -131,12 +122,6 @@ const Pricing = () => {
 						setCurrentSubscription(responseData.subscription);
 						// El planId está en el campo "plan" de la suscripción
 						setCurrentPlanId(responseData.subscription.plan);
-
-						console.log("📋 Suscripción actual:", {
-							plan: responseData.subscription.plan,
-							cancelAtPeriodEnd: responseData.subscription.cancelAtPeriodEnd,
-							currentPeriodEnd: responseData.subscription.currentPeriodEnd,
-						});
 					}
 				} catch (err) {
 					// No mostramos error si falla esto, solo para el listado de planes
@@ -554,11 +539,12 @@ const Pricing = () => {
 			} else {
 				throw new Error(response.message || "Error al procesar la solicitud");
 			}
-		} catch (error) {
+		} catch (error: any) {
+			const backendMsg = error?.message && !/^Error al procesar/i.test(error.message) ? error.message : null;
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: "Error al procesar la solicitud. Por favor, intenta nuevamente.",
+					message: backendMsg || "Error al procesar la solicitud. Por favor, intenta nuevamente.",
 					variant: "alert",
 					alert: {
 						color: "error",
@@ -627,21 +613,255 @@ const Pricing = () => {
 	};
 
 
-	// Si está cargando, mostrar indicador
+	const isDark = theme.palette.mode === "dark";
+
+	// Helpers brand reusables
+	const dialogPaperSx = {
+		borderRadius: 2,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+		boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+		overflow: "hidden",
+	};
+	const ghostBtnSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: "text.secondary",
+		borderRadius: 1.25,
+		border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+		px: 2,
+		py: 0.75,
+		transition: "color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease",
+		"&:hover": {
+			color: BRAND_BLUE,
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+			borderColor: alpha(BRAND_BLUE, 0.28),
+		},
+	};
+	const brandPrimarySx = {
+		minWidth: 130,
+		textTransform: "none" as const,
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		borderRadius: 1.25,
+		boxShadow: "none",
+		transition: "background-color 0.15s ease",
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+		"&.Mui-disabled": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.24 : 0.4), color: alpha("#fff", 0.9) },
+	};
+	const destructiveBtnSx = {
+		minWidth: 130,
+		textTransform: "none" as const,
+		bgcolor: theme.palette.error.main,
+		color: "#fff",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		borderRadius: 1.25,
+		boxShadow: "none",
+		transition: "background-color 0.15s ease",
+		"&:hover": { bgcolor: alpha(theme.palette.error.main, 0.88), boxShadow: "none" },
+		"&.Mui-disabled": { bgcolor: alpha(theme.palette.error.main, isDark ? 0.24 : 0.4), color: alpha("#fff", 0.9) },
+	};
+
+	// Si está cargando, mostrar skeleton brand atmosférico
 	if (loading) {
 		return (
-			<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "300px" }}>
-				<CircularProgress />
-			</Box>
+			<Stack spacing={2.5} sx={{ mt: 1 }}>
+				{/* Header skeleton */}
+				<Box
+					sx={{
+						position: "relative",
+						overflow: "hidden",
+						borderRadius: 2,
+						p: { xs: 2, md: 2.5 },
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)}`,
+					}}
+				>
+					<Box
+						sx={{
+							position: "absolute",
+							top: -60,
+							right: -40,
+							width: 280,
+							height: 280,
+							borderRadius: "50%",
+							background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
+							pointerEvents: "none",
+						}}
+					/>
+					<Box
+						sx={{
+							position: "absolute",
+							inset: 0,
+							backgroundImage: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)} 1px, transparent 1px)`,
+							backgroundSize: "22px 22px",
+							maskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+							WebkitMaskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+							opacity: 0.6,
+							pointerEvents: "none",
+						}}
+					/>
+					<Stack direction="row" alignItems="center" spacing={1.5} sx={{ position: "relative" }}>
+						<Box
+							sx={{
+								width: 44,
+								height: 44,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+							}}
+						>
+							<Crown size={22} variant="Bulk" />
+						</Box>
+						<Stack spacing={0.5}>
+							<Box sx={{ width: 80, height: 8, borderRadius: 0.5, bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.14) }} />
+							<Box sx={{ width: 200, height: 16, borderRadius: 0.5, bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.12) }} />
+							<Box sx={{ width: 260, height: 10, borderRadius: 0.5, bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />
+						</Stack>
+					</Stack>
+				</Box>
+
+				{/* Plan cards skeleton */}
+				<Grid container spacing={3}>
+					{[0, 1, 2].map((i) => (
+						<Grid item xs={12} sm={6} md={4} key={i}>
+							<Box
+								sx={{
+									position: "relative",
+									overflow: "hidden",
+									p: 3,
+									minHeight: 460,
+									borderRadius: 2,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+									bgcolor: "background.paper",
+								}}
+							>
+								{/* Pulse spotlight */}
+								<Box
+									sx={{
+										position: "absolute",
+										top: -40,
+										right: -40,
+										width: 200,
+										height: 200,
+										borderRadius: "50%",
+										background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)} 0%, transparent 70%)`,
+										animation: "planSkelPulse 1.8s ease-in-out infinite",
+										animationDelay: `${i * 0.18}s`,
+										pointerEvents: "none",
+										"@keyframes planSkelPulse": {
+											"0%, 100%": { opacity: 0.4 },
+											"50%": { opacity: 1 },
+										},
+									}}
+								/>
+								<Stack spacing={2.5} sx={{ position: "relative" }}>
+									<Stack spacing={1}>
+										<Box sx={{ width: 80, height: 8, borderRadius: 0.5, bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.14) }} />
+										<Box sx={{ width: 140, height: 22, borderRadius: 0.5, bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.14) }} />
+										<Box sx={{ width: 100, height: 36, borderRadius: 0.5, bgcolor: alpha(BRAND_BLUE, isDark ? 0.24 : 0.16) }} />
+									</Stack>
+									<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />
+									<Stack spacing={1.25}>
+										{[0, 1, 2, 3, 4].map((j) => (
+											<Stack key={j} direction="row" alignItems="center" spacing={1}>
+												<Box sx={{ width: 14, height: 14, borderRadius: "50%", bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.12), flexShrink: 0 }} />
+												<Box sx={{ width: `${70 - j * 6}%`, height: 10, borderRadius: 0.5, bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />
+											</Stack>
+										))}
+									</Stack>
+									<Box sx={{ flex: 1 }} />
+									<Box sx={{ width: "100%", height: 40, borderRadius: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1), mt: "auto" }} />
+								</Stack>
+							</Box>
+						</Grid>
+					))}
+				</Grid>
+
+				{/* Status indicator */}
+				<Stack direction="row" alignItems="center" justifyContent="center" spacing={1} sx={{ pt: 0.5 }}>
+					<Box
+						sx={{
+							width: 5,
+							height: 5,
+							borderRadius: "50%",
+							bgcolor: BRAND_BLUE,
+							animation: "planDotPulse 1.4s ease-in-out infinite",
+							"@keyframes planDotPulse": {
+								"0%, 100%": { opacity: 0.3, transform: "scale(1)" },
+								"50%": { opacity: 1, transform: "scale(1.2)" },
+							},
+						}}
+					/>
+					<Typography sx={{ fontSize: "0.72rem", letterSpacing: "0.04em", color: "text.secondary" }}>
+						Cargando planes…
+					</Typography>
+				</Stack>
+			</Stack>
 		);
 	}
 
-	// Si hay error, mostrar mensaje
+	// Si hay error, mostrar mensaje brand-aware
 	if (error) {
+		const errorColor = theme.palette.error.main;
 		return (
-			<Alert severity="error" sx={{ mt: 2 }}>
-				{error}
-			</Alert>
+			<Stack spacing={2.5} sx={{ mt: 1 }}>
+				<Box
+					sx={{
+						position: "relative",
+						overflow: "hidden",
+						borderRadius: 2,
+						p: { xs: 3, md: 4 },
+						bgcolor: alpha(errorColor, isDark ? 0.08 : 0.04),
+						border: `1px solid ${alpha(errorColor, isDark ? 0.32 : 0.22)}`,
+						textAlign: "center",
+					}}
+				>
+					<Box
+						sx={{
+							position: "absolute",
+							top: -80,
+							left: "50%",
+							transform: "translateX(-50%)",
+							width: 320,
+							height: 320,
+							borderRadius: "50%",
+							background: `radial-gradient(circle, ${alpha(errorColor, isDark ? 0.18 : 0.1)} 0%, transparent 70%)`,
+							pointerEvents: "none",
+						}}
+					/>
+					<Stack spacing={1.5} alignItems="center" sx={{ position: "relative" }}>
+						<Box
+							sx={{
+								width: 56,
+								height: 56,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(errorColor, isDark ? 0.16 : 0.08),
+								border: `1px solid ${alpha(errorColor, isDark ? 0.32 : 0.2)}`,
+								color: errorColor,
+							}}
+						>
+							<Warning2 size={26} variant="Bulk" />
+						</Box>
+						<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+							No pudimos cargar los planes
+						</Typography>
+						<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", maxWidth: 420, textWrap: "pretty" }}>
+							{error}
+						</Typography>
+					</Stack>
+				</Box>
+			</Stack>
 		);
 	}
 
@@ -658,106 +878,415 @@ const Pricing = () => {
 			: "No disponible";
 
 		return (
-			<Grid container spacing={3} justifyContent="center">
+			<Grid container spacing={3} justifyContent="center" sx={{ mt: 1 }}>
 				<Grid item xs={12} md={8} lg={6}>
-					<MainCard
+					<Box
 						sx={{
-							textAlign: "center",
-							py: 4,
-							px: 3,
+							position: "relative",
+							overflow: "hidden",
+							borderRadius: 2,
+							p: { xs: 3, md: 4 },
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)}`,
 						}}
 					>
-						<Stack spacing={3} alignItems="center">
-							{/* Icono de equipo */}
+						{/* Radial blob */}
+						<Box
+							sx={{
+								position: "absolute",
+								top: -80,
+								right: -60,
+								width: 320,
+								height: 320,
+								borderRadius: "50%",
+								background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
+								pointerEvents: "none",
+							}}
+						/>
+						{/* Dot grid */}
+						<Box
+							sx={{
+								position: "absolute",
+								inset: 0,
+								backgroundImage: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)} 1px, transparent 1px)`,
+								backgroundSize: "22px 22px",
+								maskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+								WebkitMaskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+								opacity: 0.55,
+								pointerEvents: "none",
+							}}
+						/>
+						<Stack spacing={2.5} alignItems="center" sx={{ position: "relative" }}>
+							{/* Icon ring */}
 							<Box
 								sx={{
-									width: 80,
-									height: 80,
-									borderRadius: "50%",
-									bgcolor: "primary.lighter",
+									width: 64,
+									height: 64,
+									borderRadius: 1.5,
 									display: "flex",
 									alignItems: "center",
 									justifyContent: "center",
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+									color: BRAND_BLUE,
 								}}
 							>
-								<Lock size={40} color={theme.palette.primary.main} variant="Bulk" />
+								<People size={30} variant="Bulk" />
 							</Box>
 
-							{/* Título */}
-							<Typography variant="h3" sx={{ fontWeight: 700 }}>
-								Eres miembro de un equipo
-							</Typography>
-
-							{/* Información del equipo */}
-							<Stack spacing={1} alignItems="center">
-								<Typography variant="h4" color="primary">
-									{activeTeam.name}
+							{/* Eyebrow + título */}
+							<Stack spacing={0.5} alignItems="center">
+								<Stack direction="row" spacing={0.75} alignItems="center">
+									<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+									<Typography
+										sx={{
+											fontSize: "0.62rem",
+											fontWeight: 600,
+											letterSpacing: "0.08em",
+											textTransform: "uppercase",
+											color: "text.secondary",
+										}}
+									>
+										Miembro de equipo
+									</Typography>
+								</Stack>
+								<Typography
+									sx={{
+										fontSize: { xs: "1.25rem", md: "1.4rem" },
+										fontWeight: 600,
+										letterSpacing: "-0.015em",
+										color: "text.primary",
+										textWrap: "balance",
+										textAlign: "center",
+									}}
+								>
+									Sos parte de {activeTeam.name}
 								</Typography>
-								{roleConfig && <Chip label={roleConfig.label} color={roleConfig.color} size="medium" sx={{ fontWeight: 600, px: 2 }} />}
+								{roleConfig && (
+									<Box
+										sx={{
+											display: "inline-flex",
+											alignItems: "center",
+											gap: 0.625,
+											px: 0.875,
+											py: 0.25,
+											mt: 0.5,
+											borderRadius: 0.75,
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1),
+											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.22)}`,
+										}}
+									>
+										<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+										<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: BRAND_BLUE, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>
+											{roleConfig.label}
+										</Typography>
+									</Box>
+								)}
 							</Stack>
 
-							{/* Plan del equipo */}
+							{/* Plan del equipo — bloque destacado */}
 							<Box
 								sx={{
-									bgcolor: "secondary.lighter",
-									borderRadius: 2,
-									px: 4,
-									py: 2,
 									width: "100%",
-									maxWidth: 300,
+									maxWidth: 320,
+									p: 2,
+									borderRadius: 1.5,
+									bgcolor: alpha(LIVE_GREEN, isDark ? 0.1 : 0.05),
+									border: `1px solid ${alpha(LIVE_GREEN, isDark ? 0.28 : 0.18)}`,
+									textAlign: "center",
 								}}
 							>
-								<Typography variant="body2" color="text.secondary" gutterBottom>
+								<Typography
+									sx={{
+										fontSize: "0.6rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+										mb: 0.5,
+									}}
+								>
 									Plan del equipo
 								</Typography>
-								<Typography variant="h4" color="secondary.dark" sx={{ fontWeight: 700 }}>
-									{ownerPlanName}
-								</Typography>
+								<Stack direction="row" spacing={0.875} alignItems="center" justifyContent="center">
+									<Crown size={16} variant="Bulk" color={LIVE_GREEN} />
+									<Typography
+										sx={{
+											fontSize: "1.15rem",
+											fontWeight: 700,
+											letterSpacing: "-0.015em",
+											color: LIVE_GREEN,
+										}}
+									>
+										{ownerPlanName}
+									</Typography>
+								</Stack>
 							</Box>
 
-							{/* Mensaje informativo */}
-							<Alert severity="info" sx={{ borderRadius: 2, textAlign: "left" }}>
-								<Typography variant="body2">
-									Como miembro del equipo, tienes acceso a las funcionalidades del plan <strong>{ownerPlanName}</strong>. La gestión del
-									plan y la facturación son responsabilidad del propietario del equipo.
-								</Typography>
-							</Alert>
+							{/* Mensaje informativo brand */}
+							<Box
+								sx={{
+									width: "100%",
+									p: 1.75,
+									borderRadius: 1.25,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+								}}
+							>
+								<Stack direction="row" spacing={1} alignItems="flex-start">
+									<InfoCircle size={16} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
+									<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+										Como miembro del equipo, tenés acceso a las funcionalidades del plan{" "}
+										<Box component="span" sx={{ fontWeight: 600, color: BRAND_BLUE }}>
+											{ownerPlanName}
+										</Box>
+										. La gestión del plan y la facturación son responsabilidad del propietario.
+									</Typography>
+								</Stack>
+							</Box>
 
-							{/* Nota */}
-							<Typography variant="caption" color="text.secondary" sx={{ mt: 2 }}>
-								Si necesitas cambios en el plan o más permisos, contacta al administrador de tu equipo.
+							<Typography
+								sx={{
+									fontSize: "0.72rem",
+									color: "text.secondary",
+									letterSpacing: "-0.005em",
+									textAlign: "center",
+									textWrap: "pretty",
+								}}
+							>
+								Si necesitás cambios en el plan o más permisos, contactá al administrador de tu equipo.
 							</Typography>
 						</Stack>
-					</MainCard>
+					</Box>
 				</Grid>
 			</Grid>
 		);
 	}
 
+	const tableSx = {
+		"& .MuiTableHead-root .MuiTableCell-root": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+			color: "text.secondary",
+			fontSize: "0.68rem",
+			fontWeight: 600,
+			letterSpacing: "0.06em",
+			textTransform: "uppercase",
+			borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+			py: 1.25,
+		},
+		"& .MuiTableBody-root .MuiTableCell-root": {
+			borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.1 : 0.06)}`,
+			fontSize: "0.78rem",
+		},
+	};
+
 	return (
-		<Grid container spacing={3}>
-			{!isDevelopment && (
-				<Grid item xs={12}>
-					<Stack spacing={2} direction={{ xs: "column", md: "row" }} justifyContent="space-between">
-						<Stack spacing={0}></Stack>
-						<Stack direction="row" spacing={1.5} alignItems="center">
-							<Typography variant="subtitle1" color={timePeriod ? "textSecondary" : "textPrimary"}>
-								Cobro Anual
+		<Stack spacing={2.5} sx={{ mt: 1 }}>
+			{/* Header brand atmosférico */}
+			<Box
+				sx={{
+					position: "relative",
+					overflow: "hidden",
+					borderRadius: 2,
+					p: { xs: 2, md: 2.5 },
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)}`,
+				}}
+			>
+				<Box
+					sx={{
+						position: "absolute",
+						top: -60,
+						right: -40,
+						width: 280,
+						height: 280,
+						borderRadius: "50%",
+						background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
+						pointerEvents: "none",
+					}}
+				/>
+				<Box
+					sx={{
+						position: "absolute",
+						inset: 0,
+						backgroundImage: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)} 1px, transparent 1px)`,
+						backgroundSize: "22px 22px",
+						maskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+						WebkitMaskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+						opacity: 0.6,
+						pointerEvents: "none",
+					}}
+				/>
+				<Stack
+					direction={{ xs: "column", md: "row" }}
+					alignItems={{ xs: "flex-start", md: "center" }}
+					spacing={{ xs: 1.5, md: 3 }}
+					sx={{ position: "relative" }}
+				>
+					<Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+						<Box
+							sx={{
+								width: 44,
+								height: 44,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+								flexShrink: 0,
+							}}
+						>
+							<Crown size={22} variant="Bulk" />
+						</Box>
+						<Stack spacing={0.25} sx={{ minWidth: 0 }}>
+							<Stack direction="row" spacing={0.875} alignItems="center" sx={{ display: { xs: "none", md: "flex" } }}>
+								<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+								<Typography
+									sx={{
+										fontSize: "0.62rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+									}}
+								>
+									Planes y precios
+								</Typography>
+							</Stack>
+							<Typography
+								sx={{
+									fontSize: { xs: "1.05rem", md: "1.25rem" },
+									fontWeight: 600,
+									letterSpacing: "-0.015em",
+									color: "text.primary",
+									textWrap: "balance",
+								}}
+							>
+								Elegí el plan que se adapta a tu estudio
 							</Typography>
-							<Switch
-								checked={timePeriod}
-								onChange={() => setTimePeriod(!timePeriod)}
-								inputProps={{ "aria-label": "container" }}
-								disabled
-							/>
-							<Typography variant="subtitle1" color={timePeriod ? "textPrimary" : "textSecondary"}>
-								Cobro Mensual
+							<Typography
+								sx={{
+									display: { xs: "none", md: "block" },
+									fontSize: "0.82rem",
+									color: "text.secondary",
+									letterSpacing: "-0.005em",
+									textWrap: "pretty",
+								}}
+							>
+								Cambiá, mejorá o cancelá tu suscripción cuando quieras. Sin sorpresas.
 							</Typography>
 						</Stack>
 					</Stack>
-				</Grid>
+
+					{!isDevelopment && (
+						<Box
+							sx={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: 0.625,
+								px: 0.875,
+								py: 0.25,
+								borderRadius: 0.75,
+								bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
+								border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+								flexShrink: 0,
+							}}
+						>
+							<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: STALE_AMBER }} />
+							<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
+								Facturación anual · Próximamente
+							</Typography>
+						</Box>
+					)}
+				</Stack>
+			</Box>
+
+			{/* Tabla resumen para mobile — evita ~2800px de scroll vertical */}
+			{plans.length > 0 && (
+				<Box sx={{ display: { xs: "block", md: "none" } }}>
+					<Box
+						sx={{
+							borderRadius: 1.5,
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+							overflow: "hidden",
+						}}
+					>
+						<TableContainer sx={{ overflowX: "auto" }}>
+							<Table size="small" sx={tableSx}>
+								<TableHead>
+									<TableRow>
+										<TableCell>Recurso</TableCell>
+										{plans.map((p) => (
+											<TableCell key={p.planId} align="center">
+												<Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5}>
+													<span>{cleanPlanDisplayName(p.displayName)}</span>
+													{currentPlanId === p.planId && (
+														<Box
+															sx={{
+																px: 0.625,
+																py: 0.125,
+																borderRadius: 0.5,
+																bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.12),
+																border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.36 : 0.24)}`,
+																color: BRAND_BLUE,
+																fontSize: "0.6rem",
+																fontWeight: 700,
+																lineHeight: 1.4,
+																textTransform: "none",
+															}}
+														>
+															Actual
+														</Box>
+													)}
+												</Stack>
+											</TableCell>
+										))}
+									</TableRow>
+								</TableHead>
+								<TableBody>
+								{(() => {
+									// Recolectar los primeros 5 recursos visibles del plan más completo
+									const currentEnv = import.meta.env.PROD ? "production" : "development";
+									const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+										if (!visibility || visibility === "all") return true;
+										if (visibility === "none") return false;
+										return visibility === currentEnv;
+									};
+									const allResourceNames = Array.from(
+										new Set(
+											plans.flatMap((p) =>
+												p.resourceLimits
+													.filter((r) => isVisibleInCurrentEnv(r.visibility))
+													.sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
+													.slice(0, 5)
+													.map((r) => r.name),
+											),
+										),
+									).slice(0, 5);
+									return allResourceNames.map((resourceName) => (
+										<TableRow key={resourceName}>
+											<TableCell>{plans[0]?.resourceLimits.find((r) => r.name === resourceName)?.displayName ?? resourceName}</TableCell>
+											{plans.map((p) => {
+												const resource = p.resourceLimits.find((r) => r.name === resourceName);
+												return (
+													<TableCell key={p.planId} align="center">
+														{resource ? resource.limit : "—"}
+													</TableCell>
+												);
+											})}
+										</TableRow>
+									));
+								})()}
+							</TableBody>
+						</Table>
+					</TableContainer>
+					</Box>
+				</Box>
 			)}
-			<Grid item container spacing={3} xs={12} alignItems="center">
+
+			<Grid container spacing={3} alignItems="stretch">
 				{plans.map((plan) => {
 					// Determinar si este es el plan activo del usuario
 					const isCurrentPlan = currentPlanId === plan.planId;
@@ -774,23 +1303,6 @@ const Pricing = () => {
 						currentPlanId !== "free" &&
 						(currentPlanId === "standard" || currentPlanId === "premium") &&
 						!isAlreadyCanceled;
-
-					// Debug: mostrar información del plan y validación
-					if (plan.planId === "free") {
-						console.log("🔍 Plan Free - Validación de cancelación:", {
-							currentPlanId,
-							isAlreadyCanceled,
-							isDowngradeToFree,
-							currentPeriodEnd: currentSubscription?.currentPeriodEnd,
-							validations: {
-								isPlanFree: plan.planId === "free",
-								hasCurrentPlan: !!currentPlanId,
-								isNotFreePlan: currentPlanId !== "free",
-								isPaidPlan: currentPlanId === "standard" || currentPlanId === "premium",
-								notCanceled: !isAlreadyCanceled,
-							},
-						});
-					}
 
 					// Obtener la información de precios según el entorno
 					const pricing = getPlanPricing(plan);
@@ -886,6 +1398,7 @@ const Pricing = () => {
 								isCurrent={isCurrentPlan}
 								contextMessage={contextMessage}
 								showInactiveOverlay={isInactive}
+								dataTestId={`sub-plan-card-${plan.planId}`}
 								cta={{
 									label: ctaLabel,
 									onClick: handleCtaClick,
@@ -894,6 +1407,7 @@ const Pricing = () => {
 									variant: isInactive ? "outlined" : isCurrentPlan || plan.planId === "standard" || plan.planId === "premium" ? "contained" : "outlined",
 									color: ctaColor,
 									startIcon: isInactive ? <Lock size={16} /> : undefined,
+									dataTestId: `sub-action-btn-${plan.planId}`,
 								}}
 							/>
 						</Grid>
@@ -902,25 +1416,78 @@ const Pricing = () => {
 			</Grid>
 
 			{/* Sección de documentos legales */}
-			<Grid item xs={12}>
-				<Box sx={{ textAlign: "center", mt: 4, mb: 2 }}>
-					<Typography variant="body2" color="text.secondary">
-						Al suscribirte, aceptas nuestros{" "}
-						<Link component="button" variant="body2" onClick={handleOpenLegalDocs} sx={{ textDecoration: "none" }}>
-							términos y condiciones de suscripción
-						</Link>
-						, así como nuestra{" "}
-						<Link component="button" variant="body2" onClick={handleOpenLegalDocs} sx={{ textDecoration: "none" }}>
-							política de reembolsos
-						</Link>{" "}
-						y{" "}
-						<Link component="button" variant="body2" onClick={handleOpenLegalDocs} sx={{ textDecoration: "none" }}>
-							términos de facturación
-						</Link>
-						.
-					</Typography>
-				</Box>
-			</Grid>
+			<Box sx={{ textAlign: "center", mt: 1.5, mb: 1 }}>
+				<Typography
+					sx={{
+						fontSize: "0.78rem",
+						color: "text.secondary",
+						letterSpacing: "-0.005em",
+						textWrap: "pretty",
+					}}
+				>
+					Al suscribirte, aceptás nuestros{" "}
+					<Box
+						component="button"
+						type="button"
+						onClick={handleOpenLegalDocs}
+						sx={{
+							background: "none",
+							border: "none",
+							p: 0,
+							font: "inherit",
+							cursor: "pointer",
+							color: BRAND_BLUE,
+							fontWeight: 600,
+							borderBottom: `1px solid ${alpha(BRAND_BLUE, 0)}`,
+							transition: "border-color 0.15s ease",
+							"&:hover": { borderBottomColor: alpha(BRAND_BLUE, 0.5) },
+						}}
+					>
+						términos y condiciones
+					</Box>
+					, nuestra{" "}
+					<Box
+						component="button"
+						type="button"
+						onClick={handleOpenLegalDocs}
+						sx={{
+							background: "none",
+							border: "none",
+							p: 0,
+							font: "inherit",
+							cursor: "pointer",
+							color: BRAND_BLUE,
+							fontWeight: 600,
+							borderBottom: `1px solid ${alpha(BRAND_BLUE, 0)}`,
+							transition: "border-color 0.15s ease",
+							"&:hover": { borderBottomColor: alpha(BRAND_BLUE, 0.5) },
+						}}
+					>
+						política de reembolsos
+					</Box>{" "}
+					y{" "}
+					<Box
+						component="button"
+						type="button"
+						onClick={handleOpenLegalDocs}
+						sx={{
+							background: "none",
+							border: "none",
+							p: 0,
+							font: "inherit",
+							cursor: "pointer",
+							color: BRAND_BLUE,
+							fontWeight: 600,
+							borderBottom: `1px solid ${alpha(BRAND_BLUE, 0)}`,
+							transition: "border-color 0.15s ease",
+							"&:hover": { borderBottomColor: alpha(BRAND_BLUE, 0.5) },
+						}}
+					>
+						términos de facturación
+					</Box>
+					.
+				</Typography>
+			</Box>
 
 			{/* Diálogo para mostrar los documentos legales */}
 			<Dialog
@@ -928,8 +1495,9 @@ const Pricing = () => {
 				onClose={handleCloseLegalDocs}
 				maxWidth="lg"
 				fullWidth
-				sx={{
-					"& .MuiDialog-paper": {
+				PaperProps={{
+					sx: {
+						...dialogPaperSx,
 						height: "80vh",
 						maxHeight: "80vh",
 					},
@@ -939,15 +1507,72 @@ const Pricing = () => {
 			</Dialog>
 
 			{/* Diálogo para mostrar las opciones de downgrade */}
-			<Dialog open={optionsDialogOpen} onClose={() => setOptionsDialogOpen(false)} maxWidth="sm" fullWidth>
-				<DialogTitle sx={{ pb: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
-					<Typography variant="h4">Opciones de cambio de plan</Typography>
-				</DialogTitle>
-				<DialogContent sx={{ pt: 3 }}>
-					<Typography variant="body1" sx={{ mb: 3 }}>
-						Selecciona cómo quieres proceder con tu cambio de plan:
-					</Typography>
-
+			<Dialog open={optionsDialogOpen} onClose={() => setOptionsDialogOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: dialogPaperSx }}>
+				<Box
+					sx={{
+						position: "relative",
+						overflow: "hidden",
+						p: { xs: 2.25, sm: 2.5 },
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+						borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+					}}
+				>
+					<Box
+						sx={{
+							position: "absolute",
+							top: -60,
+							right: -40,
+							width: 220,
+							height: 220,
+							borderRadius: "50%",
+							background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
+							pointerEvents: "none",
+						}}
+					/>
+					<Stack direction="row" alignItems="center" spacing={1.5} sx={{ position: "relative" }}>
+						<Box
+							sx={{
+								width: 40,
+								height: 40,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+							}}
+						>
+							<Crown size={20} variant="Bulk" />
+						</Box>
+						<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+							<Stack direction="row" spacing={0.75} alignItems="center">
+								<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+								<Typography sx={{ fontSize: "0.6rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
+									Cambio de plan
+								</Typography>
+							</Stack>
+							<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+								Opciones disponibles
+							</Typography>
+							<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+								Elegí cómo querés proceder con el cambio.
+							</Typography>
+						</Stack>
+						<IconButton
+							onClick={() => setOptionsDialogOpen(false)}
+							sx={{
+								color: "text.secondary",
+								borderRadius: 1,
+								"&:hover": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) },
+							}}
+							aria-label="cerrar"
+						>
+							<CloseSquare size={20} variant="Linear" />
+						</IconButton>
+					</Stack>
+				</Box>
+				<DialogContent sx={{ p: { xs: 2.5, sm: 3 } }}>
 					<FormControl component="fieldset" sx={{ width: "100%" }}>
 						<RadioGroup
 							aria-label="opciones-downgrade"
@@ -955,71 +1580,77 @@ const Pricing = () => {
 							value={selectedOption}
 							onChange={(e) => handleOptionSelection(e.target.value)}
 						>
-							{downgradeOptions.map((option, index) => (
-								<Paper
-									key={index}
-									elevation={1}
-									onClick={() => handleOptionSelection(option.type)}
-									sx={{
-										mb: 2,
-										p: 2,
-										border: selectedOption === option.type ? `2px solid ${theme.palette.primary.main}` : "1px solid transparent",
-										borderRadius: 1,
-										transition: "all 0.2s ease-in-out",
-										cursor: "pointer",
-										"&:hover": {
-											borderColor: theme.palette.primary.light,
-											bgcolor: theme.palette.background.paper,
-											boxShadow: 3,
-										},
-									}}
-								>
-									<Box sx={{ display: "flex", alignItems: "flex-start" }}>
-										<Radio
-											checked={selectedOption === option.type}
-											onChange={() => handleOptionSelection(option.type)}
-											value={option.type}
-											name="radio-option"
-											sx={{ mt: -0.5, mr: 1 }}
-										/>
-										<Box>
-											<Typography variant="subtitle1" sx={{ fontWeight: "medium" }}>
-												{(() => {
-													switch (option.type) {
-														case "cancel_downgrade":
-															return "Cancelar el cambio programado";
-														case "immediate_change":
-															return "Cambiar inmediatamente";
-														case "change_after_current":
-															return "Cambiar al finalizar el período actual";
-														default:
-															return option.type;
-													}
-												})()}
-											</Typography>
-											<Typography variant="body2" color="textSecondary">
-												{option.description}
-											</Typography>
-										</Box>
+							{downgradeOptions.map((option, index) => {
+								const isSelected = selectedOption === option.type;
+								return (
+									<Box
+										key={index}
+										onClick={() => handleOptionSelection(option.type)}
+										sx={{
+											mb: 1.25,
+											p: 1.5,
+											borderRadius: 1.25,
+											cursor: "pointer",
+											bgcolor: isSelected ? alpha(BRAND_BLUE, isDark ? 0.14 : 0.06) : "background.paper",
+											border: `1px solid ${isSelected ? alpha(BRAND_BLUE, 0.55) : alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`,
+											transition: "border-color 0.15s ease, background-color 0.15s ease",
+											"&:hover": {
+												borderColor: alpha(BRAND_BLUE, isSelected ? 0.65 : 0.32),
+												bgcolor: isSelected ? alpha(BRAND_BLUE, isDark ? 0.18 : 0.08) : alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+											},
+										}}
+									>
+										<Stack direction="row" alignItems="flex-start" spacing={1}>
+											<Radio
+												checked={isSelected}
+												onChange={() => handleOptionSelection(option.type)}
+												value={option.type}
+												name="radio-option"
+												sx={{
+													mt: -0.5,
+													color: alpha(BRAND_BLUE, isDark ? 0.4 : 0.32),
+													"&.Mui-checked": { color: BRAND_BLUE },
+												}}
+											/>
+											<Stack spacing={0.25} sx={{ flex: 1 }}>
+												<Typography sx={{ fontSize: "0.9rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+													{(() => {
+														switch (option.type) {
+															case "cancel_downgrade":
+																return "Cancelar el cambio programado";
+															case "immediate_change":
+																return "Cambiar inmediatamente";
+															case "change_after_current":
+																return "Cambiar al finalizar el período actual";
+															default:
+																return option.type;
+														}
+													})()}
+												</Typography>
+												<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+													{option.description}
+												</Typography>
+											</Stack>
+										</Stack>
 									</Box>
-								</Paper>
-							))}
+								);
+							})}
 						</RadioGroup>
 					</FormControl>
 				</DialogContent>
-				<DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-					<Button onClick={() => setOptionsDialogOpen(false)} color="error" variant="outlined" disabled={loading}>
+				<DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
+					<Button onClick={() => setOptionsDialogOpen(false)} disabled={loading} sx={ghostBtnSx}>
 						Cancelar
 					</Button>
-					<Button onClick={handleOptionConfirm} color="primary" variant="contained" disabled={!selectedOption || loading}>
-						{loading ? (
-							<>
-								<CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
-								Procesando...
-							</>
-						) : (
-							"Confirmar selección"
-						)}
+					<Button
+						variant="contained"
+						onClick={handleOptionConfirm}
+						disabled={!selectedOption || loading}
+						data-testid="sub-options-confirm-btn"
+						startIcon={loading ? <CircularProgress size={14} color="inherit" /> : undefined}
+						sx={brandPrimarySx}
+					>
+						{loading ? "Procesando..." : "Confirmar selección"}
 					</Button>
 				</DialogActions>
 			</Dialog>
@@ -1030,90 +1661,152 @@ const Pricing = () => {
 				onClose={() => !cancelLoading && setCancelDialogOpen(false)}
 				aria-labelledby="cancel-subscription-dialog-title"
 				aria-describedby="cancel-subscription-dialog-description"
-				PaperProps={{
-					sx: {
-						borderRadius: 3,
-						boxShadow: "0 10px 40px 0 rgba(0,0,0,0.1)",
-						maxWidth: 500,
-					},
-				}}
+				maxWidth="sm"
+				fullWidth
+				PaperProps={{ sx: { ...dialogPaperSx, maxWidth: 520 } }}
 			>
-				<DialogTitle
-					id="cancel-subscription-dialog-title"
+				<Box
 					sx={{
-						pb: 1,
-						pt: 3,
-						px: 3,
-						fontWeight: 600,
+						position: "relative",
+						overflow: "hidden",
+						p: { xs: 2.25, sm: 2.5 },
+						bgcolor: alpha(theme.palette.error.main, isDark ? 0.08 : 0.04),
+						borderBottom: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.22 : 0.14)}`,
 					}}
 				>
-					¿Cancelar suscripción y volver al Plan Gratuito?
-				</DialogTitle>
-				<DialogContent sx={{ p: 3 }}>
-					<Typography variant="body1" paragraph>
-						Al cancelar tu suscripción actual:
-					</Typography>
-
 					<Box
 						sx={{
-							bgcolor: "background.neutral",
-							p: 2,
-							borderRadius: 2,
-							mb: 2,
+							position: "absolute",
+							top: -60,
+							right: -40,
+							width: 220,
+							height: 220,
+							borderRadius: "50%",
+							background: `radial-gradient(circle, ${alpha(theme.palette.error.main, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
+							pointerEvents: "none",
 						}}
-					>
-						<Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 1 }}>
-							Detalles importantes:
-						</Typography>
-						<Stack spacing={1}>
-							<Typography variant="body2" color="text.primary">
-								• Tu servicio seguirá activo hasta el final del período actual
-							</Typography>
-							<Typography variant="body2" color="text.primary">
-								• Tendrás un período de gracia de 15 días para archivar contenido
-							</Typography>
-							<Typography variant="body2" color="text.primary">
-								• No se realizarán más cargos automáticos
+					/>
+					<Stack direction="row" alignItems="center" spacing={1.5} sx={{ position: "relative" }}>
+						<Box
+							sx={{
+								width: 40,
+								height: 40,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(theme.palette.error.main, isDark ? 0.18 : 0.1),
+								border: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.28 : 0.18)}`,
+								color: theme.palette.error.main,
+							}}
+						>
+							<Warning2 size={20} variant="Bulk" />
+						</Box>
+						<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+							<Stack direction="row" spacing={0.75} alignItems="center">
+								<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: theme.palette.error.main }} />
+								<Typography sx={{ fontSize: "0.6rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
+									Cancelar suscripción
+								</Typography>
+							</Stack>
+							<Typography id="cancel-subscription-dialog-title" sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+								Volver al plan gratuito
 							</Typography>
 						</Stack>
-					</Box>
-
-					<Alert severity="warning" variant="outlined" sx={{ borderRadius: 2, borderWidth: 1.5 }}>
-						<Typography variant="body2" fontWeight="bold" gutterBottom>
-							Límites del Plan Gratuito:
+						<IconButton
+							onClick={() => !cancelLoading && setCancelDialogOpen(false)}
+							disabled={cancelLoading}
+							sx={{
+								color: "text.secondary",
+								borderRadius: 1,
+								"&:hover": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) },
+							}}
+							aria-label="cerrar"
+						>
+							<CloseSquare size={20} variant="Linear" />
+						</IconButton>
+					</Stack>
+				</Box>
+				<DialogContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+					<Stack spacing={2}>
+						<Typography sx={{ fontSize: "0.85rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+							Al cancelar tu suscripción actual:
 						</Typography>
-						<List dense sx={{ pl: 2 }}>
-							<ListItem sx={{ py: 0.25, px: 0 }}>
-								<ListItemText primary="• 5 Causas" primaryTypographyProps={{ variant: "body2" }} />
-							</ListItem>
-							<ListItem sx={{ py: 0.25, px: 0 }}>
-								<ListItemText primary="• 3 Cálculos" primaryTypographyProps={{ variant: "body2" }} />
-							</ListItem>
-							<ListItem sx={{ py: 0.25, px: 0 }}>
-								<ListItemText primary="• 10 Contactos" primaryTypographyProps={{ variant: "body2" }} />
-							</ListItem>
-							<ListItem sx={{ py: 0.25, px: 0 }}>
-								<ListItemText primary="• 50 MB de Almacenamiento" primaryTypographyProps={{ variant: "body2" }} />
-							</ListItem>
-						</List>
-					</Alert>
+
+						<Box
+							sx={{
+								p: 1.75,
+								borderRadius: 1.25,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+							}}
+						>
+							<Stack direction="row" spacing={1} alignItems="flex-start">
+								<InfoCircle size={16} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
+								<Stack spacing={0.625}>
+									<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+										• Tu servicio seguirá activo hasta el final del período actual
+									</Typography>
+									<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+										• Tendrás 15 días de gracia para archivar contenido
+									</Typography>
+									<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+										• No se realizarán más cargos automáticos
+									</Typography>
+								</Stack>
+							</Stack>
+						</Box>
+
+						<Box
+							sx={{
+								p: 1.75,
+								borderRadius: 1.25,
+								bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05),
+								border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+							}}
+						>
+							<Stack direction="row" spacing={1} alignItems="flex-start">
+								<Warning2 size={16} variant="Bulk" color={STALE_AMBER} style={{ marginTop: 2, flexShrink: 0 }} />
+								<Stack spacing={0.625} sx={{ flex: 1 }}>
+									<Typography
+										sx={{
+											fontSize: "0.66rem",
+											fontWeight: 600,
+											letterSpacing: "0.06em",
+											textTransform: "uppercase",
+											color: STALE_AMBER,
+										}}
+									>
+										Límites del plan gratuito
+									</Typography>
+									<Stack spacing={0.375}>
+										<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>• 5 causas</Typography>
+										<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>• 3 cálculos</Typography>
+										<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>• 10 contactos</Typography>
+										<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>• 50 MB de almacenamiento</Typography>
+									</Stack>
+								</Stack>
+							</Stack>
+						</Box>
+					</Stack>
 				</DialogContent>
-				<DialogActions sx={{ px: 3, pb: 3 }}>
-					<Button onClick={() => setCancelDialogOpen(false)} disabled={cancelLoading}>
-						Mantener mi plan actual
+				<DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
+					<Button onClick={() => setCancelDialogOpen(false)} disabled={cancelLoading} data-testid="sub-cancel-dialog-keep-btn" sx={ghostBtnSx}>
+						Mantener plan
 					</Button>
 					<Button
-						onClick={handleCancelToFree}
-						color="error"
 						variant="contained"
+						onClick={handleCancelToFree}
 						disabled={cancelLoading}
-						startIcon={cancelLoading ? <CircularProgress size={20} /> : undefined}
+						startIcon={cancelLoading ? <CircularProgress size={14} color="inherit" /> : undefined}
+						data-testid="sub-cancel-dialog-confirm-btn"
+						sx={destructiveBtnSx}
 					>
 						{cancelLoading ? "Procesando..." : "Confirmar cancelación"}
 					</Button>
 				</DialogActions>
 			</Dialog>
-		</Grid>
+		</Stack>
 	);
 };
 

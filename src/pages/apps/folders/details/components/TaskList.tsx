@@ -24,6 +24,7 @@ import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { getTasksByFolderId, deleteTask, toggleTaskStatus } from "store/reducers/tasks";
 import { dispatch, useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
+import { useTeam } from "contexts/TeamContext";
 
 //types
 import { TaskDataType } from "types/task";
@@ -32,6 +33,7 @@ import { TaskListProps } from "types/task";
 
 const TaskList = ({ title, folderName }: TaskListProps) => {
 	const { id } = useParams();
+	const { canDelete, canUpdate } = useTeam();
 
 	// Añadimos un valor por defecto de array vacío
 	const tasks = useSelector((state: any) => state.tasksReducer?.selectedTasks || []);
@@ -227,6 +229,7 @@ const TaskList = ({ title, folderName }: TaskListProps) => {
 														<Checkbox
 															checked={task.checked}
 															onChange={handleCheckboxChange}
+															disabled={!canUpdate}
 															id={task._id}
 															name={task.name}
 															color="primary"
@@ -234,9 +237,11 @@ const TaskList = ({ title, folderName }: TaskListProps) => {
 													}
 													label={task.name}
 												/>
-												<IconButton color="error" onClick={() => handleDeleteTask(task._id)} size="small">
-													<Trash variant="Bulk" size={16} />
-												</IconButton>
+												{canDelete && (
+													<IconButton color="error" onClick={() => handleDeleteTask(task._id)} size="small">
+														<Trash variant="Bulk" size={16} />
+													</IconButton>
+												)}
 											</Stack>
 										</Grid>
 									))}

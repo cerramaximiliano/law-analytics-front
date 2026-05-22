@@ -9,3 +9,5 @@ export { default as BookingContent } from "./BookingContent";
 export { default as GuideTasks } from "./GuideTasks";
 export { default as GuideAnalytics } from "./GuideAnalytics";
 export { default as GuideLimits } from "./GuideLimits";
+export { default as GuideTeams } from "./GuideTeams";
+export { TeamsContent } from "./TeamsContent";

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // material-ui
 import { useTheme, alpha } from "@mui/material/styles";
@@ -8,7 +8,20 @@ import { Box, Button, Card, CardActionArea, Container, Grid, Stack, Typography }
 import { motion } from "framer-motion";
 
 // icons
-import { ArrowRight, Calculator, Calendar, CalendarTick, Chart21, Cloud, Coin, FolderOpen, ProfileCircle, Task } from "iconsax-react";
+import {
+	ArrowRight,
+	Calculator,
+	Calendar,
+	CalendarTick,
+	Chart21,
+	Cloud,
+	Coin,
+	FolderOpen,
+	People,
+	ProfileCircle,
+	Task,
+	TickCircle,
+} from "iconsax-react";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -22,6 +35,7 @@ import {
 	GuideLaboral,
 	GuideLimits,
 	GuideTasks,
+	GuideTeams,
 } from "components/guides";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
@@ -40,11 +54,48 @@ interface GuideEntry {
 	openModal: () => void;
 }
 
+const GUIDES_COMPLETED_KEY = "guides.completed";
+
+function loadCompletedGuides(): Set<number> {
+	try {
+		const raw = localStorage.getItem(GUIDES_COMPLETED_KEY);
+		if (!raw) return new Set();
+		const parsed = JSON.parse(raw);
+		if (Array.isArray(parsed)) return new Set(parsed as number[]);
+	} catch {
+		// ignore
+	}
+	return new Set();
+}
+
+function saveCompletedGuides(set: Set<number>): void {
+	try {
+		localStorage.setItem(GUIDES_COMPLETED_KEY, JSON.stringify(Array.from(set)));
+	} catch {
+		// ignore
+	}
+}
+
 // ==============================|| GUIDES PAGE ||============================== //
 
 const GuidesPage = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
+
+	// GU2 — track visited guides
+	const [completedGuides, setCompletedGuides] = useState<Set<number>>(() => loadCompletedGuides());
+
+	useEffect(() => {
+		saveCompletedGuides(completedGuides);
+	}, [completedGuides]);
+
+	const markGuideVisited = (index: number) => {
+		setCompletedGuides((prev) => {
+			const next = new Set(prev);
+			next.add(index);
+			return next;
+		});
+	};
 
 	// Modal states
 	const [laboral, setLaboral] = useState(false);
@@ -56,6 +107,7 @@ const GuidesPage = () => {
 	const [tasks, setTasks] = useState(false);
 	const [analytics, setAnalytics] = useState(false);
 	const [limits, setLimits] = useState(false);
+	const [teams, setTeams] = useState(false);
 	const [supportOpen, setSupportOpen] = useState(false);
 
 	const guides: GuideEntry[] = [
@@ -112,6 +164,12 @@ const GuidesPage = () => {
 			description: "Cómo aprovechar los límites de tu plan y optimizar tu uso.",
 			icon: Cloud,
 			openModal: () => setLimits(true),
+		},
+		{
+			title: "Equipos",
+			description: "Aprende a crear equipos, invitar colaboradores y trabajar de forma colaborativa.",
+			icon: People,
+			openModal: () => setTeams(true),
 		},
 	];
 
@@ -211,6 +269,7 @@ const GuidesPage = () => {
 												border: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
 												transition: "all 0.25s ease",
 												bgcolor: "transparent",
+												position: "relative",
 												"&:hover": {
 													borderColor: alpha(BRAND_BLUE, 0.4),
 													boxShadow: `0 12px 28px ${alpha(BRAND_BLUE, 0.1)}, 0 4px 10px ${alpha(BRAND_BLUE, 0.06)}`,
@@ -225,8 +284,17 @@ const GuidesPage = () => {
 												},
 											}}
 										>
+											{/* GU2 — visited badge */}
+											{completedGuides.has(idx) && (
+												<Box sx={{ position: "absolute", top: 10, right: 10, zIndex: 1, lineHeight: 0 }}>
+													<TickCircle size={20} variant="Bold" style={{ color: alpha(theme.palette.success.main, 0.85) }} />
+												</Box>
+											)}
 											<CardActionArea
-												onClick={guide.openModal}
+												onClick={() => {
+													markGuideVisited(idx);
+													guide.openModal();
+												}}
 												sx={{
 													height: "100%",
 													display: "flex",
@@ -393,6 +461,9 @@ const GuidesPage = () => {
 			<GuideTasks open={tasks} onClose={() => setTasks(false)} />
 			<GuideAnalytics open={analytics} onClose={() => setAnalytics(false)} />
 			<GuideLimits open={limits} onClose={() => setLimits(false)} />
+			<GuideTeams open={teams} onClose={() => setTeams(false)} />
+
+			{/* Modal de Soporte */}
 			<SupportModal open={supportOpen} onClose={() => setSupportOpen(false)} />
 		</>
 	);

@@ -92,6 +92,12 @@ export type FolderData = {
 	causaIsValid?: boolean; // Indica si la causa es válida
 	causaUpdateEnabled?: boolean; // Indica si las actualizaciones están habilitadas
 	causaAssociationStatus?: string; // Estado de asociación (success, pending, pending_selection, failed)
+	/** @deprecated usar listRemoved + listRemovedSource='pjn'. Se mantiene temporalmente por compat. */
+	pjnNotFound?: boolean;
+	/** La causa ya no aparece en el listado del portal origen. Generalizado para PJN/SCBA/MEV/EJE. */
+	listRemoved?: boolean;
+	listRemovedAt?: string;
+	listRemovedSource?: "pjn" | "scba" | "mev" | "eje";
 	causaLastSyncDate?: string; // Fecha de última sincronización
 	lastMovementDate?: string; // Fecha del último movimiento
 	// Campos para selección múltiple de causas (EJE/MEV)
@@ -99,6 +105,16 @@ export type FolderData = {
 	pendingCausaType?: string; // Tipo de causas pendientes ('CausasEje' | 'MEV')
 	searchTerm?: string; // Término de búsqueda original
 	eje?: boolean; // Indica si es una causa EJE (CABA)
+	scba?: boolean; // Indica si es una causa SCBA (Provincia de Buenos Aires)
+	/**
+	 * Para causas PJN agregadas individualmente (source !== 'pjn-login'):
+	 * la causa fue marcada como privada/reservada por el privacy-checker
+	 * tras N fallos consecutivos al consultarla públicamente. Las causas
+	 * pjn-login tienen otra ruta de acceso (Mis Causas autenticado) y NO
+	 * usan este flag — el frontend lo ignora cuando source==='pjn-login'.
+	 */
+	causaIsPrivate?: boolean;
+	causaPrivateDetectedAt?: string;
 };
 
 // Interfaz para una causa pendiente de selección

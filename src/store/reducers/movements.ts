@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Dispatch } from "redux";
-import { Movement, MovementState, PaginationInfo, PjnAccess, ScrapingProgress } from "types/movements";
+import { Movement, MovementState, PaginationInfo, PjnAccess, ScbaAccess, ScrapingProgress } from "types/movements";
+import { UPDATE_ACTIVITY } from "./activities";
 
 export const GET_MOVEMENTS_BY_FOLDER = "movements/GET_MOVEMENTS_BY_FOLDER";
 export const GET_MOVEMENTS = "movements/GET_MOVEMENTS";
@@ -19,6 +20,7 @@ const initialMovementState: MovementState = {
 	documentsBeforeThisPage: undefined,
 	documentsInThisPage: undefined,
 	scrapingProgress: undefined,
+	causaLastSyncDate: undefined,
 	isLoading: false,
 	error: undefined,
 };
@@ -46,13 +48,15 @@ const movementReducer = (state = initialMovementState, action: any): MovementSta
 				documentsBeforeThisPage: action.payload.documentsBeforeThisPage || undefined,
 				documentsInThisPage: action.payload.documentsInThisPage || undefined,
 				pjnAccess: action.payload.pjnAccess || undefined,
+				scbaAccess: action.payload.scbaAccess || undefined,
 				scrapingProgress: action.payload.scrapingProgress || undefined,
+				causaLastSyncDate: action.payload.causaLastSyncDate !== undefined ? action.payload.causaLastSyncDate : undefined,
 				isLoading: false,
 			};
 		case UPDATE_MOVEMENT:
 			return {
 				...state,
-				movements: state.movements.map((movement) => (movement._id === action.payload._id ? action.payload : movement)),
+				movements: state.movements.map((movement) => (String(movement._id) === String(action.payload._id) ? action.payload : movement)),
 				isLoading: false,
 			};
 		case DELETE_MOVEMENT:
@@ -134,11 +138,31 @@ export const updateMovement = (movementId: string, updateData: Partial<Movement>
 		const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/movements/${movementId}`, updateData);
 
 		if (response.data.success && response.data.movement) {
+			const updatedMovement = response.data.movement;
+
+			// Actualizar el reducer de movements
 			dispatch({
 				type: UPDATE_MOVEMENT,
-				payload: response.data.movement,
+				payload: updatedMovement,
 			});
-			return { success: true, movement: response.data.movement };
+
+			// También actualizar el reducer de activities (para Vista Combinada)
+			// Convertimos el movement a formato de actividad
+			dispatch({
+				type: UPDATE_ACTIVITY,
+				payload: {
+					_id: updatedMovement._id,
+					title: updatedMovement.title,
+					description: updatedMovement.description,
+					date: updatedMovement.time,
+					movement: updatedMovement.movement,
+					dateExpiration: updatedMovement.dateExpiration,
+					link: updatedMovement.link,
+					completed: updatedMovement.completed,
+				},
+			});
+
+			return { success: true, movement: updatedMovement };
 		}
 
 		throw new Error(response.data.message || "Error al actualizar el movimiento");
@@ -191,50 +215,54 @@ export const deleteMovement = (movementId: string) => async (dispatch: Dispatch)
 	}
 };
 
-export const addMovement = (movementData: Omit<Movement, "_id">) => async (dispatch: Dispatch) => {
-	try {
-		dispatch({ type: SET_LOADING });
+export const addMovement =
+	(movementData: Omit<Movement, "_id">, options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch) => {
+		try {
+			dispatch({ type: SET_LOADING });
 
-		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/movements`, movementData);
+			const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/movements`, movementData, {
+				headers: options?.headers,
+			});
 
-		if (response.data.success && response.data.movement) {
+			if (response.data.success && response.data.movement) {
+				dispatch({
+					type: ADD_MOVEMENT,
+					payload: response.data.movement,
+				});
+
+				return {
+					success: true,
+					movement: response.data.movement,
+				};
+			}
+
+			throw new Error(response.data.message || "Error al crear el movimiento");
+		} catch (error) {
+			let errorMessage = "Error al crear el movimiento";
+
+			if (axios.isAxiosError(error) && error.response) {
+				errorMessage = error.response.data?.message || errorMessage;
+			} else if (error instanceof Error) {
+				errorMessage = error.message;
+			}
+
 			dispatch({
-				type: ADD_MOVEMENT,
-				payload: response.data.movement,
+				type: SET_MOVEMENT_ERROR,
+				payload: errorMessage,
 			});
 
 			return {
-				success: true,
-				movement: response.data.movement,
+				success: false,
+				error: errorMessage,
 			};
 		}
-
-		throw new Error(response.data.message || "Error al crear el movimiento");
-	} catch (error) {
-		let errorMessage = "Error al crear el movimiento";
-
-		if (axios.isAxiosError(error) && error.response) {
-			errorMessage = error.response.data?.message || errorMessage;
-		} else if (error instanceof Error) {
-			errorMessage = error.message;
-		}
-
-		dispatch({
-			type: SET_MOVEMENT_ERROR,
-			payload: errorMessage,
-		});
-
-		return {
-			success: false,
-			error: errorMessage,
-		};
-	}
-};
+	};
 
 interface SuccessResponse {
 	success: true;
 	movements: Movement[];
 	count: number;
+	causaLastSyncDate?: string | null;
 }
 
 interface PaginatedSuccessResponse {
@@ -246,7 +274,9 @@ interface PaginatedSuccessResponse {
 		documentsBeforeThisPage?: number;
 		documentsInThisPage?: number;
 		pjnAccess?: PjnAccess;
+		scbaAccess?: ScbaAccess;
 		scrapingProgress?: ScrapingProgress;
+		causaLastSyncDate?: string | null;
 	};
 }
 
@@ -276,7 +306,9 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 		dispatch({ type: SET_LOADING });
 
 		// Campos optimizados para listas y vistas
-		const fields = "_id,title,time,movement,description,dateExpiration,link,source,completed,attachments";
+		const fields =
+			"_id,title,time,movement,description,dateExpiration,link,source,completed,attachments,documentType";
+		// Nota: attachments incluye s3Key/s3Bucket (subdoc completo se envía).
 
 		// Construir parámetros de consulta
 		const queryParams: any = { fields };
@@ -317,7 +349,9 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 						documentsBeforeThisPage: paginatedData.data.documentsBeforeThisPage,
 						documentsInThisPage: paginatedData.data.documentsInThisPage,
 						pjnAccess: paginatedData.data.pjnAccess,
+						scbaAccess: paginatedData.data.scbaAccess,
 						scrapingProgress: paginatedData.data.scrapingProgress,
+						causaLastSyncDate: paginatedData.data.causaLastSyncDate,
 					},
 				});
 
@@ -329,20 +363,26 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 					documentsBeforeThisPage: paginatedData.data.documentsBeforeThisPage,
 					documentsInThisPage: paginatedData.data.documentsInThisPage,
 					pjnAccess: paginatedData.data.pjnAccess,
+					scbaAccess: paginatedData.data.scbaAccess,
 					scrapingProgress: paginatedData.data.scrapingProgress,
+					causaLastSyncDate: paginatedData.data.causaLastSyncDate,
 				};
 			} else {
 				// Manejar respuesta no paginada (retrocompatibilidad)
 				const nonPaginatedData = response.data as SuccessResponse;
 				dispatch({
 					type: GET_MOVEMENTS_BY_FOLDER,
-					payload: nonPaginatedData.movements,
+					payload: {
+						movements: nonPaginatedData.movements,
+						causaLastSyncDate: nonPaginatedData.causaLastSyncDate,
+					},
 				});
 
 				return {
 					success: true,
 					movements: nonPaginatedData.movements,
 					count: nonPaginatedData.count,
+					causaLastSyncDate: nonPaginatedData.causaLastSyncDate,
 				};
 			}
 		}
@@ -389,6 +429,16 @@ export const toggleMovementComplete = (movementId: string) => async (dispatch: D
 					completed: response.data.movement.completed,
 				},
 			});
+
+			// También actualizar el reducer de activities (para Vista Combinada)
+			dispatch({
+				type: UPDATE_ACTIVITY,
+				payload: {
+					_id: movementId,
+					completed: response.data.movement.completed,
+				},
+			});
+
 			return {
 				success: true,
 				movement: response.data.movement,

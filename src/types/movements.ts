@@ -12,15 +12,26 @@ export type Movement = {
 	description?: string;
 	link?: string;
 	texto?: string; // Contenido de texto del escrito (MEV únicamente)
-	source?: "pjn" | "mev"; // Campo para identificar movimientos sincronizados (PJN o MEV)
+	source?: "pjn" | "mev" | "scba"; // Origen del movimiento sincronizado
 	completed?: boolean; // Nueva propiedad para indicar si el movimiento está completado
 	attachments?: Array<{
-		// Arreglo de adjuntos para movimientos de MEV
+		// Arreglo de adjuntos del movimiento (MEV/SCBA: múltiples, PJN: típicamente 1).
+		// Resolución al hacer click:
+		//   - Si tiene s3Key → endpoint proxy /api/movements/:movId/attachments/:idx/download
+		//     (presigned URL S3, 5 min, controlado por nosotros).
+		//   - Si no, `url` legacy (puede requerir login del portal de origen).
 		name: string;
-		url: string;
+		url?: string;
+		s3Bucket?: string;
+		s3Key?: string;
 		type?: string;
 		size?: number;
 	}>;
+	// Cómo renderizar el "Documento" del movimiento.
+	//   - 'pdf': PDFViewer (link directo embedable, caso PJN).
+	//   - 'text': MovementTextViewer (texto extraído + lista de adjuntos,
+	//     caso SCBA/MEV donde no hay PDF público accesible sin login).
+	documentType?: "pdf" | "text";
 };
 
 // Tipos para paginación
@@ -45,11 +56,24 @@ export interface PjnAccess {
 	previewCount?: number; // Cantidad de movimientos de preview mostrados (para usuarios free)
 }
 
+// Mismo shape que PjnAccess — el server devuelve idéntico contrato para SCBA.
+export interface ScbaAccess {
+	hasAccess: boolean;
+	message: string | null;
+	requiresUpgrade: boolean;
+	currentPlan?: string;
+	requiredPlans?: string[];
+	availableMovements?: number;
+	totalMovements?: number;
+	previewCount?: number;
+}
+
 export interface ScrapingProgress {
 	status: string;
 	isComplete: boolean;
 	totalExpected: number;
 	totalProcessed: number;
+	startedAt?: string;
 }
 
 export interface PaginatedMovementsResponse {
@@ -59,6 +83,7 @@ export interface PaginatedMovementsResponse {
 	documentsBeforeThisPage?: number;
 	documentsInThisPage?: number;
 	pjnAccess?: PjnAccess;
+	scbaAccess?: ScbaAccess;
 	scrapingProgress?: ScrapingProgress;
 }
 
@@ -69,7 +94,9 @@ export interface MovementState {
 	documentsBeforeThisPage?: number;
 	documentsInThisPage?: number;
 	pjnAccess?: PjnAccess;
+	scbaAccess?: ScbaAccess;
 	scrapingProgress?: ScrapingProgress;
+	causaLastSyncDate?: string | null;
 	isLoading: boolean;
 	error?: string;
 }
@@ -98,4 +125,6 @@ export interface MovementsModalType {
 	folderName: string;
 	editMode?: boolean;
 	movementData?: Movement | null;
+	onSuccess?: () => void;
+	dialogSx?: Record<string, any>;
 }

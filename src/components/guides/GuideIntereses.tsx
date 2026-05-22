@@ -1,31 +1,12 @@
 import React from "react";
-import { useState } from "react";
 
 // material-ui
-import {
-	Typography,
-	Button,
-	Box,
-	Alert,
-	AlertTitle,
-	Stack,
-	Dialog,
-	DialogTitle,
-	DialogContent,
-	DialogActions,
-	Step,
-	Stepper,
-	StepLabel,
-	Paper,
-	Grid,
-	styled,
-	alpha,
-} from "@mui/material";
+import { Typography, Box, Alert, AlertTitle, Stack, Paper, Grid, styled, alpha } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
 // project imports
-import { PopupTransition } from "components/@extended/Transitions";
-import { Coin, ArrowRight2, Next, ArrowLeft, ArrowRight, Copy, Sms, Printer, Save2, DocumentText, Link21 } from "iconsax-react";
+import { Coin, ArrowRight2, Copy, Sms, Printer, Save2, DocumentText, Link21 } from "iconsax-react";
+import GuideShell from "./GuideShell";
 
 // ==============================|| GUÍA INTERESES - ESTILOS ||============================== //
 
@@ -341,112 +322,25 @@ interface GuideInteresesProps {
 }
 
 const GuideIntereses: React.FC<GuideInteresesProps> = ({ open, onClose }) => {
-	const [activeStep, setActiveStep] = useState(0);
-	const theme = useTheme();
-
-	const handleNext = () => {
-		setActiveStep((prevStep) => prevStep + 1);
-	};
-
-	const handleBack = () => {
-		setActiveStep((prevStep) => prevStep - 1);
-	};
-
-	const handleClose = () => {
-		onClose();
-		// Reset a paso 0 al cerrar
-		setTimeout(() => setActiveStep(0), 300);
-	};
-
 	const steps = [
-		{
-			title: "Bienvenido a la Calculadora de Intereses",
-			content: <IntroductionContent />,
-		},
-		{
-			title: "Acceso y Formulario Básico",
-			content: <FormContent />,
-		},
-		{
-			title: "Tipos de Tasas Disponibles",
-			content: <RatesContent />,
-		},
-		{
-			title: "Métodos de Cálculo Aplicados",
-			content: <MethodsContent />,
-		},
-		{
-			title: "Interpretación de Resultados",
-			content: <ResultsContent />,
-		},
-		{
-			title: "Gestión y Exportación de Cálculos",
-			content: <ManagementContent />,
-		},
+		{ title: "Bienvenido a la Calculadora de Intereses", content: <IntroductionContent /> },
+		{ title: "Acceso y Formulario Básico", content: <FormContent /> },
+		{ title: "Tipos de Tasas Disponibles", content: <RatesContent /> },
+		{ title: "Métodos de Cálculo Aplicados", content: <MethodsContent /> },
+		{ title: "Interpretación de Resultados", content: <ResultsContent /> },
+		{ title: "Gestión y Exportación de Cálculos", content: <ManagementContent /> },
 	];
 
 	return (
-		<Dialog
+		<GuideShell
 			open={open}
-			onClose={handleClose}
-			maxWidth="md"
-			fullWidth
-			TransitionComponent={PopupTransition}
-			sx={{ "& .MuiDialog-paper": { borderRadius: 2 } }}
-		>
-			<DialogTitle
-				sx={{
-					borderBottom: `1px solid ${theme.palette.divider}`,
-					p: 2,
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-				}}
-			>
-				<Box display="flex" alignItems="center">
-					<Coin variant="Bulk" size={28} style={{ marginRight: "12px", color: theme.palette.success.main }} />
-					<Typography variant="h3">Guía de Calculadora de Intereses</Typography>
-				</Box>
-			</DialogTitle>
-
-			<DialogContent sx={{ p: 0 }}>
-				<Stepper activeStep={activeStep} alternativeLabel sx={{ p: 3, pb: 1, pt: 3 }}>
-					{steps.map((step, index) => (
-						<Step key={index}>
-							<StepLabel>{step.title}</StepLabel>
-						</Step>
-					))}
-				</Stepper>
-
-				<Box sx={{ p: 0, height: 400, overflowY: "auto" }}>
-					<Box sx={{ p: 3 }}>
-						<Typography variant="h4" gutterBottom color="primary">
-							{steps[activeStep].title}
-						</Typography>
-						<Box sx={{ mb: 3 }}>{steps[activeStep].content}</Box>
-					</Box>
-				</Box>
-			</DialogContent>
-
-			<DialogActions sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-				<Button onClick={handleBack} disabled={activeStep === 0} startIcon={<ArrowLeft />}>
-					Anterior
-				</Button>
-				<Box sx={{ flex: "1 1 auto" }} />
-				<Button onClick={handleClose} sx={{ color: "text.secondary" }}>
-					Cerrar
-				</Button>
-				{activeStep === steps.length - 1 ? (
-					<Button variant="contained" color="primary" onClick={handleClose} endIcon={<Next />}>
-						Finalizar
-					</Button>
-				) : (
-					<Button variant="contained" color="primary" onClick={handleNext} endIcon={<ArrowRight />}>
-						Siguiente
-					</Button>
-				)}
-			</DialogActions>
-		</Dialog>
+			onClose={onClose}
+			icon={<Coin size={18} variant="Bulk" />}
+			eyebrow="Guía"
+			title="Guía de Calculadora de Intereses"
+			subtitle="Tasas, métodos de cálculo y exportación"
+			steps={steps}
+		/>
 	);
 };
 

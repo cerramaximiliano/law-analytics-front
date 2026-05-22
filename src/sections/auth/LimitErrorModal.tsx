@@ -51,6 +51,20 @@ interface LimitErrorModalProps {
 	upgradeRequired?: boolean;
 }
 
+// Traduce nombres internos de planes (free/standard/premium) a labels en español
+// usados en la UI. Mantiene cualquier valor desconocido tal cual.
+const PLAN_LABELS: Record<string, string> = {
+	free: "Gratuito",
+	standard: "Estándar",
+	premium: "Premium",
+};
+
+const formatPlanName = (raw: string): string => {
+	if (!raw) return raw;
+	const key = raw.trim().toLowerCase();
+	return PLAN_LABELS[key] ?? raw;
+};
+
 export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({ open, onClose, message, limitInfo, featureInfo }) => {
 	const navigate = useNavigate();
 	const theme = useTheme();
@@ -166,7 +180,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({ open, onClose,
 							<Stack direction="row" alignItems="center" spacing={0.5}>
 								<Crown size={14} variant="Bulk" color={BRAND_BLUE} />
 								<Typography variant="body2" sx={{ fontWeight: 600, letterSpacing: "-0.005em" }}>
-									{featureInfo.plan}
+									{formatPlanName(featureInfo.plan)}
 								</Typography>
 							</Stack>
 						</Stack>
@@ -180,7 +194,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({ open, onClose,
 										<Chip
 											key={index}
 											size="small"
-											label={plan}
+											label={formatPlanName(plan)}
 											icon={<Crown size={12} variant="Bulk" />}
 											sx={{
 												height: 22,

@@ -56,6 +56,7 @@ export interface PlanCardCTAProps {
 	href?: string;
 	component?: React.ElementType;
 	to?: string;
+	dataTestId?: string;
 }
 
 export interface PlanCardProps {
@@ -83,6 +84,8 @@ export interface PlanCardProps {
 	hideResources?: boolean;
 	/** Override completo — ocultar bloque de funcionalidades. Default true en compact. */
 	hideFeatures?: boolean;
+	/** data-testid aplicado al MainCard root. */
+	dataTestId?: string;
 }
 
 // ============================== COMPONENT ============================== //
@@ -100,6 +103,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
 	maxResourcesCompact = 4,
 	hideResources = false,
 	hideFeatures,
+	dataTestId,
 }) => {
 	// Default de hideFeatures: en compact se ocultan (modal no es lugar para
 	// listas largas); en non-compact se muestran.
@@ -184,6 +188,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
 	const cardInner = (
 		<MainCard
 			border={!highlighted}
+			{...(dataTestId && { "data-testid": dataTestId })}
 			sx={{
 				height: "100%",
 				position: "relative",
@@ -523,6 +528,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
 					component={cta.component as any}
 					{...(cta.href && { href: cta.href })}
 					{...(cta.to && { to: cta.to })}
+					{...(cta.dataTestId && { "data-testid": cta.dataTestId })}
 					startIcon={cta.loading ? <CircularProgress size={14} color="inherit" /> : cta.startIcon}
 					endIcon={!cta.loading ? cta.endIcon : undefined}
 					sx={{

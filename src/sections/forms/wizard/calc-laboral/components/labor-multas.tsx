@@ -78,12 +78,13 @@ const LaborMultas: React.FC<Props> = (props) => {
 				Art. 245 bis (Ley 27.742) — Agravamiento por despido discriminatorio
 			</Typography>
 			<Typography variant="caption" component="div" sx={{ mb: 0.5 }}>
-				Procede cuando el despido se origina por motivos de raza, etnia, religión, nacionalidad, ideología, opinión política o gremial, sexo o género,
-				orientación sexual, posición económica, caracteres físicos o discapacidad. La prueba está a cargo de quien lo invoca.
+				Procede cuando el despido se origina por motivos de raza, etnia, religión, nacionalidad, ideología, opinión política o gremial, sexo
+				o género, orientación sexual, posición económica, caracteres físicos o discapacidad. La prueba está a cargo de quien lo invoca.
 			</Typography>
 			<Typography variant="caption" component="div" sx={{ mb: 0.5 }}>
-				Si la sentencia confirma el origen discriminatorio, corresponde una indemnización agravada equivalente al <strong>50%</strong> de la del art. 245
-				LCT (o del régimen especial aplicable). Según la gravedad, los jueces pueden incrementar hasta el <strong>100%</strong>.
+				Si la sentencia confirma el origen discriminatorio, corresponde una indemnización agravada equivalente al <strong>50%</strong> de la
+				del art. 245 LCT (o del régimen especial aplicable). Según la gravedad, los jueces pueden incrementar hasta el <strong>100%</strong>
+				.
 			</Typography>
 			<Typography variant="caption" component="div" sx={{ fontStyle: "italic" }}>
 				No es acumulable con otros regímenes de agravamiento indemnizatorio.

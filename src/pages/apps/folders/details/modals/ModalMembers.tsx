@@ -2,11 +2,10 @@ import React from "react";
 import { useState, useEffect } from "react";
 
 // material-ui
-import { useTheme } from "@mui/material/styles";
+import { useTheme, alpha } from "@mui/material/styles";
 import {
 	Box,
 	Button,
-	Divider,
 	DialogActions,
 	DialogTitle,
 	DialogContent,
@@ -26,12 +25,14 @@ import SimpleBar from "components/third-party/SimpleBar";
 import { dispatch, useSelector } from "store";
 import { filterContactsByFolder, updateMultipleContacts } from "store/reducers/contacts";
 import { openSnackbar } from "store/reducers/snackbar";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 //types
 import { MembersModalType, Contact } from "types/movements";
 
 const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: MembersModalType) => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedAddresses, setSelectedAddresses] = useState<Contact[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
@@ -47,9 +48,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 
 	const toggleSelection = (address: Contact) => {
 		setSelectedAddresses((prev) =>
-			prev.some((selected) => selected.email === address.email)
-				? prev.filter((selected) => selected.email !== address.email)
-				: [...prev, address],
+			prev.some((selected) => selected._id === address._id) ? prev.filter((selected) => selected._id !== address._id) : [...prev, address],
 		);
 	};
 
@@ -158,10 +157,11 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 	}, [open]);
 
 	const filteredContacts = contacts.filter((contact: Contact) => {
+		const search = searchTerm.toLowerCase();
 		const matchesSearch =
-			contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			contact.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			contact.email.toLowerCase().includes(searchTerm.toLowerCase());
+			(contact.name || "").toLowerCase().includes(search) ||
+			(contact.lastName || "").toLowerCase().includes(search) ||
+			(contact.email || "").toLowerCase().includes(search);
 
 		const isNotMember = !membersData.some((member) => member._id === contact._id);
 
@@ -171,44 +171,96 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 	return (
 		<ResponsiveDialog
 			maxWidth="sm"
+			fullWidth
 			open={open}
 			onClose={closeAddressModal}
 			PaperProps={{
 				sx: {
 					p: 0,
 					borderRadius: 2,
-					boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+					boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
 					display: "flex",
 					flexDirection: "column",
 					maxHeight: { xs: "90vh", sm: "85vh" },
+					overflow: "hidden",
 				},
 			}}
-			sx={{
-				"& .MuiDialog-paper": { p: 0 },
-				"& .MuiBackdrop-root": { opacity: "0.5 !important" },
-			}}
+			sx={{ "& .MuiBackdrop-root": { opacity: "0.5 !important" } }}
 		>
 			<DialogTitle
 				sx={{
-					bgcolor: theme.palette.primary.lighter,
-					p: 3,
-					borderBottom: `1px solid ${theme.palette.divider}`,
+					display: "flex",
+					alignItems: "center",
+					gap: 1.25,
+					px: 2.5,
+					py: 1.75,
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+					borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 					flexShrink: 0,
 				}}
 			>
-				<Stack direction="row" justifyContent="space-between" alignItems="center">
-					<Stack direction="row" alignItems="center" spacing={1}>
-						<UserAdd size={24} color={theme.palette.primary.main} />
-						<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-							Seleccione Contactos
+				<Box
+					sx={{
+						width: 32,
+						height: 32,
+						borderRadius: 1,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+						color: BRAND_BLUE,
+					}}
+				>
+					<UserAdd size={18} variant="Bulk" />
+				</Box>
+				<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+					<Stack direction="row" spacing={0.5} alignItems="center">
+						<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+						<Typography
+							sx={{
+								fontSize: "0.6rem",
+								fontWeight: 600,
+								letterSpacing: "0.08em",
+								textTransform: "uppercase",
+								color: "text.secondary",
+							}}
+						>
+							Vincular contactos
 						</Typography>
 					</Stack>
-					<Typography color="textSecondary" variant="subtitle2">
-						{selectedAddresses.length} seleccionados
+					<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+						Seleccioná contactos
 					</Typography>
 				</Stack>
+				<Box
+					sx={{
+						display: "inline-flex",
+						alignItems: "center",
+						gap: 0.5,
+						px: 0.875,
+						py: 0.25,
+						borderRadius: 0.75,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+						flexShrink: 0,
+					}}
+				>
+					<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+					<Typography
+						sx={{
+							fontSize: "0.7rem",
+							fontWeight: 700,
+							color: BRAND_BLUE,
+							letterSpacing: "-0.005em",
+							fontVariantNumeric: "tabular-nums",
+						}}
+					>
+						{selectedAddresses.length}
+					</Typography>
+				</Box>
 			</DialogTitle>
-			<Divider />
 
 			<DialogContent
 				sx={{
@@ -237,7 +289,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 								>
 									<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
 										{selectedAddresses.map((address) => (
-											<Tooltip key={address.email} title={`${address.name} ${address.lastName || ""}`}>
+											<Tooltip key={address._id} title={`${address.name} ${address.lastName || ""}`}>
 												<Box
 													sx={{
 														p: 1,
@@ -284,23 +336,21 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 					</FormControl>
 				</Box>
 
-				<Box sx={{ flex: 1, overflow: "hidden", px: 2.5, pb: 2.5 }}>
+				<Box sx={{ flex: 1, minHeight: 0, px: 2.5, pb: 2.5 }}>
 					<SimpleBar
 						sx={{
-							height: "100%",
+							maxHeight: { xs: "40vh", sm: "45vh" },
 							width: "100%",
 							overflowX: "hidden",
-							overflowY: "auto",
-							position: "relative",
 						}}
 					>
 						<Stack spacing={1.5}>
 							{filteredContacts.length > 0 ? (
 								filteredContacts.map((contact: Contact) => {
-									const isSelected = selectedAddresses.some((selected) => selected.email === contact.email);
+									const isSelected = selectedAddresses.some((selected) => selected._id === contact._id);
 									return (
 										<Box
-											key={contact.email}
+											key={contact._id}
 											onClick={() => toggleSelection(contact)}
 											sx={{
 												width: "100%",
@@ -317,8 +367,6 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 													transform: "translateY(-2px)",
 													boxShadow: `0 4px 8px ${theme.palette.primary.lighter}`,
 													zIndex: 10,
-													marginTop: "10px",
-													marginBottom: "6px",
 												},
 											}}
 										>
@@ -376,27 +424,53 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 				</Box>
 			</DialogContent>
 
-			<Divider />
-
 			<DialogActions
 				sx={{
-					p: 2.5,
-					bgcolor: theme.palette.background.default,
-					borderTop: `1px solid ${theme.palette.divider}`,
+					px: 2.5,
+					py: 1.75,
+					borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
 					flexShrink: 0,
 				}}
 			>
-				<Button color="error" onClick={closeAddressModal}>
+				<Button
+					onClick={closeAddressModal}
+					sx={{
+						textTransform: "none",
+						fontWeight: 600,
+						letterSpacing: "-0.005em",
+						color: "text.secondary",
+						borderRadius: 1.25,
+						px: 2,
+						py: 0.875,
+						border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+						"&:hover": {
+							color: BRAND_BLUE,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+							borderColor: alpha(BRAND_BLUE, 0.28),
+						},
+					}}
+				>
 					Cancelar
 				</Button>
 				<Button
 					onClick={handleVincular}
-					color="primary"
 					variant="contained"
 					disabled={selectedAddresses.length === 0 || isLoading}
-					startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
+					startIcon={isLoading ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : null}
+					sx={{
+						textTransform: "none",
+						fontWeight: 600,
+						letterSpacing: "-0.005em",
+						bgcolor: BRAND_BLUE,
+						color: "#fff",
+						borderRadius: 1.25,
+						px: 2,
+						py: 0.875,
+						boxShadow: "none",
+						"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+					}}
 				>
-					{isLoading ? "Vinculando..." : `Vincular (${selectedAddresses.length})`}
+					{isLoading ? "Vinculando…" : `Vincular (${selectedAddresses.length})`}
 				</Button>
 			</DialogActions>
 		</ResponsiveDialog>

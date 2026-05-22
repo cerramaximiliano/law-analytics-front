@@ -4,13 +4,15 @@ import { Box, Container, Grid, Typography, Divider, Tab, Tabs, Link } from "@mui
 
 // third-party
 import { motion } from "framer-motion";
-import React, { useState, SyntheticEvent } from "react";
+import React, { useState, useRef, SyntheticEvent } from "react";
 
 // project imports
 import MainCard from "components/MainCard";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
 import LegalDocumentViewerAllPlans from "pages/extra-pages/price/LegalDocumentViewerAllPlans";
+import { LEGAL_LAST_UPDATED } from "config/legalDates";
+import LegalPageTOC, { TocItem } from "components/legal/LegalPageTOC";
 
 // ============================== TOKENS ============================== //
 // Mantener en sync con sections/landing/Planes.tsx
@@ -24,9 +26,15 @@ interface TabPanelProps {
 
 function TabPanel(props: TabPanelProps) {
 	const { children, value, index, ...other } = props;
+	const visited = useRef(false);
+	if (value === index) {
+		visited.current = true;
+	}
+
+
 	return (
 		<div role="tabpanel" hidden={value !== index} id={`terms-tabpanel-${index}`} aria-labelledby={`terms-tab-${index}`} {...other}>
-			{value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+			{visited.current && <Box sx={{ pt: 3 }}>{children}</Box>}
 		</div>
 	);
 }
@@ -38,6 +46,13 @@ function a11yProps(index: number) {
 	};
 }
 
+// Tab anchor IDs used both for navigation and for the TOC items
+const TERMS_TOC_ITEMS: TocItem[] = [
+	{ id: "terminos-suscripcion", label: "Términos de suscripción" },
+	{ id: "politica-reembolso", label: "Política de reembolso" },
+	{ id: "terminos-facturacion", label: "Términos de facturación" },
+];
+
 // ==============================|| TERMS PAGE ||============================== //
 
 const TermsPage = () => {
@@ -48,6 +63,29 @@ const TermsPage = () => {
 	const handleChange = (_event: SyntheticEvent, newValue: number) => {
 		setValue(newValue);
 	};
+
+	// Map TOC item ids to tab indices
+	const TAB_ID_TO_INDEX: Record<string, number> = {
+		"terminos-suscripcion": 0,
+		"politica-reembolso": 1,
+		"terminos-facturacion": 2,
+	};
+
+	const TAB_INDEX_TO_ID = ["terminos-suscripcion", "politica-reembolso", "terminos-facturacion"];
+
+	const TAB_INDEX_TO_LABEL = ["Términos de Suscripción", "Política de Reembolso", "Términos de Facturación"];
+
+	const handleTocItemClick = (id: string) => {
+		const idx = TAB_ID_TO_INDEX[id];
+		if (idx !== undefined) {
+			setValue(idx);
+			const panel = document.getElementById(`terms-tabpanel-${idx}`);
+			if (panel) {
+				panel.scrollIntoView({ behavior: "smooth", block: "start" });
+			}
+		}
+	};
+
 
 	const breadcrumbItems = [{ title: "Inicio", to: "/" }, { title: "Términos y Condiciones" }];
 
@@ -80,11 +118,22 @@ const TermsPage = () => {
 										lineHeight: 1.08,
 										letterSpacing: "-0.025em",
 										textWrap: "balance",
-										mb: 1.5,
+										mb: 0.75,
 										color: isDark ? theme.palette.grey[50] : theme.palette.grey[900],
 									}}
 								>
 									Términos y Condiciones
+								</Typography>
+								<Typography
+									sx={{
+										fontSize: { xs: "1rem", md: "1.125rem" },
+										color: theme.palette.text.secondary,
+										fontWeight: 400,
+										letterSpacing: "-0.005em",
+										mb: 1,
+									}}
+								>
+									&rsaquo; {TAB_INDEX_TO_LABEL[value]}
 								</Typography>
 								<Typography
 									sx={{
@@ -93,13 +142,33 @@ const TermsPage = () => {
 										letterSpacing: "0.01em",
 									}}
 								>
-									Última actualización: 1 de Mayo de 2025
+									Última actualización: {LEGAL_LAST_UPDATED}
 								</Typography>
 							</motion.div>
 						</Box>
 					</Grid>
 
-					<Grid item xs={12}>
+					{/* Mobile TOC — visible only on xs/sm */}
+					<Grid item xs={12} sx={{ display: { xs: "block", md: "none" } }}>
+						<LegalPageTOC
+							items={TERMS_TOC_ITEMS}
+							ariaLabel="Índice de Términos y Condiciones"
+							onItemClick={handleTocItemClick}
+							activeItemId={TAB_INDEX_TO_ID[value]}
+						/>
+					</Grid>
+
+					{/* Desktop TOC sidebar */}
+					<Grid item md={3} sx={{ display: { xs: "none", md: "block" } }}>
+						<LegalPageTOC
+							items={TERMS_TOC_ITEMS}
+							ariaLabel="Índice de Términos y Condiciones"
+							onItemClick={handleTocItemClick}
+							activeItemId={TAB_INDEX_TO_ID[value]}
+						/>
+					</Grid>
+
+					<Grid item xs={12} md={9}>
 						<MainCard>
 							<Box sx={{ borderBottom: `1px solid ${alpha(theme.palette.divider, 0.6)}` }}>
 								<Tabs

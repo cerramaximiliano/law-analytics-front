@@ -1,5 +1,6 @@
 import axios from "axios";
 import secureStorage from "services/secureStorage";
+import { refreshAccessToken } from "utils/refreshToken";
 
 /**
  * Axios instance dedicada a la RAG API (ia.lawanalytics.app).
@@ -52,7 +53,8 @@ ragAxios.interceptors.response.use(
 		try {
 			// Refresca el token vía la API principal; el interceptor de ServerContext
 			// actualiza secureStorage con el nuevo JWT al completarse.
-			await axios.post(`${import.meta.env.VITE_BASE_URL}/api/auth/refresh-token`);
+			// Dedup compartida con el resto de interceptors (utils/refreshToken.ts).
+			await refreshAccessToken();
 
 			// Actualizar el header con el token recién obtenido y reintentar
 			const freshToken = secureStorage.getAuthToken();

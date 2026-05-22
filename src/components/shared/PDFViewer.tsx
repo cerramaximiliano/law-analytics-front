@@ -11,10 +11,13 @@ import {
 	Stack,
 	LinearProgress,
 	Fade,
+	Tooltip,
+	useMediaQuery,
+	useTheme,
 } from "@mui/material";
-import { Add, ArrowLeft2, ArrowRight2, DocumentText, Warning2 } from "iconsax-react";
+import { Add, ArrowLeft2, ArrowRight2, DocumentText, Warning2, Maximize4 } from "iconsax-react";
 import { Movement } from "types/movements";
-import axios from "axios";
+import usePdfBlobLoader from "hooks/usePdfBlobLoader";
 
 interface PDFViewerProps {
 	open: boolean;
@@ -34,6 +37,8 @@ interface PDFViewerProps {
 	totalWithLinks?: number;
 	documentsBeforeThisPage?: number;
 	documentsInThisPage?: number;
+	// Props para explorador de documentos
+	onOpenExplorer?: () => void;
 }
 
 const PDFViewer: React.FC<PDFViewerProps> = ({
@@ -52,12 +57,14 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 	totalWithLinks = 0,
 	documentsBeforeThisPage = 0,
 	documentsInThisPage = 0,
+	onOpenExplorer,
 }) => {
-	const [loading, setLoading] = React.useState(true);
-	const [error, setError] = React.useState(false);
-	const [loadProgress, setLoadProgress] = React.useState(0);
-	const [showProgress, setShowProgress] = React.useState(false);
-	const [blobUrl, setBlobUrl] = React.useState<string>("");
+	const theme = useTheme();
+	const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+	const { blobUrl, loading, error, loadProgress, showProgress, handleIframeLoad, handleIframeError } = usePdfBlobLoader({
+		url,
+		enabled: open,
+	});
 
 	// Calcular índices y navegación
 	const movementsWithLinks = React.useMemo(() => movements.filter((m) => m.link), [movements]);
@@ -67,7 +74,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 		if (url) {
 			const indexByUrl = movementsWithLinks.findIndex((m) => m.link === url);
 			if (indexByUrl !== -1) {
-				console.log("Found by URL:", indexByUrl, "URL:", url);
 				return indexByUrl;
 			}
 		}
@@ -75,12 +81,10 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 		if (currentMovementId) {
 			const indexById = movementsWithLinks.findIndex((m) => m._id === currentMovementId);
 			if (indexById !== -1) {
-				console.log("Found by ID:", indexById, "ID:", currentMovementId);
 				return indexById;
 			}
 		}
-		console.log("Using default index 0");
-		return 0; // Default al primer elemento
+		return 0;
 	}, [movementsWithLinks, currentMovementId, url]);
 
 	// Calcular la posición global del documento
@@ -97,168 +101,55 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
 	const handlePrevious = () => {
 		if (currentIndex > 0 && onNavigate) {
-			// Navegar dentro de la página actual
-			// No establecer loading aquí, el useEffect lo manejará
 			onNavigate(movementsWithLinks[currentIndex - 1]);
 		} else if (currentIndex === 0 && documentsBeforeThisPage > 0 && onRequestPreviousPage) {
-			// Solicitar la página anterior
 			onRequestPreviousPage();
 		}
 	};
 
 	const handleNext = () => {
 		if (currentIndex < movementsWithLinks.length - 1 && onNavigate) {
-			// No establecer loading aquí, el useEffect lo manejará
 			onNavigate(movementsWithLinks[currentIndex + 1]);
 		} else if (hasNextPage && currentIndex === movementsWithLinks.length - 1 && onRequestNextPage) {
-			// Solicitar siguiente página cuando llegamos al último
 			onRequestNextPage();
 		}
 	};
-
-	const handleLoad = () => {
-		setLoading(false);
-		setError(false);
-		setShowProgress(false);
-		setLoadProgress(100);
-	};
-
-	const handleError = () => {
-		setLoading(false);
-		setError(true);
-		setShowProgress(false);
-		setLoadProgress(0);
-	};
-
-	// Rastrear la URL anterior para detectar cambios reales
-	const prevUrlRef = React.useRef<string>("");
-
-	React.useEffect(() => {
-		if (!open || !url || url === prevUrlRef.current) {
-			return;
-		}
-
-		prevUrlRef.current = url;
-		setLoading(true);
-		setError(false);
-		setLoadProgress(0);
-		setShowProgress(true);
-
-		let currentBlobUrl: string | null = null;
-
-		const fetchDocument = async () => {
-			try {
-				// Determinar si es una URL relativa (de nuestro servidor) o absoluta (externa)
-				const isRelativeUrl = url.startsWith("/api/") || url.startsWith("api/");
-
-				if (isRelativeUrl) {
-					// Para URLs relativas (MEV, PJN), usar axios para que las cookies se envíen correctamente
-					const baseURL = import.meta.env.VITE_BASE_URL || "";
-					const fullUrl = url.startsWith("/") ? `${baseURL}${url}` : `${baseURL}/${url}`;
-
-					const response = await axios.get(fullUrl, {
-						responseType: "blob",
-						withCredentials: true, // Enviar cookies auth_token y refresh_token
-						headers: {
-							Accept: "application/pdf",
-						},
-						onDownloadProgress: (progressEvent) => {
-							if (progressEvent.total) {
-								const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-								setLoadProgress(Math.min(progress, 90));
-							}
-						},
-					});
-
-					// Crear URL temporal del blob
-					const blob = new Blob([response.data], { type: "application/pdf" });
-					const objectUrl = URL.createObjectURL(blob);
-					currentBlobUrl = objectUrl;
-					setBlobUrl(objectUrl);
-					setLoadProgress(100);
-					setLoading(false);
-					setShowProgress(false);
-				} else {
-					// URLs externas: verificar que sea un PDF válido antes de mostrar
-					try {
-						// Hacer una petición HEAD para verificar el content-type
-						const headResponse = await fetch(url, { method: "HEAD" });
-
-						if (!headResponse.ok) {
-							console.error("Document URL returned error status:", headResponse.status);
-							setError(true);
-							setLoading(false);
-							setShowProgress(false);
-							setLoadProgress(0);
-							return;
-						}
-
-						const contentType = headResponse.headers.get("content-type") || "";
-						const isPdf = contentType.includes("application/pdf") || contentType.includes("application/octet-stream");
-
-						if (!isPdf) {
-							console.error("URL does not contain a PDF. Content-Type:", contentType);
-							setError(true);
-							setLoading(false);
-							setShowProgress(false);
-							setLoadProgress(0);
-							return;
-						}
-
-						// Es un PDF válido, cargar en el iframe
-						setBlobUrl(url);
-						setLoadProgress(90);
-					} catch (headErr) {
-						// Si HEAD falla (CORS), intentar cargar directamente
-						console.warn("HEAD request failed (possibly CORS), trying to load directly:", headErr);
-						setBlobUrl(url);
-						setLoadProgress(90);
-					}
-				}
-			} catch (err) {
-				console.error("Error fetching document:", err);
-				setError(true);
-				setLoading(false);
-				setShowProgress(false);
-				setLoadProgress(0);
-			}
-		};
-
-		fetchDocument();
-
-		// Cleanup: revocar la URL del blob al cerrar o cambiar de documento
-		return () => {
-			if (currentBlobUrl && currentBlobUrl.startsWith("blob:")) {
-				URL.revokeObjectURL(currentBlobUrl);
-			}
-		};
-	}, [open, url]);
-
-	// Cleanup cuando se cierra el modal
-	React.useEffect(() => {
-		if (!open && blobUrl && blobUrl.startsWith("blob:")) {
-			URL.revokeObjectURL(blobUrl);
-			setBlobUrl("");
-		}
-	}, [open]);
 
 	return (
 		<Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth PaperProps={{ sx: { height: "90vh" } }}>
 			<DialogTitle sx={{ pb: movements.length > 0 ? 1 : 2 }}>
 				<Box display="flex" justifyContent="space-between" alignItems="center">
 					<Typography variant="h6">{title || "Visualizar Documento"}</Typography>
-					<IconButton
-						onClick={onClose}
-						size="small"
-						sx={{
-							color: "text.secondary",
-							"&:hover": {
-								backgroundColor: "action.hover",
-							},
-						}}
-					>
-						<Add size={20} style={{ transform: "rotate(45deg)" }} />
-					</IconButton>
+					<Stack direction="row" spacing={0.5} alignItems="center">
+						{onOpenExplorer && isDesktop && (
+							<Tooltip title="Abrir en explorador">
+								<IconButton
+									onClick={onOpenExplorer}
+									size="small"
+									sx={{
+										color: "primary.main",
+										"&:hover": {
+											backgroundColor: "primary.lighter",
+										},
+									}}
+								>
+									<Maximize4 size={20} />
+								</IconButton>
+							</Tooltip>
+						)}
+						<IconButton
+							onClick={onClose}
+							size="small"
+							sx={{
+								color: "text.secondary",
+								"&:hover": {
+									backgroundColor: "action.hover",
+								},
+							}}
+						>
+							<Add size={20} style={{ transform: "rotate(45deg)" }} />
+						</IconButton>
+					</Stack>
 				</Box>
 				{/* Barra de navegación */}
 				{movements.length > 0 && (
@@ -417,14 +308,14 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 				)}
 				{!error && blobUrl && (
 					<iframe
-						key={blobUrl} // Forzar recreación del iframe cuando cambia la URL del blob
+						key={blobUrl}
 						src={blobUrl}
 						width="100%"
 						height="100%"
 						style={{ border: "none" }}
 						title={title || "PDF Document"}
-						onLoad={handleLoad}
-						onError={handleError}
+						onLoad={handleIframeLoad}
+						onError={handleIframeError}
 					/>
 				)}
 			</DialogContent>

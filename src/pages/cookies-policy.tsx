@@ -10,6 +10,8 @@ import { motion } from "framer-motion";
 import MainCard from "components/MainCard";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
+import { LEGAL_LAST_UPDATED } from "config/legalDates";
+import LegalPageTOC, { TocItem } from "components/legal/LegalPageTOC";
 
 // ============================== TOKENS ============================== //
 // Mantener en sync con sections/landing/Planes.tsx
@@ -17,8 +19,9 @@ const BRAND_BLUE = "#3A7BFF";
 
 // ============================== HELPERS ============================== //
 
-const sectionHeading = (text: string, mt = 4) => (
+const sectionHeading = (text: string, id?: string, mt = 4) => (
 	<Typography
+		id={id}
 		variant="h3"
 		sx={{
 			mt,
@@ -49,6 +52,14 @@ const subHeading = (text: string) => (
 );
 
 // ==============================|| COOKIES POLICY PAGE ||============================== //
+
+const COOKIES_TOC_ITEMS: TocItem[] = [
+	{ id: "que-son-cookies", label: "¿Qué son las cookies?" },
+	{ id: "tipos-cookies", label: "Tipos de cookies que utilizamos" },
+	{ id: "gestion-cookies", label: "Cómo gestionamos las cookies" },
+	{ id: "cookies-terceros", label: "Cookies de terceros" },
+	{ id: "cambios-politica-cookies", label: "Cambios en nuestra política de cookies" },
+];
 
 const CookiesPolicy = () => {
 	const theme = useTheme();
@@ -105,13 +116,23 @@ const CookiesPolicy = () => {
 										letterSpacing: "0.01em",
 									}}
 								>
-									Última actualización: 1 de Mayo de 2025
+									Última actualización: {LEGAL_LAST_UPDATED}
 								</Typography>
 							</motion.div>
 						</Box>
 					</Grid>
 
-					<Grid item xs={12}>
+					{/* Mobile TOC — visible only on xs/sm */}
+					<Grid item xs={12} sx={{ display: { xs: "block", md: "none" } }}>
+						<LegalPageTOC items={COOKIES_TOC_ITEMS} ariaLabel="Índice de Política de Cookies" />
+					</Grid>
+
+					{/* Desktop TOC sidebar */}
+					<Grid item md={3} sx={{ display: { xs: "none", md: "block" } }}>
+						<LegalPageTOC items={COOKIES_TOC_ITEMS} ariaLabel="Índice de Política de Cookies" />
+					</Grid>
+
+					<Grid item xs={12} md={9}>
 						<MainCard>
 							<Typography paragraph sx={bodySx}>
 								Esta Política de Cookies explica qué son las cookies y cómo las utilizamos en Law||Analytics. Debe leer esta política para
@@ -119,7 +140,7 @@ const CookiesPolicy = () => {
 								cookies y cómo se utiliza esa información, y cómo controlar las preferencias de cookies.
 							</Typography>
 
-							{sectionHeading("¿Qué son las cookies?")}
+							{sectionHeading("¿Qué son las cookies?", "que-son-cookies")}
 							<Typography paragraph sx={bodySx}>
 								Las cookies son pequeños archivos de texto que se almacenan en su navegador web o en el disco duro de su ordenador. Las
 								cookies contienen información sobre sus visitas a nuestro sitio web y nos ayudan a ofrecer una mejor experiencia a nuestros
@@ -127,7 +148,7 @@ const CookiesPolicy = () => {
 								que pasó en nuestro sitio web, las páginas visitadas y las preferencias de idioma.
 							</Typography>
 
-							{sectionHeading("Tipos de cookies que utilizamos")}
+							{sectionHeading("Tipos de cookies que utilizamos", "tipos-cookies")}
 							<Typography sx={bodySx}>
 								Las cookies pueden ser cookies de sesión o cookies persistentes. Las cookies de sesión son temporales y se eliminan de su
 								dispositivo una vez que cierra el navegador web. Las cookies persistentes permanecen en su dispositivo hasta que expiran o
@@ -165,7 +186,7 @@ const CookiesPolicy = () => {
 								</Typography>
 							</Box>
 
-							{sectionHeading("Cómo gestionamos las cookies")}
+							{sectionHeading("Cómo gestionamos las cookies", "gestion-cookies")}
 							<Typography paragraph sx={bodySx}>
 								Puede configurar su navegador para rechazar todas las cookies o para indicar cuándo se envía una cookie. Sin embargo, si no
 								acepta cookies, es posible que no pueda utilizar algunas partes de nuestro sitio web.
@@ -200,9 +221,9 @@ const CookiesPolicy = () => {
 								</li>
 								<li>
 									<Box component="strong" sx={{ fontWeight: 600 }}>
-										Internet Explorer
+										Microsoft Edge
 									</Box>
-									: Herramientas → Opciones de Internet → Privacidad → Configuración
+									: Configuración → Privacidad, búsqueda y servicios → Cookies y permisos del sitio
 								</li>
 								<li>
 									<Box component="strong" sx={{ fontWeight: 600 }}>
@@ -212,13 +233,13 @@ const CookiesPolicy = () => {
 								</li>
 							</Box>
 
-							{sectionHeading("Cookies de terceros")}
+							{sectionHeading("Cookies de terceros", "cookies-terceros")}
 							<Typography paragraph sx={bodySx}>
 								Además de nuestras propias cookies, también podemos utilizar cookies de terceros para reportar estadísticas de uso del
 								sitio, entregar anuncios en y a través del Servicio, y así sucesivamente.
 							</Typography>
 
-							{sectionHeading("Cambios en nuestra Política de Cookies")}
+							{sectionHeading("Cambios en nuestra Política de Cookies", "cambios-politica-cookies")}
 							<Typography paragraph sx={bodySx}>
 								Si realizamos cambios en nuestra Política de Cookies, publicaremos la política actualizada en esta página. Le recomendamos
 								que revise esta Política de Cookies periódicamente para estar informado sobre cómo utilizamos las cookies.

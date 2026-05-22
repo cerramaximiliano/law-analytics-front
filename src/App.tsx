@@ -13,6 +13,7 @@ import Snackbar from "components/@extended/Snackbar";
 import Notistack from "components/third-party/Notistack";
 import SearchModal from "components/search/SearchModal";
 import SEOProvider from "components/SEO/SEOProvider";
+import GlobalSyncErrorListener from "components/GlobalSyncErrorListener";
 
 import { dispatch } from "store";
 import { fetchMenu } from "store/reducers/menu";
@@ -63,6 +64,7 @@ const App = () => {
 								<AuthProvider>
 									<WebSocketProvider>
 										<Notistack>
+											<GlobalSyncErrorListener />
 											<Routes />
 											<Snackbar />
 											<SearchModal />

@@ -41,18 +41,18 @@ import {
 } from "react-table";
 
 // project-imports
-import MainCard from "components/MainCard";
 import ScrollX from "components/ScrollX";
 import IconButton from "components/@extended/IconButton";
 import { PopupTransition } from "components/@extended/Transitions";
-import { EmptyTable, HeaderSort, SortingSelect, TablePagination, TableRowSelection } from "components/third-party/ReactTable";
+import { HeaderSort, SortingSelect, TablePagination, TableRowSelection } from "components/third-party/ReactTable";
 import { CSVLink } from "react-csv";
 import AlertCalculatorDelete from "./AlertCalculatorDelete";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 import { CalculationDetailsView } from "components/calculator/CalculationDetailsView";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 // assets
-import { Add, Eye, Trash, DocumentDownload, Coin, Refresh, Copy, Sms, Printer, Link21, More } from "iconsax-react";
+import { Add, Eye, Trash, DocumentDownload, Coin, Refresh, Copy, Sms, Printer, Link21, More, Calculator } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
@@ -60,6 +60,7 @@ import { getCalculatorsByFilter, clearSelectedCalculators, updateCalculator } fr
 import { openSnackbar } from "store/reducers/snackbar";
 import despidoFormModel from "sections/forms/wizard/calc-laboral/despido/formModel/despidoFormModel";
 import LinkCauseModal from "sections/forms/wizard/calc-laboral/components/linkCauseModal";
+import { useTeam } from "contexts/TeamContext";
 
 // ==============================|| REACT TABLE ||============================== //
 
@@ -702,57 +703,122 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 		// eslint-disable-next-line
 	}, [matchDownSM]);
 
+	const isDark = theme.palette.mode === "dark";
+	const [overflowAnchor, setOverflowAnchor] = useState<null | HTMLElement>(null);
+	const csvLinkRef = useRef<any>(null);
+	const totalColumns = (headerGroups[0]?.headers?.length || 0) + 1;
+
+	// Estilo brand-aware de la tabla — mismo lenguaje que folders/contacts/calculator/all.
+	const tableSx = {
+		"& .MuiTableHead-root .MuiTableCell-head": {
+			fontSize: "0.7rem",
+			fontWeight: 600,
+			letterSpacing: "0.1em",
+			textTransform: "uppercase",
+			color: "text.secondary",
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+			py: 1.5,
+			"&:not(:last-of-type):after": {
+				backgroundColor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.1),
+			},
+		},
+		"& .MuiTableBody-root .MuiTableCell-root": {
+			py: 1.5,
+			fontVariantNumeric: "tabular-nums",
+			letterSpacing: "-0.005em",
+		},
+	} as const;
+
+	// Inputs brand-aware
+	const brandedInputSx = {
+		"& .MuiOutlinedInput-notchedOutline": {
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.26 : 0.16),
+			transition: "border-color 0.15s ease",
+		},
+		"& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.46 : 0.32),
+		},
+		"& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+			borderColor: alpha(BRAND_BLUE, 0.55),
+			borderWidth: 1,
+		},
+		"& .MuiIconButton-root": {
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.26 : 0.16),
+			color: BRAND_BLUE,
+			"&:hover": {
+				borderColor: alpha(BRAND_BLUE, isDark ? 0.46 : 0.32),
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.06),
+			},
+		},
+	} as const;
+
 	return (
 		<>
 			<TableRowSelection selected={Object.keys(selectedRowIds).length} />
-			<Stack spacing={3}>
+			<Stack spacing={2}>
 				<Stack
 					direction={matchDownSM ? "column" : "row"}
-					spacing={2}
+					spacing={1.5}
 					justifyContent="space-between"
-					alignItems={matchDownSM ? "flex-start" : "flex-start"}
-					sx={{ p: 3, pb: 0 }}
+					alignItems={matchDownSM ? "stretch" : "center"}
+					flexWrap="wrap"
+					useFlexGap
 				>
-					{/* Lado izquierdo - Filtro y ordenamiento */}
-					<Stack direction="column" spacing={2} sx={{ width: matchDownSM ? "100%" : "300px" }}>
-						{/* Primera línea: Barra de búsqueda */}
+					<Box sx={{ width: { xs: "100%", sm: 240 }, ...brandedInputSx }}>
 						<CustomGlobalFilter
 							preGlobalFilteredRows={preGlobalFilteredRows}
 							globalFilter={globalFilter}
 							setGlobalFilter={setGlobalFilter}
 						/>
-
-						{/* Segunda línea: Selector de ordenamiento */}
+					</Box>
+					<Box sx={{ width: { xs: "100%", sm: 220 }, ...brandedInputSx }}>
 						<CustomSortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
-					</Stack>
+					</Box>
+					<Box sx={{ flex: 1 }} />
 
-					{/* Lado derecho - Botón de exportación */}
-					<Stack direction="column" spacing={2} sx={{ width: matchDownSM ? "100%" : "auto" }}>
-						<Tooltip title="Exportar a CSV">
-							<IconButton
-								color="primary"
-								size="medium"
-								sx={{
-									position: "relative",
-								}}
-							>
-								<CSVLink
-									data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row<CalculatorData>) => d.original) : data}
-									filename={"calculos-laborales.csv"}
-									style={{
-										color: "inherit",
-										display: "flex",
-										alignItems: "center",
-										textDecoration: "none",
-									}}
-								>
-									<DocumentDownload variant="Bulk" size={22} />
-								</CSVLink>
-							</IconButton>
-						</Tooltip>
-					</Stack>
+					<Tooltip title="Más opciones" arrow placement="top">
+						<IconButton
+							size="small"
+							onClick={(e) => setOverflowAnchor(e.currentTarget)}
+							sx={{
+								color: "text.secondary",
+								transition: "background-color 0.15s ease, color 0.15s ease",
+								"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08), color: BRAND_BLUE },
+							}}
+						>
+							<More variant="Bulk" size={20} />
+						</IconButton>
+					</Tooltip>
+
+					<CSVLink
+						ref={csvLinkRef}
+						data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row<CalculatorData>) => d.original) : data}
+						filename={"calculos-laborales.csv"}
+						style={{ display: "none" }}
+					/>
+					<Menu
+						anchorEl={overflowAnchor}
+						open={Boolean(overflowAnchor)}
+						onClose={() => setOverflowAnchor(null)}
+						anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+						transformOrigin={{ vertical: "top", horizontal: "right" }}
+						slotProps={{ paper: { sx: { minWidth: 200 } } }}
+					>
+						<MenuItem
+							onClick={() => {
+								setOverflowAnchor(null);
+								csvLinkRef.current?.link?.click();
+							}}
+						>
+							<ListItemIcon>
+								<DocumentDownload variant="Bulk" size={18} />
+							</ListItemIcon>
+							<ListItemText>Exportar CSV</ListItemText>
+						</MenuItem>
+					</Menu>
 				</Stack>
-				<Table {...getTableProps()}>
+
+				<Table {...getTableProps()} sx={tableSx}>
 					<TableHead>
 						{headerGroups.map((headerGroup: HeaderGroup<CalculatorData>) => (
 							<TableRow {...headerGroup.getHeaderGroupProps()} sx={{ "& > th:first-of-type": { width: "40px" } }}>
@@ -767,7 +833,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 					<TableBody {...getTableBodyProps()}>
 						{isLoading ? (
 							<>
-								{Array.from({ length: 10 }).map((_, rowIndex) => (
+								{Array.from({ length: 8 }).map((_, rowIndex) => (
 									<TableRow key={rowIndex}>
 										{headerGroups[0].headers.map((column, cellIndex) => (
 											<TableCell key={cellIndex}>
@@ -794,7 +860,14 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 														}}
 														sx={{
 															cursor: "pointer",
-															bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : "inherit",
+															transition: "background-color 0.15s ease",
+															bgcolor: row.isSelected || isRowExpanded ? alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) : "inherit",
+															"&:hover": {
+																bgcolor:
+																	row.isSelected || isRowExpanded
+																		? alpha(BRAND_BLUE, isDark ? 0.18 : 0.11)
+																		: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+															},
 														}}
 													>
 														{row.cells.map((cell: Cell<CalculatorData>) => (
@@ -802,19 +875,15 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 														))}
 													</TableRow>
 													<TableRow sx={{ "&:hover": { bgcolor: "inherit !important" } }}>
-														<TableCell colSpan={columns.length + 1} sx={{ p: 0 }}>
+														<TableCell colSpan={totalColumns} sx={{ p: 0, border: 0 }}>
 															<Collapse in={isRowExpanded} timeout="auto" unmountOnExit>
 																<Box
 																	sx={{
-																		margin: 2,
-																		bgcolor: theme.palette.mode === "dark" ? "grey.800" : "#f5f5f5",
-																		borderRadius: 2,
-																		p: 0,
-																		border: `1px solid ${theme.palette.divider}`,
-																		boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-																		"&:hover": {
-																			bgcolor: theme.palette.mode === "dark" ? "grey.800" : "#f5f5f5",
-																		},
+																		mx: 2,
+																		my: 1.5,
+																		borderRadius: 1.5,
+																		bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+																		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
 																	}}
 																>
 																	{renderRowSubComponent({ row })}
@@ -826,7 +895,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 											);
 										})}
 										<TableRow sx={{ "&:hover": { bgcolor: "transparent !important" } }}>
-											<TableCell sx={{ p: 2, py: 3 }} colSpan={9}>
+											<TableCell sx={{ p: 2, py: 3, border: 0 }} colSpan={totalColumns}>
 												<CustomTablePagination
 													gotoPage={gotoPage}
 													rows={rows}
@@ -838,7 +907,96 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 										</TableRow>
 									</>
 								) : (
-									<EmptyTable msg="No Hay Datos" colSpan={7} />
+									<TableRow>
+										<TableCell colSpan={totalColumns} sx={{ p: 0, border: 0 }}>
+											<Box
+												sx={{
+													position: "relative",
+													overflow: "hidden",
+													width: "100%",
+													py: { xs: 3.5, sm: 4.5 },
+													px: 2,
+												}}
+											>
+												<Box
+													aria-hidden
+													sx={{
+														position: "absolute",
+														inset: 0,
+														background: `radial-gradient(circle at 50% 40%, ${alpha(BRAND_BLUE, isDark ? 0.12 : 0.07)} 0%, transparent 60%)`,
+														pointerEvents: "none",
+														zIndex: 0,
+													}}
+												/>
+												<Stack
+													spacing={2}
+													alignItems="center"
+													sx={{ position: "relative", zIndex: 1, maxWidth: 440, mx: "auto", textAlign: "center" }}
+												>
+													<Box
+														sx={{
+															display: "inline-flex",
+															alignItems: "center",
+															px: 1.25,
+															py: 0.4,
+															borderRadius: 1,
+															bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+															border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.2)}`,
+														}}
+													>
+														<Typography
+															sx={{
+																fontSize: "0.68rem",
+																fontWeight: 600,
+																letterSpacing: "0.14em",
+																textTransform: "uppercase",
+																color: BRAND_BLUE,
+															}}
+														>
+															Sin cálculos
+														</Typography>
+													</Box>
+													<Box
+														sx={{
+															width: 80,
+															height: 80,
+															borderRadius: "50%",
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+															color: BRAND_BLUE,
+														}}
+													>
+														<Calculator size={40} variant="Bulk" />
+													</Box>
+													<Stack spacing={0.75} alignItems="center">
+														<Typography
+															sx={{
+																fontSize: "1.05rem",
+																fontWeight: 600,
+																letterSpacing: "-0.015em",
+																color: "text.primary",
+															}}
+														>
+															Todavía no hay cálculos guardados
+														</Typography>
+														<Typography
+															sx={{
+																fontSize: "0.85rem",
+																color: "text.secondary",
+																lineHeight: 1.55,
+																maxWidth: 360,
+																textWrap: "pretty",
+															}}
+														>
+															Hacé un cálculo en las tabs de Despido o Liquidación y guardalo desde la pantalla de resultados.
+														</Typography>
+													</Stack>
+												</Stack>
+											</Box>
+										</TableCell>
+									</TableRow>
 								)}
 							</>
 						)}
@@ -856,6 +1014,7 @@ const SavedLabor = () => {
 	const { selectedCalculators, isLoader } = useSelector((state: any) => state.calculator);
 	const auth = useSelector((state: any) => state.auth);
 	const userId = auth.user?._id;
+	const { activeTeam, isTeamMode, isInitialized: isTeamInitialized, canDelete } = useTeam();
 
 	const [linkModalOpen, setLinkModalOpen] = useState(false);
 	const [selectedCalculationId, setSelectedCalculationId] = useState("");
@@ -878,18 +1037,38 @@ const SavedLabor = () => {
 		// Marcar como montado
 		isMountedRef.current = true;
 
+		// Esperar a que el TeamContext esté inicializado
+		if (!isTeamInitialized) {
+			return;
+		}
+
+		// Si está en modo equipo pero aún no hay equipo activo, esperar
+		if (isTeamMode && !activeTeam?._id) {
+			return;
+		}
+
 		// Usar setTimeout para retrasar la primera ejecución y evitar conflictos
 		const timeoutId = setTimeout(
 			() => {
-				if (userId && isMountedRef.current) {
+				if (isMountedRef.current) {
 					// getCalculatorsByFilter ya maneja la lógica de cache internamente
-					dispatch(
-						getCalculatorsByFilter({
-							userId,
-							type: "Calculado",
-							classType: "laboral",
-						}),
-					);
+					if (isTeamMode && activeTeam?._id) {
+						dispatch(
+							getCalculatorsByFilter({
+								groupId: activeTeam._id,
+								type: "Calculado",
+								classType: "laboral",
+							}),
+						);
+					} else if (userId) {
+						dispatch(
+							getCalculatorsByFilter({
+								userId,
+								type: "Calculado",
+								classType: "laboral",
+							}),
+						);
+					}
 				}
 			},
 			isFirstRenderRef.current ? 100 : 0,
@@ -903,7 +1082,7 @@ const SavedLabor = () => {
 			// Limpiar selectedCalculators cuando el componente se desmonta
 			dispatch(clearSelectedCalculators());
 		};
-	}, [userId, dispatch]); // Incluir dispatch en las dependencias
+	}, [userId, isTeamMode, activeTeam?._id, isTeamInitialized]); // Incluir dependencias de equipo
 
 	const handleAdd = () => {
 		setAdd(!add);
@@ -1337,26 +1516,33 @@ const SavedLabor = () => {
 				disableSortBy: true,
 				Cell: ({ row }: { row: Row<CalculatorData> }) => {
 					const isExpanded = expandedRowId === row.original._id;
-					const collapseIcon = isExpanded ? (
-						<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} />
-					) : (
-						<Eye variant="Bulk" />
-					);
+					const isDarkMode = theme.palette.mode === "dark";
+					const collapseIcon = isExpanded ? <Add size={18} style={{ transform: "rotate(45deg)" }} /> : <Eye variant="Bulk" size={18} />;
+
+					// Monocromo + intent: brand-blue para acciones normales, red sólo para destructive.
+					const actionIconSx = {
+						color: "text.secondary",
+						transition: "background-color 0.15s ease, color 0.15s ease",
+						"&:hover:not(.Mui-disabled)": {
+							bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.16 : 0.08),
+							color: BRAND_BLUE,
+						},
+					} as const;
+					const destructiveIconSx = {
+						color: "text.secondary",
+						transition: "background-color 0.15s ease, color 0.15s ease",
+						"&:hover:not(.Mui-disabled)": {
+							bgcolor: alpha(theme.palette.error.main, isDarkMode ? 0.18 : 0.1),
+							color: theme.palette.error.main,
+						},
+					} as const;
+
 					return (
-						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0}>
-							<Tooltip
-								componentsProps={{
-									tooltip: {
-										sx: {
-											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
-											opacity: 0.9,
-										},
-									},
-								}}
-								title="Ver"
-							>
+						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0.25}>
+							<Tooltip title="Ver detalles" arrow placement="top">
 								<IconButton
-									color="success"
+									size="small"
+									sx={actionIconSx}
 									onClick={(e: MouseEvent<HTMLButtonElement>) => {
 										e.stopPropagation();
 										if (handleToggleExpanded) {
@@ -1367,19 +1553,10 @@ const SavedLabor = () => {
 									{collapseIcon}
 								</IconButton>
 							</Tooltip>
-							<Tooltip
-								componentsProps={{
-									tooltip: {
-										sx: {
-											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
-											opacity: 0.9,
-										},
-									},
-								}}
-								title="Imprimir"
-							>
+							<Tooltip title="Imprimir" arrow placement="top">
 								<IconButton
-									color="primary"
+									size="small"
+									sx={actionIconSx}
 									onClick={(e: MouseEvent<HTMLButtonElement>) => {
 										e.stopPropagation();
 										setSelectedRowData(row.original);
@@ -1389,22 +1566,13 @@ const SavedLabor = () => {
 										}, 100);
 									}}
 								>
-									<Printer variant="Bulk" />
+									<Printer variant="Bulk" size={18} />
 								</IconButton>
 							</Tooltip>
-							<Tooltip
-								componentsProps={{
-									tooltip: {
-										sx: {
-											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
-											opacity: 0.9,
-										},
-									},
-								}}
-								title="Enviar por email"
-							>
+							<Tooltip title="Enviar por email" arrow placement="top">
 								<IconButton
-									color="info"
+									size="small"
+									sx={actionIconSx}
 									onClick={(e: MouseEvent<HTMLButtonElement>) => {
 										e.stopPropagation();
 										setSelectedRowData(row.original);
@@ -1414,67 +1582,45 @@ const SavedLabor = () => {
 										}, 100);
 									}}
 								>
-									<Sms variant="Bulk" />
+									<Sms variant="Bulk" size={18} />
 								</IconButton>
 							</Tooltip>
-							<Tooltip
-								componentsProps={{
-									tooltip: {
-										sx: {
-											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
-											opacity: 0.9,
-										},
-									},
-								}}
-								title="Eliminar"
-							>
-								<IconButton
-									color="error"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => {
-										e.stopPropagation();
-										handleOpenDeleteModal(row.original._id);
-									}}
-								>
-									<Trash variant="Bulk" />
-								</IconButton>
-							</Tooltip>
-							{!row.original.folderId && (
-								<Tooltip
-									componentsProps={{
-										tooltip: {
-											sx: {
-												backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
-												opacity: 0.9,
-											},
-										},
-									}}
-									title="Vincular a Carpeta"
-								>
+							{canDelete && (
+								<Tooltip title="Eliminar" arrow placement="top">
 									<IconButton
-										color="warning"
+										size="small"
+										sx={destructiveIconSx}
+										onClick={(e: MouseEvent<HTMLButtonElement>) => {
+											e.stopPropagation();
+											handleOpenDeleteModal(row.original._id);
+										}}
+									>
+										<Trash variant="Bulk" size={18} />
+									</IconButton>
+								</Tooltip>
+							)}
+							{!row.original.folderId && (
+								<Tooltip title="Vincular a carpeta" arrow placement="top">
+									<IconButton
+										size="small"
+										sx={actionIconSx}
 										onClick={(e: MouseEvent<HTMLButtonElement>) => {
 											e.stopPropagation();
 											setSelectedCalculationId(row.original._id);
 											setLinkModalOpen(true);
 										}}
 									>
-										<Link21 variant="Bulk" />
+										<Link21 variant="Bulk" size={18} />
 									</IconButton>
 								</Tooltip>
 							)}
-							<Tooltip
-								componentsProps={{
-									tooltip: {
-										sx: {
-											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
-											opacity: 0.9,
-										},
-									},
-								}}
-								title="Más acciones"
-							>
-								<IconButton color="secondary" onClick={(e: MouseEvent<HTMLButtonElement>) => handleOpenActionMenu(e, row.original)}>
-									<More variant="Bulk" />
+							<Tooltip title="Más acciones" arrow placement="top">
+								<IconButton
+									size="small"
+									sx={actionIconSx}
+									onClick={(e: MouseEvent<HTMLButtonElement>) => handleOpenActionMenu(e, row.original)}
+								>
+									<More variant="Bulk" size={18} />
 								</IconButton>
 							</Tooltip>
 						</Stack>
@@ -1504,8 +1650,54 @@ const SavedLabor = () => {
 		[handleKeepUpdatedChange, keepUpdatedLoading, triggerEmailForRow, triggerPrintForRow],
 	);
 
+	const isDark = theme.palette.mode === "dark";
+
 	return (
-		<MainCard content={false} title={"Cáculos Laborales Guardados"}>
+		<Stack spacing={2}>
+			{/* Header de sección — replica labor-tabs panel header pero standalone para esta tab */}
+			<Stack spacing={0.625}>
+				<Box
+					sx={{
+						display: "inline-flex",
+						alignSelf: "flex-start",
+						alignItems: "center",
+						px: 1,
+						py: 0.3,
+						borderRadius: 0.75,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.2)}`,
+					}}
+				>
+					<Typography
+						sx={{
+							fontSize: "0.62rem",
+							fontWeight: 600,
+							letterSpacing: "0.14em",
+							textTransform: "uppercase",
+							color: BRAND_BLUE,
+							lineHeight: 1,
+						}}
+					>
+						Cálculos guardados
+					</Typography>
+				</Box>
+				<Typography
+					sx={{
+						fontSize: { xs: "1.1rem", sm: "1.25rem" },
+						fontWeight: 600,
+						letterSpacing: "-0.02em",
+						lineHeight: 1.2,
+						color: "text.primary",
+					}}
+				>
+					Cálculos laborales guardados
+				</Typography>
+				<Typography sx={{ fontSize: "0.875rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>
+					Revisá, vinculá a carpetas, imprimí o eliminá los cálculos que hayas guardado.
+				</Typography>
+			</Stack>
+			<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1) }} />
+
 			<ScrollX>
 				<ReactTable
 					columns={columns}
@@ -1517,8 +1709,8 @@ const SavedLabor = () => {
 					onToggleExpanded={handleToggleExpanded}
 				/>
 			</ScrollX>
+
 			<AlertCalculatorDelete id={calculatorIdToDelete} open={deleteModalOpen} handleClose={handleCloseDeleteModal} />
-			{/* add customer dialog */}
 			<LinkCauseModal open={linkModalOpen} onClose={() => setLinkModalOpen(false)} calculationId={selectedCalculationId} />
 			<Dialog
 				maxWidth="sm"
@@ -1531,7 +1723,7 @@ const SavedLabor = () => {
 				aria-describedby="alert-dialog-slide-description"
 			></Dialog>
 
-			{/* Menú de acciones */}
+			{/* Menú de acciones contextuales por fila */}
 			<Menu
 				anchorEl={actionMenuAnchor}
 				open={Boolean(actionMenuAnchor)}
@@ -1539,6 +1731,7 @@ const SavedLabor = () => {
 				onClick={(e) => e.stopPropagation()}
 				anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
 				transformOrigin={{ vertical: "top", horizontal: "right" }}
+				slotProps={{ paper: { sx: { minWidth: 240 } } }}
 			>
 				<MenuItem onClick={handleCopyToClipboard}>
 					<ListItemIcon>
@@ -1569,7 +1762,7 @@ const SavedLabor = () => {
 						</MenuItem>
 					)}
 			</Menu>
-		</MainCard>
+		</Stack>
 	);
 };
 

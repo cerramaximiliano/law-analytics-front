@@ -44,7 +44,7 @@ import { dispatch, useSelector } from "store";
 import { markAlertAsRead, fetchUserAlerts, deleteAlert, loadMoreAlerts } from "store/reducers/alerts";
 import { Alert } from "types/alert";
 import { useNavigate } from "react-router-dom";
-import { BRAND_BLUE, headerBorder, headerShadow, LIVE_GREEN, LIVE_PULSE_KEYFRAMES, navActiveBg, navActiveBorder } from "themes/dashboardTokens";
+import { BRAND_BLUE, headerBorder, headerShadow, LIVE_GREEN, LIVE_PULSE_KEYFRAMES, navActiveBg } from "themes/dashboardTokens";
 
 const actionSX = {
 	mt: 0,
@@ -466,6 +466,7 @@ const NotificationPage = () => {
 								<IconButton
 									shape="rounded"
 									color="secondary"
+									data-testid="notification-mark-read-btn"
 									onClick={(e) => {
 										e.stopPropagation();
 										handleMarkAlertAsRead(notification._id);
@@ -488,6 +489,7 @@ const NotificationPage = () => {
 							<IconButton
 								shape="rounded"
 								color="secondary"
+								data-testid="notification-delete-btn"
 								onClick={(e) => {
 									e.stopPropagation();
 									handleDeleteAlert(notification._id);
