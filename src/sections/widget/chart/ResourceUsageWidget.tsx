@@ -325,29 +325,31 @@ export const FoldersSyncBadges = ({
 	const pjnState: JurisdictionState = pjnSynced === null ? "loading" : pjnSynced ? "connected" : "disconnected";
 	const scbaState: JurisdictionState = scbaSynced === null ? "loading" : scbaSynced ? "connected" : "disconnected";
 
-	// Ruta de la vista de Integraciones donde se administra cada cuenta vinculada
-	// (mismo tab para PJN y SCBA — TabPjnIntegration renderiza ambos cards).
-	const integrationsPath = "/apps/profiles/account/pjn";
+	// Ruta de la vista de Integraciones donde se administra cada cuenta vinculada.
+	// `TabPjnIntegration` lee el query param `view` para mostrar el tab correcto.
+	// Diseñado para extender a nuevas integraciones (mev, eje, ...): basta agregar
+	// el valor al ToggleButtonGroup y pasarlo acá.
+	const buildIntegrationsPath = (provider: "pjn" | "scba") =>
+		`/apps/profiles/account/pjn?view=${provider}`;
 
 	// Click handler PJN:
-	//   - Conectada → siempre ir a integraciones (para administrar).
+	//   - Conectada → ir a integraciones tab=pjn (para administrar).
 	//   - No conectada → usar callback del padre (típicamente abre modal "agregar
-	//     causa"); si no hay callback, fallback a integraciones igual.
+	//     causa"); si no hay callback, fallback a integraciones tab=pjn.
 	const handlePjnClick = () => {
 		if (pjnSynced === true) {
-			navigate(integrationsPath);
+			navigate(buildIntegrationsPath("pjn"));
 		} else if (onPjnClick) {
 			onPjnClick();
 		} else {
-			navigate(integrationsPath);
+			navigate(buildIntegrationsPath("pjn"));
 		}
 	};
 
-	// Click handler SCBA: mismo patrón. Si está desconectada y no hay onBaClick,
-	// no se hace nada (el botón queda inerte — caso edge que el padre ya manejaba así).
+	// Click handler SCBA: mismo patrón, pero apunta al tab SCBA cuando va a integraciones.
 	const handleScbaClick = () => {
 		if (scbaSynced === true) {
-			navigate(integrationsPath);
+			navigate(buildIntegrationsPath("scba"));
 		} else if (onBaClick) {
 			onBaClick();
 		}

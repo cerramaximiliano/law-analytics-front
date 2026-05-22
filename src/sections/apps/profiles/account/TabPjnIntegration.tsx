@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
 	Box,
 	CircularProgress,
@@ -34,7 +35,33 @@ const TabPjnIntegration = () => {
 	const [isConnected, setIsConnected] = useState<ConnectionStatus>(null);
 	const [isScbaConnected, setIsScbaConnected] = useState<ConnectionStatus>(null);
 
-	const [view, setView] = useState<"pjn" | "scba">("pjn");
+	// Vista activa (PJN o SCBA) sincronizada con el query param `view`.
+	// Permite que badges externos (FoldersSyncBadges) y links directos abran la
+	// integración correcta sin que el user tenga que clickear el toggle. Default
+	// 'pjn' si no hay param o el valor no es válido. Diseñado para extender a
+	// nuevas integraciones (MEV, EJE, etc.): sumar valor al union + ToggleButton.
+	const [searchParams, setSearchParams] = useSearchParams();
+	const initialView: "pjn" | "scba" = searchParams.get("view") === "scba" ? "scba" : "pjn";
+	const [view, setView] = useState<"pjn" | "scba">(initialView);
+
+	// Mantener sincronizado view ← URL: si el user navega con el back/forward
+	// del browser, el toggle refleja el cambio.
+	useEffect(() => {
+		const fromUrl = searchParams.get("view") === "scba" ? "scba" : "pjn";
+		if (fromUrl !== view) setView(fromUrl);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [searchParams]);
+
+	// Mantener sincronizado URL ← view: si el user toca el toggle, la URL refleja
+	// el tab seleccionado (sharing-friendly + reactivo a back/forward).
+	const handleViewChange = (next: "pjn" | "scba") => {
+		setView(next);
+		setSearchParams(prev => {
+			const params = new URLSearchParams(prev);
+			params.set("view", next);
+			return params;
+		}, { replace: true });
+	};
 
 	const [syncContactsEnabled, setSyncContactsEnabled] = useState(false);
 	const [syncContactsLoading, setSyncContactsLoading] = useState(false);
@@ -239,7 +266,7 @@ const TabPjnIntegration = () => {
 					value={view}
 					exclusive
 					onChange={(_, value) => {
-						if (value !== null) setView(value);
+						if (value !== null) handleViewChange(value);
 					}}
 					size="small"
 					sx={{ display: "flex", flexWrap: "wrap", gap: 1, "& .MuiToggleButtonGroup-grouped": { borderRadius: 1.25 } }}
