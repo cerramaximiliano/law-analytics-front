@@ -26,6 +26,7 @@ import { formatFolderName } from "utils/formatFolderName";
 
 // components reutilizados
 import AlertFolderDelete from "./AlertFolderDelete";
+import CausaSelector from "./CausaSelector";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 
 export type VerificationGate = "pending" | "pending_selection" | "failed" | "invalid";
@@ -93,7 +94,9 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [supportOpen, setSupportOpen] = useState(false);
+	const [selectorOpen, setSelectorOpen] = useState(false);
 	const [reverifying, setReverifying] = useState(false);
+	const [refreshing, setRefreshing] = useState(false);
 	const [reverifyError, setReverifyError] = useState<{ code?: string; message?: string } | null>(null);
 
 	const meta = gateMeta[gate];
@@ -188,6 +191,16 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 			}
 		} finally {
 			setReverifying(false);
+		}
+	};
+
+	const handleRefreshStatus = async () => {
+		if (!folder?._id || refreshing) return;
+		setRefreshing(true);
+		try {
+			await dispatch(getFolderById(folder._id, true));
+		} finally {
+			setRefreshing(false);
 		}
 	};
 
@@ -483,22 +496,127 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 								</Box>
 							)}
 
-							{/* CTA principal: selector si pending_selection, sino reintentar (oculto si locked) */}
+							{/* CTA principal según gate */}
 							{gate === "pending_selection" ? (
 								<ActionCard
 									toneHex={BRAND_BLUE}
 									icon={<SearchNormal1 size={18} variant="Bulk" color={BRAND_BLUE} />}
 									title="Elegir el expediente correcto"
-									description={
-										onSelectCausa
-											? "Abrí el selector y marcá cuál de los expedientes corresponde a esta carpeta."
-											: "El selector está en el listado: buscá la fila con badge ámbar y abrí la selección desde ahí."
-									}
-									ctaLabel={onSelectCausa ? "Elegir expediente" : "Ir al listado"}
+									description="Abrí el selector y marcá cuál de los expedientes corresponde a esta carpeta. Una vez que elijas, vamos a sincronizar sus movimientos."
+									ctaLabel="Elegir expediente"
 									ctaLoading={false}
-									onClick={onSelectCausa ?? (() => navigate("/apps/folders/list"))}
+									onClick={onSelectCausa ?? (() => setSelectorOpen(true))}
 									isDark={isDark}
 								/>
+							) : gate === "pending" ? (
+								<>
+									{/* Banner informativo: esperando al worker */}
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											gap: 1.25,
+											px: 1.25,
+											py: 1.125,
+											borderRadius: 1.25,
+											border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.24 : 0.16)}`,
+											bgcolor: alpha(STALE_AMBER, isDark ? 0.045 : 0.025),
+										}}
+									>
+										<Box
+											sx={{
+												width: 30,
+												height: 30,
+												borderRadius: 1,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												bgcolor: alpha(STALE_AMBER, isDark ? 0.18 : 0.1),
+												border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.3 : 0.2)}`,
+												flexShrink: 0,
+											}}
+										>
+											<Clock size={18} variant="Bulk" color={STALE_AMBER} />
+										</Box>
+										<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+											<Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em", lineHeight: 1.3 }}>
+												Esperando al worker
+											</Typography>
+											<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", lineHeight: 1.45, textWrap: "pretty" }}>
+												{inFlight
+													? "El sistema reconsulta el estado cada 10 segundos. El resultado va a aparecer acá automáticamente — esto puede tardar hasta 3 minutos."
+													: "La verificación está en cola. Podés actualizar el estado para traer el resultado más reciente o forzar otro intento."}
+											</Typography>
+										</Stack>
+									</Box>
+
+									<ActionCard
+										toneHex={BRAND_BLUE}
+										icon={
+											refreshing ? (
+												<CircularProgress size={16} thickness={5} sx={{ color: BRAND_BLUE }} />
+											) : (
+												<Refresh size={18} color={BRAND_BLUE} />
+											)
+										}
+										title="Actualizar estado"
+										description="Trae el resultado más reciente del worker sin esperar al próximo auto-refresh."
+										ctaLabel={refreshing ? "Actualizando…" : "Actualizar"}
+										ctaLoading={refreshing}
+										onClick={handleRefreshStatus}
+										isDark={isDark}
+									/>
+
+									<ActionCard
+										toneHex={theme.palette.error.main}
+										icon={<Trash size={18} variant="Bulk" color={theme.palette.error.main} />}
+										title="Eliminar carpeta"
+										description="Si te equivocaste al cargar los datos y querés crearla de nuevo."
+										ctaLabel="Eliminar"
+										ctaLoading={false}
+										onClick={() => setDeleteOpen(true)}
+										isDark={isDark}
+										destructive
+									/>
+
+									{/* Link sutil: forzar reintento (sólo si no in-flight y quedan intentos) */}
+									{!inFlight && !locked && (
+										<Button
+											onClick={handleReverify}
+											disabled={reverifying}
+											size="small"
+											startIcon={
+												reverifying ? (
+													<CircularProgress size={12} thickness={5} sx={{ color: STALE_AMBER }} />
+												) : (
+													<Refresh size={13} color={STALE_AMBER} />
+												)
+											}
+											sx={{
+												alignSelf: "flex-start",
+												mt: 0.25,
+												textTransform: "none",
+												fontWeight: 500,
+												fontSize: "0.72rem",
+												color: "text.secondary",
+												letterSpacing: "-0.005em",
+												px: 0.875,
+												py: 0.375,
+												minHeight: 0,
+												"&:hover": {
+													color: STALE_AMBER,
+													bgcolor: alpha(STALE_AMBER, isDark ? 0.08 : 0.05),
+												},
+											}}
+										>
+											{reverifying
+												? "Forzando reintento…"
+												: attempts === 0
+												? "Forzar reintento de verificación"
+												: `Forzar reintento (queda ${attemptsLeft} de ${MAX_ATTEMPTS})`}
+										</Button>
+									)}
+								</>
 							) : !locked ? (
 								<ActionCard
 									toneHex={STALE_AMBER}
@@ -537,28 +655,33 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 								</Box>
 							)}
 
-							<ActionCard
-								toneHex={BRAND_BLUE}
-								icon={<MessageQuestion size={18} variant="Bulk" color={BRAND_BLUE} />}
-								title="Pedir revisión a soporte"
-								description="Mandanos el caso con todo el contexto del intento. Vas a poder agregar más detalles antes de enviar."
-								ctaLabel="Contactar a soporte"
-								ctaLoading={false}
-								onClick={() => setSupportOpen(true)}
-								isDark={isDark}
-							/>
+							{/* Soporte + eliminar — para estados terminales o pending_selection. pending tiene su propio set arriba. */}
+							{gate !== "pending" && (
+								<>
+									<ActionCard
+										toneHex={BRAND_BLUE}
+										icon={<MessageQuestion size={18} variant="Bulk" color={BRAND_BLUE} />}
+										title="Pedir revisión a soporte"
+										description="Mandanos el caso con todo el contexto del intento. Vas a poder agregar más detalles antes de enviar."
+										ctaLabel="Contactar a soporte"
+										ctaLoading={false}
+										onClick={() => setSupportOpen(true)}
+										isDark={isDark}
+									/>
 
-							<ActionCard
-								toneHex={theme.palette.error.main}
-								icon={<Trash size={18} variant="Bulk" color={theme.palette.error.main} />}
-								title="Eliminar carpeta"
-								description="Libera espacio en tu plan. Útil si te equivocaste al cargar los datos y querés crearla de nuevo."
-								ctaLabel="Eliminar"
-								ctaLoading={false}
-								onClick={() => setDeleteOpen(true)}
-								isDark={isDark}
-								destructive
-							/>
+									<ActionCard
+										toneHex={theme.palette.error.main}
+										icon={<Trash size={18} variant="Bulk" color={theme.palette.error.main} />}
+										title="Eliminar carpeta"
+										description="Libera espacio en tu plan. Útil si te equivocaste al cargar los datos y querés crearla de nuevo."
+										ctaLabel="Eliminar"
+										ctaLoading={false}
+										onClick={() => setDeleteOpen(true)}
+										isDark={isDark}
+										destructive
+									/>
+								</>
+							)}
 						</Stack>
 					</Box>
 				</MainCard>
@@ -581,6 +704,21 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 				defaultPriority="high"
 				lockedHeader={supportLockedHeader}
 				variant="dashboard"
+			/>
+
+			<CausaSelector
+				open={selectorOpen}
+				onClose={() => setSelectorOpen(false)}
+				folderId={folder?._id || ""}
+				folderName={titleProvisoria}
+				onCausaSelected={() => {
+					// Refrescá el folder para que la vista salga del gate pending_selection
+					// y reaparezcan los datos sincronizados.
+					if (folder?._id) dispatch(getFolderById(folder._id, true));
+				}}
+				onSelectionCancelled={() => {
+					if (folder?._id) dispatch(getFolderById(folder._id, true));
+				}}
 			/>
 		</>
 	);
