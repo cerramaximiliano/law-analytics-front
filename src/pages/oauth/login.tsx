@@ -101,6 +101,52 @@ const OauthLoginPage = () => {
 		}
 	}, [contextState.status, clientId, clientName]);
 
+	// Mapeo de error codes → mensajes amigables + tracking
+	const handleAcceptError = (err: any, method: "email" | "google") => {
+		const data = (err.response?.data as ErrorResponse) || {};
+		const code = data.error || "request_failed";
+		let msg = data.error_description || "Error al iniciar sesión. Intentá de nuevo.";
+
+		if (code === "account_locked" && data.lockout_minutes) {
+			msg = `Cuenta temporalmente bloqueada. Reintentá en ${data.lockout_minutes} minuto(s).`;
+		} else if (code === "user_not_found" && data.email) {
+			msg = `No hay una cuenta de lawanalytics asociada a ${data.email}. Registrate en lawanalytics.app primero.`;
+		}
+
+		trackOauthLoginError(code, method, clientId || undefined);
+		setGlobalError(msg);
+	};
+
+	const submitGoogle = async (tokenResponse: any) => {
+		setGlobalError(null);
+		setIsGoogleLoading(true);
+		trackOauthLoginSubmit("google", clientId || undefined);
+		try {
+			const res = await axiosInstance.post<AcceptResponse>("/api/oauth/login/accept-google", {
+				login_challenge: challenge,
+				token: tokenResponse.access_token,
+				remember: true,
+			});
+			trackOauthLoginSuccess("google", clientId || undefined);
+			window.location.href = res.data.redirect_to;
+		} catch (err: any) {
+			handleAcceptError(err, "google");
+		} finally {
+			setIsGoogleLoading(false);
+		}
+	};
+
+	// useGoogleLogin debe ir antes de cualquier early return (Rules of Hooks).
+	const googleLogin = useGoogleLogin({
+		onSuccess: submitGoogle,
+		onError: () => {
+			trackOauthLoginError("google_provider_error", "google", clientId || undefined);
+			setGlobalError("Error al iniciar sesión con Google. Intentá de nuevo.");
+		},
+		flow: "implicit",
+		scope: "email profile",
+	});
+
 	// Loading inicial mientras se valida el challenge
 	if (contextState.status === "loading") {
 		return (
@@ -137,51 +183,6 @@ const OauthLoginPage = () => {
 	}
 
 	const isAnyLoading = isGoogleLoading || isEmailLoading;
-
-	// Mapeo de error codes → mensajes amigables + tracking
-	const handleAcceptError = (err: any, method: "email" | "google") => {
-		const data = (err.response?.data as ErrorResponse) || {};
-		const code = data.error || "request_failed";
-		let msg = data.error_description || "Error al iniciar sesión. Intentá de nuevo.";
-
-		if (code === "account_locked" && data.lockout_minutes) {
-			msg = `Cuenta temporalmente bloqueada. Reintentá en ${data.lockout_minutes} minuto(s).`;
-		} else if (code === "user_not_found" && data.email) {
-			msg = `No hay una cuenta de lawanalytics asociada a ${data.email}. Registrate en lawanalytics.app primero.`;
-		}
-
-		trackOauthLoginError(code, method, clientId || undefined);
-		setGlobalError(msg);
-	};
-
-	const submitGoogle = async (tokenResponse: any) => {
-		setGlobalError(null);
-		setIsGoogleLoading(true);
-		trackOauthLoginSubmit("google", clientId || undefined);
-		try {
-			const res = await axiosInstance.post<AcceptResponse>("/api/oauth/login/accept-google", {
-				login_challenge: challenge,
-				token: tokenResponse.access_token,
-				remember: true,
-			});
-			trackOauthLoginSuccess("google", clientId || undefined);
-			window.location.href = res.data.redirect_to;
-		} catch (err: any) {
-			handleAcceptError(err, "google");
-		} finally {
-			setIsGoogleLoading(false);
-		}
-	};
-
-	const googleLogin = useGoogleLogin({
-		onSuccess: submitGoogle,
-		onError: () => {
-			trackOauthLoginError("google_provider_error", "google", clientId || undefined);
-			setGlobalError("Error al iniciar sesión con Google. Intentá de nuevo.");
-		},
-		flow: "implicit",
-		scope: "email profile",
-	});
 
 	return (
 		<AuthWrapper>
