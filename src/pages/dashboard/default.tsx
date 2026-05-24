@@ -278,9 +278,11 @@ const DashboardDefault = () => {
 
 	// Funcion para reintentar la carga
 	// Usa effectiveUserId (owner's userId en modo equipo) para mantener consistencia
+	// Debe pedir las mismas secciones que el initial load — un fetch parcial wipea
+	// el resto de state.data y los widgets de folders quedan en "Sin datos".
 	const handleRetry = () => {
 		if (effectiveUserId && isTeamReady) {
-			dispatch(getUnifiedStats(effectiveUserId, "dashboard", true));
+			dispatch(getUnifiedStats(effectiveUserId, "dashboard,folders", true));
 		}
 	};
 
@@ -574,10 +576,7 @@ const DashboardDefault = () => {
 										</Typography>
 									}
 								>
-									<BarsDataWidget
-										color={BRAND_BLUE}
-										data={dashboardData?.trends?.tasks?.map((item) => item.count) || undefined}
-									/>
+									<BarsDataWidget color={BRAND_BLUE} data={dashboardData?.trends?.tasks?.map((item) => item.count) || undefined} />
 								</EcommerceDataCard>
 							</Grid>
 
@@ -589,18 +588,12 @@ const DashboardDefault = () => {
 									iconPrimary={<CloudChange size={20} variant="Bulk" />}
 									onClick={() => navigate("/apps/calendar")}
 									percentage={
-										<Typography
-											variant="caption"
-											sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}
-										>
+										<Typography variant="caption" sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}>
 											En los próximos 7 días
 										</Typography>
 									}
 								>
-									<BarsDataWidget
-										color={BRAND_BLUE}
-										data={dashboardData?.trends?.deadlines?.map((item) => item.count) || undefined}
-									/>
+									<BarsDataWidget color={BRAND_BLUE} data={dashboardData?.trends?.deadlines?.map((item) => item.count) || undefined} />
 								</EcommerceDataCard>
 							</Grid>
 
