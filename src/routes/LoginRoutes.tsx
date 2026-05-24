@@ -14,6 +14,13 @@ const AuthCheckMail = Loadable(lazyRetry(() => import("pages/auth/auth1/check-ma
 const AuthResetPassword = Loadable(lazyRetry(() => import("pages/auth/auth1/reset-password")));
 const AuthCodeVerification = Loadable(lazyRetry(() => import("pages/auth/auth1/code-verification")));
 
+// OAuth (MCP server connection) — Phase 2. Sin GuestGuard porque users con sesión
+// activa en lawanalytics igual necesitan re-autenticar ante Hydra (cookies del
+// hub no se comparten con Hydra). El flow es válido logged-in o logged-out.
+const OauthLogin = Loadable(lazyRetry(() => import("pages/oauth/login")));
+const OauthConsent = Loadable(lazyRetry(() => import("pages/oauth/consent")));
+const OauthUpgradeRequired = Loadable(lazyRetry(() => import("pages/oauth/upgrade-required")));
+
 // ==============================|| AUTH ROUTES ||============================== //
 
 const LoginRoutes = {
@@ -50,6 +57,25 @@ const LoginRoutes = {
 				{
 					path: "code-verification",
 					element: <AuthCodeVerification />,
+				},
+			],
+		},
+		// OAuth rutas — fuera del GuestGuard
+		{
+			path: "/",
+			element: <CommonLayout />,
+			children: [
+				{
+					path: "oauth/login",
+					element: <OauthLogin />,
+				},
+				{
+					path: "oauth/consent",
+					element: <OauthConsent />,
+				},
+				{
+					path: "oauth/upgrade-required",
+					element: <OauthUpgradeRequired />,
 				},
 			],
 		},
