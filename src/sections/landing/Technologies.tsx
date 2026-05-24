@@ -19,7 +19,6 @@ import {
 	Send2,
 	ArrowRight2,
 	ArrowRight,
-	Star1,
 } from "iconsax-react";
 
 // project-imports
@@ -27,6 +26,7 @@ import FadeInWhenVisible from "./Animation";
 import SectionEyebrow from "./SectionEyebrow";
 import MainCard from "components/MainCard";
 import FeatureModal from "components/FeatureModal";
+import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
 import { useLandingAnalytics } from "hooks/useLandingAnalytics";
 import { FeatureNames, pushGTMEvent, trackViewFeaturesSection } from "utils/gtm";
 
@@ -446,7 +446,7 @@ const TechnologiesPage = () => {
 	// **NO va a /register** → no impacta Funnel 1. Tracking aparte:
 	// mcp_landing_card_click (con cta_location='landing_card_mcp').
 	const mcpBanner: CitasBannerData = {
-		iconComponent: Star1,
+		iconComponent: ClaudeAiLogo as unknown as typeof CalendarTick,
 		title: "Nuevo · Conectá Claude.ai a tu cuenta",
 		description:
 			"Pediole a Claude que busque tus expedientes, resuma movimientos o consulte jurisprudencia desde el chat.",

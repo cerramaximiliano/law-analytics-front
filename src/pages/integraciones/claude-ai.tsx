@@ -45,6 +45,9 @@ import {
 	TickCircle,
 } from "iconsax-react";
 
+// project-imports
+import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
+
 // tracking
 import { pushGTMEvent } from "utils/gtm";
 
@@ -179,6 +182,9 @@ const ClaudeAiLandingPage = () => {
 			<Container maxWidth="md">
 				{/* Hero */}
 				<Stack spacing={2} alignItems="center" sx={{ textAlign: "center", mb: 6 }}>
+					<Box sx={{ color: BRAND_BLUE, mb: 1 }}>
+						<ClaudeAiLogo size={64} />
+					</Box>
 					<Chip
 						label="BETA CERRADA"
 						color="primary"

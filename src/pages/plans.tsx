@@ -9,13 +9,14 @@ import { Alert, Box, Button, CircularProgress, Container, Grid, Stack, Typograph
 import { motion } from "framer-motion";
 
 // icons
-import { ArrowRight2, Star1 } from "iconsax-react";
+import { ArrowRight2 } from "iconsax-react";
 
 // project-imports
 import PlanCard from "components/cards/PlanCard";
 import ApiService, { Plan } from "store/reducers/ApiService";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
+import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
 import { cleanPlanDisplayName, getCurrentEnvironment } from "utils/planPricingUtils";
 import { pushGTMEvent } from "utils/gtm";
 
@@ -218,7 +219,7 @@ const Plans = () => {
 							justifyContent="space-between"
 						>
 							<Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
-								<Star1 size={32} color={BRAND_BLUE} />
+								<ClaudeAiLogo size={32} color={BRAND_BLUE} />
 								<Box>
 									<Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
 										Nuevo · Conectá Claude.ai a tu cuenta
