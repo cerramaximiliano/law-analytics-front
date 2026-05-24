@@ -51,6 +51,7 @@ import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
 import LogoSection from "components/logo";
 import FadeInWhenVisible from "sections/landing/Animation";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
+import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 
 // tracking
 import { pushGTMEvent } from "utils/gtm";
@@ -173,11 +174,18 @@ const FAQ: FaqItem[] = [
 
 const ClaudeAiLandingPage = () => {
 	const theme = useTheme();
+	const { integrations, loading: integrationsLoading } = usePublicIntegrations();
+	const claudeAiEnabled = integrations.claudeAi.enabled;
+	const maintenanceMessage = integrations.claudeAi.maintenanceMessage;
 	const [openFaq, setOpenFaq] = useState<number | null>(null);
 
 	useEffect(() => {
-		pushGTMEvent("mcp_landing_view", {});
-	}, []);
+		// Solo trackeamos el view si la integración está habilitada — si está
+		// deshabilitada el user ve la pantalla "no disponible", no la landing.
+		if (!integrationsLoading && claudeAiEnabled) {
+			pushGTMEvent("mcp_landing_view", {});
+		}
+	}, [integrationsLoading, claudeAiEnabled]);
 
 	const handleFaqToggle = (idx: number) => {
 		const newState = openFaq === idx ? null : idx;
@@ -193,6 +201,36 @@ const ClaudeAiLandingPage = () => {
 		pushGTMEvent("mcp_landing_cta_click", { cta_location: location });
 		setSupportOpen(true);
 	};
+
+	// Gating: si la integración está deshabilitada en IntegrationsConfig
+	// mostramos pantalla de "no disponible" en vez de la landing completa.
+	// Durante el fetch inicial (sin cache) mostramos un esqueleto neutro
+	// para evitar flash de la landing en deshabilitado.
+	if (integrationsLoading) {
+		return <Box sx={{ bgcolor: "background.default", minHeight: "100vh" }} />;
+	}
+
+	if (!claudeAiEnabled) {
+		return (
+			<Box sx={{ bgcolor: "background.default", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+				<Container maxWidth="sm">
+					<Stack spacing={3} alignItems="center" sx={{ textAlign: "center", py: 8 }}>
+						<ClaudeAiLogo size={64} />
+						<Typography variant="h3" sx={{ fontWeight: 700 }}>
+							Integración no disponible
+						</Typography>
+						<Typography color="text.secondary">
+							{maintenanceMessage ||
+								"La integración con Claude.ai no está disponible en este momento. Volvé a intentar más tarde."}
+						</Typography>
+						<Button variant="contained" href="/" sx={{ mt: 2 }}>
+							Volver al inicio
+						</Button>
+					</Stack>
+				</Container>
+			</Box>
+		);
+	}
 
 	return (
 		<Box sx={{ bgcolor: "background.default", minHeight: "100vh" }}>

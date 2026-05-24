@@ -44,6 +44,7 @@ import MainCard from "components/MainCard";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
+import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 
 // ============================== TOKENS ============================== //
 // Mantener en sync con sections/landing/Planes.tsx
@@ -279,6 +280,19 @@ const FAQS: Faq[] = [
 const FaqPage = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
+	const { integrations } = usePublicIntegrations();
+	const claudeAiEnabled = integrations.claudeAi.enabled;
+
+	// Filtrar categoría 'integraciones' + sus preguntas si Claude.ai no está
+	// habilitado en IntegrationsConfig. Mantenemos los datos hardcoded acá
+	// (no movemos a CMS) y filtramos en runtime.
+	const visibleCategories = claudeAiEnabled
+		? CATEGORIES
+		: CATEGORIES.filter((c) => c.id !== "integraciones");
+	const visibleFaqs = claudeAiEnabled
+		? FAQS
+		: FAQS.filter((f) => f.category !== "integraciones");
+
 	const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 	const [activeCategory, setActiveCategory] = useState<string | null>(null);
 	const [searchQuery, setSearchQuery] = useState<string>("");
@@ -304,7 +318,7 @@ const FaqPage = () => {
 		setActiveCategory(categoryId === activeCategory ? null : categoryId);
 	};
 
-	const filteredFaqs = FAQS.filter((faq) => (activeCategory ? faq.category === activeCategory : true)).filter((faq) => {
+	const filteredFaqs = visibleFaqs.filter((faq) => (activeCategory ? faq.category === activeCategory : true)).filter((faq) => {
 		const q = searchQuery.trim().toLowerCase();
 		if (!q) return true;
 		return faq.question.toLowerCase().includes(q) || faq.answer.toLowerCase().includes(q);
@@ -447,7 +461,7 @@ const FaqPage = () => {
 											},
 										}}
 									/>
-									{CATEGORIES.map((category) => {
+									{visibleCategories.map((category) => {
 										const Icon = category.icon;
 										const active = activeCategory === category.id;
 										return (

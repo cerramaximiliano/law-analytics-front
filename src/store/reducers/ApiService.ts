@@ -19,6 +19,28 @@ export interface ApiResponse<T = any> {
 }
 
 // ===============================
+// Integraciones públicas (toggles de disponibilidad UI)
+// ===============================
+// Embebido en el response de GET /api/plan-configs/public para evitar requests
+// extra al cargar la landing. Cada flag indica si la opción se muestra en UI.
+// `enabled: false` → la UI debe ocultar la opción de esa integración.
+
+export interface ServiceFlag {
+	enabled: boolean;
+	maintenanceMessage: string | null;
+}
+
+export interface PublicIntegrations {
+	/** Toggle para mostrar el banner MCP de Claude.ai en landing/plans + página /integraciones/claude-ai. */
+	claudeAi: ServiceFlag;
+}
+
+/** Defaults seguros (fail-open) si el endpoint falla — todas las integraciones se asumen disponibles. */
+export const DEFAULT_PUBLIC_INTEGRATIONS: PublicIntegrations = {
+	claudeAi: { enabled: true, maintenanceMessage: null },
+};
+
+// ===============================
 // Interfaces de usuario y sesiones
 // ===============================
 
@@ -582,7 +604,9 @@ class ApiService {
 	 * Obtiene los planes públicos disponibles
 	 */
 
-	static async getPublicPlans(options?: { landingOnly?: boolean }): Promise<ApiResponse<Plan[]>> {
+	static async getPublicPlans(
+		options?: { landingOnly?: boolean },
+	): Promise<ApiResponse<Plan[]> & { integrations?: PublicIntegrations }> {
 		try {
 			// landingOnly=true fuerza al backend a devolver solo descuentos con
 			// showOnLanding=true aunque haya sesión. Lo usa la landing pública (`/`)
@@ -592,10 +616,48 @@ class ApiService {
 				withCredentials: true,
 				params,
 			});
+			// Cachear el bloque `integrations` para que componentes que sólo lo
+			// necesitan (Technologies banner, /plans banner, /integraciones/claude-ai)
+			// no disparen su propia request. La landing ya consume getPublicPlans
+			// dos veces (Planes + DiscountBanner) → cache se hidrata en el primer call.
+			if (response.data?.integrations) {
+				ApiService._cachedPublicIntegrations = response.data.integrations;
+			}
 			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);
 		}
+	}
+
+	// Cache module-level del bloque integrations devuelto por /plan-configs/public.
+	// Vida = duración del bundle JS en memoria. Se hidrata en la primera call exitosa
+	// a getPublicPlans y queda disponible vía fetchPublicIntegrations().
+	private static _cachedPublicIntegrations: PublicIntegrations | null = null;
+	private static _publicIntegrationsInflight: Promise<PublicIntegrations> | null = null;
+
+	/**
+	 * Devuelve los flags de integraciones públicas. Usa cache (si existe) o
+	 * dispara getPublicPlans para hidratarlo. Promise-dedupes — múltiples calls
+	 * concurrentes comparten el mismo fetch.
+	 *
+	 * Fail-open: si el endpoint falla, asume todas las integraciones enabled.
+	 */
+	static async fetchPublicIntegrations(): Promise<PublicIntegrations> {
+		if (ApiService._cachedPublicIntegrations) return ApiService._cachedPublicIntegrations;
+		if (ApiService._publicIntegrationsInflight) return ApiService._publicIntegrationsInflight;
+
+		ApiService._publicIntegrationsInflight = ApiService.getPublicPlans({ landingOnly: true })
+			.then(() => ApiService._cachedPublicIntegrations || DEFAULT_PUBLIC_INTEGRATIONS)
+			.catch(() => DEFAULT_PUBLIC_INTEGRATIONS)
+			.finally(() => {
+				ApiService._publicIntegrationsInflight = null;
+			});
+		return ApiService._publicIntegrationsInflight;
+	}
+
+	/** Lectura síncrona del cache — null si todavía no se hidrató. */
+	static getCachedPublicIntegrations(): PublicIntegrations | null {
+		return ApiService._cachedPublicIntegrations;
 	}
 
 	/**

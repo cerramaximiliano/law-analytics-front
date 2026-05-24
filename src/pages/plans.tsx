@@ -17,6 +17,7 @@ import ApiService, { Plan } from "store/reducers/ApiService";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
+import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 import { cleanPlanDisplayName, getCurrentEnvironment } from "utils/planPricingUtils";
 import { pushGTMEvent } from "utils/gtm";
 
@@ -42,6 +43,8 @@ const ctaLabelFor = (plan: Plan, loadingPlanId: string | null): string => {
 const Plans = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
+	const { integrations } = usePublicIntegrations();
+	const showMcpBanner = integrations.claudeAi.enabled;
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [plans, setPlans] = useState<Plan[]>([]);
@@ -195,10 +198,12 @@ const Plans = () => {
 					</Grid>
 				)}
 
-				{/* Banner MCP / Claude.ai (Phase 8 — adoption push). NO va a /register
+				{/* Banner MCP / Claude.ai (Phase 8 — adoption push). Gated por
+			    IntegrationsConfig.services.claudeAi.enabled.
+			    NO va a /register
 				    así que NO impacta Funnel 1. Link a la landing pública de la
 				    integración. Tracking: mcp_plans_cta_click. */}
-				{!loading && !error && plans.length > 0 && (
+				{!loading && !error && plans.length > 0 && showMcpBanner && (
 					<Box
 						component={motion.div}
 						initial={{ opacity: 0, y: 20 }}

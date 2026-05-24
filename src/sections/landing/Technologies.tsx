@@ -28,6 +28,7 @@ import MainCard from "components/MainCard";
 import FeatureModal from "components/FeatureModal";
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
 import { useLandingAnalytics } from "hooks/useLandingAnalytics";
+import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 import { FeatureNames, pushGTMEvent, trackViewFeaturesSection } from "utils/gtm";
 
 // ============================== TOKENS ============================== //
@@ -340,6 +341,8 @@ const TechnologiesPage = () => {
 	const theme = useTheme();
 	const navigate = useNavigate();
 	const { trackCitasCTA, trackPruebaPagarCTA, trackFeature } = useLandingAnalytics();
+	const { integrations } = usePublicIntegrations();
+	const showMcpBanner = integrations.claudeAi.enabled;
 	const isDark = theme.palette.mode === "dark";
 
 	const sectionRef = useRef<HTMLDivElement>(null);
@@ -374,7 +377,7 @@ const TechnologiesPage = () => {
 		{
 			iconComponent: FolderOpen,
 			title: "Expedientes",
-			description: "Notificaciones PJN · MEV en vivo",
+			description: "Notificaciones PJN · MEV · EJE en vivo",
 			colorKey: "warning",
 			featureKey: FeatureNames.CARPETAS,
 		},
@@ -618,12 +621,16 @@ const TechnologiesPage = () => {
 				</Box>
 
 				{/* Banner MCP — adopción de integración con Claude.ai (Phase 8).
-				    No va a /register, va a la landing pública dedicada. */}
-				<Box sx={{ mt: 3 }}>
-					<FadeInWhenVisible>
-						<CitasBanner banner={mcpBanner} theme={theme} isDark={isDark} onClick={handleMcpBannerClick} onCtaTrack={trackMcpCTA} />
-					</FadeInWhenVisible>
-				</Box>
+				    No va a /register, va a la landing pública dedicada.
+				    Gated por IntegrationsConfig.services.claudeAi.enabled — admin
+				    puede desactivarlo desde /admin/integrations. */}
+				{showMcpBanner && (
+					<Box sx={{ mt: 3 }}>
+						<FadeInWhenVisible>
+							<CitasBanner banner={mcpBanner} theme={theme} isDark={isDark} onClick={handleMcpBannerClick} onCtaTrack={trackMcpCTA} />
+						</FadeInWhenVisible>
+					</Box>
+				)}
 
 				{/* CTA Final de la sección */}
 				<Box sx={{ mt: { xs: 5, md: 7 } }}>
