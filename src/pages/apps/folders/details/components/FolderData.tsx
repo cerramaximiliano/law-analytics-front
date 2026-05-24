@@ -44,7 +44,7 @@ const customInputStyles = {
 		fontSize: 12,
 	},
 	"& input::placeholder": {
-		color: "#000000",
+		color: "text.primary",
 		opacity: 0.6,
 	},
 };
@@ -53,7 +53,7 @@ const customTextareaStyles = {
 		fontSize: 12,
 	},
 	"& textarea::placeholder": {
-		color: "#000000",
+		color: "text.primary",
 		opacity: 0.6,
 	},
 };
@@ -513,7 +513,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 								sx={{
 									mt: 4,
 									borderBottomWidth: 1,
-									borderColor: "rgba(0, 0, 0, 0.12)",
+									borderColor: "divider",
 									width: "100%",
 								}}
 							/>

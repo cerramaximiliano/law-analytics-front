@@ -11,6 +11,7 @@ import Search from "./Search";
 import Profile from "./Profile";
 /* import Localization from "./Localization"; */
 import Notification from "./Notification";
+import ThemeModeToggle from "./ThemeModeToggle";
 import MobileSection from "./MobileSection";
 /* import MegaMenuSection from "./MegaMenuSection"; */
 import TeamModeIndicator from "components/teams/TeamModeIndicator";
@@ -44,6 +45,7 @@ const HeaderContent = () => {
 			<Box sx={{ ml: "auto", mr: 1 }}>
 				<TeamModeIndicator compact={downLG} />
 			</Box>
+			<ThemeModeToggle />
 			<Notification />
 			{/* <Message /> */}
 			{!downLG && <Profile />}

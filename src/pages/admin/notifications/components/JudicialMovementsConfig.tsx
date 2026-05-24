@@ -377,7 +377,7 @@ const JudicialMovementsConfig: React.FC = () => {
 
 					{/* Statistics */}
 					{config.stats && (
-						<Box sx={{ mt: 3, p: 2, bgcolor: "grey.50", borderRadius: 1 }}>
+						<Box sx={{ mt: 3, p: 2, bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.50"), borderRadius: 1 }}>
 							<Grid container spacing={2}>
 								<Grid item xs={12} sm={4}>
 									<Typography variant="caption" color="text.secondary">

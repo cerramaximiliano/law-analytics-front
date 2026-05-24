@@ -146,9 +146,9 @@ const TrackingStatusChip = ({ label }: { label: string }) => {
 };
 
 const CorreoBadge = ({ size = "md" }: { size?: "sm" | "md" }) => {
-	const theme = useTheme();
-	const isDark = theme.palette.mode === "dark";
 	const height = size === "sm" ? 16 : 18;
+	// Correo Argentino brand color must stay solid in both modes — the logo PNG
+	// loses contrast over a translucent bg when the page is dark.
 	return (
 		<Box
 			sx={{
@@ -158,8 +158,8 @@ const CorreoBadge = ({ size = "md" }: { size?: "sm" | "md" }) => {
 				px: 0.75,
 				py: 0.5,
 				borderRadius: 0.75,
-				bgcolor: alpha("#FFCE00", isDark ? 0.22 : 0.85),
-				border: `1px solid ${alpha("#E0B400", isDark ? 0.4 : 0.6)}`,
+				bgcolor: "#FFCE00",
+				border: "1px solid #E0B400",
 				flexShrink: 0,
 			}}
 		>

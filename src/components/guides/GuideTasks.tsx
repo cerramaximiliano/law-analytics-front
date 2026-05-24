@@ -28,7 +28,7 @@ const CreateTaskContent = () => (
 		<Stack spacing={2}>
 			<Typography variant="body1">Para crear una nueva tarea:</Typography>
 
-			<Box sx={{ bgcolor: "grey.50", borderRadius: 1, p: 2 }}>
+			<Box sx={{ bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.50"), borderRadius: 1, p: 2 }}>
 				<Typography variant="subtitle2" gutterBottom color="primary">
 					Pasos para crear una tarea:
 				</Typography>

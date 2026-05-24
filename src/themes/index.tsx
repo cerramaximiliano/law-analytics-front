@@ -22,13 +22,14 @@ import { CustomShadowProps } from "types/theme";
 // types
 type ThemeCustomizationProps = {
 	children: ReactNode;
+	forceMode?: ThemeMode;
 };
 
 // ==============================|| DEFAULT THEME - MAIN  ||============================== //
 
-export default function ThemeCustomization({ children }: ThemeCustomizationProps) {
+export default function ThemeCustomization({ children, forceMode }: ThemeCustomizationProps) {
 	const { themeDirection, mode, presetColor, fontFamily, themeContrast } = useConfig();
-	let themeMode = mode;
+	let themeMode = forceMode ?? mode;
 	if (themeMode === ThemeMode.AUTO) {
 		const autoMode = getWindowScheme();
 		if (autoMode) {
@@ -76,8 +77,11 @@ export default function ThemeCustomization({ children }: ThemeCustomizationProps
 		[themeDirection, theme, themeTypography, themeCustomShadows],
 	);
 
-	const themes: Theme = createTheme(themeOptions);
-	themes.components = componentsOverride(themes);
+	const themes: Theme = useMemo(() => {
+		const t = createTheme(themeOptions);
+		t.components = componentsOverride(t);
+		return t;
+	}, [themeOptions]);
 
 	return (
 		<StyledEngineProvider injectFirst>

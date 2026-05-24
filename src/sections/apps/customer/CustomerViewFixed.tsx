@@ -288,7 +288,7 @@ const CustomerViewFixed: React.FC<ContactViewProps> = ({ data }) => {
 
 						{/* Debug info in development */}
 						{process.env.NODE_ENV === "development" && (
-							<Box sx={{ mb: 2, p: 1, bgcolor: "grey.100", borderRadius: 1 }}>
+							<Box sx={{ mb: 2, p: 1, bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.100"), borderRadius: 1 }}>
 								<Typography variant="caption" component="pre">
 									{JSON.stringify(
 										{

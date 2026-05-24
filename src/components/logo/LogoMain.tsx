@@ -1,44 +1,25 @@
 import React from "react";
-// material-ui
-//import { useTheme } from "@mui/material/styles";
 
 import { Stack } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+
 import logo from "assets/images/large_logo_transparent.png";
+import { ThemeMode } from "types/config";
 
-//import { fontFamily } from "@mui/system";
-/**
- * if you want to use image instead of <svg> uncomment following.
- *
- * import logoDark from 'assets/images/logo-dark.svg';
- * import logo from 'assets/images/logo.svg';
- *
- */
-
-// ==============================|| LOGO SVG ||============================== //
+// ==============================|| LOGO ||============================== //
 
 const LogoMain = ({ reverse, ...others }: { reverse?: boolean }) => {
-	//const theme = useTheme();
+	const theme = useTheme();
+	const isDark = theme.palette.mode === ThemeMode.DARK;
 	return (
-		/**
-		 * if you want to use image instead of svg uncomment following, and comment out <svg> element.
-		 *
-		 * <img src={theme.palette.mode === ThemeMode.DARK ? logoDark : logo} alt="icon logo" width="100" />
-		 *
-		 */
-		<>
-			<Stack>
-				<img src={logo} height="50" alt="" />
-				{/* 				<Typography
-					variant="h3"
-					sx={{
-						fontFamily: "'Cinzel', serif", // Aquí aplicas la fuente Cinzel
-						fontWeight: 400,
-					}}
-				>
-					Law||Analytics
-				</Typography> */}
-			</Stack>
-		</>
+		<Stack>
+			<img
+				src={logo}
+				height="50"
+				alt=""
+				style={isDark ? { filter: "brightness(0) invert(1)" } : undefined}
+			/>
+		</Stack>
 	);
 };
 
