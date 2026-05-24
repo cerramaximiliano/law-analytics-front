@@ -47,15 +47,28 @@ import {
 
 // project-imports
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
+import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 
 // tracking
 import { pushGTMEvent } from "utils/gtm";
 
 const BRAND_BLUE = "#3A7BFF";
-const BETA_REQUEST_EMAIL = "soporte@lawanalytics.app";
-const BETA_REQUEST_SUBJECT = "Solicito acceso beta al conector MCP de Claude.ai";
 
 const MCP_SERVER_URL = "https://mcp.lawanalytics.app";
+
+// Subject EXACTO (matchea subjectOptions en SupportModal.tsx — si lo renombrás,
+// actualizar acá también).
+const BETA_REQUEST_SUBJECT = "Solicitud de acceso beta — Conector MCP";
+
+const BETA_REQUEST_LOCKED_HEADER = `Tipo: Solicitud de acceso beta — Conector MCP (Claude.ai)
+Origen: /integraciones/claude-ai
+Pre-requisitos del solicitante:
+  • Cuenta activa en lawanalytics.app
+  • Plan Pro/Team en Claude.ai (necesario para custom connectors)
+
+El usuario solicita acceso a la beta cerrada del conector MCP. Una vez aprobado:
+1. Activar grant manual en User.featureGrants.mcp_access = true (admin → Feature Grants)
+2. Enviar instrucciones de cómo conectar el conector en Claude.ai → Settings → Connectors`;
 
 interface UseCase {
 	icon: React.ReactNode;
@@ -171,18 +184,19 @@ const ClaudeAiLandingPage = () => {
 		}
 	};
 
+	const [supportOpen, setSupportOpen] = useState(false);
+
 	const handleCtaClick = (location: string) => {
 		pushGTMEvent("mcp_landing_cta_click", { cta_location: location });
+		setSupportOpen(true);
 	};
-
-	const mailtoHref = `mailto:${BETA_REQUEST_EMAIL}?subject=${encodeURIComponent(BETA_REQUEST_SUBJECT)}`;
 
 	return (
 		<Box sx={{ bgcolor: "background.default", minHeight: "100vh", py: { xs: 4, md: 8 } }}>
 			<Container maxWidth="md">
 				{/* Hero */}
 				<Stack spacing={2} alignItems="center" sx={{ textAlign: "center", mb: 6 }}>
-					<Box sx={{ color: BRAND_BLUE, mb: 1 }}>
+					<Box sx={{ mb: 1 }}>
 						<ClaudeAiLogo size={64} />
 					</Box>
 					<Chip
@@ -202,8 +216,6 @@ const ClaudeAiLandingPage = () => {
 						<Button
 							variant="contained"
 							size="large"
-							component="a"
-							href={mailtoHref}
 							onClick={() => handleCtaClick("hero")}
 							endIcon={<ArrowRight2 size={20} />}
 							sx={{ minWidth: 220 }}
@@ -404,8 +416,6 @@ const ClaudeAiLandingPage = () => {
 						<Button
 							variant="contained"
 							size="large"
-							component="a"
-							href={mailtoHref}
 							onClick={() => handleCtaClick("footer")}
 							startIcon={<Message size={20} />}
 							sx={{ minWidth: 240 }}
@@ -418,6 +428,18 @@ const ClaudeAiLandingPage = () => {
 					</Typography>
 				</Box>
 			</Container>
+
+			{/* SupportModal — usado para "Solicitar acceso beta". Se pre-setea con
+			    subject + lockedHeader del contexto del request; el user solo aporta
+			    su email (si está anónimo) y opcionalmente agrega contexto extra. */}
+			<SupportModal
+				open={supportOpen}
+				onClose={() => setSupportOpen(false)}
+				defaultSubject={BETA_REQUEST_SUBJECT}
+				defaultPriority="low"
+				lockedHeader={BETA_REQUEST_LOCKED_HEADER}
+				variant="landing"
+			/>
 		</Box>
 	);
 };

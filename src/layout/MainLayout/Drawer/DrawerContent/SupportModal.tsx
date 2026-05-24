@@ -82,6 +82,7 @@ const subjectOptions = [
 	"Error en proceso de pago",
 	"Solicitud de nueva jurisdicción",
 	"Solicitud de nuevo modelo de documento",
+	"Solicitud de acceso beta — Conector MCP",
 	"Otro",
 ];
 
@@ -204,10 +205,16 @@ const SupportModal = ({
 		setAttachmentFile(file);
 	};
 
+	// Cuando no hay user autenticado, el email es REQUERIDO en el form (no podemos
+	// inferirlo del JWT). El name se queda opcional para minimizar fricción —
+	// soporte responde por email igual.
+	const isAnonymous = !authUser;
+	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 	const validateForm = (): boolean => {
 		const newErrors = {
 			name: false,
-			email: false,
+			email: isAnonymous && !emailRegex.test(formData.email.trim()),
 			subject: !formData.subject.trim(),
 			// Con lockedHeader el contexto ya viene completo; el textarea es opcional.
 			message: hasLockedHeader ? false : !formData.message.trim(),
@@ -580,6 +587,30 @@ const SupportModal = ({
 												</Typography>
 											</Stack>
 										</Box>
+
+										{/* Email — visible solo si user no está logueado (la landing pública
+										    /integraciones/claude-ai puede tener users anónimos). Para users
+										    logueados el email viene del JWT y se envía implícito. */}
+										{isAnonymous && (
+											<TextField
+												fullWidth
+												type="email"
+												label="Tu email"
+												name="email"
+												value={formData.email}
+												onChange={handleChange}
+												error={errors.email}
+												helperText={
+													errors.email
+														? "Ingresá un email válido"
+														: "Te respondemos a este email dentro de 24 hs"
+												}
+												disabled={submitting}
+												required
+												placeholder="tu@email.com"
+												autoComplete="email"
+											/>
+										)}
 
 										{/* Asunto */}
 										<TextField

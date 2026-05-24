@@ -7,19 +7,26 @@
  * `color`, `variant`) para que sea intercambiable en componentes existentes
  * como CitasBanner que esperan `typeof Calculator`.
  *
- * El path SVG es el oficial de claude.ai (viewBox 100x100, fill: currentColor).
+ * **El color SIEMPRE es el oficial de la marca Claude** (`#D97757` — Crail).
+ * El prop `color` se acepta por compatibilidad con la signature de iconsax
+ * pero se IGNORA — el branding del logo no debe alterarse según el contexto
+ * para mantener identidad de marca consistente.
  */
 
 import { type SVGProps } from "react";
 
+/** Color oficial del logo Claude.ai (Crail). */
+export const CLAUDE_BRAND_COLOR = "#D97757";
+
 interface ClaudeAiLogoProps extends Omit<SVGProps<SVGSVGElement>, "color"> {
 	size?: number | string;
+	/** Ignorado — el logo siempre se renderiza en color de marca Claude (#D97757). */
 	color?: string;
 	/** Ignorado — mantenido para compatibilidad con iconsax `variant`. */
 	variant?: string;
 }
 
-const ClaudeAiLogo = ({ size = 24, color, variant: _variant, style, ...rest }: ClaudeAiLogoProps) => {
+const ClaudeAiLogo = ({ size = 24, color: _color, variant: _variant, style, ...rest }: ClaudeAiLogoProps) => {
 	const numericSize = typeof size === "number" ? size : parseFloat(size);
 	return (
 		<svg
@@ -27,7 +34,7 @@ const ClaudeAiLogo = ({ size = 24, color, variant: _variant, style, ...rest }: C
 			viewBox="0 0 100 100"
 			width={numericSize}
 			height={numericSize}
-			fill={color || "currentColor"}
+			fill={CLAUDE_BRAND_COLOR}
 			style={{ flexShrink: 0, ...style }}
 			aria-label="Claude.ai"
 			{...rest}

@@ -219,7 +219,7 @@ const Plans = () => {
 							justifyContent="space-between"
 						>
 							<Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
-								<ClaudeAiLogo size={32} color={BRAND_BLUE} />
+								<ClaudeAiLogo size={32} />
 								<Box>
 									<Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
 										Nuevo · Conectá Claude.ai a tu cuenta
