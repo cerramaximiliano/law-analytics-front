@@ -43,6 +43,7 @@ import {
 import MainCard from "components/MainCard";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
+import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
 
 // ============================== TOKENS ============================== //
 // Mantener en sync con sections/landing/Planes.tsx
@@ -70,6 +71,7 @@ const CATEGORIES: Category[] = [
 	{ id: "calendario", name: "Calendario", icon: Calendar },
 	{ id: "citas", name: "Sistema de citas", icon: CalendarTick },
 	{ id: "plataforma", name: "Plataforma", icon: InfoCircle },
+	{ id: "integraciones", name: "Integraciones IA", icon: ClaudeAiLogo as unknown as typeof Calculator },
 ];
 
 const FAQS: Faq[] = [
@@ -219,6 +221,56 @@ const FAQS: Faq[] = [
 		question: "¿La plataforma recibe actualizaciones regularmente?",
 		answer:
 			"Sí, realizamos actualizaciones periódicas para mejorar las funcionalidades existentes, incorporar nuevas características y optimizar el rendimiento general. Siempre comunicamos las actualizaciones importantes a través de notificaciones en la plataforma y correos electrónicos informativos.",
+	},
+	// Integraciones IA — MCP server (Phase 8 / Phase 7 beta)
+	{
+		id: "int1",
+		category: "integraciones",
+		question: "¿Puedo conectar Law Analytics a Claude.ai o ChatGPT?",
+		answer:
+			"Sí. Tenemos un conector MCP (Model Context Protocol) que te permite pedirle a Claude.ai que busque tus expedientes, resuma movimientos, consulte jurisprudencia y más, directamente desde cualquier chat con tu cuenta. Está disponible en beta cerrada — pedí acceso en /integraciones/claude-ai.",
+	},
+	{
+		id: "int2",
+		category: "integraciones",
+		question: "¿Es seguro? ¿Qué ve exactamente Claude sobre mis datos?",
+		answer:
+			"Sí. Usa OAuth 2.1 estándar (mismo protocolo que login con Google). Claude solo puede invocar tools de lectura — no puede modificar, eliminar ni compartir nada. Cada consulta es explícita: vos le pedís a Claude qué buscar y solo eso ve. Tu base completa NUNCA se le envía. Podés revocar el acceso en cualquier momento.",
+	},
+	{
+		id: "int3",
+		category: "integraciones",
+		question: "¿Qué necesito para conectarlo?",
+		answer:
+			"(1) Una cuenta activa en Law Analytics con plan Standard o Premium + addon MCP Access (durante la beta el acceso es manual sin addon). (2) Un plan Pro o Team de Claude.ai (los planes Free no soportan custom connectors). Después en Claude.ai → Settings → Connectors → Add custom connector, pegás https://mcp.lawanalytics.app y autorizás.",
+	},
+	{
+		id: "int4",
+		category: "integraciones",
+		question: "¿Qué cosas puedo pedirle a Claude sobre mis causas?",
+		answer:
+			"Buscar folders por nombre del demandante/demandado, listar tus causas activas, ver detalle completo de un folder con sus movimientos, tareas, notas, eventos, cálculos, contactos y escritos. También consultar jurisprudencia (búsqueda semántica sobre ~80 mil sentencias judiciales) y hacer preguntas sobre el contenido de un expediente específico via RAG.",
+	},
+	{
+		id: "int5",
+		category: "integraciones",
+		question: "¿Cómo revoco el acceso si quiero desconectarlo?",
+		answer:
+			"Dos formas: (1) En Claude.ai → Settings → Connectors → Law Analytics → Disconnect. (2) En tu cuenta de Law Analytics → Configuración → Apps conectadas → Desconectar. Cualquiera de las dos revoca el token al instante.",
+	},
+	{
+		id: "int6",
+		category: "integraciones",
+		question: "¿Funciona con otros asistentes IA además de Claude?",
+		answer:
+			"El protocolo MCP es estándar abierto, así que cualquier cliente que lo soporte puede conectarse. Hoy Claude.ai es el principal cliente soportado en producción; seguimos de cerca el rollout en ChatGPT y otros agentes IA que están adoptando MCP.",
+	},
+	{
+		id: "int7",
+		category: "integraciones",
+		question: "Conecté pero Claude.ai no encuentra mis herramientas",
+		answer:
+			"Suele ser cache del lado de Claude.ai. Solución: en Settings → Connectors → Law Analytics → Disconnect, después click en los 3 puntitos → Remove (eliminar), refrescá la página de Claude.ai (Ctrl+R), volvé a agregarlo con la misma URL y hacé el OAuth de nuevo. Después abrí un chat NUEVO. Si persiste, contactanos.",
 	},
 ];
 

@@ -3,17 +3,22 @@ import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
 import { useTheme, alpha } from "@mui/material/styles";
-import { Alert, Box, CircularProgress, Container, Grid, Typography } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Container, Grid, Stack, Typography } from "@mui/material";
 
 // third-party
 import { motion } from "framer-motion";
+
+// icons
+import { ArrowRight2 } from "iconsax-react";
 
 // project-imports
 import PlanCard from "components/cards/PlanCard";
 import ApiService, { Plan } from "store/reducers/ApiService";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
+import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
 import { cleanPlanDisplayName, getCurrentEnvironment } from "utils/planPricingUtils";
+import { pushGTMEvent } from "utils/gtm";
 
 // ============================== TOKENS ============================== //
 // Compartidos con PlanCard. Mantener en sync con sections/landing/Planes.tsx.
@@ -188,6 +193,58 @@ const Plans = () => {
 							);
 						})}
 					</Grid>
+				)}
+
+				{/* Banner MCP / Claude.ai (Phase 8 — adoption push). NO va a /register
+				    así que NO impacta Funnel 1. Link a la landing pública de la
+				    integración. Tracking: mcp_plans_cta_click. */}
+				{!loading && !error && plans.length > 0 && (
+					<Box
+						component={motion.div}
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.4, delay: 0.3 }}
+						sx={{
+							mt: 6,
+							p: { xs: 3, md: 4 },
+							borderRadius: 3,
+							border: `1px solid ${alpha(BRAND_BLUE, 0.2)}`,
+							bgcolor: alpha(BRAND_BLUE, 0.04),
+						}}
+					>
+						<Stack
+							direction={{ xs: "column", md: "row" }}
+							spacing={2}
+							alignItems={{ xs: "flex-start", md: "center" }}
+							justifyContent="space-between"
+						>
+							<Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
+								<ClaudeAiLogo size={32} color={BRAND_BLUE} />
+								<Box>
+									<Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+										Nuevo · Conectá Claude.ai a tu cuenta
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										Pediole a Claude que busque tus expedientes, resuma movimientos o consulte
+										jurisprudencia directo desde el chat. Disponible para planes Standard y Premium.
+									</Typography>
+								</Box>
+							</Stack>
+							<Button
+								variant="outlined"
+								color="primary"
+								component={RouterLink}
+								to="/integraciones/claude-ai"
+								onClick={() =>
+									pushGTMEvent("mcp_plans_cta_click", { cta_location: "plans_page" })
+								}
+								endIcon={<ArrowRight2 size={16} />}
+								sx={{ flexShrink: 0, minWidth: { md: 200 } }}
+							>
+								Más información
+							</Button>
+						</Stack>
+					</Box>
 				)}
 			</Container>
 		</Box>
