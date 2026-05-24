@@ -258,8 +258,8 @@ const ClaudeAiLandingPage = () => {
 						<ClaudeAiLogo size={64} />
 					</Box>
 					<Chip
-						label="BETA CERRADA"
-						color="primary"
+						label={integrations.claudeAi.releaseStage === "stable" ? "DISPONIBLE" : "BETA CERRADA"}
+						color={integrations.claudeAi.releaseStage === "stable" ? "success" : "primary"}
 						size="small"
 						sx={{ fontWeight: 700, letterSpacing: 1, mb: 1 }}
 					/>
@@ -278,7 +278,7 @@ const ClaudeAiLandingPage = () => {
 							endIcon={<ArrowRight2 size={20} />}
 							sx={{ minWidth: 220 }}
 						>
-							Solicitar acceso beta
+							{integrations.claudeAi.releaseStage === "stable" ? "Conectar Claude.ai" : "Solicitar acceso beta"}
 						</Button>
 						<Button
 							variant="outlined"
@@ -487,7 +487,7 @@ const ClaudeAiLandingPage = () => {
 							startIcon={<Message size={20} />}
 							sx={{ minWidth: 240 }}
 						>
-							Solicitar acceso beta
+							{integrations.claudeAi.releaseStage === "stable" ? "Conectar Claude.ai" : "Solicitar acceso beta"}
 						</Button>
 					</Stack>
 					<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 3 }}>

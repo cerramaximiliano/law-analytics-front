@@ -25,19 +25,34 @@ export interface ApiResponse<T = any> {
 // extra al cargar la landing. Cada flag indica si la opción se muestra en UI.
 // `enabled: false` → la UI debe ocultar la opción de esa integración.
 
+/**
+ * releaseStage: 'beta' → chip "Beta" + CTA "Solicitar acceso" + form de soporte.
+ *                'stable' → chip "Disponible" + CTA directo a /connect.
+ */
+export type ReleaseStage = "beta" | "stable";
+
 export interface ServiceFlag {
 	enabled: boolean;
 	maintenanceMessage: string | null;
+	releaseStage: ReleaseStage;
 }
 
 export interface PublicIntegrations {
 	/** Toggle para mostrar el banner MCP de Claude.ai en landing/plans + página /integraciones/claude-ai. */
 	claudeAi: ServiceFlag;
+	/** Toggle equivalente para ChatGPT — UI futura (placeholder hasta que el MCP soporte ChatGPT). */
+	chatGpt: ServiceFlag;
 }
 
-/** Defaults seguros (fail-open) si el endpoint falla — todas las integraciones se asumen disponibles. */
+/**
+ * Defaults fail-CLOSED si el endpoint falla — ambas integraciones se asumen
+ * NO disponibles. Cambiado de fail-open a fail-closed cuando el producto decidió
+ * lanzar la integración deshabilitada por default (no exponer features que no
+ * están listas en producción si el backend no puede confirmar el flag).
+ */
 export const DEFAULT_PUBLIC_INTEGRATIONS: PublicIntegrations = {
-	claudeAi: { enabled: true, maintenanceMessage: null },
+	claudeAi: { enabled: false, maintenanceMessage: null, releaseStage: "beta" },
+	chatGpt: { enabled: false, maintenanceMessage: null, releaseStage: "beta" },
 };
 
 // ===============================

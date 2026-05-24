@@ -7,9 +7,11 @@
  * fetch nuevo. Para páginas standalone (/integraciones/claude-ai accedida
  * directamente) hace una sola request inicial.
  *
- * Fail-open: si el endpoint falla, devuelve DEFAULT_PUBLIC_INTEGRATIONS
- * (todo enabled) — preferir mostrar UI con riesgo de UX confuso vs ocultar
- * features por un fallo transitorio del backend.
+ * Fail-closed: si el endpoint falla, devuelve DEFAULT_PUBLIC_INTEGRATIONS
+ * (todo disabled) — el producto prefiere ocultar features que no podemos
+ * confirmar como disponibles vs exponerlas accidentalmente por un fallo
+ * transitorio del backend. Coherente con el default del schema en
+ * IntegrationsConfig (services.{claudeAi,chatGpt}.enabled = false).
  */
 
 import { useEffect, useState } from "react";
