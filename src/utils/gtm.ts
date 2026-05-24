@@ -46,6 +46,15 @@ export const GTMEvents = {
 	REGISTER_FORM_ERROR: "register_form_error",
 	SIGN_UP: "sign_up",
 	GOOGLE_SIGNUP_CLICK: "google_signup_click",
+	// OAuth/MCP server connection events (Phase 2 — pending GTM tags creation)
+	OAUTH_LOGIN_VIEW: "oauth_login_view",
+	OAUTH_LOGIN_SUBMIT: "oauth_login_submit",
+	OAUTH_LOGIN_SUCCESS: "oauth_login_success",
+	OAUTH_LOGIN_ERROR: "oauth_login_error",
+	OAUTH_CONSENT_VIEW: "oauth_consent_view",
+	OAUTH_CONSENT_ACCEPT: "oauth_consent_accept",
+	OAUTH_CONSENT_REJECT: "oauth_consent_reject",
+	OAUTH_UPGRADE_VIEW: "oauth_upgrade_view",
 } as const;
 
 // Landing page section names for scroll tracking
@@ -235,5 +244,93 @@ export const trackRegisterFormError = (errorType: string, errorMessage?: string,
 		error_type: errorType,
 		error_message: errorMessage || null,
 		source: source || "direct",
+	});
+};
+
+// =============================================================================
+// OAuth (MCP server connection) events — Phase 2 / PR 2.x
+//
+// NO confundir con register_* / sign_up: estos eventos NO son signups ni logins
+// estándar — son autorizaciones para que un cliente externo (Claude.ai, ChatGPT)
+// acceda a la cuenta del user via OAuth 2.1.
+//
+// IMPORTANTE: cada evento nuevo requiere su tag GTM (Setup B). Mientras no
+// existan los tags en GTM, los pushes al dataLayer no llegan a GA4 — pero
+// documentamos acá para que cuando se creen los tags estén alineados.
+//
+// Tags GTM a crear post-deploy de Phase 2:
+//   - oauth_login_view      → GA4 event
+//   - oauth_login_submit    → GA4 event con dimensión `method`
+//   - oauth_login_success   → GA4 event con dimensión `method`
+//   - oauth_login_error     → GA4 event con dimensiones `error_type`, `method`
+//   - oauth_consent_view    → GA4 event con dimensión `client_name`, `verified`
+//   - oauth_consent_accept  → GA4 event (conversión soft)
+//   - oauth_consent_reject  → GA4 event con dimensión `reason`
+//   - oauth_upgrade_view    → GA4 event con dimensión `reason` (señal de upsell)
+// =============================================================================
+
+/** Montaje de /oauth/login — un user con sesión OAuth iniciada llegó a la pantalla de login */
+export const trackOauthLoginView = (clientId?: string, clientName?: string): void => {
+	pushGTMEvent(GTMEvents.OAUTH_LOGIN_VIEW, {
+		client_id: clientId || null,
+		client_name: clientName || null,
+	});
+};
+
+/** Submit del form de login OAuth (email/pwd o Google) */
+export const trackOauthLoginSubmit = (method: "email" | "google", clientId?: string): void => {
+	pushGTMEvent(GTMEvents.OAUTH_LOGIN_SUBMIT, {
+		method,
+		client_id: clientId || null,
+	});
+};
+
+/** Login OAuth exitoso — Hydra acceptLoginRequest devolvió redirect_to */
+export const trackOauthLoginSuccess = (method: "email" | "google", clientId?: string): void => {
+	pushGTMEvent(GTMEvents.OAUTH_LOGIN_SUCCESS, {
+		method,
+		client_id: clientId || null,
+	});
+};
+
+/** Error en login OAuth (credenciales inválidas, Hydra error, etc.) */
+export const trackOauthLoginError = (errorType: string, method?: "email" | "google", clientId?: string): void => {
+	pushGTMEvent(GTMEvents.OAUTH_LOGIN_ERROR, {
+		error_type: errorType,
+		method: method || null,
+		client_id: clientId || null,
+	});
+};
+
+/** Montaje de /oauth/consent */
+export const trackOauthConsentView = (clientId?: string, clientName?: string, verified?: boolean): void => {
+	pushGTMEvent(GTMEvents.OAUTH_CONSENT_VIEW, {
+		client_id: clientId || null,
+		client_name: clientName || null,
+		verified: !!verified,
+	});
+};
+
+/** User clickea "Autorizar" en consent — conversión soft */
+export const trackOauthConsentAccept = (clientId?: string, grantedScopes?: string[]): void => {
+	pushGTMEvent(GTMEvents.OAUTH_CONSENT_ACCEPT, {
+		client_id: clientId || null,
+		granted_scopes: grantedScopes || [],
+	});
+};
+
+/** User clickea "Rechazar" en consent */
+export const trackOauthConsentReject = (clientId?: string, reason?: string): void => {
+	pushGTMEvent(GTMEvents.OAUTH_CONSENT_REJECT, {
+		client_id: clientId || null,
+		reason: reason || null,
+	});
+};
+
+/** Montaje de /oauth/upgrade-required — señal de upsell potencial */
+export const trackOauthUpgradeView = (reason: string, plan?: string): void => {
+	pushGTMEvent(GTMEvents.OAUTH_UPGRADE_VIEW, {
+		reason,
+		plan: plan || null,
 	});
 };

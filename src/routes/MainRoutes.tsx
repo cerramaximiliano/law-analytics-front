@@ -41,6 +41,9 @@ const AccountTabRole = Loadable(lazyRetry(() => import("sections/apps/profiles/a
 const AccountTabSettings = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabSettings")));
 const AccountTabPjnIntegration = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabPjnIntegration")));
 
+// render - OAuth connected apps (Phase 2 PR 2.4)
+const ConnectedAppsPage = Loadable(lazyRetry(() => import("pages/oauth/connected-apps")));
+
 // render - folders
 const FoldersLayout = Loadable(lazyRetry(() => import("pages/apps/folders/folders")));
 
@@ -136,6 +139,10 @@ const MainRoutes = {
 				</AuthGuard>
 			),
 			children: [
+				{
+					path: "settings/connected-apps",
+					element: <ConnectedAppsPage />,
+				},
 				{
 					path: "dashboard",
 					children: [
