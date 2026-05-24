@@ -66,7 +66,7 @@ type TeaserRowDef =
 
 const TEASER_ROWS: TeaserRowDef[] = [
 	{ kind: "resource", resourceName: "folders", format: (n) => `${n} causas activas` },
-	{ kind: "feature", featureName: "movements", label: "Sincronización con PJN y MEV" },
+	{ kind: "feature", featureName: "movements", label: "Sincronización con PJN, MEV y EJE" },
 	{ kind: "resource", resourceName: "aiQueriesPerMonth", format: (n) => `${n} consultas IA/mes` },
 	{ kind: "feature", featureName: "booking", label: "Sistema de reservas online" },
 ];
@@ -82,7 +82,7 @@ const PLAN_DEFAULTS: Plan[] = [
 		priceSuffix: "Para siempre",
 		rows: [
 			{ label: "5 causas activas", enabled: true },
-			{ label: "Sincronización con PJN y MEV", enabled: false },
+			{ label: "Sincronización con PJN, MEV y EJE", enabled: false },
 			{ label: "50 consultas IA/mes", enabled: true },
 			{ label: "Sistema de reservas online", enabled: false },
 		],
@@ -98,7 +98,7 @@ const PLAN_DEFAULTS: Plan[] = [
 		priceSuffix: "/mes",
 		rows: [
 			{ label: "50 causas activas", enabled: true },
-			{ label: "Sincronización con PJN y MEV", enabled: true },
+			{ label: "Sincronización con PJN, MEV y EJE", enabled: true },
 			{ label: "200 consultas IA/mes", enabled: true },
 			{ label: "Sistema de reservas online", enabled: true },
 		],
@@ -114,7 +114,7 @@ const PLAN_DEFAULTS: Plan[] = [
 		priceSuffix: "/mes",
 		rows: [
 			{ label: "500 causas activas", enabled: true },
-			{ label: "Sincronización con PJN y MEV", enabled: true },
+			{ label: "Sincronización con PJN, MEV y EJE", enabled: true },
 			{ label: "1500 consultas IA/mes", enabled: true },
 			{ label: "Sistema de reservas online", enabled: true },
 		],

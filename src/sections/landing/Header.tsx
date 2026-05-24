@@ -75,8 +75,8 @@ const INTEGRATIONS: Integration[] = [
 		key: "eje",
 		shortName: "EJE",
 		fullName: "Poder Judicial de la\nCiudad de Buenos Aires",
-		tooltipTitle: "Poder Judicial de la Ciudad de Buenos Aires (EJE) - Próximamente",
-		status: "comingSoon",
+		tooltipTitle: "Poder Judicial de la Ciudad de Buenos Aires (EJE)",
+		status: "available",
 		logoSrc: logoPJCABA,
 		bgColor: "#ffffff",
 		hasBorder: true,
@@ -686,10 +686,10 @@ const HeaderPage = () => {
 										}}
 									>
 										<Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
-											Centralizá expedientes de PJN y MEV con novedades y movimientos actualizados.
+											Centralizá expedientes de PJN, MEV y EJE con novedades y movimientos actualizados.
 										</Box>
 										<Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
-											Centralizá tus expedientes de PJN y MEV, con novedades y movimientos actualizados desde una sola plataforma.
+											Centralizá tus expedientes de PJN, MEV y EJE, con novedades y movimientos actualizados desde una sola plataforma.
 										</Box>
 									</Typography>
 									<Typography
