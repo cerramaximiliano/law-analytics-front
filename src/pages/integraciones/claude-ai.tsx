@@ -29,6 +29,7 @@ import {
 	Typography,
 	useTheme,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
 // icons
 import {
@@ -47,6 +48,8 @@ import {
 
 // project-imports
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
+import LogoSection from "components/logo";
+import FadeInWhenVisible from "sections/landing/Animation";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 
 // tracking
@@ -192,8 +195,25 @@ const ClaudeAiLandingPage = () => {
 	};
 
 	return (
-		<Box sx={{ bgcolor: "background.default", minHeight: "100vh", py: { xs: 4, md: 8 } }}>
-			<Container maxWidth="md">
+		<Box sx={{ bgcolor: "background.default", minHeight: "100vh" }}>
+			{/* Nav minimalista — logo a la izquierda como link a la landing */}
+			<Box
+				component="header"
+				sx={{
+					position: "sticky",
+					top: 0,
+					zIndex: 10,
+					bgcolor: alpha(theme.palette.background.default, 0.85),
+					backdropFilter: "blur(10px)",
+					borderBottom: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+				}}
+			>
+				<Container maxWidth="md" sx={{ display: "flex", alignItems: "center", py: 1.5 }}>
+					<LogoSection to="/" />
+				</Container>
+			</Box>
+
+			<Container maxWidth="md" sx={{ py: { xs: 4, md: 8 } }}>
 				{/* Hero */}
 				<Stack spacing={2} alignItems="center" sx={{ textAlign: "center", mb: 6 }}>
 					<Box sx={{ mb: 1 }}>
@@ -237,6 +257,7 @@ const ClaudeAiLandingPage = () => {
 				<Divider sx={{ my: 6 }} />
 
 				{/* Use cases */}
+				<FadeInWhenVisible>
 				<Box sx={{ mb: 8 }} id="que-podes-hacer">
 					<Typography variant="h4" sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}>
 						Qué podés hacer
@@ -270,10 +291,12 @@ const ClaudeAiLandingPage = () => {
 						))}
 					</Grid>
 				</Box>
+				</FadeInWhenVisible>
 
 				<Divider sx={{ my: 6 }} />
 
 				{/* Steps */}
+				<FadeInWhenVisible>
 				<Box sx={{ mb: 8 }} id="como-funciona">
 					<Typography variant="h4" sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}>
 						Cómo conectarlo
@@ -316,10 +339,12 @@ const ClaudeAiLandingPage = () => {
 						))}
 					</Stack>
 				</Box>
+				</FadeInWhenVisible>
 
 				<Divider sx={{ my: 6 }} />
 
 				{/* Trust / Security */}
+				<FadeInWhenVisible>
 				<Box sx={{ mb: 8 }} id="seguridad">
 					<Typography variant="h4" sx={{ fontWeight: 700, mb: 4, textAlign: "center" }}>
 						Seguridad y privacidad
@@ -360,10 +385,12 @@ const ClaudeAiLandingPage = () => {
 						</Grid>
 					</Grid>
 				</Box>
+				</FadeInWhenVisible>
 
 				<Divider sx={{ my: 6 }} />
 
 				{/* FAQ */}
+				<FadeInWhenVisible>
 				<Box sx={{ mb: 8 }} id="faq">
 					<Typography variant="h4" sx={{ fontWeight: 700, mb: 4, textAlign: "center" }}>
 						Preguntas frecuentes
@@ -400,10 +427,12 @@ const ClaudeAiLandingPage = () => {
 						))}
 					</Stack>
 				</Box>
+				</FadeInWhenVisible>
 
 				<Divider sx={{ my: 6 }} />
 
 				{/* CTA final */}
+				<FadeInWhenVisible>
 				<Box sx={{ textAlign: "center", py: 6 }}>
 					<Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>
 						Listo para probarlo
@@ -427,6 +456,7 @@ const ClaudeAiLandingPage = () => {
 						Tenés que tener una cuenta activa en lawanalytics.app + plan Pro/Team en Claude.ai.
 					</Typography>
 				</Box>
+				</FadeInWhenVisible>
 			</Container>
 
 			{/* SupportModal — usado para "Solicitar acceso beta". Se pre-setea con

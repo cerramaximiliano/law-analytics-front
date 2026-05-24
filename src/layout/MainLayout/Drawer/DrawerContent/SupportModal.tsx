@@ -94,6 +94,7 @@ const priorityOptions = [
 ];
 
 const SUBJECT_TEMPLATE_REQUEST = "Solicitud de nuevo modelo de documento";
+const SUBJECT_MCP_BETA = "Solicitud de acceso beta — Conector MCP";
 
 const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx"];
 const MAX_FILE_SIZE_MB = 10;
@@ -293,6 +294,7 @@ const SupportModal = ({
 	};
 
 	const isTemplateRequest = formData.subject === SUBJECT_TEMPLATE_REQUEST;
+	const isMcpBetaRequest = formData.subject === SUBJECT_MCP_BETA;
 
 	// Props comunes para el Dialog (open/onClose/sizing); las props específicas de
 	// transición y look van por separado según variant.
@@ -574,23 +576,41 @@ const SupportModal = ({
 							) : (
 								<Box component="form" onSubmit={handleSubmit}>
 									<Stack spacing={2.5}>
-										<Box
-											sx={{
-												p: 1.5,
-												borderRadius: 1.25,
-												bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
-												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
-											}}
-										>
-											<Stack direction="row" spacing={1} alignItems="flex-start">
-												<InfoCircle size={16} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
-												<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-													{isTemplateRequest
-														? "Adjuntá el PDF, DOC o DOCX que querés que integremos como modelo autocompletable. Indicá también qué campos deberían ser completables y a qué tipo de expediente corresponde."
-														: "Si tu consulta es sobre un error de pago, incluí todos los detalles posibles para ayudarte mejor."}
-												</Typography>
-											</Stack>
-										</Box>
+										{/* Info box — solo se muestra cuando hay un mensaje útil para el
+										    subject actual. Para subjects sin un copy específico, omitimos
+										    la caja para no mostrar info ruido (ej. "error de pago" no
+										    aplica a una solicitud de acceso beta). */}
+										{(isTemplateRequest || isMcpBetaRequest) && (
+											<Box
+												sx={{
+													p: 1.5,
+													borderRadius: 1.25,
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+													border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+												}}
+											>
+												<Stack direction="row" spacing={1} alignItems="flex-start">
+													<InfoCircle
+														size={16}
+														variant="Bulk"
+														color={BRAND_BLUE}
+														style={{ marginTop: 2, flexShrink: 0 }}
+													/>
+													<Typography
+														sx={{
+															fontSize: "0.82rem",
+															color: "text.primary",
+															letterSpacing: "-0.005em",
+															textWrap: "pretty",
+														}}
+													>
+														{isTemplateRequest
+															? "Adjuntá el PDF, DOC o DOCX que querés que integremos como modelo autocompletable. Indicá también qué campos deberían ser completables y a qué tipo de expediente corresponde."
+															: "Te activamos el acceso beta dentro de las próximas 24 horas. Recibirás un email con instrucciones para conectar Claude.ai a tu cuenta."}
+													</Typography>
+												</Stack>
+											</Box>
+										)}
 
 										{/* Email — visible solo si user no está logueado (la landing pública
 										    /integraciones/claude-ai puede tener users anónimos). Para users
