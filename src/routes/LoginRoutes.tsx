@@ -21,6 +21,9 @@ const OauthLogin = Loadable(lazyRetry(() => import("pages/oauth/login")));
 const OauthConsent = Loadable(lazyRetry(() => import("pages/oauth/consent")));
 const OauthUpgradeRequired = Loadable(lazyRetry(() => import("pages/oauth/upgrade-required")));
 
+// Landing pública de integración con Claude.ai (Phase 7 PR 7.3)
+const IntegracionClaudeAi = Loadable(lazyRetry(() => import("pages/integraciones/claude-ai")));
+
 // ==============================|| AUTH ROUTES ||============================== //
 
 const LoginRoutes = {
@@ -76,6 +79,10 @@ const LoginRoutes = {
 				{
 					path: "oauth/upgrade-required",
 					element: <OauthUpgradeRequired />,
+				},
+				{
+					path: "integraciones/claude-ai",
+					element: <IntegracionClaudeAi />,
 				},
 			],
 		},
