@@ -294,7 +294,6 @@ const SupportModal = ({
 	};
 
 	const isTemplateRequest = formData.subject === SUBJECT_TEMPLATE_REQUEST;
-	const isMcpBetaRequest = formData.subject === SUBJECT_MCP_BETA;
 
 	// Props comunes para el Dialog (open/onClose/sizing); las props específicas de
 	// transición y look van por separado según variant.
@@ -576,11 +575,10 @@ const SupportModal = ({
 							) : (
 								<Box component="form" onSubmit={handleSubmit}>
 									<Stack spacing={2.5}>
-										{/* Info box — solo se muestra cuando hay un mensaje útil para el
-										    subject actual. Para subjects sin un copy específico, omitimos
-										    la caja para no mostrar info ruido (ej. "error de pago" no
-										    aplica a una solicitud de acceso beta). */}
-										{(isTemplateRequest || isMcpBetaRequest) && (
+										{/* Info box — sólo se muestra para subjects con un copy específico
+										    útil (hoy: solo Solicitud de modelo de documento, que pide adjuntar
+										    archivo). Para el resto omitimos la caja para no mostrar info ruido. */}
+										{isTemplateRequest && (
 											<Box
 												sx={{
 													p: 1.5,
@@ -604,9 +602,9 @@ const SupportModal = ({
 															textWrap: "pretty",
 														}}
 													>
-														{isTemplateRequest
-															? "Adjuntá el PDF, DOC o DOCX que querés que integremos como modelo autocompletable. Indicá también qué campos deberían ser completables y a qué tipo de expediente corresponde."
-															: "Te activamos el acceso beta dentro de las próximas 24 horas. Recibirás un email con instrucciones para conectar Claude.ai a tu cuenta."}
+														Adjuntá el PDF, DOC o DOCX que querés que integremos como modelo
+														autocompletable. Indicá también qué campos deberían ser completables
+														y a qué tipo de expediente corresponde.
 													</Typography>
 												</Stack>
 											</Box>
