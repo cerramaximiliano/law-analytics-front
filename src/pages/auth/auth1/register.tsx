@@ -692,7 +692,7 @@ const Register = () => {
 													textWrap: "pretty",
 												}}
 											>
-												Centralizá expedientes de PJN y MEV con novedades y movimientos automáticos.
+												Centralizá expedientes de PJN, MEV y EJE con novedades y movimientos automáticos.
 											</Typography>
 										</Stack>
 									)}

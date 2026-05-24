@@ -44,7 +44,7 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 	[FeatureNames.CARPETAS]: {
 		title: "Expedientes organizados, sin esfuerzo",
 		description: "Todo tu estudio en un solo lugar, sincronizado con el Poder Judicial.",
-		benefits: ["Vista unificada", "Integración con PJN y MEV", "Alertas de movimientos"],
+		benefits: ["Vista unificada", "Integración con PJN, MEV y EJE", "Alertas de movimientos"],
 		cta: "Probar con mis expedientes",
 		iconComponent: FolderOpen,
 		colorKey: "warning",
