@@ -19,6 +19,7 @@ import {
 	Send2,
 	ArrowRight2,
 	ArrowRight,
+	Star1,
 } from "iconsax-react";
 
 // project-imports
@@ -27,7 +28,7 @@ import SectionEyebrow from "./SectionEyebrow";
 import MainCard from "components/MainCard";
 import FeatureModal from "components/FeatureModal";
 import { useLandingAnalytics } from "hooks/useLandingAnalytics";
-import { FeatureNames, trackViewFeaturesSection } from "utils/gtm";
+import { FeatureNames, pushGTMEvent, trackViewFeaturesSection } from "utils/gtm";
 
 // ============================== TOKENS ============================== //
 // Mismos tokens que el Hero — atmósfera brand-blue + dot verde para nuevos.
@@ -441,6 +442,26 @@ const TechnologiesPage = () => {
 		featureKey: FeatureNames.SISTEMA_CITAS,
 	};
 
+	// Banner MCP (Phase 8) — link a landing pública de integración con Claude.ai.
+	// **NO va a /register** → no impacta Funnel 1. Tracking aparte:
+	// mcp_landing_card_click (con cta_location='landing_card_mcp').
+	const mcpBanner: CitasBannerData = {
+		iconComponent: Star1,
+		title: "Nuevo · Conectá Claude.ai a tu cuenta",
+		description:
+			"Pediole a Claude que busque tus expedientes, resuma movimientos o consulte jurisprudencia desde el chat.",
+		cta: "Ver cómo conectarlo",
+		to: "/integraciones/claude-ai",
+		featureKey: FeatureNames.SISTEMA_CITAS, // reusa key — no se usa en este flow porque no va a /register
+	};
+	const handleMcpBannerClick = useCallback(() => {
+		pushGTMEvent("mcp_landing_card_click", { cta_location: "landing_card_mcp" });
+		navigate(mcpBanner.to);
+	}, [navigate, mcpBanner.to]);
+	const trackMcpCTA = useCallback(() => {
+		pushGTMEvent("mcp_landing_card_click", { cta_location: "landing_card_mcp" });
+	}, []);
+
 	const handleRowClick = useCallback(
 		(tech: FeatureRowData) => {
 			trackFeature(tech.featureKey);
@@ -593,6 +614,14 @@ const TechnologiesPage = () => {
 				<Box sx={{ mt: 3 }}>
 					<FadeInWhenVisible>
 						<CitasBanner banner={citasBanner} theme={theme} isDark={isDark} onClick={handleBannerClick} onCtaTrack={trackCitasCTA} />
+					</FadeInWhenVisible>
+				</Box>
+
+				{/* Banner MCP — adopción de integración con Claude.ai (Phase 8).
+				    No va a /register, va a la landing pública dedicada. */}
+				<Box sx={{ mt: 3 }}>
+					<FadeInWhenVisible>
+						<CitasBanner banner={mcpBanner} theme={theme} isDark={isDark} onClick={handleMcpBannerClick} onCtaTrack={trackMcpCTA} />
 					</FadeInWhenVisible>
 				</Box>
 
