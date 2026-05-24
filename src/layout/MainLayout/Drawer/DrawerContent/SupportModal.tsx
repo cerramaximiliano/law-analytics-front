@@ -347,7 +347,11 @@ const SupportModal = ({
 
 	const dialogJSX = (
 		<Dialog {...commonDialogProps} {...(variantDialogProps as any)}>
-					<Box sx={{ position: "relative" }}>
+					{/* Box wrapper en flex column para que DialogContent scrollee internamente
+					    en vez de hacer que el Paper crezca más allá del viewport (que con
+					    overflow:hidden en PaperProps cortaba los DialogActions). minHeight:0
+					    permite que el flex child (DialogContent) shrink correctamente. */}
+					<Box sx={{ position: "relative", display: "flex", flexDirection: "column", minHeight: 0, flex: 1 }}>
 						{/* Atmósfera — blob brand-blue sutil, coherente con FeatureModal y landing.
 						    Variant `dashboard` lo omite. */}
 						{!isDashboard && (
@@ -521,7 +525,7 @@ const SupportModal = ({
 
 						{!isDashboard && <Divider sx={{ position: "relative", zIndex: 1 }} />}
 
-						<DialogContent sx={{ position: "relative", zIndex: 1, p: 3 }}>
+						<DialogContent sx={{ position: "relative", zIndex: 1, p: 3, overflowY: "auto", flex: 1, minHeight: 0 }}>
 							{submitted ? (
 								isDashboard ? (
 									<Stack alignItems="center" spacing={1.5} sx={{ py: 4, textAlign: "center" }}>
