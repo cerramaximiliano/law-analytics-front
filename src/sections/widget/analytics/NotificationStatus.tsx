@@ -74,7 +74,7 @@ const NotificationStatus = () => {
 								sx={{
 									height: 8,
 									borderRadius: 1,
-									backgroundColor: "grey.200",
+									backgroundColor: (theme) => (theme.palette.mode === "dark" ? "grey.700" : "grey.200"),
 									"& .MuiLinearProgress-bar": {
 										borderRadius: 1,
 										backgroundColor: "success.main",
@@ -96,7 +96,7 @@ const NotificationStatus = () => {
 								sx={{
 									height: 8,
 									borderRadius: 1,
-									backgroundColor: "grey.200",
+									backgroundColor: (theme) => (theme.palette.mode === "dark" ? "grey.700" : "grey.200"),
 									"& .MuiLinearProgress-bar": {
 										borderRadius: 1,
 										backgroundColor: "warning.main",

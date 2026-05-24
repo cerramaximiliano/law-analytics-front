@@ -460,7 +460,7 @@ const CalcTableEnhanced = ({
 										width: 100,
 										height: 8,
 										borderRadius: 4,
-										bgcolor: "grey.200",
+										bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.700" : "grey.200"),
 										"& .MuiLinearProgress-bar": {
 											borderRadius: 4,
 											bgcolor: "success.main",
@@ -490,7 +490,7 @@ const CalcTableEnhanced = ({
 						sx={{
 							p: 2,
 							mb: 2,
-							bgcolor: "grey.50",
+							bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.50"),
 							border: "1px solid",
 							borderColor: "divider",
 							borderRadius: 1,

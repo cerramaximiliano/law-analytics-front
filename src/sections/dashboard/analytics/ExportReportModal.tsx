@@ -605,7 +605,7 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 					</Alert>
 
 					{/* Información del reporte */}
-					<Box sx={{ p: 2, bgcolor: "grey.50", borderRadius: 1 }}>
+					<Box sx={{ p: 2, bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.50"), borderRadius: 1 }}>
 						<Typography variant="subtitle2" gutterBottom fontWeight={600}>
 							Contenido del Reporte:
 						</Typography>

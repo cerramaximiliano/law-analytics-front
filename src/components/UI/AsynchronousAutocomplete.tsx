@@ -79,7 +79,7 @@ const AsynchronousAutocomplete = (props: any) => {
 							fontSize: 12,
 						},
 						"& input::placeholder": {
-							color: "#000000",
+							color: "text.primary",
 							opacity: 0.6,
 						},
 						"& .MuiInputBase-root": {

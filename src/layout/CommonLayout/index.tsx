@@ -8,8 +8,10 @@ import { Container, Toolbar } from "@mui/material";
 
 // project-imports
 import ComponentLayout from "./ComponentLayout";
+import ThemeCustomization from "themes";
 import { dispatch, useSelector } from "store";
 import { openComponentDrawer } from "store/reducers/menu";
+import { ThemeMode } from "types/config";
 
 // material-ui
 import { styled } from "@mui/material/styles";
@@ -49,7 +51,7 @@ const CommonLayout = ({ layout = "blank" }: { layout?: string }) => {
 	};
 
 	return (
-		<>
+		<ThemeCustomization forceMode={ThemeMode.LIGHT}>
 			{(layout === "landing" || layout === "simple") && (
 				<Suspense fallback={<Loader />}>
 					<Header layout={layout} />
@@ -67,7 +69,7 @@ const CommonLayout = ({ layout = "blank" }: { layout?: string }) => {
 				</Suspense>
 			)}
 			{layout === "blank" && <Outlet />}
-		</>
+		</ThemeCustomization>
 	);
 };
 

@@ -4,6 +4,7 @@ import { useRoutes } from "react-router-dom";
 
 // project-imports
 import CommonLayout from "layout/CommonLayout";
+import PublicLayout from "layout/PublicLayout";
 import Loadable from "components/Loadable";
 import LoginRoutes from "./LoginRoutes";
 import MainRoutes from "./MainRoutes";
@@ -65,8 +66,14 @@ export default function ThemeRoutes() {
 		LoginRoutes,
 		MainRoutes,
 		{
-			path: "f/:token",
-			element: <FeedbackInvitePage />,
+			path: "/",
+			element: <PublicLayout />,
+			children: [
+				{
+					path: "f/:token",
+					element: <FeedbackInvitePage />,
+				},
+			],
 		},
 		{
 			path: "*",

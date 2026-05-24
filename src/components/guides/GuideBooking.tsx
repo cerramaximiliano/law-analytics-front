@@ -679,7 +679,7 @@ const ClientExperienceContent = () => {
 					</Typography>
 				</Box>
 				<Box sx={{ p: 2 }}>
-					<Box sx={{ p: 2, mb: 3, bgcolor: alpha(theme.palette.grey[100], 0.5), borderRadius: "8px" }}>
+					<Box sx={{ p: 2, mb: 3, bgcolor: alpha(theme.palette.grey[theme.palette.mode === "dark" ? 800 : 100], 0.5), borderRadius: "8px" }}>
 						<Typography variant="subtitle2" gutterBottom color="primary">
 							Paso 1: Acceso al Portal de Citas
 						</Typography>
@@ -689,7 +689,7 @@ const ClientExperienceContent = () => {
 						</Typography>
 					</Box>
 
-					<Box sx={{ p: 2, mb: 3, bgcolor: alpha(theme.palette.grey[100], 0.5), borderRadius: "8px" }}>
+					<Box sx={{ p: 2, mb: 3, bgcolor: alpha(theme.palette.grey[theme.palette.mode === "dark" ? 800 : 100], 0.5), borderRadius: "8px" }}>
 						<Typography variant="subtitle2" gutterBottom color="primary">
 							Paso 2: Selección de Fecha y Hora
 						</Typography>
@@ -701,7 +701,7 @@ const ClientExperienceContent = () => {
 						</ul>
 					</Box>
 
-					<Box sx={{ p: 2, mb: 3, bgcolor: alpha(theme.palette.grey[100], 0.5), borderRadius: "8px" }}>
+					<Box sx={{ p: 2, mb: 3, bgcolor: alpha(theme.palette.grey[theme.palette.mode === "dark" ? 800 : 100], 0.5), borderRadius: "8px" }}>
 						<Typography variant="subtitle2" gutterBottom color="primary">
 							Paso 3: Formulario de Información
 						</Typography>
@@ -713,7 +713,7 @@ const ClientExperienceContent = () => {
 						</ul>
 					</Box>
 
-					<Box sx={{ p: 2, bgcolor: alpha(theme.palette.grey[100], 0.5), borderRadius: "8px" }}>
+					<Box sx={{ p: 2, bgcolor: alpha(theme.palette.grey[theme.palette.mode === "dark" ? 800 : 100], 0.5), borderRadius: "8px" }}>
 						<Typography variant="subtitle2" gutterBottom color="primary">
 							Paso 4: Confirmación y Recordatorios
 						</Typography>

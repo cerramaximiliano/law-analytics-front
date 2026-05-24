@@ -577,7 +577,7 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 															sx={{
 																width: 30,
 																height: 30,
-																bgcolor: "grey.200",
+																bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.700" : "grey.200"),
 																color: "grey.500",
 															}}
 														>
@@ -689,7 +689,7 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 
 			{/* Estadísticas adicionales */}
 			{stats && (
-				<Box sx={{ p: 2, borderTop: 1, borderColor: "divider", bgcolor: "grey.50" }}>
+				<Box sx={{ p: 2, borderTop: 1, borderColor: "divider", bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.50") }}>
 					<Stack direction="row" spacing={2} flexWrap="wrap">
 						<Typography variant="caption" color="textSecondary">
 							Total con documentos: <strong>{stats.totalWithLinks || 0}</strong>

@@ -45,7 +45,7 @@ const customInputStyles = {
 		fontSize: 12,
 	},
 	"& input::placeholder": {
-		color: "#000000",
+		color: "text.primary",
 		opacity: 0.6,
 	},
 };
@@ -54,7 +54,7 @@ const customTextareaStyles = {
 		fontSize: 12,
 	},
 	"& textarea::placeholder": {
-		color: "#000000",
+		color: "text.primary",
 		opacity: 0.6,
 	},
 };
@@ -580,7 +580,7 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 								sx={{
 									mt: 4,
 									borderBottomWidth: 1,
-									borderColor: "rgba(0, 0, 0, 0.12)",
+									borderColor: "divider",
 									width: "100%",
 								}}
 							/>

@@ -5,6 +5,7 @@ import { Navigate } from "react-router-dom";
 // project-imports
 import MainLayout from "layout/MainLayout";
 import CommonLayout from "layout/CommonLayout";
+import PublicLayout from "layout/PublicLayout";
 import Loadable from "components/Loadable";
 import AuthGuard from "utils/route-guard/AuthGuard";
 import AdminRoleGuard from "utils/route-guard/AdminRoleGuard";
@@ -104,27 +105,33 @@ const MainRoutes = {
 	path: "/",
 	children: [
 		{
-			path: "booking/:slug",
-			element: <BookingPage />,
-		},
-		{
-			path: "booking",
-			element: <BookingPage />,
-		},
-		{
-			path: "manage-booking",
-			element: <ManageBookingPage />,
-		},
-		{
-			path: "manage-booking/:token",
-			element: <ManageBookingPage />,
-		},
-		{
-			path: "teams",
+			path: "/",
+			element: <PublicLayout />,
 			children: [
 				{
-					path: "invitation/:token",
-					element: <AcceptInvitation />,
+					path: "booking/:slug",
+					element: <BookingPage />,
+				},
+				{
+					path: "booking",
+					element: <BookingPage />,
+				},
+				{
+					path: "manage-booking",
+					element: <ManageBookingPage />,
+				},
+				{
+					path: "manage-booking/:token",
+					element: <ManageBookingPage />,
+				},
+				{
+					path: "teams",
+					children: [
+						{
+							path: "invitation/:token",
+							element: <AcceptInvitation />,
+						},
+					],
 				},
 			],
 		},

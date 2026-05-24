@@ -875,7 +875,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 										&nbsp;&nbsp;- El tope legal vigente
 										<br />• <strong>Nunca puede superar</strong> la remuneración original
 									</Typography>
-									<Box sx={{ mt: 2, p: 2, bgcolor: "grey.100", borderRadius: 1 }}>
+									<Box sx={{ mt: 2, p: 2, bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.100"), borderRadius: 1 }}>
 										<Typography variant="body2" fontWeight="bold" gutterBottom>
 											Ejemplo práctico:
 										</Typography>
