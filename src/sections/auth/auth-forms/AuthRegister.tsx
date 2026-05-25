@@ -1,6 +1,5 @@
 import React from "react";
 import { useState, useRef, SyntheticEvent } from "react";
-import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
 import {
@@ -11,7 +10,6 @@ import {
 	FormControl,
 	FormHelperText,
 	Grid,
-	Link,
 	InputAdornment,
 	OutlinedInput,
 	Stack,
@@ -38,7 +36,7 @@ import { trackSignUp, trackRegisterFormStart, trackRegisterFormSubmit, trackRegi
 import { StringColorProps } from "types/password";
 
 // assets
-import { Eye, EyeSlash, TickCircle, Sms, Lock } from "iconsax-react";
+import { Eye, EyeSlash, Sms, Lock } from "iconsax-react";
 
 // ============================|| JWT - REGISTER ||============================ //
 
@@ -263,55 +261,6 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 										{isSubmitting ? "Creando..." : "Empezar gratis ahora"}
 									</Button>
 								</AnimateButton>
-								<Stack direction="row" spacing={1} justifyContent="center" alignItems="center" sx={{ mt: 1.5 }}>
-									<Stack direction="row" alignItems="center" spacing={0.3}>
-										<TickCircle size={10} variant="Bold" color="#22C55E" />
-										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
-											Sin tarjeta
-										</Typography>
-									</Stack>
-									<Stack direction="row" alignItems="center" spacing={0.3}>
-										<TickCircle size={10} variant="Bold" color="#22C55E" />
-										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
-											Acceso inmediato
-										</Typography>
-									</Stack>
-									<Stack direction="row" alignItems="center" spacing={0.3}>
-										<TickCircle size={10} variant="Bold" color="#22C55E" />
-										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
-											Cancelá cuando quieras
-										</Typography>
-									</Stack>
-								</Stack>
-								<Typography
-									variant="caption"
-									color="text.secondary"
-									sx={{ mt: 2, display: "block", textAlign: "center", fontSize: "0.65rem", lineHeight: 1.6, opacity: 0.7 }}
-								>
-									Al continuar aceptás los{" "}
-									<Link
-										variant="caption"
-										component={RouterLink}
-										to="/terms"
-										target="_blank"
-										rel="noopener noreferrer"
-										sx={{ fontSize: "0.65rem" }}
-									>
-										términos
-									</Link>{" "}
-									y la{" "}
-									<Link
-										variant="caption"
-										component={RouterLink}
-										to="/privacy-policy"
-										target="_blank"
-										rel="noopener noreferrer"
-										sx={{ fontSize: "0.65rem" }}
-									>
-										política de privacidad
-									</Link>
-									.
-								</Typography>
 							</Grid>
 						</Grid>
 					</form>

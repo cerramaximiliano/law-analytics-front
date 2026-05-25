@@ -636,9 +636,67 @@ const Register = () => {
 												/>
 											</motion.div>
 
+											<motion.div
+												initial={{ opacity: 0, translateY: 16 }}
+												animate={{ opacity: 1, translateY: 0 }}
+												transition={{ ...SPRING, delay: 0.35 }}
+											>
+												<Stack spacing={1.25} alignItems="center" sx={{ mt: -0.5 }}>
+													<Stack direction="row" spacing={1.25} justifyContent="center" alignItems="center" flexWrap="wrap">
+														<Stack direction="row" alignItems="center" spacing={0.4}>
+															<TickCircle size={11} variant="Bold" color={LIVE_GREEN} />
+															<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
+																Sin tarjeta
+															</Typography>
+														</Stack>
+														<Stack direction="row" alignItems="center" spacing={0.4}>
+															<TickCircle size={11} variant="Bold" color={LIVE_GREEN} />
+															<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
+																Acceso inmediato
+															</Typography>
+														</Stack>
+														<Stack direction="row" alignItems="center" spacing={0.4}>
+															<TickCircle size={11} variant="Bold" color={LIVE_GREEN} />
+															<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
+																Cancelá cuando quieras
+															</Typography>
+														</Stack>
+													</Stack>
+													<Typography
+														variant="caption"
+														color="text.secondary"
+														sx={{ textAlign: "center", fontSize: "0.65rem", lineHeight: 1.6, opacity: 0.7 }}
+													>
+														Al continuar aceptás los{" "}
+														<Typography
+															component={Link}
+															to="/terms"
+															target="_blank"
+															rel="noopener noreferrer"
+															variant="caption"
+															sx={{ fontSize: "0.65rem", color: theme.palette.primary.main, textDecoration: "none" }}
+														>
+															términos
+														</Typography>{" "}
+														y la{" "}
+														<Typography
+															component={Link}
+															to="/privacy-policy"
+															target="_blank"
+															rel="noopener noreferrer"
+															variant="caption"
+															sx={{ fontSize: "0.65rem", color: theme.palette.primary.main, textDecoration: "none" }}
+														>
+															política de privacidad
+														</Typography>
+														.
+													</Typography>
+												</Stack>
+											</motion.div>
+
 											<AuthDivider>
 												<Typography variant="caption" color="text.secondary" sx={{ opacity: 0.6, fontSize: "0.7rem" }}>
-													o registrate con email
+													o usá tu email
 												</Typography>
 											</AuthDivider>
 
