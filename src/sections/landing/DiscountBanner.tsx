@@ -77,7 +77,7 @@ const DiscountBanner = () => {
 	if (!discount) return null;
 
 	const handleClick = () => {
-		pushGTMEvent("cta_click_discount_banner", { code: discount.code });
+		pushGTMEvent("cta_click_discount_banner", { source: "discount_banner", code: discount.code });
 		const target = document.getElementById("planes");
 		if (target) {
 			target.scrollIntoView({ behavior: "smooth", block: "start" });

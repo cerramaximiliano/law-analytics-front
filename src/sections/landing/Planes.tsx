@@ -144,7 +144,7 @@ const billingSuffixShort = (period: string): string => {
 const formatPriceShort = (price: number): string => (price % 1 === 0 ? `$${price}` : `$${price.toFixed(2)}`);
 
 const trackPlanCTA = (planId: Plan["id"]) => {
-	pushGTMEvent("cta_click_plan_teaser", { plan: planId });
+	pushGTMEvent("cta_click_plan_teaser", { source: "plan_teaser", plan: planId });
 };
 
 /**

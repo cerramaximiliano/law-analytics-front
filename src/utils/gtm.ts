@@ -101,10 +101,13 @@ export const trackScrollSection = (sectionName: string): void => {
 };
 
 /**
- * Track CTA click with location
+ * Track CTA click with location.
+ * Pushea `source` (alineado con la convención de ?source= del funnel) y
+ * `cta_location` (legacy — mantenido para no romper tags GTM existentes).
  */
 export const trackCTAClick = (eventName: string, location: string): void => {
 	pushGTMEvent(eventName, {
+		source: location,
 		cta_location: location,
 	});
 };
