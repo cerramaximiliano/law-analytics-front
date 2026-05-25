@@ -150,6 +150,22 @@ export const getAttributionPayload = (internalSource?: string | null, internalFe
 };
 
 /**
+ * Resuelve el `source` interno del query string con fallback a `utm_source`.
+ *
+ * Prioridad:
+ *   1. `?source=hero|modal|plan_teaser|...` (CTAs internos del landing)
+ *   2. `?utm_source=email|newsletter|facebook|...` (campañas externas con UTMs)
+ *   3. null (caerá a "direct" en los helpers de tracking)
+ *
+ * El fallback resuelve el caso de los emails de marketing y campañas externas
+ * que inyectan UTMs (la-marketing-service, Google Ads, etc.) sin pasar el
+ * query param interno `?source=`.
+ */
+export const resolveInternalSource = (params: URLSearchParams): string | null => {
+	return params.get("source") || params.get("utm_source") || null;
+};
+
+/**
  * Limpia los touches almacenados. Útil para tests / debug.
  */
 export const clearAttribution = (): void => {

@@ -24,6 +24,7 @@ import AuthRegister from "sections/auth/auth-forms/AuthRegister";
 import CustomGoogleButton from "components/auth/CustomGoogleButton";
 import { FeatureModalData } from "components/FeatureModal";
 import { trackRegisterView, trackSignUp, trackGoogleSignupClick } from "utils/gtm";
+import { resolveInternalSource } from "utils/attribution";
 import { env } from "utils/env";
 
 // assets — logos de integraciones disponibles localmente
@@ -380,7 +381,7 @@ const Register = () => {
 	const isMaintenanceMode = env.MAINTENANCE_MODE === "true";
 
 	const params = new URLSearchParams(location.search);
-	const source = params.get("source") || undefined;
+	const source = resolveInternalSource(params) ?? undefined;
 	const feature = params.get("feature") || undefined;
 
 	// Contenido contextual del panel derecho según el feature del query string.

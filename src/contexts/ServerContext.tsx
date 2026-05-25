@@ -18,7 +18,7 @@ import { Payment } from "store/reducers/ApiService";
 import { fetchUserStats } from "store/reducers/userStats";
 import { AppDispatch } from "store";
 import secureStorage from "services/secureStorage";
-import { getAttributionPayload } from "utils/attribution";
+import { getAttributionPayload, resolveInternalSource } from "utils/attribution";
 import { requestQueueService } from "services/requestQueueService";
 import authTokenService from "services/authTokenService";
 import { refreshAccessToken } from "utils/refreshToken";
@@ -147,7 +147,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				const params = new URLSearchParams(window.location.search);
 				const result = await axios.post<LoginResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/google`, {
 					token: credential,
-					attribution: getAttributionPayload(params.get("source"), params.get("feature")),
+					attribution: getAttributionPayload(resolveInternalSource(params), params.get("feature")),
 				});
 
 				const { user, success, subscription, paymentHistory, customer, isNewUser } = result.data;
@@ -542,7 +542,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				password,
 				...(firstName && { firstName }),
 				...(lastName && { lastName }),
-				attribution: getAttributionPayload(params.get("source"), params.get("feature")),
+				attribution: getAttributionPayload(resolveInternalSource(params), params.get("feature")),
 			});
 
 			// Siempre necesitará verificación para nuevos registros
