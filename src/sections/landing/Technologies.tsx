@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, ElementType, KeyboardEvent } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef, ElementType, KeyboardEvent } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 
 // material-ui
@@ -26,7 +26,7 @@ import FadeInWhenVisible from "./Animation";
 import SectionEyebrow from "./SectionEyebrow";
 import MainCard from "components/MainCard";
 import FeatureModal from "components/FeatureModal";
-import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
+import AiClientsLogos from "components/icons/AiClientsLogos";
 import { useLandingAnalytics } from "hooks/useLandingAnalytics";
 import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 import { FeatureNames, pushGTMEvent, trackViewFeaturesSection } from "utils/gtm";
@@ -453,8 +453,20 @@ const TechnologiesPage = () => {
 	// El copy se calcula dinámicamente según qué integraciones AI estén
 	// enabled (Claude.ai, ChatGPT o ambas) — el banner es genérico.
 	const mcpCopy = getMcpBannerCopy(integrations);
+	// Wrapper estable (memoizado por integrations) que envuelve AiClientsLogos
+	// para que CitasBanner pueda usarlo como iconComponent — el banner solo
+	// renderea <Icon size={X} /> y nosotros ignoramos size opcionalmente para
+	// que ambos logos se muestren al mismo tamaño visualmente equilibrado.
+	const McpIconComponent = useMemo(() => {
+		const Component = ({ size }: { size?: number | string }) => {
+			const n = typeof size === "number" ? size : typeof size === "string" ? parseFloat(size) : 32;
+			return <AiClientsLogos integrations={integrations} size={n} spacing={1} />;
+		};
+		Component.displayName = "McpIconComponent";
+		return Component;
+	}, [integrations]);
 	const mcpBanner: CitasBannerData = {
-		iconComponent: ClaudeAiLogo as unknown as typeof CalendarTick,
+		iconComponent: McpIconComponent as unknown as typeof CalendarTick,
 		title: mcpCopy.title,
 		description: mcpCopy.description,
 		cta: "Ver cómo conectarlo",

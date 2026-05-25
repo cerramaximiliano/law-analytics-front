@@ -17,7 +17,7 @@ import PlanCard from "components/cards/PlanCard";
 import ApiService, { Plan } from "store/reducers/ApiService";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
-import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
+import AiClientsLogos from "components/icons/AiClientsLogos";
 import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 import { usePublicAddons } from "hooks/usePublicAddons";
 import useAuth from "hooks/useAuth";
@@ -315,7 +315,7 @@ const Plans = () => {
 							justifyContent="space-between"
 						>
 							<Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
-								<ClaudeAiLogo size={32} />
+								<AiClientsLogos integrations={integrations} size={32} />
 								<Box>
 									<Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5, flexWrap: "wrap" }}>
 										<Typography variant="h6" sx={{ fontWeight: 700 }}>
