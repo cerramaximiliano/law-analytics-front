@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 
 // material-ui
 import { useTheme, alpha } from "@mui/material/styles";
-import { Alert, Box, Button, CircularProgress, Container, Grid, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, CircularProgress, Container, Grid, Stack, Typography } from "@mui/material";
 
 // third-party
 import { motion } from "framer-motion";
@@ -18,8 +19,13 @@ import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
 import { usePublicIntegrations } from "hooks/usePublicIntegrations";
+import { usePublicAddons } from "hooks/usePublicAddons";
+import useAuth from "hooks/useAuth";
+import useSubscription from "hooks/useSubscription";
 import { cleanPlanDisplayName, getCurrentEnvironment } from "utils/planPricingUtils";
 import { pushGTMEvent } from "utils/gtm";
+import { getMcpBannerCopy, formatMonthlyPrice } from "utils/mcpBannerCopy";
+import { openSnackbar } from "store/reducers/snackbar";
 
 // ============================== TOKENS ============================== //
 // Compartidos con PlanCard. Mantener en sync con sections/landing/Planes.tsx.
@@ -43,12 +49,97 @@ const ctaLabelFor = (plan: Plan, loadingPlanId: string | null): string => {
 const Plans = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
+	const navigate = useNavigate();
+	const dispatch = useDispatch();
 	const { integrations } = usePublicIntegrations();
-	const showMcpBanner = integrations.claudeAi.enabled;
+	const { addons } = usePublicAddons();
+	const { isLoggedIn } = useAuth();
+	const { subscription } = useSubscription();
+
+	// Banner MCP visible si CUALQUIERA de las dos integraciones AI está enabled.
+	const showMcpBanner = integrations.claudeAi.enabled || integrations.chatGpt.enabled;
+	const mcpCopy = getMcpBannerCopy(integrations);
+	// El addon mcp_access es el único hoy; se busca por key + available para
+	// que si el backend lo flippea a unavailable mid-session, el banner desaparece.
+	const mcpAddon = addons.find((a) => a.key === "mcp_access" && a.available) || null;
+	const mcpPriceLabel = mcpAddon ? formatMonthlyPrice(mcpAddon.priceMonthly, mcpAddon.currency) : null;
+
+	// Estado de la subscription del user — null/undefined si anónimo.
+	const userPlan = (subscription as any)?.plan as "free" | "standard" | "premium" | undefined;
+	const userHasAddon = !!((subscription as any)?.addons || []).find(
+		(a: { key?: string; status?: string }) => a?.key === "mcp_access" && a?.status === "active",
+	);
+	const userPlanIsPaid = userPlan === "standard" || userPlan === "premium";
+
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [plans, setPlans] = useState<Plan[]>([]);
 	const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
+	const [addonBusy, setAddonBusy] = useState(false);
+
+	// CTA contextual del banner MCP:
+	// - Anónimo                       → "Iniciar sesión" → /login?source=mcp-banner
+	// - Free                          → "Mejorar plan"   → scroll a top de planes
+	// - Paid sin addon                → "Agregar"        → POST addAddon
+	// - Con addon active              → "Conectar"       → /integraciones/claude-ai
+	const handleMcpCtaClick = async () => {
+		pushGTMEvent("mcp_plans_cta_click", {
+			cta_location: "plans_page",
+			user_state: !isLoggedIn ? "anonymous" : userHasAddon ? "has_addon" : userPlanIsPaid ? "paid_no_addon" : "free",
+		});
+
+		if (!isLoggedIn) {
+			navigate("/login?source=mcp-banner");
+			return;
+		}
+		if (userHasAddon) {
+			navigate("/integraciones/claude-ai");
+			return;
+		}
+		if (!userPlanIsPaid) {
+			// Free → scroll arriba al grid de planes (sin redirect, ya estás en /plans).
+			window.scrollTo({ top: 0, behavior: "smooth" });
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Necesitás un plan Standard o Premium para agregar el conector MCP.",
+					variant: "alert",
+					alert: { color: "info" },
+					close: true,
+				}),
+			);
+			return;
+		}
+
+		// Paid sin addon → checkout real.
+		try {
+			setAddonBusy(true);
+			const res = await ApiService.addAddon("mcp_access");
+			if (res.success) {
+				const msg = res.alreadyActive
+					? "El conector MCP ya estaba activo."
+					: "Conector MCP agregado a tu suscripción. Procesando…";
+				dispatch(openSnackbar({ open: true, message: msg, variant: "alert", alert: { color: "success" }, close: false }));
+				// Redirigir a la página de integración después del éxito.
+				setTimeout(() => navigate("/integraciones/claude-ai"), 1500);
+			}
+		} catch (err) {
+			const message = err instanceof Error ? err.message : "Error al agregar el addon";
+			dispatch(openSnackbar({ open: true, message, variant: "alert", alert: { color: "error" }, close: true }));
+		} finally {
+			setAddonBusy(false);
+		}
+	};
+
+	const mcpCtaLabel = !isLoggedIn
+		? "Iniciar sesión para agregar"
+		: userHasAddon
+			? "Conectar Claude.ai / ChatGPT"
+			: !userPlanIsPaid
+				? "Mejorar plan para agregar"
+				: addonBusy
+					? "Procesando…"
+					: "Agregar conector MCP";
 
 	const breadcrumbItems = [{ title: "Inicio", to: "/" }, { title: "Planes y Precios" }];
 
@@ -198,11 +289,11 @@ const Plans = () => {
 					</Grid>
 				)}
 
-				{/* Banner MCP / Claude.ai (Phase 8 — adoption push). Gated por
-			    IntegrationsConfig.services.claudeAi.enabled.
-			    NO va a /register
-				    así que NO impacta Funnel 1. Link a la landing pública de la
-				    integración. Tracking: mcp_plans_cta_click. */}
+				{/* Banner MCP — addon mcp_access (Phase 9 — billing real).
+				    Gated por IntegrationsConfig: visible si claudeAi.enabled
+				    O chatGpt.enabled. CTA contextual según estado del user
+				    (ver handleMcpCtaClick). NO va a /register → no impacta Funnel 1.
+				    Tracking: mcp_plans_cta_click con user_state. */}
 				{!loading && !error && plans.length > 0 && showMcpBanner && (
 					<Box
 						component={motion.div}
@@ -226,27 +317,41 @@ const Plans = () => {
 							<Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
 								<ClaudeAiLogo size={32} />
 								<Box>
-									<Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
-										Nuevo · Conectá Claude.ai a tu cuenta
-									</Typography>
+									<Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5, flexWrap: "wrap" }}>
+										<Typography variant="h6" sx={{ fontWeight: 700 }}>
+											{mcpCopy.title}
+										</Typography>
+										<Chip
+											label="Add-on"
+											size="small"
+											sx={{
+												fontWeight: 600,
+												letterSpacing: 0.5,
+												bgcolor: alpha(BRAND_BLUE, 0.12),
+												color: BRAND_BLUE,
+											}}
+										/>
+										{mcpPriceLabel && !userHasAddon && (
+											<Typography variant="body2" sx={{ fontWeight: 600 }}>
+												{mcpPriceLabel}
+											</Typography>
+										)}
+									</Stack>
 									<Typography variant="body2" color="text.secondary">
-										Pediole a Claude que busque tus expedientes, resuma movimientos o consulte
-										jurisprudencia directo desde el chat. Disponible para planes Standard y Premium.
+										{mcpCopy.description}
+										{!userHasAddon && " Aditivo a planes Standard y Premium."}
 									</Typography>
 								</Box>
 							</Stack>
 							<Button
-								variant="outlined"
+								variant={userHasAddon ? "outlined" : "contained"}
 								color="primary"
-								component={RouterLink}
-								to="/integraciones/claude-ai"
-								onClick={() =>
-									pushGTMEvent("mcp_plans_cta_click", { cta_location: "plans_page" })
-								}
+								onClick={handleMcpCtaClick}
+								disabled={addonBusy}
 								endIcon={<ArrowRight2 size={16} />}
-								sx={{ flexShrink: 0, minWidth: { md: 200 } }}
+								sx={{ flexShrink: 0, minWidth: { md: 220 } }}
 							>
-								Más información
+								{mcpCtaLabel}
 							</Button>
 						</Stack>
 					</Box>

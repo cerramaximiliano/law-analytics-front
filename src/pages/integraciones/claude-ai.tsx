@@ -155,12 +155,12 @@ const FAQ: FaqItem[] = [
 		a: "12 tools cubriendo: búsqueda de folders, listado paginado, detalle completo (folder + causa + movimientos + counts), drill-downs por colección (movimientos, tareas, notas, eventos, cálculos, contactos, escritos), búsqueda semántica de sentencias judiciales (~80 mil), y consulta RAG sobre el contenido de un expediente específico.",
 	},
 	{
-		q: "¿Funciona con ChatGPT, Gemini u otros?",
-		a: "El protocolo MCP es estándar abierto — cualquier cliente que lo soporte puede conectarse. Hoy Claude.ai es el principal pero estamos siguiendo el rollout en ChatGPT y otros.",
+		q: "¿Funciona con ChatGPT u otros asistentes?",
+		a: "Sí — el protocolo MCP es un estándar abierto. Soportamos Claude.ai y ChatGPT (ambos con el mismo addon). Cuando otros clientes (Gemini, Copilot, etc.) habiliten MCP los iremos sumando.",
 	},
 	{
 		q: "¿Tiene costo extra?",
-		a: "Durante la beta cerrada, no. En GA va a estar incluido en planes Standard/Premium con un addon dedicado. Te avisamos antes de cualquier cobro.",
+		a: "Es un add-on opcional sobre planes Standard y Premium. Lo agregás desde la página de planes — Stripe prorratea automáticamente sobre tu ciclo de billing. Lo podés cancelar cuando quieras.",
 	},
 	{
 		q: "Conecté pero Claude.ai dice que no encuentra herramientas",
@@ -269,6 +269,14 @@ const ClaudeAiLandingPage = () => {
 					<Typography variant="h6" color="text.secondary" sx={{ maxWidth: 640, fontWeight: 400 }}>
 						Pediole a Claude que busque tus causas, resuma movimientos, te recuerde audiencias y consulte
 						jurisprudencia — directo desde cualquier chat, con tus datos reales.
+						{integrations.chatGpt.enabled && (
+							<>
+								{" "}
+								<Box component="span" sx={{ display: "block", mt: 1, fontWeight: 500, color: "text.primary" }}>
+									También compatible con <strong>ChatGPT</strong> — mismo addon, mismas tools.
+								</Box>
+							</>
+						)}
 					</Typography>
 					<Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mt: 3 }}>
 						<Button

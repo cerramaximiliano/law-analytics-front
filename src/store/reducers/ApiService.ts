@@ -55,6 +55,34 @@ export const DEFAULT_PUBLIC_INTEGRATIONS: PublicIntegrations = {
 	chatGpt: { enabled: false, maintenanceMessage: null, releaseStage: "beta" },
 };
 
+// ====================================
+// Public Addons (piggyback en getPublicPlans)
+// ====================================
+// Cada entry incluye precio leído desde Stripe + flag de disponibilidad
+// calculado en función de IntegrationsConfig (un addon mcp_access está
+// available si claudeAi.enabled OR chatGpt.enabled).
+
+export type AddonKey = "mcp_access";
+
+export interface PublicAddon {
+	key: AddonKey;
+	displayName: string;
+	description: string;
+	/** Precio mensual en moneda real (no centavos). null si Stripe no devolvió precio. */
+	priceMonthly: number | null;
+	/** ISO currency lowercase: 'usd', 'ars', etc. */
+	currency: string;
+	interval: "month" | "year" | string;
+	/** El addon está disponible para mostrar/comprar (alguna integración requerida enabled). */
+	available: boolean;
+	/** Planes en los que el user puede contratar el addon. Si no está en estos planes, debe upgradear primero. */
+	requiredPlans: string[];
+	/** Si el user no está en uno de estos planes, debe upgradear primero. */
+	requiresIntegrationsAny: string[];
+}
+
+export const DEFAULT_PUBLIC_ADDONS: PublicAddon[] = [];
+
 // ===============================
 // Interfaces de usuario y sesiones
 // ===============================
@@ -621,7 +649,7 @@ class ApiService {
 
 	static async getPublicPlans(
 		options?: { landingOnly?: boolean },
-	): Promise<ApiResponse<Plan[]> & { integrations?: PublicIntegrations }> {
+	): Promise<ApiResponse<Plan[]> & { integrations?: PublicIntegrations; addons?: PublicAddon[] }> {
 		try {
 			// landingOnly=true fuerza al backend a devolver solo descuentos con
 			// showOnLanding=true aunque haya sesión. Lo usa la landing pública (`/`)
@@ -631,12 +659,15 @@ class ApiService {
 				withCredentials: true,
 				params,
 			});
-			// Cachear el bloque `integrations` para que componentes que sólo lo
-			// necesitan (Technologies banner, /plans banner, /integraciones/claude-ai)
+			// Cachear los bloques `integrations` y `addons` para que componentes que
+			// solo los necesitan (Technologies banner, /plans banner, /integraciones/*)
 			// no disparen su propia request. La landing ya consume getPublicPlans
 			// dos veces (Planes + DiscountBanner) → cache se hidrata en el primer call.
 			if (response.data?.integrations) {
 				ApiService._cachedPublicIntegrations = response.data.integrations;
+			}
+			if (Array.isArray(response.data?.addons)) {
+				ApiService._cachedPublicAddons = response.data.addons;
 			}
 			return response.data;
 		} catch (error) {
@@ -649,6 +680,8 @@ class ApiService {
 	// a getPublicPlans y queda disponible vía fetchPublicIntegrations().
 	private static _cachedPublicIntegrations: PublicIntegrations | null = null;
 	private static _publicIntegrationsInflight: Promise<PublicIntegrations> | null = null;
+	private static _cachedPublicAddons: PublicAddon[] | null = null;
+	private static _publicAddonsInflight: Promise<PublicAddon[]> | null = null;
 
 	/**
 	 * Devuelve los flags de integraciones públicas. Usa cache (si existe) o
@@ -673,6 +706,67 @@ class ApiService {
 	/** Lectura síncrona del cache — null si todavía no se hidrató. */
 	static getCachedPublicIntegrations(): PublicIntegrations | null {
 		return ApiService._cachedPublicIntegrations;
+	}
+
+	/**
+	 * Devuelve los addons públicos. Mismo patrón que fetchPublicIntegrations —
+	 * cache + Promise dedup. La landing piggybackea esto con getPublicPlans.
+	 */
+	static async fetchPublicAddons(): Promise<PublicAddon[]> {
+		if (ApiService._cachedPublicAddons) return ApiService._cachedPublicAddons;
+		if (ApiService._publicAddonsInflight) return ApiService._publicAddonsInflight;
+
+		ApiService._publicAddonsInflight = ApiService.getPublicPlans({ landingOnly: true })
+			.then(() => ApiService._cachedPublicAddons || DEFAULT_PUBLIC_ADDONS)
+			.catch(() => DEFAULT_PUBLIC_ADDONS)
+			.finally(() => {
+				ApiService._publicAddonsInflight = null;
+			});
+		return ApiService._publicAddonsInflight;
+	}
+
+	static getCachedPublicAddons(): PublicAddon[] | null {
+		return ApiService._cachedPublicAddons;
+	}
+
+	/**
+	 * Agregar addon a la subscription paga del user.
+	 * El backend hace stripe.subscriptions.update + el webhook de la-subscriptions
+	 * sincroniza el campo addons[] cuando llega (~1-2s después).
+	 */
+	static async addAddon(
+		addonKey: AddonKey,
+	): Promise<{
+		success: boolean;
+		alreadyActive?: boolean;
+		pendingWebhookSync?: boolean;
+		addon?: { key: AddonKey; status: string; stripePriceId: string; currentPeriodEnd: string | null };
+		message?: string;
+	}> {
+		try {
+			const response = await axios.post(
+				`${API_BASE_URL}/api/subscriptions/addons/checkout`,
+				{ addonKey },
+				{ withCredentials: true },
+			);
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Remover un addon de la subscription. Stripe prorratea automáticamente.
+	 */
+	static async removeAddon(addonKey: AddonKey): Promise<{ success: boolean; message?: string }> {
+		try {
+			const response = await axios.delete(`${API_BASE_URL}/api/subscriptions/addons/${addonKey}`, {
+				withCredentials: true,
+			});
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
 	}
 
 	/**

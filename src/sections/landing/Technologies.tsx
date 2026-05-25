@@ -30,6 +30,7 @@ import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
 import { useLandingAnalytics } from "hooks/useLandingAnalytics";
 import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 import { FeatureNames, pushGTMEvent, trackViewFeaturesSection } from "utils/gtm";
+import { getMcpBannerCopy } from "utils/mcpBannerCopy";
 
 // ============================== TOKENS ============================== //
 // Mismos tokens que el Hero — atmósfera brand-blue + dot verde para nuevos.
@@ -342,7 +343,8 @@ const TechnologiesPage = () => {
 	const navigate = useNavigate();
 	const { trackCitasCTA, trackPruebaPagarCTA, trackFeature } = useLandingAnalytics();
 	const { integrations } = usePublicIntegrations();
-	const showMcpBanner = integrations.claudeAi.enabled;
+	// Banner MCP visible si CUALQUIERA de las dos integraciones AI está enabled.
+	const showMcpBanner = integrations.claudeAi.enabled || integrations.chatGpt.enabled;
 	const isDark = theme.palette.mode === "dark";
 
 	const sectionRef = useRef<HTMLDivElement>(null);
@@ -445,14 +447,16 @@ const TechnologiesPage = () => {
 		featureKey: FeatureNames.SISTEMA_CITAS,
 	};
 
-	// Banner MCP (Phase 8) — link a landing pública de integración con Claude.ai.
+	// Banner MCP (Phase 8) — link a landing pública de integración AI.
 	// **NO va a /register** → no impacta Funnel 1. Tracking aparte:
 	// mcp_landing_card_click (con cta_location='landing_card_mcp').
+	// El copy se calcula dinámicamente según qué integraciones AI estén
+	// enabled (Claude.ai, ChatGPT o ambas) — el banner es genérico.
+	const mcpCopy = getMcpBannerCopy(integrations);
 	const mcpBanner: CitasBannerData = {
 		iconComponent: ClaudeAiLogo as unknown as typeof CalendarTick,
-		title: "Nuevo · Conectá Claude.ai a tu cuenta",
-		description:
-			"Pediole a Claude que busque tus expedientes, resuma movimientos o consulte jurisprudencia desde el chat.",
+		title: mcpCopy.title,
+		description: mcpCopy.description,
 		cta: "Ver cómo conectarlo",
 		to: "/integraciones/claude-ai",
 		featureKey: FeatureNames.SISTEMA_CITAS, // reusa key — no se usa en este flow porque no va a /register
