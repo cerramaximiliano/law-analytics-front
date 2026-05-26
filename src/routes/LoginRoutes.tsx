@@ -28,6 +28,9 @@ const OauthUpgradeRequired = Loadable(lazyRetry(() => import("pages/oauth/upgrad
 // mantiene como redirect para preservar links externos y SEO.
 const IntegracionConectoresAi = Loadable(lazyRetry(() => import("pages/integraciones/conectores-ai")));
 
+// Landing dedicada para ChatGPT — steps y FAQ orientados al flow de OpenAI.
+const IntegracionChatGpt = Loadable(lazyRetry(() => import("pages/integraciones/chatgpt")));
+
 // ==============================|| AUTH ROUTES ||============================== //
 
 const LoginRoutes = {
@@ -87,6 +90,10 @@ const LoginRoutes = {
 				{
 					path: "integraciones/conectores-ai",
 					element: <IntegracionConectoresAi />,
+				},
+				{
+					path: "integraciones/chatgpt",
+					element: <IntegracionChatGpt />,
 				},
 				{
 					// Redirect de la URL vieja para preservar links externos.
