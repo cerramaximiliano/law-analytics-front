@@ -12,7 +12,7 @@ export type Movement = {
 	description?: string;
 	link?: string;
 	texto?: string; // Contenido de texto del escrito (MEV únicamente)
-	source?: "pjn" | "mev" | "scba"; // Origen del movimiento sincronizado
+	source?: "pjn" | "mev" | "scba" | "eje"; // Origen del movimiento sincronizado
 	completed?: boolean; // Nueva propiedad para indicar si el movimiento está completado
 	attachments?: Array<{
 		// Arreglo de adjuntos del movimiento (MEV/SCBA: múltiples, PJN: típicamente 1).
@@ -68,6 +68,14 @@ export interface ScbaAccess {
 	previewCount?: number;
 }
 
+// EJE no aplica feature-gating ni plan upgrades — solo hasAccess flag.
+// Los movimientos vienen del subdoc causas-eje.movimientos[] y nunca
+// tienen link/url/attachments (el parser EJE solo captura tieneAdjuntos
+// como boolean, no la URL).
+export interface EjeAccess {
+	hasAccess: boolean;
+}
+
 export interface ScrapingProgress {
 	status: string;
 	isComplete: boolean;
@@ -84,6 +92,7 @@ export interface PaginatedMovementsResponse {
 	documentsInThisPage?: number;
 	pjnAccess?: PjnAccess;
 	scbaAccess?: ScbaAccess;
+	ejeAccess?: EjeAccess;
 	scrapingProgress?: ScrapingProgress;
 }
 
@@ -95,6 +104,7 @@ export interface MovementState {
 	documentsInThisPage?: number;
 	pjnAccess?: PjnAccess;
 	scbaAccess?: ScbaAccess;
+	ejeAccess?: EjeAccess;
 	scrapingProgress?: ScrapingProgress;
 	causaLastSyncDate?: string | null;
 	isLoading: boolean;

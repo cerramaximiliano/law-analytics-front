@@ -5,7 +5,7 @@ import { ScrapingProgress } from "types/movements";
 
 interface ScrapingProgressBannerProps {
 	scrapingProgress?: ScrapingProgress;
-	source?: "mev" | "pjn" | "scba";
+	source?: "mev" | "pjn" | "scba" | "eje";
 	onRefresh: () => void;
 	onClose?: () => void;
 }

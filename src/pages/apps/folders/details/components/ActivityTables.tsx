@@ -170,8 +170,35 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const { scrapingProgress } = useScrapingProgress(movementsData.scrapingProgress, id);
 
 	// Detectar origen del scraping por la presencia del *Access correspondiente
-	// (el server solo devuelve scbaAccess/pjnAccess cuando el folder es de ese tipo).
-	const scrapingSource: "mev" | "pjn" | "scba" = movementsData.scbaAccess ? "scba" : movementsData.pjnAccess ? "pjn" : "mev";
+	// (el server solo devuelve scbaAccess/pjnAccess/ejeAccess cuando el folder es de ese tipo).
+	const scrapingSource: "mev" | "pjn" | "scba" | "eje" = movementsData.scbaAccess
+		? "scba"
+		: movementsData.pjnAccess
+			? "pjn"
+			: movementsData.ejeAccess
+				? "eje"
+				: "mev";
+
+	// En EJE el parser resuelve adjuntos via API pública del portal, pero
+	// solo una minoría de movimientos tiene PDF asociado (en muchas causas
+	// directamente ninguno). Si totalWithLinks llega en 0 con el filtro
+	// "Solo con documento" activo, dejaríamos al user con una tabla vacía
+	// sin pista de qué hay. Apagamos el filtro automáticamente solo en
+	// ese caso — si hay al menos un adjunto, dejamos el default ON.
+	const ejeAutoDisabledRef = useRef(false);
+	useEffect(() => {
+		if (
+			!ejeAutoDisabledRef.current &&
+			movementsData.ejeAccess &&
+			filters.onlyWithDocuments &&
+			movementsData.totalWithLinks === 0 &&
+			!movementsData.isLoading
+		) {
+			ejeAutoDisabledRef.current = true;
+			setFilters((prev: any) => ({ ...prev, onlyWithDocuments: false }));
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [movementsData.ejeAccess, movementsData.totalWithLinks, movementsData.isLoading]);
 
 	// SCBA recién vinculado pero todavía sin primer scrap: el worker SCBA corre
 	// cada ~5min y hasta que termine no hay movimientos ni causaLastSyncDate.
@@ -1254,7 +1281,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														/>
 													</Box>
 												)}
-												{!scrapingProgress && !isScbaFirstSyncPending && (movementsData.pjnAccess || movementsData.scbaAccess) && (
+												{!scrapingProgress && !isScbaFirstSyncPending && (movementsData.pjnAccess || movementsData.scbaAccess || movementsData.ejeAccess) && (
 													<FolderSyncStatus source={scrapingSource} causaLastSyncDate={movementsData.causaLastSyncDate} />
 												)}
 											</>
@@ -1672,7 +1699,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														/>
 													</Box>
 												)}
-												{!scrapingProgress && !isScbaFirstSyncPending && (movementsData.pjnAccess || movementsData.scbaAccess) && (
+												{!scrapingProgress && !isScbaFirstSyncPending && (movementsData.pjnAccess || movementsData.scbaAccess || movementsData.ejeAccess) && (
 													<FolderSyncStatus source={scrapingSource} causaLastSyncDate={movementsData.causaLastSyncDate} />
 												)}
 											</>
