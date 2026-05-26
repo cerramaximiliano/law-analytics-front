@@ -1,5 +1,5 @@
 import React from "react";
-import { ReactNode, useMemo } from "react";
+import { ReactNode, useEffect, useMemo } from "react";
 
 // material-ui
 import { CssBaseline, StyledEngineProvider } from "@mui/material";
@@ -82,6 +82,23 @@ export default function ThemeCustomization({ children, forceMode }: ThemeCustomi
 		t.components = componentsOverride(t);
 		return t;
 	}, [themeOptions]);
+
+	// Cuando este ThemeCustomization se monta anidado dentro de otro (caso típico:
+	// CommonLayout / PublicLayout con `forceMode=LIGHT` sobre el outer de App.tsx en
+	// dark), ambos CssBaseline emiten `body { background-color }` y el orden en el
+	// <head> determina quién gana. El orden no es estable entre navegaciones (al
+	// desmontar/remontar el sub-árbol, el inner se reinserta al principio del head
+	// vía emotion y el outer dark gana la cascada). Para no depender de eso, forzamos
+	// el body bg como inline style — siempre vence a cualquier regla de stylesheet.
+	useEffect(() => {
+		if (forceMode === undefined) return;
+		const body = document.body;
+		const prev = body.style.backgroundColor;
+		body.style.backgroundColor = themes.palette.background.default;
+		return () => {
+			body.style.backgroundColor = prev;
+		};
+	}, [forceMode, themes.palette.background.default]);
 
 	return (
 		<StyledEngineProvider injectFirst>
