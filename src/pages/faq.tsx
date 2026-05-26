@@ -229,7 +229,7 @@ const FAQS: Faq[] = [
 		category: "integraciones",
 		question: "¿Puedo conectar Law Analytics a Claude.ai o ChatGPT?",
 		answer:
-			"Sí. Tenemos un conector MCP (Model Context Protocol) que te permite pedirle a Claude.ai que busque tus expedientes, resuma movimientos, consulte jurisprudencia y más, directamente desde cualquier chat con tu cuenta. Está disponible en beta cerrada — pedí acceso en /integraciones/claude-ai.",
+			"Sí. Tenemos un conector MCP (Model Context Protocol) que te permite pedirle a Claude.ai o ChatGPT que busquen tus expedientes, resuman movimientos, consulten jurisprudencia y más, directamente desde cualquier chat con tu cuenta. Pedí acceso en /integraciones/conectores-ai.",
 	},
 	{
 		id: "int2",

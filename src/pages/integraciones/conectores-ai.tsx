@@ -1,12 +1,12 @@
 /**
- * /integraciones/claude-ai — landing pública del MCP server para Claude.ai.
- *
- * Explica qué es, cómo conectar (step-by-step), FAQ de seguridad/privacidad,
- * y CTA para solicitar acceso beta (vía mailto:).
+ * /integraciones/conectores-ai — landing pública del MCP server.
+ * Soporta Claude.ai y ChatGPT con FAQ compartida — el copy/hero/CTA se
+ * adapta dinámicamente según qué AIs estén enabled en IntegrationsConfig.
+ * URL vieja /integraciones/claude-ai redirige acá (LoginRoutes.tsx).
  *
  * Tracking GTM:
- *  - mcp_landing_view              al montar
- *  - mcp_landing_cta_click         al click en "Solicitar acceso beta"
+ *  - mcp_landing_view              al montar (con flags claude_enabled, chatgpt_enabled)
+ *  - mcp_landing_cta_click         al click en CTA (hero / footer)
  *  - mcp_landing_faq_open          al abrir un item del FAQ
  */
 
@@ -48,6 +48,7 @@ import {
 
 // project-imports
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
+import AiClientsLogos from "components/icons/AiClientsLogos";
 import LogoSection from "components/logo";
 import FadeInWhenVisible from "sections/landing/Animation";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
@@ -64,15 +65,15 @@ const MCP_SERVER_URL = "https://mcp.lawanalytics.app";
 // actualizar acá también).
 const BETA_REQUEST_SUBJECT = "Solicitud de acceso beta — Conector MCP";
 
-const BETA_REQUEST_LOCKED_HEADER = `Tipo: Solicitud de acceso beta — Conector MCP (Claude.ai)
-Origen: /integraciones/claude-ai
+const BETA_REQUEST_LOCKED_HEADER = `Tipo: Solicitud de acceso beta — Conector MCP (Claude.ai / ChatGPT)
+Origen: /integraciones/conectores-ai
 Pre-requisitos del solicitante:
   • Cuenta activa en lawanalytics.app
-  • Plan Pro/Team en Claude.ai (necesario para custom connectors)
+  • Plan Pro/Team en Claude.ai o ChatGPT (necesario para custom connectors)
 
 El usuario solicita acceso a la beta cerrada del conector MCP. Una vez aprobado:
 1. Activar grant manual en User.featureGrants.mcp_access = true (admin → Feature Grants)
-2. Enviar instrucciones de cómo conectar el conector en Claude.ai → Settings → Connectors`;
+2. Enviar instrucciones de cómo conectar el conector en Claude.ai (Settings → Connectors) o ChatGPT`;
 
 interface UseCase {
 	icon: React.ReactNode;
@@ -176,16 +177,45 @@ const ClaudeAiLandingPage = () => {
 	const theme = useTheme();
 	const { integrations, loading: integrationsLoading } = usePublicIntegrations();
 	const claudeAiEnabled = integrations.claudeAi.enabled;
-	const maintenanceMessage = integrations.claudeAi.maintenanceMessage;
+	const chatGptEnabled = integrations.chatGpt.enabled;
+	const anyAiEnabled = claudeAiEnabled || chatGptEnabled;
+	const bothAiEnabled = claudeAiEnabled && chatGptEnabled;
+
+	// El mensaje de mantenimiento prioriza el del primero deshabilitado
+	// (mensaje "general" cuando se desactiva la página entera).
+	const maintenanceMessage = integrations.claudeAi.maintenanceMessage || integrations.chatGpt.maintenanceMessage;
+
+	// Chip stage: si alguno está en beta, mostrar BETA (conservador). Si ambos
+	// stable (o solo está enabled uno y es stable), mostrar DISPONIBLE.
+	const anyBeta =
+		(claudeAiEnabled && integrations.claudeAi.releaseStage !== "stable") ||
+		(chatGptEnabled && integrations.chatGpt.releaseStage !== "stable");
+
+	// Title dinámico: menciona los AI activos por nombre.
+	const heroTitle = bothAiEnabled
+		? "Conectá Claude.ai y ChatGPT a tu cuenta de Law Analytics"
+		: claudeAiEnabled
+			? "Conectá Claude.ai a tu cuenta de Law Analytics"
+			: "Conectá ChatGPT a tu cuenta de Law Analytics";
+
+	// CTA label: cuando ambos AI están enabled hablamos genérico.
+	const heroCtaLabel = anyBeta
+		? "Solicitar acceso beta"
+		: bothAiEnabled
+			? "Conectar conector AI"
+			: claudeAiEnabled
+				? "Conectar Claude.ai"
+				: "Conectar ChatGPT";
+
 	const [openFaq, setOpenFaq] = useState<number | null>(null);
 
 	useEffect(() => {
-		// Solo trackeamos el view si la integración está habilitada — si está
-		// deshabilitada el user ve la pantalla "no disponible", no la landing.
-		if (!integrationsLoading && claudeAiEnabled) {
-			pushGTMEvent("mcp_landing_view", {});
+		// Solo trackeamos el view si alguna integración está habilitada — si
+		// ninguna lo está, el user ve la pantalla "no disponible".
+		if (!integrationsLoading && anyAiEnabled) {
+			pushGTMEvent("mcp_landing_view", { claude_enabled: claudeAiEnabled, chatgpt_enabled: chatGptEnabled });
 		}
-	}, [integrationsLoading, claudeAiEnabled]);
+	}, [integrationsLoading, anyAiEnabled, claudeAiEnabled, chatGptEnabled]);
 
 	const handleFaqToggle = (idx: number) => {
 		const newState = openFaq === idx ? null : idx;
@@ -210,7 +240,7 @@ const ClaudeAiLandingPage = () => {
 		return <Box sx={{ bgcolor: "background.default", minHeight: "100vh" }} />;
 	}
 
-	if (!claudeAiEnabled) {
+	if (!anyAiEnabled) {
 		return (
 			<Box sx={{ bgcolor: "background.default", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
 				<Container maxWidth="sm">
@@ -252,33 +282,29 @@ const ClaudeAiLandingPage = () => {
 			</Box>
 
 			<Container maxWidth="md" sx={{ py: { xs: 4, md: 8 } }}>
-				{/* Hero — solo logo de Claude (la URL es /integraciones/claude-ai
-				    y la página es Claude-specific). La mención a ChatGPT vive en
-				    el subtítulo y FAQ cuando chatGpt.enabled. */}
+				{/* Hero — logos y title dinámicos según qué AI estén enabled
+				    (Claude.ai, ChatGPT o ambos). Página renombrada de
+				    /integraciones/claude-ai a /integraciones/conectores-ai
+				    (redirect 301 en LoginRoutes.tsx). */}
 				<Stack spacing={2} alignItems="center" sx={{ textAlign: "center", mb: 6 }}>
 					<Box sx={{ mb: 1 }}>
-						<ClaudeAiLogo size={64} />
+						<AiClientsLogos integrations={integrations} size={64} spacing={2} />
 					</Box>
 					<Chip
-						label={integrations.claudeAi.releaseStage === "stable" ? "DISPONIBLE" : "BETA CERRADA"}
-						color={integrations.claudeAi.releaseStage === "stable" ? "success" : "primary"}
+						label={anyBeta ? "BETA CERRADA" : "DISPONIBLE"}
+						color={anyBeta ? "primary" : "success"}
 						size="small"
 						sx={{ fontWeight: 700, letterSpacing: 1, mb: 1 }}
 					/>
 					<Typography variant="h2" sx={{ fontWeight: 700, fontSize: { xs: 28, md: 44 } }}>
-						Conectá <span style={{ color: BRAND_BLUE }}>Claude.ai</span> a tu cuenta de Law Analytics
+						{heroTitle}
 					</Typography>
 					<Typography variant="h6" color="text.secondary" sx={{ maxWidth: 640, fontWeight: 400 }}>
-						Pediole a Claude que busque tus causas, resuma movimientos, te recuerde audiencias y consulte
-						jurisprudencia — directo desde cualquier chat, con tus datos reales.
-						{integrations.chatGpt.enabled && (
-							<>
-								{" "}
-								<Box component="span" sx={{ display: "block", mt: 1, fontWeight: 500, color: "text.primary" }}>
-									También compatible con <strong>ChatGPT</strong> — mismo addon, mismas tools.
-								</Box>
-							</>
-						)}
+						{bothAiEnabled
+							? "Pediole a Claude o ChatGPT que busquen tus causas, resuman movimientos, te recuerden audiencias y consulten jurisprudencia — directo desde cualquier chat, con tus datos reales."
+							: claudeAiEnabled
+								? "Pediole a Claude que busque tus causas, resuma movimientos, te recuerde audiencias y consulte jurisprudencia — directo desde cualquier chat, con tus datos reales."
+								: "Pediole a ChatGPT que busque tus causas, resuma movimientos, te recuerde audiencias y consulte jurisprudencia — directo desde cualquier chat, con tus datos reales."}
 					</Typography>
 					<Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mt: 3 }}>
 						<Button
@@ -288,7 +314,7 @@ const ClaudeAiLandingPage = () => {
 							endIcon={<ArrowRight2 size={20} />}
 							sx={{ minWidth: 220 }}
 						>
-							{integrations.claudeAi.releaseStage === "stable" ? "Conectar Claude.ai" : "Solicitar acceso beta"}
+							{heroCtaLabel}
 						</Button>
 						<Button
 							variant="outlined"
@@ -497,11 +523,11 @@ const ClaudeAiLandingPage = () => {
 							startIcon={<Message size={20} />}
 							sx={{ minWidth: 240 }}
 						>
-							{integrations.claudeAi.releaseStage === "stable" ? "Conectar Claude.ai" : "Solicitar acceso beta"}
+							{heroCtaLabel}
 						</Button>
 					</Stack>
 					<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 3 }}>
-						Tenés que tener una cuenta activa en lawanalytics.app + plan Pro/Team en Claude.ai.
+						Tenés que tener una cuenta activa en lawanalytics.app + plan Pro/Team en {bothAiEnabled ? "Claude.ai o ChatGPT" : claudeAiEnabled ? "Claude.ai" : "ChatGPT"}.
 					</Typography>
 				</Box>
 				</FadeInWhenVisible>

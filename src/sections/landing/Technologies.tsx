@@ -26,12 +26,11 @@ import FadeInWhenVisible from "./Animation";
 import SectionEyebrow from "./SectionEyebrow";
 import MainCard from "components/MainCard";
 import FeatureModal from "components/FeatureModal";
-import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
-import ChatGptLogo from "components/icons/ChatGptLogo";
+import AiClientsLogos from "components/icons/AiClientsLogos";
 import { useLandingAnalytics } from "hooks/useLandingAnalytics";
 import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 import { FeatureNames, pushGTMEvent, trackViewFeaturesSection } from "utils/gtm";
-import { getAiBannerCopy } from "utils/mcpBannerCopy";
+import { getMcpBannerCopy, AI_INTEGRATION_PATH } from "utils/mcpBannerCopy";
 
 // ============================== TOKENS ============================== //
 // Mismos tokens que el Hero — atmósfera brand-blue + dot verde para nuevos.
@@ -448,55 +447,40 @@ const TechnologiesPage = () => {
 		featureKey: FeatureNames.SISTEMA_CITAS,
 	};
 
-	// Banners MCP (Phase 8) — un banner SEPARADO por cliente AI activo.
-	// Cada AI tiene su propio widget con su logo, copy específico y CTA al
-	// detalle. Cuando ambos están enabled, se renderean lado a lado en
-	// Grid 6/6 (mismo peso visual). **NO van a /register** → no impactan
-	// Funnel 1. Tracking diferenciado por cta_location.
-	const claudeAiBannerCopy = getAiBannerCopy("claudeAi");
-	const chatGptBannerCopy = getAiBannerCopy("chatGpt");
+	// Banner MCP (Phase 8) — UN banner único en la landing con AMBOS logos
+	// (Claude.ai + ChatGPT) cuando ambos enabled. Punto de discovery
+	// unificado de "conectores AI" — la decisión por marca se hace recién
+	// en /plans donde hay cards separadas. Copy genérico se calcula con
+	// getMcpBannerCopy según qué AIs estén active.
+	// **NO va a /register** → no impacta Funnel 1.
+	const mcpCopy = getMcpBannerCopy(integrations);
 
-	// Wrapper memoizado para ChatGPT — necesita el ajuste de color por theme
-	// (el ChatGptLogo ya lo hace solo, esto es solo el adapter de signature
-	// para que CitasBanner lo trate como iconComponent).
-	const ChatGptIconComponent = useMemo(() => {
+	// Wrapper memoizado para que CitasBanner pueda usar AiClientsLogos como
+	// iconComponent — el banner sólo renderea <Icon size={X} /> y delegamos
+	// a AiClientsLogos que decide qué logos mostrar según integrations.
+	const McpIconComponent = useMemo(() => {
 		const Component = ({ size }: { size?: number | string }) => {
 			const n = typeof size === "number" ? size : typeof size === "string" ? parseFloat(size) : 32;
-			return <ChatGptLogo size={n} />;
+			return <AiClientsLogos integrations={integrations} size={n} spacing={1} />;
 		};
-		Component.displayName = "ChatGptIconComponent";
+		Component.displayName = "McpIconComponent";
 		return Component;
-	}, []);
+	}, [integrations]);
 
-	const claudeAiBanner: CitasBannerData = {
-		iconComponent: ClaudeAiLogo as unknown as typeof CalendarTick,
-		title: claudeAiBannerCopy.title,
-		description: claudeAiBannerCopy.description,
+	const mcpBanner: CitasBannerData = {
+		iconComponent: McpIconComponent as unknown as typeof CalendarTick,
+		title: mcpCopy.title,
+		description: mcpCopy.description,
 		cta: "Ver cómo conectarlo",
-		to: claudeAiBannerCopy.to,
+		to: AI_INTEGRATION_PATH,
 		featureKey: FeatureNames.SISTEMA_CITAS, // reusa key — no se usa en este flow porque no va a /register
 	};
-	const chatGptBanner: CitasBannerData = {
-		iconComponent: ChatGptIconComponent as unknown as typeof CalendarTick,
-		title: chatGptBannerCopy.title,
-		description: chatGptBannerCopy.description,
-		cta: "Ver cómo conectarlo",
-		to: chatGptBannerCopy.to,
-		featureKey: FeatureNames.SISTEMA_CITAS,
-	};
-	const handleClaudeAiBannerClick = useCallback(() => {
-		pushGTMEvent("mcp_landing_card_click", { cta_location: "landing_card_claude" });
-		navigate(claudeAiBanner.to);
-	}, [navigate, claudeAiBanner.to]);
-	const handleChatGptBannerClick = useCallback(() => {
-		pushGTMEvent("mcp_landing_card_click", { cta_location: "landing_card_chatgpt" });
-		navigate(chatGptBanner.to);
-	}, [navigate, chatGptBanner.to]);
-	const trackClaudeAiCTA = useCallback(() => {
-		pushGTMEvent("mcp_landing_card_click", { cta_location: "landing_card_claude" });
-	}, []);
-	const trackChatGptCTA = useCallback(() => {
-		pushGTMEvent("mcp_landing_card_click", { cta_location: "landing_card_chatgpt" });
+	const handleMcpBannerClick = useCallback(() => {
+		pushGTMEvent("mcp_landing_card_click", { cta_location: "landing_card_mcp" });
+		navigate(mcpBanner.to);
+	}, [navigate, mcpBanner.to]);
+	const trackMcpCTA = useCallback(() => {
+		pushGTMEvent("mcp_landing_card_click", { cta_location: "landing_card_mcp" });
 	}, []);
 
 	const handleRowClick = useCallback(
@@ -654,42 +638,17 @@ const TechnologiesPage = () => {
 					</FadeInWhenVisible>
 				</Box>
 
-				{/* Banners MCP — un widget separado por cada cliente AI activo
-				    (Claude.ai, ChatGPT). Cuando ambos están enabled se muestran
-				    lado a lado en Grid 6/6 con el mismo peso visual.
-				    No van a /register, llevan a la landing pública dedicada.
-				    Gated por IntegrationsConfig.services.{claudeAi,chatGpt}.enabled —
-				    admin puede desactivarlos individualmente desde /admin/integrations. */}
+				{/* Banner MCP único — punto de descubrimiento unificado de
+				    conectores AI (Claude.ai + ChatGPT). Cuando ambos enabled
+				    muestra los dos logos en el ícono. La decisión por marca
+				    se hace recién en /plans (dos cards separadas). Gated por
+				    IntegrationsConfig.services.{claudeAi,chatGpt}.enabled —
+				    admin puede desactivarlos desde /admin/integrations. */}
 				{showMcpBanner && (
 					<Box sx={{ mt: 3 }}>
-						<Grid container spacing={3}>
-							{integrations.claudeAi.enabled && (
-								<Grid item xs={12} md={integrations.chatGpt.enabled ? 6 : 12}>
-									<FadeInWhenVisible>
-										<CitasBanner
-											banner={claudeAiBanner}
-											theme={theme}
-											isDark={isDark}
-											onClick={handleClaudeAiBannerClick}
-											onCtaTrack={trackClaudeAiCTA}
-										/>
-									</FadeInWhenVisible>
-								</Grid>
-							)}
-							{integrations.chatGpt.enabled && (
-								<Grid item xs={12} md={integrations.claudeAi.enabled ? 6 : 12}>
-									<FadeInWhenVisible>
-										<CitasBanner
-											banner={chatGptBanner}
-											theme={theme}
-											isDark={isDark}
-											onClick={handleChatGptBannerClick}
-											onCtaTrack={trackChatGptCTA}
-										/>
-									</FadeInWhenVisible>
-								</Grid>
-							)}
-						</Grid>
+						<FadeInWhenVisible>
+							<CitasBanner banner={mcpBanner} theme={theme} isDark={isDark} onClick={handleMcpBannerClick} onCtaTrack={trackMcpCTA} />
+						</FadeInWhenVisible>
 					</Box>
 				)}
 

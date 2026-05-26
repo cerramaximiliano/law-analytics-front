@@ -1,4 +1,5 @@
 import React from "react";
+import { Navigate } from "react-router-dom";
 import { lazyRetry } from "utils/lazyRetry";
 
 // project-imports
@@ -21,8 +22,11 @@ const OauthLogin = Loadable(lazyRetry(() => import("pages/oauth/login")));
 const OauthConsent = Loadable(lazyRetry(() => import("pages/oauth/consent")));
 const OauthUpgradeRequired = Loadable(lazyRetry(() => import("pages/oauth/upgrade-required")));
 
-// Landing pública de integración con Claude.ai (Phase 7 PR 7.3)
-const IntegracionClaudeAi = Loadable(lazyRetry(() => import("pages/integraciones/claude-ai")));
+// Landing pública de conectores AI (Claude.ai + ChatGPT) — Phase 7 PR 7.3.
+// Renombrada de /integraciones/claude-ai a /integraciones/conectores-ai
+// cuando el conector pasó a soportar también ChatGPT. La URL vieja se
+// mantiene como redirect para preservar links externos y SEO.
+const IntegracionConectoresAi = Loadable(lazyRetry(() => import("pages/integraciones/conectores-ai")));
 
 // ==============================|| AUTH ROUTES ||============================== //
 
@@ -81,8 +85,16 @@ const LoginRoutes = {
 					element: <OauthUpgradeRequired />,
 				},
 				{
+					path: "integraciones/conectores-ai",
+					element: <IntegracionConectoresAi />,
+				},
+				{
+					// Redirect de la URL vieja para preservar links externos.
+					// `replace` evita que el back del browser vuelva al path viejo.
+					// Para SEO real (301) hay que sumar regla nginx en el server —
+					// React Router hace 302 client-side.
 					path: "integraciones/claude-ai",
-					element: <IntegracionClaudeAi />,
+					element: <Navigate to="/integraciones/conectores-ai" replace />,
 				},
 			],
 		},

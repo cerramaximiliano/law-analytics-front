@@ -68,13 +68,16 @@ export interface AiBannerCopy {
 }
 
 /**
- * Copy específico para banners/cards individuales por cliente AI. Cada AI
- * (Claude.ai, ChatGPT) tiene su propio banner separado con su logo y copy
- * — los dos se renderizan lado a lado cuando ambos están habilitados.
- *
- * Hoy ambos linkean a /integraciones/claude-ai porque es la única página
- * de detalle. Cuando exista /integraciones/chatgpt, actualizar `to` para
- * el caso chatGpt.
+ * URL pública unificada de la integración AI (cubre Claude.ai y ChatGPT).
+ * La URL vieja `/integraciones/claude-ai` redirige acá (Navigate replace en
+ * LoginRoutes). Para SEO 301 real se necesita una regla nginx en el server.
+ */
+export const AI_INTEGRATION_PATH = "/integraciones/conectores-ai";
+
+/**
+ * Copy específico por cliente AI. En /plans se renderizan cards separadas
+ * (una por cliente) para dar visibilidad de marca; en la landing `/` el
+ * banner es UNO solo con ambos logos. Ambos linkean al mismo detalle.
  */
 export function getAiBannerCopy(client: AiClient): AiBannerCopy {
 	if (client === "claudeAi") {
@@ -84,7 +87,7 @@ export function getAiBannerCopy(client: AiClient): AiBannerCopy {
 			title: "Conectá Claude.ai a tu cuenta",
 			description:
 				"Pediole a Claude que busque tus expedientes, resuma movimientos o consulte jurisprudencia desde el chat.",
-			to: "/integraciones/claude-ai",
+			to: AI_INTEGRATION_PATH,
 		};
 	}
 	return {
@@ -93,8 +96,7 @@ export function getAiBannerCopy(client: AiClient): AiBannerCopy {
 		title: "Conectá ChatGPT a tu cuenta",
 		description:
 			"Pediole a ChatGPT que busque tus expedientes, resuma movimientos o consulte jurisprudencia desde el chat.",
-		// TODO: cambiar a /integraciones/chatgpt cuando exista la página dedicada.
-		to: "/integraciones/claude-ai",
+		to: AI_INTEGRATION_PATH,
 	};
 }
 

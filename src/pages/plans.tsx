@@ -25,7 +25,7 @@ import useAuth from "hooks/useAuth";
 import useSubscription from "hooks/useSubscription";
 import { cleanPlanDisplayName, getCurrentEnvironment } from "utils/planPricingUtils";
 import { pushGTMEvent } from "utils/gtm";
-import { getAiBannerCopy, formatMonthlyPrice, type AiClient } from "utils/mcpBannerCopy";
+import { getAiBannerCopy, formatMonthlyPrice, AI_INTEGRATION_PATH, type AiClient } from "utils/mcpBannerCopy";
 import { openSnackbar } from "store/reducers/snackbar";
 
 // ============================== TOKENS ============================== //
@@ -83,7 +83,7 @@ const Plans = () => {
 	// - Anónimo                       → "Iniciar sesión" → /login?source=mcp-banner
 	// - Free                          → "Mejorar plan"   → scroll a top de planes
 	// - Paid sin addon                → "Agregar"        → POST addAddon
-	// - Con addon active              → "Conectar"       → /integraciones/claude-ai
+	// - Con addon active              → "Conectar"       → /integraciones/conectores-ai
 	const handleMcpCtaClick = async () => {
 		pushGTMEvent("mcp_plans_cta_click", {
 			cta_location: "plans_page",
@@ -95,7 +95,7 @@ const Plans = () => {
 			return;
 		}
 		if (userHasAddon) {
-			navigate("/integraciones/claude-ai");
+			navigate(AI_INTEGRATION_PATH);
 			return;
 		}
 		if (!userPlanIsPaid) {
@@ -123,7 +123,7 @@ const Plans = () => {
 					: "Conector MCP agregado a tu suscripción. Procesando…";
 				dispatch(openSnackbar({ open: true, message: msg, variant: "alert", alert: { color: "success" }, close: false }));
 				// Redirigir a la página de integración después del éxito.
-				setTimeout(() => navigate("/integraciones/claude-ai"), 1500);
+				setTimeout(() => navigate(AI_INTEGRATION_PATH), 1500);
 			}
 		} catch (err) {
 			const message = err instanceof Error ? err.message : "Error al agregar el addon";
