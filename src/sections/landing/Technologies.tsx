@@ -447,41 +447,25 @@ const TechnologiesPage = () => {
 		featureKey: FeatureNames.SISTEMA_CITAS,
 	};
 
-	// Banner MCP (Phase 8) — UN banner único en la landing con AMBOS logos
-	// (Claude.ai + ChatGPT) cuando ambos enabled. Punto de discovery
-	// unificado de "conectores AI" — la decisión por marca se hace recién
-	// en /plans donde hay cards separadas. Copy genérico se calcula con
-	// getMcpBannerCopy según qué AIs estén active.
+	// Banner MCP (Phase 8) — banner único en la landing con AMBOS logos
+	// SEPARADOS (cada uno en su propio chip bordeado). NO usa CitasBanner
+	// porque ese componente envuelve el iconComponent en un Box compartido
+	// de ~60px que pegaba ambos logos sobre el mismo fondo. Hacemos un
+	// banner custom inline que renderea AiClientsLogos con framed=true
+	// directamente — los chips quedan visualmente distintos.
 	// **NO va a /register** → no impacta Funnel 1.
 	const mcpCopy = getMcpBannerCopy(integrations);
-
-	// Wrapper memoizado para que CitasBanner pueda usar AiClientsLogos como
-	// iconComponent — el banner sólo renderea <Icon size={X} /> y delegamos
-	// a AiClientsLogos que decide qué logos mostrar según integrations.
-	const McpIconComponent = useMemo(() => {
-		const Component = ({ size }: { size?: number | string }) => {
-			const n = typeof size === "number" ? size : typeof size === "string" ? parseFloat(size) : 32;
-			return <AiClientsLogos integrations={integrations} size={n} spacing={1} />;
-		};
-		Component.displayName = "McpIconComponent";
-		return Component;
-	}, [integrations]);
-
-	const mcpBanner: CitasBannerData = {
-		iconComponent: McpIconComponent as unknown as typeof CalendarTick,
-		title: mcpCopy.title,
-		description: mcpCopy.description,
-		cta: "Ver cómo conectarlo",
-		to: AI_INTEGRATION_PATH,
-		featureKey: FeatureNames.SISTEMA_CITAS, // reusa key — no se usa en este flow porque no va a /register
-	};
 	const handleMcpBannerClick = useCallback(() => {
 		pushGTMEvent("mcp_landing_card_click", { cta_location: "landing_card_mcp" });
-		navigate(mcpBanner.to);
-	}, [navigate, mcpBanner.to]);
-	const trackMcpCTA = useCallback(() => {
-		pushGTMEvent("mcp_landing_card_click", { cta_location: "landing_card_mcp" });
-	}, []);
+		navigate(AI_INTEGRATION_PATH);
+	}, [navigate]);
+	const handleMcpCtaClick = useCallback(
+		(e: React.MouseEvent) => {
+			e.stopPropagation();
+			pushGTMEvent("mcp_landing_card_click", { cta_location: "landing_card_mcp" });
+		},
+		[],
+	);
 
 	const handleRowClick = useCallback(
 		(tech: FeatureRowData) => {
@@ -639,15 +623,93 @@ const TechnologiesPage = () => {
 				</Box>
 
 				{/* Banner MCP único — punto de descubrimiento unificado de
-				    conectores AI (Claude.ai + ChatGPT). Cuando ambos enabled
-				    muestra los dos logos en el ícono. La decisión por marca
-				    se hace recién en /plans (dos cards separadas). Gated por
-				    IntegrationsConfig.services.{claudeAi,chatGpt}.enabled —
-				    admin puede desactivarlos desde /admin/integrations. */}
+				    conectores AI (Claude.ai + ChatGPT). Los logos van como
+				    chips bordeados separados (framed=true) directamente en
+				    el layout, sin pasar por el Box de 60x60 de CitasBanner. */}
 				{showMcpBanner && (
 					<Box sx={{ mt: 3 }}>
 						<FadeInWhenVisible>
-							<CitasBanner banner={mcpBanner} theme={theme} isDark={isDark} onClick={handleMcpBannerClick} onCtaTrack={trackMcpCTA} />
+							<MainCard
+								onClick={handleMcpBannerClick}
+								sx={{
+									position: "relative",
+									overflow: "hidden",
+									cursor: "pointer",
+									bgcolor: alpha(theme.palette.primary.main, isDark ? 0.1 : 0.06),
+									borderColor: alpha(theme.palette.primary.main, 0.25),
+									transition: "transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease",
+									"&:hover": {
+										transform: { sm: "translateY(-3px)" },
+										boxShadow: { sm: `0 14px 32px ${alpha(BRAND_BLUE, 0.18)}, 0 6px 14px ${alpha(BRAND_BLUE, 0.1)}` },
+										borderColor: { sm: alpha(theme.palette.primary.main, 0.45) },
+									},
+								}}
+							>
+								<Box
+									aria-hidden
+									sx={{
+										position: "absolute",
+										top: -50,
+										right: -30,
+										width: 200,
+										height: 200,
+										borderRadius: "50%",
+										background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.14)} 0%, transparent 65%)`,
+										filter: "blur(40px)",
+										pointerEvents: "none",
+									}}
+								/>
+								<Box
+									sx={{
+										position: "relative",
+										display: "flex",
+										flexDirection: { xs: "column", md: "row" },
+										alignItems: "center",
+										gap: { xs: 2.5, md: 3 },
+										textAlign: { xs: "center", md: "left" },
+									}}
+								>
+									<AiClientsLogos integrations={integrations} size={32} spacing={1.5} framed />
+									<Box sx={{ flex: 1 }}>
+										<Typography
+											variant="h5"
+											sx={{
+												fontWeight: 600,
+												mb: 0.5,
+												color: isDark ? theme.palette.grey[100] : theme.palette.grey[900],
+												lineHeight: 1.25,
+											}}
+										>
+											{mcpCopy.title}
+										</Typography>
+										<Typography sx={{ fontSize: "0.88rem", color: theme.palette.text.secondary, lineHeight: 1.5 }}>
+											{mcpCopy.description}
+										</Typography>
+									</Box>
+									<Box sx={{ flexShrink: 0 }}>
+										<Button
+											component={RouterLink}
+											to={AI_INTEGRATION_PATH}
+											onClick={handleMcpCtaClick}
+											variant="contained"
+											color="primary"
+											size="large"
+											endIcon={<ArrowRight size={18} color="#fff" />}
+											sx={{
+												px: 2.5,
+												py: 1.25,
+												fontSize: "0.9rem",
+												fontWeight: 600,
+												textTransform: "none",
+												borderRadius: 2,
+												whiteSpace: "nowrap",
+											}}
+										>
+											Ver cómo conectarlo
+										</Button>
+									</Box>
+								</Box>
+							</MainCard>
 						</FadeInWhenVisible>
 					</Box>
 				)}
