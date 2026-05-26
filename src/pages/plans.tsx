@@ -17,14 +17,15 @@ import PlanCard from "components/cards/PlanCard";
 import ApiService, { Plan } from "store/reducers/ApiService";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
-import AiClientsLogos from "components/icons/AiClientsLogos";
+import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
+import ChatGptLogo from "components/icons/ChatGptLogo";
 import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 import { usePublicAddons } from "hooks/usePublicAddons";
 import useAuth from "hooks/useAuth";
 import useSubscription from "hooks/useSubscription";
 import { cleanPlanDisplayName, getCurrentEnvironment } from "utils/planPricingUtils";
 import { pushGTMEvent } from "utils/gtm";
-import { getMcpBannerCopy, formatMonthlyPrice } from "utils/mcpBannerCopy";
+import { getAiBannerCopy, formatMonthlyPrice, type AiClient } from "utils/mcpBannerCopy";
 import { openSnackbar } from "store/reducers/snackbar";
 
 // ============================== TOKENS ============================== //
@@ -56,9 +57,10 @@ const Plans = () => {
 	const { isLoggedIn } = useAuth();
 	const { subscription } = useSubscription();
 
-	// Banner MCP visible si CUALQUIERA de las dos integraciones AI está enabled.
+	// Banners MCP visibles si CUALQUIERA de las dos integraciones AI está enabled.
+	// Renderizamos UNA card por cliente AI activo (Claude.ai, ChatGPT) en
+	// Grid 6/6 — cada card es independiente con su logo + copy específicos.
 	const showMcpBanner = integrations.claudeAi.enabled || integrations.chatGpt.enabled;
-	const mcpCopy = getMcpBannerCopy(integrations);
 	// El addon mcp_access es el único hoy; se busca por key + available para
 	// que si el backend lo flippea a unavailable mid-session, el banner desaparece.
 	const mcpAddon = addons.find((a) => a.key === "mcp_access" && a.available) || null;
@@ -289,71 +291,82 @@ const Plans = () => {
 					</Grid>
 				)}
 
-				{/* Banner MCP — addon mcp_access (Phase 9 — billing real).
-				    Gated por IntegrationsConfig: visible si claudeAi.enabled
-				    O chatGpt.enabled. CTA contextual según estado del user
-				    (ver handleMcpCtaClick). NO va a /register → no impacta Funnel 1.
-				    Tracking: mcp_plans_cta_click con user_state. */}
+				{/* Cards MCP — addon mcp_access (Phase 9 — billing real).
+				    Una card SEPARADA por cliente AI activo (Claude.ai, ChatGPT).
+				    Cuando ambos están enabled, se renderean lado a lado en
+				    Grid 6/6 con el mismo peso visual. CTA contextual compartido
+				    (el addon mcp_access cubre ambos clientes). NO va a /register
+				    → no impacta Funnel 1. Tracking: mcp_plans_cta_click con user_state. */}
 				{!loading && !error && plans.length > 0 && showMcpBanner && (
-					<Box
-						component={motion.div}
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.4, delay: 0.3 }}
-						sx={{
-							mt: 6,
-							p: { xs: 3, md: 4 },
-							borderRadius: 3,
-							border: `1px solid ${alpha(BRAND_BLUE, 0.2)}`,
-							bgcolor: alpha(BRAND_BLUE, 0.04),
-						}}
-					>
-						<Stack
-							direction={{ xs: "column", md: "row" }}
-							spacing={2}
-							alignItems={{ xs: "flex-start", md: "center" }}
-							justifyContent="space-between"
-						>
-							<Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
-								<AiClientsLogos integrations={integrations} size={32} />
-								<Box>
-									<Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5, flexWrap: "wrap" }}>
-										<Typography variant="h6" sx={{ fontWeight: 700 }}>
-											{mcpCopy.title}
-										</Typography>
-										<Chip
-											label="Add-on"
-											size="small"
-											sx={{
-												fontWeight: 600,
-												letterSpacing: 0.5,
-												bgcolor: alpha(BRAND_BLUE, 0.12),
-												color: BRAND_BLUE,
-											}}
-										/>
-										{mcpPriceLabel && !userHasAddon && (
-											<Typography variant="body2" sx={{ fontWeight: 600 }}>
-												{mcpPriceLabel}
-											</Typography>
-										)}
-									</Stack>
-									<Typography variant="body2" color="text.secondary">
-										{mcpCopy.description}
-										{!userHasAddon && " Aditivo a planes Standard y Premium."}
-									</Typography>
-								</Box>
-							</Stack>
-							<Button
-								variant={userHasAddon ? "outlined" : "contained"}
-								color="primary"
-								onClick={handleMcpCtaClick}
-								disabled={addonBusy}
-								endIcon={<ArrowRight2 size={16} />}
-								sx={{ flexShrink: 0, minWidth: { md: 220 } }}
-							>
-								{mcpCtaLabel}
-							</Button>
-						</Stack>
+					<Box sx={{ mt: 6 }}>
+						<Grid container spacing={3} alignItems="stretch">
+							{(["claudeAi", "chatGpt"] as AiClient[])
+								.filter((c) => integrations[c].enabled)
+								.map((client, idx, arr) => {
+									const copy = getAiBannerCopy(client);
+									const md = arr.length > 1 ? 6 : 12;
+									return (
+										<Grid item xs={12} md={md} key={client}>
+											<Box
+												component={motion.div}
+												initial={{ opacity: 0, y: 20 }}
+												animate={{ opacity: 1, y: 0 }}
+												transition={{ duration: 0.4, delay: 0.3 + idx * 0.1 }}
+												sx={{
+													height: "100%",
+													p: { xs: 3, md: 4 },
+													borderRadius: 3,
+													border: `1px solid ${alpha(BRAND_BLUE, 0.2)}`,
+													bgcolor: alpha(BRAND_BLUE, 0.04),
+													display: "flex",
+													flexDirection: "column",
+												}}
+											>
+												<Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+													{client === "claudeAi" ? <ClaudeAiLogo size={40} /> : <ChatGptLogo size={40} />}
+													<Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap" }}>
+														<Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+															{copy.displayName}
+														</Typography>
+														<Chip
+															label="Add-on"
+															size="small"
+															sx={{
+																fontWeight: 600,
+																letterSpacing: 0.5,
+																bgcolor: alpha(BRAND_BLUE, 0.12),
+																color: BRAND_BLUE,
+															}}
+														/>
+													</Stack>
+												</Stack>
+
+												<Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1 }}>
+													{copy.description}
+													{!userHasAddon && " Aditivo a planes Standard y Premium."}
+												</Typography>
+
+												{mcpPriceLabel && !userHasAddon && (
+													<Typography variant="body1" sx={{ fontWeight: 700, mb: 2, color: BRAND_BLUE }}>
+														{mcpPriceLabel}
+													</Typography>
+												)}
+
+												<Button
+													variant={userHasAddon ? "outlined" : "contained"}
+													color="primary"
+													onClick={handleMcpCtaClick}
+													disabled={addonBusy}
+													endIcon={<ArrowRight2 size={16} />}
+													fullWidth
+												>
+													{mcpCtaLabel}
+												</Button>
+											</Box>
+										</Grid>
+									);
+								})}
+						</Grid>
 					</Box>
 				)}
 			</Container>

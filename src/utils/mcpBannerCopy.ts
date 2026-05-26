@@ -53,6 +53,51 @@ export function getMcpBannerCopy(integrations: PublicIntegrations): McpBannerCop
 	return { title, description, activeClients: active, clientsLabel };
 }
 
+export type AiClient = "claudeAi" | "chatGpt";
+
+export interface AiBannerCopy {
+	clientKey: AiClient;
+	/** Display name canónico: "Claude.ai" / "ChatGPT". */
+	displayName: string;
+	/** Título corto del banner. */
+	title: string;
+	/** Subtítulo descriptivo. */
+	description: string;
+	/** Destino del CTA del banner — link a la página de la integración. */
+	to: string;
+}
+
+/**
+ * Copy específico para banners/cards individuales por cliente AI. Cada AI
+ * (Claude.ai, ChatGPT) tiene su propio banner separado con su logo y copy
+ * — los dos se renderizan lado a lado cuando ambos están habilitados.
+ *
+ * Hoy ambos linkean a /integraciones/claude-ai porque es la única página
+ * de detalle. Cuando exista /integraciones/chatgpt, actualizar `to` para
+ * el caso chatGpt.
+ */
+export function getAiBannerCopy(client: AiClient): AiBannerCopy {
+	if (client === "claudeAi") {
+		return {
+			clientKey: "claudeAi",
+			displayName: "Claude.ai",
+			title: "Conectá Claude.ai a tu cuenta",
+			description:
+				"Pediole a Claude que busque tus expedientes, resuma movimientos o consulte jurisprudencia desde el chat.",
+			to: "/integraciones/claude-ai",
+		};
+	}
+	return {
+		clientKey: "chatGpt",
+		displayName: "ChatGPT",
+		title: "Conectá ChatGPT a tu cuenta",
+		description:
+			"Pediole a ChatGPT que busque tus expedientes, resuma movimientos o consulte jurisprudencia desde el chat.",
+		// TODO: cambiar a /integraciones/chatgpt cuando exista la página dedicada.
+		to: "/integraciones/claude-ai",
+	};
+}
+
 /**
  * Formatea un precio mensual para mostrarlo en cards/banners.
  * Si no hay precio (Stripe no devolvió), retorna null para que el caller

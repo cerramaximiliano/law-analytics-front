@@ -48,7 +48,6 @@ import {
 
 // project-imports
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
-import AiClientsLogos from "components/icons/AiClientsLogos";
 import LogoSection from "components/logo";
 import FadeInWhenVisible from "sections/landing/Animation";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
@@ -253,13 +252,12 @@ const ClaudeAiLandingPage = () => {
 			</Box>
 
 			<Container maxWidth="md" sx={{ py: { xs: 4, md: 8 } }}>
-				{/* Hero */}
+				{/* Hero — solo logo de Claude (la URL es /integraciones/claude-ai
+				    y la página es Claude-specific). La mención a ChatGPT vive en
+				    el subtítulo y FAQ cuando chatGpt.enabled. */}
 				<Stack spacing={2} alignItems="center" sx={{ textAlign: "center", mb: 6 }}>
 					<Box sx={{ mb: 1 }}>
-						{/* Si chatGpt.enabled, mostramos también su logo al lado del de
-						    Claude. Si solo Claude, mantenemos solo el logo de Claude
-						    (que es lo que el usuario espera por la URL /integraciones/claude-ai). */}
-						<AiClientsLogos integrations={integrations} size={64} spacing={2} />
+						<ClaudeAiLogo size={64} />
 					</Box>
 					<Chip
 						label={integrations.claudeAi.releaseStage === "stable" ? "DISPONIBLE" : "BETA CERRADA"}
