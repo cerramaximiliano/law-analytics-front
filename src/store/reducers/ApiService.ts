@@ -647,9 +647,9 @@ class ApiService {
 	 * Obtiene los planes públicos disponibles
 	 */
 
-	static async getPublicPlans(
-		options?: { landingOnly?: boolean },
-	): Promise<ApiResponse<Plan[]> & { integrations?: PublicIntegrations; addons?: PublicAddon[] }> {
+	static async getPublicPlans(options?: {
+		landingOnly?: boolean;
+	}): Promise<ApiResponse<Plan[]> & { integrations?: PublicIntegrations; addons?: PublicAddon[] }> {
 		try {
 			// landingOnly=true fuerza al backend a devolver solo descuentos con
 			// showOnLanding=true aunque haya sesión. Lo usa la landing pública (`/`)
@@ -734,9 +734,7 @@ class ApiService {
 	 * El backend hace stripe.subscriptions.update + el webhook de la-subscriptions
 	 * sincroniza el campo addons[] cuando llega (~1-2s después).
 	 */
-	static async addAddon(
-		addonKey: AddonKey,
-	): Promise<{
+	static async addAddon(addonKey: AddonKey): Promise<{
 		success: boolean;
 		alreadyActive?: boolean;
 		pendingWebhookSync?: boolean;
@@ -744,11 +742,7 @@ class ApiService {
 		message?: string;
 	}> {
 		try {
-			const response = await axios.post(
-				`${API_BASE_URL}/api/subscriptions/addons/checkout`,
-				{ addonKey },
-				{ withCredentials: true },
-			);
+			const response = await axios.post(`${API_BASE_URL}/api/subscriptions/addons/checkout`, { addonKey }, { withCredentials: true });
 			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);
@@ -1331,6 +1325,38 @@ class ApiService {
 	 */
 	static async dismissOnboarding(): Promise<ApiResponse<{ onboarding: OnboardingStatus }>> {
 		return this.updateOnboarding({ dismissed: true });
+	}
+
+	/**
+	 * Registra un evento del flujo de onboarding en la colección OnboardingEvent.
+	 * Complementa a los eventos GTM/GA4 (que viven en analytics) con persistencia
+	 * en Mongo para poder cruzarlos con el resto del estado del user en la
+	 * admin UI (/admin/users/onboarding tab Eventos).
+	 *
+	 * Eventos válidos (ver authController.trackOnboardingEvent):
+	 *   - onboarding_shown
+	 *   - onboarding_step_clicked
+	 *   - onboarding_step_completed
+	 *   - onboarding_judicial_logo_clicked
+	 *   - onboarding_example_folder_used
+	 *   - onboarding_dismissed
+	 *   - onboarding_completed
+	 *   - (legacy) onboarding_cta_clicked, folder_created_from_onboarding
+	 *
+	 * El metadata es libre — se guarda tal cual. Convenciones que usa el
+	 * OnboardingChecklist: `{ step_id, jurisdiction, mode, completed_count }`.
+	 */
+	static async trackOnboardingEvent(event: string, metadata?: Record<string, unknown>, sessionsCount?: number): Promise<void> {
+		try {
+			await axios.post(
+				`${API_BASE_URL}/api/auth/onboarding/track`,
+				{ event, metadata: metadata || {}, sessionsCount: sessionsCount || 1 },
+				{ withCredentials: true },
+			);
+		} catch (error) {
+			// Tracking no debe romper el flow del user — log y seguir.
+			console.warn("trackOnboardingEvent failed", event, error);
+		}
 	}
 }
 

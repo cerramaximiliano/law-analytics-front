@@ -98,5 +98,5 @@ export interface PropsAddFolder {
 	open: boolean;
 	mode: "add" | "edit";
 	initialStep?: number;
-	initialFormValues?: { entryMethod?: string; judicialPower?: string };
+	initialFormValues?: { entryMethod?: string; judicialPower?: string; pjnImportMode?: string; baImportMode?: string };
 }

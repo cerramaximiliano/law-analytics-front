@@ -40,7 +40,10 @@ import dayjs from "utils/dayjs-config";
 import folderData from "data/folder.json";
 import { useTeam } from "contexts/TeamContext";
 
-const getInitialValues = (folder: FormikValues | null, overrides?: { entryMethod?: string; judicialPower?: string }) => {
+const getInitialValues = (
+	folder: FormikValues | null,
+	overrides?: { entryMethod?: string; judicialPower?: string; pjnImportMode?: string; baImportMode?: string },
+) => {
 	const newFolder = {
 		folderName: "",
 		description: "",
@@ -62,8 +65,8 @@ const getInitialValues = (folder: FormikValues | null, overrides?: { entryMethod
 		eje: false, // Para indicar si los datos provienen del EJE (CABA)
 		ejeSearchType: "expediente", // Tipo de búsqueda para EJE: "cuij" o "expediente"
 		ejeCuij: "", // CUIJ para búsqueda en EJE
-		pjnImportMode: "connect", // Modo de importación PJN: "connect" o "single"
-		baImportMode: "connect", // Modo de importación BA: "connect" o "single"
+		pjnImportMode: overrides?.pjnImportMode ?? "connect", // Modo de importación PJN: "connect" o "single"
+		baImportMode: overrides?.baImportMode ?? "connect", // Modo de importación BA: "connect" o "single"
 	};
 
 	if (folder) {

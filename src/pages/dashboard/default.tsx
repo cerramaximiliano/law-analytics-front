@@ -8,8 +8,7 @@ import { Grid, Stack, Typography, Snackbar, Alert, Skeleton, Fade, CircularProgr
 import EcommerceDataCard from "components/cards/statistics/WidgetDataCard";
 import BarsDataWidget from "sections/widget/chart/BarsDataWidget";
 import ErrorStateCard from "components/ErrorStateCard";
-import OnboardingCard from "components/cards/OnboardingCard";
-import OnboardingEducationalBlock from "components/cards/OnboardingEducationalBlock";
+import OnboardingChecklist, { useJudicialConnectionState } from "components/cards/OnboardingChecklist";
 
 import RepeatCustomerRate from "sections/widget/chart/FoldersDataRate";
 import FinancialWidget from "sections/widget/chart/FinancialWidget";
@@ -21,7 +20,7 @@ import StorageWidget from "sections/widget/chart/StorageWidget";
 import ResourceUsageWidget from "sections/widget/chart/ResourceUsageWidget";
 
 // assets
-import { Calendar, CloudChange, FolderAdd, Task, Moneys } from "iconsax-react";
+import { Calendar, CloudChange } from "iconsax-react";
 import WelcomeBanner from "sections/dashboard/default/WelcomeBanner";
 import { useSelector, dispatch } from "store";
 import { getUnifiedStats } from "store/reducers/unifiedStats";
@@ -33,9 +32,6 @@ import { BRAND_BLUE } from "themes/dashboardTokens";
 // hooks
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffectiveUser } from "hooks/useEffectiveUser";
-
-// Limite de sesiones para mostrar onboarding
-const MAX_ONBOARDING_SESSIONS = 5;
 
 // Key para sessionStorage (evitar multiples incrementos por sesion)
 const ONBOARDING_SESSION_KEY = "onboarding_session_checked";
@@ -153,7 +149,14 @@ const DashboardDefault = () => {
 		fetchOnboarding();
 	}, [personalUserId]);
 
-	// Determinar si mostrar onboarding
+	// Determinar si mostrar onboarding.
+	// Cambio vs versión anterior: ya NO se apaga por umbral de sesiones ni por
+	// "ya creó una carpeta". El checklist nuevo (OnboardingChecklist) tiene 4
+	// pasos y el principal — vincular cuenta del Poder Judicial — recién aparece
+	// recién después de crear la primera carpeta. Se oculta solo cuando:
+	//   1. El user lo dismissa explícitamente (link "Ocultar guía"), o
+	//   2. El backend marca onboardingComplete=true (al alcanzar 4/4 el componente
+	//      lo dispara via ApiService.updateOnboarding({step: 'first_feature'})).
 	const showOnboarding = useMemo(() => {
 		// Override (state hidratado desde sessionStorage + query param) — solo admin.
 		if (isAdmin) {
@@ -161,28 +164,26 @@ const DashboardDefault = () => {
 			if (onboardingOverride === "skip") return false;
 		}
 
-		// Si el usuario tiene el onboarding completado o descartado, no mostrar
 		if (onboardingStatus?.onboardingComplete || onboardingStatus?.dismissed) {
 			return false;
 		}
 
-		// Si no hay datos del dashboard aun, no podemos determinar
 		if (!dashboardData) {
 			return false;
 		}
 
-		// Limite de sesiones: si ya se mostro mas de MAX_ONBOARDING_SESSIONS veces, no mostrar
-		if (onboardingStatus?.onboardingSessionsCount && onboardingStatus.onboardingSessionsCount > MAX_ONBOARDING_SESSIONS) {
-			return false;
-		}
-
-		// Mostrar onboarding si no tiene carpetas activas
-		const totalCarpetas = (dashboardData?.folders?.active || 0) + (dashboardData?.folders?.closed || 0);
-		return totalCarpetas === 0;
+		return true;
 	}, [onboardingStatus, dashboardData, onboardingOverride, isAdmin]);
 
 	// Estado combinado de carga (ambos deben estar listos)
 	const isFullyLoading = isLoading || onboardingLoading;
+
+	// Estado de cred judicial (PJN/SCBA). Skip si el onboarding no se va a
+	// mostrar — evita 2 requests inútiles en cada carga del dashboard del user
+	// que ya completó/dismissó el flow. Tiene que evaluarse después de
+	// showOnboarding y antes del render.
+	const skipJudicialFetch = !!onboardingStatus?.onboardingComplete || !!onboardingStatus?.dismissed || onboardingLoading;
+	const judicialState = useJudicialConnectionState(skipJudicialFetch);
 
 	// Nombre del usuario para el banner
 	const userName = user?.firstName || user?.name?.split(" ")[0] || "";
@@ -286,11 +287,6 @@ const DashboardDefault = () => {
 		}
 	};
 
-	// Handlers para las acciones de onboarding (con flag para tour/guia posterior)
-	const handleCreateFolder = () => navigate("/apps/folders/list?onboarding=true");
-	const handleCreateTask = () => navigate("/tareas?onboarding=true");
-	const handleViewDeadlines = () => navigate("/apps/calendar?onboarding=true");
-
 	// Renderizar skeleton loader para las tarjetas
 	const renderSkeletonCards = () => (
 		<>
@@ -322,58 +318,6 @@ const DashboardDefault = () => {
 		if (error?.includes("404") || error?.includes("encontrado")) return "notFound";
 		return "general";
 	};
-
-	// Renderizar las 4 OnboardingCards en 2x2 — usadas dentro de la columna
-	// izquierda lg=6 para llenar el espacio debajo del EducationalBlock.
-	// Jerarquía: Carpetas = foco principal, Tareas/Vencimientos = secundarios.
-	const renderOnboardingCards = () => (
-		<>
-			<Grid item xs={12} sm={6}>
-				<OnboardingCard
-					title="Monto activo"
-					description="Visualizá el valor total de tus expedientes activos. Se calcula automáticamente desde tus carpetas."
-					icon={<Moneys size={20} variant="Bulk" />}
-					variant="informative"
-					muted
-				/>
-			</Grid>
-
-			<Grid item xs={12} sm={6}>
-				<OnboardingCard
-					title="Carpetas activas"
-					description="Las carpetas representan tus expedientes. Organizá causas, clientes y documentos en un solo lugar."
-					actionLabel="Crear mi primera carpeta"
-					onAction={handleCreateFolder}
-					icon={<FolderAdd size={20} variant="Bulk" />}
-					variant="primary"
-				/>
-			</Grid>
-
-			<Grid item xs={12} sm={6}>
-				<OnboardingCard
-					title="Tareas pendientes"
-					description="Gestioná tus tareas para no perder plazos importantes. Las tareas se vinculan a tus carpetas."
-					actionLabel="Ver tareas"
-					onAction={handleCreateTask}
-					icon={<Task size={20} variant="Bulk" />}
-					variant="secondary"
-					muted
-				/>
-			</Grid>
-
-			<Grid item xs={12} sm={6}>
-				<OnboardingCard
-					title="Vencimientos"
-					description="Configurá alertas para vencimientos judiciales. Recibí notificaciones antes de cada fecha límite."
-					actionLabel="Ver vencimientos"
-					onAction={handleViewDeadlines}
-					icon={<CloudChange size={20} variant="Bulk" />}
-					variant="secondary"
-					muted
-				/>
-			</Grid>
-		</>
-	);
 
 	// Renderizar el dashboard
 	return (
@@ -437,44 +381,43 @@ const DashboardDefault = () => {
 					</Grid>
 				)}
 
-				{/* Banner siempre visible (con skeleton si esta cargando) */}
-				<Grid item xs={12}>
-					{isFullyLoading ? (
-						<Skeleton variant="rectangular" height={180} sx={{ borderRadius: 1.5 }} />
-					) : (
-						<Fade in={!isFullyLoading} timeout={300}>
-							<div>
-								<WelcomeBanner
-									showOnboarding={showOnboarding}
-									userName={userName}
-									onDismiss={handleDismissOnboarding}
-									sessionCount={onboardingStatus?.onboardingSessionsCount || 0}
-									maxSessions={MAX_ONBOARDING_SESSIONS}
-								/>
-							</div>
-						</Fade>
-					)}
-					{lastUpdated && !isFullyLoading && !error && !showOnboarding && (
-						<Typography
-							variant="caption"
-							color="text.secondary"
-							sx={{
-								display: "flex",
-								justifyContent: "flex-end",
-								mt: 1,
-							}}
-						>
-							Última actualización:{" "}
-							{new Date(lastUpdated).toLocaleString("es-AR", {
-								day: "2-digit",
-								month: "2-digit",
-								year: "numeric",
-								hour: "2-digit",
-								minute: "2-digit",
-							})}
-						</Typography>
-					)}
-				</Grid>
+				{/* Header del dashboard: WelcomeBanner (variante default) cuando NO hay
+				    onboarding. Cuando hay onboarding, el OnboardingChecklist se
+				    renderiza más abajo dentro del bloque condicional y reemplaza al
+				    banner — sin esto saldrían dos hero rows uno arriba del otro. */}
+				{!showOnboarding && (
+					<Grid item xs={12}>
+						{isFullyLoading ? (
+							<Skeleton variant="rectangular" height={120} sx={{ borderRadius: 1.5 }} />
+						) : (
+							<Fade in={!isFullyLoading} timeout={300}>
+								<div>
+									<WelcomeBanner showOnboarding={false} userName={userName} />
+								</div>
+							</Fade>
+						)}
+						{lastUpdated && !isFullyLoading && !error && (
+							<Typography
+								variant="caption"
+								color="text.secondary"
+								sx={{
+									display: "flex",
+									justifyContent: "flex-end",
+									mt: 1,
+								}}
+							>
+								Última actualización:{" "}
+								{new Date(lastUpdated).toLocaleString("es-AR", {
+									day: "2-digit",
+									month: "2-digit",
+									year: "numeric",
+									hour: "2-digit",
+									minute: "2-digit",
+								})}
+							</Typography>
+						)}
+					</Grid>
+				)}
 
 				{/* Overlay de loading cuando se esta descartando */}
 				{isDismissing && (
@@ -517,28 +460,36 @@ const DashboardDefault = () => {
 					</Grid>
 				)}
 
-				{/* Mostrar contenido de onboarding para usuarios nuevos */}
+				{/* Mostrar onboarding checklist para usuarios sin onboarding completado.
+				    Si el user ya creó carpeta (step 1 done), el checklist sigue
+				    visible empujando al step #2 — conectar cuenta judicial — que
+				    es el cuello de botella real (0% activación a 90 días). */}
 				{!isFullyLoading && !error && dashboardData && showOnboarding && !isDismissing && (
 					<Fade in timeout={400}>
 						<Grid container item spacing={2.75}>
-							{/* Columna izquierda lg=6: EducationalBlock arriba + 4 OnboardingCards en 2x2 debajo */}
-							<Grid item xs={12} lg={6}>
-								<Grid container spacing={2.75}>
-									<Grid item xs={12}>
-										<OnboardingEducationalBlock />
-									</Grid>
-									{renderOnboardingCards()}
-								</Grid>
+							{/* Checklist ocupa lg=7 cuando el user ya tiene recursos para
+							    dar espacio a los widgets de KPI; full-width si recién empieza. */}
+							<Grid item xs={12} lg={dashboardData?.folders?.total ? 7 : 12}>
+								<OnboardingChecklist
+									userName={userName}
+									hasFolders={(dashboardData?.folders?.total || 0) > 0}
+									hasPjnCredentials={judicialState.hasPjnCredentials}
+									hasScbaCredentials={judicialState.hasScbaCredentials}
+									onDismiss={handleDismissOnboarding}
+								/>
 							</Grid>
 
-							{/* Columna derecha lg=6: widgets apilados verticalmente (Storage + Task + Release) */}
-							<Grid item xs={12} lg={6}>
-								<Stack spacing={2.75}>
-									<StorageWidget />
-									<AssignUsers />
-									<ProjectRelease />
-								</Stack>
-							</Grid>
+							{/* Cuando ya creó carpeta, aparece la columna derecha con
+							    widgets para que el dashboard no se sienta "vacío" pero el
+							    checklist mantiene el foco. */}
+							{dashboardData?.folders?.total ? (
+								<Grid item xs={12} lg={5}>
+									<Stack spacing={2.75}>
+										<ActiveFoldersWidget />
+										<StorageWidget />
+									</Stack>
+								</Grid>
+							) : null}
 						</Grid>
 					</Fade>
 				)}

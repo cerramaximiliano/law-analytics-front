@@ -195,6 +195,11 @@ interface FormValues {
 	// Campos específicos para EJE (CABA)
 	ejeSearchType?: "cuij" | "expediente";
 	ejeCuij?: string;
+	// Modo de importación del sub-toggle dentro del step. Persistido en el form
+	// para que callers externos (onboarding checklist) puedan pre-seleccionar
+	// "single" via `initialFormValues` y el `useState` local los recoja al mount.
+	pjnImportMode?: string;
+	baImportMode?: string;
 }
 
 // Modos de importación para PJN Nacional y Buenos Aires
@@ -219,11 +224,17 @@ const AutomaticStep = () => {
 	// importar — no tiene sentido permitir intentar cargar un expediente.
 	const { isInMaintenance: pjnInMaintenance } = usePjnSiteStatus();
 
-	// Modo de importación PJN: conectar cuenta o importar expediente individual
-	const [pjnImportMode, setPjnImportMode] = useState<PjnImportMode>("connect");
+	// Modo de importación PJN: conectar cuenta o importar expediente individual.
+	// Toma el initial value del form (`values.pjnImportMode`) para permitir que
+	// se pre-seleccione "single" desde callers externos — ej. el onboarding
+	// checklist que envía al user directo al modo "Importar expediente individual"
+	// cuando clickea el logo PJN en la opción B del step "Conectar con el Poder
+	// Judicial".
+	const [pjnImportMode, setPjnImportMode] = useState<PjnImportMode>((values.pjnImportMode as PjnImportMode) || "connect");
 
-	// Modo de importación Buenos Aires: conectar cuenta SCBA o importar expediente individual
-	const [baImportMode, setBaImportMode] = useState<BaImportMode>("connect");
+	// Modo de importación Buenos Aires: conectar cuenta SCBA o importar expediente individual.
+	// Mismo patrón que `pjnImportMode`.
+	const [baImportMode, setBaImportMode] = useState<BaImportMode>((values.baImportMode as BaImportMode) || "connect");
 
 	// Estado para errores de EJE (CABA)
 	const [cuijError, setCuijError] = useState("");

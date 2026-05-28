@@ -364,27 +364,24 @@ function ReactTable({
 	const filterTypes = useMemo(() => renderFilterTypes, []);
 	const sortBy = { id: "folderName", desc: false };
 
-	const defaultHiddenColumns = useMemo(
-		() => {
-			const base = matchDownSM
-				? [
-						"_id",
-						"email",
-						"status",
-						"description",
-						"initialDateFolder",
-						"lastMovementDate",
-						"finalDateFolder",
-						"folderJuris.label",
-						"folderFuero",
-						"createdAt",
-						"updatedAt",
-				  ]
-				: ["email", "_id", "description", "finalDateFolder", "createdAt", "updatedAt"];
-			return disableRowSelection ? [...base, "selection"] : base;
-		},
-		[matchDownSM, disableRowSelection],
-	);
+	const defaultHiddenColumns = useMemo(() => {
+		const base = matchDownSM
+			? [
+					"_id",
+					"email",
+					"status",
+					"description",
+					"initialDateFolder",
+					"lastMovementDate",
+					"finalDateFolder",
+					"folderJuris.label",
+					"folderFuero",
+					"createdAt",
+					"updatedAt",
+			  ]
+			: ["email", "_id", "description", "finalDateFolder", "createdAt", "updatedAt"];
+		return disableRowSelection ? [...base, "selection"] : base;
+	}, [matchDownSM, disableRowSelection]);
 
 	const {
 		getTableProps,
@@ -1064,7 +1061,13 @@ function ReactTable({
 								<Stack direction="row" spacing={1.25} alignItems="center" flexWrap="wrap" useFlexGap>
 									{/* Filtro por Tipo */}
 									<FormControl size="small" sx={{ minWidth: 130 }}>
-										<Select id="folder-type-filter" displayEmpty value={folderTypeFilter} onChange={onFolderTypeFilterChange} sx={filterSelectSx}>
+										<Select
+											id="folder-type-filter"
+											displayEmpty
+											value={folderTypeFilter}
+											onChange={onFolderTypeFilterChange}
+											sx={filterSelectSx}
+										>
 											<MenuItem value="all">
 												<Typography variant="body2">Tipo: Todos</Typography>
 											</MenuItem>
@@ -1122,7 +1125,13 @@ function ReactTable({
 									{/* Filtro por Movimientos */}
 									{onMovimientosFilterChange && (
 										<FormControl size="small" sx={{ minWidth: 160 }}>
-											<Select id="movimientos-filter" displayEmpty value={movimientosFilter} onChange={onMovimientosFilterChange} sx={filterSelectSx}>
+											<Select
+												id="movimientos-filter"
+												displayEmpty
+												value={movimientosFilter}
+												onChange={onMovimientosFilterChange}
+												sx={filterSelectSx}
+											>
 												<MenuItem value="all">
 													<Typography variant="body2">Movimientos: Todos</Typography>
 												</MenuItem>
@@ -1144,7 +1153,13 @@ function ReactTable({
 									{/* Filtro por Jurisdicción */}
 									{onJurisdiccionFilterChange && uniqueJurisdicciones.length > 0 && (
 										<FormControl size="small" sx={{ minWidth: 150 }}>
-											<Select id="jurisdiccion-filter" displayEmpty value={jurisdiccionFilter} onChange={onJurisdiccionFilterChange} sx={filterSelectSx}>
+											<Select
+												id="jurisdiccion-filter"
+												displayEmpty
+												value={jurisdiccionFilter}
+												onChange={onJurisdiccionFilterChange}
+												sx={filterSelectSx}
+											>
 												<MenuItem value="all">
 													<Typography variant="body2">Jurisdicción: Todas</Typography>
 												</MenuItem>
@@ -1261,10 +1276,7 @@ function ReactTable({
 									border: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.32 : 0.2)}`,
 								}}
 							>
-								<Box
-									aria-hidden
-									sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: BRAND_BLUE, flexShrink: 0 }}
-								/>
+								<Box aria-hidden sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: BRAND_BLUE, flexShrink: 0 }} />
 								<Typography
 									sx={{
 										fontSize: "0.62rem",
@@ -1487,9 +1499,7 @@ function ReactTable({
 													},
 												}),
 												"&:hover": {
-													bgcolor: row.isSelected
-														? alpha(BRAND_BLUE, isDark ? 0.18 : 0.11)
-														: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+													bgcolor: row.isSelected ? alpha(BRAND_BLUE, isDark ? 0.18 : 0.11) : alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
 												},
 											}}
 										>
@@ -1533,7 +1543,10 @@ function ReactTable({
 						sx={{
 							position: "absolute",
 							inset: 0,
-							background: `radial-gradient(circle at 50% 40%, ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.12 : 0.07)} 0%, transparent 60%)`,
+							background: `radial-gradient(circle at 50% 40%, ${alpha(
+								BRAND_BLUE,
+								theme.palette.mode === "dark" ? 0.12 : 0.07,
+							)} 0%, transparent 60%)`,
 							pointerEvents: "none",
 							zIndex: 0,
 						}}
@@ -1543,7 +1556,10 @@ function ReactTable({
 						sx={{
 							position: "absolute",
 							inset: 0,
-							backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, theme.palette.mode === "dark" ? 0.06 : 0.04)} 1px, transparent 1px)`,
+							backgroundImage: `radial-gradient(${alpha(
+								theme.palette.text.primary,
+								theme.palette.mode === "dark" ? 0.06 : 0.04,
+							)} 1px, transparent 1px)`,
 							backgroundSize: "22px 22px",
 							maskImage: "radial-gradient(ellipse 70% 70% at center, #000 0%, transparent 80%)",
 							WebkitMaskImage: "radial-gradient(ellipse 70% 70% at center, #000 0%, transparent 80%)",
@@ -1728,11 +1744,7 @@ function ReactTable({
 						)
 					) : (
 						// Empty state de búsqueda — sin resultados
-						<Stack
-							spacing={2}
-							alignItems="center"
-							sx={{ position: "relative", zIndex: 1, maxWidth: 460, mx: "auto", textAlign: "center" }}
-						>
+						<Stack spacing={2} alignItems="center" sx={{ position: "relative", zIndex: 1, maxWidth: 460, mx: "auto", textAlign: "center" }}>
 							<Box
 								sx={{
 									display: "inline-flex",
@@ -1810,7 +1822,7 @@ const FoldersLayout = () => {
 	const theme = useTheme();
 	const mode = theme.palette.mode;
 	const navigate = useNavigate();
-	const [searchParams] = useSearchParams();
+	const [searchParams, setSearchParams] = useSearchParams();
 
 	// Estado de la cred SCBA del user: afecta el render del badge de folders SCBA
 	// (warning amber en lugar de tick azul cuando la cred del user está en error).
@@ -1874,7 +1886,7 @@ const FoldersLayout = () => {
 	// Estado para pre-seleccionar paso y valores al abrir AddFolder desde los badges
 	const [addFolderInitialStep, setAddFolderInitialStep] = useState<number | undefined>(undefined);
 	const [addFolderInitialFormValues, setAddFolderInitialFormValues] = useState<
-		{ entryMethod?: string; judicialPower?: string } | undefined
+		{ entryMethod?: string; judicialPower?: string; pjnImportMode?: string; baImportMode?: string } | undefined
 	>(undefined);
 
 	// Referencias
@@ -2225,6 +2237,66 @@ const FoldersLayout = () => {
 		setAddFolderMode("add");
 		setFolder(null);
 	}, []);
+
+	// Auto-abrir modal AddFolder cuando se llega desde el onboarding checklist
+	// con `?onboarding=true&action=create&jurisdiction=PJN|MEV|EJE`. El click en
+	// el logo de cada jurisdicción en el step "Conectar con el Poder Judicial"
+	// del checklist debe abrir el modal en el paso 2 con la opción correcta
+	// pre-seleccionada.
+	//
+	// Para PJN y MEV el modal tiene dos sub-tabs ("Conectar mi cuenta" /
+	// "Importar expediente individual"). Como esta opción del checklist es
+	// explícitamente "vincular expediente uno por uno", forzamos el sub-tab
+	// "single" via `pjnImportMode/baImportMode: "single"` en los form values.
+	// El componente `automaticStep` lee ese valor del form como initial state
+	// del toggle. EJE no tiene esa distinción — va directo al input de CUIJ.
+	//
+	// Una vez disparado, limpia los query params para que el modal no se reabra
+	// si el user navega dentro de la página (cierra modal + abre otro flujo).
+	const onboardingActionFired = useRef(false);
+	useEffect(() => {
+		if (onboardingActionFired.current) return;
+		const onboarding = searchParams.get("onboarding");
+		const action = searchParams.get("action");
+		const jurisdiction = searchParams.get("jurisdiction");
+		if (onboarding !== "true" || action !== "create" || !jurisdiction) return;
+
+		const j = jurisdiction.toUpperCase();
+		if (j === "EJE") {
+			handleOpenCabaFolder();
+		} else if (j === "MEV") {
+			setAddFolderInitialStep(2);
+			setAddFolderInitialFormValues({
+				entryMethod: "automatic",
+				judicialPower: "buenosaires",
+				baImportMode: "single",
+			});
+			setAdd(true);
+			setAddFolderMode("add");
+			setFolder(null);
+		} else if (j === "PJN") {
+			setAddFolderInitialStep(2);
+			setAddFolderInitialFormValues({
+				entryMethod: "automatic",
+				judicialPower: "nacional",
+				pjnImportMode: "single",
+			});
+			setAdd(true);
+			setAddFolderMode("add");
+			setFolder(null);
+		} else {
+			return;
+		}
+
+		onboardingActionFired.current = true;
+		// Limpiar los params consumidos. Preservar `onboarding=true` por si la
+		// página lo usa para otros adornos visuales (el flag `isOnboarding`
+		// arriba cambia el label del CTA principal).
+		const next = new URLSearchParams(searchParams);
+		next.delete("action");
+		next.delete("jurisdiction");
+		setSearchParams(next, { replace: true });
+	}, [searchParams, setSearchParams, handleOpenCabaFolder]);
 
 	const handleArchiveSelected = useCallback(
 		async (selectedRows: Row<any>[]) => {
@@ -3544,770 +3616,776 @@ const FoldersLayout = () => {
 					<DowngradeGracePeriodAlert />
 
 					{/* Microhint de onboarding */}
-				{isOnboarding && verifiedFolders.length === 0 && (
-					<Box sx={{ px: { xs: 2, sm: 3 }, pt: 2, pb: 0 }}>
-						<Typography
-							variant="caption"
-							sx={{
-								color: "text.secondary",
-								fontSize: "0.75rem",
-								letterSpacing: "0.02em",
-							}}
-						>
-							Primeros pasos · Crea tu primera carpeta
-						</Typography>
-					</Box>
-				)}
-
-				{/* Tabla principal de causas verificadas */}
-				<Box>
-					<ScrollX>
-						<ReactTable
-							columns={columns as any}
-							data={filteredVerifiedFolders}
-							handleAdd={canCreate ? handleAddFolder : undefined}
-							handleArchiveSelected={canUpdate ? handleArchiveSelected : undefined}
-							handleDeleteSelected={canDelete ? handleDeleteSelected : undefined}
-							handleOpenGuide={handleOpenGuide}
-							handleOpenArchivedModal={handleOpenArchivedModal}
-							renderRowSubComponent={renderRowSubComponent}
-							isLoading={isLoader}
-							expandedRowId={expandedRowId}
-							navigate={navigate}
-							skeletonRowCount={filteredVerifiedFolders.length}
-							pendingCount={pendingCount}
-							invalidCount={invalidCount}
-							onScrollToPending={handleScrollToPending}
-							anchorEl={anchorEl}
-							menuRowId={menuRowId}
-							handleMenuOpen={handleMenuOpen}
-							handleMenuClose={handleMenuClose}
-							isOnboarding={isOnboarding}
-							folderTypeFilter={folderTypeFilter}
-							onFolderTypeFilterChange={handleFolderTypeFilterChange}
-							statusFilter={statusFilter}
-							onStatusFilterChange={handleStatusFilterChange}
-							parteFilter={parteFilter}
-							onParteFilterChange={handleParteFilterChange}
-							uniquePartes={uniquePartes}
-							movimientosFilter={movimientosFilter}
-							onMovimientosFilterChange={handleMovimientosFilterChange}
-							jurisdiccionFilter={jurisdiccionFilter}
-							onJurisdiccionFilterChange={handleJurisdiccionFilterChange}
-							uniqueJurisdicciones={uniqueJurisdicciones}
-							onBarWidthMeasured={setBarWidth}
-						/>
-					</ScrollX>
-				</Box>
-
-				{/* Tabla secundaria: causas pendientes o inválidas */}
-				{pendingOrInvalidFolders.length > 0 && (
-					<Box ref={pendingTableRef} sx={{ mt: { xs: 3, sm: 4 } }}>
-						{/* Banner atmosférico ámbar con live-dot pulsante — replica el
-						    lenguaje del landing (integraciones live). Reemplaza el bloque
-						    warning.lighter MUI default que rompía la atmósfera brand. */}
-						<Box
-							sx={{
-								mx: { xs: 2, sm: 3 },
-								mb: 2,
-								position: "relative",
-								overflow: "hidden",
-								borderRadius: 1.5,
-								border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
-								bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05),
-								px: { xs: 2, sm: 2.5 },
-								py: { xs: 1.5, sm: 1.75 },
-								...LIVE_PULSE_KEYFRAMES,
-							}}
-						>
-							<Stack direction="row" alignItems="center" spacing={1.75}>
-								{/* Dot ámbar con pulso animado */}
-								<Box sx={{ position: "relative", display: "inline-flex", flexShrink: 0, mt: 0.5, alignSelf: "flex-start" }}>
-									<Box
-										sx={{
-											width: 8,
-											height: 8,
-											borderRadius: "50%",
-											bgcolor: STALE_AMBER,
-											zIndex: 1,
-										}}
-									/>
-									<Box
-										aria-hidden
-										sx={{
-											position: "absolute",
-											inset: 0,
-											borderRadius: "50%",
-											bgcolor: STALE_AMBER,
-											opacity: 0.5,
-											animation: "la-live-pulse 2.4s ease-out infinite",
-										}}
-									/>
-								</Box>
-
-								<Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
-									<Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
-										<Typography
-											sx={{
-												fontSize: { xs: "0.92rem", sm: "1rem" },
-												fontWeight: 600,
-												letterSpacing: "-0.01em",
-												color: "text.primary",
-												lineHeight: 1.25,
-											}}
-										>
-											Carpetas que requieren tu atención
-										</Typography>
-										<Box
-											sx={{
-												display: "inline-flex",
-												alignItems: "center",
-												px: 0.875,
-												py: 0.25,
-												borderRadius: 0.75,
-												bgcolor: alpha(STALE_AMBER, isDark ? 0.22 : 0.14),
-												border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.4 : 0.28)}`,
-											}}
-										>
-											<Typography
-												sx={{
-													fontSize: "0.7rem",
-													fontWeight: 600,
-													letterSpacing: "0.02em",
-													color: STALE_AMBER,
-													fontVariantNumeric: "tabular-nums",
-													lineHeight: 1,
-												}}
-											>
-												{pendingOrInvalidFolders.length}
-											</Typography>
-										</Box>
-									</Stack>
-									<Typography
-										sx={{
-											fontSize: { xs: "0.8rem", sm: "0.85rem" },
-											color: "text.secondary",
-											lineHeight: 1.55,
-											textWrap: "pretty",
-										}}
-									>
-										Estas causas importadas automáticamente esperan verificación del worker o presentan problemas de validación.
-									</Typography>
-								</Stack>
-							</Stack>
+					{isOnboarding && verifiedFolders.length === 0 && (
+						<Box sx={{ px: { xs: 2, sm: 3 }, pt: 2, pb: 0 }}>
+							<Typography
+								variant="caption"
+								sx={{
+									color: "text.secondary",
+									fontSize: "0.75rem",
+									letterSpacing: "0.02em",
+								}}
+							>
+								Primeros pasos · Crea tu primera carpeta
+							</Typography>
 						</Box>
+					)}
+
+					{/* Tabla principal de causas verificadas */}
+					<Box>
 						<ScrollX>
 							<ReactTable
 								columns={columns as any}
-								data={pendingOrInvalidFolders}
+								data={filteredVerifiedFolders}
 								handleAdd={canCreate ? handleAddFolder : undefined}
 								handleArchiveSelected={canUpdate ? handleArchiveSelected : undefined}
+								handleDeleteSelected={canDelete ? handleDeleteSelected : undefined}
 								handleOpenGuide={handleOpenGuide}
 								handleOpenArchivedModal={handleOpenArchivedModal}
 								renderRowSubComponent={renderRowSubComponent}
 								isLoading={isLoader}
 								expandedRowId={expandedRowId}
 								navigate={navigate}
-								hideControls={true}
-								simpleSkeleton={true}
-								skeletonRowCount={pendingOrInvalidFolders.length}
-								initialPageSize={5}
+								skeletonRowCount={filteredVerifiedFolders.length}
+								pendingCount={pendingCount}
+								invalidCount={invalidCount}
+								onScrollToPending={handleScrollToPending}
 								anchorEl={anchorEl}
 								menuRowId={menuRowId}
 								handleMenuOpen={handleMenuOpen}
 								handleMenuClose={handleMenuClose}
-								disableRowSelection
+								isOnboarding={isOnboarding}
+								folderTypeFilter={folderTypeFilter}
+								onFolderTypeFilterChange={handleFolderTypeFilterChange}
+								statusFilter={statusFilter}
+								onStatusFilterChange={handleStatusFilterChange}
+								parteFilter={parteFilter}
+								onParteFilterChange={handleParteFilterChange}
+								uniquePartes={uniquePartes}
+								movimientosFilter={movimientosFilter}
+								onMovimientosFilterChange={handleMovimientosFilterChange}
+								jurisdiccionFilter={jurisdiccionFilter}
+								onJurisdiccionFilterChange={handleJurisdiccionFilterChange}
+								uniqueJurisdicciones={uniqueJurisdicciones}
+								onBarWidthMeasured={setBarWidth}
 							/>
 						</ScrollX>
 					</Box>
-				)}
 
-				{/* Menu de acciones (compartido por todas las filas) */}
-				<Menu
-					anchorEl={anchorEl}
-					open={Boolean(anchorEl && menuRowId)}
-					onClose={handleMenuClose}
-					anchorOrigin={{
-						vertical: "bottom",
-						horizontal: "center",
-					}}
-					transformOrigin={{
-						vertical: "top",
-						horizontal: "center",
-					}}
-					slotProps={{
-						paper: {
-							sx: {
-								minWidth: 180,
-							},
-						},
-					}}
-				>
-					<MenuItem
-						onClick={(e) => {
-							e.stopPropagation();
-							handleMenuClose();
-							if (menuRowId) {
-								handleToggleExpanded(menuRowId);
-							}
-						}}
-					>
-						<ListItemIcon>
-							{expandedRowId === menuRowId ? (
-								<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} size={18} />
-							) : (
-								<Eye variant="Bulk" size={18} />
-							)}
-						</ListItemIcon>
-						<ListItemText>{expandedRowId === menuRowId ? "Cerrar detalles" : "Ver detalles"}</ListItemText>
-					</MenuItem>
-					{canCreate && (
-						<>
-							<MenuItem
-								onClick={(e) => {
-									e.stopPropagation();
-									if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-										handleOpenDocChooser(menuFolderData._id, menuFolderData.folderName);
-									}
-								}}
-							>
-								<ListItemIcon>
-									<DocumentText1 variant="Bulk" size={18} />
-								</ListItemIcon>
-								<ListItemText>Crear Documento</ListItemText>
-							</MenuItem>
-							<MenuItem
-								onClick={(e) => {
-									e.stopPropagation();
-									if (menuFolderData && menuFolderData._id) {
-										handleOpenCalculatorModal(menuFolderData._id);
-									}
-								}}
-							>
-								<ListItemIcon>
-									<CalculatorIcon variant="Bulk" size={18} />
-								</ListItemIcon>
-								<ListItemText>Crear Cálculo</ListItemText>
-							</MenuItem>
-							<MenuItem
-								onClick={(e) => {
-									e.stopPropagation();
-									if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-										handleOpenTaskModal(menuFolderData._id, menuFolderData.folderName);
-									}
-								}}
-							>
-								<ListItemIcon>
-									<TaskSquare variant="Bulk" size={18} />
-								</ListItemIcon>
-								<ListItemText>Crear Tarea</ListItemText>
-							</MenuItem>
-							<MenuItem
-								onClick={(e) => {
-									e.stopPropagation();
-									if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-										handleOpenNoteModal(menuFolderData._id, menuFolderData.folderName);
-									}
-								}}
-							>
-								<ListItemIcon>
-									<DocumentText variant="Bulk" size={18} />
-								</ListItemIcon>
-								<ListItemText>Crear Nota</ListItemText>
-							</MenuItem>
-							<MenuItem
-								onClick={(e) => {
-									e.stopPropagation();
-									if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-										handleOpenContactModal(menuFolderData._id, menuFolderData.folderName);
-									}
-								}}
-							>
-								<ListItemIcon>
-									<Profile2User variant="Bulk" size={18} />
-								</ListItemIcon>
-								<ListItemText>Crear Contacto</ListItemText>
-							</MenuItem>
-							<MenuItem
-								onClick={(e) => {
-									e.stopPropagation();
-									if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-										handleOpenMovementModal(menuFolderData._id, menuFolderData.folderName);
-									}
-								}}
-							>
-								<ListItemIcon>
-									<TableDocument variant="Bulk" size={18} />
-								</ListItemIcon>
-								<ListItemText>Crear Movimiento</ListItemText>
-							</MenuItem>
-							<MenuItem
-								onClick={(e) => {
-									e.stopPropagation();
-									if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-										handleOpenEventModal(menuFolderData._id, menuFolderData.folderName);
-									}
-								}}
-							>
-								<ListItemIcon>
-									<Calendar variant="Bulk" size={18} />
-								</ListItemIcon>
-								<ListItemText>Crear Evento</ListItemText>
-							</MenuItem>
-							<MenuItem
-								onClick={(e) => {
-									e.stopPropagation();
-									if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-										handleOpenCalcDataModal(menuFolderData._id, menuFolderData.folderName);
-									}
-								}}
-							>
-								<ListItemIcon>
-									<Moneys variant="Bulk" size={18} />
-								</ListItemIcon>
-								<ListItemText>Crear Oferta/Reclamo</ListItemText>
-							</MenuItem>
-						</>
-					)}
-				</Menu>
-
-				<AlertFolderDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} onDelete={async () => {}} />
-				{add && (
-					<Dialog
-						maxWidth="sm"
-						TransitionComponent={PopupTransition}
-						keepMounted
-						fullWidth
-						open={add}
-						onClose={handleCloseDialog}
-						sx={{
-							"& .MuiDialog-paper": {
-								p: 0,
-								height: { xs: "90vh", sm: "85vh", md: "80vh" },
-								maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" },
-								display: "flex",
-								flexDirection: "column",
-								overflow: "hidden",
-							},
-						}}
-					>
-						<AddFolder
-							open={add}
-							folder={folder}
-							mode={addFolderMode}
-							onCancel={handleCloseDialog}
-							onAddFolder={handleCloseDialog}
-							initialStep={addFolderInitialStep}
-							initialFormValues={addFolderInitialFormValues}
-						/>
-					</Dialog>
-				)}
-
-				{/* El componente AddFolder manejará el LimitErrorModal independientemente */}
-
-				{/* Modal para elementos archivados */}
-				<ArchivedItemsModal
-					open={archivedModalOpen}
-					onClose={handleCloseArchivedModal}
-					title="Causas Archivadas"
-					items={archivedFolders || []}
-					onUnarchive={handleUnarchiveSelected}
-					loading={loadingUnarchive}
-					itemType="folders"
-					pagination={archivedPagination}
-					onPageChange={handleArchivedPageChange}
-					onPageSizeChange={handleArchivedPageSizeChange}
-				/>
-
-				{/* Guía de causas */}
-				<GuideFolders open={guideOpen} onClose={() => setGuideOpen(false)} />
-
-				{/* Modal de selección de tipo de calculadora */}
-				<SelectCalculatorTypeModal
-					open={calculatorModalOpen}
-					onClose={handleCloseCalculatorModal}
-					folderId={selectedFolderIdForCalculator}
-				/>
-
-				{/* Modal de creación de tareas */}
-				<ModalTasks
-					open={taskModalOpen}
-					setOpen={setTaskModalOpen}
-					folderId={selectedFolderForModal.id}
-					folderName={selectedFolderForModal.name}
-					handlerAddress={undefined}
-				/>
-
-				{/* Modal de agregar montos de reclamo/ofrecimiento */}
-				<ModalCalcData
-					open={calcDataModalOpen}
-					setOpen={setCalcDataModalOpen}
-					folderId={selectedFolderForModal.id}
-					folderName={selectedFolderForModal.name}
-					handlerAddress={undefined}
-				/>
-
-				{/* Modal de creación de notas */}
-				<ModalNotes
-					open={noteModalOpen}
-					setOpen={setNoteModalOpen}
-					folderId={selectedFolderForModal.id}
-					folderName={selectedFolderForModal.name}
-					handlerAddress={undefined}
-				/>
-
-				{/* Modal de creación de contactos */}
-				{contactModalOpen && (
-					<Dialog
-						maxWidth="sm"
-						TransitionComponent={PopupTransition}
-						keepMounted
-						fullWidth
-						open={contactModalOpen}
-						sx={{
-							"& .MuiDialog-paper": {
-								p: 0,
-								height: { xs: "90vh", sm: "85vh", md: "80vh" },
-								maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" },
-								display: "flex",
-								flexDirection: "column",
-								overflow: "hidden",
-							},
-						}}
-					>
-						<AddCustomer
-							open={contactModalOpen}
-							customer={null}
-							mode="add"
-							folderId={selectedFolderForModal.id}
-							onCancel={handleCloseContactModal}
-							onAddMember={() => {
-								// Callback cuando se agrega un contacto exitosamente
-								handleCloseContactModal();
-							}}
-						/>
-					</Dialog>
-				)}
-
-				{/* Modal de creación de movimientos */}
-				<ModalMovements
-					open={movementModalOpen}
-					setOpen={setMovementModalOpen}
-					folderId={selectedFolderForModal.id}
-					folderName={selectedFolderForModal.name}
-					editMode={false}
-					movementData={null}
-				/>
-
-				{/* Modal de creación de eventos */}
-				{eventModalOpen && (
-					<Dialog
-						maxWidth="sm"
-						TransitionComponent={PopupTransition}
-						keepMounted
-						fullWidth
-						open={eventModalOpen}
-						onClose={handleCloseEventModal}
-						sx={{
-							"& .MuiDialog-paper": {
-								p: 0,
-							},
-						}}
-					>
-						<AddEventFrom
-							event={null}
-							range={null}
-							onCancel={handleCloseEventModal}
-							userId={user?._id}
-							folderId={selectedFolderForModal.id}
-							folderName={selectedFolderForModal.name}
-						/>
-					</Dialog>
-				)}
-
-				{/* Modal de selección de causa (múltiples resultados) */}
-				<CausaSelector
-					open={causaSelectorOpen}
-					onClose={() => setCausaSelectorOpen(false)}
-					folderId={causaSelectorFolder.id}
-					folderName={causaSelectorFolder.name}
-					onCausaSelected={() => {
-						if (isTeamMode && activeTeam?._id) {
-							dispatch(getFoldersByGroupId(activeTeam._id));
-						} else if (user?._id) {
-							dispatch(getFoldersByUserId(user._id, true));
-						}
-					}}
-					onSelectionCancelled={() => {
-						if (isTeamMode && activeTeam?._id) {
-							dispatch(getFoldersByGroupId(activeTeam._id));
-						} else if (user?._id) {
-							dispatch(getFoldersByUserId(user._id, true));
-						}
-					}}
-				/>
-
-				{/* Chooser: elegir tipo de documento */}
-				<ResponsiveDialog
-					open={docChooserOpen}
-					onClose={() => setDocChooserOpen(false)}
-					maxWidth="xs"
-					fullWidth
-					PaperProps={{ elevation: 5, sx: { borderRadius: 2, overflow: "hidden" } }}
-				>
-					<DialogTitle sx={{ bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035), p: 3, borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}` }}>
-						<Stack spacing={1}>
-							<Stack direction="row" alignItems="center" spacing={1}>
-								<DocumentText1 size={24} color={BRAND_BLUE} variant="Bold" />
-								<Typography variant="h5" sx={{ fontWeight: 600, color: BRAND_BLUE }}>
-									Crear Documento
-								</Typography>
-							</Stack>
-							<Typography variant="body2" color="textSecondary">
-								{selectedFolderForDoc?.name ?? ""}
-							</Typography>
-						</Stack>
-					</DialogTitle>
-					<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.12) }} />
-					<DialogContent sx={{ pb: 3 }}>
-						<Stack spacing={1.5}>
-							<Card
-								variant="outlined"
-								sx={{
-									cursor: "pointer",
-									"&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
-									transition: "border-color 0.15s",
-								}}
-							>
-								<CardActionArea
-									onClick={() => {
-										setDocChooserOpen(false);
-										setCreatePostalOpen(true);
-									}}
-								>
-									<CardContent>
-										<Stack direction="row" spacing={1.5} alignItems="center">
-											<NoteText size={28} variant="Bulk" />
-											<Stack spacing={0.25}>
-												<Typography variant="body2" fontWeight={600}>
-													Modelo del Sistema
-												</Typography>
-												<Typography variant="caption" color="text.secondary">
-													Telegramas, cartas documento y más
-												</Typography>
-											</Stack>
-										</Stack>
-									</CardContent>
-								</CardActionArea>
-							</Card>
-							<Divider>
-								<Typography variant="caption" color="text.secondary">
-									o
-								</Typography>
-							</Divider>
-							<Card
-								variant="outlined"
-								sx={{
-									cursor: "pointer",
-									"&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
-									transition: "border-color 0.15s",
-								}}
-							>
-								<CardActionArea
-									onClick={() => {
-										setDocChooserOpen(false);
-										setPickModelOpen(true);
-									}}
-								>
-									<CardContent>
-										<Stack direction="row" spacing={1.5} alignItems="center">
-											<DocumentText size={28} variant="Bulk" />
-											<Stack spacing={0.25}>
-												<Typography variant="body2" fontWeight={600}>
-													Mis Modelos
-												</Typography>
-												<Typography variant="caption" color="text.secondary">
-													Escritos personalizados con editor de texto
-												</Typography>
-											</Stack>
-										</Stack>
-									</CardContent>
-								</CardActionArea>
-							</Card>
-						</Stack>
-					</DialogContent>
-				</ResponsiveDialog>
-
-				{/* Modal postal */}
-				{createPostalOpen && (
-					<CreatePostalDocumentModal
-						open={createPostalOpen}
-						handleClose={() => setCreatePostalOpen(false)}
-						prefilledFolderId={selectedFolderForDoc?.id ?? null}
-						showSnackbar={(message, severity) => {
-							setSnackbarMessage(message);
-							setSnackbarSeverity(severity);
-							setSnackbarOpen(true);
-						}}
-					/>
-				)}
-
-				{/* Modal mis modelos */}
-				<PickModelDialog open={pickModelOpen} onClose={() => setPickModelOpen(false)} folderId={selectedFolderForDoc?.id ?? null} />
-
-				{/* Modal de límite de recursos */}
-				<LimitErrorModal
-					open={limitErrorOpen}
-					onClose={handleCloseLimitErrorModal}
-					message={limitErrorMessage}
-					limitInfo={limitErrorInfo}
-					upgradeRequired={true}
-				/>
-
-				<Snackbar
-					open={snackbarOpen}
-					autoHideDuration={6000}
-					onClose={handleSnackbarClose}
-					anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-				>
-					<Alert
-						onClose={handleSnackbarClose}
-						severity={snackbarSeverity}
-						variant="filled"
-						sx={{
-							width: "100%",
-							fontWeight: 500,
-						}}
-					>
-						{snackbarMessage}
-					</Alert>
-				</Snackbar>
-
-				{/* Diálogo de confirmación de eliminación — brand sober destructive */}
-				<Dialog
-					open={deleteDialogOpen}
-					onClose={handleCancelDelete}
-					keepMounted
-					TransitionComponent={PopupTransition}
-					maxWidth="xs"
-					fullWidth
-					aria-labelledby="folders-delete-title"
-					aria-describedby="folders-delete-description"
-					PaperProps={{
-						sx: {
-							borderRadius: 2,
-							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
-							boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
-							overflow: "hidden",
-						},
-					}}
-				>
-					<DialogContent sx={{ p: { xs: 3, sm: 3.5 }, position: "relative" }}>
-						<Box
-							sx={{
-								position: "absolute",
-								top: -80,
-								left: "50%",
-								transform: "translateX(-50%)",
-								width: 280,
-								height: 280,
-								borderRadius: "50%",
-								background: `radial-gradient(circle, ${alpha(theme.palette.error.main, isDark ? 0.18 : 0.1)} 0%, transparent 70%)`,
-								pointerEvents: "none",
-							}}
-						/>
-						<Stack alignItems="center" spacing={2.25} sx={{ position: "relative" }}>
+					{/* Tabla secundaria: causas pendientes o inválidas */}
+					{pendingOrInvalidFolders.length > 0 && (
+						<Box ref={pendingTableRef} sx={{ mt: { xs: 3, sm: 4 } }}>
+							{/* Banner atmosférico ámbar con live-dot pulsante — replica el
+						    lenguaje del landing (integraciones live). Reemplaza el bloque
+						    warning.lighter MUI default que rompía la atmósfera brand. */}
 							<Box
 								sx={{
-									width: 60,
-									height: 60,
+									mx: { xs: 2, sm: 3 },
+									mb: 2,
+									position: "relative",
+									overflow: "hidden",
 									borderRadius: 1.5,
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-									bgcolor: alpha(theme.palette.error.main, isDark ? 0.16 : 0.08),
-									border: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.32 : 0.2)}`,
-									color: theme.palette.error.main,
+									border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+									bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05),
+									px: { xs: 2, sm: 2.5 },
+									py: { xs: 1.5, sm: 1.75 },
+									...LIVE_PULSE_KEYFRAMES,
 								}}
 							>
-								<Trash size={26} variant="Bulk" />
-							</Box>
-							<Stack spacing={1} alignItems="center">
-								<Typography
-									id="folders-delete-title"
-									sx={{
-										fontSize: "1.05rem",
-										fontWeight: 600,
-										letterSpacing: "-0.015em",
-										color: "text.primary",
-										textAlign: "center",
-										textWrap: "balance" as any,
-									}}
-								>
-									{foldersToDelete.length === 1 ? "¿Eliminar esta carpeta?" : `¿Eliminar ${foldersToDelete.length} carpetas?`}
-								</Typography>
-								<Typography
-									id="folders-delete-description"
-									sx={{
-										fontSize: "0.85rem",
-										color: "text.secondary",
-										letterSpacing: "-0.005em",
-										textAlign: "center",
-										textWrap: "pretty" as any,
-									}}
-								>
-									Vas a eliminar{" "}
-									<Box component="span" sx={{ fontWeight: 600, color: "text.primary", fontVariantNumeric: "tabular-nums" }}>
-										{foldersToDelete.length} {foldersToDelete.length === 1 ? "carpeta" : "carpetas"}
-									</Box>{" "}
-									de forma permanente. Esta acción no se puede deshacer.
-								</Typography>
-							</Stack>
+								<Stack direction="row" alignItems="center" spacing={1.75}>
+									{/* Dot ámbar con pulso animado */}
+									<Box sx={{ position: "relative", display: "inline-flex", flexShrink: 0, mt: 0.5, alignSelf: "flex-start" }}>
+										<Box
+											sx={{
+												width: 8,
+												height: 8,
+												borderRadius: "50%",
+												bgcolor: STALE_AMBER,
+												zIndex: 1,
+											}}
+										/>
+										<Box
+											aria-hidden
+											sx={{
+												position: "absolute",
+												inset: 0,
+												borderRadius: "50%",
+												bgcolor: STALE_AMBER,
+												opacity: 0.5,
+												animation: "la-live-pulse 2.4s ease-out infinite",
+											}}
+										/>
+									</Box>
 
-							<Stack direction="row" spacing={1.25} sx={{ width: 1, mt: 0.5 }}>
-								<Button
-									fullWidth
-									onClick={handleCancelDelete}
-									sx={{
-										textTransform: "none",
-										fontWeight: 600,
-										letterSpacing: "-0.005em",
-										color: "text.secondary",
-										borderRadius: 1.25,
-										py: 1,
-										border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
-										"&:hover": {
-											color: BRAND_BLUE,
-											bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
-											borderColor: alpha(BRAND_BLUE, 0.28),
-										},
+									<Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+										<Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+											<Typography
+												sx={{
+													fontSize: { xs: "0.92rem", sm: "1rem" },
+													fontWeight: 600,
+													letterSpacing: "-0.01em",
+													color: "text.primary",
+													lineHeight: 1.25,
+												}}
+											>
+												Carpetas que requieren tu atención
+											</Typography>
+											<Box
+												sx={{
+													display: "inline-flex",
+													alignItems: "center",
+													px: 0.875,
+													py: 0.25,
+													borderRadius: 0.75,
+													bgcolor: alpha(STALE_AMBER, isDark ? 0.22 : 0.14),
+													border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.4 : 0.28)}`,
+												}}
+											>
+												<Typography
+													sx={{
+														fontSize: "0.7rem",
+														fontWeight: 600,
+														letterSpacing: "0.02em",
+														color: STALE_AMBER,
+														fontVariantNumeric: "tabular-nums",
+														lineHeight: 1,
+													}}
+												>
+													{pendingOrInvalidFolders.length}
+												</Typography>
+											</Box>
+										</Stack>
+										<Typography
+											sx={{
+												fontSize: { xs: "0.8rem", sm: "0.85rem" },
+												color: "text.secondary",
+												lineHeight: 1.55,
+												textWrap: "pretty",
+											}}
+										>
+											Estas causas importadas automáticamente esperan verificación del worker o presentan problemas de validación.
+										</Typography>
+									</Stack>
+								</Stack>
+							</Box>
+							<ScrollX>
+								<ReactTable
+									columns={columns as any}
+									data={pendingOrInvalidFolders}
+									handleAdd={canCreate ? handleAddFolder : undefined}
+									handleArchiveSelected={canUpdate ? handleArchiveSelected : undefined}
+									handleOpenGuide={handleOpenGuide}
+									handleOpenArchivedModal={handleOpenArchivedModal}
+									renderRowSubComponent={renderRowSubComponent}
+									isLoading={isLoader}
+									expandedRowId={expandedRowId}
+									navigate={navigate}
+									hideControls={true}
+									simpleSkeleton={true}
+									skeletonRowCount={pendingOrInvalidFolders.length}
+									initialPageSize={5}
+									anchorEl={anchorEl}
+									menuRowId={menuRowId}
+									handleMenuOpen={handleMenuOpen}
+									handleMenuClose={handleMenuClose}
+									disableRowSelection
+								/>
+							</ScrollX>
+						</Box>
+					)}
+
+					{/* Menu de acciones (compartido por todas las filas) */}
+					<Menu
+						anchorEl={anchorEl}
+						open={Boolean(anchorEl && menuRowId)}
+						onClose={handleMenuClose}
+						anchorOrigin={{
+							vertical: "bottom",
+							horizontal: "center",
+						}}
+						transformOrigin={{
+							vertical: "top",
+							horizontal: "center",
+						}}
+						slotProps={{
+							paper: {
+								sx: {
+									minWidth: 180,
+								},
+							},
+						}}
+					>
+						<MenuItem
+							onClick={(e) => {
+								e.stopPropagation();
+								handleMenuClose();
+								if (menuRowId) {
+									handleToggleExpanded(menuRowId);
+								}
+							}}
+						>
+							<ListItemIcon>
+								{expandedRowId === menuRowId ? (
+									<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} size={18} />
+								) : (
+									<Eye variant="Bulk" size={18} />
+								)}
+							</ListItemIcon>
+							<ListItemText>{expandedRowId === menuRowId ? "Cerrar detalles" : "Ver detalles"}</ListItemText>
+						</MenuItem>
+						{canCreate && (
+							<>
+								<MenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+											handleOpenDocChooser(menuFolderData._id, menuFolderData.folderName);
+										}
 									}}
 								>
-									Cancelar
-								</Button>
-								<Button
-									fullWidth
-									onClick={handleConfirmDelete}
-									autoFocus
-									variant="contained"
-									sx={{
-										textTransform: "none",
-										fontWeight: 600,
-										letterSpacing: "-0.005em",
-										bgcolor: theme.palette.error.main,
-										color: "#fff",
-										borderRadius: 1.25,
-										py: 1,
-										boxShadow: "none",
-										"&:hover": { bgcolor: alpha(theme.palette.error.main, 0.88), boxShadow: "none" },
+									<ListItemIcon>
+										<DocumentText1 variant="Bulk" size={18} />
+									</ListItemIcon>
+									<ListItemText>Crear Documento</ListItemText>
+								</MenuItem>
+								<MenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										if (menuFolderData && menuFolderData._id) {
+											handleOpenCalculatorModal(menuFolderData._id);
+										}
 									}}
 								>
-									Eliminar
-								</Button>
+									<ListItemIcon>
+										<CalculatorIcon variant="Bulk" size={18} />
+									</ListItemIcon>
+									<ListItemText>Crear Cálculo</ListItemText>
+								</MenuItem>
+								<MenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+											handleOpenTaskModal(menuFolderData._id, menuFolderData.folderName);
+										}
+									}}
+								>
+									<ListItemIcon>
+										<TaskSquare variant="Bulk" size={18} />
+									</ListItemIcon>
+									<ListItemText>Crear Tarea</ListItemText>
+								</MenuItem>
+								<MenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+											handleOpenNoteModal(menuFolderData._id, menuFolderData.folderName);
+										}
+									}}
+								>
+									<ListItemIcon>
+										<DocumentText variant="Bulk" size={18} />
+									</ListItemIcon>
+									<ListItemText>Crear Nota</ListItemText>
+								</MenuItem>
+								<MenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+											handleOpenContactModal(menuFolderData._id, menuFolderData.folderName);
+										}
+									}}
+								>
+									<ListItemIcon>
+										<Profile2User variant="Bulk" size={18} />
+									</ListItemIcon>
+									<ListItemText>Crear Contacto</ListItemText>
+								</MenuItem>
+								<MenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+											handleOpenMovementModal(menuFolderData._id, menuFolderData.folderName);
+										}
+									}}
+								>
+									<ListItemIcon>
+										<TableDocument variant="Bulk" size={18} />
+									</ListItemIcon>
+									<ListItemText>Crear Movimiento</ListItemText>
+								</MenuItem>
+								<MenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+											handleOpenEventModal(menuFolderData._id, menuFolderData.folderName);
+										}
+									}}
+								>
+									<ListItemIcon>
+										<Calendar variant="Bulk" size={18} />
+									</ListItemIcon>
+									<ListItemText>Crear Evento</ListItemText>
+								</MenuItem>
+								<MenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+											handleOpenCalcDataModal(menuFolderData._id, menuFolderData.folderName);
+										}
+									}}
+								>
+									<ListItemIcon>
+										<Moneys variant="Bulk" size={18} />
+									</ListItemIcon>
+									<ListItemText>Crear Oferta/Reclamo</ListItemText>
+								</MenuItem>
+							</>
+						)}
+					</Menu>
+
+					<AlertFolderDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} onDelete={async () => {}} />
+					{add && (
+						<Dialog
+							maxWidth="sm"
+							TransitionComponent={PopupTransition}
+							keepMounted
+							fullWidth
+							open={add}
+							onClose={handleCloseDialog}
+							sx={{
+								"& .MuiDialog-paper": {
+									p: 0,
+									height: { xs: "90vh", sm: "85vh", md: "80vh" },
+									maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" },
+									display: "flex",
+									flexDirection: "column",
+									overflow: "hidden",
+								},
+							}}
+						>
+							<AddFolder
+								open={add}
+								folder={folder}
+								mode={addFolderMode}
+								onCancel={handleCloseDialog}
+								onAddFolder={handleCloseDialog}
+								initialStep={addFolderInitialStep}
+								initialFormValues={addFolderInitialFormValues}
+							/>
+						</Dialog>
+					)}
+
+					{/* El componente AddFolder manejará el LimitErrorModal independientemente */}
+
+					{/* Modal para elementos archivados */}
+					<ArchivedItemsModal
+						open={archivedModalOpen}
+						onClose={handleCloseArchivedModal}
+						title="Causas Archivadas"
+						items={archivedFolders || []}
+						onUnarchive={handleUnarchiveSelected}
+						loading={loadingUnarchive}
+						itemType="folders"
+						pagination={archivedPagination}
+						onPageChange={handleArchivedPageChange}
+						onPageSizeChange={handleArchivedPageSizeChange}
+					/>
+
+					{/* Guía de causas */}
+					<GuideFolders open={guideOpen} onClose={() => setGuideOpen(false)} />
+
+					{/* Modal de selección de tipo de calculadora */}
+					<SelectCalculatorTypeModal
+						open={calculatorModalOpen}
+						onClose={handleCloseCalculatorModal}
+						folderId={selectedFolderIdForCalculator}
+					/>
+
+					{/* Modal de creación de tareas */}
+					<ModalTasks
+						open={taskModalOpen}
+						setOpen={setTaskModalOpen}
+						folderId={selectedFolderForModal.id}
+						folderName={selectedFolderForModal.name}
+						handlerAddress={undefined}
+					/>
+
+					{/* Modal de agregar montos de reclamo/ofrecimiento */}
+					<ModalCalcData
+						open={calcDataModalOpen}
+						setOpen={setCalcDataModalOpen}
+						folderId={selectedFolderForModal.id}
+						folderName={selectedFolderForModal.name}
+						handlerAddress={undefined}
+					/>
+
+					{/* Modal de creación de notas */}
+					<ModalNotes
+						open={noteModalOpen}
+						setOpen={setNoteModalOpen}
+						folderId={selectedFolderForModal.id}
+						folderName={selectedFolderForModal.name}
+						handlerAddress={undefined}
+					/>
+
+					{/* Modal de creación de contactos */}
+					{contactModalOpen && (
+						<Dialog
+							maxWidth="sm"
+							TransitionComponent={PopupTransition}
+							keepMounted
+							fullWidth
+							open={contactModalOpen}
+							sx={{
+								"& .MuiDialog-paper": {
+									p: 0,
+									height: { xs: "90vh", sm: "85vh", md: "80vh" },
+									maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" },
+									display: "flex",
+									flexDirection: "column",
+									overflow: "hidden",
+								},
+							}}
+						>
+							<AddCustomer
+								open={contactModalOpen}
+								customer={null}
+								mode="add"
+								folderId={selectedFolderForModal.id}
+								onCancel={handleCloseContactModal}
+								onAddMember={() => {
+									// Callback cuando se agrega un contacto exitosamente
+									handleCloseContactModal();
+								}}
+							/>
+						</Dialog>
+					)}
+
+					{/* Modal de creación de movimientos */}
+					<ModalMovements
+						open={movementModalOpen}
+						setOpen={setMovementModalOpen}
+						folderId={selectedFolderForModal.id}
+						folderName={selectedFolderForModal.name}
+						editMode={false}
+						movementData={null}
+					/>
+
+					{/* Modal de creación de eventos */}
+					{eventModalOpen && (
+						<Dialog
+							maxWidth="sm"
+							TransitionComponent={PopupTransition}
+							keepMounted
+							fullWidth
+							open={eventModalOpen}
+							onClose={handleCloseEventModal}
+							sx={{
+								"& .MuiDialog-paper": {
+									p: 0,
+								},
+							}}
+						>
+							<AddEventFrom
+								event={null}
+								range={null}
+								onCancel={handleCloseEventModal}
+								userId={user?._id}
+								folderId={selectedFolderForModal.id}
+								folderName={selectedFolderForModal.name}
+							/>
+						</Dialog>
+					)}
+
+					{/* Modal de selección de causa (múltiples resultados) */}
+					<CausaSelector
+						open={causaSelectorOpen}
+						onClose={() => setCausaSelectorOpen(false)}
+						folderId={causaSelectorFolder.id}
+						folderName={causaSelectorFolder.name}
+						onCausaSelected={() => {
+							if (isTeamMode && activeTeam?._id) {
+								dispatch(getFoldersByGroupId(activeTeam._id));
+							} else if (user?._id) {
+								dispatch(getFoldersByUserId(user._id, true));
+							}
+						}}
+						onSelectionCancelled={() => {
+							if (isTeamMode && activeTeam?._id) {
+								dispatch(getFoldersByGroupId(activeTeam._id));
+							} else if (user?._id) {
+								dispatch(getFoldersByUserId(user._id, true));
+							}
+						}}
+					/>
+
+					{/* Chooser: elegir tipo de documento */}
+					<ResponsiveDialog
+						open={docChooserOpen}
+						onClose={() => setDocChooserOpen(false)}
+						maxWidth="xs"
+						fullWidth
+						PaperProps={{ elevation: 5, sx: { borderRadius: 2, overflow: "hidden" } }}
+					>
+						<DialogTitle
+							sx={{
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+								p: 3,
+								borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+							}}
+						>
+							<Stack spacing={1}>
+								<Stack direction="row" alignItems="center" spacing={1}>
+									<DocumentText1 size={24} color={BRAND_BLUE} variant="Bold" />
+									<Typography variant="h5" sx={{ fontWeight: 600, color: BRAND_BLUE }}>
+										Crear Documento
+									</Typography>
+								</Stack>
+								<Typography variant="body2" color="textSecondary">
+									{selectedFolderForDoc?.name ?? ""}
+								</Typography>
 							</Stack>
-						</Stack>
-					</DialogContent>
-				</Dialog>
+						</DialogTitle>
+						<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.12) }} />
+						<DialogContent sx={{ pb: 3 }}>
+							<Stack spacing={1.5}>
+								<Card
+									variant="outlined"
+									sx={{
+										cursor: "pointer",
+										"&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
+										transition: "border-color 0.15s",
+									}}
+								>
+									<CardActionArea
+										onClick={() => {
+											setDocChooserOpen(false);
+											setCreatePostalOpen(true);
+										}}
+									>
+										<CardContent>
+											<Stack direction="row" spacing={1.5} alignItems="center">
+												<NoteText size={28} variant="Bulk" />
+												<Stack spacing={0.25}>
+													<Typography variant="body2" fontWeight={600}>
+														Modelo del Sistema
+													</Typography>
+													<Typography variant="caption" color="text.secondary">
+														Telegramas, cartas documento y más
+													</Typography>
+												</Stack>
+											</Stack>
+										</CardContent>
+									</CardActionArea>
+								</Card>
+								<Divider>
+									<Typography variant="caption" color="text.secondary">
+										o
+									</Typography>
+								</Divider>
+								<Card
+									variant="outlined"
+									sx={{
+										cursor: "pointer",
+										"&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
+										transition: "border-color 0.15s",
+									}}
+								>
+									<CardActionArea
+										onClick={() => {
+											setDocChooserOpen(false);
+											setPickModelOpen(true);
+										}}
+									>
+										<CardContent>
+											<Stack direction="row" spacing={1.5} alignItems="center">
+												<DocumentText size={28} variant="Bulk" />
+												<Stack spacing={0.25}>
+													<Typography variant="body2" fontWeight={600}>
+														Mis Modelos
+													</Typography>
+													<Typography variant="caption" color="text.secondary">
+														Escritos personalizados con editor de texto
+													</Typography>
+												</Stack>
+											</Stack>
+										</CardContent>
+									</CardActionArea>
+								</Card>
+							</Stack>
+						</DialogContent>
+					</ResponsiveDialog>
+
+					{/* Modal postal */}
+					{createPostalOpen && (
+						<CreatePostalDocumentModal
+							open={createPostalOpen}
+							handleClose={() => setCreatePostalOpen(false)}
+							prefilledFolderId={selectedFolderForDoc?.id ?? null}
+							showSnackbar={(message, severity) => {
+								setSnackbarMessage(message);
+								setSnackbarSeverity(severity);
+								setSnackbarOpen(true);
+							}}
+						/>
+					)}
+
+					{/* Modal mis modelos */}
+					<PickModelDialog open={pickModelOpen} onClose={() => setPickModelOpen(false)} folderId={selectedFolderForDoc?.id ?? null} />
+
+					{/* Modal de límite de recursos */}
+					<LimitErrorModal
+						open={limitErrorOpen}
+						onClose={handleCloseLimitErrorModal}
+						message={limitErrorMessage}
+						limitInfo={limitErrorInfo}
+						upgradeRequired={true}
+					/>
+
+					<Snackbar
+						open={snackbarOpen}
+						autoHideDuration={6000}
+						onClose={handleSnackbarClose}
+						anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+					>
+						<Alert
+							onClose={handleSnackbarClose}
+							severity={snackbarSeverity}
+							variant="filled"
+							sx={{
+								width: "100%",
+								fontWeight: 500,
+							}}
+						>
+							{snackbarMessage}
+						</Alert>
+					</Snackbar>
+
+					{/* Diálogo de confirmación de eliminación — brand sober destructive */}
+					<Dialog
+						open={deleteDialogOpen}
+						onClose={handleCancelDelete}
+						keepMounted
+						TransitionComponent={PopupTransition}
+						maxWidth="xs"
+						fullWidth
+						aria-labelledby="folders-delete-title"
+						aria-describedby="folders-delete-description"
+						PaperProps={{
+							sx: {
+								borderRadius: 2,
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+								boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+								overflow: "hidden",
+							},
+						}}
+					>
+						<DialogContent sx={{ p: { xs: 3, sm: 3.5 }, position: "relative" }}>
+							<Box
+								sx={{
+									position: "absolute",
+									top: -80,
+									left: "50%",
+									transform: "translateX(-50%)",
+									width: 280,
+									height: 280,
+									borderRadius: "50%",
+									background: `radial-gradient(circle, ${alpha(theme.palette.error.main, isDark ? 0.18 : 0.1)} 0%, transparent 70%)`,
+									pointerEvents: "none",
+								}}
+							/>
+							<Stack alignItems="center" spacing={2.25} sx={{ position: "relative" }}>
+								<Box
+									sx={{
+										width: 60,
+										height: 60,
+										borderRadius: 1.5,
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										bgcolor: alpha(theme.palette.error.main, isDark ? 0.16 : 0.08),
+										border: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.32 : 0.2)}`,
+										color: theme.palette.error.main,
+									}}
+								>
+									<Trash size={26} variant="Bulk" />
+								</Box>
+								<Stack spacing={1} alignItems="center">
+									<Typography
+										id="folders-delete-title"
+										sx={{
+											fontSize: "1.05rem",
+											fontWeight: 600,
+											letterSpacing: "-0.015em",
+											color: "text.primary",
+											textAlign: "center",
+											textWrap: "balance" as any,
+										}}
+									>
+										{foldersToDelete.length === 1 ? "¿Eliminar esta carpeta?" : `¿Eliminar ${foldersToDelete.length} carpetas?`}
+									</Typography>
+									<Typography
+										id="folders-delete-description"
+										sx={{
+											fontSize: "0.85rem",
+											color: "text.secondary",
+											letterSpacing: "-0.005em",
+											textAlign: "center",
+											textWrap: "pretty" as any,
+										}}
+									>
+										Vas a eliminar{" "}
+										<Box component="span" sx={{ fontWeight: 600, color: "text.primary", fontVariantNumeric: "tabular-nums" }}>
+											{foldersToDelete.length} {foldersToDelete.length === 1 ? "carpeta" : "carpetas"}
+										</Box>{" "}
+										de forma permanente. Esta acción no se puede deshacer.
+									</Typography>
+								</Stack>
+
+								<Stack direction="row" spacing={1.25} sx={{ width: 1, mt: 0.5 }}>
+									<Button
+										fullWidth
+										onClick={handleCancelDelete}
+										sx={{
+											textTransform: "none",
+											fontWeight: 600,
+											letterSpacing: "-0.005em",
+											color: "text.secondary",
+											borderRadius: 1.25,
+											py: 1,
+											border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+											"&:hover": {
+												color: BRAND_BLUE,
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+												borderColor: alpha(BRAND_BLUE, 0.28),
+											},
+										}}
+									>
+										Cancelar
+									</Button>
+									<Button
+										fullWidth
+										onClick={handleConfirmDelete}
+										autoFocus
+										variant="contained"
+										sx={{
+											textTransform: "none",
+											fontWeight: 600,
+											letterSpacing: "-0.005em",
+											bgcolor: theme.palette.error.main,
+											color: "#fff",
+											borderRadius: 1.25,
+											py: 1,
+											boxShadow: "none",
+											"&:hover": { bgcolor: alpha(theme.palette.error.main, 0.88), boxShadow: "none" },
+										}}
+									>
+										Eliminar
+									</Button>
+								</Stack>
+							</Stack>
+						</DialogContent>
+					</Dialog>
 				</MainCard>
 			</Stack>
 		</>

@@ -38,6 +38,39 @@ class SecureStorageService {
 		Cookies.remove("auth_token");
 	}
 
+	// ── Refresh token fallback ──────────────────────────────────────────────
+	// El refresh token normalmente vive en una cookie httpOnly del backend
+	// (`refresh_token` con domain=.lawanalytics.app). En desarrollo con front
+	// en localhost contra prod cross-origin, esa cookie no llega al browser.
+	// Como fallback guardamos el refresh token devuelto en el body del login
+	// y el interceptor lo envía como header `X-Refresh-Token`.
+	//
+	// En producción normal este storage queda vacío y el flow usa solo cookie.
+
+	setRefreshToken(token: string): void {
+		try {
+			localStorage.setItem("refresh_token_fallback", token);
+		} catch (error) {
+			console.warn("No se pudo guardar el refresh token fallback:", error);
+		}
+	}
+
+	getRefreshToken(): string | null {
+		try {
+			return localStorage.getItem("refresh_token_fallback");
+		} catch {
+			return null;
+		}
+	}
+
+	removeRefreshToken(): void {
+		try {
+			localStorage.removeItem("refresh_token_fallback");
+		} catch {
+			// no-op
+		}
+	}
+
 	// Para datos no sensibles, usar sessionStorage
 	setSessionData(key: string, value: any): void {
 		try {
@@ -65,6 +98,8 @@ class SecureStorageService {
 	clearSession(): void {
 		// Limpiar cookies
 		this.removeAuthToken();
+		// Limpiar refresh token fallback
+		this.removeRefreshToken();
 
 		// Limpiar sessionStorage
 		sessionStorage.clear();

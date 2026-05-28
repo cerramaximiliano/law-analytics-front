@@ -55,6 +55,14 @@ export const GTMEvents = {
 	OAUTH_CONSENT_ACCEPT: "oauth_consent_accept",
 	OAUTH_CONSENT_REJECT: "oauth_consent_reject",
 	OAUTH_UPGRADE_VIEW: "oauth_upgrade_view",
+	// Onboarding checklist events (pending GTM tags creation post-deploy)
+	ONBOARDING_SHOWN: "onboarding_shown",
+	ONBOARDING_STEP_CLICKED: "onboarding_step_clicked",
+	ONBOARDING_STEP_COMPLETED: "onboarding_step_completed",
+	ONBOARDING_JUDICIAL_LOGO_CLICKED: "onboarding_judicial_logo_clicked",
+	ONBOARDING_EXAMPLE_FOLDER_USED: "onboarding_example_folder_used",
+	ONBOARDING_DISMISSED: "onboarding_dismissed",
+	ONBOARDING_COMPLETED: "onboarding_completed",
 } as const;
 
 // Landing page section names for scroll tracking
@@ -336,4 +344,75 @@ export const trackOauthUpgradeView = (reason: string, plan?: string): void => {
 		reason,
 		plan: plan || null,
 	});
+};
+
+// =============================================================================
+// Onboarding checklist events — Phase 1
+//
+// Reemplaza el onboarding actual (banner + 4 cards) por un checklist de 4 pasos
+// persistente hasta completarse. Métricas que cierran el loop post-signup que
+// hoy es invisible (la colección OnboardingEvent vino vacía: el frontend
+// nunca trackeaba nada).
+//
+// step_id values:
+//   - "first_folder"        — crear primera carpeta
+//   - "judicial_connection" — vincular cred PJN/SCBA o folder con causaType
+//   - "first_contact"       — agregar primer contacto
+//   - "first_deadline"      — configurar primera alerta de vencimiento
+//
+// jurisdiction values: "PJN" | "MEV" | "SCBA" | "EJE"
+//
+// Tags GTM a crear post-deploy:
+//   - onboarding_shown                → GA4 event con dimensión completed_count
+//   - onboarding_step_clicked         → GA4 event con dimensión step_id
+//   - onboarding_step_completed       → GA4 event (conversión soft) con step_id
+//   - onboarding_judicial_logo_clicked → GA4 event con dimensiones jurisdiction, mode
+//   - onboarding_example_folder_used  → GA4 event (señal de fricción)
+//   - onboarding_dismissed            → GA4 event con dimensión completed_count
+//   - onboarding_completed            → GA4 event (conversión hard)
+// =============================================================================
+
+/** Mount del checklist — se dispara una vez por sesión cuando el user logueado lo ve */
+export const trackOnboardingShown = (completedCount: number, totalSteps: number): void => {
+	pushGTMEvent(GTMEvents.ONBOARDING_SHOWN, {
+		completed_count: completedCount,
+		total_steps: totalSteps,
+	});
+};
+
+/** Click sobre un step pending — útil para medir CTR por step */
+export const trackOnboardingStepClicked = (stepId: string): void => {
+	pushGTMEvent(GTMEvents.ONBOARDING_STEP_CLICKED, { step_id: stepId });
+};
+
+/** Step pasa a completed (detectado en el reload, no en el click) — conversión soft */
+export const trackOnboardingStepCompleted = (stepId: string): void => {
+	pushGTMEvent(GTMEvents.ONBOARDING_STEP_COMPLETED, { step_id: stepId });
+};
+
+/** Click sobre un logo de jurisdicción (PJN/MEV/SCBA/EJE) dentro del step judicial.
+ *  `mode` = "credential" (PJN/SCBA → conectar cuenta) | "individual" (PJN/MEV/EJE → vincular expediente). */
+export const trackOnboardingJudicialLogoClicked = (
+	jurisdiction: "PJN" | "MEV" | "SCBA" | "EJE",
+	mode: "credential" | "individual",
+): void => {
+	pushGTMEvent(GTMEvents.ONBOARDING_JUDICIAL_LOGO_CLICKED, { jurisdiction, mode });
+};
+
+/** Click sobre "Crear con datos de ejemplo" — escape hatch del paso #1 */
+export const trackOnboardingExampleFolderUsed = (): void => {
+	pushGTMEvent(GTMEvents.ONBOARDING_EXAMPLE_FOLDER_USED, {});
+};
+
+/** Dismiss explícito ("Ocultar guía") — distingue abandono activo vs pasivo */
+export const trackOnboardingDismissed = (completedCount: number, totalSteps: number): void => {
+	pushGTMEvent(GTMEvents.ONBOARDING_DISMISSED, {
+		completed_count: completedCount,
+		total_steps: totalSteps,
+	});
+};
+
+/** 4/4 — el user completó todos los pasos. Conversión hard del onboarding. */
+export const trackOnboardingCompleted = (): void => {
+	pushGTMEvent(GTMEvents.ONBOARDING_COMPLETED, {});
 };

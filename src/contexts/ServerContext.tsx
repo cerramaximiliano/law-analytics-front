@@ -37,7 +37,6 @@ const initialState: AuthProps = {
 	email: "",
 };
 
-
 // Definir el contexto de autenticación unificado
 const AuthContext = createContext<ServerContextType | null>(null);
 
@@ -303,6 +302,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					secureStorage.setAuthToken(tokenFromData);
 					// Propagar el token renovado al WebSocket activo
 					webSocketService.updateToken(tokenFromData);
+				}
+
+				// Guardar refresh token como fallback para entornos donde la cookie
+				// httpOnly no llega (dev cross-origin localhost → prod). Solo viene
+				// en el body de los endpoints de login/register/google, así que el
+				// check por `refreshToken` en data es suficiente — no se va a setear
+				// en responses normales que no tienen ese campo.
+				const refreshTokenFromData = response.data?.refreshToken;
+				if (refreshTokenFromData && typeof refreshTokenFromData === "string") {
+					secureStorage.setRefreshToken(refreshTokenFromData);
 				}
 
 				return response;
