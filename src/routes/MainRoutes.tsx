@@ -1,9 +1,11 @@
 // @refresh reset
 import React from "react";
+import { Navigate } from "react-router-dom";
 
 // project-imports
 import MainLayout from "layout/MainLayout";
 import CommonLayout from "layout/CommonLayout";
+import PublicLayout from "layout/PublicLayout";
 import Loadable from "components/Loadable";
 import AuthGuard from "utils/route-guard/AuthGuard";
 import AdminRoleGuard from "utils/route-guard/AdminRoleGuard";
@@ -36,9 +38,12 @@ const UserTabProfessional = Loadable(lazyRetry(() => import("sections/apps/profi
 
 const AccountProfile = Loadable(lazyRetry(() => import("pages/apps/profiles/account")));
 const AccountTabAccount = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabAccount")));
-const AccountTabPassword = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabPassword")));
 const AccountTabRole = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabRole")));
 const AccountTabSettings = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabSettings")));
+const AccountTabPjnIntegration = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabPjnIntegration")));
+
+// render - OAuth connected apps (Phase 2 PR 2.4)
+const ConnectedAppsPage = Loadable(lazyRetry(() => import("pages/oauth/connected-apps")));
 
 // render - folders
 const FoldersLayout = Loadable(lazyRetry(() => import("pages/apps/folders/folders")));
@@ -78,6 +83,9 @@ const SubscriptionError = Loadable(lazyRetry(() => import("pages/apps/subscripti
 // help page
 const HelpPage = Loadable(lazyRetry(() => import("pages/help")));
 
+// teams pages
+const AcceptInvitation = Loadable(lazyRetry(() => import("pages/teams/accept-invitation")));
+
 // admin pages
 const AdminNotificationsPage = Loadable(lazyRetry(() => import("pages/admin/notifications")));
 const AdminJudicialMovementsPage = Loadable(lazyRetry(() => import("pages/admin/notifications/judicial-movements")));
@@ -100,20 +108,35 @@ const MainRoutes = {
 	path: "/",
 	children: [
 		{
-			path: "booking/:slug",
-			element: <BookingPage />,
-		},
-		{
-			path: "booking",
-			element: <BookingPage />,
-		},
-		{
-			path: "manage-booking",
-			element: <ManageBookingPage />,
-		},
-		{
-			path: "manage-booking/:token",
-			element: <ManageBookingPage />,
+			path: "/",
+			element: <PublicLayout />,
+			children: [
+				{
+					path: "booking/:slug",
+					element: <BookingPage />,
+				},
+				{
+					path: "booking",
+					element: <BookingPage />,
+				},
+				{
+					path: "manage-booking",
+					element: <ManageBookingPage />,
+				},
+				{
+					path: "manage-booking/:token",
+					element: <ManageBookingPage />,
+				},
+				{
+					path: "teams",
+					children: [
+						{
+							path: "invitation/:token",
+							element: <AcceptInvitation />,
+						},
+					],
+				},
+			],
 		},
 		{
 			path: "/",
@@ -123,6 +146,10 @@ const MainRoutes = {
 				</AuthGuard>
 			),
 			children: [
+				{
+					path: "settings/connected-apps",
+					element: <ConnectedAppsPage />,
+				},
 				{
 					path: "dashboard",
 					children: [
@@ -252,16 +279,20 @@ const MainRoutes = {
 											element: <AccountTabAccount />,
 										},
 										{
-											path: "password",
-											element: <AccountTabPassword />,
-										},
-										{
 											path: "role",
 											element: <AccountTabRole />,
 										},
 										{
-											path: "settings",
+											path: "subscription",
 											element: <AccountTabSettings />,
+										},
+										{
+											path: "settings",
+											element: <Navigate to="/apps/profiles/account/subscription" replace />,
+										},
+										{
+											path: "pjn",
+											element: <AccountTabPjnIntegration />,
 										},
 									],
 								},
@@ -332,7 +363,7 @@ const MainRoutes = {
 						{
 							/* legacy — kept for bookmarks */
 							path: "plantillas",
-							element: <ModelosPage />,
+							element: <Navigate replace to="/documentos/modelos" />,
 						},
 					],
 				},

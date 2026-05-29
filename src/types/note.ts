@@ -5,6 +5,8 @@ export interface Note {
 	userId: string;
 	groupId?: string;
 	folderId?: string;
+	movementRef?: string;
+	movementSource?: "pjn" | "mev" | null;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -15,6 +17,8 @@ export interface NoteFormValues {
 	userId?: string;
 	folderId?: string;
 	groupId?: string;
+	movementRef?: string;
+	movementSource?: "pjn" | "mev" | null;
 }
 
 export interface NoteModalType {
@@ -24,6 +28,8 @@ export interface NoteModalType {
 	folderId: string;
 	folderName?: string;
 	note?: Note | null;
+	initialValues?: Partial<NoteFormValues>;
+	dialogSx?: Record<string, any>;
 }
 
 export interface NoteState {

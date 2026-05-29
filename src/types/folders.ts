@@ -46,6 +46,11 @@ export interface Folder {
 	expedientYear?: string; // Año del expediente para ingreso automático
 	pjn?: boolean; // Indica si los datos provienen del Poder Judicial de la Nación
 	source?: string; // Fuente de los datos (manual o auto)
+	// Marker para folders desvinculados via modo "keep" (PJN/SCBA unlink).
+	// Aunque source pase a "manual", este campo conserva el origen original
+	// para que la UI bloquee la re-vinculación individual (que no es segura:
+	// el matching por fuero+numero+año puede unirse a una causa distinta).
+	previousSyncSource?: "pjn" | "scba" | "mev" | "eje" | null;
 	createdAt?: string; // Fecha de creación de la carpeta
 	updatedAt?: string; // Fecha de última actualización de la carpeta
 }
@@ -92,4 +97,6 @@ export interface PropsAddFolder {
 	onAddFolder: (folder: any) => void;
 	open: boolean;
 	mode: "add" | "edit";
+	initialStep?: number;
+	initialFormValues?: { entryMethod?: string; judicialPower?: string; pjnImportMode?: string; baImportMode?: string };
 }

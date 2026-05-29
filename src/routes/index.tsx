@@ -4,6 +4,7 @@ import { useRoutes } from "react-router-dom";
 
 // project-imports
 import CommonLayout from "layout/CommonLayout";
+import PublicLayout from "layout/PublicLayout";
 import Loadable from "components/Loadable";
 import LoginRoutes from "./LoginRoutes";
 import MainRoutes from "./MainRoutes";
@@ -18,6 +19,7 @@ const CookiesPolicy = Loadable(lazy(() => import("pages/cookies-policy")));
 const UnsubscribePage = Loadable(lazy(() => import("pages/unsubscribe")));
 const TermsPage = Loadable(lazy(() => import("pages/terms")));
 const Plans = Loadable(lazy(() => import("pages/plans")));
+const FeedbackInvitePage = Loadable(lazy(() => import("pages/feedback-invite")));
 
 // ==============================|| ROUTES RENDER ||============================== //
 
@@ -63,6 +65,16 @@ export default function ThemeRoutes() {
 		},
 		LoginRoutes,
 		MainRoutes,
+		{
+			path: "/",
+			element: <PublicLayout />,
+			children: [
+				{
+					path: "f/:token",
+					element: <FeedbackInvitePage />,
+				},
+			],
+		},
 		{
 			path: "*",
 			element: <MaintenanceError />,

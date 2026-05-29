@@ -192,7 +192,7 @@ const TaskView = memo(({ data }: any) => {
 															display: "flex",
 															alignItems: "center",
 															gap: 1,
-															bgcolor: "grey.50",
+															bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.50"),
 														}}
 													>
 														<NoteText size={16} />

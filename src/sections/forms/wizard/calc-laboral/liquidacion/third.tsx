@@ -1,11 +1,14 @@
 import React from "react";
 import { useEffect, useCallback } from "react";
-import { Typography, Box, Switch, FormControlLabel, Paper, useTheme, Alert } from "@mui/material";
+import { Stack, Typography, Box, Switch, FormControlLabel, useTheme } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { InfoCircle } from "iconsax-react";
 import { useFormikContext } from "formik";
 import dayjs from "utils/dayjs-config";
 import { useSelector, dispatch } from "store";
 import { getInterestRates } from "store/reducers/interestRates";
 import InterestSegmentsManager, { InterestSegment, InterestRate } from "components/calculator/InterestSegmentsManager";
+import { BRAND_BLUE, STALE_AMBER } from "themes/dashboardTokens";
 
 interface FormField {
 	aplicarIntereses: {
@@ -117,7 +120,7 @@ export default function ThirdForm(props: ThirdFormProps) {
 		[setFieldValue, capitalizeInterest.name],
 	);
 
-const handleTotalChange = useCallback(
+	const handleTotalChange = useCallback(
 		(total: { interest: number; amount: number }) => {
 			// Guardar los totales calculados para usarlos en el submit
 			setFieldValue("calculatedInterest", total.interest);
@@ -140,58 +143,117 @@ const handleTotalChange = useCallback(
 
 	const isInterestSectionEnabled = values[aplicarIntereses.name];
 
-	return (
-		<>
-			<Typography variant="h5" gutterBottom>
-				Actualización por Intereses
-			</Typography>
+	const isDark = theme.palette.mode === "dark";
 
-			<Paper
-				elevation={0}
+	const renderNotice = (text: React.ReactNode, variant: "info" | "warning" | "error" = "info") => {
+		const accent = variant === "info" ? BRAND_BLUE : variant === "warning" ? STALE_AMBER : theme.palette.error.main;
+		return (
+			<Box
 				sx={{
-					p: 3,
-					mb: 3,
-					bgcolor: theme.palette.background.default,
-					borderRadius: 2,
+					display: "flex",
+					alignItems: "flex-start",
+					gap: 1,
+					px: 1.5,
+					py: 1.25,
+					borderRadius: 1.5,
+					border: `1px solid ${alpha(accent, isDark ? 0.32 : 0.22)}`,
+					bgcolor: alpha(accent, isDark ? 0.1 : 0.05),
+					mb: 2,
 				}}
 			>
-				<Typography variant="body2" color="textSecondary" paragraph>
-					Puede actualizar el monto calculado aplicando intereses desde una fecha determinada hasta la fecha actual o una fecha específica.
-					Puede agregar múltiples tramos con diferentes tasas de interés.
-				</Typography>
+				<Box sx={{ color: accent, display: "flex", mt: 0.125, flexShrink: 0 }}>
+					<InfoCircle size={16} variant="Bulk" />
+				</Box>
+				<Typography sx={{ fontSize: "0.82rem", color: "text.primary", lineHeight: 1.5, fontWeight: 500, textWrap: "pretty" }}>{text}</Typography>
+			</Box>
+		);
+	};
 
-				<FormControlLabel
-					control={<Switch checked={values[aplicarIntereses.name]} onChange={handleAplicarInteresesChange} color="primary" />}
-					label="Aplicar intereses al monto calculado"
-				/>
-			</Paper>
+	return (
+		<>
+			<Box
+				sx={{
+					p: { xs: 2, sm: 2.25 },
+					mb: 2.5,
+					borderRadius: 1.5,
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+				}}
+			>
+				<Stack spacing={1}>
+					<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", lineHeight: 1.55, textWrap: "pretty" }}>
+						Actualizá el monto calculado aplicando intereses desde una fecha determinada hasta hoy u otra fecha. Podés sumar múltiples tramos con
+						diferentes tasas.
+					</Typography>
+
+					<FormControlLabel
+						control={
+							<Switch
+								checked={values[aplicarIntereses.name]}
+								onChange={handleAplicarInteresesChange}
+								sx={{
+									"& .MuiSwitch-switchBase.Mui-checked": {
+										color: BRAND_BLUE,
+										"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08) },
+									},
+									"& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { bgcolor: BRAND_BLUE },
+								}}
+							/>
+						}
+						label={<Typography sx={{ fontSize: "0.875rem", fontWeight: 500 }}>Aplicar intereses al monto calculado</Typography>}
+					/>
+				</Stack>
+			</Box>
 
 			{isInterestSectionEnabled && (
-				<Box sx={{ mt: 3 }}>
-					{/* Mostrar error de validación cuando se intenta avanzar sin tramos */}
-					{errors[segmentsIntereses.name] && touched[segmentsIntereses.name] && (
-						<Alert severity="error" sx={{ mb: 2 }}>
-							{typeof errors[segmentsIntereses.name] === "string"
-								? String(errors[segmentsIntereses.name])
-								: "Debe agregar al menos un tramo"}
-						</Alert>
-					)}
+				<Box sx={{ mt: 2.5 }}>
+					{errors[segmentsIntereses.name] &&
+						touched[segmentsIntereses.name] &&
+						renderNotice(
+							typeof errors[segmentsIntereses.name] === "string" ? String(errors[segmentsIntereses.name]) : "Debe agregar al menos un tramo",
+							"error",
+						)}
 
-					{calculatedAmount <= 0 && (
-						<Alert severity="warning" sx={{ mb: 2 }}>
-							El monto calculado en los pasos anteriores es $0 o no está disponible. Los intereses se calcularán sobre este monto.
-						</Alert>
-					)}
+					{calculatedAmount <= 0 &&
+						renderNotice(
+							"El monto calculado en los pasos anteriores es $0 o no está disponible. Los intereses se calcularán sobre este monto.",
+							"warning",
+						)}
 
 					{calculatedAmount > 0 && (
-						<Paper elevation={0} sx={{ mb: 3, p: 2, bgcolor: theme.palette.primary.lighter, borderRadius: 2 }}>
-							<Typography variant="subtitle2" color="primary.dark" gutterBottom>
+						<Box
+							sx={{
+								mb: 2.5,
+								p: 2,
+								borderRadius: 1.5,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.05),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+							}}
+						>
+							<Typography
+								sx={{
+									fontSize: "0.62rem",
+									fontWeight: 600,
+									letterSpacing: "0.14em",
+									textTransform: "uppercase",
+									color: BRAND_BLUE,
+									mb: 0.5,
+								}}
+							>
 								Capital base para intereses
 							</Typography>
-							<Typography variant="h6" color="primary.main">
+							<Typography
+								sx={{
+									fontSize: "1.25rem",
+									fontWeight: 600,
+									letterSpacing: "-0.015em",
+									color: "text.primary",
+									fontVariantNumeric: "tabular-nums",
+								}}
+							>
 								{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(calculatedAmount)}
 							</Typography>
-						</Paper>
+						</Box>
 					)}
 
 					<InterestSegmentsManager

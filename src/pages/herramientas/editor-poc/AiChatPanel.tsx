@@ -549,7 +549,7 @@ Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/
 												<Box
 													key={i}
 													sx={{
-														bgcolor: "grey.50",
+														bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.50"),
 														border: "1px solid",
 														borderColor: "divider",
 														borderRadius: 1,
@@ -660,7 +660,7 @@ Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/
 			</Box>
 
 			{/* ── Acciones rápidas ─────────────────────────── */}
-			<Box sx={{ px: 1.5, pt: 1, pb: 0.75, borderTop: "1px solid", borderColor: "divider", bgcolor: "grey.50" }}>
+			<Box sx={{ px: 1.5, pt: 1, pb: 0.75, borderTop: "1px solid", borderColor: "divider", bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.50") }}>
 				<Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.75 }}>
 					<Typography sx={{ ...sectionLabel, color: "text.secondary", fontSize: "0.68rem" }}>Acciones rápidas</Typography>
 					<Stack direction="row" spacing={0.25}>

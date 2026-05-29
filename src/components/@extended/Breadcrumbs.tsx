@@ -356,7 +356,7 @@ const Breadcrumbs = ({
 									sx={{ textDecoration: "none", display: "flex", alignItems: "center", flexShrink: 0 }}
 									color="secondary"
 								>
-									Causas
+									Mis Carpetas
 								</Typography>
 							) : location.pathname.includes("/calculator/") || location.pathname.includes("/apps/calc") ? (
 								<Typography

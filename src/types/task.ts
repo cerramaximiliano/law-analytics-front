@@ -24,6 +24,8 @@ export interface TaskType {
 	folderId?: string;
 	userId?: string;
 	groupId?: string;
+	movementRef?: string;
+	movementSource?: "pjn" | "mev" | null;
 	description?: string;
 	assignedTo?: string[];
 	reminders?: Array<{
@@ -81,6 +83,8 @@ export type TaskModalType = {
 	editMode?: boolean;
 	taskToEdit?: TaskType | null;
 	onClose?: () => void;
+	initialValues?: Partial<TaskFormValues>;
+	dialogSx?: Record<string, any>;
 };
 
 export type TaskFormValues = {
@@ -90,4 +94,6 @@ export type TaskFormValues = {
 	checked: boolean;
 	folderId: string;
 	userId?: string;
+	movementRef?: string;
+	movementSource?: "pjn" | "mev" | null;
 };

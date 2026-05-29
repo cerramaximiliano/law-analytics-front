@@ -1,10 +1,11 @@
-import axios from "axios";
-import { WS_BASE_URL, API_BASE_URL } from "../../config";
+import { WS_BASE_URL } from "../../config";
 import { io, Socket } from "socket.io-client";
 import { Alert } from "types/alert";
+import secureStorage from "../../services/secureStorage";
+import { refreshAccessToken } from "../../utils/refreshToken";
 
 // Tipos para los eventos y mensajes
-export type WSMessageType = "NOTIFICATION" | "FOLDER_UPDATE" | "TASK_UPDATE" | "USER_ACTIVITY" | "CONNECTION_STATE";
+export type WSMessageType = "NOTIFICATION" | "FOLDER_UPDATE" | "TASK_UPDATE" | "USER_ACTIVITY" | "CONNECTION_STATE" | "SYNC_PROGRESS" | "SYSTEM_STATUS";
 
 export interface WSMessage<T = any> {
 	type: WSMessageType;
@@ -71,10 +72,13 @@ class WebSocketService {
 			this.options = { ...this.options, ...customOptions };
 		}
 
-		// Si ya hay una conexión activa, cerrarla primero
-		if (this.socket && this.socket.connected) {
-			this.log("Cerrando conexión Socket.IO existente antes de crear una nueva");
+		// Cerrar CUALQUIER socket existente antes de crear uno nuevo.
+		// Incluye sockets en estado CONNECTING (no solo los ya conectados).
+		// Evita dobles conexiones cuando connect() se llama dos veces en rápida sucesión.
+		if (this.socket) {
+			this.log("Cerrando socket existente antes de reconectar (estado: " + (this.socket.connected ? "connected" : "connecting") + ")");
 			this.socket.disconnect();
+			this.socket = null;
 		}
 
 		// Actualizar estado
@@ -87,10 +91,10 @@ class WebSocketService {
 				reconnection: this.options.autoReconnect,
 				reconnectionAttempts: this.options.maxReconnectAttempts,
 				reconnectionDelay: this.options.reconnectInterval,
-				withCredentials: true, // Usar cookies para autenticación
+				withCredentials: true,
 				auth: {
 					userId: this.userId,
-					// El token se enviará automáticamente via cookie httpOnly
+					token: secureStorage.getAuthToken() || undefined,
 				},
 				transports: ["websocket"], // Solo WebSocket para mayor seguridad
 				secure: process.env.NODE_ENV === "production",
@@ -137,6 +141,48 @@ class WebSocketService {
 		this.socket.once("authentication_error", (errorMsg) => {
 			this.log(`Error de autenticación: ${errorMsg}`, "error");
 			this.updateConnectionState(ConnectionState.ERROR);
+		});
+	}
+
+	/**
+	 * Re-autentica al usuario con el token más reciente disponible en secureStorage.
+	 * Se usa cuando el servidor solicita renovación (token_refresh_needed / auth_expired).
+	 */
+	private reAuthenticate(): void {
+		if (!this.socket || !this.socket.connected || !this.userId) return;
+
+		const freshToken = secureStorage.getAuthToken();
+		if (!freshToken) {
+			this.log("No hay token disponible para re-autenticación", "error");
+			return;
+		}
+
+		this.log("Re-autenticando con token actualizado");
+		this.socket.emit("re_authenticate", { token: freshToken });
+
+		this.socket.once("authenticated", (response) => {
+			if (response?.success) {
+				this.log("Re-autenticación exitosa");
+				this.updateConnectionState(ConnectionState.AUTHENTICATED);
+			}
+		});
+	}
+
+	/**
+	 * Notifica al servidor de un nuevo token cuando la API HTTP lo refresca.
+	 * Solo actúa si el socket está actualmente autenticado.
+	 */
+	public updateToken(newToken: string): void {
+		if (!this.socket || !this.socket.connected) return;
+		if (this.connectionState !== ConnectionState.AUTHENTICATED) return;
+
+		this.log("Actualizando token en WebSocket tras refresh HTTP");
+		this.socket.emit("re_authenticate", { token: newToken });
+
+		this.socket.once("authenticated", (response) => {
+			if (response?.success) {
+				this.log("Token WebSocket actualizado correctamente");
+			}
 		});
 	}
 
@@ -290,6 +336,18 @@ class WebSocketService {
 			}
 		});
 
+		// El servidor solicita renovación de token (vencido pero conexión activa)
+		this.socket.on("token_refresh_needed", () => {
+			this.log("Servidor solicita renovación de token");
+			this.reAuthenticate();
+		});
+
+		// El servidor cerró la sesión por token vencido (compatibilidad con versión anterior)
+		this.socket.on("auth_expired", () => {
+			this.log("Token expirado notificado por servidor, intentando re-autenticar");
+			this.reAuthenticate();
+		});
+
 		// Escuchar eventos específicos del servidor
 		this.socket.on("new_alert", (alert: Alert) => {
 			this.log(`Nueva alerta recibida: ${alert.primaryText || "Sin título"}`);
@@ -317,6 +375,52 @@ class WebSocketService {
 			this.handleMessage({
 				type: "NOTIFICATION",
 				payload: { pendingAlerts: validAlerts },
+				timestamp: new Date().toISOString(),
+			});
+		});
+
+		// Escuchar folders creados desde workers (PJN o SCBA).
+		// Retrocompat: la forma previa era un array directo de folders; la nueva
+		// es { folders, source } para discriminar origen. Soportamos ambas.
+		this.socket.on("folders_created", (data: any) => {
+			let folders: any[];
+			let source: "pjn" | "scba" = "pjn";
+			if (Array.isArray(data)) {
+				folders = data;
+			} else {
+				folders = data?.folders ?? [];
+				source = data?.source ?? "pjn";
+			}
+			if (folders.length === 0) return;
+			this.log(`${folders.length} folder(s) ${source.toUpperCase()} recibido(s) via WS`);
+			this.handleMessage({
+				type: "FOLDER_UPDATE",
+				payload: { newFolders: folders, source },
+				timestamp: new Date().toISOString(),
+			});
+		});
+
+		// Escuchar progreso de sincronización (PJN o SCBA) desde workers.
+		// El campo `source` viene dentro del payload (agregado por la-notification)
+		// para que el WebSocketContext despache al reducer correcto.
+		this.socket.on("sync_progress", (progress: any) => {
+			const source = progress?.source ?? "pjn";
+			this.log(`Progreso de sincronización ${source.toUpperCase()} recibido`);
+			this.handleMessage({
+				type: "SYNC_PROGRESS",
+				payload: progress,
+				timestamp: new Date().toISOString(),
+			});
+		});
+
+		// Estado global del sistema (mantenimiento del portal PJN, etc).
+		// Broadcast por la-notification cuando pjn-workers reportan transición.
+		// El payload incluye { type: 'PJN_SITE_STATUS', payload: {...} }.
+		this.socket.on("system_status", (message: any) => {
+			this.log(`system_status recibido: ${message?.type ?? "(sin type)"}`);
+			this.handleMessage({
+				type: "SYSTEM_STATUS",
+				payload: message,
 				timestamp: new Date().toISOString(),
 			});
 		});
@@ -418,14 +522,8 @@ class WebSocketService {
 	 */
 	public static async refreshAuthToken(): Promise<string | null> {
 		try {
-			// Intenta obtener un token actualizado del servidor
-			const response = await axios.post(
-				`${API_BASE_URL}/api/auth/refresh-token`,
-				{},
-				{
-					withCredentials: true,
-				},
-			);
+			// Intenta obtener un token actualizado del servidor (dedup compartida)
+			const response = await refreshAccessToken();
 
 			if (response.data && response.data.success) {
 				return response.data.token || null;

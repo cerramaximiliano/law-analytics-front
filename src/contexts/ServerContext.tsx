@@ -18,9 +18,12 @@ import { Payment } from "store/reducers/ApiService";
 import { fetchUserStats } from "store/reducers/userStats";
 import { AppDispatch } from "store";
 import secureStorage from "services/secureStorage";
+import { getAttributionPayload, resolveInternalSource } from "utils/attribution";
 import { requestQueueService } from "services/requestQueueService";
 import authTokenService from "services/authTokenService";
+import { refreshAccessToken } from "utils/refreshToken";
 import { extractErrorMessage } from "utils/errorMessages";
+import webSocketService from "store/reducers/WebSocketService";
 import { APP_DEFAULT_PATH } from "config";
 
 // Global setting for hiding international banking data
@@ -136,13 +139,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	};
 
 	// Iniciar sesión con Google
-	const loginWithGoogle = async (tokenResponse: CredentialResponse): Promise<boolean> => {
+	const loginWithGoogle = async (tokenResponse: CredentialResponse): Promise<{ success: boolean; isNewUser?: boolean }> => {
 		try {
 			const credential = tokenResponse.credential;
 			if (credential) {
-				const result = await axios.post<LoginResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/google`, { token: credential });
+				const params = new URLSearchParams(window.location.search);
+				const result = await axios.post<LoginResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/google`, {
+					token: credential,
+					attribution: getAttributionPayload(resolveInternalSource(params), params.get("feature")),
+				});
 
-				const { user, success, subscription, paymentHistory, customer } = result.data;
+				const { user, success, subscription, paymentHistory, customer, isNewUser } = result.data;
 
 				if (success) {
 					setIsGoogleLoggedIn(true);
@@ -182,7 +189,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					// Procesar la cola de peticiones pendientes después de login exitoso
 					await processRequestQueue();
 
-					return true;
+					return { success: true, isNewUser: Boolean(isNewUser) };
 				} else {
 					throw new Error("No se pudo autenticar. Intenta nuevamente.");
 				}
@@ -287,10 +294,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					authTokenService.setToken(token);
 					// También guardar en secureStorage para persistencia
 					secureStorage.setAuthToken(token);
+					// Propagar el token renovado al WebSocket activo
+					webSocketService.updateToken(token);
 				} else if (tokenFromData) {
 					authTokenService.setToken(tokenFromData);
 					// También guardar en secureStorage para persistencia
 					secureStorage.setAuthToken(tokenFromData);
+					// Propagar el token renovado al WebSocket activo
+					webSocketService.updateToken(tokenFromData);
+				}
+
+				// Guardar refresh token como fallback para entornos donde la cookie
+				// httpOnly no llega (dev cross-origin localhost → prod). Solo viene
+				// en el body de los endpoints de login/register/google, así que el
+				// check por `refreshToken` en data es suficiente — no se va a setear
+				// en responses normales que no tienen ese campo.
+				const refreshTokenFromData = response.data?.refreshToken;
+				if (refreshTokenFromData && typeof refreshTokenFromData === "string") {
+					secureStorage.setRefreshToken(refreshTokenFromData);
 				}
 
 				return response;
@@ -323,11 +344,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					!url.includes("/api/auth/logout") &&
 					!url.includes("/api/auth/me") // Excluir /api/auth/me para evitar problemas en registro
 				) {
-					// Si el backend indica que necesita refresh
-					if (error.response?.data && (error.response.data as any).needRefresh === true) {
+					// Intentar refrescar el token automáticamente ante cualquier 401
+					if (!originalRequest._queued && !originalRequest._retry) {
 						try {
-							// Intentar refrescar el token automáticamente
-							const refreshResponse = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/auth/refresh-token`);
+							const refreshResponse = await refreshAccessToken();
 
 							// Si el refresh es exitoso, reintentar la petición original
 							if (refreshResponse.status === 200) {
@@ -336,20 +356,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 									_hasBeenHandled: false,
 								});
 							}
-						} catch (refreshError) {
-							// Si no es una petición ya encolada y no es una petición de retry
-							if (!originalRequest._queued && !originalRequest._retry) {
-								// Encolar la petición para reintentar después de la autenticación
-								const queuedPromise = requestQueueService.enqueue(originalRequest);
-								setShowUnauthorizedModal(true);
-								return queuedPromise;
-							}
-
-							return Promise.reject(refreshError);
-						}
-					} else {
-						// Si no necesita refresh, encolar la petición si no ha sido encolada
-						if (!originalRequest._queued && !originalRequest._retry) {
+						} catch (_refreshError) {
+							// El refresh falló (refresh token también expirado o sesión inválida)
+							// Encolar la petición y pedir re-autenticación
 							const queuedPromise = requestQueueService.enqueue(originalRequest);
 							setShowUnauthorizedModal(true);
 							return queuedPromise;
@@ -467,9 +476,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	}, []);
 
 	// Login normal
-	const login = async (email: string, password: string): Promise<boolean> => {
+	const login = async (email: string, password: string, rememberMe?: boolean): Promise<boolean> => {
 		try {
-			const response = await axios.post<LoginResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/login`, { email, password });
+			const response = await axios.post<LoginResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/login`, {
+				email,
+				password,
+				rememberMe: rememberMe ?? false,
+			});
 
 			const { user, subscription, paymentHistory, customer } = response.data;
 
@@ -532,11 +545,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		lastName?: string,
 	): Promise<{ email: string; isLoggedIn: boolean; needsVerification: boolean }> => {
 		try {
+			const params = new URLSearchParams(window.location.search);
 			const response = await axios.post<RegisterResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/register`, {
 				email,
 				password,
 				...(firstName && { firstName }),
 				...(lastName && { lastName }),
+				attribution: getAttributionPayload(resolveInternalSource(params), params.get("feature")),
 			});
 
 			// Siempre necesitará verificación para nuevos registros

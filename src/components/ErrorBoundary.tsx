@@ -89,7 +89,7 @@ class ErrorBoundary extends Component<Props, State> {
 								sx={{
 									mt: 2,
 									p: 2,
-									bgcolor: "grey.100",
+									bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.100"),
 									borderRadius: 1,
 									textAlign: "left",
 								}}

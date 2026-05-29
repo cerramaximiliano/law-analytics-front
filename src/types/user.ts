@@ -62,6 +62,13 @@ export interface Subscription {
 	stripePriceId?: string;
 	plan: "free" | "standard" | "premium";
 	status: "active" | "canceled" | "past_due" | "trialing" | "incomplete" | "unpaid" | "incomplete_expired";
+	addons?: Array<{
+		key: "mcp_access";
+		status: "active" | "past_due" | "canceled" | "incomplete";
+		stripeSubscriptionItemId?: string;
+		stripePriceId?: string;
+		currentPeriodEnd?: string;
+	}>;
 	currentPeriodStart: Date;
 	currentPeriodEnd: Date;
 	startDate: Date; // Start date

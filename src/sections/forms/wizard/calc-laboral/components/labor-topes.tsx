@@ -6,7 +6,7 @@ import { useState } from "react";
 
 interface Props {
 	name: string;
-	nameRemuneracion: object;
+	nameRemuneracion: string;
 	options: { value: string; label: string }[];
 }
 const LaborTopes: React.FC<Props> = (props) => {

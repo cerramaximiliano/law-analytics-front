@@ -3,33 +3,27 @@ import {
 	Autocomplete,
 	Box,
 	Button,
-	Card,
-	CardActionArea,
-	CardContent,
 	Checkbox,
-	Chip,
 	CircularProgress,
 	Dialog,
 	DialogActions,
 	DialogContent,
-	DialogTitle,
-	Divider,
 	FormControl,
 	FormControlLabel,
 	Grid,
+	IconButton,
 	InputLabel,
 	MenuItem,
 	Radio,
 	RadioGroup,
 	Select,
 	Stack,
-	Tab,
-	Tabs,
 	TextField,
 	Tooltip,
 	Typography,
 } from "@mui/material";
-import { Profile2User, Save2 } from "iconsax-react";
+import { alpha, useTheme } from "@mui/material/styles";
+import { CloseSquare, DocumentText, Profile2User, Save2 } from "iconsax-react";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { dispatch, useSelector } from "store";
 import { fetchPdfTemplates, createPostalDocument, updatePostalDocument } from "store/reducers/postalDocuments";
@@ -40,6 +34,7 @@ import { PdfTemplate, PdfTemplateField } from "types/postal-document";
 import { Contact } from "types/contact";
 import { FolderData } from "types/folder";
 import { PostalTrackingType } from "types/postal-tracking";
+import { BRAND_BLUE, STALE_AMBER } from "themes/dashboardTokens";
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -64,68 +59,18 @@ interface SaveContactDialogState {
 // ── Constantes ───────────────────────────────────────────────────────────────
 
 const VALID_CODE_IDS = [
-	"CC",
-	"CD",
-	"CL",
-	"CM",
-	"CO",
-	"CP",
-	"DE",
-	"DI",
-	"EC",
-	"EE",
-	"EO",
-	"EP",
-	"GC",
-	"GD",
-	"GE",
-	"GF",
-	"GO",
-	"GR",
-	"GS",
-	"HC",
-	"HD",
-	"HE",
-	"HO",
-	"HU",
-	"HX",
-	"IN",
-	"IS",
-	"JP",
-	"LC",
-	"LS",
-	"ND",
-	"MD",
-	"ME",
-	"MC",
-	"MS",
-	"MU",
-	"MX",
-	"OL",
-	"PC",
-	"PP",
-	"RD",
-	"RE",
-	"RP",
-	"RR",
-	"SD",
-	"SL",
-	"SP",
-	"SR",
-	"ST",
-	"TC",
-	"TD",
-	"TL",
-	"UP",
+	"CC", "CD", "CL", "CM", "CO", "CP", "DE", "DI", "EC", "EE", "EO", "EP", "GC", "GD", "GE", "GF", "GO", "GR", "GS",
+	"HC", "HD", "HE", "HO", "HU", "HX", "IN", "IS", "JP", "LC", "LS", "ND", "MD", "ME", "MC", "MS", "MU", "MX", "OL",
+	"PC", "PP", "RD", "RE", "RP", "RR", "SD", "SL", "SP", "SR", "ST", "TC", "TD", "TL", "UP",
 ];
 
 const GROUP_LABELS: Record<string, string> = {
-	destinatario: "DESTINATARIO",
-	remitente: "REMITENTE",
-	poderdante: "PODERDANTE (quien otorga el poder)",
-	apoderado: "APODERADO (letrado)",
-	cuerpo: "CUERPO DEL TELEGRAMA",
-	tipo: "TIPO DE COMUNICACIÓN",
+	destinatario: "Destinatario",
+	remitente: "Remitente",
+	poderdante: "Poderdante (quien otorga el poder)",
+	apoderado: "Apoderado (letrado)",
+	cuerpo: "Cuerpo del telegrama",
+	tipo: "Tipo de comunicación",
 };
 
 const RADIO_OPTION_LABELS: Record<string, string> = {
@@ -134,13 +79,10 @@ const RADIO_OPTION_LABELS: Record<string, string> = {
 	Opción3: "3 - Otro tipo de comunicación",
 };
 
-// Grupos que admiten selección / guardado de contacto
 const CONTACT_GROUPS: ContactGroupKey[] = ["destinatario", "remitente", "poderdante"];
 
-// Pares de checkboxes mutuamente excluyentes (radio behavior)
 const EXCLUSIVE_CHECKBOX_PAIRS: [string, string][] = [["suscribe_sexo_f", "suscribe_sexo_m"]];
 
-// Datos de prueba por plantilla (solo DEV)
 const DEV_FILL_DATA: Record<string, { title: string; fields: Record<string, string> }> = {
 	carta_poder_srt: {
 		title: "Test Carta Poder SRT",
@@ -271,7 +213,7 @@ const DEV_FILL_DATA: Record<string, { title: string; fields: Record<string, stri
 	},
 };
 
-// ── Mapeo Contact → campos del formulario ────────────────────────────────────
+// ── Mapeo contactos (sin cambios) ────────────────────────────────────────────
 
 function contactToFormValues(contact: Contact, group: ContactGroupKey): Record<string, string> {
 	const fullName =
@@ -299,7 +241,6 @@ function contactToFormValues(contact: Contact, group: ContactGroupKey): Record<s
 			rem_provincia: contact.state || "",
 		};
 	}
-	// poderdante
 	return {
 		suscribe_nombre: fullName,
 		suscribe_doc: contact.document || "",
@@ -309,8 +250,6 @@ function contactToFormValues(contact: Contact, group: ContactGroupKey): Record<s
 		suscribe_telefono: contact.phone || "",
 	};
 }
-
-// ── Mapeo campos del formulario → Contact ────────────────────────────────────
 
 function formValuesToContact(
 	values: Record<string, string>,
@@ -349,7 +288,6 @@ function formValuesToContact(
 			role,
 		};
 	}
-	// poderdante
 	const raw = values.suscribe_nombre || "";
 	const parts = raw.trim().split(/\s+/);
 	return {
@@ -365,8 +303,6 @@ function formValuesToContact(
 	};
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
 function getInitialFormValues(fields: PdfTemplateField[]): Record<string, string> {
 	return fields.reduce((acc, f) => {
 		acc[f.name] = "";
@@ -379,7 +315,6 @@ function hasGroupData(formValues: Record<string, string>, group: ContactGroupKey
 	return !!formValues[nameKey]?.trim();
 }
 
-/** Groups consecutive checkbox fields into sub-arrays for inline rendering */
 function groupFieldsForRender(fields: PdfTemplateField[]): (PdfTemplateField | PdfTemplateField[])[] {
 	const result: (PdfTemplateField | PdfTemplateField[])[] = [];
 	let i = 0;
@@ -405,6 +340,31 @@ function getContactLabel(c: Contact): string {
 	return `${name}${company}`;
 }
 
+// ── Brand pill compartido ────────────────────────────────────────────────────
+
+const CategoryPill = ({ label }: { label: string }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	return (
+		<Box
+			sx={{
+				display: "inline-flex",
+				alignItems: "center",
+				px: 0.875,
+				py: 0.25,
+				borderRadius: 0.75,
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.3 : 0.2)}`,
+				alignSelf: "flex-start",
+			}}
+		>
+			<Typography sx={{ fontSize: "0.66rem", fontWeight: 600, color: BRAND_BLUE, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>
+				{label}
+			</Typography>
+		</Box>
+	);
+};
+
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function CreatePostalDocumentModal({
@@ -415,42 +375,38 @@ export default function CreatePostalDocumentModal({
 	prefilledFolderId,
 	showSnackbar,
 }: Props) {
-	// Redux state
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+
 	const allContacts: Contact[] = useSelector((state: any) => state.contacts?.contacts || []);
 	const allFolders: FolderData[] = useSelector((state: any) => state.folder?.folders || []);
 	const allTrackings: PostalTrackingType[] = useSelector((state: any) => state.postalTrackingReducer?.allTrackings || []);
 	const userId = useSelector((state: any) => state.auth?.user?._id);
 	const user = useSelector((state: any) => state.auth?.user);
 
-	// Modal state
 	const [step, setStep] = useState<0 | 1>(0);
 	const [templates, setTemplates] = useState<PdfTemplate[]>([]);
 	const [loadingTemplates, setLoadingTemplates] = useState(false);
 	const [selectedTemplate, setSelectedTemplate] = useState<PdfTemplate | null>(null);
-	const [templateTab, setTemplateTab] = useState<0 | 1>(0);
 	const [formValues, setFormValues] = useState<Record<string, string>>({});
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const [generating, setGenerating] = useState(false);
 
-	// Linking — carpeta
 	const [linkedFolder, setLinkedFolder] = useState<FolderData | null>(null);
 
-	// Linking — seguimiento: modo "vincular existente" vs "crear nuevo"
 	const [trackingMode, setTrackingMode] = useState<"link" | "create">("link");
 	const [linkedTracking, setLinkedTracking] = useState<PostalTrackingType | null>(null);
 	const [newTrackingCodeId, setNewTrackingCodeId] = useState("TC");
 	const [newTrackingNumberId, setNewTrackingNumberId] = useState("");
 	const [newTrackingLabel, setNewTrackingLabel] = useState("");
 
-	// Contact selected per group (null = manual entry)
 	const [selectedContacts, setSelectedContacts] = useState<Record<ContactGroupKey, Contact | null>>({
 		destinatario: null,
 		remitente: null,
 		poderdante: null,
 	});
 
-	// Save-as-contact dialog
 	const [saveDialog, setSaveDialog] = useState<SaveContactDialogState>({
 		open: false,
 		group: null,
@@ -459,16 +415,12 @@ export default function CreatePostalDocumentModal({
 	});
 	const [savingContact, setSavingContact] = useState(false);
 
-	// Limit error modal
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorMessage, setLimitErrorMessage] = useState("");
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
 
-	// ── Load templates + contacts on open ──────────────────────────────────────
-
 	useEffect(() => {
 		if (!open) return;
-		// Si viene una plantilla preseleccionada, saltar al paso 1 directamente
 		if (preselectedTemplate) {
 			setSelectedTemplate(preselectedTemplate);
 			setFormValues(getInitialFormValues(preselectedTemplate.fields));
@@ -489,14 +441,11 @@ export default function CreatePostalDocumentModal({
 		dispatch(fetchAllTrackings() as any);
 	}, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-	// Pre-select folder when prefilledFolderId is provided
 	useEffect(() => {
 		if (!prefilledFolderId || !allFolders.length) return;
 		const found = allFolders.find((f) => f._id === prefilledFolderId);
 		if (found) setLinkedFolder(found);
 	}, [prefilledFolderId, allFolders]); // eslint-disable-line react-hooks/exhaustive-deps
-
-	// ── Reset ─────────────────────────────────────────────────────────────────
 
 	const resetState = () => {
 		setStep(0);
@@ -513,7 +462,6 @@ export default function CreatePostalDocumentModal({
 		setNewTrackingLabel("");
 		setSelectedContacts({ destinatario: null, remitente: null, poderdante: null });
 		setSaveDialog({ open: false, group: null, contactType: "Humana", role: "" });
-		setTemplateTab(0);
 	};
 
 	const handleClose_ = () => {
@@ -534,20 +482,15 @@ export default function CreatePostalDocumentModal({
 		setNewTrackingLabel("");
 	};
 
-	// ── Template selection ────────────────────────────────────────────────────
-
 	const handleSelectTemplate = (tpl: PdfTemplate) => {
 		setSelectedTemplate(tpl);
 		setFormValues(getInitialFormValues(tpl.fields));
 		setStep(1);
 	};
 
-	// ── Form field helpers ────────────────────────────────────────────────────
-
 	const handleFieldChange = (name: string, value: string) =>
 		setFormValues((prev) => {
 			const updated = { ...prev, [name]: value };
-			// Mutual exclusion for paired checkboxes
 			if (value === "X") {
 				for (const pair of EXCLUSIVE_CHECKBOX_PAIRS) {
 					if (pair.includes(name)) {
@@ -584,8 +527,6 @@ export default function CreatePostalDocumentModal({
 			apoderado_telefono: user.contact || user.phone || "",
 		}));
 	};
-
-	// ── Submit ────────────────────────────────────────────────────────────────
 
 	const newTrackingNumberIdValid = /^\d{9}$/.test(newTrackingNumberId);
 	const willCreateTracking =
@@ -636,8 +577,6 @@ export default function CreatePostalDocumentModal({
 		}
 	};
 
-	// ── Update existing contact ───────────────────────────────────────────────
-
 	const handleUpdateContact = async (group: ContactGroupKey) => {
 		const contact = selectedContacts[group];
 		if (!contact?._id) return;
@@ -660,8 +599,6 @@ export default function CreatePostalDocumentModal({
 		}
 		setSavingContact(false);
 	};
-
-	// ── Save as contact ───────────────────────────────────────────────────────
 
 	const openSaveDialog = (group: ContactGroupKey) => {
 		const defaultType: "Humana" | "Jurídica" = group === "destinatario" ? "Jurídica" : "Humana";
@@ -687,6 +624,87 @@ export default function CreatePostalDocumentModal({
 		setSavingContact(false);
 	};
 
+	// ── Brand helpers ────────────────────────────────────────────────────────
+
+	const dialogPaperSx = {
+		borderRadius: 2,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+		boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+		overflow: "hidden",
+	};
+
+	const inputSx = {
+		"& .MuiOutlinedInput-root": {
+			borderRadius: 1.25,
+			fontSize: "0.875rem",
+			"& fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.14), transition: "border-color 0.15s ease" },
+			"&:hover fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.28) },
+			"&.Mui-focused fieldset": { borderColor: BRAND_BLUE, borderWidth: 1 },
+		},
+		"& .MuiInputLabel-root.Mui-focused": { color: BRAND_BLUE },
+	};
+
+	const selectSx = {
+		borderRadius: 1.25,
+		fontSize: "0.875rem",
+		"& fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.14) },
+		"&:hover fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.28) },
+		"&.Mui-focused fieldset": { borderColor: BRAND_BLUE },
+	};
+
+	const ghostBtnSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: "text.secondary",
+		borderRadius: 1.25,
+		border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+		px: 2,
+		py: 0.75,
+		"&:hover": {
+			color: BRAND_BLUE,
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+			borderColor: alpha(BRAND_BLUE, 0.28),
+		},
+	};
+
+	const brandPrimarySx = {
+		minWidth: 130,
+		textTransform: "none" as const,
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		borderRadius: 1.25,
+		boxShadow: "none",
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+		"&.Mui-disabled": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.24 : 0.4), color: alpha("#fff", 0.9) },
+	};
+
+	const smallActionSx = {
+		textTransform: "none" as const,
+		fontSize: "0.72rem",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		py: 0.4,
+		px: 1.25,
+		borderRadius: 1,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+		color: BRAND_BLUE,
+		bgcolor: "transparent",
+		"&:hover": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.06),
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.48 : 0.36),
+		},
+	};
+
+	const iconBtnSx = {
+		color: "text.secondary",
+		borderRadius: 1,
+		transition: "color 0.15s ease, background-color 0.15s ease",
+		"&:hover": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) },
+	};
+
 	// ── Field renderer ────────────────────────────────────────────────────────
 
 	const renderField = (field: PdfTemplateField) => {
@@ -699,16 +717,20 @@ export default function CreatePostalDocumentModal({
 							size="small"
 							checked={formValues[field.name] === "X"}
 							onChange={(e) => handleFieldChange(field.name, e.target.checked ? "X" : "")}
+							sx={{
+								color: alpha(BRAND_BLUE, isDark ? 0.4 : 0.32),
+								"&.Mui-checked": { color: BRAND_BLUE },
+							}}
 						/>
 					}
-					label={field.label}
+					label={<Typography sx={{ fontSize: "0.82rem", color: "text.primary" }}>{field.label}</Typography>}
 				/>
 			);
 		}
 		if (field.type === "radio") {
 			return (
-				<FormControl key={field.name} fullWidth sx={{ mt: 1 }}>
-					<Typography variant="body2" color="textSecondary" sx={{ mb: 0.5 }}>
+				<FormControl key={field.name} fullWidth sx={{ mt: 0.5 }}>
+					<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "0.02em", mb: 0.5 }}>
 						{field.label}
 						{field.required && (
 							<Typography component="span" color="error" sx={{ ml: 0.25 }}>
@@ -718,7 +740,17 @@ export default function CreatePostalDocumentModal({
 					</Typography>
 					<RadioGroup row value={formValues[field.name] || ""} onChange={(e) => handleFieldChange(field.name, e.target.value)}>
 						{(field.options || []).map((opt) => (
-							<FormControlLabel key={opt} value={opt} control={<Radio size="small" />} label={RADIO_OPTION_LABELS[opt] || opt} />
+							<FormControlLabel
+								key={opt}
+								value={opt}
+								control={
+									<Radio
+										size="small"
+										sx={{ color: alpha(BRAND_BLUE, isDark ? 0.4 : 0.32), "&.Mui-checked": { color: BRAND_BLUE } }}
+									/>
+								}
+								label={<Typography sx={{ fontSize: "0.82rem", color: "text.primary" }}>{RADIO_OPTION_LABELS[opt] || opt}</Typography>}
+							/>
 						))}
 					</RadioGroup>
 				</FormControl>
@@ -737,6 +769,7 @@ export default function CreatePostalDocumentModal({
 					fullWidth
 					value={formValues[field.name] || ""}
 					onChange={(e) => handleFieldChange(field.name, e.target.value)}
+					sx={inputSx}
 				/>
 			);
 		}
@@ -752,6 +785,7 @@ export default function CreatePostalDocumentModal({
 					InputLabelProps={{ shrink: true }}
 					value={formValues[field.name] || ""}
 					onChange={(e) => handleFieldChange(field.name, e.target.value)}
+					sx={inputSx}
 				/>
 			);
 		}
@@ -765,38 +799,47 @@ export default function CreatePostalDocumentModal({
 				fullWidth
 				value={formValues[field.name] || ""}
 				onChange={(e) => handleFieldChange(field.name, e.target.value)}
+				sx={inputSx}
 			/>
 		);
 	};
 
-	// ── Group renderer ────────────────────────────────────────────────────────
+	const groupHeader = (label: string, action?: React.ReactNode) => (
+		<Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.25 }}>
+			<Stack direction="row" alignItems="center" spacing={0.875}>
+				<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+				<Typography
+					sx={{
+						fontSize: "0.66rem",
+						fontWeight: 600,
+						letterSpacing: "0.08em",
+						textTransform: "uppercase",
+						color: BRAND_BLUE,
+					}}
+				>
+					{label}
+				</Typography>
+			</Stack>
+			{action}
+		</Stack>
+	);
 
 	const renderGroup = (groupKey: string, fields: PdfTemplateField[]) => {
 		const isContactGroup = (CONTACT_GROUPS as string[]).includes(groupKey);
 		const group = groupKey as ContactGroupKey;
 		const activeContacts = allContacts.filter((c: Contact) => c.status !== "archived");
 
-		// ── Apoderado: auto-fill from user profile ────────────────────────────────
 		if (groupKey === "apoderado") {
 			return (
 				<Box key={groupKey}>
-					<Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-						<Typography variant="subtitle2" color="primary" fontWeight={700}>
-							{GROUP_LABELS[groupKey]}
-						</Typography>
+					{groupHeader(
+						GROUP_LABELS[groupKey],
 						<Tooltip title="Completar automáticamente con tus datos profesionales del perfil">
-							<Button
-								size="small"
-								variant="outlined"
-								color="primary"
-								startIcon={<Profile2User size={14} />}
-								onClick={applyUserToApoderado}
-								sx={{ fontSize: "0.7rem", py: 0.25 }}
-							>
+							<Button size="small" startIcon={<Profile2User size={13} variant="Linear" />} onClick={applyUserToApoderado} sx={smallActionSx}>
 								Mis datos
 							</Button>
-						</Tooltip>
-					</Stack>
+						</Tooltip>,
+					)}
 					<Stack spacing={1.5}>
 						{groupFieldsForRender(fields).map((item, i) =>
 							Array.isArray(item) ? (
@@ -814,44 +857,33 @@ export default function CreatePostalDocumentModal({
 
 		return (
 			<Box key={groupKey}>
-				{/* Group header */}
-				<Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-					<Typography variant="subtitle2" color="primary" fontWeight={700}>
-						{GROUP_LABELS[groupKey] || groupKey.toUpperCase()}
-					</Typography>
-					{isContactGroup &&
-						hasGroupData(formValues, group) &&
-						(selectedContacts[group] ? (
-							<Tooltip title={`Actualizar contacto "${getContactLabel(selectedContacts[group]!)}" con los datos actuales`}>
-								<Button
-									size="small"
-									variant="outlined"
-									color="primary"
-									startIcon={savingContact ? <CircularProgress size={14} color="inherit" /> : <Save2 size={14} />}
-									onClick={() => handleUpdateContact(group)}
-									disabled={savingContact}
-									sx={{ fontSize: "0.7rem", py: 0.25 }}
-								>
-									Actualizar contacto
-								</Button>
-							</Tooltip>
-						) : (
-							<Tooltip title={`Guardar datos de ${GROUP_LABELS[group] || group} como nuevo contacto`}>
-								<Button
-									size="small"
-									variant="outlined"
-									color="secondary"
-									startIcon={<Save2 size={14} />}
-									onClick={() => openSaveDialog(group)}
-									sx={{ fontSize: "0.7rem", py: 0.25 }}
-								>
-									Guardar como contacto
-								</Button>
-							</Tooltip>
-						))}
-				</Stack>
+				{groupHeader(
+					GROUP_LABELS[groupKey] || groupKey,
+					isContactGroup && hasGroupData(formValues, group)
+						? selectedContacts[group]
+							? (
+								<Tooltip title={`Actualizar contacto "${getContactLabel(selectedContacts[group]!)}" con los datos actuales`}>
+									<Button
+										size="small"
+										startIcon={savingContact ? <CircularProgress size={12} color="inherit" /> : <Save2 size={13} variant="Linear" />}
+										onClick={() => handleUpdateContact(group)}
+										disabled={savingContact}
+										sx={smallActionSx}
+									>
+										Actualizar contacto
+									</Button>
+								</Tooltip>
+							  )
+							: (
+								<Tooltip title={`Guardar datos de ${GROUP_LABELS[group] || group} como nuevo contacto`}>
+									<Button size="small" startIcon={<Save2 size={13} variant="Linear" />} onClick={() => openSaveDialog(group)} sx={smallActionSx}>
+										Guardar como contacto
+									</Button>
+								</Tooltip>
+							  )
+						: undefined,
+				)}
 
-				{/* Contact autocomplete selector */}
 				{isContactGroup && (
 					<Autocomplete
 						size="small"
@@ -862,11 +894,9 @@ export default function CreatePostalDocumentModal({
 						renderOption={(props, c: Contact) => (
 							<Box component="li" {...props} key={c._id}>
 								<Stack>
-									<Typography variant="body2" fontWeight={500}>
-										{getContactLabel(c)}
-									</Typography>
+									<Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{getContactLabel(c)}</Typography>
 									{c.role && (
-										<Typography variant="caption" color="textSecondary">
+										<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
 											{Array.isArray(c.role) ? c.role.join(", ") : c.role}
 											{c.city ? ` · ${c.city}` : ""}
 										</Typography>
@@ -878,12 +908,13 @@ export default function CreatePostalDocumentModal({
 						renderInput={(params) => (
 							<TextField
 								{...params}
-								placeholder={`Buscar contacto para ${GROUP_LABELS[group] || group}...`}
+								placeholder={`Buscar contacto para ${(GROUP_LABELS[group] || group).toLowerCase()}...`}
+								sx={inputSx}
 								InputProps={{
 									...params.InputProps,
 									startAdornment: (
 										<>
-											<Profile2User size={16} style={{ marginRight: 6, opacity: 0.5 }} />
+											<Profile2User size={15} style={{ marginRight: 6, opacity: 0.55, color: theme.palette.text.secondary }} />
 											{params.InputProps.startAdornment}
 										</>
 									),
@@ -895,7 +926,6 @@ export default function CreatePostalDocumentModal({
 					/>
 				)}
 
-				{/* Fields — consecutive checkboxes are grouped inline */}
 				<Stack spacing={1.5}>
 					{groupFieldsForRender(fields).map((item, i) =>
 						Array.isArray(item) ? (
@@ -911,74 +941,206 @@ export default function CreatePostalDocumentModal({
 		);
 	};
 
+	// ── Dialog header brand atmosférico ──────────────────────────────────────
+
+	const dialogHeader = (
+		<Box
+			sx={{
+				position: "relative",
+				overflow: "hidden",
+				p: { xs: 2.25, sm: 2.5 },
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+				borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+			}}
+		>
+			<Box
+				sx={{
+					position: "absolute",
+					top: -60,
+					right: -40,
+					width: 220,
+					height: 220,
+					borderRadius: "50%",
+					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
+					pointerEvents: "none",
+				}}
+			/>
+			<Box
+				sx={{
+					position: "absolute",
+					inset: 0,
+					backgroundImage: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)} 1px, transparent 1px)`,
+					backgroundSize: "20px 20px",
+					maskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+					WebkitMaskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+					opacity: 0.55,
+					pointerEvents: "none",
+				}}
+			/>
+			<Stack direction="row" alignItems="center" spacing={1.5} sx={{ position: "relative" }}>
+				<Box
+					sx={{
+						width: 40,
+						height: 40,
+						borderRadius: 1.5,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+						color: BRAND_BLUE,
+						flexShrink: 0,
+					}}
+				>
+					<DocumentText size={20} variant="Bulk" />
+				</Box>
+				<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+					<Stack direction="row" spacing={0.75} alignItems="center">
+						<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+						<Typography
+							sx={{
+								fontSize: "0.6rem",
+								fontWeight: 600,
+								letterSpacing: "0.08em",
+								textTransform: "uppercase",
+								color: "text.secondary",
+							}}
+						>
+							{step === 0 ? "Nuevo Documento" : "Completar formulario"}
+						</Typography>
+					</Stack>
+					<Typography
+						sx={{
+							fontSize: "1.05rem",
+							fontWeight: 600,
+							letterSpacing: "-0.015em",
+							color: "text.primary",
+							overflow: "hidden",
+							textOverflow: "ellipsis",
+							whiteSpace: "nowrap",
+						}}
+					>
+						{step === 0 ? "Elegí una plantilla" : selectedTemplate?.name || "Plantilla"}
+					</Typography>
+					<Typography
+						sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}
+					>
+						{step === 0
+							? "Seleccioná el modelo que querés usar para tu documento."
+							: "Completá los datos para generar el PDF."}
+					</Typography>
+				</Stack>
+				<IconButton onClick={handleClose_} sx={iconBtnSx} aria-label="cerrar">
+					<CloseSquare size={20} variant="Linear" />
+				</IconButton>
+			</Stack>
+		</Box>
+	);
+
 	// ── Render ────────────────────────────────────────────────────────────────
 
 	return (
 		<>
-			<Dialog open={open} onClose={handleClose_} maxWidth={step === 1 ? "lg" : "md"} fullWidth>
-				<DialogTitle>{step === 0 ? "Seleccioná una plantilla" : `Completar formulario — ${selectedTemplate?.name}`}</DialogTitle>
+			<Dialog open={open} onClose={handleClose_} maxWidth={step === 1 ? "lg" : "md"} fullWidth PaperProps={{ sx: dialogPaperSx }}>
+				{dialogHeader}
 
-				<DialogContent dividers>
-					{/* ── Step 0: template selection ── */}
+				<DialogContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+					{/* ── Step 0: template selection (solo modelos del sistema) ── */}
 					{step === 0 && (
 						<>
 							{loadingTemplates ? (
 								<Stack alignItems="center" justifyContent="center" sx={{ py: 6 }}>
-									<CircularProgress />
+									<CircularProgress size={32} sx={{ color: BRAND_BLUE }} />
 								</Stack>
 							) : (
-								<>
-									<Tabs value={templateTab} onChange={(_e, v) => setTemplateTab(v)} sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>
-										<Tab label="Modelos del sistema" />
-										<Tab label="Mis modelos" />
-									</Tabs>
-									{(() => {
-										const filtered = templates.filter((t) => (templateTab === 0 ? t.source !== "user" : t.source === "user"));
-										if (filtered.length === 0) {
-											return (
-												<Typography color="textSecondary" align="center" sx={{ py: 4 }}>
-													{templateTab === 0 ? "No hay modelos del sistema disponibles." : "Todavía no creaste ningún modelo propio."}
-												</Typography>
-											);
-										}
+								(() => {
+									const filtered = templates.filter((t) => t.source !== "user");
+									if (filtered.length === 0) {
 										return (
-											<Grid container spacing={2}>
-												{filtered.map((tpl) => (
-													<Grid item xs={12} sm={6} md={4} key={tpl._id}>
-														<Card variant="outlined" sx={{ height: "100%" }}>
-															<CardActionArea onClick={() => handleSelectTemplate(tpl)} sx={{ height: "100%" }}>
-																<CardContent>
-																	<Stack spacing={1}>
-																		<Chip
-																			label={tpl.category}
-																			size="small"
-																			color="primary"
-																			variant="outlined"
-																			sx={{ alignSelf: "flex-start" }}
-																		/>
-																		<Typography variant="subtitle1" fontWeight={600}>
-																			{tpl.name}
-																		</Typography>
-																		<Typography variant="body2" color="textSecondary">
-																			{tpl.description}
-																		</Typography>
-																	</Stack>
-																</CardContent>
-															</CardActionArea>
-														</Card>
-													</Grid>
-												))}
-											</Grid>
+											<Stack alignItems="center" justifyContent="center" spacing={1.5} sx={{ py: 6 }}>
+												<Box
+													sx={{
+														width: 52,
+														height: 52,
+														borderRadius: 1.5,
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+														border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+														color: BRAND_BLUE,
+													}}
+												>
+													<DocumentText size={24} variant="Bulk" />
+												</Box>
+												<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>
+													Sin modelos del sistema
+												</Typography>
+												<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", textAlign: "center", maxWidth: 320, textWrap: "pretty" }}>
+													No hay modelos del sistema disponibles en este momento.
+												</Typography>
+											</Stack>
 										);
-									})()}
-								</>
+									}
+									return (
+										<Grid container spacing={1.5}>
+											{filtered.map((tpl) => (
+												<Grid item xs={12} sm={6} md={4} key={tpl._id}>
+													<Box
+														onClick={() => handleSelectTemplate(tpl)}
+														sx={{
+															p: 1.5,
+															height: "100%",
+															borderRadius: 1.5,
+															cursor: "pointer",
+															bgcolor: "background.paper",
+															border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`,
+															transition: "border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease",
+															display: "flex",
+															flexDirection: "column",
+															"&:hover": {
+																borderColor: alpha(BRAND_BLUE, isDark ? 0.45 : 0.32),
+																bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+																transform: "translateY(-1px)",
+															},
+														}}
+													>
+														<Stack spacing={1}>
+															<CategoryPill label={tpl.category} />
+															<Typography
+																sx={{
+																	fontSize: "0.95rem",
+																	fontWeight: 600,
+																	letterSpacing: "-0.005em",
+																	color: "text.primary",
+																}}
+															>
+																{tpl.name}
+															</Typography>
+															<Typography
+																sx={{
+																	fontSize: "0.78rem",
+																	color: "text.secondary",
+																	letterSpacing: "-0.005em",
+																	textWrap: "pretty",
+																}}
+															>
+																{tpl.description}
+															</Typography>
+														</Stack>
+													</Box>
+												</Grid>
+											))}
+										</Grid>
+									);
+								})()
 							)}
 						</>
 					)}
 
 					{/* ── Step 1: form ── */}
 					{step === 1 && selectedTemplate && (
-						<Stack spacing={2.5} sx={{ mt: 0.5 }}>
+						<Stack spacing={2.5}>
 							{/* Document metadata */}
 							<Grid container spacing={2} alignItems="center">
 								<Grid item xs={12} sm={7}>
@@ -989,6 +1151,7 @@ export default function CreatePostalDocumentModal({
 										fullWidth
 										value={title}
 										onChange={(e) => setTitle(e.target.value)}
+										sx={inputSx}
 									/>
 								</Grid>
 								<Grid item xs={12} sm={4}>
@@ -998,6 +1161,7 @@ export default function CreatePostalDocumentModal({
 										fullWidth
 										value={description}
 										onChange={(e) => setDescription(e.target.value)}
+										sx={inputSx}
 									/>
 								</Grid>
 								{import.meta.env.DEV && selectedTemplate.slug && DEV_FILL_DATA[selectedTemplate.slug] && (
@@ -1005,15 +1169,23 @@ export default function CreatePostalDocumentModal({
 										<Tooltip title="[DEV] Rellenar todos los campos con datos de prueba">
 											<Button
 												size="small"
-												variant="outlined"
-												color="warning"
 												fullWidth
 												onClick={() => {
 													const dev = DEV_FILL_DATA[selectedTemplate!.slug!];
 													setFormValues((prev) => ({ ...prev, ...dev.fields }));
 													if (!title) setTitle(dev.title);
 												}}
-												sx={{ fontSize: "0.65rem", py: 0.75, whiteSpace: "nowrap" }}
+												sx={{
+													textTransform: "none",
+													fontSize: "0.65rem",
+													fontWeight: 600,
+													py: 0.75,
+													whiteSpace: "nowrap",
+													borderRadius: 1,
+													border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.36 : 0.28)}`,
+													color: STALE_AMBER,
+													"&:hover": { bgcolor: alpha(STALE_AMBER, isDark ? 0.14 : 0.08), borderColor: alpha(STALE_AMBER, 0.5) },
+												}}
 											>
 												DEV Fill
 											</Button>
@@ -1022,7 +1194,7 @@ export default function CreatePostalDocumentModal({
 								)}
 							</Grid>
 
-							<Divider />
+							<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />
 
 							{/* Template fields grouped */}
 							{(() => {
@@ -1032,7 +1204,6 @@ export default function CreatePostalDocumentModal({
 									[...selectedTemplate.fields]
 										.sort((a, b) => a.order - b.order)
 										.forEach((f) => {
-											// Skip internal rendering fields (not user-facing)
 											if (f.group === "__system" || f.type === "flow-section") return;
 											if (!gs[f.group]) {
 												gs[f.group] = [];
@@ -1042,7 +1213,6 @@ export default function CreatePostalDocumentModal({
 										});
 									return { groups: gs, groupOrder: go };
 								})();
-								// Pair destinatario + remitente side-by-side when consecutive
 								const renderItems: Array<string | [string, string]> = [];
 								let ri = 0;
 								while (ri < groupOrder.length) {
@@ -1072,19 +1242,17 @@ export default function CreatePostalDocumentModal({
 										<Box key={item}>
 											{renderGroup(item, groups[item])}
 											{CONTACT_GROUPS.includes(item as ContactGroupKey) && item !== groupOrder[groupOrder.length - 1] && (
-												<Divider sx={{ mt: 2 }} />
+												<Box sx={{ height: 1, mt: 2, bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />
 											)}
 										</Box>
 									);
 								});
 							})()}
 
-							{/* ── Vincular ── */}
-							<Divider />
+							{/* Vincular */}
+							<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />
 							<Box>
-								<Typography variant="subtitle2" color="primary" fontWeight={700} sx={{ mb: 1.5 }}>
-									VINCULAR (opcional)
-								</Typography>
+								{groupHeader("Vincular (opcional)")}
 								<Stack spacing={1.5}>
 									<Autocomplete
 										size="small"
@@ -1096,39 +1264,48 @@ export default function CreatePostalDocumentModal({
 										renderOption={(props, f: FolderData) => (
 											<Box component="li" {...props} key={f._id}>
 												<Stack>
-													<Typography variant="body2" fontWeight={500}>
-														{f.folderName}
-													</Typography>
+													<Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{f.folderName}</Typography>
 													{f.folderFuero && (
-														<Typography variant="caption" color="textSecondary">
-															{f.folderFuero}
-														</Typography>
+														<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>{f.folderFuero}</Typography>
 													)}
 												</Stack>
 											</Box>
 										)}
-										renderInput={(params) => <TextField {...params} label="Vincular con carpeta" placeholder="Buscar carpeta..." />}
+										renderInput={(params) => <TextField {...params} label="Vincular con carpeta" placeholder="Buscar carpeta..." sx={inputSx} />}
 										noOptionsText="Sin carpetas disponibles"
 									/>
 									{selectedTemplate.supportsTracking && !prefilledTrackingId && (
 										<Box>
 											<Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
-												<Button
-													size="small"
-													variant={trackingMode === "link" ? "contained" : "outlined"}
-													onClick={() => setTrackingMode("link")}
-													sx={{ fontSize: "0.7rem" }}
-												>
-													Vincular existente
-												</Button>
-												<Button
-													size="small"
-													variant={trackingMode === "create" ? "contained" : "outlined"}
-													onClick={() => setTrackingMode("create")}
-													sx={{ fontSize: "0.7rem" }}
-												>
-													Crear seguimiento
-												</Button>
+												{(["link", "create"] as const).map((mode) => {
+													const active = trackingMode === mode;
+													return (
+														<Button
+															key={mode}
+															size="small"
+															onClick={() => setTrackingMode(mode)}
+															sx={{
+																textTransform: "none",
+																fontSize: "0.75rem",
+																fontWeight: 600,
+																letterSpacing: "-0.005em",
+																py: 0.4,
+																px: 1.25,
+																borderRadius: 1,
+																border: `1px solid ${active ? alpha(BRAND_BLUE, 0.55) : alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+																bgcolor: active ? alpha(BRAND_BLUE, isDark ? 0.18 : 0.1) : "transparent",
+																color: active ? BRAND_BLUE : "text.secondary",
+																"&:hover": {
+																	bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.06),
+																	borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.3),
+																	color: BRAND_BLUE,
+																},
+															}}
+														>
+															{mode === "link" ? "Vincular existente" : "Crear seguimiento"}
+														</Button>
+													);
+												})}
 											</Stack>
 
 											{trackingMode === "link" && (
@@ -1142,18 +1319,16 @@ export default function CreatePostalDocumentModal({
 													renderOption={(props, t: PostalTrackingType) => (
 														<Box component="li" {...props} key={t._id}>
 															<Stack>
-																<Typography variant="body2" fontWeight={500}>
+																<Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>
 																	{t.label || `${t.codeId} ${t.numberId}`}
 																</Typography>
-																<Typography variant="caption" color="textSecondary">
+																<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
 																	{t.trackingStatus || t.processingStatus}
 																</Typography>
 															</Stack>
 														</Box>
 													)}
-													renderInput={(params) => (
-														<TextField {...params} label="Buscar seguimiento..." placeholder="Buscar seguimiento..." />
-													)}
+													renderInput={(params) => <TextField {...params} label="Buscar seguimiento..." sx={inputSx} />}
 													noOptionsText="Sin seguimientos disponibles"
 												/>
 											)}
@@ -1161,9 +1336,14 @@ export default function CreatePostalDocumentModal({
 											{trackingMode === "create" && (
 												<Stack spacing={1.5}>
 													<Stack direction="row" spacing={1.5}>
-														<FormControl size="small" sx={{ minWidth: 80 }}>
+														<FormControl size="small" sx={{ minWidth: 90 }}>
 															<InputLabel>Prefijo</InputLabel>
-															<Select label="Prefijo" value={newTrackingCodeId} onChange={(e) => setNewTrackingCodeId(e.target.value)}>
+															<Select
+																label="Prefijo"
+																value={newTrackingCodeId}
+																onChange={(e) => setNewTrackingCodeId(e.target.value)}
+																sx={selectSx}
+															>
 																{VALID_CODE_IDS.map((c) => (
 																	<MenuItem key={c} value={c}>
 																		{c}
@@ -1180,6 +1360,7 @@ export default function CreatePostalDocumentModal({
 															error={newTrackingNumberId.length > 0 && !newTrackingNumberIdValid}
 															helperText={newTrackingNumberId.length > 0 && !newTrackingNumberIdValid ? "9 dígitos exactos" : ""}
 															inputProps={{ inputMode: "numeric" }}
+															sx={inputSx}
 														/>
 													</Stack>
 													<TextField
@@ -1189,13 +1370,14 @@ export default function CreatePostalDocumentModal({
 														value={newTrackingLabel}
 														placeholder={title || "Se usará el título del documento"}
 														onChange={(e) => setNewTrackingLabel(e.target.value)}
+														sx={inputSx}
 													/>
 												</Stack>
 											)}
 										</Box>
 									)}
 									{prefilledTrackingId && selectedTemplate.supportsTracking && (
-										<Typography variant="caption" color="textSecondary">
+										<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 											Seguimiento postal vinculado automáticamente.
 										</Typography>
 									)}
@@ -1205,22 +1387,22 @@ export default function CreatePostalDocumentModal({
 					)}
 				</DialogContent>
 
-				<DialogActions sx={{ px: 3, py: 2 }}>
+				<DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
 					{step === 0 && (
-						<Button onClick={handleClose_} color="secondary" variant="outlined">
+						<Button onClick={handleClose_} sx={ghostBtnSx}>
 							Cancelar
 						</Button>
 					)}
 					{step === 1 && (
 						<>
-							<Button onClick={handleBack} color="secondary" variant="outlined">
+							<Button onClick={handleBack} sx={ghostBtnSx}>
 								Volver
 							</Button>
 							<Button
 								onClick={handleSubmit}
-								variant="contained"
 								disabled={generating || !title.trim()}
-								startIcon={generating ? <CircularProgress size={16} color="inherit" /> : undefined}
+								startIcon={generating ? <CircularProgress size={14} color="inherit" /> : undefined}
+								sx={brandPrimarySx}
 							>
 								Generar documento
 							</Button>
@@ -1230,15 +1412,84 @@ export default function CreatePostalDocumentModal({
 			</Dialog>
 
 			{/* ── Save as contact dialog ── */}
-			<Dialog open={saveDialog.open} onClose={() => setSaveDialog((s) => ({ ...s, open: false }))} maxWidth="xs" fullWidth>
-				<DialogTitle>Guardar como contacto</DialogTitle>
-				<DialogContent>
-					<Stack spacing={2} sx={{ mt: 1 }}>
-						<Typography variant="body2" color="textSecondary">
-							Los datos de <strong>{saveDialog.group ? GROUP_LABELS[saveDialog.group] : ""}</strong> se guardarán como un nuevo contacto.
+			<Dialog
+				open={saveDialog.open}
+				onClose={() => setSaveDialog((s) => ({ ...s, open: false }))}
+				maxWidth="xs"
+				fullWidth
+				PaperProps={{ sx: dialogPaperSx }}
+			>
+				<Box
+					sx={{
+						position: "relative",
+						overflow: "hidden",
+						p: { xs: 2.25, sm: 2.5 },
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+						borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+					}}
+				>
+					<Box
+						sx={{
+							position: "absolute",
+							top: -60,
+							right: -40,
+							width: 200,
+							height: 200,
+							borderRadius: "50%",
+							background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
+							pointerEvents: "none",
+						}}
+					/>
+					<Stack direction="row" alignItems="center" spacing={1.5} sx={{ position: "relative" }}>
+						<Box
+							sx={{
+								width: 40,
+								height: 40,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+							}}
+						>
+							<Save2 size={20} variant="Bulk" />
+						</Box>
+						<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+							<Stack direction="row" spacing={0.75} alignItems="center">
+								<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+								<Typography
+									sx={{
+										fontSize: "0.6rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+									}}
+								>
+									Nuevo contacto
+								</Typography>
+							</Stack>
+							<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+								Guardar como contacto
+							</Typography>
+						</Stack>
+						<IconButton onClick={() => setSaveDialog((s) => ({ ...s, open: false }))} sx={iconBtnSx} aria-label="cerrar">
+							<CloseSquare size={20} variant="Linear" />
+						</IconButton>
+					</Stack>
+				</Box>
+				<DialogContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+					<Stack spacing={2}>
+						<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+							Los datos de{" "}
+							<Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
+								{saveDialog.group ? GROUP_LABELS[saveDialog.group] : ""}
+							</Box>{" "}
+							se guardarán como un nuevo contacto.
 						</Typography>
 
-						{/* Preview name */}
 						<TextField
 							size="small"
 							label="Nombre del contacto"
@@ -1251,6 +1502,7 @@ export default function CreatePostalDocumentModal({
 									? formValues.rem_nombre || ""
 									: formValues.suscribe_nombre || ""
 							}
+							sx={inputSx}
 						/>
 
 						<FormControl size="small" fullWidth>
@@ -1264,6 +1516,7 @@ export default function CreatePostalDocumentModal({
 										contactType: e.target.value as "Humana" | "Jurídica",
 									}))
 								}
+								sx={selectSx}
 							>
 								<MenuItem value="Humana">Persona física</MenuItem>
 								<MenuItem value="Jurídica">Persona jurídica / Empresa</MenuItem>
@@ -1277,18 +1530,19 @@ export default function CreatePostalDocumentModal({
 							placeholder="Ej: Empleador, Trabajador, Cliente..."
 							value={saveDialog.role}
 							onChange={(e) => setSaveDialog((s) => ({ ...s, role: e.target.value }))}
+							sx={inputSx}
 						/>
 					</Stack>
 				</DialogContent>
-				<DialogActions sx={{ px: 3, py: 2 }}>
-					<Button onClick={() => setSaveDialog((s) => ({ ...s, open: false }))} color="secondary" variant="outlined">
+				<DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
+					<Button onClick={() => setSaveDialog((s) => ({ ...s, open: false }))} sx={ghostBtnSx}>
 						Cancelar
 					</Button>
 					<Button
 						onClick={handleSaveContact}
-						variant="contained"
 						disabled={savingContact || !saveDialog.role.trim()}
-						startIcon={savingContact ? <CircularProgress size={16} color="inherit" /> : undefined}
+						startIcon={savingContact ? <CircularProgress size={14} color="inherit" /> : undefined}
+						sx={brandPrimarySx}
 					>
 						Guardar contacto
 					</Button>

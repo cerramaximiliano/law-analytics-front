@@ -20,30 +20,22 @@ import {
 	Popover,
 	Link,
 } from "@mui/material";
-import {
-	Edit,
-	Trash,
-	Eye,
-	Link2,
-	DocumentText,
-	Judge,
-	NotificationStatus,
-	Status,
-	Clock,
-	TickCircle,
-	DocumentDownload,
-	Link1,
-} from "iconsax-react";
+import { alpha } from "@mui/material/styles";
+import { Edit, Trash, Eye, Link2, Clock, TickCircle, DocumentDownload, Link1, TableDocument } from "iconsax-react";
 import { Movement, PaginationInfo, PjnAccess } from "types/movements";
 import dayjs from "utils/dayjs-config";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 import { visuallyHidden } from "@mui/utils";
 import { dispatch } from "store";
 import { getMovementsByFolderId, toggleMovementComplete } from "store/reducers/movements";
 import { useParams } from "react-router";
 import PDFViewer from "components/shared/PDFViewer";
+import MovementTextViewer from "components/shared/MovementTextViewer";
 import PaginationWithJump from "components/shared/PaginationWithJump";
 import PjnAccessAlert from "components/shared/PjnAccessAlert";
 import ScrollX from "components/ScrollX";
+import { useTeam } from "contexts/TeamContext";
+import { getMovementIcon, getMovementColor, parseDate, formatDate } from "../utils/movementUtils";
 
 interface MovementsTableProps {
 	movements: Movement[];
@@ -51,6 +43,7 @@ interface MovementsTableProps {
 	onEdit: (movement: Movement) => void;
 	onDelete: (id: string) => void;
 	onView: (movement: Movement) => void;
+	onOpenExplorer?: (movement: Movement) => void;
 	filters?: any;
 	pagination?: PaginationInfo;
 	isLoading?: boolean;
@@ -79,91 +72,6 @@ const headCells: HeadCell[] = [
 	{ id: "actions", label: "Acciones", numeric: false, width: "140px" },
 ];
 
-const getMovementIcon = (movement?: string) => {
-	switch (movement) {
-		case "Escrito-Actor":
-		case "Escrito-Demandado":
-			return <DocumentText size={16} />;
-		case "Despacho":
-			return <Judge size={16} />;
-		case "Cédula":
-		case "Oficio":
-			return <NotificationStatus size={16} />;
-		case "Evento":
-			return <Status size={16} />;
-		default:
-			return <DocumentText size={16} />;
-	}
-};
-
-const getMovementColor = (movement?: string): "success" | "error" | "secondary" | "primary" | "warning" | "default" => {
-	switch (movement) {
-		case "Escrito-Actor":
-			return "success";
-		case "Escrito-Demandado":
-			return "error";
-		case "Despacho":
-			return "secondary";
-		case "Cédula":
-		case "Oficio":
-			return "primary";
-		case "Evento":
-			return "warning";
-		default:
-			return "default";
-	}
-};
-
-const parseDate = (dateString: string) => {
-	try {
-		// Try to parse as ISO date first
-		if (dateString.includes("T") || dateString.includes("-")) {
-			const parsed = dayjs(dateString);
-			if (parsed.isValid()) {
-				// Normalizar a medianoche en zona horaria local para evitar cambios de fecha
-				return dayjs(parsed.format("YYYY-MM-DD")).toDate();
-			}
-		}
-
-		// Try to parse as DD/MM/YYYY format
-		const parsed = dayjs(dateString, "DD/MM/YYYY");
-		if (parsed.isValid()) {
-			return parsed.toDate();
-		}
-
-		return new Date(0);
-	} catch {
-		return new Date(0);
-	}
-};
-
-const formatDate = (dateString: string) => {
-	if (!dateString || dateString.trim() === "") {
-		return "";
-	}
-
-	try {
-		// Try to parse as ISO date first
-		if (dateString.includes("T") || dateString.includes("-")) {
-			const parsed = dayjs.utc(dateString);
-			if (parsed.isValid()) {
-				// Usar componentes de fecha UTC para evitar conversión de zona horaria
-				return parsed.format("DD/MM/YYYY");
-			}
-		}
-
-		// Try to parse as DD/MM/YYYY format
-		const parsed = dayjs(dateString, "DD/MM/YYYY");
-		if (parsed.isValid()) {
-			return parsed.format("DD/MM/YYYY");
-		}
-
-		return "";
-	} catch {
-		return "";
-	}
-};
-
 // Helper para construir el filtro de movimiento
 // Nota: Todos los tipos (tanto generales como PJN) usan el campo 'movement' en el backend
 const buildMovementFilter = (type: string) => {
@@ -184,6 +92,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	onEdit,
 	onDelete,
 	onView,
+	onOpenExplorer,
 	filters = {},
 	pagination,
 	isLoading,
@@ -194,7 +103,9 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 }) => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+	const { canDelete, canUpdate } = useTeam();
 	const [order, setOrder] = useState<Order>("desc");
 	const [orderBy, setOrderBy] = useState<keyof Movement>("time");
 	const [page, setPage] = useState(0);
@@ -208,6 +119,10 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	const [selectedPdfTitle, setSelectedPdfTitle] = useState<string>("");
 	const [selectedMovementId, setSelectedMovementId] = useState<string>("");
 	const [isLoadingMoreForPdf, setIsLoadingMoreForPdf] = useState(false);
+	// Estado para el visor de texto (SCBA/MEV: no hay PDF embedable, el
+	// "documento" es el texto extraído + lista de adjuntos)
+	const [textViewerOpen, setTextViewerOpen] = useState(false);
+	const [textViewerMovement, setTextViewerMovement] = useState<Movement | null>(null);
 
 	// Estados para el popover de attachments
 	const [attachmentsAnchor, setAttachmentsAnchor] = useState<HTMLElement | null>(null);
@@ -337,6 +252,36 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	const handlePdfNavigate = (movement: Movement) => {
 		setSelectedPdfUrl(movement.link || "");
 		setSelectedPdfTitle(movement.title || "Documento");
+		setSelectedMovementId(movement._id || "");
+	};
+
+	// Decide qué viewer abrir según el tipo de documento del movimiento.
+	//   - documentType='text' (SCBA migrado vía keep, o cualquier mov que el
+	//     backend marque explícitamente): MovementTextViewer.
+	//   - documentType='pdf' o sin marcar pero con link: PDFViewer (PJN, MEV
+	//     con su endpoint /api/movements/mev/.../documento, links manuales).
+	//
+	// Importante: NO usamos source='mev' como trigger de TextViewer porque
+	// MEV legacy ya renderiza vía PDFViewer (link interno que sirve un HTML).
+	// Para que MEV use TextViewer hay que adaptar también el mapper MEV del
+	// backend para que pueble description + attachments con el shape esperado.
+	const openMovementDocument = (movement: Movement) => {
+		const isTextDoc = movement.documentType === "text";
+		if (isTextDoc) {
+			setTextViewerMovement(movement);
+			setSelectedMovementId(movement._id || "");
+			setTextViewerOpen(true);
+		} else {
+			setSelectedPdfUrl(movement.link || "");
+			setSelectedPdfTitle(movement.title || "Documento");
+			setSelectedMovementId(movement._id || "");
+			setPdfViewerOpen(true);
+		}
+	};
+
+	// Navegación dentro del TextViewer entre movs visibles
+	const handleTextNavigate = (movement: Movement) => {
+		setTextViewerMovement(movement);
 		setSelectedMovementId(movement._id || "");
 	};
 
@@ -507,10 +452,32 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 								))
 							) : movements.length === 0 ? (
 								<TableRow key="no-data-row">
-									<TableCell colSpan={headCells.length} align="center">
-										<Typography variant="subtitle1" color="textSecondary" sx={{ py: 3 }}>
-											No se encontraron movimientos
-										</Typography>
+									<TableCell colSpan={headCells.length} align="center" sx={{ py: 5, border: "none" }}>
+										<Stack alignItems="center" spacing={1.5}>
+											<Box
+												sx={{
+													width: 56,
+													height: 56,
+													borderRadius: 1.5,
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+													border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+													color: BRAND_BLUE,
+												}}
+											>
+												<TableDocument size={28} variant="Bulk" />
+											</Box>
+											<Stack alignItems="center" spacing={0.375}>
+												<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.015em" }}>
+													Sin movimientos registrados
+												</Typography>
+												<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", maxWidth: 360, textAlign: "center" }}>
+													Los escritos y despachos judiciales aparecerán acá cuando se sincronicen o agreguen.
+												</Typography>
+											</Stack>
+										</Stack>
 									</TableCell>
 								</TableRow>
 							) : (
@@ -558,6 +525,18 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																	}}
 																>
 																	Sincronizado • MEV
+																</Typography>
+															)}
+															{movement.source === "scba" && (
+																<Typography
+																	variant="caption"
+																	color="text.secondary"
+																	sx={{
+																		fontStyle: "italic",
+																		fontSize: "0.7rem",
+																	}}
+																>
+																	Sincronizado • SCBA
 																</Typography>
 															)}
 															{movement.attachments && movement.attachments.length > 0 && (
@@ -657,30 +636,35 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 														: "-"}
 												</TableCell>
 												<TableCell>
-													{movement.link ? (
-														<Tooltip title="Ver documento">
-															<IconButton
-																size="small"
-																color="primary"
-																onClick={(e) => {
-																	e.stopPropagation();
-																	console.log("Documento URL:", movement.link);
-																	setSelectedPdfUrl(movement.link || "");
-																	setSelectedPdfTitle(movement.title || "Documento");
-																	setSelectedMovementId(movement._id || "");
-																	setPdfViewerOpen(true);
-																}}
-															>
-																<Link2 size={18} />
-															</IconButton>
-														</Tooltip>
-													) : (
-														"-"
-													)}
+													{(() => {
+														// Mostrar el botón si hay algo que ver:
+														//   - documentType='text': texto extraído o adjuntos.
+														//   - otro caso (PJN/MEV/manual): link directo (comportamiento legacy).
+														const isText = movement.documentType === "text";
+														const hasContent = isText
+															? !!(movement.description?.trim() || (movement.attachments && movement.attachments.length > 0))
+															: !!movement.link;
+														return hasContent ? (
+															<Tooltip title="Ver documento">
+																<IconButton
+																	size="small"
+																	color="primary"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		openMovementDocument(movement);
+																	}}
+																>
+																	<Link2 size={18} />
+																</IconButton>
+															</Tooltip>
+														) : (
+															"-"
+														);
+													})()}
 												</TableCell>
 												<TableCell>
 													<Stack direction="row" spacing={0.5}>
-														{movement.dateExpiration && (
+														{movement.dateExpiration && canUpdate && (
 															<Tooltip title={movement.completed ? "Marcar como pendiente" : "Marcar como completado"}>
 																<IconButton
 																	size="small"
@@ -708,32 +692,36 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																<Eye size={18} />
 															</IconButton>
 														</Tooltip>
-														{movement.source !== "pjn" && movement.source !== "mev" && (
+														{movement.source !== "pjn" && movement.source !== "mev" && movement.source !== "scba" && (
 															<>
-																<Tooltip title="Editar">
-																	<IconButton
-																		size="small"
-																		color="primary"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			onEdit(movement);
-																		}}
-																	>
-																		<Edit size={18} />
-																	</IconButton>
-																</Tooltip>
-																<Tooltip title="Eliminar">
-																	<IconButton
-																		size="small"
-																		color="error"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			onDelete(movement._id!);
-																		}}
-																	>
-																		<Trash size={18} />
-																	</IconButton>
-																</Tooltip>
+																{canUpdate && (
+																	<Tooltip title="Editar">
+																		<IconButton
+																			size="small"
+																			color="primary"
+																			onClick={(e) => {
+																				e.stopPropagation();
+																				onEdit(movement);
+																			}}
+																		>
+																			<Edit size={18} />
+																		</IconButton>
+																	</Tooltip>
+																)}
+																{canDelete && (
+																	<Tooltip title="Eliminar">
+																		<IconButton
+																			size="small"
+																			color="error"
+																			onClick={(e) => {
+																				e.stopPropagation();
+																				onDelete(movement._id!);
+																			}}
+																		>
+																			<Trash size={18} />
+																		</IconButton>
+																	</Tooltip>
+																)}
 															</>
 														)}
 													</Stack>
@@ -823,21 +811,20 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 					</Table>
 				</TableContainer>
 			</ScrollX>
-			{/* Barra de paginación personalizada */}
+			{/* Barra de paginación */}
 			<Box
 				sx={{
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "space-between",
 					flexDirection: isMobile ? "column" : "row",
-					gap: 2,
-					p: 2,
-					borderTop: 1,
-					borderColor: "divider",
+					gap: 1.5,
+					px: 1.5,
+					py: 1,
+					borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
 				}}
 			>
-				{/* Controles de filas por página y información */}
-				<Stack direction="row" spacing={isMobile ? 2 : 3} alignItems="center" flexWrap="wrap" sx={{ width: isMobile ? "100%" : "auto" }}>
+				<Stack direction="row" spacing={isMobile ? 1.5 : 2} alignItems="center" flexWrap="wrap" sx={{ width: isMobile ? "100%" : "auto" }}>
 					<TablePagination
 						rowsPerPageOptions={[5, 10, 25, 50]}
 						component="div"
@@ -846,29 +833,41 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 						page={page}
 						onPageChange={handleChangePage}
 						onRowsPerPageChange={handleChangeRowsPerPage}
-						labelRowsPerPage={isMobile ? "Filas:" : "Filas por página:"}
+						labelRowsPerPage={isMobile ? "Filas" : "Filas por página"}
 						labelDisplayedRows={({ from, to, count }) =>
-							isMobile ? `${from}-${to} / ${count}` : `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
+							isMobile ? `${from}–${to} / ${count}` : `${from}–${to} de ${count !== -1 ? count : `más de ${to}`}`
 						}
 						sx={{
 							"& .MuiTablePagination-toolbar": {
 								paddingLeft: 0,
-								minHeight: isMobile ? 40 : 52,
+								minHeight: isMobile ? 40 : 44,
 							},
-							"& .MuiTablePagination-actions": {
-								display: "none", // Ocultar las flechas predeterminadas
+							"& .MuiTablePagination-actions": { display: "none" },
+							"& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
+								fontSize: "0.74rem",
+								fontWeight: 500,
+								letterSpacing: "-0.005em",
+								color: "text.secondary",
+								fontVariantNumeric: "tabular-nums",
+							},
+							"& .MuiTablePagination-select": {
+								fontSize: "0.78rem",
+								fontWeight: 600,
+								color: BRAND_BLUE,
+								fontVariantNumeric: "tabular-nums",
+								borderRadius: 0.875,
+								"&:focus": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04) },
 							},
 						}}
 					/>
 				</Stack>
 
-				{/* Paginación con números */}
 				{pagination && pagination.pages > 1 && (
 					<PaginationWithJump page={page} totalPages={pagination.pages} onPageChange={handlePageChange} disabled={isLoading} />
 				)}
 			</Box>
 
-			{/* PDF Viewer Dialog con navegación */}
+			{/* PDF Viewer Dialog con navegación (PJN o cualquier link directo a PDF) */}
 			<PDFViewer
 				open={pdfViewerOpen}
 				onClose={() => setPdfViewerOpen(false)}
@@ -885,6 +884,35 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 				totalWithLinks={totalWithLinks}
 				documentsBeforeThisPage={documentsBeforeThisPage}
 				documentsInThisPage={documentsInThisPage}
+				onOpenExplorer={
+					onOpenExplorer
+						? () => {
+								// Find the current movement and open explorer with it
+								const currentMov = movements.find((m) => m._id === selectedMovementId) || movements.find((m) => m.link === selectedPdfUrl);
+								setPdfViewerOpen(false);
+								if (currentMov) {
+									onOpenExplorer(currentMov);
+								}
+						  }
+						: undefined
+				}
+			/>
+
+			{/* Text Viewer Dialog (SCBA/MEV: texto extraído + lista de adjuntos) */}
+			<MovementTextViewer
+				open={textViewerOpen}
+				onClose={() => setTextViewerOpen(false)}
+				movement={textViewerMovement}
+				movements={movements}
+				currentMovementId={selectedMovementId}
+				onNavigate={handleTextNavigate}
+				onRequestNextPage={handleRequestNextPageForPdf}
+				onRequestPreviousPage={handleRequestPreviousPageForPdf}
+				hasNextPage={pagination?.hasNext || false}
+				hasPreviousPage={pagination?.hasPrev || false}
+				isLoadingMore={isLoadingMoreForPdf}
+				totalWithLinks={totalWithLinks}
+				documentsBeforeThisPage={documentsBeforeThisPage}
 			/>
 
 			{/* Popover para mostrar archivos adjuntos */}

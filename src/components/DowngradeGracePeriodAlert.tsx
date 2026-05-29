@@ -44,7 +44,7 @@ const DowngradeGracePeriodAlert: React.FC = () => {
 	};
 
 	const handleSettingsClick = () => {
-		navigate("/apps/profiles/account/settings");
+		navigate("/apps/profiles/account/subscription");
 	};
 
 	return (
@@ -87,9 +87,9 @@ const DowngradeGracePeriodAlert: React.FC = () => {
 						{autoArchiveScheduled && (
 							<>
 								{" "}
-								<strong style={{ color: "black" }}>
+								<Box component="strong" sx={{ color: "text.primary" }}>
 									Importante: Si no archivas los recursos excedentes antes de la fecha de expiración, se archivarán automáticamente.
-								</strong>
+								</Box>
 							</>
 						)}{" "}
 						<Button

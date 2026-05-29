@@ -18,7 +18,7 @@
 import { test, expect } from "@playwright/test";
 import { loginViaForm } from "./helpers/auth";
 
-const VITE_BASE  = "http://localhost:5000";
+const VITE_BASE = "http://localhost:5000";
 const VITE_PROXY = "http://localhost:3000";
 
 const FAKE_ID = "000000000000000000000001";

@@ -31,7 +31,7 @@ const GroupedAutocomplete = (props: any) => {
 					height: 39.91,
 				},
 				"& input::placeholder": {
-					color: "#000000",
+					color: "text.primary",
 					opacity: 0.6,
 				},
 				"& .MuiOutlinedInput-root": {

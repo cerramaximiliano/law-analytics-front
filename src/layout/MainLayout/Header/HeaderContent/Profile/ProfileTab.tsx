@@ -6,7 +6,10 @@ import { useNavigate } from "react-router-dom";
 import { List, ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
 
 // assets
-import { Card, Logout, Profile, Setting2, TableDocument } from "iconsax-react";
+import { Card, Logout, Profile, Setting2, TableDocument, MessageQuestion } from "iconsax-react";
+
+// project-imports
+import { FEEDBACK_OPEN_EVENT } from "components/feedback/FeedbackWidget";
 
 // ==============================|| HEADER PROFILE - PROFILE TAB ||============================== //
 
@@ -66,7 +69,7 @@ const ProfileTab = ({ handleLogout, handleClose }: Props) => {
 
 			<ListItemButton
 				selected={selectedIndex === 5}
-				onClick={(event: MouseEvent<HTMLDivElement>) => handleListItemClick(event, 5, "/apps/profiles/account/settings")}
+				onClick={(event: MouseEvent<HTMLDivElement>) => handleListItemClick(event, 5, "/apps/profiles/account/subscription")}
 			>
 				<ListItemIcon>
 					<Card variant="Bulk" size={18} />
@@ -74,7 +77,20 @@ const ProfileTab = ({ handleLogout, handleClose }: Props) => {
 				<ListItemText primary="Suscripción" />
 			</ListItemButton>
 
-			<ListItemButton selected={selectedIndex === 6} onClick={handleLogout}>
+			<ListItemButton
+				selected={selectedIndex === 6}
+				onClick={() => {
+					window.dispatchEvent(new CustomEvent(FEEDBACK_OPEN_EVENT));
+					if (handleClose) handleClose();
+				}}
+			>
+				<ListItemIcon>
+					<MessageQuestion variant="Bulk" size={18} />
+				</ListItemIcon>
+				<ListItemText primary="Dejar feedback" />
+			</ListItemButton>
+
+			<ListItemButton selected={selectedIndex === 7} onClick={handleLogout}>
 				<ListItemIcon>
 					<Logout variant="Bulk" size={18} />
 				</ListItemIcon>

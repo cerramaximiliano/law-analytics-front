@@ -1,24 +1,38 @@
 import React from "react";
 import { useEffect } from "react";
-import { useTheme } from "@mui/material/styles";
-import { Box, CardContent, CircularProgress, Grid, LinearProgress, Stack, Typography, Alert } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
+import { Box, CircularProgress, LinearProgress, Stack, Typography } from "@mui/material";
 import MainCard from "components/MainCard";
+import { useNavigate } from "react-router-dom";
 import { useSelector, dispatch } from "store";
 import { getUnifiedStats } from "store/reducers/unifiedStats";
-import { Calendar, Timer1 } from "iconsax-react";
+import { CalendarRemove, Timer1 } from "iconsax-react";
+import { BRAND_BLUE } from "themes/dashboardTokens";
+import { ThemeMode } from "types/config";
 
 const ProjectRelease = () => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === ThemeMode.DARK;
+	const navigate = useNavigate();
 
-	// Obtener userId del usuario actual
 	const user = useSelector((state) => state.auth.user);
 	const userId = user?._id;
 
-	// Obtener datos del store unificado
+	// Card clickeable — navega al calendar donde se ven los vencimientos.
+	const cardClickableSx = {
+		cursor: "pointer",
+		transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
+		"&:hover": {
+			transform: "translateY(-2px)",
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.32 : 0.22),
+			boxShadow: `0 8px 22px ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+		},
+	};
+	const handleClickCard = () => navigate("/apps/calendar");
+
 	const { data: unifiedData, isLoading, isInitialized } = useSelector((state) => state.unifiedStats);
 	const upcomingDeadlines = unifiedData?.folders?.upcomingDeadlines;
 
-	// Mapear los datos al formato esperado
 	const deadlinesData = upcomingDeadlines
 		? {
 				next7Days: upcomingDeadlines.next7Days || 0,
@@ -27,153 +41,172 @@ const ProjectRelease = () => {
 		  }
 		: null;
 
-	// Cargar datos si no existen
 	useEffect(() => {
 		if (userId && !isInitialized && !unifiedData?.folders) {
 			dispatch(getUnifiedStats(userId, "folders"));
 		}
 	}, [userId, isInitialized, unifiedData]);
 
-	// Estado de carga
+	// Header reusable — brand-tinted icon + título + caption.
+	const renderHeader = (caption: React.ReactNode) => (
+		<Stack direction="row" alignItems="center" spacing={1.5}>
+			<Box
+				sx={{
+					width: 40,
+					height: 40,
+					borderRadius: 1.5,
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+					color: BRAND_BLUE,
+				}}
+			>
+				<CalendarRemove size={20} variant="Bulk" />
+			</Box>
+			<Stack spacing={0.25}>
+				<Typography variant="subtitle1" sx={{ letterSpacing: "-0.005em" }}>
+					Próximos vencimientos
+				</Typography>
+				{caption}
+			</Stack>
+		</Stack>
+	);
+
+	// Fila reusable — label + count + progress bar.
+	const renderRow = (label: string, count: number, percentage: number, color: string) => (
+		<Stack spacing={0.75}>
+			<Stack direction="row" justifyContent="space-between" alignItems="center">
+				<Stack direction="row" spacing={1} alignItems="center">
+					<Timer1 size={14} variant="Bold" color={color} />
+					<Typography variant="caption" sx={{ color, fontWeight: 600, letterSpacing: "-0.005em" }}>
+						{label}
+					</Typography>
+				</Stack>
+				<Typography
+					sx={{
+						fontSize: "1.05rem",
+						fontWeight: 600,
+						color,
+						fontVariantNumeric: "tabular-nums",
+						letterSpacing: "-0.01em",
+					}}
+				>
+					{count}
+				</Typography>
+			</Stack>
+			<LinearProgress
+				variant="determinate"
+				value={percentage}
+				sx={{
+					height: 6,
+					borderRadius: 1,
+					backgroundColor: alpha(theme.palette.text.primary, isDark ? 0.08 : 0.05),
+					"& .MuiLinearProgress-bar": {
+						borderRadius: 1,
+						bgcolor: color,
+					},
+				}}
+			/>
+		</Stack>
+	);
+
+	// Loading
 	if (isLoading && !deadlinesData) {
 		return (
 			<MainCard>
-				<CardContent>
-					<Stack spacing={2}>
-						<Stack spacing={0.75}>
-							<Typography variant="h5">Próximos Vencimientos</Typography>
-							<Typography variant="caption" color="secondary">
-								Cargando información...
-							</Typography>
-						</Stack>
-						<Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-							<CircularProgress size={24} />
-						</Box>
-					</Stack>
-				</CardContent>
+				<Stack spacing={2}>
+					{renderHeader(
+						<Typography variant="caption" sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}>
+							Cargando…
+						</Typography>,
+					)}
+					<Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+						<CircularProgress size={24} />
+					</Box>
+				</Stack>
 			</MainCard>
 		);
 	}
 
-	// Estado sin datos, pero con contexto y estructura
+	// Empty state — también clickeable para incentivar agregar vencimientos.
 	if (!deadlinesData) {
 		return (
-			<MainCard>
-				<CardContent>
-					<Stack spacing={2}>
-						<Stack spacing={0.75}>
-							<Typography variant="h5">Próximos Vencimientos</Typography>
-							<Typography variant="caption" color="secondary">
-								No hay vencimientos programados
-							</Typography>
-						</Stack>
-
-						<Box
-							sx={{
-								display: "flex",
-								flexDirection: "column",
-								alignItems: "center",
-								justifyContent: "center",
-								py: 3,
-								gap: 2,
-							}}
+			<MainCard onClick={handleClickCard} sx={cardClickableSx}>
+				<Stack spacing={2}>
+					{renderHeader(
+						<Typography variant="caption" sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}>
+							Sin vencimientos programados
+						</Typography>,
+					)}
+					<Box
+						sx={{
+							display: "flex",
+							flexDirection: "column",
+							alignItems: "center",
+							justifyContent: "center",
+							py: 3,
+							gap: 1.5,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`,
+							borderRadius: 1.5,
+						}}
+					>
+						<Typography
+							variant="body2"
+							sx={{ color: "text.secondary", letterSpacing: "-0.005em", textAlign: "center", textWrap: "balance", maxWidth: 280 }}
 						>
-							<Calendar size={32} variant="Bulk" color={theme.palette.text.secondary} />
-							<Typography variant="body2" color="text.secondary" align="center">
-								No hay carpetas con fechas de vencimiento en los próximos 30 días.
-							</Typography>
-							<Alert severity="info" sx={{ width: "100%", mt: 1 }}>
-								Las fechas de vencimiento se mostrarán aquí cuando se agreguen a las carpetas.
-							</Alert>
-						</Box>
-					</Stack>
-				</CardContent>
+							Las fechas de vencimiento se mostrarán acá cuando agregues alguna a tus carpetas.
+						</Typography>
+					</Box>
+				</Stack>
 			</MainCard>
 		);
 	}
 
-	// Calcular el total y los porcentajes
-	const total = deadlinesData.next30Days || 1; // Prevenir división por cero
+	const total = deadlinesData.next30Days || 1;
 	const next7DaysPercentage = Math.round((deadlinesData.next7Days / total) * 100);
 	const next15DaysPercentage = Math.round((deadlinesData.next15Days / total) * 100);
 
-	// Estado con datos
 	return (
-		<MainCard>
-			<CardContent>
-				<Grid container spacing={3}>
-					<Grid item xs={12}>
-						<Stack spacing={0.75}>
-							<Typography variant="h5">Próximos Vencimientos</Typography>
-							<Typography variant="caption" color="secondary">
-								En los próximos 30 días
-							</Typography>
-						</Stack>
-					</Grid>
-					<Grid item xs={12}>
-						<LinearProgress
-							variant="determinate"
-							value={next7DaysPercentage}
-							color="error"
+		<MainCard onClick={handleClickCard} sx={cardClickableSx}>
+			<Stack spacing={2.5}>
+				{renderHeader(
+					<Typography variant="caption" sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}>
+						En los próximos 30 días
+					</Typography>,
+				)}
+
+				<Stack spacing={2}>
+					{renderRow("Próximos 7 días", deadlinesData.next7Days, next7DaysPercentage, theme.palette.error.main)}
+					{renderRow("Próximos 15 días", deadlinesData.next15Days, next15DaysPercentage, theme.palette.warning.main)}
+				</Stack>
+
+				<Box
+					sx={{
+						pt: 1.5,
+						borderTop: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.08 : 0.05)}`,
+					}}
+				>
+					<Stack direction="row" justifyContent="space-between" alignItems="center">
+						<Typography variant="caption" sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}>
+							Total 30 días
+						</Typography>
+						<Typography
 							sx={{
-								height: 8,
-								borderRadius: 2,
-								"& .MuiLinearProgress-bar": {
-									borderRadius: 2,
-								},
+								fontSize: "1.05rem",
+								fontWeight: 600,
+								color: "text.primary",
+								fontVariantNumeric: "tabular-nums",
+								letterSpacing: "-0.01em",
 							}}
-						/>
-					</Grid>
-					<Grid item xs={12}>
-						<Stack direction="row" justifyContent="space-between" alignItems="center">
-							<Stack direction="row" spacing={1} alignItems="center">
-								<Timer1 size={16} variant="Bold" color={theme.palette.error.main} />
-								<Typography variant="caption" color="error">
-									Próximos 7 días
-								</Typography>
-							</Stack>
-							<Typography variant="h6" color="error">
-								{deadlinesData.next7Days}
-							</Typography>
-						</Stack>
-					</Grid>
-					<Grid item xs={12}>
-						<LinearProgress
-							variant="determinate"
-							value={next15DaysPercentage}
-							color="warning"
-							sx={{
-								height: 8,
-								borderRadius: 2,
-								"& .MuiLinearProgress-bar": {
-									borderRadius: 2,
-								},
-							}}
-						/>
-					</Grid>
-					<Grid item xs={12}>
-						<Stack direction="row" justifyContent="space-between" alignItems="center">
-							<Stack direction="row" spacing={1} alignItems="center">
-								<Timer1 size={16} variant="Bold" color={theme.palette.warning.dark} />
-								<Typography variant="caption" color="warning.dark">
-									Próximos 15 días
-								</Typography>
-							</Stack>
-							<Typography variant="h6" color="warning.dark">
-								{deadlinesData.next15Days}
-							</Typography>
-						</Stack>
-					</Grid>
-					<Grid item xs={12}>
-						<Stack direction="row" spacing={1} alignItems="center">
-							<Typography variant="caption" color="primary">
-								Total próximos 30 días:
-							</Typography>
-							<Typography variant="h6">{deadlinesData.next30Days}</Typography>
-						</Stack>
-					</Grid>
-				</Grid>
-			</CardContent>
+						>
+							{deadlinesData.next30Days}
+						</Typography>
+					</Stack>
+				</Box>
+			</Stack>
 		</MainCard>
 	);
 };

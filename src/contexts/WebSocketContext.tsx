@@ -6,7 +6,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { openSnackbar } from "store/reducers/snackbar";
 // Importamos correctamente las acciones
 import { ADD_MULTIPLE_ALERTS, ADD_ALERT } from "store/reducers/alerts";
+import { pjnSyncStarted, pjnSyncProgress, pjnSyncCompleted, pjnSyncError } from "store/reducers/pjnSync";
+import { pjnSiteStatusUpdated, fetchPjnSiteStatus } from "store/reducers/pjnSiteStatus";
+import { scbaSiteStatusUpdated, fetchScbaSiteStatus } from "store/reducers/scbaSiteStatus";
+import { scbaSyncStarted, scbaSyncProgress, scbaSyncCompleted, scbaSyncError } from "store/reducers/scbaSync";
+import { movementsSyncStarted, movementsSyncCompleted } from "store/reducers/movementsSync";
+import { getFoldersByUserId } from "store/reducers/folder";
 import { Alert } from "types/alert";
+import { FolderData } from "types/folder";
 
 // Definición del contexto WebSocket
 export interface WebSocketContextType {
@@ -64,23 +71,12 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 	);
 
 	// Manejar cambios de estado de conexión
-	const handleConnectionStateChange = useCallback(
-		(state: ConnectionState) => {
-			setConnectionState(state);
-
-			// Comentado: Las notificaciones de conexión no son necesarias para el usuario
-			// if (state === ConnectionState.CONNECTED) {
-			// 	if (isInitialized) {
-			// 		showNotification("Conexión con el servidor establecida", "success");
-			// 	}
-			// } else if (state === ConnectionState.AUTHENTICATED) {
-			// 	showNotification("Autenticación con el servidor establecida", "success");
-			// } else if (state === ConnectionState.ERROR) {
-			// 	showNotification("Error en la conexión con el servidor", "error");
-			// }
-		},
-		[isInitialized, showNotification],
-	);
+	// isInitialized eliminado de los deps: solo estaba en código comentado.
+	// Mantenerlo causaba que handleConnectionStateChange cambiara al conectar,
+	// re-ejecutando el efecto de suscripción innecesariamente.
+	const handleConnectionStateChange = useCallback((state: ConnectionState) => {
+		setConnectionState(state);
+	}, []);
 
 	// Manejar mensajes recibidos
 	const handleMessage = useCallback(
@@ -88,6 +84,122 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 			setLastMessage(message);
 
 			// Manejar tipos específicos de mensajes
+			if (message.type === "FOLDER_UPDATE") {
+				if (message.payload?.newFolders && Array.isArray(message.payload.newFolders)) {
+					const newFolders = message.payload.newFolders as FolderData[];
+					const source: "pjn" | "scba" = message.payload?.source ?? "pjn";
+					const label = source === "scba" ? "SCBA" : "PJN";
+					newFolders.forEach((folder) => {
+						dispatch({ type: "UPSERT_FOLDER", payload: folder });
+					});
+					if (newFolders.length === 1) {
+						showNotification(`Carpeta ${label} agregada: ${newFolders[0].folderName || "Nueva carpeta"}`, "info");
+					} else {
+						showNotification(`${newFolders.length} carpetas ${label} agregadas`, "info");
+					}
+				}
+			}
+
+			if (message.type === "SYNC_PROGRESS") {
+				const p = message.payload as any;
+				const source: "pjn" | "scba" = p?.source ?? "pjn";
+				const label = source === "scba" ? "SCBA" : "PJN";
+
+				if (source === "scba") {
+					if (p?.phase === "started") {
+						dispatch(scbaSyncStarted({ progress: p.progress, message: p.message, force: true }));
+					} else if (p?.phase === "completed") {
+						dispatch(scbaSyncCompleted({ foldersCreated: p.newFolders ?? 0, newCausas: p.newCausas ?? 0 }));
+						if (userId) {
+							dispatch(getFoldersByUserId(userId, true) as any);
+						}
+						showNotification(`Sincronización ${label} completada: ${p.newCausas ?? 0} causas procesadas`, "success");
+					} else if (p?.phase === "error") {
+						dispatch(scbaSyncError({ message: p.message ?? "Error en sincronización SCBA" }));
+						showNotification(`Error en sincronización ${label}: ${p.message ?? "Error desconocido"}`, "error");
+					} else if (p?.phase) {
+						dispatch(
+							scbaSyncProgress({
+								progress: p.progress ?? 0,
+								message: p.message ?? "",
+								phase: p.phase,
+								currentPage: p.currentPage,
+								totalPages: p.totalPages,
+								causasProcessed: p.causasProcessed,
+								totalExpected: p.totalExpected,
+								causasFound: p.causasFound,
+							}),
+						);
+					}
+					return;
+				}
+
+				// source === 'pjn' (comportamiento existente, sin cambios)
+				if (p?.phase === "started") {
+					dispatch(pjnSyncStarted({ progress: p.progress, message: p.message, force: true }));
+				} else if (p?.phase === "completed") {
+					dispatch(pjnSyncCompleted({ foldersCreated: p.newFolders ?? 0, newCausas: p.newCausas ?? 0 }));
+					if (userId) {
+						dispatch(getFoldersByUserId(userId, true) as any);
+					}
+					showNotification(`Sincronización completada: ${p.newFolders ?? 0} carpetas creadas`, "success");
+				} else if (p?.phase === "error") {
+					dispatch(pjnSyncError({ message: p.message ?? "Error en sincronización" }));
+					showNotification(`Error en sincronización: ${p.message ?? "Error desconocido"}`, "error");
+				} else if (p?.phase === "movements_started") {
+					dispatch(movementsSyncStarted({ totalCausas: p.totalCausas, isInitialSync: p.isInitialSync }));
+				} else if (p?.phase === "movements_completed") {
+					dispatch(
+						movementsSyncCompleted({ newMovimientos: p.newMovimientos, totalCausas: p.totalCausas, isInitialSync: p.isInitialSync }),
+					);
+					showNotification(`Movimientos sincronizados: ${p.newMovimientos ?? 0} nuevos`, "success");
+				} else if (p?.phase) {
+					dispatch(
+						pjnSyncProgress({
+							progress: p.progress ?? 0,
+							message: p.message ?? "",
+							phase: p.phase,
+							currentPage: p.currentPage,
+							totalPages: p.totalPages,
+							causasProcessed: p.causasProcessed,
+							totalExpected: p.totalExpected,
+							batchNum: p.batchNum,
+							totalBatches: p.totalBatches,
+						}),
+					);
+				}
+			}
+
+			// Estado global del sitio (PJN/SCBA en mantenimiento / operativo).
+			// Payload viene como { type: '<PORTAL>_SITE_STATUS', payload: {...}, timestamp }.
+			if (message.type === "SYSTEM_STATUS") {
+				const env = message.payload as any;
+				if (env?.type === "PJN_SITE_STATUS" && env.payload) {
+					dispatch(pjnSiteStatusUpdated(env.payload));
+
+					if (env.payload.status === "maintenance") {
+						showNotification(
+							"El portal del PJN entró en mantenimiento. Las sincronizaciones quedan en pausa.",
+							"warning",
+						);
+					} else if (env.payload.status === "healthy") {
+						showNotification("El portal del PJN volvió a estar operativo.", "success");
+					}
+				}
+				if (env?.type === "SCBA_SITE_STATUS" && env.payload) {
+					dispatch(scbaSiteStatusUpdated(env.payload));
+
+					if (env.payload.status === "down") {
+						showNotification(
+							"El portal de la SCBA no está respondiendo. Las sincronizaciones quedan en pausa.",
+							"warning",
+						);
+					} else if (env.payload.status === "healthy") {
+						showNotification("El portal de la SCBA volvió a estar operativo.", "success");
+					}
+				}
+			}
+
 			if (message.type === "NOTIFICATION") {
 				// Manejar alertas pendientes - formato {pendingAlerts: Alert[]}
 				if (message.payload && message.payload.pendingAlerts) {
@@ -129,7 +241,7 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 				}
 			}
 		},
-		[dispatch, showNotification],
+		[dispatch, showNotification, userId],
 	);
 
 	// Conectar al WebSocket
@@ -157,14 +269,23 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 		return webSocketService.subscribe(type, callback);
 	}, []);
 
-	// Conectar/desconectar automáticamente según el estado de autenticación
+	// Conectar/desconectar automáticamente según el estado de autenticación.
+	// isInitialized eliminado de los deps: llamar setIsInitialized(true) dentro de connect()
+	// re-ejecutaba este efecto, causando una segunda llamada a connect() y doble conexión WS.
+	// webSocketService.disconnect() es un no-op si no hay socket activo, así que el
+	// else if simplificado a !isLoggedIn es seguro.
 	useEffect(() => {
 		if (isLoggedIn && autoConnect && userId) {
 			connect();
-		} else if (!isLoggedIn && isInitialized) {
+			// Hidratación inicial del estado de los portales PJN/SCBA. El socket
+			// recibe updates en tiempo real, pero al login necesitamos saber si
+			// alguno ya estaba caído antes de conectarnos.
+			dispatch(fetchPjnSiteStatus() as any);
+			dispatch(fetchScbaSiteStatus() as any);
+		} else if (!isLoggedIn) {
 			disconnect();
 		}
-	}, [isLoggedIn, autoConnect, connect, disconnect, isInitialized, userId]);
+	}, [isLoggedIn, autoConnect, connect, disconnect, userId, dispatch]);
 
 	// Actualizar userId cuando cambie
 	useEffect(() => {
@@ -182,10 +303,9 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 			stateUnsubscribe();
 			messageUnsubscribe();
 
-			// Asegurar que nos desconectamos al desmontar
-			if (webSocketService.isConnected()) {
-				webSocketService.disconnect();
-			}
+			// Desconectar siempre al hacer cleanup, no solo si isConnected().
+			// Cubre sockets en estado CONNECTING que de otro modo quedarían huérfanos.
+			webSocketService.disconnect();
 		};
 	}, [handleConnectionStateChange, handleMessage]);
 

@@ -1,17 +1,15 @@
 import React from "react";
+
 // material-ui
-import { Grid, Typography, Button, Stack, Box, Link, Tooltip } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { Box, Button, Link, Stack, Tooltip, Typography, useMediaQuery } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 
-// project import
+// project-imports
 import MainCard from "components/MainCard";
-
-// assets
-import cardBack from "assets/images/widget/img-dropbox-bg.svg";
-import WelcomeImage from "assets/images/analytics/welcome-banner.png";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 // icons
-import { Add } from "iconsax-react";
+import { Add, ArrowRight } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
@@ -27,116 +25,211 @@ interface WelcomeBannerProps {
 	maxSessions?: number;
 }
 
-// ==============================|| ANALYTICS - WELCOME ||============================== //
+// ==============================|| DASHBOARD - WELCOME BANNER ||============================== //
+// Dos variantes según `showOnboarding`:
+// - onboarding (usuarios nuevos sin carpetas): hero grande con eyebrow, h2 y CTA
+//   primario "Crear primera carpeta". Lo más visible del dashboard al loguearse.
+// - default (usuarios con recursos): billboard horizontal compacto con greeting
+//   personalizado + CTA dual (planes + nueva carpeta). Mucho menos altura para
+//   no robar foco a las cards de KPIs que vienen debajo.
 
-const WelcomeBanner = ({ showOnboarding = false, userName, onDismiss, sessionCount = 0, maxSessions = 5 }: WelcomeBannerProps) => {
+const WelcomeBanner = ({ showOnboarding = false, userName, onDismiss }: WelcomeBannerProps) => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === ThemeMode.DARK;
+	// Adaptación a altura de viewport. Threshold a 980 captura laptops 1080p
+	// (~950-980 disponibles después de barra de URL del navegador).
+	const isShortViewport = useMediaQuery("(max-height: 980px)");
+	const isTightViewport = useMediaQuery("(max-height: 760px)");
 	const navigate = useNavigate();
 
-	const handleCreateFolder = () => {
-		navigate("/apps/folders/list?onboarding=true");
+	const handleCreateFolder = () => navigate("/apps/folders/list?onboarding=true");
+	const handleViewPlans = () => navigate("/suscripciones/tables");
+
+	// Estilos compartidos del container — atmósfera brand-blue, border + shadow tintados.
+	const containerSx = {
+		position: "relative" as const,
+		overflow: "hidden",
+		bgcolor: theme.palette.background.paper,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+		boxShadow: `0 4px 18px ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)}`,
+		p: 0,
 	};
 
-	// Contenido para usuarios nuevos (onboarding)
+	// Botón primario BRAND_BLUE con shadow tintada — patrón landing CTA.
+	// Padding y fontSize responsive: chico en mobile, grande en desktop.
+	const primaryButtonSx = {
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		fontWeight: 600,
+		textTransform: "none",
+		letterSpacing: "-0.005em",
+		borderRadius: 1.25,
+		fontSize: { xs: "0.82rem", sm: "0.9rem" },
+		px: { xs: 1.75, sm: 2.25 },
+		py: { xs: 0.75, sm: 1 },
+		whiteSpace: "nowrap",
+		boxShadow: `0 8px 20px ${alpha(BRAND_BLUE, 0.28)}`,
+		transition: "transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease",
+		"&:hover": {
+			bgcolor: alpha(BRAND_BLUE, 0.92),
+			boxShadow: `0 12px 26px ${alpha(BRAND_BLUE, 0.36)}`,
+			transform: "translateY(-1px)",
+		},
+		"&:active": { transform: "translateY(0)" },
+	};
+
+	// ============================== ONBOARDING (nuevo) ==============================
 	if (showOnboarding) {
 		return (
-			<MainCard
-				border={false}
-				sx={{
-					color: "common.white",
-					bgcolor: theme.palette.mode === ThemeMode.DARK ? "primary.400" : "primary.darker",
-					position: "relative",
-					"&:after": {
-						content: '""',
-						backgroundImage: `url(${cardBack})`,
+			<MainCard border={false} sx={containerSx}>
+				{/* Atmósfera — blob brand-blue arriba derecha + dot grid */}
+				<Box
+					aria-hidden
+					sx={{
 						position: "absolute",
-						top: 0,
-						left: 0,
-						right: 0,
-						bottom: 0,
-						zIndex: 1,
-						opacity: 0.5,
-						backgroundPosition: "bottom right",
-						backgroundSize: "100%",
-						backgroundRepeat: "no-repeat",
-					},
-				}}
-			>
-				<Grid container>
-					<Grid item md={6} sm={6} xs={12}>
-						<Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ padding: { xs: 2, sm: 3 } }}>
-							<Typography variant="h2" color={theme.palette.background.paper} sx={{ fontSize: { xs: "1.5rem", sm: "2rem" } }}>
-								{userName ? `Bienvenido, ${userName}` : "Bienvenido a Law||Analytics"}
-							</Typography>
-							<Typography variant="h6" color={theme.palette.background.paper} sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
-								Comienza creando tu primera carpeta. Es el corazon de Law||Analytics: desde ahi gestionas documentos, calculos y
-								vencimientos.
-							</Typography>
-							<Box sx={{ pt: { xs: 1, sm: 1.5 } }}>
-								<Button
-									variant="contained"
-									color="secondary"
-									onClick={handleCreateFolder}
-									startIcon={<Add />}
-									size="large"
-									sx={{
-										zIndex: 2,
-										bgcolor: "background.paper",
-										color: "primary.darker",
-										textTransform: "none",
-										"&:hover": {
-											bgcolor: "grey.100",
-										},
-									}}
-								>
-									Crear mi primera carpeta
-								</Button>
-							</Box>
-							<Typography
-								variant="caption"
-								color={theme.palette.background.paper}
-								sx={{ opacity: 0.8, mt: 0.5, display: { xs: "none", sm: "block" } }}
-							>
-								Organiza un expediente en menos de 1 minuto
-							</Typography>
-						</Stack>
-					</Grid>
-					<Grid item sm={6} xs={12} sx={{ display: { xs: "none", sm: "initial" } }}>
-						<Stack sx={{ position: "relative", pr: { sm: 3, md: 8 }, zIndex: 2 }} justifyContent="center" alignItems="flex-end">
-							<img src={WelcomeImage} alt="Welcome" width="200px" />
-						</Stack>
-					</Grid>
-				</Grid>
+						top: "-40%",
+						right: "-15%",
+						width: { xs: 320, md: 460 },
+						height: { xs: 320, md: 460 },
+						borderRadius: "50%",
+						background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.13)} 0%, transparent 65%)`,
+						filter: "blur(60px)",
+						pointerEvents: "none",
+						zIndex: 0,
+					}}
+				/>
+				<Box
+					aria-hidden
+					sx={{
+						position: "absolute",
+						inset: 0,
+						backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDark ? 0.08 : 0.06)} 1px, transparent 1px)`,
+						backgroundSize: "26px 26px",
+						maskImage: "radial-gradient(ellipse 60% 80% at 80% 30%, #000 0%, transparent 75%)",
+						WebkitMaskImage: "radial-gradient(ellipse 60% 80% at 80% 30%, #000 0%, transparent 75%)",
+						pointerEvents: "none",
+						zIndex: 0,
+					}}
+				/>
 
-				{/* Link para descartar onboarding */}
-				{onDismiss && (
+				<Stack
+					spacing={{
+						xs: isTightViewport ? 1 : isShortViewport ? 1.25 : 1.75,
+						sm: isTightViewport ? 1.25 : isShortViewport ? 1.5 : 2.25,
+					}}
+					sx={{
+						px: { xs: 2.5, sm: 4 },
+						py: {
+							xs: isTightViewport ? 1.5 : isShortViewport ? 2 : 3,
+							sm: isTightViewport ? 2 : isShortViewport ? 2.25 : 4,
+						},
+						position: "relative",
+						zIndex: 1,
+						maxWidth: { md: 620 },
+					}}
+				>
+					{/* Eyebrow chip — patrón SectionEyebrow del landing */}
 					<Box
 						sx={{
-							position: "absolute",
-							bottom: 8,
-							right: 16,
-							zIndex: 3,
+							display: "inline-flex",
+							alignSelf: "flex-start",
+							alignItems: "center",
+							px: 1.25,
+							py: 0.4,
+							borderRadius: 1,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.2)}`,
 						}}
 					>
-						<Tooltip title="Podes volver a ver esta guia desde Ayuda" placement="top" arrow>
+						<Typography
+							sx={{
+								fontSize: "0.68rem",
+								fontWeight: 600,
+								letterSpacing: "0.14em",
+								textTransform: "uppercase",
+								color: BRAND_BLUE,
+							}}
+						>
+							Empezá acá
+						</Typography>
+					</Box>
+
+					<Typography
+						variant="h2"
+						sx={{
+							fontSize: {
+								xs: isTightViewport ? "1.25rem" : isShortViewport ? "1.35rem" : "1.5rem",
+								sm: isTightViewport ? "1.5rem" : isShortViewport ? "1.625rem" : "1.875rem",
+								md: isTightViewport ? "1.625rem" : isShortViewport ? "1.75rem" : "2.125rem",
+							},
+							fontWeight: 600,
+							letterSpacing: "-0.025em",
+							lineHeight: 1.15,
+							color: "text.primary",
+							textWrap: "balance",
+						}}
+					>
+						{userName ? `Bienvenido, ${userName}` : "Bienvenido a Law·Analytics"}
+					</Typography>
+
+					<Typography
+						sx={{
+							fontSize: { xs: "0.9rem", sm: "1rem" },
+							color: "text.secondary",
+							lineHeight: 1.55,
+							maxWidth: 540,
+							textWrap: "pretty",
+						}}
+					>
+						Empezá creando tu primera carpeta. Es el corazón de Law·Analytics: desde ahí gestionás documentos, cálculos y vencimientos.
+					</Typography>
+
+					<Box sx={{ pt: 0.5 }}>
+						<Button variant="contained" onClick={handleCreateFolder} startIcon={<Add size={18} />} sx={primaryButtonSx}>
+							Crear mi primera carpeta
+						</Button>
+					</Box>
+
+					{/* Helper — oculto en viewport corto para ahorrar altura */}
+					{!isShortViewport && (
+						<Typography
+							variant="caption"
+							sx={{
+								color: "text.secondary",
+								opacity: 0.75,
+								display: { xs: "none", sm: "block" },
+								mt: -0.5,
+							}}
+						>
+							Organizá un expediente en menos de 1 minuto
+						</Typography>
+					)}
+				</Stack>
+
+				{/* Dismiss link */}
+				{onDismiss && (
+					<Box sx={{ position: "absolute", bottom: 10, right: 16, zIndex: 3 }}>
+						<Tooltip title="Podés volver a ver esta guía desde Ayuda" placement="top" arrow>
 							<Link
 								component="button"
 								variant="caption"
 								onClick={onDismiss}
 								sx={{
-									color: "rgba(255, 255, 255, 0.55)",
+									color: alpha(theme.palette.text.primary, 0.45),
 									textDecoration: "none",
 									cursor: "pointer",
 									fontSize: "0.7rem",
-									transition: "all 0.2s ease",
+									border: "none",
+									background: "none",
+									transition: "color 0.2s ease",
 									"&:hover": {
-										color: "rgba(255, 255, 255, 0.85)",
+										color: theme.palette.text.primary,
 										textDecoration: "underline",
 										textUnderlineOffset: "2px",
 									},
 								}}
 							>
-								No mostrar esta guia nuevamente
+								No mostrar esta guía nuevamente
 							</Link>
 						</Tooltip>
 					</Box>
@@ -145,66 +238,100 @@ const WelcomeBanner = ({ showOnboarding = false, userName, onDismiss, sessionCou
 		);
 	}
 
-	// Contenido normal para usuarios con recursos
+	// ============================== DEFAULT (con recursos) ==============================
+	// Billboard horizontal compacto. La altura baja deliberadamente — las KPI cards
+	// de abajo son el foco visual, este banner es contexto + acceso rápido.
 	return (
-		<MainCard
-			border={false}
-			sx={{
-				color: "common.white",
-				bgcolor: theme.palette.mode === ThemeMode.DARK ? "primary.400" : "primary.darker",
-				"&:after": {
-					content: '""',
-					backgroundImage: `url(${cardBack})`,
+		<MainCard border={false} sx={containerSx}>
+			{/* Atmósfera — más sutil que en el hero onboarding (banner más bajo) */}
+			<Box
+				aria-hidden
+				sx={{
 					position: "absolute",
-					top: 0,
-					left: 0,
-					right: 0,
-					bottom: 0,
+					top: "-60%",
+					right: "-10%",
+					width: { xs: 240, md: 360 },
+					height: { xs: 240, md: 360 },
+					borderRadius: "50%",
+					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.11)} 0%, transparent 65%)`,
+					filter: "blur(60px)",
+					pointerEvents: "none",
+					zIndex: 0,
+				}}
+			/>
+			<Box
+				aria-hidden
+				sx={{
+					position: "absolute",
+					inset: 0,
+					backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDark ? 0.07 : 0.05)} 1px, transparent 1px)`,
+					backgroundSize: "24px 24px",
+					maskImage: "radial-gradient(ellipse 50% 100% at 90% 50%, #000 0%, transparent 70%)",
+					WebkitMaskImage: "radial-gradient(ellipse 50% 100% at 90% 50%, #000 0%, transparent 70%)",
+					pointerEvents: "none",
+					zIndex: 0,
+				}}
+			/>
+
+			<Stack
+				direction={{ xs: "column", md: "row" }}
+				alignItems={{ xs: "flex-start", md: "center" }}
+				justifyContent="space-between"
+				spacing={{ xs: 2, md: 3 }}
+				sx={{
+					px: { xs: 2.5, sm: 3 },
+					py: { xs: 2.5, sm: 2.75 },
+					position: "relative",
 					zIndex: 1,
-					opacity: 0.5,
-					backgroundPosition: "bottom right",
-					backgroundSize: "100%",
-					backgroundRepeat: "no-repeat",
-				},
-			}}
-		>
-			<Grid container>
-				<Grid item md={6} sm={6} xs={12}>
-					<Stack spacing={2} sx={{ padding: 3 }}>
-						<Typography variant="h2" color={theme.palette.background.paper}>
-							Explore las Herramientas Legales
-						</Typography>
-						<Typography variant="h6" color={theme.palette.background.paper}>
-							Utilice todo el potencial disponible en Law||Analytics y supere todos los limites.
-						</Typography>
-						<Box sx={{ pt: 1.5 }}>
-							<Button
-								variant="outlined"
-								color="secondary"
-								href="/suscripciones/tables"
-								sx={{
-									color: "background.paper",
-									borderColor: theme.palette.background.paper,
-									zIndex: 2,
-									"&:hover": {
-										color: "background.paper",
-										borderColor: theme.palette.background.paper,
-										bgcolor: "primary.main",
-									},
-								}}
-								target="_self"
-							>
-								Planes Exclusivos
-							</Button>
-						</Box>
-					</Stack>
-				</Grid>
-				<Grid item sm={6} xs={12} sx={{ display: { xs: "none", sm: "initial" } }}>
-					<Stack sx={{ position: "relative", pr: { sm: 3, md: 8 }, zIndex: 2 }} justifyContent="center" alignItems="flex-end">
-						<img src={WelcomeImage} alt="Welcome" width="200px" />
-					</Stack>
-				</Grid>
-			</Grid>
+				}}
+			>
+				<Box sx={{ maxWidth: 540 }}>
+					<Typography
+						sx={{
+							fontSize: { xs: "1.15rem", sm: "1.375rem" },
+							fontWeight: 600,
+							letterSpacing: "-0.02em",
+							lineHeight: 1.2,
+							color: "text.primary",
+							mb: 0.5,
+						}}
+					>
+						{userName ? `Hola, ${userName}` : "Hola"}
+					</Typography>
+					<Typography
+						sx={{
+							fontSize: { xs: "0.85rem", sm: "0.9rem" },
+							color: "text.secondary",
+							lineHeight: 1.5,
+							textWrap: "pretty",
+						}}
+					>
+						Acá tenés el resumen de actividad y los próximos vencimientos.
+					</Typography>
+				</Box>
+
+				<Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+					<Button
+						variant="text"
+						onClick={handleViewPlans}
+						endIcon={<ArrowRight size={14} />}
+						sx={{
+							color: BRAND_BLUE,
+							fontWeight: 600,
+							fontSize: "0.85rem",
+							textTransform: "none",
+							letterSpacing: "-0.005em",
+							px: 1.5,
+							"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.06) },
+						}}
+					>
+						Ver planes
+					</Button>
+					<Button variant="contained" onClick={handleCreateFolder} startIcon={<Add size={18} />} sx={primaryButtonSx}>
+						Nueva carpeta
+					</Button>
+				</Stack>
+			</Stack>
 		</MainCard>
 	);
 };

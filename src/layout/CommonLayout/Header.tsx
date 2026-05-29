@@ -1,6 +1,6 @@
 import React from "react";
 import { useState, cloneElement, ReactElement } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 
 // material-ui
 import AppBar from "@mui/material/AppBar";
@@ -67,6 +67,10 @@ const Header = ({ handleDrawerOpen, layout = "landing", ...others }: Props) => {
 	const theme = useTheme();
 	const matchDownMd = useMediaQuery(theme.breakpoints.down("md"));
 	const [drawerToggle, setDrawerToggle] = useState<boolean>(false);
+	// Override solo en landing: el logo grande domina la pantalla en mobile y le quita
+	// jerarquía al título/CTA. En el resto de las páginas públicas se mantiene normal.
+	const isLandingRoute = useLocation().pathname === "/";
+	const landingMobileLogoSx = isLandingRoute ? { "& img": { height: 36 } } : undefined;
 
 	/** Method called on multiple components with different event types */
 	const drawerToggler = (open: boolean) => (event: any) => {
@@ -86,10 +90,14 @@ const Header = ({ handleDrawerOpen, layout = "landing", ...others }: Props) => {
 					backdropFilter: "blur(8px)",
 					color: theme.palette.text.primary,
 					boxShadow: "none",
+					// Cuando hay banner de descuento, el AppBar baja para no taparlo
+					// (--discount-banner-h se setea en :root por DiscountBanner.tsx).
+					top: "var(--discount-banner-h, 0px)",
+					transition: "top 0.25s ease",
 				}}
 			>
 				<Container maxWidth="xl" disableGutters={matchDownMd}>
-					<Toolbar sx={{ px: { xs: 1.5, sm: 4, md: 0, lg: 0 }, py: 1 }}>
+					<Toolbar sx={{ px: { xs: 1.5, sm: 4, md: 0, lg: 0 }, py: isLandingRoute ? { xs: 2.5, sm: 1.5, md: 1 } : 1 }}>
 						<Stack direction="row" sx={{ flexGrow: 1, display: { xs: "none", md: "block" } }} alignItems="center">
 							<Typography component="div" sx={{ textAlign: "left", display: "inline-block" }}>
 								<Logo reverse to="/" />
@@ -132,7 +140,7 @@ const Header = ({ handleDrawerOpen, layout = "landing", ...others }: Props) => {
 							}}
 						>
 							<Typography component="div" sx={{ textAlign: "left", display: "inline-block" }}>
-								<Logo reverse to="/" />
+								<Logo reverse to="/" sx={landingMobileLogoSx} />
 							</Typography>
 							<Stack direction="row" spacing={2}>
 								{layout === "component" && (

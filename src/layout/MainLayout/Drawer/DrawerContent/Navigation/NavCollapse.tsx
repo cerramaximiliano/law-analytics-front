@@ -27,6 +27,7 @@ import Transitions from "components/@extended/Transitions";
 import useConfig from "hooks/useConfig";
 import { dispatch, useSelector } from "store";
 import { activeItem } from "store/reducers/menu";
+import { navActiveBg, navActiveBorder } from "themes/dashboardTokens";
 
 // assets
 import { ArrowDown2, ArrowUp2, ArrowRight2, Copy } from "iconsax-react";
@@ -219,11 +220,26 @@ const NavCollapse = ({ menu, level, parentId, setSelectedItems, selectedItems, s
 	});
 
 	const isSelected = selected === menu.id;
+
+	// `isSelected` (arriba) es el estado local "popper hover-abierto" — útil para
+	// destacar el item activo en el modo expandido, pero en mini-drawer queda
+	// "pegado" y produce múltiples items marcados al pasar por varios parents.
+	// Para el pill del mini-drawer usamos `containsActiveRoute`: true sólo si
+	// la ruta actual coincide con alguno de los hijos (recursivo).
+	const containsActiveRoute = useMemo(() => {
+		const check = (items?: NavItemType[]): boolean =>
+			!!items && items.some((child) => child.url === pathname || (child.children ? check(child.children) : false));
+		return check(menu.children);
+	}, [menu.children, pathname]);
+
 	const borderIcon = level === 1 ? <Copy variant="Bulk" size={drawerOpen ? 22 : 24} /> : false;
 	const Icon = menu.icon!;
 	const menuIcon = menu.icon ? <Icon variant="Bulk" size={drawerOpen ? 22 : 24} /> : borderIcon;
-	const textColor = theme.palette.mode === ThemeMode.DARK ? theme.palette.secondary[400] : theme.palette.secondary.main;
-	const iconSelectedColor = theme.palette.mode === ThemeMode.DARK && drawerOpen ? theme.palette.text.primary : theme.palette.primary.main;
+	const isDark = theme.palette.mode === ThemeMode.DARK;
+	const textColor = isDark ? theme.palette.secondary[400] : theme.palette.secondary.main;
+	const iconSelectedColor = isDark && drawerOpen ? theme.palette.text.primary : theme.palette.primary.main;
+	const activePillBg = navActiveBg(isDark);
+	const activePillBorder = navActiveBorder(isDark);
 	const popperId = miniMenuOpened ? `collapse-pop-${menu.id}` : undefined;
 	const FlexBox = {
 		display: "flex",
@@ -237,7 +253,10 @@ const NavCollapse = ({ menu, level, parentId, setSelectedItems, selectedItems, s
 			{menuOrientation === MenuOrientation.VERTICAL || downLG ? (
 				<>
 					<ListItemButton
-						selected={isSelected}
+						// En mini-drawer, `selected` debe reflejar la ruta real, no el hover
+						// local — sino el theme override (`MuiListItemButton.Mui-selected`)
+						// pinta el icono blue en cualquier item hover-abierto.
+						selected={drawerOpen ? isSelected : containsActiveRoute}
 						{...(!drawerOpen && { onMouseEnter: handleClick, onMouseLeave: handleClose })}
 						onClick={handleClick}
 						sx={{
@@ -247,11 +266,19 @@ const NavCollapse = ({ menu, level, parentId, setSelectedItems, selectedItems, s
 								mx: 1.25,
 								my: 0.5,
 								borderRadius: 1,
+								border: "1px solid transparent",
 								"&:hover": {
 									bgcolor: theme.palette.mode === ThemeMode.DARK ? "divider" : "secondary.200",
 								},
 								"&.Mui-selected": {
+									bgcolor: activePillBg,
+									border: `1px solid ${activePillBorder}`,
 									color: iconSelectedColor,
+									"&:hover": {
+										bgcolor: activePillBg,
+										border: `1px solid ${activePillBorder}`,
+										color: iconSelectedColor,
+									},
 								},
 							}),
 							...(!drawerOpen && {
@@ -274,22 +301,28 @@ const NavCollapse = ({ menu, level, parentId, setSelectedItems, selectedItems, s
 								onClick={handlerIconLink}
 								sx={{
 									minWidth: 38,
-									color: isSelected ? "primary.main" : textColor,
+									// En mini-drawer el `isSelected` local queda pegado al pasar el mouse;
+									// usamos `containsActiveRoute` (ruta real) cuando colapsado, e
+									// `isSelected` (expandir/click) cuando el drawer está abierto.
+									color: (drawerOpen ? isSelected : containsActiveRoute) ? "primary.main" : textColor,
 									...(!drawerOpen && {
 										borderRadius: 1,
 										width: 46,
 										height: 46,
 										alignItems: "center",
 										justifyContent: "center",
+										border: "1px solid transparent",
 										"&:hover": {
 											bgcolor: theme.palette.mode === ThemeMode.DARK ? "secondary.light" : "secondary.200",
 										},
 									}),
 									...(!drawerOpen &&
-										isSelected && {
-											bgcolor: theme.palette.mode === ThemeMode.DARK ? "secondary.100" : "primary.lighter",
+										containsActiveRoute && {
+											bgcolor: activePillBg,
+											border: `1px solid ${activePillBorder}`,
 											"&:hover": {
-												bgcolor: theme.palette.mode === ThemeMode.DARK ? "secondary.200" : "primary.lighter",
+												bgcolor: activePillBg,
+												border: `1px solid ${activePillBorder}`,
 											},
 										}),
 								}}

@@ -1,29 +1,10 @@
 import React from "react";
-import { useState } from "react";
 
 // material-ui
-import {
-	Typography,
-	Button,
-	Box,
-	Alert,
-	AlertTitle,
-	Stack,
-	Dialog,
-	DialogTitle,
-	DialogContent,
-	DialogActions,
-	Step,
-	Stepper,
-	StepLabel,
-	Paper,
-	Grid,
-	Chip,
-} from "@mui/material";
+import { Typography, Button, Box, Alert, AlertTitle, Stack, Paper, Grid, Chip } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
 // project imports
-import { PopupTransition } from "components/@extended/Transitions";
 import {
 	Task,
 	TaskSquare,
@@ -35,12 +16,10 @@ import {
 	DocumentDownload,
 	Filter,
 	ArrowRight2,
-	ArrowLeft,
-	ArrowRight,
-	Next,
 	Warning2,
 	Folder2,
 } from "iconsax-react";
+import GuideShell from "./GuideShell";
 
 // ==============================|| CONTENIDOS DE LA GUÍA DE TAREAS ||============================== //
 
@@ -49,7 +28,7 @@ const CreateTaskContent = () => (
 		<Stack spacing={2}>
 			<Typography variant="body1">Para crear una nueva tarea:</Typography>
 
-			<Box sx={{ bgcolor: "grey.50", borderRadius: 1, p: 2 }}>
+			<Box sx={{ bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.50"), borderRadius: 1, p: 2 }}>
 				<Typography variant="subtitle2" gutterBottom color="primary">
 					Pasos para crear una tarea:
 				</Typography>
@@ -301,23 +280,6 @@ interface GuideTasksProps {
 }
 
 const GuideTasks: React.FC<GuideTasksProps> = ({ open, onClose }) => {
-	const theme = useTheme();
-	const [activeStep, setActiveStep] = useState(0);
-
-	const handleNext = () => {
-		setActiveStep((prevStep) => prevStep + 1);
-	};
-
-	const handleBack = () => {
-		setActiveStep((prevStep) => prevStep - 1);
-	};
-
-	const handleClose = () => {
-		onClose();
-		// Reset a paso 0 al cerrar
-		setTimeout(() => setActiveStep(0), 300);
-	};
-
 	const steps = [
 		{
 			title: "Introducción a Tareas",
@@ -361,60 +323,15 @@ const GuideTasks: React.FC<GuideTasksProps> = ({ open, onClose }) => {
 	];
 
 	return (
-		<Dialog
+		<GuideShell
 			open={open}
-			onClose={handleClose}
-			maxWidth="md"
-			fullWidth
-			TransitionComponent={PopupTransition}
-			sx={{ "& .MuiDialog-paper": { borderRadius: "12px" } }}
-		>
-			<DialogTitle
-				sx={{
-					borderBottom: `1px solid ${theme.palette.divider}`,
-					p: 2,
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-				}}
-			>
-				<Box display="flex" alignItems="center">
-					<Task variant="Bulk" size={28} style={{ marginRight: "12px", color: theme.palette.primary.main }} />
-					<Typography variant="h3">Guía: Sección de Tareas</Typography>
-				</Box>
-			</DialogTitle>
-
-			<DialogContent sx={{ p: 0 }}>
-				<Stepper activeStep={activeStep} alternativeLabel sx={{ p: 3, pb: 1, pt: 3 }}>
-					{steps.map((step, index) => (
-						<Step key={index}>
-							<StepLabel>{step.title}</StepLabel>
-						</Step>
-					))}
-				</Stepper>
-
-				<Box sx={{ p: 3, height: 400, overflowY: "auto" }}>{steps[activeStep] && steps[activeStep].content}</Box>
-			</DialogContent>
-
-			<DialogActions sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-				<Button onClick={handleBack} disabled={activeStep === 0} startIcon={<ArrowLeft />}>
-					Anterior
-				</Button>
-				<Box sx={{ flex: "1 1 auto" }} />
-				<Button color="error" onClick={handleClose}>
-					Cerrar
-				</Button>
-				{activeStep === steps.length - 1 ? (
-					<Button variant="contained" color="primary" onClick={handleClose} endIcon={<Next />}>
-						Finalizar
-					</Button>
-				) : (
-					<Button variant="contained" color="primary" onClick={handleNext} endIcon={<ArrowRight />}>
-						Siguiente
-					</Button>
-				)}
-			</DialogActions>
-		</Dialog>
+			onClose={onClose}
+			icon={<Task size={18} variant="Bulk" />}
+			eyebrow="Guía"
+			title="Guía de Tareas"
+			subtitle="Crear, priorizar y organizar tus pendientes"
+			steps={steps}
+		/>
 	);
 };
 

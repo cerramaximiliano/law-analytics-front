@@ -40,6 +40,10 @@ const slice = createSlice({
 		},
 
 		// SET STATS DATA
+		// Mergea la respuesta con el state existente cuando es del MISMO userId. Un
+		// fetch parcial (ej. sections=dashboard) no debe borrar secciones cargadas
+		// previamente (ej. folders). Si cambia el userId — owner del equipo, switch
+		// de user — reemplaza completamente.
 		setStatsSuccess(
 			state,
 			action: PayloadAction<{
@@ -54,7 +58,8 @@ const slice = createSlice({
 			console.log("📊 [Redux] Setting dataQuality in state:", action.payload.dataQuality);
 			state.isLoading = false;
 			state.error = null;
-			state.data = action.payload.data;
+			const sameUser = state.lastFetchedUserId === action.payload.userId;
+			state.data = sameUser && state.data ? ({ ...state.data, ...action.payload.data } as UnifiedStatsData) : action.payload.data;
 			state.dataQuality = action.payload.dataQuality || null;
 			state.lastFetchedUserId = action.payload.userId;
 			state.lastFetchTime = Date.now();
@@ -126,6 +131,11 @@ export const {
 
 // ----------------------------------------------------------------------
 
+// Dedup de requests en vuelo: varios widgets pueden dispatchear getUnifiedStats
+// en el mismo tick (dashboard + folder widgets + task widget). Sin este map, cada
+// uno dispara un HTTP y vacía el bucket del rate-limiter del server.
+const inFlightRequests = new Map<string, Promise<void>>();
+
 /**
  * Obtiene las estadísticas unificadas del usuario
  * @param userId - ID del usuario
@@ -148,78 +158,97 @@ export function getUnifiedStats(userId: string, sections: string = "all", forceR
 			return;
 		}
 
-		dispatch(slice.actions.startLoading());
-
-		try {
-			const baseURL = import.meta.env.VITE_BASE_URL || "";
-			const url = `${baseURL}/api/stats/unified/${userId}`;
-
-			// Log para debugging
-			console.log("🔍 [UnifiedStats] Fetching stats:", {
-				environment: import.meta.env.MODE,
-				baseURL,
-				fullURL: url,
-				userId,
-				sections,
-			});
-
-			const response = await axios.get<UnifiedStatsResponse>(url, {
-				params: { sections },
-				withCredentials: true,
-			});
-
-			// Log de respuesta
-			console.log("✅ [UnifiedStats] Response received:", {
-				environment: import.meta.env.MODE,
-				success: response.data.success,
-				resolutionTime: response.data.data?.folders?.resolutionTimes?.overall,
-				activefolders: response.data.data?.dashboard?.folders?.active,
-				closedFolders: response.data.data?.dashboard?.folders?.closed,
-				dataQuality: response.data.dataQuality,
-				matters: response.data.data?.matters,
-				foldersbyMatter: response.data.data?.folders?.byMatter,
-				lastUpdated: response.data.lastUpdated,
-				fullData: response.data.data,
-			});
-
-			if (response.data.success && response.data.data) {
-				dispatch(
-					slice.actions.setStatsSuccess({
-						data: response.data.data,
-						userId: userId,
-						dataQuality: response.data.dataQuality,
-						lastUpdated: response.data.lastUpdated,
-						descriptions: response.data.descriptions,
-						cacheInfo: response.data.cacheInfo,
-					}),
-				);
-			} else {
-				throw new Error("Formato de respuesta inválido");
-			}
-		} catch (error) {
-			let errorMessage = "Error al cargar las estadísticas";
-
-			if (axios.isAxiosError(error)) {
-				if (error.response?.status === 401) {
-					errorMessage = "No autorizado. Por favor inicia sesión nuevamente";
-				} else if (error.response?.status === 403) {
-					errorMessage = "No tienes permisos para ver esta información";
-				} else if (error.response?.status === 404) {
-					errorMessage = "No se encontraron estadísticas para este usuario";
-				} else if (error.response?.data?.message) {
-					errorMessage = error.response.data.message;
-				} else if (error.message) {
-					// Evitar mostrar "Wrong Services"
-					errorMessage = error.message === "Wrong Services" ? "Error de conexión con el servidor" : error.message;
-				}
-			} else if (error instanceof Error) {
-				errorMessage = error.message;
-			}
-
-			dispatch(slice.actions.hasError(errorMessage));
-			// No lanzar el error para evitar el mensaje en consola
-			console.error("Error en getUnifiedStats:", errorMessage);
+		// Dedup: si ya hay un request en vuelo para este userId+sections, reutilizarlo.
+		// forceRefresh skipea la dedup para que el retry siempre dispare un fetch real.
+		const flightKey = `${userId}|${sections}`;
+		if (!forceRefresh) {
+			const existing = inFlightRequests.get(flightKey);
+			if (existing) return existing;
 		}
+
+		const flight = (async () => {
+			dispatch(slice.actions.startLoading());
+
+			try {
+				const baseURL = import.meta.env.VITE_BASE_URL || "";
+				const url = `${baseURL}/api/stats/unified/${userId}`;
+
+				// Log para debugging
+				console.log("🔍 [UnifiedStats] Fetching stats:", {
+					environment: import.meta.env.MODE,
+					baseURL,
+					fullURL: url,
+					userId,
+					sections,
+				});
+
+				const response = await axios.get<UnifiedStatsResponse>(url, {
+					params: { sections },
+					withCredentials: true,
+				});
+
+				// Log de respuesta
+				console.log("✅ [UnifiedStats] Response received:", {
+					environment: import.meta.env.MODE,
+					success: response.data.success,
+					resolutionTime: response.data.data?.folders?.resolutionTimes?.overall,
+					activefolders: response.data.data?.dashboard?.folders?.active,
+					closedFolders: response.data.data?.dashboard?.folders?.closed,
+					dataQuality: response.data.dataQuality,
+					matters: response.data.data?.matters,
+					foldersbyMatter: response.data.data?.folders?.byMatter,
+					lastUpdated: response.data.lastUpdated,
+					fullData: response.data.data,
+				});
+
+				if (response.data.success && response.data.data) {
+					dispatch(
+						slice.actions.setStatsSuccess({
+							data: response.data.data,
+							userId: userId,
+							dataQuality: response.data.dataQuality,
+							lastUpdated: response.data.lastUpdated,
+							descriptions: response.data.descriptions,
+							cacheInfo: response.data.cacheInfo,
+						}),
+					);
+				} else {
+					throw new Error("Formato de respuesta inválido");
+				}
+			} catch (error) {
+				let errorMessage = "Error al cargar las estadísticas";
+
+				if (axios.isAxiosError(error)) {
+					if (error.response?.status === 401) {
+						errorMessage = "No autorizado. Por favor inicia sesión nuevamente";
+					} else if (error.response?.status === 403) {
+						errorMessage = "No tienes permisos para ver esta información";
+					} else if (error.response?.status === 404) {
+						errorMessage = "No se encontraron estadísticas para este usuario";
+					} else if (error.response?.data?.message) {
+						errorMessage = error.response.data.message;
+					} else if (error.message) {
+						// Evitar mostrar "Wrong Services"
+						errorMessage = error.message === "Wrong Services" ? "Error de conexión con el servidor" : error.message;
+					}
+				} else if (error instanceof Error) {
+					errorMessage = error.message;
+				}
+
+				dispatch(slice.actions.hasError(errorMessage));
+				// No lanzar el error para evitar el mensaje en consola
+				console.error("Error en getUnifiedStats:", errorMessage);
+			}
+		})();
+
+		inFlightRequests.set(flightKey, flight);
+		flight.finally(() => {
+			if (inFlightRequests.get(flightKey) === flight) {
+				inFlightRequests.delete(flightKey);
+			}
+		});
+
+		return flight;
 	};
 }
 

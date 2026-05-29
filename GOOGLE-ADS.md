@@ -9,6 +9,7 @@ Todo tu estudio jurídico en un solo lugar: expedientes sincronizados automátic
 ## Palabras clave / Temas de búsqueda
 
 ### Búsquedas directas de software
+
 - software para abogados
 - software jurídico
 - software para estudios jurídicos
@@ -18,6 +19,7 @@ Todo tu estudio jurídico en un solo lugar: expedientes sincronizados automátic
 - software legal argentina
 
 ### Búsquedas por problema/necesidad
+
 - consultar expedientes poder judicial
 - seguimiento de expedientes judiciales
 - gestión de expedientes legales
@@ -26,6 +28,7 @@ Todo tu estudio jurídico en un solo lugar: expedientes sincronizados automátic
 - alertas vencimientos judiciales
 
 ### Búsquedas de calculadoras
+
 - calculadora indemnización laboral
 - calculadora despido
 - liquidación por despido
@@ -34,12 +37,14 @@ Todo tu estudio jurídico en un solo lugar: expedientes sincronizados automátic
 - calculadora intereses judiciales
 
 ### Búsquedas específicas del Poder Judicial
+
 - consulta expedientes PJN
 - poder judicial de la nación expedientes
 - expedientes provincia buenos aires
 - consultar causas judiciales
 
 ### Búsquedas de alternativas
+
 - CRM para abogados
 - sistema de gestión legal
 
@@ -54,6 +59,7 @@ Todo tu estudio jurídico en un solo lugar: expedientes sincronizados automátic
 5. Nunca Pierdas un Plazo
 
 ### Títulos alternativos
+
 - Expedientes Automáticos
 - Gestión Jurídica Simple
 - Todo en Un Solo Lugar
@@ -98,31 +104,37 @@ Todo tu estudio jurídico en un solo lugar: expedientes sincronizados automátic
 ## Enlaces de sitio (Sitelinks)
 
 ### 1. Registrate Gratis
+
 - **URL:** https://lawanalytics.app/register
 - **Descripción 1:** Creá tu cuenta en 1 minuto, sin tarjeta de crédito
 - **Descripción 2:** 30 días de prueba gratis con acceso completo
 
 ### 2. Ver Planes y Precios
+
 - **URL:** https://lawanalytics.app/plans
 - **Descripción 1:** Conocé nuestros planes y todos los beneficios
 - **Descripción 2:** Elegí el plan ideal para tu estudio jurídico
 
 ### 3. Calculadora Laboral
+
 - **URL:** https://lawanalytics.app/calculator/labor
 - **Descripción 1:** Calculá indemnizaciones y despidos en minutos
 - **Descripción 2:** Cálculos precisos con tasas actualizadas del BCRA
 
 ### 4. Preguntas Frecuentes
+
 - **URL:** https://lawanalytics.app/faq
 - **Descripción 1:** Respuestas a las dudas más comunes
 - **Descripción 2:** Todo lo que necesitás saber antes de empezar
 
 ### 5. Guías y Tutoriales
+
 - **URL:** https://lawanalytics.app/guides
 - **Descripción 1:** Aprendé a usar la plataforma paso a paso
 - **Descripción 2:** Tutoriales para sacarle el máximo provecho
 
 ### 6. Iniciar Sesión
+
 - **URL:** https://lawanalytics.app/login
 - **Descripción 1:** Accedé a tu cuenta de Law Analytics
 - **Descripción 2:** Ingresá y gestioná tu estudio jurídico

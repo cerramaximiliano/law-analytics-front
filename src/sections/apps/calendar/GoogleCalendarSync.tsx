@@ -13,7 +13,7 @@ import {
 	DialogContent,
 	Skeleton,
 } from "@mui/material";
-import { Google, Refresh, Link21, CloseCircle } from "iconsax-react";
+import { Google, Refresh, CloseCircle } from "iconsax-react";
 import { useDispatch, useSelector } from "store";
 import {
 	initializeGoogleCalendar,
@@ -207,57 +207,32 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 				}}
 			>
 				{!isConnected ? (
-					<Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="space-between">
-						<Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
-							{userProfile?.email ? (
-								// Si hay perfil previo guardado, mostrar avatar
-								<Avatar
-									src={!imageError && userProfile?.imageUrl ? userProfile.imageUrl : undefined}
-									sx={{
-										width: { xs: 18, sm: 20 },
-										height: { xs: 18, sm: 20 },
-										fontSize: "0.7rem",
-										bgcolor: "primary.lighter",
-										color: "primary.main",
-										flexShrink: 0,
-									}}
-									imgProps={{
-										referrerPolicy: "no-referrer",
-										onError: () => setImageError(true),
-									}}
-								>
-									{userProfile?.email?.charAt(0)?.toUpperCase()}
-								</Avatar>
-							) : (
-								// Si no hay perfil previo, mostrar icono de Google
-								<Google size={18} variant="Bold" color="#666" />
-							)}
+					/* Estado idle / no conectado: CTA claro, sin ambigüedad de skeleton */
+					<Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+						{userProfile?.email && (
 							<Box sx={{ minWidth: 0, flex: 1, display: { xs: "none", sm: "block" } }}>
-								<Typography variant="caption" sx={{ lineHeight: 1.2 }} noWrap>
-									Google Calendar
+								<Typography variant="caption" color="text.secondary" noWrap sx={{ fontSize: "0.7rem" }}>
+									{userProfile.email}
 								</Typography>
-								{userProfile?.email && (
-									<Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.7rem" }} noWrap>
-										{userProfile.email}
-									</Typography>
-								)}
 							</Box>
-						</Stack>
+						)}
 						<Button
-							variant="contained"
-							startIcon={<Link21 size={14} />}
+							variant="outlined"
+							startIcon={<Google size={16} variant="Bold" />}
 							onClick={handleConnect}
-							disabled={isLoading}
 							size="small"
 							sx={{
-								minWidth: "auto",
 								fontSize: { xs: "0.7rem", sm: "0.75rem" },
 								py: 0.5,
-								px: { xs: 0.75, sm: 1 },
+								px: { xs: 1, sm: 1.5 },
+								whiteSpace: "nowrap",
 								flexShrink: 0,
+								borderColor: "divider",
+								color: "text.primary",
+								"&:hover": { borderColor: "primary.main", color: "primary.main" },
 							}}
 						>
-							{userProfile?.email ? "Reconectar" : "Conectar"}
+							{userProfile?.email ? "Reconectar Google Calendar" : "Conectar con Google Calendar"}
 						</Button>
 					</Stack>
 				) : (

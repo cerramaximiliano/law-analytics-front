@@ -4,6 +4,7 @@ import Drawer from "@mui/material/Drawer";
 
 // project-imports
 import { DRAWER_WIDTH, MINI_DRAWER_WIDTH } from "config";
+import { railBorder } from "themes/dashboardTokens";
 
 // types
 import { ThemeMode } from "types/config";
@@ -11,7 +12,7 @@ import { ThemeMode } from "types/config";
 const openedMixin = (theme: Theme): CSSObject => ({
 	backgroundColor: theme.palette.background.default,
 	width: DRAWER_WIDTH,
-	borderRight: `1px dashed ${theme.palette.mode === ThemeMode.DARK ? theme.palette.secondary[200] : theme.palette.secondary[400]}`,
+	borderRight: `1px solid ${railBorder(theme.palette.mode === ThemeMode.DARK)}`,
 	transition: theme.transitions.create("width", {
 		easing: theme.transitions.easing.sharp,
 		duration: theme.transitions.duration.enteringScreen,
@@ -28,7 +29,7 @@ const closedMixin = (theme: Theme): CSSObject => ({
 	}),
 	overflowX: "hidden",
 	width: MINI_DRAWER_WIDTH,
-	borderRight: "none",
+	borderRight: `1px solid ${railBorder(theme.palette.mode === ThemeMode.DARK)}`,
 	boxShadow: theme.customShadows.z1,
 });
 

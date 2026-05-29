@@ -1,6 +1,5 @@
 import React from "react";
-import { useState, SyntheticEvent } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { useState, useRef, SyntheticEvent } from "react";
 
 // material-ui
 import {
@@ -11,7 +10,6 @@ import {
 	FormControl,
 	FormHelperText,
 	Grid,
-	Link,
 	InputAdornment,
 	OutlinedInput,
 	Stack,
@@ -32,13 +30,13 @@ import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { setNeedsVerification } from "store/reducers/auth";
 import { strengthColor, strengthIndicator } from "utils/password-strength";
-import { trackSignUp } from "utils/gtm";
+import { trackSignUp, trackRegisterFormStart, trackRegisterFormSubmit, trackRegisterFormError } from "utils/gtm";
 
 // types
 import { StringColorProps } from "types/password";
 
 // assets
-import { Eye, EyeSlash, TickCircle, Sms, Lock } from "iconsax-react";
+import { Eye, EyeSlash, Sms, Lock } from "iconsax-react";
 
 // ============================|| JWT - REGISTER ||============================ //
 
@@ -56,6 +54,14 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 
 	const [level, setLevel] = useState<StringColorProps>();
 	const [showPassword, setShowPassword] = useState(false);
+	const formStartedRef = useRef(false);
+
+	const fireFormStartOnce = () => {
+		if (!formStartedRef.current) {
+			formStartedRef.current = true;
+			trackRegisterFormStart(source, feature);
+		}
+	};
 	const handleClickShowPassword = () => {
 		setShowPassword(!showPassword);
 	};
@@ -82,6 +88,7 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 					password: Yup.string().min(8, "Mínimo 8 caracteres").max(255).required("El password es requerido"),
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
+					trackRegisterFormSubmit("email", source, feature);
 					try {
 						await register(values.email, values.password);
 						if (scriptedRef.current) {
@@ -116,10 +123,13 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 							}, 500);
 						}
 					} catch (err: any) {
+						const apiMessage = err?.response?.data?.message;
+						const errorType = err?.response?.status ? `api_${err.response.status}` : "api_network";
+						trackRegisterFormError(errorType, apiMessage, source);
 						if (scriptedRef.current) {
 							setStatus({ success: false });
 							setTimeout(() => {
-								setErrors({ submit: err.response.data.message });
+								setErrors({ submit: apiMessage });
 							}, 1);
 							setSubmitting(false);
 						}
@@ -146,7 +156,10 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 										value={values.email}
 										name="email"
 										onBlur={handleBlur}
-										onChange={handleChange}
+										onChange={(e) => {
+											fireFormStartOnce();
+											handleChange(e);
+										}}
 										placeholder="nombre@estudio.com"
 										startAdornment={
 											<InputAdornment position="start">
@@ -178,6 +191,7 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 										name="password"
 										onBlur={handleBlur}
 										onChange={(e) => {
+											fireFormStartOnce();
 											handleChange(e);
 											changePassword(e.target.value);
 										}}
@@ -247,54 +261,6 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 										{isSubmitting ? "Creando..." : "Empezar gratis ahora"}
 									</Button>
 								</AnimateButton>
-								<Stack direction="row" spacing={1} justifyContent="center" alignItems="center" sx={{ mt: 1.5 }}>
-									<Stack direction="row" alignItems="center" spacing={0.3}>
-										<TickCircle size={10} variant="Bold" color="#4caf50" />
-										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
-											Sin tarjeta
-										</Typography>
-									</Stack>
-									<Stack direction="row" alignItems="center" spacing={0.3}>
-										<TickCircle size={10} variant="Bold" color="#4caf50" />
-										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
-											Acceso inmediato
-										</Typography>
-									</Stack>
-									<Stack direction="row" alignItems="center" spacing={0.3}>
-										<TickCircle size={10} variant="Bold" color="#4caf50" />
-										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
-											Cancelá cuando quieras
-										</Typography>
-									</Stack>
-								</Stack>
-								<Typography
-									variant="caption"
-									color="text.secondary"
-									sx={{ mt: 2, display: "block", textAlign: "center", fontSize: "0.65rem", lineHeight: 1.6, opacity: 0.7 }}
-								>
-									Registrándose, está de acuerdo con{" "}
-									<Link
-										variant="caption"
-										component={RouterLink}
-										to="/terms"
-										target="_blank"
-										rel="noopener noreferrer"
-										sx={{ fontSize: "0.65rem" }}
-									>
-										Términos del Servicio
-									</Link>{" "}
-									y{" "}
-									<Link
-										variant="caption"
-										component={RouterLink}
-										to="/privacy-policy"
-										target="_blank"
-										rel="noopener noreferrer"
-										sx={{ fontSize: "0.65rem" }}
-									>
-										Política de Privacidad
-									</Link>
-								</Typography>
 							</Grid>
 						</Grid>
 					</form>

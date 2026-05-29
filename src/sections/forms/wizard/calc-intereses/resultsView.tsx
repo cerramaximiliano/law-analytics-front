@@ -25,6 +25,7 @@ import { addCalculator } from "store/reducers/calculator";
 import { CalculatorType } from "types/calculator";
 import { CalculationDetailsView } from "components/calculator/CalculationDetailsView";
 import { getEffectiveInterest } from "components/calculator/InterestSegmentsManager";
+import { useTeam } from "contexts/TeamContext";
 
 //third party
 import dayjs from "utils/dayjs-config";
@@ -73,8 +74,7 @@ const formatTipoIndice = (tipoIndice: string): string => {
 };
 
 // Tipos de índice que devuelven datos { inicio, fin } en lugar de un array diario.
-const ES_INDICE_PUNTUAL = (tipoIndice?: string): boolean =>
-	tipoIndice === "indexado" || tipoIndice === "porcentajeAcumulado";
+const ES_INDICE_PUNTUAL = (tipoIndice?: string): boolean => tipoIndice === "indexado" || tipoIndice === "porcentajeAcumulado";
 
 // Tipo para los segmentos de intereses
 interface InterestSegment {
@@ -114,6 +114,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 	const [segmentsTasasData, setSegmentsTasasData] = useState<Record<string, any>>({});
 
 	const userFromRedux = useSelector((state: RootState) => state.auth.user);
+	const { getRequestHeaders } = useTeam();
 
 	// Cargar datos de tasas cuando se abre el modal
 	useEffect(() => {
@@ -613,7 +614,13 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 					text += `    Calculado: ${formatValue("interest", segment.interest)}\n`;
 					text += `    Piso (67% × CER+3%): ${formatValue("interest", segment.cerComparison.piso?.monto || 0)}\n`;
 					text += `    Techo (CER+3%): ${formatValue("interest", segment.cerComparison.techo?.monto || 0)}\n`;
-					text += `    Aplicado: ${formatValue("interest", eff)}${eff === segment.cerComparison.techo?.monto ? " (techo)" : eff === segment.cerComparison.piso?.monto ? " (piso)" : " (dentro del rango)"}\n`;
+					text += `    Aplicado: ${formatValue("interest", eff)}${
+						eff === segment.cerComparison.techo?.monto
+							? " (techo)"
+							: eff === segment.cerComparison.piso?.monto
+							? " (piso)"
+							: " (dentro del rango)"
+					}\n`;
 				}
 			});
 			if (values.capitalizeInterest) {
@@ -878,7 +885,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 
 			// Utilizar la acción asíncrona addCalculator que ya tienes en tu store
 			// Esta acción ya maneja la llamada a la API y la actualización del store
-			const result = await dispatch(addCalculator(calculatorData));
+			const result = await dispatch(addCalculator(calculatorData, { headers: getRequestHeaders() }));
 
 			if (result.success) {
 				enqueueSnackbar("Cálculo guardado correctamente", {

@@ -1,20 +1,6 @@
 import React, { useState, useEffect } from "react";
-import {
-	Box,
-	Tabs,
-	Tab,
-	Divider,
-	Paper,
-	Typography,
-	Badge,
-	useTheme,
-	useMediaQuery,
-	Drawer,
-	IconButton,
-	Stack,
-	alpha,
-} from "@mui/material";
-import { Calculator, People, TaskSquare, Menu, DocumentText } from "iconsax-react";
+import { Box, Tabs, Tab, Typography, Badge, useTheme, useMediaQuery, Drawer, IconButton, Stack, alpha } from "@mui/material";
+import { Calculator, People, TaskSquare, Menu, DocumentText, Briefcase } from "iconsax-react";
 import MainCard from "components/MainCard";
 import CalcTableResponsive from "../components/CalcTableResponsive";
 import MembersImproved from "../components/MembersImproved";
@@ -23,9 +9,11 @@ import Notes from "../components/Notes";
 import { FolderData } from "types/folder";
 import { useSelector, dispatch } from "store";
 import { getCalculatorsByFolderId } from "store/reducers/calculator";
-import { filterContactsByFolder, getContactsByUserId } from "store/reducers/contacts";
+import { filterContactsByFolder, getContactsByUserId, getContactsByGroupId } from "store/reducers/contacts";
 import { getTasksByFolderId } from "store/reducers/tasks";
+import { useTeam } from "contexts/TeamContext";
 import type { RootState } from "store";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 interface TabPanelProps {
 	children?: React.ReactNode;
@@ -44,46 +32,63 @@ function TabPanel(props: TabPanelProps) {
 }
 
 interface GestionTabImprovedProps {
-	folder: FolderData;
+	folder: FolderData & { groupId?: string };
 	isDetailedView: boolean;
 }
 
 const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetailedView }) => {
+	void isDetailedView;
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const [value, setValue] = useState(0);
 	const [mobileOpen, setMobileOpen] = useState(false);
 
-	// Get data from Redux store
+	const { activeTeam, isTeamMode } = useTeam();
+
 	const { selectedCalculators } = useSelector((state: RootState) => state.calculator);
-	const { selectedContacts, contacts } = useSelector((state: RootState) => state.contacts);
-	const { selectedTasks } = useSelector((state: RootState) => state.tasksReducer);
+	const { selectedContacts, isInitialized: contactsInitialized } = useSelector((state: RootState) => state.contacts);
+	const { selectedTasks, selectedFolderId: tasksFolderId } = useSelector((state: RootState) => state.tasksReducer);
 	const { selectedNotes } = useSelector((state: RootState) => state.notesReducer);
 	const userId = useSelector((state: RootState) => state.auth.user?._id);
 
-	// Fetch data when component mounts
-	useEffect(() => {
-		if (folder._id) {
-			const fetchData = async () => {
-				// Fetch calculations and tasks
-				dispatch(getCalculatorsByFolderId(folder._id));
-				dispatch(getTasksByFolderId(folder._id));
+	const lastFetchedFolderIdRef = React.useRef<string | null>(null);
 
-				// Fetch contacts if needed, then filter by folder
-				if (userId && (!contacts || contacts.length === 0)) {
-					await dispatch(getContactsByUserId(userId));
-				}
-				dispatch(filterContactsByFolder(folder._id));
-			};
-			fetchData();
+	useEffect(() => {
+		if (!folder._id) return;
+
+		if (lastFetchedFolderIdRef.current === folder._id) {
+			return;
 		}
-	}, [folder._id, userId]);
+
+		const fetchData = async () => {
+			const groupId = folder.groupId || (isTeamMode ? activeTeam?._id : undefined);
+
+			dispatch(getCalculatorsByFolderId(folder._id, groupId));
+
+			if (tasksFolderId !== folder._id) {
+				dispatch(getTasksByFolderId(folder._id));
+			}
+
+			if (groupId) {
+				await dispatch(getContactsByGroupId(groupId));
+			} else if (userId && !contactsInitialized) {
+				await dispatch(getContactsByUserId(userId));
+			}
+			dispatch(filterContactsByFolder(folder._id));
+
+			lastFetchedFolderIdRef.current = folder._id;
+		};
+
+		fetchData();
+	}, [folder._id, folder.groupId, userId, isTeamMode, activeTeam?._id, tasksFolderId, contactsInitialized]);
 
 	const pendingTasks = selectedTasks?.filter((t: any) => !t.checked).length || 0;
 	const totalTasks = selectedTasks?.length || 0;
 	const completedTasks = totalTasks - pendingTasks;
+	const completionPct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-	const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+	const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
 		setValue(newValue);
 		if (isMobile) {
 			setMobileOpen(false);
@@ -93,24 +98,21 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 	const tabData = [
 		{
 			icon: <Calculator size={20} />,
-			label: "Cálculos, Montos y Ofrecimientos",
+			label: "Cálculos, montos y ofrecimientos",
 			shortLabel: "Cálculos",
 			description: `${selectedCalculators?.length || 0} registros`,
-			color: theme.palette.primary.main,
 		},
 		{
 			icon: <People size={20} />,
 			label: "Intervinientes",
 			shortLabel: "Intervinientes",
 			description: `${selectedContacts?.length || 0} contactos`,
-			color: theme.palette.success.main,
 		},
 		{
 			icon: <TaskSquare size={20} />,
 			label: "Tareas",
 			shortLabel: "Tareas",
 			description: `${pendingTasks} pendientes de ${totalTasks}`,
-			color: theme.palette.warning.main,
 			badge: pendingTasks,
 		},
 		{
@@ -118,9 +120,35 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 			label: "Notas",
 			shortLabel: "Notas",
 			description: `${selectedNotes?.length || 0} notas`,
-			color: theme.palette.info.main,
 		},
 	];
+
+	const StatRow = ({ label, value: rowValue }: { label: string; value: React.ReactNode }) => (
+		<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+			<Typography
+				sx={{
+					fontSize: "0.7rem",
+					fontWeight: 600,
+					letterSpacing: "0.04em",
+					textTransform: "uppercase",
+					color: "text.secondary",
+				}}
+			>
+				{label}
+			</Typography>
+			<Typography
+				sx={{
+					fontSize: "0.82rem",
+					fontWeight: 600,
+					color: "text.primary",
+					letterSpacing: "-0.005em",
+					fontVariantNumeric: "tabular-nums",
+				}}
+			>
+				{rowValue}
+			</Typography>
+		</Box>
+	);
 
 	const sidebarContent = (
 		<Box
@@ -129,109 +157,216 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 				display: "flex",
 				flexDirection: "column",
 				height: "100%",
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+				borderRight: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
 			}}
 		>
-			<Box sx={{ p: 2 }}>
-				<Typography variant="h5" sx={{ fontWeight: 600 }}>
-					Gestión
-				</Typography>
-				<Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-					Administra cálculos, intervinientes y tareas
-				</Typography>
+			{/* Header */}
+			<Box sx={{ p: 1.75, borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}>
+				<Stack direction="row" spacing={1.25} alignItems="center">
+					<Box
+						sx={{
+							width: 32,
+							height: 32,
+							borderRadius: 1,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+							color: BRAND_BLUE,
+						}}
+					>
+						<Briefcase size={16} variant="Bulk" />
+					</Box>
+					<Stack spacing={0.125}>
+						<Stack direction="row" spacing={0.5} alignItems="center">
+							<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+							<Typography
+								sx={{
+									fontSize: "0.58rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+								}}
+							>
+								Gestión
+							</Typography>
+						</Stack>
+						<Typography
+							sx={{
+								fontSize: "0.82rem",
+								fontWeight: 600,
+								letterSpacing: "-0.005em",
+								color: "text.primary",
+								lineHeight: 1.3,
+							}}
+						>
+							Cálculos, contactos y tareas
+						</Typography>
+					</Stack>
+				</Stack>
 			</Box>
-			<Divider />
+
+			{/* Tabs verticales */}
 			<Box sx={{ flex: 1 }}>
 				<Tabs
 					orientation="vertical"
 					variant="standard"
 					value={value}
 					onChange={handleChange}
+					TabIndicatorProps={{
+						sx: {
+							left: 0,
+							width: 3,
+							borderRadius: "0 2px 2px 0",
+							bgcolor: BRAND_BLUE,
+							transition: "all 200ms ease",
+						},
+					}}
 					sx={{
 						borderRight: 0,
-						"& .MuiTabs-indicator": {
-							left: 0,
-							width: 4,
-							transition: "all 0.3s ease",
-						},
 						"& .MuiTab-root": {
-							minHeight: 72,
+							minHeight: 68,
 							justifyContent: "flex-start",
 							textAlign: "left",
 							alignItems: "flex-start",
-							px: 2,
-							py: 1.5,
+							px: 1.75,
+							py: 1.25,
 							borderRadius: 0,
 							textTransform: "none",
-							transition: "all 0.2s ease",
+							transition: "all 180ms ease",
 							"&.Mui-selected": {
-								bgcolor: alpha(theme.palette.primary.main, 0.08),
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
 							},
 							"&:hover": {
-								bgcolor: alpha(theme.palette.primary.main, 0.04),
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
 							},
 						},
 					}}
 				>
-					{tabData.map((tab, index) => (
-						<Tab
-							key={index}
-							label={
-								<Stack direction="row" spacing={2} alignItems="center" sx={{ width: "100%" }}>
-									<Box sx={{ color: tab.color }}>
-										{tab.badge ? (
-											<Badge badgeContent={tab.badge} color="warning">
-												{tab.icon}
-											</Badge>
-										) : (
-											tab.icon
-										)}
-									</Box>
-									<Stack spacing={0.5} sx={{ textAlign: "left" }}>
-										<Typography variant="body1" sx={{ fontWeight: 500 }}>
-											{tab.shortLabel}
-										</Typography>
-										<Typography variant="caption" color="text.secondary">
-											{tab.description}
-										</Typography>
+					{tabData.map((tab, index) => {
+						const active = value === index;
+						return (
+							<Tab
+								key={index}
+								disableRipple
+								label={
+									<Stack direction="row" spacing={1.25} alignItems="center" sx={{ width: "100%" }}>
+										<Box
+											sx={{
+												width: 28,
+												height: 28,
+												borderRadius: 0.75,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												bgcolor: active ? alpha(BRAND_BLUE, isDark ? 0.18 : 0.1) : alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+												border: `1px solid ${active ? alpha(BRAND_BLUE, isDark ? 0.32 : 0.22) : alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+												color: BRAND_BLUE,
+												flexShrink: 0,
+												transition: "all 180ms ease",
+											}}
+										>
+											{tab.badge ? (
+												<Badge
+													badgeContent={tab.badge}
+													sx={{
+														"& .MuiBadge-badge": {
+															bgcolor: STALE_AMBER,
+															color: "#fff",
+															fontSize: "0.58rem",
+															fontWeight: 700,
+															height: 14,
+															minWidth: 14,
+															padding: "0 4px",
+														},
+													}}
+												>
+													{React.cloneElement(tab.icon, { size: 14, variant: active ? "Bulk" : "Linear" })}
+												</Badge>
+											) : (
+												React.cloneElement(tab.icon, { size: 14, variant: active ? "Bulk" : "Linear" })
+											)}
+										</Box>
+										<Stack spacing={0.125} sx={{ textAlign: "left", minWidth: 0 }}>
+											<Typography
+												sx={{
+													fontSize: "0.85rem",
+													fontWeight: active ? 600 : 500,
+													letterSpacing: "-0.005em",
+													color: active ? "text.primary" : "text.secondary",
+												}}
+											>
+												{tab.shortLabel}
+											</Typography>
+											<Typography
+												sx={{
+													fontSize: "0.68rem",
+													color: "text.secondary",
+													letterSpacing: "-0.005em",
+													opacity: 0.85,
+												}}
+											>
+												{tab.description}
+											</Typography>
+										</Stack>
 									</Stack>
-								</Stack>
-							}
-						/>
-					))}
+								}
+							/>
+						);
+					})}
 				</Tabs>
 			</Box>
-			<Divider />
-			<Box sx={{ p: 1.5 }}>
-				<Paper
-					sx={{
-						p: 1.5,
-						bgcolor: alpha(theme.palette.primary.main, 0.04),
-						border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-						borderRadius: 2,
-					}}
-				>
-					<Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600 }}>
-						Estado General
+
+			{/* Stats footer */}
+			<Box sx={{ p: 1.75, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}>
+				<Stack direction="row" spacing={0.5} alignItems="center" mb={1}>
+					<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+					<Typography
+						sx={{
+							fontSize: "0.58rem",
+							fontWeight: 600,
+							letterSpacing: "0.08em",
+							textTransform: "uppercase",
+							color: "text.secondary",
+						}}
+					>
+						Estado general
 					</Typography>
-					<Stack spacing={0.25}>
-						<Box sx={{ display: "flex", justifyContent: "space-between" }}>
-							<Typography variant="body2" color="text.secondary">
-								Completitud:
-							</Typography>
-							<Typography variant="body2" fontWeight={600}>
-								{totalTasks > 0 ? `${Math.round((completedTasks / totalTasks) * 100)}%` : "0%"}
-							</Typography>
+				</Stack>
+				<Stack spacing={0.875}>
+					<StatRow
+						label="Completitud"
+						value={
+							<Box component="span" sx={{ color: completionPct === 100 ? LIVE_GREEN : BRAND_BLUE, fontWeight: 700 }}>
+								{completionPct}%
+							</Box>
+						}
+					/>
+					{totalTasks > 0 && (
+						<Box
+							sx={{
+								width: "100%",
+								height: 5,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08),
+								borderRadius: 1,
+								overflow: "hidden",
+							}}
+						>
+							<Box
+								sx={{
+									width: `${completionPct}%`,
+									height: "100%",
+									bgcolor: completionPct === 100 ? LIVE_GREEN : BRAND_BLUE,
+									transition: "width 300ms ease",
+								}}
+							/>
 						</Box>
-						<Box sx={{ display: "flex", justifyContent: "space-between" }}>
-							<Typography variant="body2" color="text.secondary">
-								Última actualización:
-							</Typography>
-							<Typography variant="body2" fontWeight={600}>
-								Hoy
-							</Typography>
-						</Box>
-					</Stack>
-				</Paper>
+					)}
+					<StatRow label="Última actualización" value="Hoy" />
+				</Stack>
 			</Box>
 		</Box>
 	);
@@ -239,19 +374,66 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 	return (
 		<MainCard
 			content={false}
-			sx={{ display: "flex", flexDirection: "column", height: isMobile ? "auto" : "calc(100vh - 200px)", overflow: "hidden" }}
+			sx={{
+				display: "flex",
+				flexDirection: "column",
+				height: isMobile ? "auto" : "calc(100vh - 200px)",
+				overflow: "hidden",
+				borderRadius: 1.5,
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+				boxShadow: "none",
+			}}
 		>
 			{isMobile ? (
 				<>
 					<Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
-						<Box sx={{ display: "flex", alignItems: "center", p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
-							<IconButton onClick={() => setMobileOpen(true)} sx={{ mr: 1 }}>
-								<Menu />
+						{/* Mobile header */}
+						<Box
+							sx={{
+								display: "flex",
+								alignItems: "center",
+								gap: 1,
+								p: 1.5,
+								borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+							}}
+						>
+							<IconButton
+								onClick={() => setMobileOpen(true)}
+								sx={{
+									width: 32,
+									height: 32,
+									borderRadius: 1,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.05),
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+									color: BRAND_BLUE,
+									"&:hover": {
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+									},
+								}}
+							>
+								<Menu size={16} variant="Bulk" />
 							</IconButton>
-							<Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
-								{tabData[value].shortLabel}
-							</Typography>
-							<Typography variant="caption" color="text.secondary">
+							<Stack spacing={0.125} sx={{ minWidth: 0, flex: 1 }}>
+								<Stack direction="row" spacing={0.5} alignItems="center">
+									<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+									<Typography
+										sx={{
+											fontSize: "0.58rem",
+											fontWeight: 600,
+											letterSpacing: "0.08em",
+											textTransform: "uppercase",
+											color: "text.secondary",
+										}}
+									>
+										Sección activa
+									</Typography>
+								</Stack>
+								<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+									{tabData[value].shortLabel}
+								</Typography>
+							</Stack>
+							<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 								{tabData[value].description}
 							</Typography>
 						</Box>
@@ -274,8 +456,12 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 						anchor="left"
 						open={mobileOpen}
 						onClose={() => setMobileOpen(false)}
-						ModalProps={{
-							keepMounted: true,
+						ModalProps={{ keepMounted: true }}
+						PaperProps={{
+							sx: {
+								border: "none",
+								boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+							},
 						}}
 					>
 						{sidebarContent}
@@ -283,16 +469,7 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 				</>
 			) : (
 				<Box sx={{ display: "flex", width: "100%", height: "100%" }}>
-					<Paper
-						elevation={0}
-						sx={{
-							borderRight: `1px solid ${theme.palette.divider}`,
-							bgcolor: theme.palette.mode === "dark" ? alpha(theme.palette.background.paper, 0.8) : theme.palette.grey[50],
-							flexShrink: 0,
-						}}
-					>
-						{sidebarContent}
-					</Paper>
+					{sidebarContent}
 					<Box sx={{ flexGrow: 1, overflow: "auto", display: "flex", flexDirection: "column" }}>
 						<Box sx={{ flex: 1, p: 3, overflow: "auto" }}>
 							<TabPanel value={value} index={0}>

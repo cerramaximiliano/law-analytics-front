@@ -113,7 +113,7 @@ function ChatDrawer({ handleDrawerOpen, openChatDrawer, setUser }: ChatDrawerPro
 					<Stack spacing={2}>
 						<Stack direction="row" spacing={0.5} alignItems="center">
 							<Typography variant="h5" color="inherit">
-								Messages
+								Mensajes
 							</Typography>
 							<Chip
 								label="9"
@@ -133,7 +133,7 @@ function ChatDrawer({ handleDrawerOpen, openChatDrawer, setUser }: ChatDrawerPro
 						<OutlinedInput
 							fullWidth
 							id="input-search-header"
-							placeholder="Search"
+							placeholder="Buscar"
 							value={search}
 							onChange={handleSearch}
 							sx={{
@@ -167,13 +167,13 @@ function ChatDrawer({ handleDrawerOpen, openChatDrawer, setUser }: ChatDrawerPro
 							<ListItemIcon>
 								<Logout variant="Bulk" />
 							</ListItemIcon>
-							<ListItemText primary="LogOut" />
+							<ListItemText primary="Cerrar sesión" />
 						</ListItemButton>
 						<ListItemButton>
 							<ListItemIcon>
 								<Setting3 variant="Bulk" />
 							</ListItemIcon>
-							<ListItemText primary="Settings" />
+							<ListItemText primary="Configuración" />
 						</ListItemButton>
 					</List>
 				</Box>
@@ -238,7 +238,7 @@ function ChatDrawer({ handleDrawerOpen, openChatDrawer, setUser }: ChatDrawerPro
 											>
 												<TickCircle variant="Bold" />
 											</IconButton>
-											<Typography>Active</Typography>
+											<Typography>Disponible</Typography>
 										</MenuItem>
 										<MenuItem onClick={handleRightMenuItemClick("offline")}>
 											<IconButton
@@ -255,7 +255,7 @@ function ChatDrawer({ handleDrawerOpen, openChatDrawer, setUser }: ChatDrawerPro
 											>
 												<Clock />
 											</IconButton>
-											<Typography>Away</Typography>
+											<Typography>Ausente</Typography>
 										</MenuItem>
 										<MenuItem onClick={handleRightMenuItemClick("do_not_disturb")}>
 											<IconButton
@@ -272,7 +272,7 @@ function ChatDrawer({ handleDrawerOpen, openChatDrawer, setUser }: ChatDrawerPro
 											>
 												<MinusCirlce />
 											</IconButton>
-											<Typography>Do not disturb</Typography>
+											<Typography>No molestar</Typography>
 										</MenuItem>
 									</Menu>
 								</Grid>

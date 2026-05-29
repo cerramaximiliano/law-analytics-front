@@ -30,6 +30,7 @@ import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
+import { useTeam } from "contexts/TeamContext";
 
 // ===========================|| DATA WIDGET - USER PERSONAL DATA ||=========================== //
 
@@ -41,7 +42,7 @@ const customInputStyles = {
 		fontSize: 12,
 	},
 	"& input::placeholder": {
-		color: "#000000",
+		color: "text.primary",
 		opacity: 0.6,
 	},
 };
@@ -50,13 +51,14 @@ const customTextareaStyles = {
 		fontSize: 12,
 	},
 	"& textarea::placeholder": {
-		color: "#000000",
+		color: "text.primary",
 		opacity: 0.6,
 	},
 };
 
 const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean; type: string }) => {
 	const { id } = useParams<{ id: string }>();
+	const { canUpdate } = useTeam();
 
 	// Formateo de fechas a DD/MM/YYYY
 	const formatDate = (date: string | null | undefined) => {
@@ -442,7 +444,7 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 								sx={{
 									mt: 4,
 									borderBottomWidth: 1,
-									borderColor: "rgba(0, 0, 0, 0.12)",
+									borderColor: "divider",
 									width: "100%",
 								}}
 							/>
@@ -461,19 +463,21 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 										</>
 									)}
 
-									<Stack direction="row" spacing={2}>
-										<Grid>
-											{isEditing ? (
-												<Button type="submit" variant="contained" disabled={isLoader}>
-													Aplicar
-												</Button>
-											) : (
-												<Button type="button" onClick={handleEdit} disabled={isLoader}>
-													Editar
-												</Button>
-											)}
-										</Grid>
-									</Stack>
+									{canUpdate && (
+										<Stack direction="row" spacing={2}>
+											<Grid>
+												{isEditing ? (
+													<Button type="submit" variant="contained" disabled={isLoader}>
+														Aplicar
+													</Button>
+												) : (
+													<Button type="button" onClick={handleEdit} disabled={isLoader}>
+														Editar
+													</Button>
+												)}
+											</Grid>
+										</Stack>
+									)}
 								</Stack>
 							</Grid>
 						</Grid>

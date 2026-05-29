@@ -11,8 +11,10 @@ import Search from "./Search";
 import Profile from "./Profile";
 /* import Localization from "./Localization"; */
 import Notification from "./Notification";
+import ThemeModeToggle from "./ThemeModeToggle";
 import MobileSection from "./MobileSection";
 /* import MegaMenuSection from "./MegaMenuSection"; */
+import TeamModeIndicator from "components/teams/TeamModeIndicator";
 
 import useConfig from "hooks/useConfig";
 import DrawerHeader from "layout/MainLayout/Drawer/DrawerHeader";
@@ -40,6 +42,10 @@ const HeaderContent = () => {
 			{/* 			{!downLG && localization} */}
 			{downLG && <Box sx={{ width: "100%", ml: 1 }} />}
 
+			<Box sx={{ ml: "auto", mr: 1 }}>
+				<TeamModeIndicator compact={downLG} />
+			</Box>
+			<ThemeModeToggle />
 			<Notification />
 			{/* <Message /> */}
 			{!downLG && <Profile />}

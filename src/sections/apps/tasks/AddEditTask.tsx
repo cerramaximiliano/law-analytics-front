@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 // react
 
 // material-ui
 import { Button, FormControl, Grid, InputLabel, MenuItem, Select, Stack, TextField } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -15,6 +16,8 @@ import dayjs from "utils/dayjs-config";
 // project imports
 import { dispatch, useSelector } from "store";
 import { addTask, updateTask } from "store/reducers/tasks";
+import { useTeam } from "contexts/TeamContext";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 // assets
 import { Add } from "iconsax-react";
@@ -40,20 +43,70 @@ const TaskSchema = Yup.object().shape({
 // ==============================|| ADD / EDIT TASK ||============================== //
 
 const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const { folders } = useSelector((state) => state.folder);
 	const { user } = useSelector((state) => state.auth);
+	const { getRequestHeaders } = useTeam();
 
 	const isCreating = !task;
 
-	const formik = useFormik({
-		initialValues: {
+	const labelSx = {
+		fontSize: "0.72rem",
+		fontWeight: 600,
+		letterSpacing: "0.04em",
+		textTransform: "uppercase",
+		color: "text.secondary",
+	} as const;
+
+	const cancelButtonSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: "text.secondary",
+		borderRadius: 1.25,
+		px: 2,
+		py: 0.875,
+		border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+		"&:hover": {
+			color: BRAND_BLUE,
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+			borderColor: alpha(BRAND_BLUE, 0.28),
+		},
+	};
+
+	const submitButtonSx = {
+		textTransform: "none" as const,
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		borderRadius: 1.25,
+		px: 2,
+		py: 0.875,
+		boxShadow: "none",
+		minWidth: 120,
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+		"&.Mui-disabled": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.24 : 0.4), color: alpha("#fff", 0.9) },
+	};
+
+	// Memoizar valores iniciales para evitar que enableReinitialize resetee el form en cada render
+	// Solo se recalculan cuando cambia el task._id (es decir, cuando se edita una tarea diferente)
+	const initialValues = useMemo(
+		() => ({
 			name: task?.name || "",
 			description: task?.description || "",
 			dueDate: task?.dueDate ? dayjs(task.dueDate) : dayjs(),
 			priority: task?.priority || "media",
 			status: task?.status || "pendiente",
 			folderId: task?.folderId || "",
-		},
+		}),
+		[task?._id], // Solo dependemos del ID, no del objeto completo
+	);
+
+	const formik = useFormik({
+		initialValues,
+		enableReinitialize: true, // Permite reinicializar el form cuando cambia la tarea
 		validationSchema: TaskSchema,
 		onSubmit: async (values, { setSubmitting, resetForm }) => {
 			try {
@@ -66,7 +119,7 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 
 				let result;
 				if (isCreating) {
-					result = await dispatch(addTask(taskData));
+					result = await dispatch(addTask(taskData, { headers: getRequestHeaders() }));
 				} else {
 					result = await dispatch(updateTask(task._id, taskData));
 				}
@@ -95,7 +148,7 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 					<Grid container spacing={3}>
 						<Grid item xs={12}>
 							<Stack spacing={1}>
-								<InputLabel htmlFor="task-name">Nombre de la tarea</InputLabel>
+								<InputLabel htmlFor="task-name" sx={labelSx}>Nombre de la tarea</InputLabel>
 								<TextField
 									fullWidth
 									id="task-name"
@@ -110,7 +163,7 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 
 						<Grid item xs={12}>
 							<Stack spacing={1}>
-								<InputLabel htmlFor="task-description">Descripción</InputLabel>
+								<InputLabel htmlFor="task-description" sx={labelSx}>Descripción</InputLabel>
 								<TextField
 									fullWidth
 									id="task-description"
@@ -126,7 +179,7 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 
 						<Grid item xs={12} sm={6}>
 							<Stack spacing={1}>
-								<InputLabel htmlFor="task-dueDate">Fecha de vencimiento</InputLabel>
+								<InputLabel htmlFor="task-dueDate" sx={labelSx}>Fecha de vencimiento</InputLabel>
 								<DatePicker
 									value={values.dueDate}
 									onChange={(date) => setFieldValue("dueDate", date ? dayjs(date) : dayjs())}
@@ -145,7 +198,7 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 
 						<Grid item xs={12} sm={6}>
 							<Stack spacing={1}>
-								<InputLabel htmlFor="task-priority">Prioridad</InputLabel>
+								<InputLabel htmlFor="task-priority" sx={labelSx}>Prioridad</InputLabel>
 								<FormControl fullWidth>
 									<Select id="task-priority" {...getFieldProps("priority")} error={Boolean(touched.priority && errors.priority)}>
 										<MenuItem value="baja">Baja</MenuItem>
@@ -158,7 +211,7 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 
 						<Grid item xs={12} sm={6}>
 							<Stack spacing={1}>
-								<InputLabel htmlFor="task-status">Estado</InputLabel>
+								<InputLabel htmlFor="task-status" sx={labelSx}>Estado</InputLabel>
 								<FormControl fullWidth>
 									<Select id="task-status" {...getFieldProps("status")} error={Boolean(touched.status && errors.status)}>
 										<MenuItem value="pendiente">Pendiente</MenuItem>
@@ -173,7 +226,7 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 
 						<Grid item xs={12} sm={6}>
 							<Stack spacing={1}>
-								<InputLabel htmlFor="task-folder">Carpeta</InputLabel>
+								<InputLabel htmlFor="task-folder" sx={labelSx}>Carpeta</InputLabel>
 								<FormControl fullWidth>
 									<Select
 										id="task-folder"
@@ -202,11 +255,17 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 						</Grid>
 
 						<Grid item xs={12}>
-							<Stack direction="row" spacing={2} justifyContent="flex-end">
-								<Button color="error" onClick={onCancel}>
+							<Stack direction="row" spacing={1.25} justifyContent="flex-end">
+								<Button onClick={onCancel} sx={cancelButtonSx}>
 									Cancelar
 								</Button>
-								<Button type="submit" variant="contained" disabled={isSubmitting} startIcon={isCreating ? <Add /> : null}>
+								<Button
+									type="submit"
+									variant="contained"
+									disabled={isSubmitting}
+									startIcon={isCreating ? <Add size={16} variant="Linear" /> : null}
+									sx={submitButtonSx}
+								>
 									{isCreating ? "Crear" : "Actualizar"}
 								</Button>
 							</Stack>

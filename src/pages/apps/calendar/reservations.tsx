@@ -33,8 +33,10 @@ import {
 	Tooltip,
 	Skeleton,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import ResponsiveDialog from "components/@extended/ResponsiveDialog";
-import { Calendar, ClipboardTick, MoreSquare, Trash, User, Edit2, Link21, Clock, InfoCircle, Lock } from "iconsax-react";
+import { Calendar, ClipboardTick, MoreSquare, Trash, User, Edit2, Link21, Clock, InfoCircle, Lock, Calendar1, Add, Eye } from "iconsax-react";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import MainCard from "components/MainCard";
 import { LoadingButton } from "@mui/lab";
 import dayjs from "utils/dayjs-config";
@@ -43,6 +45,8 @@ import { openSnackbar } from "store/reducers/snackbar";
 import { GuideBooking } from "components/guides";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import useSubscription from "hooks/useSubscription";
+import { useTeam } from "contexts/TeamContext";
+import { useEffectiveUser } from "hooks/useEffectiveUser";
 
 // Definición de interfaces para tipar adecuadamente los objetos
 interface CustomField {
@@ -85,38 +89,194 @@ interface BookingType {
 	availability?: AvailabilityType;
 }
 
-// Nota: El componente EmptyState se ha eliminado pues ya no se utiliza
+// ==============================|| BOOKING STATUS PILL ||============================== //
+// Pill brand-aware para los 5 estados de reserva. Replica el patrón
+// StatusPill de folders con dot color-coded por intención.
 
-// Componente para NoResultsState
+const BookingStatusPill: React.FC<{ status: BookingType["status"] }> = ({ status }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+
+	const config = (() => {
+		switch (status) {
+			case "confirmed":
+				return { dot: LIVE_GREEN, label: "Confirmada" };
+			case "pending":
+				return { dot: STALE_AMBER, label: "Pendiente" };
+			case "cancelled":
+				return { dot: theme.palette.error.main, label: "Cancelada" };
+			case "rejected":
+				return { dot: theme.palette.error.main, label: "Rechazada" };
+			case "completed":
+				return { dot: BRAND_BLUE, label: "Completada" };
+			default:
+				return { dot: theme.palette.text.secondary, label: status as string };
+		}
+	})();
+
+	return (
+		<Box
+			sx={{
+				display: "inline-flex",
+				alignItems: "center",
+				gap: 0.625,
+				px: 0.875,
+				py: 0.375,
+				borderRadius: 0.875,
+				bgcolor: alpha(config.dot, isDark ? 0.14 : 0.08),
+				border: `1px solid ${alpha(config.dot, isDark ? 0.36 : 0.22)}`,
+			}}
+		>
+			<Box aria-hidden sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: config.dot, flexShrink: 0 }} />
+			<Typography
+				sx={{
+					fontSize: "0.7rem",
+					fontWeight: 600,
+					letterSpacing: "0.01em",
+					color: "text.primary",
+					lineHeight: 1,
+					whiteSpace: "nowrap",
+				}}
+			>
+				{config.label}
+			</Typography>
+		</Box>
+	);
+};
+
+// Helper sx para botones brand sober.
+const useBrandStyles = () => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+
+	return {
+		isDark,
+		theme,
+		brandButtonSx: {
+			textTransform: "none" as const,
+			bgcolor: BRAND_BLUE,
+			color: "#fff",
+			fontWeight: 600,
+			letterSpacing: "-0.005em",
+			borderRadius: 1.25,
+			boxShadow: "none",
+			transition: "background-color 0.15s ease",
+			"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+			"&.Mui-disabled": {
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.24 : 0.4),
+				color: alpha("#fff", 0.9),
+			},
+		},
+		ghostButtonSx: {
+			textTransform: "none" as const,
+			color: "text.secondary",
+			fontWeight: 500,
+			"&:hover": {
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.06),
+				color: BRAND_BLUE,
+			},
+		},
+		dangerOutlinedButtonSx: {
+			textTransform: "none" as const,
+			bgcolor: theme.palette.error.main,
+			color: "#fff",
+			fontWeight: 600,
+			borderRadius: 1.25,
+			boxShadow: "none",
+			"&:hover": { bgcolor: alpha(theme.palette.error.main, 0.88), boxShadow: "none" },
+		},
+	};
+};
+
+// Empty/no-results state brand-aware: atmósfera radial + ícono en círculo brand.
 const NoResultsState: React.FC<{
 	title: string;
 	description: string;
-}> = ({ title, description }) => (
-	<Box
-		sx={{
-			textAlign: "center",
-			p: 4,
-			display: "flex",
-			flexDirection: "column",
-			alignItems: "center",
-			justifyContent: "center",
-			minHeight: "200px",
-		}}
-	>
-		<Typography variant="h5" gutterBottom>
-			{title}
-		</Typography>
-		<Typography variant="body1" color="text.secondary">
-			{description}
-		</Typography>
-	</Box>
-);
+}> = ({ title, description }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	return (
+		<Box
+			sx={{
+				position: "relative",
+				overflow: "hidden",
+				width: "100%",
+				py: { xs: 4, sm: 5 },
+				px: 2,
+			}}
+		>
+			<Box
+				aria-hidden
+				sx={{
+					position: "absolute",
+					inset: 0,
+					background: `radial-gradient(circle at 50% 40%, ${alpha(BRAND_BLUE, isDark ? 0.12 : 0.07)} 0%, transparent 60%)`,
+					pointerEvents: "none",
+					zIndex: 0,
+				}}
+			/>
+			<Stack
+				spacing={2}
+				alignItems="center"
+				sx={{ position: "relative", zIndex: 1, maxWidth: 460, mx: "auto", textAlign: "center" }}
+			>
+				<Box
+					sx={{
+						display: "inline-flex",
+						alignItems: "center",
+						px: 1.25,
+						py: 0.4,
+						borderRadius: 1,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.2)}`,
+					}}
+				>
+					<Typography
+						sx={{
+							fontSize: "0.68rem",
+							fontWeight: 600,
+							letterSpacing: "0.14em",
+							textTransform: "uppercase",
+							color: BRAND_BLUE,
+						}}
+					>
+						Sin reservas
+					</Typography>
+				</Box>
+				<Box
+					sx={{
+						width: 72,
+						height: 72,
+						borderRadius: "50%",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+						color: BRAND_BLUE,
+					}}
+				>
+					<Calendar1 size={36} variant="Bulk" />
+				</Box>
+				<Stack spacing={0.5} alignItems="center">
+					<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary", textWrap: "balance" }}>
+						{title}
+					</Typography>
+					<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", lineHeight: 1.55, maxWidth: 360, textWrap: "pretty" }}>
+						{description}
+					</Typography>
+				</Stack>
+			</Stack>
+		</Box>
+	);
+};
 
 // Componente para mostrar un resumen de la disponibilidad
 const AvailabilityCard: React.FC<{
 	availability: AvailabilityType;
 	onDelete: (availabilityId: string) => void;
-}> = ({ availability, onDelete }) => {
+	canEdit?: boolean;
+	canDelete?: boolean;
+}> = ({ availability, onDelete, canEdit = true, canDelete = true }) => {
 	const theme = useTheme();
 	const navigate = useNavigate();
 	const [copied, setCopied] = useState(false);
@@ -182,79 +342,173 @@ const AvailabilityCard: React.FC<{
 		setTimeout(() => setCopied(false), 2000);
 	};
 
+	const isDark = theme.palette.mode === "dark";
+	const accent = availability.isActive ? LIVE_GREEN : theme.palette.text.secondary;
+
+	const actionIconSx = {
+		color: "text.secondary",
+		transition: "background-color 0.15s ease, color 0.15s ease",
+		"&:hover:not(.Mui-disabled)": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+			color: BRAND_BLUE,
+		},
+	} as const;
+	const destructiveIconSx = {
+		color: "text.secondary",
+		transition: "background-color 0.15s ease, color 0.15s ease",
+		"&:hover:not(.Mui-disabled)": {
+			bgcolor: alpha(theme.palette.error.main, isDark ? 0.18 : 0.1),
+			color: theme.palette.error.main,
+		},
+	} as const;
+
 	return (
-		<Card variant="outlined" sx={{ height: "100%", borderLeft: `4px solid ${theme.palette.primary.main}` }}>
-			<CardContent>
-				<Box sx={{ mb: 2 }}>
-					<Typography variant="h6" sx={{ fontWeight: 500 }}>
-						{availability.title}
+		<Box
+			sx={{
+				position: "relative",
+				height: "100%",
+				borderRadius: 1.5,
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+				bgcolor: theme.palette.background.paper,
+				transition: "border-color 0.15s ease, background-color 0.15s ease",
+				p: 2,
+				"&:hover": {
+					borderColor: alpha(BRAND_BLUE, isDark ? 0.42 : 0.28),
+				},
+			}}
+		>
+			{/* Status pill ámbar (activa/inactiva) — top-right */}
+			<Box sx={{ position: "absolute", top: 12, right: 12 }}>
+				<Box
+					sx={{
+						display: "inline-flex",
+						alignItems: "center",
+						gap: 0.5,
+						px: 0.75,
+						py: 0.25,
+						borderRadius: 0.75,
+						bgcolor: alpha(accent, isDark ? 0.14 : 0.08),
+						border: `1px solid ${alpha(accent, isDark ? 0.32 : 0.2)}`,
+					}}
+				>
+					<Box aria-hidden sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: accent, flexShrink: 0 }} />
+					<Typography sx={{ fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.04em", color: "text.primary", lineHeight: 1 }}>
+						{availability.isActive ? "Activa" : "Inactiva"}
 					</Typography>
 				</Box>
+			</Box>
 
-				<Stack spacing={2}>
-					<Box sx={{ display: "flex", alignItems: "flex-start" }}>
-						<Clock size={18} style={{ marginRight: 8, marginTop: 4, flexShrink: 0 }} />
-						<Box>
-							<Typography variant="body2" sx={{ fontWeight: 500 }}>
-								Duración:
-							</Typography>
-							<Typography variant="body2" color="text.secondary">
-								{availability.duration} minutos
-							</Typography>
-						</Box>
+			<Stack spacing={1.5}>
+				{/* Header: ícono brand + título */}
+				<Stack direction="row" alignItems="center" spacing={1} sx={{ pr: 8 }}>
+					<Box
+						sx={{
+							width: 32,
+							height: 32,
+							borderRadius: 1,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+							color: BRAND_BLUE,
+							flexShrink: 0,
+						}}
+					>
+						<Calendar size={16} variant="Bulk" />
 					</Box>
-
-					<Box sx={{ display: "flex", alignItems: "flex-start" }}>
-						<Calendar size={18} style={{ marginRight: 8, marginTop: 4, flexShrink: 0 }} />
-						<Box>
-							<Typography variant="body2" sx={{ fontWeight: 500 }}>
-								Horarios:
-							</Typography>
-							<Typography variant="body2" color="text.secondary">
-								{formatTimeSlots(availability.timeSlots)}
-							</Typography>
-						</Box>
-					</Box>
-
-					<Box sx={{ display: "flex", alignItems: "flex-start" }}>
-						<Link21 size={18} style={{ marginRight: 8, marginTop: 4, flexShrink: 0 }} />
-						<Box sx={{ flex: 1 }}>
-							<Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
-								Enlace:
-							</Typography>
-							<Button size="small" onClick={handleCopyLink} startIcon={<Link21 size={16} />} sx={{ textTransform: "none" }}>
-								{copied ? "¡Copiado!" : "Copiar enlace"}
-							</Button>
-						</Box>
-					</Box>
+					<Typography
+						sx={{
+							fontSize: "0.95rem",
+							fontWeight: 600,
+							letterSpacing: "-0.01em",
+							color: "text.primary",
+							overflow: "hidden",
+							textOverflow: "ellipsis",
+							whiteSpace: "nowrap",
+						}}
+					>
+						{availability.title}
+					</Typography>
 				</Stack>
 
-				<Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 2 }}>
-					<Tooltip title="Eliminar Configuración">
-						<IconButton
-							size="small"
-							color="primary"
-							onClick={() => navigate(`/apps/calendar/booking-config?id=${availability._id}`)}
-							sx={{ textTransform: "none" }}
-						>
-							<Edit2 variant="Bulk" size={16} />
-						</IconButton>
-					</Tooltip>
-					<Tooltip title="Editar Configuración">
-						<IconButton size="small" color="error" onClick={() => onDelete(availability._id)} sx={{ textTransform: "none" }}>
-							<Trash variant="Bulk" size={16} />
-						</IconButton>
-					</Tooltip>
-				</Box>
+				<Stack spacing={1}>
+					{/* Duración */}
+					<Stack direction="row" spacing={1.25} alignItems="flex-start">
+						<Box sx={{ color: "text.secondary", mt: 0.125, flexShrink: 0 }}>
+							<Clock size={14} variant="Bulk" />
+						</Box>
+						<Box sx={{ minWidth: 0 }}>
+							<Typography sx={{ fontSize: "0.7rem", fontWeight: 600, color: "text.secondary", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+								Duración
+							</Typography>
+							<Typography sx={{ fontSize: "0.85rem", color: "text.primary", fontVariantNumeric: "tabular-nums" }}>
+								{availability.duration} min
+							</Typography>
+						</Box>
+					</Stack>
 
-				<Chip
-					label={availability.isActive ? "Activa" : "Inactiva"}
-					size="small"
-					color={availability.isActive ? "success" : "default"}
-					sx={{ position: "absolute", top: 12, right: 12 }}
-				/>
-			</CardContent>
-		</Card>
+					{/* Horarios */}
+					<Stack direction="row" spacing={1.25} alignItems="flex-start">
+						<Box sx={{ color: "text.secondary", mt: 0.125, flexShrink: 0 }}>
+							<Calendar1 size={14} variant="Bulk" />
+						</Box>
+						<Box sx={{ minWidth: 0 }}>
+							<Typography sx={{ fontSize: "0.7rem", fontWeight: 600, color: "text.secondary", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+								Horarios
+							</Typography>
+							<Typography sx={{ fontSize: "0.82rem", color: "text.primary", lineHeight: 1.45 }}>{formatTimeSlots(availability.timeSlots)}</Typography>
+						</Box>
+					</Stack>
+
+					{/* Enlace */}
+					<Stack direction="row" spacing={1.25} alignItems="center">
+						<Box sx={{ color: "text.secondary", flexShrink: 0 }}>
+							<Link21 size={14} variant="Bulk" />
+						</Box>
+						<Button
+							size="small"
+							onClick={handleCopyLink}
+							startIcon={<Link21 size={14} variant="Bulk" />}
+							sx={{
+								textTransform: "none",
+								fontSize: "0.78rem",
+								fontWeight: 500,
+								color: copied ? LIVE_GREEN : BRAND_BLUE,
+								px: 0.75,
+								py: 0.25,
+								"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.06) },
+							}}
+						>
+							{copied ? "¡Copiado!" : "Copiar enlace público"}
+						</Button>
+					</Stack>
+				</Stack>
+
+				{/* Actions */}
+				<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1), mt: 0.5 }} />
+				<Stack direction="row" justifyContent="flex-end" spacing={0.5}>
+					<Tooltip title={canEdit ? "Editar configuración" : "No tenés permisos para editar"} arrow placement="top">
+						<span>
+							<IconButton
+								size="small"
+								sx={actionIconSx}
+								onClick={() => navigate(`/apps/calendar/booking-config?id=${availability._id}`)}
+								disabled={!canEdit}
+							>
+								<Edit2 variant="Bulk" size={16} />
+							</IconButton>
+						</span>
+					</Tooltip>
+					<Tooltip title={canDelete ? "Eliminar configuración" : "No tenés permisos para eliminar"} arrow placement="top">
+						<span>
+							<IconButton size="small" sx={destructiveIconSx} onClick={() => onDelete(availability._id)} disabled={!canDelete}>
+								<Trash variant="Bulk" size={16} />
+							</IconButton>
+						</span>
+					</Tooltip>
+				</Stack>
+			</Stack>
+		</Box>
 	);
 };
 
@@ -265,7 +519,9 @@ const BookingCard: React.FC<{
 	onStatusChange: (bookingId: string, newStatus: BookingType["status"]) => void;
 	onDelete: (booking: BookingType) => void;
 	showAvailabilityInfo?: boolean;
-}> = ({ booking, availability, onStatusChange, onDelete, showAvailabilityInfo = false }) => {
+	canUpdate?: boolean;
+	canDelete?: boolean;
+}> = ({ booking, availability, onStatusChange, onDelete, showAvailabilityInfo = false, canUpdate = true, canDelete = true }) => {
 	const theme = useTheme();
 	const [expanded, setExpanded] = useState(false);
 	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -275,23 +531,12 @@ const BookingCard: React.FC<{
 	const { hasFeatureLocal } = useSubscription();
 	const hasBookingFeature = hasFeatureLocal("booking");
 
-	// Determinar color según estado
-	const getStatusChip = (status: BookingType["status"]) => {
-		switch (status) {
-			case "confirmed":
-				return <Chip label="Confirmada" size="small" color="success" />;
-			case "pending":
-				return <Chip label="Pendiente" size="small" color="warning" />;
-			case "cancelled":
-				return <Chip label="Cancelada" size="small" color="error" />;
-			case "rejected":
-				return <Chip label="Rechazada" size="small" color="error" />;
-			case "completed":
-				return <Chip label="Completada" size="small" color="info" />;
-			default:
-				return null;
-		}
-	};
+	// Combined check: has feature AND has permission
+	const canPerformUpdate = hasBookingFeature && canUpdate;
+	const canPerformDelete = hasBookingFeature && canDelete;
+
+	// Determinar pill según estado — usa el BookingStatusPill brand-aware.
+	const getStatusChip = (status: BookingType["status"]) => <BookingStatusPill status={status} />;
 
 	// Verificar si ya pasó la fecha
 	const isPast = booking.startTime ? dayjs().isAfter(dayjs(booking.startTime)) : false;
@@ -307,280 +552,429 @@ const BookingCard: React.FC<{
 		setAnchorEl(null);
 	};
 
+	const isDark = theme.palette.mode === "dark";
+
+	// Status accent — usado en el dot del top-right pill y en algún botón contextual.
+	const accent = (() => {
+		switch (booking.status) {
+			case "confirmed":
+				return LIVE_GREEN;
+			case "pending":
+				return STALE_AMBER;
+			case "cancelled":
+			case "rejected":
+				return theme.palette.error.main;
+			case "completed":
+				return BRAND_BLUE;
+			default:
+				return theme.palette.text.secondary;
+		}
+	})();
+
+	const actionIconSx = {
+		color: "text.secondary",
+		transition: "background-color 0.15s ease, color 0.15s ease",
+		"&:hover:not(.Mui-disabled)": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+			color: BRAND_BLUE,
+		},
+	} as const;
+	const destructiveIconSx = {
+		color: "text.secondary",
+		transition: "background-color 0.15s ease, color 0.15s ease",
+		"&:hover:not(.Mui-disabled)": {
+			bgcolor: alpha(theme.palette.error.main, isDark ? 0.18 : 0.1),
+			color: theme.palette.error.main,
+		},
+	} as const;
+	const successIconSx = {
+		color: "text.secondary",
+		transition: "background-color 0.15s ease, color 0.15s ease",
+		"&:hover:not(.Mui-disabled)": {
+			bgcolor: alpha(LIVE_GREEN, isDark ? 0.18 : 0.1),
+			color: LIVE_GREEN,
+		},
+	} as const;
+
+	// Mismo patrón estructural que AvailabilityCard: Box con border brand,
+	// status pill top-right, header con ícono en círculo brand + título,
+	// info blocks compactos, hairline divider, actions row al pie.
 	return (
-		<Card
-			variant="outlined"
+		<Box
 			sx={{
+				position: "relative",
 				height: "100%",
-				borderLeft: "4px solid",
-				borderLeftColor:
-					booking.status === "confirmed"
-						? "success.main"
-						: booking.status === "pending"
-						? "warning.main"
-						: booking.status === "cancelled" || booking.status === "rejected"
-						? "error.main"
-						: "grey.500",
+				borderRadius: 1.5,
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+				bgcolor: theme.palette.background.paper,
+				transition: "border-color 0.15s ease",
+				p: 1.5,
+				"&:hover": { borderColor: alpha(BRAND_BLUE, isDark ? 0.42 : 0.28) },
 			}}
 		>
-			<CardContent sx={{ pb: 1 }}>
-				<Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-					<Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 500 }}>
-						{booking.clientName}
-					</Typography>
-					<IconButton
-						size="small"
-						onClick={handleClick}
-						aria-controls={open ? "booking-menu" : undefined}
-						aria-haspopup="true"
-						aria-expanded={open ? "true" : undefined}
-						disabled={!hasBookingFeature}
-					>
-						<MoreSquare size={20} />
-					</IconButton>
-					<Menu
-						id="booking-menu"
-						anchorEl={anchorEl}
-						open={open}
-						onClose={handleClose}
-						MenuListProps={{
-							"aria-labelledby": "booking-button",
+			{/* Status pills top-right (status + opcional HOY) */}
+			<Stack direction="row" spacing={0.5} sx={{ position: "absolute", top: 12, right: 12 }}>
+				{isBookingToday && (
+					<Box
+						sx={{
+							display: "inline-flex",
+							alignItems: "center",
+							gap: 0.5,
+							px: 0.75,
+							py: 0.25,
+							borderRadius: 0.75,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.2)}`,
 						}}
 					>
-						{booking.status === "pending" && (
-							<MenuItem
-								onClick={() => {
-									handleClose();
-									onStatusChange(booking._id, "confirmed");
-								}}
-								disabled={!hasBookingFeature}
-							>
-								<ClipboardTick size={16} style={{ marginRight: 8, color: theme.palette.success.main }} />
-								Confirmar
-							</MenuItem>
-						)}
+						<Box aria-hidden sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: BRAND_BLUE, flexShrink: 0 }} />
+						<Typography sx={{ fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.04em", color: BRAND_BLUE, lineHeight: 1 }}>
+							HOY
+						</Typography>
+					</Box>
+				)}
+				{getStatusChip(booking.status)}
+			</Stack>
 
-						{booking.status === "pending" && (
-							<MenuItem
-								onClick={() => {
-									handleClose();
-									onStatusChange(booking._id, "rejected");
-								}}
-								sx={{ color: "error.main" }}
-								disabled={!hasBookingFeature}
-							>
-								<Trash size={16} style={{ marginRight: 8 }} />
-								Rechazar
-							</MenuItem>
-						)}
-
-						{booking.status === "confirmed" && !isPast && (
-							<MenuItem
-								onClick={() => {
-									handleClose();
-									onStatusChange(booking._id, "cancelled");
-								}}
-								sx={{ color: "error.main" }}
-								disabled={!hasBookingFeature}
-							>
-								<Trash size={16} style={{ marginRight: 8 }} />
-								Cancelar
-							</MenuItem>
-						)}
-
-						{booking.status === "confirmed" && isPast && (
-							<MenuItem
-								onClick={() => {
-									handleClose();
-									onStatusChange(booking._id, "completed");
-								}}
-								disabled={!hasBookingFeature}
-							>
-								<ClipboardTick size={16} style={{ marginRight: 8 }} />
-								Marcar como completada
-							</MenuItem>
-						)}
-
-						<MenuItem
-							onClick={() => {
-								handleClose();
-								onDelete(booking);
-							}}
-							sx={{ color: "error.main" }}
-							disabled={!hasBookingFeature}
-						>
-							<Trash size={16} style={{ marginRight: 8 }} />
-							Eliminar
-						</MenuItem>
-					</Menu>
-				</Box>
-
-				<Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-					{getStatusChip(booking.status)}
-					{isBookingToday && <Chip label="Hoy" size="small" color="info" />}
+			<Stack spacing={1.25}>
+				{/* Header: ícono en círculo brand + clientName (pr para no chocar con las pills top-right) */}
+				<Stack direction="row" alignItems="center" spacing={1} sx={{ pr: isBookingToday ? 14 : 9 }}>
+					<Box
+						sx={{
+							width: 28,
+							height: 28,
+							borderRadius: 0.875,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+							color: BRAND_BLUE,
+							flexShrink: 0,
+						}}
+					>
+						<User size={14} variant="Bulk" />
+					</Box>
+					<Typography
+						sx={{
+							fontSize: "0.88rem",
+							fontWeight: 600,
+							letterSpacing: "-0.01em",
+							color: "text.primary",
+							overflow: "hidden",
+							textOverflow: "ellipsis",
+							whiteSpace: "nowrap",
+						}}
+					>
+						{booking.clientName}
+					</Typography>
 				</Stack>
 
-				<Stack spacing={1.5}>
-					<Box sx={{ display: "flex" }}>
-						<Calendar size={18} style={{ marginRight: 8, flexShrink: 0, marginTop: 2 }} />
-						<Box>
-							<Typography variant="body2" sx={{ fontWeight: 500 }}>
-								{dayjs(booking.startTime).format("dddd, D [de] MMMM [de] YYYY")}
+				{/* Info blocks — mismo patrón que AvailabilityCard (icono + eyebrow uppercase + value) */}
+				<Stack spacing={0.875}>
+					{/* Fecha + hora */}
+					<Stack direction="row" spacing={1.25} alignItems="flex-start">
+						<Box sx={{ color: "text.secondary", flexShrink: 0, mt: 0.125 }}>
+							<Calendar1 size={14} variant="Bulk" />
+						</Box>
+						<Box sx={{ minWidth: 0 }}>
+							<Typography
+								sx={{
+									fontSize: "0.62rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+									lineHeight: 1.2,
+								}}
+							>
+								Fecha y hora
 							</Typography>
-							<Typography variant="body2" color="text.secondary">
-								{dayjs(booking.startTime).format("h:mm a")} - {dayjs(booking.endTime).format("h:mm a")}
+							<Typography
+								sx={{
+									fontSize: "0.78rem",
+									fontWeight: 500,
+									color: "text.primary",
+									textTransform: "capitalize",
+									lineHeight: 1.35,
+								}}
+							>
+								{dayjs(booking.startTime).format("D MMM YYYY")}
+								<Box component="span" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums", ml: 0.625 }}>
+									· {dayjs(booking.startTime).format("HH:mm")}–{dayjs(booking.endTime).format("HH:mm")}
+								</Box>
 							</Typography>
 						</Box>
-					</Box>
+					</Stack>
 
-					<Box sx={{ display: "flex" }}>
-						<User size={18} style={{ marginRight: 8, flexShrink: 0, marginTop: 2 }} />
-						<Box>
-							<Typography variant="body2" sx={{ fontWeight: 500 }}>
-								{booking.clientName}
+					{/* Contacto */}
+					<Stack direction="row" spacing={1.25} alignItems="flex-start">
+						<Box sx={{ color: "text.secondary", flexShrink: 0, mt: 0.125 }}>
+							<User size={14} variant="Bulk" />
+						</Box>
+						<Box sx={{ minWidth: 0 }}>
+							<Typography
+								sx={{
+									fontSize: "0.62rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+									lineHeight: 1.2,
+								}}
+							>
+								Contacto
 							</Typography>
-							<Typography variant="body2" color="text.secondary">
+							<Typography
+								sx={{
+									fontSize: "0.78rem",
+									color: "text.primary",
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									whiteSpace: "nowrap",
+									lineHeight: 1.35,
+								}}
+							>
 								{booking.clientEmail}
-								{booking.clientPhone && ` • ${booking.clientPhone}`}
 							</Typography>
-							{booking.clientCompany && (
-								<Typography variant="body2" color="text.secondary">
-									{booking.clientCompany}
+							{booking.clientPhone && (
+								<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+									{booking.clientPhone}
 								</Typography>
 							)}
 						</Box>
-					</Box>
+					</Stack>
 
-					{/* Mostrar información de disponibilidad cuando se ven todas las reservas */}
+					{/* Tipo de cita */}
 					{showAvailabilityInfo && availability && (
-						<Box sx={{ display: "flex", mt: 1.5 }}>
-							<Calendar size={18} style={{ marginRight: 8, flexShrink: 0, marginTop: 2 }} />
-							<Box>
-								<Typography variant="body2" sx={{ fontWeight: 500 }}>
-									Tipo de cita:
+						<Stack direction="row" spacing={1.25} alignItems="flex-start">
+							<Box sx={{ color: "text.secondary", flexShrink: 0, mt: 0.125 }}>
+								<Clock size={14} variant="Bulk" />
+							</Box>
+							<Box sx={{ minWidth: 0 }}>
+								<Typography
+									sx={{
+										fontSize: "0.62rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+										lineHeight: 1.2,
+									}}
+								>
+									Tipo
 								</Typography>
-								<Typography variant="body2" color="text.secondary">
-									{availability.title || "No especificado"}
+								<Typography
+									sx={{
+										fontSize: "0.78rem",
+										color: "text.primary",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+										whiteSpace: "nowrap",
+										lineHeight: 1.35,
+									}}
+								>
+									{availability.title || "Sin tipo"}
 								</Typography>
 							</Box>
-						</Box>
+						</Stack>
 					)}
 				</Stack>
 
-				{expanded && (
-					<Box sx={{ mt: 2 }}>
-						<Divider sx={{ my: 1.5 }} />
-
+				{/* Sección expandible — notas / dirección / customFields / cancelación */}
+				{expanded && (booking.notes || booking.clientAddress || (booking.customFields && booking.customFields.length > 0) || booking.cancelledBy) && (
+					<Stack spacing={1} sx={{ pt: 1, borderTop: `1px dashed ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}` }}>
 						{booking.notes && (
-							<Box sx={{ mb: 2 }}>
-								<Typography variant="subtitle2">Notas:</Typography>
-								<Typography variant="body2">{booking.notes}</Typography>
-							</Box>
-						)}
-
-						{booking.clientAddress && (
-							<Box sx={{ mb: 2 }}>
-								<Typography variant="subtitle2">Dirección:</Typography>
-								<Typography variant="body2">{booking.clientAddress}</Typography>
-							</Box>
-						)}
-
-						{booking.customFields && booking.customFields.length > 0 && (
 							<Box>
-								<Typography variant="subtitle2" sx={{ mb: 1 }}>
-									Campos personalizados:
+								<Typography
+									sx={{ fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}
+								>
+									Notas
 								</Typography>
-								{Array.isArray(booking.customFields) &&
-									booking.customFields.map((field, index) => (
-										<Box key={index} sx={{ mb: 1 }}>
-											<Typography variant="caption" sx={{ fontWeight: 500 }}>
-												{field.name}:
-											</Typography>
-											<Typography variant="body2">{field.value.toString()}</Typography>
-										</Box>
-									))}
+								<Typography sx={{ fontSize: "0.74rem", color: "text.primary", lineHeight: 1.45 }}>{booking.notes}</Typography>
 							</Box>
 						)}
-
+						{booking.clientAddress && (
+							<Box>
+								<Typography
+									sx={{ fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}
+								>
+									Dirección
+								</Typography>
+								<Typography sx={{ fontSize: "0.74rem", color: "text.primary", lineHeight: 1.45 }}>{booking.clientAddress}</Typography>
+							</Box>
+						)}
+						{booking.customFields && booking.customFields.length > 0 && (
+							<Stack spacing={0.5}>
+								<Typography
+									sx={{ fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}
+								>
+									Campos personalizados
+								</Typography>
+								{booking.customFields.map((field, index) => (
+									<Box key={index}>
+										<Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }}>{field.name}</Typography>
+										<Typography sx={{ fontSize: "0.74rem", color: "text.primary" }}>{field.value.toString()}</Typography>
+									</Box>
+								))}
+							</Stack>
+						)}
 						{booking.cancelledBy && (
-							<Box sx={{ mt: 2 }}>
-								<Typography variant="subtitle2" color="error">
-									Cancelado por: {booking.cancelledBy === "host" ? "Anfitrión" : "Cliente"}
+							<Box>
+								<Typography
+									sx={{
+										fontSize: "0.62rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: theme.palette.error.main,
+									}}
+								>
+									Cancelada por {booking.cancelledBy === "host" ? "el anfitrión" : "el cliente"}
 								</Typography>
 								{booking.cancellationReason && (
-									<Typography variant="body2" color="text.secondary">
-										Motivo: {booking.cancellationReason}
-									</Typography>
+									<Typography sx={{ fontSize: "0.74rem", color: "text.secondary", lineHeight: 1.45 }}>{booking.cancellationReason}</Typography>
 								)}
 							</Box>
 						)}
-					</Box>
+					</Stack>
 				)}
-			</CardContent>
 
-			<Box sx={{ p: 2, pt: 0, display: "flex", justifyContent: "space-between" }}>
-				<Box display="flex" gap={1}>
-					{booking.status === "pending" && (
-						<>
-							<Button
-								size="small"
-								variant="outlined"
-								color="success"
-								startIcon={<ClipboardTick size={16} />}
-								onClick={() => onStatusChange(booking._id, "confirmed")}
-								sx={{ textTransform: "none" }}
-								disabled={!hasBookingFeature}
-							>
-								Confirmar
-							</Button>
-							<Button
-								size="small"
-								variant="outlined"
-								color="error"
-								startIcon={<Trash size={16} />}
-								onClick={() => onStatusChange(booking._id, "rejected")}
-								sx={{ textTransform: "none" }}
-								disabled={!hasBookingFeature}
-							>
-								Rechazar
-							</Button>
-						</>
-					)}
+				{/* Hairline divider — alineado con AvailabilityCard */}
+				<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1) }} />
 
-					{booking.status === "confirmed" && !isPast && (
-						<Button
-							size="small"
-							variant="outlined"
-							color="error"
-							startIcon={<Trash size={16} />}
-							onClick={() => onStatusChange(booking._id, "cancelled")}
-							sx={{ textTransform: "none" }}
-							disabled={!hasBookingFeature}
+				{/* Actions row — icon buttons monocromos con intent hover (mismo patrón que AvailabilityCard).
+				    Tooltips comunican la acción; los iconos quedan compactos. */}
+				<Stack direction="row" alignItems="center" justifyContent="space-between">
+					<Stack direction="row" spacing={0.25}>
+						{/* Expand toggle a la izquierda */}
+						<Tooltip title={expanded ? "Ver menos" : "Ver más"} arrow placement="top">
+							<IconButton size="small" sx={actionIconSx} onClick={() => setExpanded(!expanded)}>
+								{expanded ? <Add size={16} style={{ transform: "rotate(45deg)" }} /> : <Eye size={16} variant="Bulk" />}
+							</IconButton>
+						</Tooltip>
+					</Stack>
+
+					<Stack direction="row" spacing={0.25}>
+						{/* Acciones contextuales según estado — icon buttons brand consistentes */}
+						{booking.status === "pending" && (
+							<>
+								<Tooltip title="Confirmar reserva" arrow placement="top">
+									<span>
+										<IconButton
+											size="small"
+											sx={successIconSx}
+											onClick={() => onStatusChange(booking._id, "confirmed")}
+											disabled={!hasBookingFeature}
+										>
+											<ClipboardTick size={16} variant="Bulk" />
+										</IconButton>
+									</span>
+								</Tooltip>
+								<Tooltip title="Rechazar reserva" arrow placement="top">
+									<span>
+										<IconButton
+											size="small"
+											sx={destructiveIconSx}
+											onClick={() => onStatusChange(booking._id, "rejected")}
+											disabled={!hasBookingFeature}
+										>
+											<Trash size={16} variant="Bulk" />
+										</IconButton>
+									</span>
+								</Tooltip>
+							</>
+						)}
+						{booking.status === "confirmed" && !isPast && (
+							<Tooltip title="Cancelar reserva" arrow placement="top">
+								<span>
+									<IconButton
+										size="small"
+										sx={destructiveIconSx}
+										onClick={() => onStatusChange(booking._id, "cancelled")}
+										disabled={!hasBookingFeature}
+									>
+										<Trash size={16} variant="Bulk" />
+									</IconButton>
+								</span>
+							</Tooltip>
+						)}
+						{booking.status === "confirmed" && isPast && (
+							<Tooltip title="Marcar como completada" arrow placement="top">
+								<span>
+									<IconButton
+										size="small"
+										sx={actionIconSx}
+										onClick={() => onStatusChange(booking._id, "completed")}
+										disabled={!hasBookingFeature}
+									>
+										<ClipboardTick size={16} variant="Bulk" />
+									</IconButton>
+								</span>
+							</Tooltip>
+						)}
+
+						{/* Overflow menu — mismo patrón que folders/contacts */}
+						<Tooltip
+							title={
+								!hasBookingFeature
+									? "Función no disponible en tu plan"
+									: !canUpdate && !canDelete
+									? "No tenés permisos para realizar acciones"
+									: "Más acciones"
+							}
+							arrow
+							placement="top"
 						>
-							Cancelar
-						</Button>
-					)}
-
-					{booking.status === "confirmed" && isPast && (
-						<Button
-							size="small"
-							variant="outlined"
-							color="info"
-							startIcon={<ClipboardTick size={16} />}
-							onClick={() => onStatusChange(booking._id, "completed")}
-							sx={{ textTransform: "none" }}
-							disabled={!hasBookingFeature}
+							<span>
+								<IconButton
+									size="small"
+									onClick={handleClick}
+									aria-controls={open ? "booking-menu" : undefined}
+									aria-haspopup="true"
+									aria-expanded={open ? "true" : undefined}
+									disabled={!hasBookingFeature || (!canUpdate && !canDelete)}
+									sx={actionIconSx}
+								>
+									<MoreSquare size={16} variant="Bulk" />
+								</IconButton>
+							</span>
+						</Tooltip>
+						<Menu
+							id="booking-menu"
+							anchorEl={anchorEl}
+							open={open}
+							onClose={handleClose}
+							MenuListProps={{ "aria-labelledby": "booking-button" }}
+							slotProps={{ paper: { sx: { minWidth: 200 } } }}
 						>
-							Completada
-						</Button>
-					)}
-				</Box>
-
-				<Button size="small" onClick={() => setExpanded(!expanded)} sx={{ textTransform: "none" }}>
-					{expanded ? "Ver menos" : "Ver más"}
-				</Button>
-			</Box>
-		</Card>
+							{booking.status === "confirmed" && isPast && (
+								<MenuItem
+									onClick={() => {
+										handleClose();
+										onStatusChange(booking._id, "completed");
+									}}
+									disabled={!canPerformUpdate}
+								>
+									<ClipboardTick size={16} style={{ marginRight: 8 }} />
+									Marcar como completada
+								</MenuItem>
+							)}
+							<MenuItem
+								onClick={() => {
+									handleClose();
+									onDelete(booking);
+								}}
+								sx={{ color: "error.main" }}
+								disabled={!canPerformDelete}
+							>
+								<Trash size={16} style={{ marginRight: 8 }} />
+								Eliminar
+							</MenuItem>
+						</Menu>
+					</Stack>
+				</Stack>
+			</Stack>
+		</Box>
 	);
 };
 
@@ -596,6 +990,14 @@ const BookingsManagement = () => {
 	const [availability, setAvailability] = useState<AvailabilityType | null>(null);
 	const [filter, setFilter] = useState("upcoming");
 	const [statusFilter, setStatusFilter] = useState("all");
+	// Tab activa al top: "reservas" (default) o "disponibilidades". Separa los flujos
+	// para que no haya scroll forzado cuando hay muchas reservas + muchas disponibilidades.
+	const [section, setSection] = useState<"reservas" | "disponibilidades">("reservas");
+
+	// Paginación de bookings — 12 por página (3 filas × 4 cards en desktop lg+).
+	// Cards más compactas → caben más sin scroll forzado.
+	const [bookingsPage, setBookingsPage] = useState(1);
+	const BOOKINGS_PER_PAGE = 12;
 	const [deleteDialog, setDeleteDialog] = useState(false);
 	const [selectedBooking, setSelectedBooking] = useState<BookingType | null>(null);
 	const [rejectDialog, setRejectDialog] = useState(false);
@@ -610,8 +1012,6 @@ const BookingsManagement = () => {
 	const [hasBookingFeature, setHasBookingFeature] = useState(false);
 	const [featureInfo, setFeatureInfo] = useState<any>(null);
 	const [limitModalOpen, setLimitModalOpen] = useState(false);
-	// Estado para controlar si el modal ha sido cerrado una vez
-	const [hasModalBeenClosed, setHasModalBeenClosed] = useState(false);
 
 	// Determinar si estamos viendo una disponibilidad específica o todas las reservas
 	const urlParts = window.location.pathname.split("/");
@@ -621,6 +1021,19 @@ const BookingsManagement = () => {
 	// Obtener acceso a las características de suscripción utilizando el hook
 	const { subscription, hasFeatureLocal } = useSubscription();
 
+	// Get team context to wait for full initialization before checking features
+	// isReady is true when: initialized AND (no teams OR activeTeam selected)
+	// Also get permission flags for role-based UI controls
+	const { isReady: isTeamReady, canCreate, canUpdate, canDelete, isTeamMode } = useTeam();
+
+	// Get effective user and request headers for team-aware data fetching
+	const { requestHeaders, isReady: isEffectiveUserReady } = useEffectiveUser();
+
+	// Combined permission check: has feature AND has role permission (or not in team mode)
+	const canCreateAvailability = hasBookingFeature && (!isTeamMode || canCreate);
+	const canEditAvailability = hasBookingFeature && (!isTeamMode || canUpdate);
+	const canDeleteAvailability = hasBookingFeature && (!isTeamMode || canDelete);
+
 	// Función para crear el objeto featureInfo de forma estándar
 	const createFeatureInfo = () => ({
 		feature: "Gestión de Reservas",
@@ -628,75 +1041,73 @@ const BookingsManagement = () => {
 		availableIn: ["standard", "premium"],
 	});
 
-	// Se ejecuta solo al montar el componente
-	useEffect(() => {
-		// Limpiar el flag del sessionStorage al montar el componente
-		// Esto asegura que al navegar fuera y volver, el modal pueda mostrarse nuevamente
-		sessionStorage.removeItem("booking_modal_shown");
-
-		// Efecto de limpieza: remover también cuando el componente se desmonte
-		return () => {
-			sessionStorage.removeItem("booking_modal_shown");
-		};
-	}, []);
-
 	// Verificar si el usuario tiene acceso a la característica de reservas
 	useEffect(() => {
+		// Esperar a que el contexto de equipos esté completamente listo
+		// isTeamReady es true cuando: inicializado Y (sin equipos O equipo activo seleccionado)
+		// Esto es importante para miembros de equipos que heredan features del owner
+		if (!isTeamReady) return;
+
 		// Verificar si tiene la característica de booking usando el hook
+		// hasFeatureLocal ya considera si el usuario es miembro de un equipo
+		// y hereda features del owner
 		const hasBookingAccess = hasFeatureLocal("booking");
 
 		setHasBookingFeature(hasBookingAccess || false);
 
-		// Si no tiene la característica habilitada y el modal no ha sido cerrado manualmente
-		if (!hasBookingAccess && !hasModalBeenClosed) {
+		if (!hasBookingAccess) {
 			setFeatureInfo(createFeatureInfo());
-
-			// Comprobar si ya mostramos el modal en esta visita a la página
-			const modalShown = sessionStorage.getItem("booking_modal_shown");
-
-			// Solo mostrar el modal si no se ha mostrado antes
-			if (!modalShown) {
-				setLimitModalOpen(true);
-			}
 		}
-	}, [subscription, hasModalBeenClosed]);
+	}, [subscription, isTeamReady]);
 
 	// Manejar cierre del modal
 	const handleCloseLimitModal = () => {
-		// Marcar que el modal fue cerrado explícitamente por el usuario
-		setHasModalBeenClosed(true);
-		// Marcar que ya se mostró, para evitar mostrarlo nuevamente en esta sesión
-		sessionStorage.setItem("booking_modal_shown", "true");
 		setLimitModalOpen(false);
 	};
 
+	// Abrir modal de upgrade solo cuando el usuario intenta crear una nueva disponibilidad
+	const handleNewAvailabilityLockedClick = () => {
+		setFeatureInfo(createFeatureInfo());
+		setLimitModalOpen(true);
+	};
+
 	// Función para cargar datos - convertida a callback para reutilizar
+	// Includes requestHeaders for team context (X-Group-Id when in team mode)
 	const fetchData = useCallback(async () => {
+		// Wait for team context to be ready before fetching
+		if (!isEffectiveUserReady) return;
+
 		try {
 			setLoading(true);
 			// Si estamos viendo una disponibilidad específica
 			if (isSpecificAvailability) {
-				// Cargar disponibilidad
-				const availabilityResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${availabilityId}`);
+				// Cargar disponibilidad - include team headers
+				const availabilityResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${availabilityId}`, {
+					headers: requestHeaders,
+				});
 
 				setAvailability(availabilityResponse.data);
 
-				// Cargar reservas para esta disponibilidad específica
-				const bookingsResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${availabilityId}/bookings`);
+				// Cargar reservas para esta disponibilidad específica - include team headers
+				const bookingsResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${availabilityId}/bookings`, {
+					headers: requestHeaders,
+				});
 
 				// Asegurar que siempre sea un array
 				const bookingsData = Array.isArray(bookingsResponse.data) ? bookingsResponse.data : [];
 				setBookings(bookingsData);
 			} else {
-				// Cargar todas las reservas del usuario
-				const bookingsResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings`);
+				// Cargar todas las reservas del usuario - include team headers
+				const bookingsResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings`, { headers: requestHeaders });
 
 				// Asegurar que siempre sea un array
 				const bookingsData = Array.isArray(bookingsResponse.data) ? bookingsResponse.data : [];
 				setBookings(bookingsData);
 
-				// Cargar todas las disponibilidades cuando estamos en la vista general
-				const availabilitiesResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/availability`);
+				// Cargar todas las disponibilidades cuando estamos en la vista general - include team headers
+				const availabilitiesResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/availability`, {
+					headers: requestHeaders,
+				});
 
 				// Asegurar que siempre sea un array
 				const availabilitiesData = Array.isArray(availabilitiesResponse.data) ? availabilitiesResponse.data : [];
@@ -720,7 +1131,7 @@ const BookingsManagement = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, [availabilityId, isSpecificAvailability]);
+	}, [availabilityId, isSpecificAvailability, isEffectiveUserReady, requestHeaders]);
 
 	// Cargar datos al montar o cuando cambien las dependencias
 	useEffect(() => {
@@ -761,6 +1172,15 @@ const BookingsManagement = () => {
 			}
 		});
 
+	// Paginación: bookings visibles en la página actual + número total de páginas
+	const totalBookingsPages = Math.max(1, Math.ceil(filteredBookings.length / BOOKINGS_PER_PAGE));
+	const paginatedBookings = filteredBookings.slice((bookingsPage - 1) * BOOKINGS_PER_PAGE, bookingsPage * BOOKINGS_PER_PAGE);
+
+	// Reset a página 1 cuando cambian los filtros o la cantidad total
+	useEffect(() => {
+		setBookingsPage(1);
+	}, [filter, statusFilter, filteredBookings.length]);
+
 	// Manejar cambio de estado
 	const handleStatusChange = async (bookingId: string, newStatus: BookingType["status"]) => {
 		// Si el estado es "rejected" y no tenemos razón, mostramos el diálogo
@@ -796,7 +1216,9 @@ const BookingsManagement = () => {
 				payload.cancellationReason = rejectReason;
 			}
 
-			const response = await axios.patch(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${bookingId}/status`, payload);
+			const response = await axios.patch(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${bookingId}/status`, payload, {
+				headers: requestHeaders,
+			});
 
 			const updatedBooking = response.data;
 
@@ -855,7 +1277,9 @@ const BookingsManagement = () => {
 					cancellationReason: rejectReason || undefined,
 				};
 
-				const response = await axios.patch(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`, payload);
+				const response = await axios.patch(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`, payload, {
+					headers: requestHeaders,
+				});
 
 				const updatedBooking = response.data;
 
@@ -905,7 +1329,9 @@ const BookingsManagement = () => {
 					cancelledBy: "host",
 				};
 
-				const response = await axios.patch(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`, payload);
+				const response = await axios.patch(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`, payload, {
+					headers: requestHeaders,
+				});
 
 				const updatedBooking = response.data;
 
@@ -955,7 +1381,7 @@ const BookingsManagement = () => {
 		try {
 			if (!selectedBooking) return;
 
-			await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}`);
+			await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}`, { headers: requestHeaders });
 
 			setBookings(bookings.filter((b) => b._id !== selectedBooking._id));
 
@@ -1000,7 +1426,9 @@ const BookingsManagement = () => {
 		try {
 			if (!selectedAvailabilityId) return;
 
-			await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${selectedAvailabilityId}`);
+			await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${selectedAvailabilityId}`, {
+				headers: requestHeaders,
+			});
 
 			// Actualizar la lista de disponibilidades
 			setAvailabilities(Array.isArray(availabilities) ? availabilities.filter((a) => a._id !== selectedAvailabilityId) : []);
@@ -1209,169 +1637,562 @@ const BookingsManagement = () => {
 		);
 	}
 
-	return (
-		<Box>
-			<MainCard
-				title={isSpecificAvailability && availability ? `Reservas - ${availability.title}` : "Configuración de Citas"}
-				secondary={
-					<Stack direction="row" spacing={2} alignItems="center">
-						{isSpecificAvailability && (
-							<Button variant="outlined" onClick={() => navigate("/apps/calendar/reservations")}>
-								Ver todas las reservas
-							</Button>
-						)}
-						{hasBookingFeature ? (
-							<Button variant="contained" color="primary" onClick={() => navigate("/apps/calendar/booking-config")}>
-								Nueva Disponibilidad
-							</Button>
-						) : (
-							<Button variant="contained" color="primary" startIcon={<Lock size={16} />} onClick={() => navigate("/suscripciones/tables")}>
-								Nueva Disponibilidad
-							</Button>
-						)}
-					</Stack>
-				}
-			>
-				{!hasBookingFeature && (
-					<Alert
-						severity="warning"
-						icon={<Lock variant="Bulk" size={24} color={theme.palette.warning.main} />}
-						sx={{ mb: 3, mt: 1 }}
-						action={
-							<Button color="warning" size="small" onClick={() => navigate("/suscripciones/tables")}>
-								Actualizar Plan
-							</Button>
-						}
-					>
-						La gestión de reservas y creación de disponibilidades está limitada a planes superiores. Actualiza tu plan para acceder a esta
-						funcionalidad.
-					</Alert>
-				)}
+	const isDarkMode = theme.palette.mode === "dark";
 
-				<Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-					<Tooltip title="Ver Guía">
-						<IconButton
-							color="success"
-							onClick={() => setGuideOpen(true)}
-							size="medium"
+	// Botón "Nueva disponibilidad" reusable.
+	const newAvailabilityButton = canCreateAvailability ? (
+		<Button
+			variant="contained"
+			onClick={() => navigate("/apps/calendar/booking-config")}
+			sx={{
+				textTransform: "none",
+				bgcolor: BRAND_BLUE,
+				color: "#fff",
+				fontWeight: 600,
+				letterSpacing: "-0.005em",
+				borderRadius: 1.25,
+				boxShadow: "none",
+				"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+			}}
+		>
+			Nueva disponibilidad
+		</Button>
+	) : (
+		<Tooltip
+			title={!hasBookingFeature ? "Función disponible en planes superiores" : "No tenés permisos para crear disponibilidades"}
+			arrow
+			placement="top"
+		>
+			<span>
+				<Button
+					variant="contained"
+					startIcon={<Lock size={16} />}
+					onClick={!hasBookingFeature ? handleNewAvailabilityLockedClick : undefined}
+					disabled={hasBookingFeature}
+					sx={{
+						textTransform: "none",
+						bgcolor: BRAND_BLUE,
+						color: "#fff",
+						fontWeight: 600,
+						letterSpacing: "-0.005em",
+						borderRadius: 1.25,
+						boxShadow: "none",
+						"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+						"&.Mui-disabled": {
+							bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.24 : 0.4),
+							color: alpha("#fff", 0.9),
+						},
+					}}
+				>
+					Nueva disponibilidad
+				</Button>
+			</span>
+		</Tooltip>
+	);
+
+	return (
+		<Stack spacing={{ xs: 1, sm: 2.5 }}>
+			{/* ── HEADER DE SECCIÓN brand-aware ───────────────────────────────── */}
+			<Box
+				sx={{
+					position: "relative",
+					overflow: "hidden",
+					bgcolor: theme.palette.background.paper,
+					border: `1px solid ${alpha(BRAND_BLUE, isDarkMode ? 0.18 : 0.12)}`,
+					boxShadow: `0 4px 18px ${alpha(BRAND_BLUE, isDarkMode ? 0.16 : 0.08)}`,
+					borderRadius: 1.5,
+					px: { xs: 1.5, sm: 2.5 },
+					py: { xs: 1.25, sm: 1.75 },
+				}}
+			>
+				<Box
+					aria-hidden
+					sx={{
+						display: { xs: "none", md: "block" },
+						position: "absolute",
+						top: "-80%",
+						right: "-10%",
+						width: 280,
+						height: 280,
+						borderRadius: "50%",
+						background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDarkMode ? 0.15 : 0.09)} 0%, transparent 65%)`,
+						filter: "blur(50px)",
+						pointerEvents: "none",
+						zIndex: 0,
+					}}
+				/>
+				<Box
+					aria-hidden
+					sx={{
+						display: { xs: "none", md: "block" },
+						position: "absolute",
+						inset: 0,
+						backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDarkMode ? 0.06 : 0.04)} 1px, transparent 1px)`,
+						backgroundSize: "22px 22px",
+						maskImage: "radial-gradient(ellipse 50% 100% at 90% 50%, #000 0%, transparent 70%)",
+						WebkitMaskImage: "radial-gradient(ellipse 50% 100% at 90% 50%, #000 0%, transparent 70%)",
+						pointerEvents: "none",
+						zIndex: 0,
+					}}
+				/>
+
+				<Stack
+					direction={{ xs: "column", md: "row" }}
+					alignItems={{ xs: "flex-start", md: "center" }}
+					justifyContent="space-between"
+					spacing={{ xs: 1.5, md: 2 }}
+					sx={{ position: "relative", zIndex: 1 }}
+				>
+					{/* Eyebrow + descripción (oculta en mobile para ahorrar altura) */}
+					<Stack
+						direction="row"
+						alignItems="center"
+						spacing={1.5}
+						sx={{ flex: { md: 1 }, minWidth: 0, display: { xs: "none", md: "flex" } }}
+					>
+						<Box
 							sx={{
-								zIndex: 10,
-								position: "relative",
-								bgcolor: "rgba(255, 255, 255, 0.8)",
-								"&:hover": { bgcolor: "rgba(255, 255, 255, 0.9)" },
+								display: "inline-flex",
+								alignItems: "center",
+								px: 1.25,
+								py: 0.4,
+								borderRadius: 1,
+								bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.16 : 0.08),
+								border: `1px solid ${alpha(BRAND_BLUE, isDarkMode ? 0.32 : 0.2)}`,
+								flexShrink: 0,
 							}}
 						>
-							<InfoCircle variant="Bulk" />
-						</IconButton>
-					</Tooltip>
-				</Box>
-
-				{/* Mostrar enlace público solo si estamos viendo una disponibilidad específica */}
-				{isSpecificAvailability && availability && (
-					<Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-						<Typography variant="subtitle1" sx={{ mr: 2 }}>
-							Enlace Público:
+							<Typography
+								sx={{
+									fontSize: "0.68rem",
+									fontWeight: 600,
+									letterSpacing: "0.14em",
+									textTransform: "uppercase",
+									color: BRAND_BLUE,
+									fontVariantNumeric: "tabular-nums",
+								}}
+							>
+								{isSpecificAvailability ? "Reservas" : "Configuración de citas"}
+							</Typography>
+						</Box>
+						<Typography sx={{ fontSize: "0.875rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>
+							{isSpecificAvailability && availability
+								? `Reservas vinculadas a ${availability.title}.`
+								: "Gestioná tus disponibilidades y las reservas que recibís a través de tus enlaces públicos."}
 						</Typography>
-						<TextField
-							size="small"
-							value={`${window.location.origin}/booking/${availability.publicUrl}`}
-							InputProps={{
-								readOnly: true,
-								endAdornment: (
-									<Button
-										onClick={() => {
-											navigator.clipboard.writeText(`${window.location.origin}/booking/${availability.publicUrl}`);
+					</Stack>
 
-											dispatch(
-												openSnackbar({
-													open: true,
-													message: "Enlace copiado al portapapeles",
-													variant: "alert",
-													alert: {
-														color: "success",
-													},
-													close: false,
-												}),
-											);
-										}}
-										sx={{ ml: 1 }}
-									>
-										Copiar
-									</Button>
-								),
+					{/* Actions: Ver todas + Nueva disponibilidad + Guía */}
+					<Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
+						{isSpecificAvailability && (
+							<Button
+								onClick={() => navigate("/apps/calendar/reservations")}
+								sx={{
+									textTransform: "none",
+									color: "text.secondary",
+									fontWeight: 500,
+									"&:hover": { bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.1 : 0.06), color: BRAND_BLUE },
+								}}
+							>
+								Ver todas
+							</Button>
+						)}
+						{newAvailabilityButton}
+						<Tooltip title="Ver guía" arrow placement="top">
+							<IconButton
+								onClick={() => setGuideOpen(true)}
+								size="small"
+								sx={{
+									color: "text.secondary",
+									transition: "background-color 0.15s ease, color 0.15s ease",
+									"&:hover": { bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.14 : 0.08), color: BRAND_BLUE },
+								}}
+							>
+								<InfoCircle variant="Bulk" size={20} />
+							</IconButton>
+						</Tooltip>
+					</Stack>
+				</Stack>
+			</Box>
+
+			{/* ── ALERTS (cuando aplican) ─────────────────────────────────────── */}
+			{!hasBookingFeature && (
+				<Alert
+					severity="info"
+					sx={{ mb: 0 }}
+					action={
+						<Button color="info" size="small" onClick={() => navigate("/suscripciones/tables")}>
+							Ver planes
+						</Button>
+					}
+				>
+					Tu plan no incluye gestión de reservas nuevas. Podés ver las existentes o actualizar tu plan.
+				</Alert>
+			)}
+
+			{hasBookingFeature && isTeamMode && !canCreate && (
+				<Alert severity="info" icon={<InfoCircle variant="Bulk" size={24} color={theme.palette.info.main} />} sx={{ mb: 0 }}>
+					Estás viendo las reservas del equipo en modo lectura. Contactá al administrador si necesitás permisos para crear o modificar
+					disponibilidades.
+				</Alert>
+			)}
+
+			{/* ── MAIN CARD: Tabs top-level + contenido ───────────────────────── */}
+			<MainCard content={false}>
+				{/* Tabs separan los flujos (Reservas / Disponibilidades) — corta el scroll
+				    que aparecía cuando ambas secciones estaban apiladas verticalmente. */}
+				{!isSpecificAvailability && (
+					<Box
+						sx={{
+							borderBottom: `1px solid ${alpha(BRAND_BLUE, isDarkMode ? 0.18 : 0.12)}`,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "space-between",
+							px: { xs: 2, sm: 3 },
+						}}
+					>
+						<Tabs
+							value={section}
+							onChange={(_, val) => setSection(val)}
+							sx={{
+								minHeight: 44,
+								"& .MuiTabs-indicator": { height: 2.5, borderRadius: 1, bgcolor: BRAND_BLUE },
+								"& .MuiTab-root": {
+									textTransform: "none",
+									fontWeight: 500,
+									fontSize: "0.875rem",
+									letterSpacing: "-0.005em",
+									minHeight: 44,
+									color: "text.secondary",
+									transition: "color 0.15s ease",
+									"&:hover": { color: BRAND_BLUE },
+									"&.Mui-selected": { color: BRAND_BLUE, fontWeight: 600 },
+								},
+								"& .MuiTab-iconWrapper": { marginRight: 0.75 },
 							}}
-							sx={{ flexGrow: 1 }}
-						/>
+						>
+							<Tab value="reservas" label="Reservas" icon={<Calendar1 size={18} variant="Bulk" />} iconPosition="start" />
+							<Tab
+								value="disponibilidades"
+								label={
+									<Stack direction="row" alignItems="center" spacing={0.625}>
+										<span>Disponibilidades</span>
+										{availabilities.length > 0 && (
+											<Box
+												sx={{
+													display: "inline-flex",
+													alignItems: "center",
+													justifyContent: "center",
+													minWidth: 20,
+													height: 18,
+													px: 0.5,
+													borderRadius: 0.625,
+													bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.18 : 0.1),
+													border: `1px solid ${alpha(BRAND_BLUE, isDarkMode ? 0.32 : 0.2)}`,
+												}}
+											>
+												<Typography
+													sx={{
+														fontSize: "0.65rem",
+														fontWeight: 600,
+														color: BRAND_BLUE,
+														fontVariantNumeric: "tabular-nums",
+														lineHeight: 1,
+													}}
+												>
+													{availabilities.length}
+												</Typography>
+											</Box>
+										)}
+									</Stack>
+								}
+								icon={<Clock size={18} variant="Bulk" />}
+								iconPosition="start"
+							/>
+						</Tabs>
 					</Box>
 				)}
 
-				{!isSpecificAvailability && (
-					<Box sx={{ mb: 4 }}>
-						<Typography variant="h5" gutterBottom>
-							Mis Disponibilidades
-						</Typography>
+				{/* Mostrar enlace público solo si estamos viendo una disponibilidad específica */}
+				{isSpecificAvailability && availability && (
+					<Box sx={{ p: { xs: 2, sm: 3 }, pb: 0 }}>
+						<Stack direction="row" alignItems="center" spacing={1.5}>
+							<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "text.secondary", letterSpacing: "-0.005em", flexShrink: 0 }}>
+								Enlace público:
+							</Typography>
+							<TextField
+								size="small"
+								value={`${window.location.origin}/booking/${availability.publicUrl}`}
+								InputProps={{
+									readOnly: true,
+									endAdornment: (
+										<Button
+											onClick={() => {
+												navigator.clipboard.writeText(`${window.location.origin}/booking/${availability.publicUrl}`);
+												dispatch(
+													openSnackbar({
+														open: true,
+														message: "Enlace copiado al portapapeles",
+														variant: "alert",
+														alert: { color: "success" },
+														close: false,
+													}),
+												);
+											}}
+											sx={{
+												ml: 1,
+												textTransform: "none",
+												color: BRAND_BLUE,
+												fontWeight: 600,
+												fontSize: "0.78rem",
+												"&:hover": { bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.12 : 0.06) },
+											}}
+										>
+											Copiar
+										</Button>
+									),
+								}}
+								sx={{
+									flexGrow: 1,
+									"& .MuiOutlinedInput-notchedOutline": {
+										borderColor: alpha(BRAND_BLUE, isDarkMode ? 0.26 : 0.16),
+									},
+									"& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+										borderColor: alpha(BRAND_BLUE, isDarkMode ? 0.46 : 0.32),
+									},
+									"& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+										borderColor: alpha(BRAND_BLUE, 0.55),
+									},
+								}}
+							/>
+						</Stack>
+					</Box>
+				)}
 
+				{/* ── TAB: DISPONIBILIDADES ──────────────────────────────────────── */}
+				{!isSpecificAvailability && section === "disponibilidades" && (
+					<Box sx={{ p: { xs: 2, sm: 3 } }}>
 						{availabilities.length > 0 ? (
 							<Grid container spacing={3}>
 								{Array.isArray(availabilities)
 									? availabilities.map((availability) => (
 											<Grid item xs={12} sm={6} md={4} key={availability._id}>
-												<AvailabilityCard availability={availability} onDelete={handleDeleteAvailabilityClick} />
+												<AvailabilityCard
+													availability={availability}
+													onDelete={handleDeleteAvailabilityClick}
+													canEdit={canEditAvailability}
+													canDelete={canDeleteAvailability}
+												/>
 											</Grid>
 									  ))
 									: null}
 							</Grid>
 						) : (
-							<Card sx={{ mb: 3 }}>
-								<CardContent>
-									<Box sx={{ textAlign: "center", py: 3 }}>
-										<Calendar size={32} style={{ opacity: 0.5, marginBottom: 16 }} />
-										<Typography variant="h6" gutterBottom>
-											No tienes disponibilidades configuradas
+							<Box
+								sx={{
+									position: "relative",
+									overflow: "hidden",
+									width: "100%",
+									py: { xs: 4, sm: 5 },
+									px: 2,
+								}}
+							>
+								<Box
+									aria-hidden
+									sx={{
+										position: "absolute",
+										inset: 0,
+										background: `radial-gradient(circle at 50% 40%, ${alpha(BRAND_BLUE, isDarkMode ? 0.12 : 0.07)} 0%, transparent 60%)`,
+										pointerEvents: "none",
+										zIndex: 0,
+									}}
+								/>
+								<Stack
+									spacing={2}
+									alignItems="center"
+									sx={{ position: "relative", zIndex: 1, maxWidth: 480, mx: "auto", textAlign: "center" }}
+								>
+									<Box
+										sx={{
+											display: "inline-flex",
+											alignItems: "center",
+											px: 1.25,
+											py: 0.4,
+											borderRadius: 1,
+											bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.16 : 0.08),
+											border: `1px solid ${alpha(BRAND_BLUE, isDarkMode ? 0.32 : 0.2)}`,
+										}}
+									>
+										<Typography
+											sx={{
+												fontSize: "0.68rem",
+												fontWeight: 600,
+												letterSpacing: "0.14em",
+												textTransform: "uppercase",
+												color: BRAND_BLUE,
+											}}
+										>
+											Sin disponibilidades
 										</Typography>
-										<Typography variant="body2" color="textSecondary" sx={{ mb: 3, maxWidth: 500, mx: "auto" }}>
-											Configura tu disponibilidad para que otros puedan agendar citas contigo. Una vez configurada, podrás compartir un
-											enlace para recibir reservas.
-										</Typography>
-										{hasBookingFeature ? (
-											<Button variant="contained" color="primary" onClick={() => navigate("/apps/calendar/booking-config")}>
-												Crear Nueva Disponibilidad
-											</Button>
-										) : (
-											<Button
-												variant="contained"
-												color="primary"
-												startIcon={<Lock size={16} />}
-												onClick={() => navigate("/suscripciones/tables")}
-											>
-												Crear Nueva Disponibilidad
-											</Button>
-										)}
 									</Box>
-								</CardContent>
-							</Card>
+									<Box
+										sx={{
+											width: 80,
+											height: 80,
+											borderRadius: "50%",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.14 : 0.08),
+											color: BRAND_BLUE,
+										}}
+									>
+										<Calendar size={40} variant="Bulk" />
+									</Box>
+									<Stack spacing={0.75} alignItems="center">
+										<Typography
+											sx={{
+												fontSize: "1.125rem",
+												fontWeight: 600,
+												letterSpacing: "-0.015em",
+												color: "text.primary",
+												textWrap: "balance",
+											}}
+										>
+											Todavía no hay disponibilidades configuradas
+										</Typography>
+										<Typography
+											sx={{
+												fontSize: "0.875rem",
+												color: "text.secondary",
+												lineHeight: 1.55,
+												maxWidth: 420,
+												textWrap: "pretty",
+											}}
+										>
+											Configurá tu disponibilidad horaria para que otros agenden citas. Vas a poder compartir el enlace público apenas la creés.
+										</Typography>
+									</Stack>
+									{canCreateAvailability ? (
+										<Button
+											variant="contained"
+											onClick={() => navigate("/apps/calendar/booking-config")}
+											sx={{
+												mt: 0.5,
+												textTransform: "none",
+												bgcolor: BRAND_BLUE,
+												color: "#fff",
+												fontWeight: 600,
+												letterSpacing: "-0.005em",
+												borderRadius: 1.25,
+												px: 2.25,
+												boxShadow: `0 4px 12px ${alpha(BRAND_BLUE, 0.22)}`,
+												"&:hover": {
+													bgcolor: alpha(BRAND_BLUE, 0.88),
+													boxShadow: `0 6px 16px ${alpha(BRAND_BLUE, 0.28)}`,
+												},
+											}}
+										>
+											Crear nueva disponibilidad
+										</Button>
+									) : (
+										<Tooltip
+											title={
+												!hasBookingFeature ? "Función disponible en planes superiores" : "No tenés permisos para crear disponibilidades"
+											}
+											arrow
+											placement="top"
+										>
+											<span>
+												<Button
+													variant="contained"
+													startIcon={<Lock size={16} />}
+													onClick={!hasBookingFeature ? handleNewAvailabilityLockedClick : undefined}
+													disabled={hasBookingFeature}
+													sx={{
+														mt: 0.5,
+														textTransform: "none",
+														bgcolor: BRAND_BLUE,
+														color: "#fff",
+														fontWeight: 600,
+														letterSpacing: "-0.005em",
+														borderRadius: 1.25,
+														px: 2.25,
+														boxShadow: "none",
+														"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+														"&.Mui-disabled": {
+															bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.24 : 0.4),
+															color: alpha("#fff", 0.9),
+														},
+													}}
+												>
+													Crear nueva disponibilidad
+												</Button>
+											</span>
+										</Tooltip>
+									)}
+								</Stack>
+							</Box>
 						)}
 					</Box>
 				)}
 
-				<Typography variant="h5" gutterBottom>
-					{isSpecificAvailability ? "Reservas" : "Todas las Reservas"}
-				</Typography>
+				{/* ── TAB: RESERVAS ──────────────────────────────────────────────── */}
+				{(isSpecificAvailability || section === "reservas") && (
+					<Box sx={{ p: { xs: 2, sm: 3 } }}>
 
-				<Paper sx={{ mb: 3 }}>
-					<Tabs value={filter} onChange={(e, val) => setFilter(val)} sx={{ borderBottom: 1, borderColor: "divider" }}>
+				<Box
+					sx={{
+						mb: 3,
+						borderRadius: 1.5,
+						border: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.22 : 0.14)}`,
+						bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.04 : 0.02),
+					}}
+				>
+					<Tabs
+						value={filter}
+						onChange={(e, val) => setFilter(val)}
+						sx={{
+							borderBottom: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.18 : 0.12)}`,
+							minHeight: 40,
+							"& .MuiTabs-indicator": { height: 2.5, borderRadius: 1, bgcolor: BRAND_BLUE },
+							"& .MuiTab-root": {
+								textTransform: "none",
+								fontSize: "0.82rem",
+								fontWeight: 500,
+								minHeight: 40,
+								color: "text.secondary",
+								transition: "color 0.15s ease",
+								"&:hover": { color: BRAND_BLUE },
+								"&.Mui-selected": { color: BRAND_BLUE, fontWeight: 600 },
+							},
+						}}
+					>
 						<Tab value="upcoming" label="Próximas" />
 						<Tab value="past" label="Pasadas" />
 						<Tab value="all" label="Todas" />
 					</Tabs>
 
-					<Box sx={{ p: 2, display: "flex", alignItems: "center" }}>
-						<Typography variant="subtitle2" sx={{ mr: 2 }}>
-							Filtrar por estado:
-						</Typography>
-						<FormControl size="small" sx={{ width: 200 }}>
-							<InputLabel>Estado</InputLabel>
-							<Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} label="Estado">
+					<Box sx={{ p: 1.5, display: "flex", alignItems: "center", gap: 1.5 }}>
+						<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "text.secondary", letterSpacing: "-0.005em" }}>Estado:</Typography>
+						<FormControl
+							size="small"
+							sx={{
+								width: 200,
+								"& .MuiOutlinedInput-notchedOutline": {
+									borderColor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.26 : 0.16),
+									transition: "border-color 0.15s ease",
+								},
+								"& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+									borderColor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.46 : 0.32),
+								},
+								"& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+									borderColor: alpha(BRAND_BLUE, 0.55),
+									borderWidth: 1,
+								},
+							}}
+						>
+							<Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} displayEmpty>
 								<MenuItem value="all">Todos</MenuItem>
 								<MenuItem value="pending">Pendientes</MenuItem>
 								<MenuItem value="confirmed">Confirmadas</MenuItem>
@@ -1381,48 +2202,152 @@ const BookingsManagement = () => {
 							</Select>
 						</FormControl>
 					</Box>
-				</Paper>
+				</Box>
+
+				{/* Chips de filtros activos brand-tinted */}
+				{(filter !== "all" || statusFilter !== "all") && (
+					<Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: "wrap", gap: 1 }}>
+						{filter !== "all" && (
+							<Chip
+								label={filter === "upcoming" ? "Próximas" : "Pasadas"}
+								size="small"
+								onDelete={() => setFilter("all")}
+								sx={{
+									fontSize: "0.72rem",
+									height: 24,
+									bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.14 : 0.08),
+									color: "text.primary",
+									border: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.32 : 0.2)}`,
+									"& .MuiChip-deleteIcon": { color: BRAND_BLUE, "&:hover": { color: alpha(BRAND_BLUE, 0.7) } },
+								}}
+							/>
+						)}
+						{statusFilter !== "all" && (
+							<Chip
+								label={
+									statusFilter === "pending"
+										? "Pendientes"
+										: statusFilter === "confirmed"
+										? "Confirmadas"
+										: statusFilter === "cancelled"
+										? "Canceladas"
+										: statusFilter === "rejected"
+										? "Rechazadas"
+										: "Completadas"
+								}
+								size="small"
+								onDelete={() => setStatusFilter("all")}
+								sx={{
+									fontSize: "0.72rem",
+									height: 24,
+									bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.14 : 0.08),
+									color: "text.primary",
+									border: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.32 : 0.2)}`,
+									"& .MuiChip-deleteIcon": { color: BRAND_BLUE, "&:hover": { color: alpha(BRAND_BLUE, 0.7) } },
+								}}
+							/>
+						)}
+					</Stack>
+				)}
 
 				{filteredBookings.length === 0 ? (
-					<Box sx={{ textAlign: "center", py: 4 }}>
+					<Box>
 						<NoResultsState
 							title="No hay reservas"
-							description={
-								statusFilter !== "all"
-									? "No hay reservas con el filtro aplicado"
-									: filter === "upcoming"
-									? "No hay reservas próximas"
-									: filter === "past"
-									? "No hay reservas pasadas"
-									: "No hay reservas registradas. Crea una disponibilidad para empezar a recibir citas."
-							}
+							description={(() => {
+								const tabLabel = filter === "upcoming" ? "próximas" : filter === "past" ? "pasadas" : "";
+								const statusLabel =
+									statusFilter === "pending"
+										? "pendientes"
+										: statusFilter === "confirmed"
+										? "confirmadas"
+										: statusFilter === "cancelled"
+										? "canceladas"
+										: statusFilter === "rejected"
+										? "rechazadas"
+										: statusFilter === "completed"
+										? "completadas"
+										: "";
+								if (tabLabel && statusLabel) {
+									return `No hay reservas ${tabLabel} ${statusLabel}.`;
+								}
+								if (statusLabel) {
+									return `No hay reservas ${statusLabel}.`;
+								}
+								if (tabLabel) {
+									return `No hay reservas ${tabLabel}.`;
+								}
+								return "No hay reservas registradas. Creá una disponibilidad para empezar a recibir citas.";
+							})()}
 						/>
-						{!isSpecificAvailability &&
-							(hasBookingFeature ? (
-								<Button variant="contained" color="primary" onClick={() => navigate("/apps/calendar/booking-config")} sx={{ mt: 3 }}>
-									Crear Nueva Disponibilidad
-								</Button>
-							) : (
-								<Button
-									variant="contained"
-									color="primary"
-									startIcon={<Lock size={16} />}
-									onClick={() => navigate("/suscripciones/tables")}
-									sx={{ mt: 3 }}
-								>
-									Crear Nueva Disponibilidad
-								</Button>
-							))}
+						{!isSpecificAvailability && (
+							<Box sx={{ display: "flex", justifyContent: "center", mt: 0.5, mb: 3 }}>
+								{canCreateAvailability ? (
+									<Button
+										variant="contained"
+										onClick={() => navigate("/apps/calendar/booking-config")}
+										sx={{
+											textTransform: "none",
+											bgcolor: BRAND_BLUE,
+											color: "#fff",
+											fontWeight: 600,
+											letterSpacing: "-0.005em",
+											borderRadius: 1.25,
+											px: 2.25,
+											boxShadow: `0 4px 12px ${alpha(BRAND_BLUE, 0.22)}`,
+											"&:hover": {
+												bgcolor: alpha(BRAND_BLUE, 0.88),
+												boxShadow: `0 6px 16px ${alpha(BRAND_BLUE, 0.28)}`,
+											},
+										}}
+									>
+										Crear nueva disponibilidad
+									</Button>
+								) : (
+									<Tooltip
+										title={!hasBookingFeature ? "Función disponible en planes superiores" : "No tenés permisos para crear disponibilidades"}
+										arrow
+										placement="top"
+									>
+										<span>
+											<Button
+												variant="contained"
+												startIcon={<Lock size={16} />}
+												onClick={!hasBookingFeature ? handleNewAvailabilityLockedClick : undefined}
+												disabled={hasBookingFeature}
+												sx={{
+													textTransform: "none",
+													bgcolor: BRAND_BLUE,
+													color: "#fff",
+													fontWeight: 600,
+													letterSpacing: "-0.005em",
+													borderRadius: 1.25,
+													px: 2.25,
+													boxShadow: "none",
+													"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+													"&.Mui-disabled": {
+														bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.24 : 0.4),
+														color: alpha("#fff", 0.9),
+													},
+												}}
+											>
+												Crear nueva disponibilidad
+											</Button>
+										</span>
+									</Tooltip>
+								)}
+							</Box>
+						)}
 					</Box>
 				) : (
-					<Grid container spacing={3}>
+					<Grid container spacing={2}>
 						{Array.isArray(filteredBookings)
-							? filteredBookings.map((booking) => {
+							? paginatedBookings.map((booking) => {
 									// Verificar si ya pasó la fecha
 									const isPast = booking.startTime ? dayjs().isAfter(dayjs(booking.startTime)) : false;
 
 									return (
-										<Grid item xs={12} sm={6} md={4} key={booking._id}>
+										<Grid item xs={12} sm={6} md={4} lg={3} key={booking._id}>
 											{/* Si tenemos información de disponibilidad, mostramos la tarjeta normal */}
 											{booking.availability || availability ? (
 												<BookingCard
@@ -1431,89 +2356,200 @@ const BookingsManagement = () => {
 													onStatusChange={handleStatusChange}
 													onDelete={handleDeleteClick}
 													showAvailabilityInfo={!isSpecificAvailability}
+													canUpdate={canEditAvailability}
+													canDelete={canDeleteAvailability}
 												/>
 											) : (
-												/* Si no tenemos información de disponibilidad, mostramos una versión simplificada */
-												<Card
-													variant="outlined"
+												/* Si no tenemos información de disponibilidad, versión simplificada
+												   con el MISMO patrón visual que BookingCard / AvailabilityCard. */
+												<Box
 													sx={{
+														position: "relative",
 														height: "100%",
-														borderLeft: "4px solid",
-														borderLeftColor:
-															booking.status === "confirmed"
-																? "success.main"
-																: booking.status === "pending"
-																? "warning.main"
-																: booking.status === "cancelled" || booking.status === "rejected"
-																? "error.main"
-																: "info.main",
+														borderRadius: 1.5,
+														border: `1px solid ${alpha(BRAND_BLUE, isDarkMode ? 0.22 : 0.14)}`,
+														bgcolor: theme.palette.background.paper,
+														transition: "border-color 0.15s ease",
+														p: 1.5,
+														"&:hover": { borderColor: alpha(BRAND_BLUE, isDarkMode ? 0.42 : 0.28) },
 													}}
 												>
-													<CardContent>
-														<Typography variant="h6" gutterBottom>
-															{booking.clientName}
-														</Typography>
-														<Typography variant="body2">{dayjs(booking.startTime).format("D/M/YYYY - HH:mm")}</Typography>
-														<Typography variant="body2" color="text.secondary" gutterBottom>
-															{booking.clientEmail}
-														</Typography>
-														<Box sx={{ mt: 1 }}>
-															{booking.status === "confirmed" && <Chip label="Confirmada" size="small" color="success" />}
-															{booking.status === "pending" && <Chip label="Pendiente" size="small" color="warning" />}
-															{booking.status === "cancelled" && <Chip label="Cancelada" size="small" color="error" />}
-															{booking.status === "rejected" && <Chip label="Rechazada" size="small" color="error" />}
-															{booking.status === "completed" && <Chip label="Completada" size="small" color="info" />}
-														</Box>
-													</CardContent>
-													{booking.status === "pending" && (
-														<Box sx={{ p: 2, pt: 0, display: "flex", gap: 1 }}>
-															<Button
-																size="small"
-																color="success"
-																startIcon={<ClipboardTick size={16} />}
-																onClick={() => handleStatusChange(booking._id, "confirmed")}
-																sx={{ textTransform: "none" }}
+													{/* Status pill top-right (consistente con BookingCard y AvailabilityCard) */}
+													<Box sx={{ position: "absolute", top: 12, right: 12 }}>
+														<BookingStatusPill status={booking.status} />
+													</Box>
+
+													<Stack spacing={1.25}>
+														<Stack direction="row" alignItems="center" spacing={1} sx={{ pr: 9 }}>
+															<Box
+																sx={{
+																	width: 28,
+																	height: 28,
+																	borderRadius: 0.875,
+																	display: "flex",
+																	alignItems: "center",
+																	justifyContent: "center",
+																	bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.18 : 0.1),
+																	color: BRAND_BLUE,
+																	flexShrink: 0,
+																}}
 															>
-																Confirmar
-															</Button>
-															<Button
-																size="small"
-																color="error"
-																startIcon={<Trash size={16} />}
-																onClick={() => handleStatusChange(booking._id, "rejected")}
-																sx={{ textTransform: "none" }}
+																<User size={14} variant="Bulk" />
+															</Box>
+															<Typography
+																sx={{
+																	fontSize: "0.88rem",
+																	fontWeight: 600,
+																	letterSpacing: "-0.01em",
+																	color: "text.primary",
+																	overflow: "hidden",
+																	textOverflow: "ellipsis",
+																	whiteSpace: "nowrap",
+																}}
 															>
-																Rechazar
-															</Button>
-														</Box>
-													)}
-													{booking.status === "confirmed" && !isPast && (
-														<Box sx={{ p: 2, pt: 0, display: "flex", gap: 1 }}>
-															<Button
-																size="small"
-																color="error"
-																startIcon={<Trash size={16} />}
-																onClick={() => handleStatusChange(booking._id, "cancelled")}
-																sx={{ textTransform: "none" }}
-															>
-																Cancelar
-															</Button>
-														</Box>
-													)}
-													{booking.status === "confirmed" && isPast && (
-														<Box sx={{ p: 2, pt: 0, display: "flex", gap: 1 }}>
-															<Button
-																size="small"
-																color="info"
-																startIcon={<ClipboardTick size={16} />}
-																onClick={() => handleStatusChange(booking._id, "completed")}
-																sx={{ textTransform: "none" }}
-															>
-																Completada
-															</Button>
-														</Box>
-													)}
-												</Card>
+																{booking.clientName}
+															</Typography>
+														</Stack>
+
+														<Stack spacing={0.875}>
+															<Stack direction="row" spacing={1.25} alignItems="flex-start">
+																<Box sx={{ color: "text.secondary", flexShrink: 0, mt: 0.125 }}>
+																	<Calendar1 size={14} variant="Bulk" />
+																</Box>
+																<Box sx={{ minWidth: 0 }}>
+																	<Typography
+																		sx={{
+																			fontSize: "0.62rem",
+																			fontWeight: 600,
+																			letterSpacing: "0.08em",
+																			textTransform: "uppercase",
+																			color: "text.secondary",
+																			lineHeight: 1.2,
+																		}}
+																	>
+																		Fecha y hora
+																	</Typography>
+																	<Typography sx={{ fontSize: "0.78rem", fontWeight: 500, color: "text.primary", fontVariantNumeric: "tabular-nums" }}>
+																		{dayjs(booking.startTime).format("D/M/YYYY · HH:mm")}
+																	</Typography>
+																</Box>
+															</Stack>
+
+															<Stack direction="row" spacing={1.25} alignItems="flex-start">
+																<Box sx={{ color: "text.secondary", flexShrink: 0, mt: 0.125 }}>
+																	<User size={14} variant="Bulk" />
+																</Box>
+																<Box sx={{ minWidth: 0 }}>
+																	<Typography
+																		sx={{
+																			fontSize: "0.62rem",
+																			fontWeight: 600,
+																			letterSpacing: "0.08em",
+																			textTransform: "uppercase",
+																			color: "text.secondary",
+																			lineHeight: 1.2,
+																		}}
+																	>
+																		Contacto
+																	</Typography>
+																	<Typography
+																		sx={{
+																			fontSize: "0.78rem",
+																			color: "text.primary",
+																			overflow: "hidden",
+																			textOverflow: "ellipsis",
+																			whiteSpace: "nowrap",
+																		}}
+																	>
+																		{booking.clientEmail}
+																	</Typography>
+																</Box>
+															</Stack>
+														</Stack>
+
+														{/* Acciones contextuales — icon buttons monocromos con intent hover */}
+														{((booking.status === "pending" && canEditAvailability) ||
+															(booking.status === "confirmed" && canEditAvailability)) && (
+															<>
+																<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.16 : 0.1) }} />
+																<Stack direction="row" justifyContent="flex-end" spacing={0.25}>
+																	{booking.status === "pending" && (
+																		<>
+																			<Tooltip title="Confirmar" arrow placement="top">
+																				<IconButton
+																					size="small"
+																					onClick={() => handleStatusChange(booking._id, "confirmed")}
+																					sx={{
+																						color: "text.secondary",
+																						transition: "background-color 0.15s ease, color 0.15s ease",
+																						"&:hover:not(.Mui-disabled)": {
+																							bgcolor: alpha(LIVE_GREEN, isDarkMode ? 0.18 : 0.1),
+																							color: LIVE_GREEN,
+																						},
+																					}}
+																				>
+																					<ClipboardTick size={16} variant="Bulk" />
+																				</IconButton>
+																			</Tooltip>
+																			<Tooltip title="Rechazar" arrow placement="top">
+																				<IconButton
+																					size="small"
+																					onClick={() => handleStatusChange(booking._id, "rejected")}
+																					sx={{
+																						color: "text.secondary",
+																						transition: "background-color 0.15s ease, color 0.15s ease",
+																						"&:hover:not(.Mui-disabled)": {
+																							bgcolor: alpha(theme.palette.error.main, isDarkMode ? 0.18 : 0.1),
+																							color: theme.palette.error.main,
+																						},
+																					}}
+																				>
+																					<Trash size={16} variant="Bulk" />
+																				</IconButton>
+																			</Tooltip>
+																		</>
+																	)}
+																	{booking.status === "confirmed" && !isPast && (
+																		<Tooltip title="Cancelar reserva" arrow placement="top">
+																			<IconButton
+																				size="small"
+																				onClick={() => handleStatusChange(booking._id, "cancelled")}
+																				sx={{
+																					color: "text.secondary",
+																					transition: "background-color 0.15s ease, color 0.15s ease",
+																					"&:hover:not(.Mui-disabled)": {
+																						bgcolor: alpha(theme.palette.error.main, isDarkMode ? 0.18 : 0.1),
+																						color: theme.palette.error.main,
+																					},
+																				}}
+																			>
+																				<Trash size={16} variant="Bulk" />
+																			</IconButton>
+																		</Tooltip>
+																	)}
+																	{booking.status === "confirmed" && isPast && (
+																		<Tooltip title="Marcar completada" arrow placement="top">
+																			<IconButton
+																				size="small"
+																				onClick={() => handleStatusChange(booking._id, "completed")}
+																				sx={{
+																					color: "text.secondary",
+																					transition: "background-color 0.15s ease, color 0.15s ease",
+																					"&:hover:not(.Mui-disabled)": {
+																						bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.16 : 0.08),
+																						color: BRAND_BLUE,
+																					},
+																				}}
+																			>
+																				<ClipboardTick size={16} variant="Bulk" />
+																			</IconButton>
+																		</Tooltip>
+																	)}
+																</Stack>
+															</>
+														)}
+													</Stack>
+												</Box>
 											)}
 										</Grid>
 									);
@@ -1521,9 +2557,83 @@ const BookingsManagement = () => {
 							: null}
 					</Grid>
 				)}
+
+				{/* Paginación brand-aware — solo si hay más de una página */}
+				{filteredBookings.length > BOOKINGS_PER_PAGE && (
+					<Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 3, flexWrap: "wrap", gap: 1 }}>
+						<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+							Mostrando <Box component="strong" sx={{ color: "text.primary", fontWeight: 600 }}>{(bookingsPage - 1) * BOOKINGS_PER_PAGE + 1}–{Math.min(bookingsPage * BOOKINGS_PER_PAGE, filteredBookings.length)}</Box> de{" "}
+							<Box component="strong" sx={{ color: "text.primary", fontWeight: 600 }}>{filteredBookings.length}</Box> reservas
+						</Typography>
+						<Stack direction="row" alignItems="center" spacing={0.5}>
+							<Button
+								size="small"
+								onClick={() => setBookingsPage((p) => Math.max(1, p - 1))}
+								disabled={bookingsPage === 1}
+								sx={{
+									textTransform: "none",
+									minWidth: 70,
+									color: "text.secondary",
+									fontWeight: 500,
+									"&:hover": { bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.1 : 0.06), color: BRAND_BLUE },
+								}}
+							>
+								Anterior
+							</Button>
+							{Array.from({ length: totalBookingsPages }).map((_, idx) => {
+								const pageNum = idx + 1;
+								const isActive = pageNum === bookingsPage;
+								return (
+									<Button
+										key={pageNum}
+										size="small"
+										onClick={() => setBookingsPage(pageNum)}
+										sx={{
+											minWidth: 32,
+											height: 32,
+											p: 0,
+											textTransform: "none",
+											fontSize: "0.78rem",
+											fontWeight: isActive ? 600 : 500,
+											fontVariantNumeric: "tabular-nums",
+											borderRadius: 1,
+											color: isActive ? "#fff" : "text.secondary",
+											bgcolor: isActive ? BRAND_BLUE : "transparent",
+											"&:hover": {
+												bgcolor: isActive ? alpha(BRAND_BLUE, 0.88) : alpha(BRAND_BLUE, isDarkMode ? 0.1 : 0.06),
+												color: isActive ? "#fff" : BRAND_BLUE,
+											},
+										}}
+									>
+										{pageNum}
+									</Button>
+								);
+							})}
+							<Button
+								size="small"
+								onClick={() => setBookingsPage((p) => Math.min(totalBookingsPages, p + 1))}
+								disabled={bookingsPage === totalBookingsPages}
+								sx={{
+									textTransform: "none",
+									minWidth: 80,
+									color: "text.secondary",
+									fontWeight: 500,
+									"&:hover": { bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.1 : 0.06), color: BRAND_BLUE },
+								}}
+							>
+								Siguiente
+							</Button>
+						</Stack>
+					</Stack>
+				)}
+					</Box>
+				)}
 			</MainCard>
 
-			{/* Diálogo de confirmación de eliminación */}
+			{/* Helper: estilos de diálogo brand-aware compartidos */}
+			{(() => null)()}
+
+			{/* Diálogo de confirmación de eliminación de reserva */}
 			<ResponsiveDialog
 				open={deleteDialog}
 				onClose={() => {
@@ -1533,25 +2643,78 @@ const BookingsManagement = () => {
 					}
 				}}
 				aria-labelledby="delete-dialog-title"
+				PaperProps={{ sx: { p: 0 } }}
 			>
-				<DialogTitle id="delete-dialog-title">Eliminar reserva</DialogTitle>
-				<DialogContent>
-					<DialogContentText>
-						¿Estás seguro de que quieres eliminar la reserva de <strong>{selectedBooking?.clientName}</strong>? Esta acción no se puede
-						deshacer.
-					</DialogContentText>
+				<DialogTitle
+					id="delete-dialog-title"
+					sx={{
+						bgcolor: alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.1 : 0.05),
+						p: { xs: 1.75, sm: 2 },
+						borderBottom: `1px solid ${alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.22 : 0.16)}`,
+					}}
+				>
+					<Stack direction="row" alignItems="center" spacing={1.25}>
+						<Box
+							sx={{
+								width: 36,
+								height: 36,
+								borderRadius: 1.25,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.2 : 0.12),
+								color: theme.palette.error.main,
+								flexShrink: 0,
+							}}
+						>
+							<Trash size={20} variant="Bulk" />
+						</Box>
+						<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", lineHeight: 1.2, color: "text.primary" }}>
+							Eliminar reserva
+						</Typography>
+					</Stack>
+				</DialogTitle>
+				<DialogContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+					<Typography sx={{ fontSize: "0.875rem", color: "text.secondary", lineHeight: 1.55, textWrap: "pretty" }}>
+						¿Seguro que querés eliminar la reserva de <Box component="strong" sx={{ color: "text.primary", fontWeight: 600 }}>{selectedBooking?.clientName}</Box>? Esta acción no se puede deshacer.
+					</Typography>
 				</DialogContent>
-				<DialogActions>
+				<DialogActions
+					sx={{
+						p: { xs: 1.5, sm: 2 },
+						bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.04 : 0.02),
+						borderTop: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.16 : 0.1)}`,
+					}}
+				>
 					<Button
 						onClick={() => {
 							setDeleteDialog(false);
 							setSelectedBooking(null);
 						}}
 						disabled={loadingAction}
+						sx={{
+							textTransform: "none",
+							color: "text.secondary",
+							fontWeight: 500,
+							"&:hover": { bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.1 : 0.06), color: BRAND_BLUE },
+						}}
 					>
 						Cancelar
 					</Button>
-					<LoadingButton onClick={handleDeleteConfirm} color="error" variant="contained" loading={loadingAction}>
+					<LoadingButton
+						onClick={handleDeleteConfirm}
+						variant="contained"
+						loading={loadingAction}
+						sx={{
+							textTransform: "none",
+							bgcolor: theme.palette.error.main,
+							color: "#fff",
+							fontWeight: 600,
+							borderRadius: 1.25,
+							boxShadow: "none",
+							"&:hover": { bgcolor: alpha(theme.palette.error.main, 0.88), boxShadow: "none" },
+						}}
+					>
 						Eliminar
 					</LoadingButton>
 				</DialogActions>
@@ -1568,23 +2731,71 @@ const BookingsManagement = () => {
 					}
 				}}
 				aria-labelledby="reject-dialog-title"
+				PaperProps={{ sx: { p: 0 } }}
 			>
-				<DialogTitle id="reject-dialog-title">Rechazar reserva</DialogTitle>
-				<DialogContent>
-					<DialogContentText sx={{ mb: 2 }}>
-						Estás rechazando la reserva de <strong>{selectedBooking?.clientName}</strong>. Puedes añadir un motivo opcional:
-					</DialogContentText>
-					<TextField
-						autoFocus
-						label="Motivo del rechazo"
-						multiline
-						rows={3}
-						value={rejectReason}
-						onChange={(e) => setRejectReason(e.target.value)}
-						fullWidth
-					/>
+				<DialogTitle
+					id="reject-dialog-title"
+					sx={{
+						bgcolor: alpha(STALE_AMBER, theme.palette.mode === "dark" ? 0.1 : 0.05),
+						p: { xs: 1.75, sm: 2 },
+						borderBottom: `1px solid ${alpha(STALE_AMBER, theme.palette.mode === "dark" ? 0.32 : 0.22)}`,
+					}}
+				>
+					<Stack direction="row" alignItems="center" spacing={1.25}>
+						<Box
+							sx={{
+								width: 36,
+								height: 36,
+								borderRadius: 1.25,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(STALE_AMBER, theme.palette.mode === "dark" ? 0.2 : 0.12),
+								color: STALE_AMBER,
+								flexShrink: 0,
+							}}
+						>
+							<InfoCircle size={20} variant="Bulk" />
+						</Box>
+						<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", lineHeight: 1.2, color: "text.primary" }}>
+							Rechazar reserva
+						</Typography>
+					</Stack>
+				</DialogTitle>
+				<DialogContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+					<Stack spacing={2}>
+						<Typography sx={{ fontSize: "0.875rem", color: "text.secondary", lineHeight: 1.55, textWrap: "pretty" }}>
+							Estás rechazando la reserva de <Box component="strong" sx={{ color: "text.primary", fontWeight: 600 }}>{selectedBooking?.clientName}</Box>. Podés agregar un motivo opcional:
+						</Typography>
+						<TextField
+							autoFocus
+							label="Motivo del rechazo"
+							multiline
+							rows={3}
+							value={rejectReason}
+							onChange={(e) => setRejectReason(e.target.value)}
+							fullWidth
+							sx={{
+								"& .MuiOutlinedInput-notchedOutline": {
+									borderColor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.26 : 0.16),
+								},
+								"& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+									borderColor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.46 : 0.32),
+								},
+								"& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+									borderColor: alpha(BRAND_BLUE, 0.55),
+								},
+							}}
+						/>
+					</Stack>
 				</DialogContent>
-				<DialogActions>
+				<DialogActions
+					sx={{
+						p: { xs: 1.5, sm: 2 },
+						bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.04 : 0.02),
+						borderTop: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.16 : 0.1)}`,
+					}}
+				>
 					<Button
 						onClick={() => {
 							setRejectDialog(false);
@@ -1592,10 +2803,29 @@ const BookingsManagement = () => {
 							setSelectedBooking(null);
 						}}
 						disabled={loadingAction}
+						sx={{
+							textTransform: "none",
+							color: "text.secondary",
+							fontWeight: 500,
+							"&:hover": { bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.1 : 0.06), color: BRAND_BLUE },
+						}}
 					>
 						Cancelar
 					</Button>
-					<LoadingButton onClick={handleRejectConfirm} color="error" variant="contained" loading={loadingAction}>
+					<LoadingButton
+						onClick={handleRejectConfirm}
+						variant="contained"
+						loading={loadingAction}
+						sx={{
+							textTransform: "none",
+							bgcolor: theme.palette.error.main,
+							color: "#fff",
+							fontWeight: 600,
+							borderRadius: 1.25,
+							boxShadow: "none",
+							"&:hover": { bgcolor: alpha(theme.palette.error.main, 0.88), boxShadow: "none" },
+						}}
+					>
 						Rechazar
 					</LoadingButton>
 				</DialogActions>
@@ -1612,23 +2842,71 @@ const BookingsManagement = () => {
 					}
 				}}
 				aria-labelledby="cancel-dialog-title"
+				PaperProps={{ sx: { p: 0 } }}
 			>
-				<DialogTitle id="cancel-dialog-title">Cancelar reserva</DialogTitle>
-				<DialogContent>
-					<DialogContentText sx={{ mb: 2 }}>
-						Estás cancelando la reserva de <strong>{selectedBooking?.clientName}</strong>. Puedes añadir un motivo opcional:
-					</DialogContentText>
-					<TextField
-						autoFocus
-						label="Motivo de la cancelación"
-						multiline
-						rows={3}
-						value={cancelReason}
-						onChange={(e) => setCancelReason(e.target.value)}
-						fullWidth
-					/>
+				<DialogTitle
+					id="cancel-dialog-title"
+					sx={{
+						bgcolor: alpha(STALE_AMBER, theme.palette.mode === "dark" ? 0.1 : 0.05),
+						p: { xs: 1.75, sm: 2 },
+						borderBottom: `1px solid ${alpha(STALE_AMBER, theme.palette.mode === "dark" ? 0.32 : 0.22)}`,
+					}}
+				>
+					<Stack direction="row" alignItems="center" spacing={1.25}>
+						<Box
+							sx={{
+								width: 36,
+								height: 36,
+								borderRadius: 1.25,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(STALE_AMBER, theme.palette.mode === "dark" ? 0.2 : 0.12),
+								color: STALE_AMBER,
+								flexShrink: 0,
+							}}
+						>
+							<InfoCircle size={20} variant="Bulk" />
+						</Box>
+						<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", lineHeight: 1.2, color: "text.primary" }}>
+							Cancelar reserva
+						</Typography>
+					</Stack>
+				</DialogTitle>
+				<DialogContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+					<Stack spacing={2}>
+						<Typography sx={{ fontSize: "0.875rem", color: "text.secondary", lineHeight: 1.55, textWrap: "pretty" }}>
+							Estás cancelando la reserva de <Box component="strong" sx={{ color: "text.primary", fontWeight: 600 }}>{selectedBooking?.clientName}</Box>. Podés agregar un motivo opcional:
+						</Typography>
+						<TextField
+							autoFocus
+							label="Motivo de la cancelación"
+							multiline
+							rows={3}
+							value={cancelReason}
+							onChange={(e) => setCancelReason(e.target.value)}
+							fullWidth
+							sx={{
+								"& .MuiOutlinedInput-notchedOutline": {
+									borderColor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.26 : 0.16),
+								},
+								"& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+									borderColor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.46 : 0.32),
+								},
+								"& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+									borderColor: alpha(BRAND_BLUE, 0.55),
+								},
+							}}
+						/>
+					</Stack>
 				</DialogContent>
-				<DialogActions>
+				<DialogActions
+					sx={{
+						p: { xs: 1.5, sm: 2 },
+						bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.04 : 0.02),
+						borderTop: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.16 : 0.1)}`,
+					}}
+				>
 					<Button
 						onClick={() => {
 							setCancelDialog(false);
@@ -1636,11 +2914,30 @@ const BookingsManagement = () => {
 							setSelectedBooking(null);
 						}}
 						disabled={loadingAction}
+						sx={{
+							textTransform: "none",
+							color: "text.secondary",
+							fontWeight: 500,
+							"&:hover": { bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.1 : 0.06), color: BRAND_BLUE },
+						}}
 					>
 						Volver
 					</Button>
-					<LoadingButton onClick={handleCancelConfirm} color="error" variant="contained" loading={loadingAction}>
-						Cancelar Reserva
+					<LoadingButton
+						onClick={handleCancelConfirm}
+						variant="contained"
+						loading={loadingAction}
+						sx={{
+							textTransform: "none",
+							bgcolor: theme.palette.error.main,
+							color: "#fff",
+							fontWeight: 600,
+							borderRadius: 1.25,
+							boxShadow: "none",
+							"&:hover": { bgcolor: alpha(theme.palette.error.main, 0.88), boxShadow: "none" },
+						}}
+					>
+						Cancelar reserva
 					</LoadingButton>
 				</DialogActions>
 			</ResponsiveDialog>
@@ -1655,32 +2952,118 @@ const BookingsManagement = () => {
 					}
 				}}
 				aria-labelledby="delete-availability-dialog-title"
+				PaperProps={{ sx: { p: 0 } }}
 			>
-				<DialogTitle id="delete-availability-dialog-title">Eliminar disponibilidad</DialogTitle>
-				<DialogContent>
-					<DialogContentText>
-						¿Estás seguro de que quieres eliminar esta disponibilidad? Esta acción eliminará todas las configuraciones asociadas y no se
-						podrá deshacer.
-						<Alert severity="info" sx={{ mt: 2 }}>
-							Recuerda que no puedes eliminar la disponibilidad si tienes citas pendientes y/o citas confirmadas futuras.
-						</Alert>
-						<Alert severity="warning" sx={{ mt: 2 }}>
-							Las reservas existentes asociadas a esta disponibilidad se mantendrán, pero ya no podrás recibir nuevas reservas con este
-							enlace.
-						</Alert>
-					</DialogContentText>
+				<DialogTitle
+					id="delete-availability-dialog-title"
+					sx={{
+						bgcolor: alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.1 : 0.05),
+						p: { xs: 1.75, sm: 2 },
+						borderBottom: `1px solid ${alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.22 : 0.16)}`,
+					}}
+				>
+					<Stack direction="row" alignItems="center" spacing={1.25}>
+						<Box
+							sx={{
+								width: 36,
+								height: 36,
+								borderRadius: 1.25,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.2 : 0.12),
+								color: theme.palette.error.main,
+								flexShrink: 0,
+							}}
+						>
+							<Trash size={20} variant="Bulk" />
+						</Box>
+						<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", lineHeight: 1.2, color: "text.primary" }}>
+							Eliminar disponibilidad
+						</Typography>
+					</Stack>
+				</DialogTitle>
+				<DialogContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+					<Stack spacing={1.5}>
+						<Typography sx={{ fontSize: "0.875rem", color: "text.secondary", lineHeight: 1.55, textWrap: "pretty" }}>
+							¿Seguro que querés eliminar esta disponibilidad? La acción elimina todas las configuraciones asociadas y no se puede deshacer.
+						</Typography>
+						<Box
+							sx={{
+								display: "flex",
+								alignItems: "flex-start",
+								gap: 1,
+								px: 1.25,
+								py: 1,
+								borderRadius: 1.25,
+								border: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.28 : 0.18)}`,
+								bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.08 : 0.05),
+							}}
+						>
+							<Box sx={{ color: BRAND_BLUE, display: "flex", mt: 0.125, flexShrink: 0 }}>
+								<InfoCircle size={14} variant="Bulk" />
+							</Box>
+							<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", lineHeight: 1.45, textWrap: "pretty" }}>
+								No podés eliminar la disponibilidad si tenés citas pendientes o citas confirmadas futuras.
+							</Typography>
+						</Box>
+						<Box
+							sx={{
+								display: "flex",
+								alignItems: "flex-start",
+								gap: 1,
+								px: 1.25,
+								py: 1,
+								borderRadius: 1.25,
+								border: `1px solid ${alpha(STALE_AMBER, theme.palette.mode === "dark" ? 0.32 : 0.22)}`,
+								bgcolor: alpha(STALE_AMBER, theme.palette.mode === "dark" ? 0.1 : 0.05),
+							}}
+						>
+							<Box sx={{ color: STALE_AMBER, display: "flex", mt: 0.125, flexShrink: 0 }}>
+								<InfoCircle size={14} variant="Bulk" />
+							</Box>
+							<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", lineHeight: 1.45, textWrap: "pretty" }}>
+								Las reservas existentes se mantienen, pero el enlace público deja de aceptar nuevas reservas.
+							</Typography>
+						</Box>
+					</Stack>
 				</DialogContent>
-				<DialogActions>
+				<DialogActions
+					sx={{
+						p: { xs: 1.5, sm: 2 },
+						bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.04 : 0.02),
+						borderTop: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.16 : 0.1)}`,
+					}}
+				>
 					<Button
 						onClick={() => {
 							setDeleteAvailabilityDialog(false);
 							setSelectedAvailabilityId(null);
 						}}
 						disabled={loadingAction}
+						sx={{
+							textTransform: "none",
+							color: "text.secondary",
+							fontWeight: 500,
+							"&:hover": { bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.1 : 0.06), color: BRAND_BLUE },
+						}}
 					>
 						Cancelar
 					</Button>
-					<LoadingButton onClick={handleDeleteAvailabilityConfirm} color="error" variant="contained" loading={loadingAction}>
+					<LoadingButton
+						onClick={handleDeleteAvailabilityConfirm}
+						variant="contained"
+						loading={loadingAction}
+						sx={{
+							textTransform: "none",
+							bgcolor: theme.palette.error.main,
+							color: "#fff",
+							fontWeight: 600,
+							borderRadius: 1.25,
+							boxShadow: "none",
+							"&:hover": { bgcolor: alpha(theme.palette.error.main, 0.88), boxShadow: "none" },
+						}}
+					>
 						Eliminar
 					</LoadingButton>
 				</DialogActions>
@@ -1697,7 +3080,7 @@ const BookingsManagement = () => {
 				featureInfo={featureInfo || createFeatureInfo()}
 				upgradeRequired={true}
 			/>
-		</Box>
+		</Stack>
 	);
 };
 

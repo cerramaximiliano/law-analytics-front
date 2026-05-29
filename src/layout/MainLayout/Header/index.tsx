@@ -3,7 +3,7 @@ import { ReactNode, useMemo } from "react";
 
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
-import { AppBar, Toolbar, useMediaQuery, AppBarProps } from "@mui/material";
+import { AppBar, Toolbar, useMediaQuery, useScrollTrigger, AppBarProps } from "@mui/material";
 
 // project-imports
 import AppBarStyled from "./AppBarStyled";
@@ -14,6 +14,7 @@ import { DRAWER_WIDTH, MINI_DRAWER_WIDTH } from "config";
 import useConfig from "hooks/useConfig";
 import { dispatch, useSelector } from "store";
 import { openDrawer } from "store/reducers/menu";
+import { headerBorder, headerShadow } from "themes/dashboardTokens";
 
 // assets
 import { HambergerMenu } from "iconsax-react";
@@ -26,9 +27,14 @@ import { MenuOrientation, ThemeMode } from "types/config";
 const Header = () => {
 	const theme = useTheme();
 	const downLG = useMediaQuery(theme.breakpoints.down("lg"));
+	const isDark = theme.palette.mode === ThemeMode.DARK;
 
 	const { menuOrientation } = useConfig();
 	const { drawerOpen } = useSelector((state) => state.menu);
+
+	// Border + shadow aparecen al hacer scroll para separar el AppBar del
+	// contenido. Mismo patrón que layout/CommonLayout/Header.tsx (ElevationScroll).
+	const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 8 });
 
 	const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL && !downLG;
 
@@ -70,6 +76,9 @@ const Header = () => {
 		sx: {
 			bgcolor: alpha(theme.palette.background.default, 0.8),
 			backdropFilter: "blur(8px)",
+			borderBottom: `1px solid ${scrolled ? headerBorder(isDark) : "transparent"}`,
+			boxShadow: scrolled ? headerShadow(isDark) : "none",
+			transition: "border-color 200ms ease, box-shadow 200ms ease",
 			zIndex: 1200,
 			width: isHorizontal
 				? "100%"

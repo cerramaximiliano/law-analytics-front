@@ -139,19 +139,21 @@ export const TablePagination = ({ gotoPage, rows, setPageSize, pageSize, pageInd
 							</Select>
 						</FormControl>
 					</Stack>
-					<Typography variant="caption" color="secondary">
-						Ir a
-					</Typography>
-					<TextField
-						size="small"
-						type="number"
-						value={pageIndex + 1}
-						onChange={(e) => {
-							const page = e.target.value ? Number(e.target.value) : 0;
-							gotoPage(page - 1);
-						}}
-						sx={{ "& .MuiOutlinedInput-input": { py: 0.75, px: 1.25, width: 36 } }}
-					/>
+					<Stack direction="row" spacing={1} alignItems="center" sx={{ display: { xs: "none", sm: "flex" } }}>
+						<Typography variant="caption" color="secondary">
+							Ir a
+						</Typography>
+						<TextField
+							size="small"
+							type="number"
+							value={pageIndex + 1}
+							onChange={(e) => {
+								const page = e.target.value ? Number(e.target.value) : 0;
+								gotoPage(page - 1);
+							}}
+							sx={{ "& .MuiOutlinedInput-input": { py: 0.75, px: 1.25, width: 36 } }}
+						/>
+					</Stack>
 				</Stack>
 			</Grid>
 			<Grid item sx={{ mt: { xs: 2, sm: 0 } }}>

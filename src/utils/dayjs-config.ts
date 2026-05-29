@@ -7,6 +7,7 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import isBetween from "dayjs/plugin/isBetween";
 import isToday from "dayjs/plugin/isToday";
 import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 
 // Extender dayjs con plugins necesarios
 dayjs.extend(relativeTime);
@@ -16,6 +17,7 @@ dayjs.extend(customParseFormat);
 dayjs.extend(isBetween);
 dayjs.extend(isToday);
 dayjs.extend(utc);
+dayjs.extend(timezone);
 
 // Configurar idioma español por defecto
 dayjs.locale("es");

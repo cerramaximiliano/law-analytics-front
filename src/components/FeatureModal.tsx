@@ -1,17 +1,32 @@
 import React, { useEffect, useCallback, useRef } from "react";
 import { Link as RouterLink } from "react-router-dom";
 // material-ui
-import { Box, Button, CardMedia, Dialog, IconButton, Typography } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { Box, Button, Dialog, IconButton, Stack, Typography } from "@mui/material";
+import { useTheme, alpha } from "@mui/material/styles";
 // third party
 import { motion, AnimatePresence } from "framer-motion";
 // icons
-import { FolderOpen, Profile2User, Calendar, Calculator, Chart, TaskSquare, CalendarTick, CloseCircle, TickCircle } from "iconsax-react";
-// images
+import {
+	FolderOpen,
+	Profile2User,
+	Calendar,
+	Calculator,
+	Chart,
+	TaskSquare,
+	CalendarTick,
+	CloseCircle,
+	TickCircle,
+	DocumentText,
+	Send2,
+} from "iconsax-react";
+// images — mantenido en data aunque el modal compacto no lo renderice
 import folderViewImg from "assets/images/folder_view.png";
 // tracking
 import { trackFeatureModalOpen, trackFeatureModalClose, trackFeatureModalCTAClick, trackFeatureModalScroll } from "utils/gtm";
 import { FeatureNames } from "utils/gtm";
+
+// Mismo BRAND_BLUE que Hero y Technologies — atmósfera coherente.
+const BRAND_BLUE = "#3A7BFF";
 
 interface FeatureModalContent {
 	title: string;
@@ -23,12 +38,13 @@ interface FeatureModalContent {
 	mockupImage?: string;
 }
 
-// Contenido de cada feature para el modal
+// Contenido de cada feature — el modal compacto no renderiza mockupImage pero
+// se mantiene el campo en la data por si otras vistas lo usan.
 export const FeatureModalData: Record<string, FeatureModalContent> = {
 	[FeatureNames.CARPETAS]: {
 		title: "Expedientes organizados, sin esfuerzo",
 		description: "Todo tu estudio en un solo lugar, sincronizado con el Poder Judicial.",
-		benefits: ["Vista unificada", "Integración con PJN y MEV", "Alertas de movimientos"],
+		benefits: ["Vista unificada", "Integración con PJN, MEV y EJE", "Alertas de movimientos"],
 		cta: "Probar con mis expedientes",
 		iconComponent: FolderOpen,
 		colorKey: "warning",
@@ -91,6 +107,34 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 		iconComponent: CalendarTick,
 		colorKey: "primary",
 	},
+	[FeatureNames.ESCRITOS]: {
+		title: "Escritos con asistente IA",
+		description:
+			"Redactá escritos más rápido. Biblioteca de templates legales, formalizá borradores con IA y reducí tiempos sin perder estilo profesional.",
+		benefits: [
+			"Biblioteca de templates legales",
+			"Formalizar borradores con IA",
+			"Edición conservando estilo profesional",
+			"Reducción de tiempos de redacción",
+		],
+		cta: "Probar Escritos Gratis",
+		iconComponent: DocumentText,
+		colorKey: "info",
+	},
+	[FeatureNames.POSTAL_TRACKING]: {
+		title: "Tracking de Telegramas y Cartas Documento",
+		description:
+			"Centralizá el seguimiento de telegramas y cartas documento. Vinculados a tus carpetas y causas, con estado y novedades en tiempo real.",
+		benefits: [
+			"Tracking de telegramas y cartas documento",
+			"Vinculación con carpetas y causas",
+			"Estado y novedades en tiempo real",
+			"Historial consolidado por cliente",
+		],
+		cta: "Probar Tracking Postal Gratis",
+		iconComponent: Send2,
+		colorKey: "warning",
+	},
 };
 
 interface FeatureModalProps {
@@ -103,28 +147,24 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 	const theme = useTheme();
 	const contentRef = useRef<HTMLDivElement>(null);
 	const hasTrackedScroll = useRef(false);
+	const isDark = theme.palette.mode === "dark";
 
 	const featureData = featureKey ? FeatureModalData[featureKey] : null;
 
-	// Track modal open
 	useEffect(() => {
 		if (open && featureKey) {
 			trackFeatureModalOpen(featureKey);
-			// Reset scroll tracking when modal opens
 			hasTrackedScroll.current = false;
 		}
 	}, [open, featureKey]);
 
-	// Track scroll inside modal (50% scroll)
 	useEffect(() => {
 		if (!open || !featureKey) return;
 
 		const handleScroll = () => {
 			if (!contentRef.current || hasTrackedScroll.current) return;
-
 			const { scrollTop, scrollHeight, clientHeight } = contentRef.current;
 			const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
-
 			if (scrollPercentage >= 0.5) {
 				trackFeatureModalScroll(featureKey);
 				hasTrackedScroll.current = true;
@@ -143,7 +183,6 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 		};
 	}, [open, featureKey]);
 
-	// Handle close with tracking
 	const handleClose = useCallback(() => {
 		if (featureKey) {
 			trackFeatureModalClose(featureKey);
@@ -151,14 +190,12 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 		onClose();
 	}, [featureKey, onClose]);
 
-	// Handle CTA click with tracking
 	const handleCTAClick = useCallback(() => {
 		if (featureKey) {
 			trackFeatureModalCTAClick(featureKey);
 		}
 	}, [featureKey]);
 
-	// Handle escape key
 	useEffect(() => {
 		const handleEscape = (e: KeyboardEvent) => {
 			if (e.key === "Escape" && open) {
@@ -172,6 +209,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 	if (!featureData) return null;
 
 	const IconComponent = featureData.iconComponent;
+	const accent = theme.palette[featureData.colorKey].main;
 
 	return (
 		<AnimatePresence>
@@ -183,191 +221,205 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 					fullWidth
 					PaperProps={{
 						component: motion.div,
-						initial: { opacity: 0, scale: 0.9 },
-						animate: { opacity: 1, scale: 1 },
-						exit: { opacity: 0, scale: 0.9 },
-						transition: { duration: 0.2 },
+						initial: { opacity: 0, scale: 0.96, y: 12 },
+						animate: { opacity: 1, scale: 1, y: 0 },
+						exit: { opacity: 0, scale: 0.96, y: 12 },
+						transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
 						sx: {
 							borderRadius: "16px",
+							maxWidth: 460,
+							width: "100%",
+							m: { xs: 2, sm: 3 },
+							bgcolor: theme.palette.background.paper,
+							border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+							boxShadow: `0 24px 48px ${alpha("#0F172A", isDark ? 0.5 : 0.2)}`,
 							overflow: "hidden",
-							maxWidth: 700,
-							bgcolor: "#F9FAFB",
-							border: "1px solid rgba(0, 0, 0, 0.08)",
-							boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
 						},
 					}}
 					slotProps={{
 						backdrop: {
 							sx: {
-								backgroundColor: "rgba(0, 0, 0, 0.6)",
+								backgroundColor: alpha("#000", 0.55),
+								backdropFilter: "blur(4px)",
+								WebkitBackdropFilter: "blur(4px)",
 							},
 						},
 					}}
 				>
-					<Box ref={contentRef} sx={{ position: "relative" }}>
-						{/* Header con gradiente suave */}
+					<Box ref={contentRef} sx={{ position: "relative", maxHeight: "85vh", overflowX: "hidden", overflowY: "auto" }}>
+						{/* Atmósfera del modal — un solo blob brand-blue + dot grid sutil */}
 						<Box
+							aria-hidden
 							sx={{
-								background: "linear-gradient(135deg, #EEF2FF 0%, #F8FAFF 100%)",
-								px: { xs: 2.5, sm: 4 },
-								py: { xs: 2, sm: 3 },
-								position: "relative",
+								position: "absolute",
+								top: -50,
+								right: -40,
+								width: 180,
+								height: 180,
+								borderRadius: "50%",
+								background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)} 0%, transparent 65%)`,
+								filter: "blur(40px)",
+								pointerEvents: "none",
+								zIndex: 0,
+							}}
+						/>
+						<Box
+							aria-hidden
+							sx={{
+								position: "absolute",
+								inset: 0,
+								backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDark ? 0.04 : 0.03)} 1px, transparent 1px)`,
+								backgroundSize: "22px 22px",
+								maskImage: "radial-gradient(ellipse 70% 60% at center, #000 0%, transparent 80%)",
+								WebkitMaskImage: "radial-gradient(ellipse 70% 60% at center, #000 0%, transparent 80%)",
+								pointerEvents: "none",
+								zIndex: 0,
+							}}
+						/>
+
+						{/* Close button */}
+						<IconButton
+							onClick={handleClose}
+							aria-label="Cerrar"
+							size="small"
+							sx={{
+								position: "absolute",
+								top: 8,
+								right: 8,
+								zIndex: 2,
+								color: theme.palette.text.secondary,
+								"&:hover": {
+									color: theme.palette.text.primary,
+									bgcolor: alpha(theme.palette.text.primary, 0.06),
+								},
 							}}
 						>
-							{/* Close button */}
-							<IconButton
-								onClick={handleClose}
+							<CloseCircle size={20} />
+						</IconButton>
+
+						{/* Contenido principal */}
+						<Box
+							sx={{
+								position: "relative",
+								zIndex: 1,
+								px: { xs: 2.5, sm: 3 },
+								py: { xs: 2.5, sm: 3 },
+							}}
+						>
+							{/* Header horizontal: icono + título */}
+							<Box
 								sx={{
-									position: "absolute",
-									top: 12,
-									right: 12,
-									color: theme.palette.grey[500],
-									"&:hover": {
-										color: theme.palette.grey[700],
-									},
+									display: "flex",
+									alignItems: "center",
+									gap: 1.75,
+									mb: 1.5,
+									pr: 4, // espacio para el close button
 								}}
 							>
-								<CloseCircle size={24} />
-							</IconButton>
+								<Box
+									sx={{
+										width: 40,
+										height: 40,
+										borderRadius: 1.5,
+										bgcolor: alpha(accent, isDark ? 0.22 : 0.14),
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										flexShrink: 0,
+									}}
+								>
+									<IconComponent size={22} variant="Bulk" color={accent} />
+								</Box>
+								<Typography
+									sx={{
+										fontWeight: 600,
+										fontSize: { xs: "1.15rem", sm: "1.3rem" },
+										letterSpacing: "-0.018em",
+										color: theme.palette.text.primary,
+										lineHeight: 1.2,
+										textWrap: "balance",
+									}}
+								>
+									{featureData.title}
+								</Typography>
+							</Box>
 
-							{/* Title */}
+							{/* Descripción */}
 							<Typography
-								variant="h3"
 								sx={{
-									textAlign: "center",
-									mb: 1,
-									fontWeight: 800,
-									color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[900],
-								}}
-							>
-								{featureData.title}
-							</Typography>
-
-							{/* Description */}
-							<Typography
-								variant="body1"
-								sx={{
-									textAlign: "center",
+									fontSize: "0.85rem",
 									color: theme.palette.text.secondary,
 									lineHeight: 1.5,
-									fontSize: "0.95rem",
-									opacity: 0.75,
+									mb: 2.5,
 								}}
 							>
 								{featureData.description}
 							</Typography>
-						</Box>
 
-						{/* Content */}
-						<Box sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 } }}>
-							{/* Imagen + Bullets lado a lado (mobile: vertical) */}
-							<Box
-								sx={{
-									display: "flex",
-									flexDirection: { xs: "column", sm: "row" },
-									gap: 2.5,
-									mb: 2.5,
-									alignItems: { xs: "stretch", sm: "flex-start" },
-								}}
-							>
-								{/* Mockup Image */}
-								{featureData.mockupImage && (
-									<Box
-										sx={{
-											width: { xs: "100%", sm: "65%" },
-											flexShrink: 0,
-											borderRadius: "14px",
-											overflow: "hidden",
-											boxShadow: "0 20px 50px rgba(0, 0, 0, 0.15)",
-											border: "1px solid #E5E7EB",
-										}}
-									>
-										<CardMedia
-											component="img"
-											image={featureData.mockupImage}
-											alt={featureData.title}
+							{/* Benefits inline — sin container, TickCircle en colorKey */}
+							<Stack spacing={1} sx={{ mb: 2.5 }}>
+								{featureData.benefits.map((benefit, index) => (
+									<Box key={index} sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+										<Box sx={{ flexShrink: 0, mt: "1px", lineHeight: 0 }}>
+											<TickCircle size={16} variant="Bold" color={accent} />
+										</Box>
+										<Typography
 											sx={{
-												width: "100%",
-												height: "auto",
-												display: "block",
-											}}
-										/>
-									</Box>
-								)}
-
-								{/* Benefits - 35% */}
-								<Box
-									sx={{
-										flex: 1,
-										px: "12px",
-										py: "8px",
-										borderRadius: "10px",
-										bgcolor: "#F8FAFC",
-										userSelect: "none",
-									}}
-								>
-									{featureData.benefits.map((benefit, index) => (
-										<Box
-											key={index}
-											sx={{
-												display: "flex",
-												alignItems: "center",
-												gap: 0.75,
-												mb: index < featureData.benefits.length - 1 ? 0.5 : 0,
+												fontSize: "0.85rem",
+												color: theme.palette.text.primary,
+												lineHeight: 1.5,
 											}}
 										>
-											<TickCircle size={16} variant="Bold" style={{ color: theme.palette.success.main, flexShrink: 0 }} />
-											<Typography variant="body2" color="text.primary" sx={{ fontSize: "0.75rem", lineHeight: 1.35 }}>
-												{benefit}
-											</Typography>
-										</Box>
-									))}
-								</Box>
-							</Box>
+											{benefit}
+										</Typography>
+									</Box>
+								))}
+							</Stack>
 
-							{/* CTA Button - Full width */}
-							<Box sx={{ mt: 1, mb: 2 }}>
-								<Button
-									component={RouterLink}
-									to={`/register?source=modal&feature=${featureKey}`}
-									variant="contained"
-									color={featureData.colorKey}
-									size="large"
-									fullWidth
-									onClick={handleCTAClick}
-									sx={{
-										height: { xs: "46px", sm: "56px" },
-										fontSize: { xs: "0.95rem", sm: "1.1rem" },
-										fontWeight: 600,
-										borderRadius: 2,
-										boxShadow: "0 6px 20px rgba(0, 0, 0, 0.18)",
-										"&:hover": {
-											boxShadow: "0 8px 25px rgba(0, 0, 0, 0.22)",
-										},
-									}}
-								>
-									{featureData.cta}
-								</Button>
+							{/* CTA — colorKey, compact, refined shadow */}
+							<Button
+								component={RouterLink}
+								to={`/register?source=modal&feature=${featureKey}`}
+								variant="contained"
+								color={featureData.colorKey}
+								fullWidth
+								onClick={handleCTAClick}
+								sx={{
+									height: 44,
+									fontSize: "0.95rem",
+									fontWeight: 600,
+									textTransform: "none",
+									borderRadius: 2,
+									boxShadow: `0 8px 20px ${alpha(accent, 0.3)}`,
+									transition: "transform 0.2s ease, box-shadow 0.2s ease",
+									"&:hover": {
+										boxShadow: `0 12px 26px ${alpha(accent, 0.4)}`,
+										transform: "translateY(-2px)",
+									},
+								}}
+							>
+								{featureData.cta}
+							</Button>
 
-								{/* Microcopy */}
-								<Box
-									sx={{
-										mt: 1.5,
-										display: "flex",
-										justifyContent: "center",
-										alignItems: "center",
-										gap: 2,
-									}}
-								>
-									{["Sin tarjeta", "Registro en 1 minuto"].map((text, index) => (
-										<Box key={index} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-											<TickCircle size={16} variant="Bold" color="#66bb6a" />
-											<Typography variant="caption" color="text.secondary">
-												{text}
-											</Typography>
-										</Box>
-									))}
-								</Box>
+							{/* Microcopy */}
+							<Box
+								sx={{
+									mt: 1.5,
+									display: "flex",
+									justifyContent: "center",
+									alignItems: "center",
+									gap: 2,
+									flexWrap: "wrap",
+								}}
+							>
+								{["Sin tarjeta", "Registro en 1 minuto"].map((text, index) => (
+									<Box key={index} sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
+										<TickCircle size={12} variant="Bold" color={theme.palette.success.main} />
+										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.72rem" }}>
+											{text}
+										</Typography>
+									</Box>
+								))}
 							</Box>
 						</Box>
 					</Box>

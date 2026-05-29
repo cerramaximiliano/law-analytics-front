@@ -19,6 +19,71 @@ export interface ApiResponse<T = any> {
 }
 
 // ===============================
+// Integraciones públicas (toggles de disponibilidad UI)
+// ===============================
+// Embebido en el response de GET /api/plan-configs/public para evitar requests
+// extra al cargar la landing. Cada flag indica si la opción se muestra en UI.
+// `enabled: false` → la UI debe ocultar la opción de esa integración.
+
+/**
+ * releaseStage: 'beta' → chip "Beta" + CTA "Solicitar acceso" + form de soporte.
+ *                'stable' → chip "Disponible" + CTA directo a /connect.
+ */
+export type ReleaseStage = "beta" | "stable";
+
+export interface ServiceFlag {
+	enabled: boolean;
+	maintenanceMessage: string | null;
+	releaseStage: ReleaseStage;
+}
+
+export interface PublicIntegrations {
+	/** Toggle para mostrar el banner MCP de Claude.ai en landing/plans + página /integraciones/claude-ai. */
+	claudeAi: ServiceFlag;
+	/** Toggle equivalente para ChatGPT — UI futura (placeholder hasta que el MCP soporte ChatGPT). */
+	chatGpt: ServiceFlag;
+}
+
+/**
+ * Defaults fail-CLOSED si el endpoint falla — ambas integraciones se asumen
+ * NO disponibles. Cambiado de fail-open a fail-closed cuando el producto decidió
+ * lanzar la integración deshabilitada por default (no exponer features que no
+ * están listas en producción si el backend no puede confirmar el flag).
+ */
+export const DEFAULT_PUBLIC_INTEGRATIONS: PublicIntegrations = {
+	claudeAi: { enabled: false, maintenanceMessage: null, releaseStage: "beta" },
+	chatGpt: { enabled: false, maintenanceMessage: null, releaseStage: "beta" },
+};
+
+// ====================================
+// Public Addons (piggyback en getPublicPlans)
+// ====================================
+// Cada entry incluye precio leído desde Stripe + flag de disponibilidad
+// calculado en función de IntegrationsConfig (un addon mcp_access está
+// available si claudeAi.enabled OR chatGpt.enabled).
+
+export type AddonKey = "mcp_access";
+
+export interface PublicAddon {
+	key: AddonKey;
+	displayName: string;
+	description: string;
+	/** Precio mensual en moneda real (no centavos). null si Stripe no devolvió precio. */
+	priceMonthly: number | null;
+	/** ISO currency lowercase: 'usd', 'ars', etc. */
+	currency: string;
+	interval: "month" | "year" | string;
+	/** El addon está disponible para mostrar/comprar (alguna integración requerida enabled). */
+	available: boolean;
+	/** Planes en los que el user puede contratar el addon. Si no está en estos planes, debe upgradear primero. */
+	requiredPlans: string[];
+	/** Si el user no está en uno de estos planes, debe upgradear primero. */
+	requiresIntegrationsAny: string[];
+}
+
+export const DEFAULT_PUBLIC_ADDONS: PublicAddon[] = [];
+
+// ===============================
 // Interfaces de usuario y sesiones
 // ===============================
 
@@ -28,6 +93,9 @@ export interface UserPreferences {
 	language: string;
 	theme: "light" | "dark" | "system";
 	notifications: NotificationPreferences;
+	pjn?: {
+		syncContactsFromIntervinientes: boolean;
+	};
 }
 
 export interface NotificationSettings {
@@ -579,9 +647,114 @@ class ApiService {
 	 * Obtiene los planes públicos disponibles
 	 */
 
-	static async getPublicPlans(): Promise<ApiResponse<Plan[]>> {
+	static async getPublicPlans(options?: {
+		landingOnly?: boolean;
+	}): Promise<ApiResponse<Plan[]> & { integrations?: PublicIntegrations; addons?: PublicAddon[] }> {
 		try {
+			// landingOnly=true fuerza al backend a devolver solo descuentos con
+			// showOnLanding=true aunque haya sesión. Lo usa la landing pública (`/`)
+			// para mostrar la promesa universal en vez del descuento personalizado.
+			const params = options?.landingOnly ? { landingOnly: "true" } : undefined;
 			const response = await axios.get(`${API_BASE_URL}/api/plan-configs/public`, {
+				withCredentials: true,
+				params,
+			});
+			// Cachear los bloques `integrations` y `addons` para que componentes que
+			// solo los necesitan (Technologies banner, /plans banner, /integraciones/*)
+			// no disparen su propia request. La landing ya consume getPublicPlans
+			// dos veces (Planes + DiscountBanner) → cache se hidrata en el primer call.
+			if (response.data?.integrations) {
+				ApiService._cachedPublicIntegrations = response.data.integrations;
+			}
+			if (Array.isArray(response.data?.addons)) {
+				ApiService._cachedPublicAddons = response.data.addons;
+			}
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	// Cache module-level del bloque integrations devuelto por /plan-configs/public.
+	// Vida = duración del bundle JS en memoria. Se hidrata en la primera call exitosa
+	// a getPublicPlans y queda disponible vía fetchPublicIntegrations().
+	private static _cachedPublicIntegrations: PublicIntegrations | null = null;
+	private static _publicIntegrationsInflight: Promise<PublicIntegrations> | null = null;
+	private static _cachedPublicAddons: PublicAddon[] | null = null;
+	private static _publicAddonsInflight: Promise<PublicAddon[]> | null = null;
+
+	/**
+	 * Devuelve los flags de integraciones públicas. Usa cache (si existe) o
+	 * dispara getPublicPlans para hidratarlo. Promise-dedupes — múltiples calls
+	 * concurrentes comparten el mismo fetch.
+	 *
+	 * Fail-open: si el endpoint falla, asume todas las integraciones enabled.
+	 */
+	static async fetchPublicIntegrations(): Promise<PublicIntegrations> {
+		if (ApiService._cachedPublicIntegrations) return ApiService._cachedPublicIntegrations;
+		if (ApiService._publicIntegrationsInflight) return ApiService._publicIntegrationsInflight;
+
+		ApiService._publicIntegrationsInflight = ApiService.getPublicPlans({ landingOnly: true })
+			.then(() => ApiService._cachedPublicIntegrations || DEFAULT_PUBLIC_INTEGRATIONS)
+			.catch(() => DEFAULT_PUBLIC_INTEGRATIONS)
+			.finally(() => {
+				ApiService._publicIntegrationsInflight = null;
+			});
+		return ApiService._publicIntegrationsInflight;
+	}
+
+	/** Lectura síncrona del cache — null si todavía no se hidrató. */
+	static getCachedPublicIntegrations(): PublicIntegrations | null {
+		return ApiService._cachedPublicIntegrations;
+	}
+
+	/**
+	 * Devuelve los addons públicos. Mismo patrón que fetchPublicIntegrations —
+	 * cache + Promise dedup. La landing piggybackea esto con getPublicPlans.
+	 */
+	static async fetchPublicAddons(): Promise<PublicAddon[]> {
+		if (ApiService._cachedPublicAddons) return ApiService._cachedPublicAddons;
+		if (ApiService._publicAddonsInflight) return ApiService._publicAddonsInflight;
+
+		ApiService._publicAddonsInflight = ApiService.getPublicPlans({ landingOnly: true })
+			.then(() => ApiService._cachedPublicAddons || DEFAULT_PUBLIC_ADDONS)
+			.catch(() => DEFAULT_PUBLIC_ADDONS)
+			.finally(() => {
+				ApiService._publicAddonsInflight = null;
+			});
+		return ApiService._publicAddonsInflight;
+	}
+
+	static getCachedPublicAddons(): PublicAddon[] | null {
+		return ApiService._cachedPublicAddons;
+	}
+
+	/**
+	 * Agregar addon a la subscription paga del user.
+	 * El backend hace stripe.subscriptions.update + el webhook de la-subscriptions
+	 * sincroniza el campo addons[] cuando llega (~1-2s después).
+	 */
+	static async addAddon(addonKey: AddonKey): Promise<{
+		success: boolean;
+		alreadyActive?: boolean;
+		pendingWebhookSync?: boolean;
+		addon?: { key: AddonKey; status: string; stripePriceId: string; currentPeriodEnd: string | null };
+		message?: string;
+	}> {
+		try {
+			const response = await axios.post(`${API_BASE_URL}/api/subscriptions/addons/checkout`, { addonKey }, { withCredentials: true });
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Remover un addon de la subscription. Stripe prorratea automáticamente.
+	 */
+	static async removeAddon(addonKey: AddonKey): Promise<{ success: boolean; message?: string }> {
+		try {
+			const response = await axios.delete(`${API_BASE_URL}/api/subscriptions/addons/${addonKey}`, {
 				withCredentials: true,
 			});
 			return response.data;
@@ -920,7 +1093,9 @@ class ApiService {
 		} catch (error: any) {
 			return {
 				success: false,
+				code: error.response?.data?.code,
 				message: error.response?.data?.message || "Error al cambiar el plan",
+				teamCheck: error.response?.data?.teamCheck,
 			};
 		}
 	}
@@ -937,7 +1112,9 @@ class ApiService {
 		} catch (error: any) {
 			return {
 				success: false,
+				code: error.response?.data?.code,
 				message: error.response?.data?.message || "Error al programar el cambio de plan",
+				teamCheck: error.response?.data?.teamCheck,
 			};
 		}
 	}
@@ -1023,7 +1200,10 @@ class ApiService {
 	 * Verifica si el usuario ha alcanzado el límite de un recurso específico
 	 * @param resourceType - Tipo de recurso a verificar (folders, calculators, contacts, etc.)
 	 */
-	static async checkResourceLimit(resourceType: string): Promise<
+	static async checkResourceLimit(
+		resourceType: string,
+		options?: { headers?: Record<string, string> },
+	): Promise<
 		ApiResponse<{
 			hasReachedLimit: boolean;
 			resourceType: string;
@@ -1037,6 +1217,7 @@ class ApiService {
 		try {
 			const response = await axios.get<ApiResponse>(`${API_BASE_URL}/api/plan-configs/check-resource/${resourceType}`, {
 				withCredentials: true,
+				headers: options?.headers,
 			});
 			return response.data;
 		} catch (error) {
@@ -1144,6 +1325,38 @@ class ApiService {
 	 */
 	static async dismissOnboarding(): Promise<ApiResponse<{ onboarding: OnboardingStatus }>> {
 		return this.updateOnboarding({ dismissed: true });
+	}
+
+	/**
+	 * Registra un evento del flujo de onboarding en la colección OnboardingEvent.
+	 * Complementa a los eventos GTM/GA4 (que viven en analytics) con persistencia
+	 * en Mongo para poder cruzarlos con el resto del estado del user en la
+	 * admin UI (/admin/users/onboarding tab Eventos).
+	 *
+	 * Eventos válidos (ver authController.trackOnboardingEvent):
+	 *   - onboarding_shown
+	 *   - onboarding_step_clicked
+	 *   - onboarding_step_completed
+	 *   - onboarding_judicial_logo_clicked
+	 *   - onboarding_example_folder_used
+	 *   - onboarding_dismissed
+	 *   - onboarding_completed
+	 *   - (legacy) onboarding_cta_clicked, folder_created_from_onboarding
+	 *
+	 * El metadata es libre — se guarda tal cual. Convenciones que usa el
+	 * OnboardingChecklist: `{ step_id, jurisdiction, mode, completed_count }`.
+	 */
+	static async trackOnboardingEvent(event: string, metadata?: Record<string, unknown>, sessionsCount?: number): Promise<void> {
+		try {
+			await axios.post(
+				`${API_BASE_URL}/api/auth/onboarding/track`,
+				{ event, metadata: metadata || {}, sessionsCount: sessionsCount || 1 },
+				{ withCredentials: true },
+			);
+		} catch (error) {
+			// Tracking no debe romper el flow del user — log y seguir.
+			console.warn("trackOnboardingEvent failed", event, error);
+		}
 	}
 }
 

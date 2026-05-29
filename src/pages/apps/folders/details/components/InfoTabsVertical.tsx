@@ -5,19 +5,16 @@ import {
 	Tab,
 	Stack,
 	Typography,
-	Paper,
 	useTheme,
 	alpha,
-	Chip,
 	Skeleton,
-	ToggleButton,
-	ToggleButtonGroup,
 	useMediaQuery,
 	Drawer,
 	IconButton,
 } from "@mui/material";
-import { Folder2, DocumentText, Judge, TickCircle, Eye, Grid1, Menu } from "iconsax-react";
+import { Folder2, DocumentText, Judge, TickCircle, Menu } from "iconsax-react";
 import MainCard from "components/MainCard";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 interface InfoTabsVerticalProps {
 	folderData: any;
@@ -25,8 +22,6 @@ interface InfoTabsVerticalProps {
 	mediationDataComponent: ReactNode;
 	judicialDataComponent: ReactNode;
 	isLoader?: boolean;
-	isDetailedView?: boolean;
-	onViewToggle?: (detailed: boolean) => void;
 }
 
 interface TabPanelProps {
@@ -50,49 +45,29 @@ function TabPanel(props: TabPanelProps) {
 				height: "100%",
 			}}
 		>
-			{value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+			{value === index && <Box sx={{ p: { xs: 2, md: 3 } }}>{children}</Box>}
 		</Box>
 	);
 }
 
-const InfoTabsVertical = ({
-	folderData,
-	basicDataComponent,
-	mediationDataComponent,
-	judicialDataComponent,
-	isLoader,
-	isDetailedView = false,
-	onViewToggle,
-}: InfoTabsVerticalProps) => {
+const InfoTabsVertical = ({ folderData, basicDataComponent, mediationDataComponent, judicialDataComponent, isLoader }: InfoTabsVerticalProps) => {
 	const [value, setValue] = useState(0);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-	const handleChange = (event: SyntheticEvent, newValue: number) => {
+	const handleChange = (_event: SyntheticEvent, newValue: number) => {
 		setValue(newValue);
 		if (isMobile) {
 			setMobileOpen(false);
 		}
 	};
 
-	const handleViewChange = (event: React.MouseEvent<HTMLElement>, newView: boolean | null) => {
-		if (newView !== null && onViewToggle) {
-			onViewToggle(newView);
-		}
-	};
-
-	// Function to check if section has data
+	// Check data presence per section
 	const hasBasicData = () => {
 		if (!folderData) return false;
-		return !!(
-			folderData.folderName ||
-			folderData.number ||
-			folderData.type ||
-			folderData.juzgado ||
-			folderData.radicacion ||
-			folderData.subType
-		);
+		return !!(folderData.folderName || folderData.number || folderData.type || folderData.juzgado || folderData.radicacion || folderData.subType);
 	};
 
 	const hasMediationData = () => {
@@ -112,90 +87,54 @@ const InfoTabsVertical = ({
 		);
 	};
 
-	// Tab configuration
+	// Tab configuration — all brand-aligned, no rainbow
 	const tabs = [
 		{
 			value: 0,
-			label: "Datos Básicos",
-			icon: <Folder2 size={20} />,
-			color: theme.palette.primary.main,
+			label: "Datos básicos",
+			icon: <Folder2 size={18} />,
 			description: "Información principal",
 			hasData: hasBasicData(),
 			status: (() => {
-				// Sugerencias de estado basadas en la información disponible:
-
-				// Opción 1: Basado en el estado general de la carpeta
 				if (!folderData) return "Sin información";
 				if (folderData.status === "Nueva") return "Recién creada";
 				if (folderData.status === "En Progreso") return "En gestión";
 				if (folderData.status === "Cerrada") return "Completada";
-
-				// Opción 2: Basado en la completitud de datos
-				// const completeness = hasBasicData() ? "Datos completos" : "Datos incompletos";
-
-				// Opción 3: Basado en la materia/tipo de caso
-				// if (folderData.materia) return folderData.materia;
-
-				// Opción 4: Basado en el rol del cliente
-				// if (folderData.orderStatus) return folderData.orderStatus;
-
-				// Opción 5: Mostrar el fuero
-				// if (folderData.folderFuero) return folderData.folderFuero;
-
 				return folderData.status || "Sin definir";
 			})(),
 		},
 		{
 			value: 1,
 			label: "Mediación",
-			icon: <DocumentText size={20} />,
-			color: theme.palette.warning.main,
+			icon: <DocumentText size={18} />,
 			description: "Proceso de mediación",
 			hasData: hasMediationData(),
 			status: (() => {
-				// Si el estado de la carpeta es "Cerrada"
-				if (folderData?.status === "Cerrada") {
-					return "Terminada";
-				}
-				// Si hay número de expediente judicial, la mediación está terminada
-				if (folderData?.judFolder?.numberJudFolder) {
-					return "Terminada";
-				}
-				// Si hay expediente de mediación, está en curso
-				if (folderData?.preFolder?.memberPreFolder) {
-					return "En curso";
-				}
-				// Si no hay número de expediente de mediación, no ha iniciado
+				if (folderData?.status === "Cerrada") return "Terminada";
+				if (folderData?.judFolder?.numberJudFolder) return "Terminada";
+				if (folderData?.preFolder?.memberPreFolder) return "En curso";
 				return "Sin iniciar";
 			})(),
 		},
 		{
 			value: 2,
 			label: "Judicial",
-			icon: <Judge size={20} />,
-			color: theme.palette.info.main,
+			icon: <Judge size={18} />,
 			description: "Proceso judicial",
 			hasData: hasJudicialData(),
 			status: (() => {
-				// Si el estado de la carpeta es "Cerrada"
-				if (folderData?.status === "Cerrada") {
-					return "Terminada";
-				}
-				// Si hay número de expediente judicial, está en curso
-				if (folderData?.judFolder?.numberJudFolder) {
-					return "En curso";
-				}
-				// Si no hay número de expediente judicial, no ha iniciado
+				if (folderData?.status === "Cerrada") return "Terminada";
+				if (folderData?.judFolder?.numberJudFolder) return "En curso";
 				return "Sin iniciar";
 			})(),
 		},
 	];
 
-	// Calculate totals for stats
 	const totalSections = 3;
 	const completedSections = tabs.filter((tab) => tab.hasData).length;
+	const completionPct = (completedSections / totalSections) * 100;
 
-	// Sidebar content
+	// Sidebar — brand-aligned
 	const sidebarContent = (
 		<Box
 			sx={{
@@ -203,143 +142,231 @@ const InfoTabsVertical = ({
 				display: "flex",
 				flexDirection: "column",
 				height: "100%",
-				bgcolor: theme.palette.mode === "dark" ? alpha(theme.palette.background.paper, 0.8) : theme.palette.grey[50],
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+				borderRight: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
 			}}
 		>
 			{/* Header */}
-			<Box sx={{ p: 2.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
-				<Typography variant="h5" gutterBottom>
-					Información General
-				</Typography>
-				<Typography variant="caption" color="textSecondary">
-					{folderData?.folderName || "Carpeta"}
-				</Typography>
+			<Box
+				sx={{
+					p: 2,
+					borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+				}}
+			>
+				<Stack direction="row" spacing={1.25} alignItems="center">
+					<Box
+						sx={{
+							width: 32,
+							height: 32,
+							borderRadius: 1,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+							color: BRAND_BLUE,
+						}}
+					>
+						<Folder2 size={16} variant="Bulk" />
+					</Box>
+					<Stack spacing={0.125} sx={{ minWidth: 0 }}>
+						<Stack direction="row" spacing={0.5} alignItems="center">
+							<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+							<Typography
+								sx={{
+									fontSize: "0.58rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+								}}
+							>
+								Información general
+							</Typography>
+						</Stack>
+						<Typography
+							sx={{
+								fontSize: "0.82rem",
+								fontWeight: 600,
+								letterSpacing: "-0.005em",
+								color: "text.primary",
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
+							{folderData?.folderName || "Carpeta"}
+						</Typography>
+					</Stack>
+				</Stack>
 			</Box>
 
-			{/* Tabs */}
+			{/* Tabs vertical */}
 			<Tabs
 				orientation="vertical"
 				variant="scrollable"
 				value={value}
 				onChange={handleChange}
+				TabIndicatorProps={{
+					sx: {
+						left: 0,
+						width: 3,
+						borderRadius: "0 2px 2px 0",
+						bgcolor: BRAND_BLUE,
+						transition: "all 200ms ease",
+					},
+				}}
 				sx={{
 					flex: 1,
-					"& .MuiTabs-indicator": {
-						left: 0,
-						width: 4,
-						transition: "all 0.3s ease",
-					},
 					"& .MuiTab-root": {
-						minHeight: 88,
+						minHeight: 76,
 						justifyContent: "flex-start",
 						textAlign: "left",
 						alignItems: "flex-start",
-						px: 2.5,
-						py: 2,
+						px: 1.75,
+						py: 1.5,
 						borderRadius: 0,
 						textTransform: "none",
-						transition: "all 0.2s ease",
+						transition: "all 180ms ease",
 						"&.Mui-selected": {
-							bgcolor: alpha(theme.palette.primary.main, 0.08),
-							"& .tab-icon": {
-								transform: "scale(1.1)",
-							},
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
 						},
 						"&:hover": {
-							bgcolor: alpha(theme.palette.primary.main, 0.04),
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
 						},
 					},
 				}}
 			>
-				{tabs.map((tab) => (
-					<Tab
-						key={tab.value}
-						value={tab.value}
-						label={
-							<Stack spacing={1} alignItems="flex-start" width="100%">
-								<Stack direction="row" spacing={1.5} alignItems="center" width="100%">
-									<Box
-										className="tab-icon"
+				{tabs.map((tab) => {
+					const active = value === tab.value;
+					const statusAccent = tab.hasData ? LIVE_GREEN : STALE_AMBER;
+					return (
+						<Tab
+							key={tab.value}
+							value={tab.value}
+							disableRipple
+							label={
+								<Stack spacing={0.625} alignItems="flex-start" width="100%">
+									<Stack direction="row" spacing={1.25} alignItems="center" width="100%">
+										<Box
+											sx={{
+												width: 28,
+												height: 28,
+												borderRadius: 0.75,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												bgcolor: active ? alpha(BRAND_BLUE, isDark ? 0.18 : 0.1) : alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+												border: `1px solid ${active ? alpha(BRAND_BLUE, isDark ? 0.32 : 0.22) : alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+												color: BRAND_BLUE,
+												transition: "all 180ms ease",
+												flexShrink: 0,
+											}}
+										>
+											{React.cloneElement(tab.icon, {
+												variant: active ? "Bulk" : "Linear",
+											})}
+										</Box>
+										<Box flex={1} sx={{ minWidth: 0 }}>
+											<Typography
+												sx={{
+													fontSize: "0.85rem",
+													fontWeight: active ? 600 : 500,
+													letterSpacing: "-0.005em",
+													color: active ? "text.primary" : "text.secondary",
+												}}
+											>
+												{tab.label}
+											</Typography>
+										</Box>
+										{tab.hasData && <TickCircle size={14} variant="Bold" color={LIVE_GREEN} />}
+									</Stack>
+									<Typography
 										sx={{
-											color: value === tab.value ? tab.color : theme.palette.text.secondary,
-											transition: "all 0.3s ease",
-											display: "flex",
-											alignItems: "center",
+											fontSize: "0.7rem",
+											color: "text.secondary",
+											letterSpacing: "-0.005em",
+											pl: 4.75,
+											opacity: 0.85,
 										}}
 									>
-										{React.cloneElement(tab.icon, {
-											variant: value === tab.value ? "Bold" : "Linear",
-										})}
-									</Box>
-									<Box flex={1}>
+										{tab.description}
+									</Typography>
+									<Box sx={{ pl: 4.75, display: "inline-flex", alignItems: "center", gap: 0.5 }}>
+										<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: statusAccent }} />
 										<Typography
-											variant="subtitle1"
-											fontWeight={value === tab.value ? 600 : 500}
-											color={value === tab.value ? "text.primary" : "text.secondary"}
+											sx={{
+												fontSize: "0.66rem",
+												fontWeight: 600,
+												letterSpacing: "0.04em",
+												textTransform: "uppercase",
+												color: statusAccent,
+											}}
 										>
-											{tab.label}
+											{tab.status}
 										</Typography>
 									</Box>
-									{tab.hasData && <TickCircle size={16} variant="Bold" color={theme.palette.success.main} style={{ opacity: 0.8 }} />}
 								</Stack>
-								<Typography
-									variant="caption"
-									color="textSecondary"
-									sx={{
-										lineHeight: 1.2,
-										display: "block",
-										opacity: 0.8,
-									}}
-								>
-									{tab.description}
-								</Typography>
-								<Typography
-									variant="caption"
-									sx={{
-										color: tab.hasData ? tab.color : theme.palette.text.disabled,
-										fontWeight: tab.hasData ? 500 : 400,
-										fontSize: "0.7rem",
-									}}
-								>
-									{tab.status}
-								</Typography>
-							</Stack>
-						}
-					/>
-				))}
+							}
+						/>
+					);
+				})}
 			</Tabs>
 
-			{/* Stats Section */}
-			<Box sx={{ p: 2.5, borderTop: `1px solid ${theme.palette.divider}` }}>
-				<Typography variant="caption" color="textSecondary" gutterBottom>
-					Estado de completitud
-				</Typography>
-				<Stack spacing={1} mt={1.5}>
-					<Stack direction="row" justifyContent="space-between" alignItems="center">
-						<Typography variant="body2">Secciones completas</Typography>
-						<Chip
-							size="small"
-							label={`${completedSections}/${totalSections}`}
-							color={completedSections === totalSections ? "success" : "default"}
-							variant={completedSections === totalSections ? "filled" : "outlined"}
-						/>
+			{/* Stats footer */}
+			<Box
+				sx={{
+					p: 2,
+					borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+				}}
+			>
+				<Stack spacing={1}>
+					<Stack direction="row" spacing={0.5} alignItems="center">
+						<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+						<Typography
+							sx={{
+								fontSize: "0.58rem",
+								fontWeight: 600,
+								letterSpacing: "0.08em",
+								textTransform: "uppercase",
+								color: "text.secondary",
+							}}
+						>
+							Estado de completitud
+						</Typography>
 					</Stack>
-					{/* Progress indicator */}
+					<Stack direction="row" justifyContent="space-between" alignItems="baseline">
+						<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>Secciones completas</Typography>
+						<Typography
+							sx={{
+								fontSize: "0.95rem",
+								fontWeight: 700,
+								color: completedSections === totalSections ? LIVE_GREEN : BRAND_BLUE,
+								letterSpacing: "-0.015em",
+								fontVariantNumeric: "tabular-nums",
+							}}
+						>
+							{completedSections}
+							<Box component="span" sx={{ fontSize: "0.78rem", fontWeight: 500, color: "text.secondary" }}>
+								/{totalSections}
+							</Box>
+						</Typography>
+					</Stack>
 					<Box
 						sx={{
 							width: "100%",
-							height: 4,
-							bgcolor: theme.palette.grey[200],
-							borderRadius: 2,
+							height: 6,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08),
+							borderRadius: 1,
 							overflow: "hidden",
 						}}
 					>
 						<Box
 							sx={{
-								width: `${(completedSections / totalSections) * 100}%`,
+								width: `${completionPct}%`,
 								height: "100%",
-								bgcolor: completedSections === totalSections ? theme.palette.success.main : theme.palette.primary.main,
-								transition: "width 0.3s ease",
+								bgcolor: completedSections === totalSections ? LIVE_GREEN : BRAND_BLUE,
+								transition: "width 300ms ease",
 							}}
 						/>
 					</Box>
@@ -350,7 +377,6 @@ const InfoTabsVertical = ({
 
 	return (
 		<MainCard
-			shadow={3}
 			content={false}
 			sx={{
 				"& .MuiCardContent-root": { p: 0 },
@@ -358,68 +384,73 @@ const InfoTabsVertical = ({
 				minHeight: 600,
 				display: "flex",
 				flexDirection: "column",
+				borderRadius: 1.5,
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+				boxShadow: "none",
+				overflow: "hidden",
 			}}
 		>
 			<Box sx={{ display: "flex", height: "100%" }}>
 				{isMobile ? (
 					<>
-						{/* Mobile Layout */}
+						{/* Mobile layout */}
 						<Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-							{/* Content Header with Menu */}
+							{/* Mobile header bar */}
 							<Box
 								sx={{
-									p: 2,
-									borderBottom: `1px solid ${theme.palette.divider}`,
-									bgcolor: theme.palette.background.paper,
+									p: 1.5,
+									borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 									display: "flex",
 									alignItems: "center",
-									justifyContent: "space-between",
+									gap: 1,
 								}}
 							>
-								<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-									<IconButton onClick={() => setMobileOpen(true)} sx={{ mr: 1 }}>
-										<Menu />
-									</IconButton>
-									<Typography variant="h6" sx={{ fontWeight: 600 }}>
+								<IconButton
+									onClick={() => setMobileOpen(true)}
+									sx={{
+										width: 32,
+										height: 32,
+										borderRadius: 1,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.05),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+										color: BRAND_BLUE,
+										"&:hover": {
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+										},
+									}}
+								>
+									<Menu size={16} variant="Bulk" />
+								</IconButton>
+								<Stack spacing={0.125} sx={{ minWidth: 0, flex: 1 }}>
+									<Stack direction="row" spacing={0.5} alignItems="center">
+										<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+										<Typography
+											sx={{
+												fontSize: "0.58rem",
+												fontWeight: 600,
+												letterSpacing: "0.08em",
+												textTransform: "uppercase",
+												color: "text.secondary",
+											}}
+										>
+											Sección activa
+										</Typography>
+									</Stack>
+									<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
 										{tabs[value].label}
 									</Typography>
-								</Box>
-								{/* View Toggle Button - Only show if available */}
-								{onViewToggle && (
-									<ToggleButtonGroup
-										value={isDetailedView}
-										exclusive
-										onChange={handleViewChange}
-										size="small"
-										sx={{
-											"& .MuiToggleButton-root": {
-												px: 1.5,
-												py: 0.5,
-												textTransform: "none",
-												fontSize: "0.8125rem",
-											},
-										}}
-									>
-										<ToggleButton value={false} aria-label="vista compacta">
-											<Grid1 size={16} style={{ marginRight: 4 }} />
-											Compacta
-										</ToggleButton>
-										<ToggleButton value={true} aria-label="vista detallada">
-											<Eye size={16} style={{ marginRight: 4 }} />
-											Detallada
-										</ToggleButton>
-									</ToggleButtonGroup>
-								)}
+								</Stack>
 							</Box>
 
-							{/* Tab Panels */}
+							{/* Tab content */}
 							<Box sx={{ flex: 1, overflow: "auto" }}>
 								{isLoader ? (
-									<Box sx={{ p: 3 }}>
-										<Stack spacing={2}>
-											<Skeleton variant="rectangular" height={60} />
-											<Skeleton variant="rectangular" height={200} />
-											<Skeleton variant="rectangular" height={100} />
+									<Box sx={{ p: 2 }}>
+										<Stack spacing={1.5}>
+											<Skeleton variant="rectangular" height={50} sx={{ borderRadius: 1 }} />
+											<Skeleton variant="rectangular" height={180} sx={{ borderRadius: 1 }} />
+											<Skeleton variant="rectangular" height={90} sx={{ borderRadius: 1 }} />
 										</Stack>
 									</Box>
 								) : (
@@ -438,13 +469,17 @@ const InfoTabsVertical = ({
 							</Box>
 						</Box>
 
-						{/* Mobile Drawer */}
+						{/* Mobile drawer */}
 						<Drawer
 							anchor="left"
 							open={mobileOpen}
 							onClose={() => setMobileOpen(false)}
-							ModalProps={{
-								keepMounted: true,
+							ModalProps={{ keepMounted: true }}
+							PaperProps={{
+								sx: {
+									border: "none",
+									boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+								},
 							}}
 						>
 							{sidebarContent}
@@ -452,64 +487,18 @@ const InfoTabsVertical = ({
 					</>
 				) : (
 					<>
-						{/* Desktop Layout */}
-						<Paper
-							elevation={0}
-							sx={{
-								borderRight: `1px solid ${theme.palette.divider}`,
-							}}
-						>
-							{sidebarContent}
-						</Paper>
+						{/* Desktop layout */}
+						{sidebarContent}
 
-						{/* Main Content Area */}
+						{/* Main content */}
 						<Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-							{/* Content Header - Only show view toggle if available */}
-							{onViewToggle && (
-								<Box
-									sx={{
-										p: 2,
-										borderBottom: `1px solid ${theme.palette.divider}`,
-										bgcolor: theme.palette.background.paper,
-										display: "flex",
-										justifyContent: "flex-end",
-									}}
-								>
-									{/* View Toggle Button */}
-									<ToggleButtonGroup
-										value={isDetailedView}
-										exclusive
-										onChange={handleViewChange}
-										size="small"
-										sx={{
-											"& .MuiToggleButton-root": {
-												px: 1.5,
-												py: 0.5,
-												textTransform: "none",
-												fontSize: "0.8125rem",
-											},
-										}}
-									>
-										<ToggleButton value={false} aria-label="vista compacta">
-											<Grid1 size={16} style={{ marginRight: 4 }} />
-											Compacta
-										</ToggleButton>
-										<ToggleButton value={true} aria-label="vista detallada">
-											<Eye size={16} style={{ marginRight: 4 }} />
-											Detallada
-										</ToggleButton>
-									</ToggleButtonGroup>
-								</Box>
-							)}
-
-							{/* Tab Panels */}
 							<Box sx={{ flex: 1, overflow: "auto" }}>
 								{isLoader ? (
 									<Box sx={{ p: 3 }}>
-										<Stack spacing={2}>
-											<Skeleton variant="rectangular" height={60} />
-											<Skeleton variant="rectangular" height={200} />
-											<Skeleton variant="rectangular" height={100} />
+										<Stack spacing={1.5}>
+											<Skeleton variant="rectangular" height={50} sx={{ borderRadius: 1 }} />
+											<Skeleton variant="rectangular" height={180} sx={{ borderRadius: 1 }} />
+											<Skeleton variant="rectangular" height={90} sx={{ borderRadius: 1 }} />
 										</Stack>
 									</Box>
 								) : (

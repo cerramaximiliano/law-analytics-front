@@ -15,12 +15,16 @@ import {
 	Avatar,
 	Box,
 	Typography,
+	useTheme,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { Edit, Trash, Eye, SmsNotification, Notification1, NotificationStatus, Clock } from "iconsax-react";
 import { NotificationType } from "types/notifications";
 import { visuallyHidden } from "@mui/utils";
 import dayjs from "utils/dayjs-config";
 import ScrollX from "components/ScrollX";
+import { useTeam } from "contexts/TeamContext";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 interface NotificationsTableProps {
 	notifications: NotificationType[];
@@ -142,6 +146,10 @@ const formatDate = (dateString: string) => {
 };
 
 const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, searchQuery, onEdit, onDelete, onView }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const errorColor = theme.palette.error.main;
+	const { canUpdate, canDelete } = useTeam();
 	const [order, setOrder] = useState<Order>("desc");
 	const [orderBy, setOrderBy] = useState<keyof NotificationType>("time");
 	const [page, setPage] = useState(0);
@@ -324,30 +332,34 @@ const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, 
 														<Eye size={18} />
 													</IconButton>
 												</Tooltip>
-												<Tooltip title="Editar">
-													<IconButton
-														size="small"
-														color="primary"
-														onClick={(e) => {
-															e.stopPropagation();
-															onEdit(notification);
-														}}
-													>
-														<Edit size={18} />
-													</IconButton>
-												</Tooltip>
-												<Tooltip title="Eliminar">
-													<IconButton
-														size="small"
-														color="error"
-														onClick={(e) => {
-															e.stopPropagation();
-															onDelete(notification._id!);
-														}}
-													>
-														<Trash size={18} />
-													</IconButton>
-												</Tooltip>
+												{canUpdate && (
+													<Tooltip title="Editar">
+														<IconButton
+															size="small"
+															color="primary"
+															onClick={(e) => {
+																e.stopPropagation();
+																onEdit(notification);
+															}}
+														>
+															<Edit size={18} />
+														</IconButton>
+													</Tooltip>
+												)}
+												{canDelete && (
+													<Tooltip title="Eliminar">
+														<IconButton
+															size="small"
+															color="error"
+															onClick={(e) => {
+																e.stopPropagation();
+																onDelete(notification._id!);
+															}}
+														>
+															<Trash size={18} />
+														</IconButton>
+													</Tooltip>
+												)}
 											</Stack>
 										</TableCell>
 									</TableRow>
@@ -355,10 +367,32 @@ const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, 
 							})}
 							{paginatedNotifications.length === 0 && (
 								<TableRow>
-									<TableCell colSpan={headCells.length} align="center">
-										<Typography variant="subtitle1" color="textSecondary" sx={{ py: 3 }}>
-											No se encontraron notificaciones
-										</Typography>
+									<TableCell colSpan={headCells.length} align="center" sx={{ py: 5, border: "none" }}>
+										<Stack alignItems="center" spacing={1.5}>
+											<Box
+												sx={{
+													width: 56,
+													height: 56,
+													borderRadius: 1.5,
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+													border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+													color: BRAND_BLUE,
+												}}
+											>
+												<NotificationStatus size={28} variant="Bulk" />
+											</Box>
+											<Stack alignItems="center" spacing={0.375}>
+												<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.015em" }}>
+													Sin notificaciones registradas
+												</Typography>
+												<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", maxWidth: 360, textAlign: "center" }}>
+													Cuando se agreguen cédulas o notificaciones, vas a verlas acá.
+												</Typography>
+											</Stack>
+										</Stack>
 									</TableCell>
 								</TableRow>
 							)}
@@ -366,17 +400,71 @@ const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, 
 					</Table>
 				</TableContainer>
 			</ScrollX>
-			<TablePagination
-				rowsPerPageOptions={[5, 10, 25, 50]}
-				component="div"
-				count={filteredNotifications.length}
-				rowsPerPage={rowsPerPage}
-				page={page}
-				onPageChange={handleChangePage}
-				onRowsPerPageChange={handleChangeRowsPerPage}
-				labelRowsPerPage="Filas por página:"
-				labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
-			/>
+			<Box
+				sx={{
+					borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+					px: 1.5,
+				}}
+			>
+				<TablePagination
+					rowsPerPageOptions={[5, 10, 25, 50]}
+					component="div"
+					count={filteredNotifications.length}
+					rowsPerPage={rowsPerPage}
+					page={page}
+					onPageChange={handleChangePage}
+					onRowsPerPageChange={handleChangeRowsPerPage}
+					labelRowsPerPage="Filas por página"
+					labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count !== -1 ? count : `más de ${to}`}`}
+					sx={{
+						"& .MuiTablePagination-toolbar": {
+							minHeight: 44,
+							px: 0,
+						},
+						"& .MuiTablePagination-spacer": { display: "none" },
+						"& .MuiTablePagination-displayedRows": {
+							marginRight: "auto",
+							fontSize: "0.74rem",
+							fontWeight: 500,
+							letterSpacing: "-0.005em",
+							color: "text.secondary",
+							fontVariantNumeric: "tabular-nums",
+						},
+						"& .MuiTablePagination-selectLabel": {
+							fontSize: "0.74rem",
+							fontWeight: 500,
+							letterSpacing: "-0.005em",
+							color: "text.secondary",
+						},
+						"& .MuiTablePagination-select": {
+							fontSize: "0.78rem",
+							fontWeight: 600,
+							color: BRAND_BLUE,
+							fontVariantNumeric: "tabular-nums",
+							borderRadius: 0.875,
+							"&:focus": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04) },
+						},
+						"& .MuiTablePagination-actions button": {
+							width: 30,
+							height: 30,
+							borderRadius: 0.875,
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+							color: BRAND_BLUE,
+							ml: 0.5,
+							"&:hover": {
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								borderColor: alpha(BRAND_BLUE, isDark ? 0.38 : 0.28),
+							},
+							"&.Mui-disabled": {
+								bgcolor: "transparent",
+								borderColor: alpha(theme.palette.text.disabled, 0.16),
+								color: theme.palette.text.disabled,
+							},
+						},
+					}}
+				/>
+			</Box>
 		</Box>
 	);
 };

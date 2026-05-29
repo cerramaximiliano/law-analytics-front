@@ -1,21 +1,7 @@
 import React from "react";
 import { useState } from "react";
 import { dispatch } from "store";
-import {
-	Skeleton,
-	Button,
-	Grid,
-	Stack,
-	Typography,
-	Zoom,
-	Box,
-	Paper,
-	useTheme,
-	alpha,
-	Chip,
-	LinearProgress,
-	useMediaQuery,
-} from "@mui/material";
+import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, useTheme, alpha, useMediaQuery } from "@mui/material";
 import dayjs from "utils/dayjs-config";
 import data from "data/folder.json";
 import { Edit2, Clock, TickCircle, Briefcase, DollarCircle, Calendar1, DocumentText } from "iconsax-react";
@@ -29,6 +15,8 @@ import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
+import { useTeam } from "contexts/TeamContext";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -52,68 +40,58 @@ interface FieldCardProps {
 	helper?: string;
 }
 
-const FieldCard: React.FC<FieldCardProps> = ({
-	label,
-	value,
-	isLoading,
-	editComponent,
-	isEditing,
-	icon,
-	hasData = true,
-	important = false,
-	fullWidth = false,
-	helper,
-}) => {
+const FieldCard: React.FC<FieldCardProps> = ({ label, value, isLoading, editComponent, isEditing, icon, important = false, helper }) => {
 	const theme = useTheme();
-	const displayValue = value || "-";
+	const isDark = theme.palette.mode === "dark";
+	const displayValue = value || "—";
 	const hasValue = value && value !== "-";
 
 	if (isLoading) {
-		return <Skeleton variant="rectangular" height={80} sx={{ borderRadius: 1 }} />;
+		return <Skeleton variant="rectangular" height={80} sx={{ borderRadius: 1.5 }} />;
 	}
 
 	return (
-		<Paper
-			elevation={0}
+		<Box
 			sx={{
-				p: 2,
+				p: 1.75,
 				height: "100%",
-				border: `1px solid ${hasValue ? theme.palette.divider : alpha(theme.palette.divider, 0.3)}`,
 				borderRadius: 1.5,
-				transition: "all 0.2s ease",
-				bgcolor: hasValue ? "background.paper" : alpha(theme.palette.grey[100], 0.3),
+				border: `1px solid ${hasValue ? alpha(BRAND_BLUE, isDark ? 0.18 : 0.1) : alpha(theme.palette.text.disabled, 0.12)}`,
+				bgcolor: hasValue ? theme.palette.background.paper : alpha(theme.palette.text.disabled, isDark ? 0.04 : 0.02),
+				transition: "all 180ms ease",
 				position: "relative",
 				overflow: "visible",
-				"&:hover": {
-					borderColor: hasValue ? theme.palette.primary.main : theme.palette.divider,
-					transform: hasValue ? "translateY(-2px)" : "none",
-					boxShadow: hasValue ? theme.shadows[2] : "none",
-				},
+				"&:hover": hasValue
+					? {
+							borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+					  }
+					: undefined,
 			}}
 		>
-			{/* Status indicator */}
+			{/* Important highlight dot */}
 			{important && hasValue && (
 				<Box
 					sx={{
 						position: "absolute",
-						top: -1,
-						right: -1,
+						top: -3,
+						right: -3,
 						width: 8,
 						height: 8,
 						borderRadius: "50%",
-						bgcolor: theme.palette.success.main,
+						bgcolor: LIVE_GREEN,
 						boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
 					}}
 				/>
 			)}
 
-			<Stack spacing={1.5}>
+			<Stack spacing={1}>
 				{/* Header */}
-				<Stack direction="row" spacing={1} alignItems="center">
+				<Stack direction="row" spacing={0.875} alignItems="center">
 					{icon && (
 						<Box
 							sx={{
-								color: hasValue ? theme.palette.primary.main : theme.palette.text.disabled,
+								color: hasValue ? BRAND_BLUE : theme.palette.text.disabled,
 								display: "flex",
 								alignItems: "center",
 							}}
@@ -122,18 +100,18 @@ const FieldCard: React.FC<FieldCardProps> = ({
 						</Box>
 					)}
 					<Typography
-						variant="caption"
 						sx={{
-							color: hasValue ? "text.secondary" : "text.disabled",
-							fontWeight: 500,
-							fontSize: "0.75rem",
+							fontSize: "0.6rem",
+							fontWeight: 600,
+							letterSpacing: "0.08em",
 							textTransform: "uppercase",
-							letterSpacing: 0.5,
+							color: hasValue ? "text.secondary" : "text.disabled",
+							lineHeight: 1.4,
 						}}
 					>
 						{label}
 					</Typography>
-					{hasValue && <TickCircle size={14} variant="Bold" color={theme.palette.success.main} style={{ marginLeft: "auto" }} />}
+					{hasValue && <TickCircle size={12} variant="Bold" color={LIVE_GREEN} style={{ marginLeft: "auto" }} />}
 				</Stack>
 
 				{/* Value */}
@@ -142,32 +120,33 @@ const FieldCard: React.FC<FieldCardProps> = ({
 				) : (
 					<>
 						<Typography
-							variant="body1"
 							sx={{
 								fontWeight: hasValue ? 600 : 400,
 								color: hasValue ? "text.primary" : "text.disabled",
-								fontSize: important ? "1.125rem" : "1rem",
+								fontSize: important ? "1rem" : "0.9rem",
+								letterSpacing: "-0.005em",
+								lineHeight: 1.4,
 							}}
 						>
 							{displayValue}
 						</Typography>
 						{helper && hasValue && (
-							<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
-								{helper}
-							</Typography>
+							<Typography sx={{ fontSize: "0.68rem", color: "text.secondary", letterSpacing: "-0.005em" }}>{helper}</Typography>
 						)}
 					</>
 				)}
 			</Stack>
-		</Paper>
+		</Box>
 	);
 };
 
 const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boolean }) => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+	const { canUpdate } = useTeam();
 
 	const initialValues = {
 		...folder,
@@ -228,19 +207,51 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 		description: Yup.string().max(500),
 	});
 
-	const getStatusColor = (status: string) => {
+	const getStatusAccent = (status: string) => {
 		switch (status) {
 			case "Nueva":
-				return "success";
+				return LIVE_GREEN;
 			case "En Progreso":
-				return "primary";
+				return BRAND_BLUE;
 			case "Cerrada":
-				return "error";
+				return theme.palette.text.disabled as string;
 			case "Pendiente":
-				return "warning";
+				return STALE_AMBER;
 			default:
-				return "default";
+				return theme.palette.text.secondary as string;
 		}
+	};
+
+	const StatusPill = ({ label }: { label: string }) => {
+		const accent = getStatusAccent(label);
+		return (
+			<Box
+				sx={{
+					display: "inline-flex",
+					alignItems: "center",
+					gap: 0.5,
+					px: 0.875,
+					py: 0.25,
+					borderRadius: 0.75,
+					bgcolor: alpha(accent, isDark ? 0.16 : 0.1),
+					border: `1px solid ${alpha(accent, isDark ? 0.32 : 0.22)}`,
+				}}
+			>
+				<Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: accent }} />
+				<Typography
+					sx={{
+						fontSize: "0.66rem",
+						fontWeight: 600,
+						color: accent,
+						letterSpacing: "0.04em",
+						textTransform: "uppercase",
+						lineHeight: 1,
+					}}
+				>
+					{label}
+				</Typography>
+			</Box>
+		);
 	};
 
 	// Calculate data completeness
@@ -269,46 +280,79 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 			<Formik initialValues={initialValues} onSubmit={_handleSubmit} enableReinitialize validationSchema={ValidationSchema}>
 				{({ isSubmitting, values }) => (
 					<Form autoComplete="off" noValidate>
-						<Stack spacing={3}>
-							{/* Header Section with Summary */}
-							<Paper
-								elevation={0}
+						<Stack spacing={2.5}>
+							{/* Header — brand-tinted atmospheric */}
+							<Box
 								sx={{
-									p: 3,
-									border: `1px solid ${theme.palette.divider}`,
+									p: 2.5,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 									borderRadius: 2,
-									bgcolor: alpha(theme.palette.primary.main, 0.02),
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
 								}}
 							>
-								<Grid container spacing={3} alignItems="center">
+								<Grid container spacing={2.5} alignItems="center">
 									<Grid item xs={12} md={8}>
 										<Stack spacing={2}>
-											<Stack direction="row" spacing={2} alignItems="center">
-												<Briefcase size={24} variant="Bold" color={theme.palette.primary.main} />
-												<Box flex={1}>
+											<Stack direction="row" spacing={1.5} alignItems="center">
+												<Box
+													sx={{
+														width: 40,
+														height: 40,
+														borderRadius: 1,
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+														border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+														color: BRAND_BLUE,
+														flexShrink: 0,
+													}}
+												>
+													<Briefcase size={20} variant="Bulk" />
+												</Box>
+												<Box flex={1} sx={{ minWidth: 0 }}>
+													<Stack direction="row" spacing={0.5} alignItems="center">
+														<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+														<Typography
+															sx={{
+																fontSize: "0.6rem",
+																fontWeight: 600,
+																letterSpacing: "0.08em",
+																textTransform: "uppercase",
+																color: "text.secondary",
+															}}
+														>
+															Carátula
+														</Typography>
+													</Stack>
 													<Typography
-														variant={isMobile ? "h6" : "h5"}
-														fontWeight={600}
 														sx={{
-															fontSize: isMobile ? "1rem" : isTablet ? "1.25rem" : "1.5rem",
-															lineHeight: 1.3,
+															fontSize: isMobile ? "1rem" : isTablet ? "1.15rem" : "1.3rem",
+															fontWeight: 600,
+															letterSpacing: "-0.015em",
+															lineHeight: 1.25,
+															color: "text.primary",
 														}}
 													>
 														{isLoader ? <Skeleton width={isMobile ? 200 : 300} /> : folder?.folderName || "Sin carátula"}
 													</Typography>
-													<Stack direction="row" spacing={2} alignItems="center" mt={0.5}>
-														{folder?.status && (
-															<Chip label={folder.status} color={getStatusColor(folder.status)} size="small" sx={{ fontWeight: 500 }} />
-														)}
+													<Stack direction="row" spacing={1.25} alignItems="center" mt={0.5} flexWrap="wrap" useFlexGap>
+														{folder?.status && <StatusPill label={folder.status} />}
 														{folder?.orderStatus && (
-															<Typography variant="body2" color="text.secondary">
+															<Typography
+																sx={{
+																	fontSize: "0.78rem",
+																	color: "text.secondary",
+																	letterSpacing: "-0.005em",
+																}}
+															>
 																{folder.orderStatus}
 															</Typography>
 														)}
 														{!isLoader && folder?.updatedAt && (
 															<Stack direction="row" spacing={0.5} alignItems="center">
-																<Clock size={14} />
-																<Typography variant="caption" color="text.secondary">
+																<Clock size={12} variant="Linear" color={theme.palette.text.secondary} />
+																<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 																	Actualizado {dayjs(folder.updatedAt).fromNow()}
 																</Typography>
 															</Stack>
@@ -317,58 +361,113 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 												</Box>
 											</Stack>
 
-											{/* Progress Indicator */}
+											{/* Progress — brand */}
 											<Box>
-												<Stack direction="row" justifyContent="space-between" mb={1}>
-													<Typography variant="caption" color="text.secondary">
-														Información completa
-													</Typography>
-													<Typography variant="caption" fontWeight={600} color="primary">
+												<Stack direction="row" justifyContent="space-between" mb={0.75}>
+													<Stack direction="row" spacing={0.5} alignItems="center">
+														<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+														<Typography
+															sx={{
+																fontSize: "0.62rem",
+																fontWeight: 600,
+																letterSpacing: "0.08em",
+																textTransform: "uppercase",
+																color: "text.secondary",
+															}}
+														>
+															Información completa
+														</Typography>
+													</Stack>
+													<Typography
+														sx={{
+															fontSize: "0.82rem",
+															fontWeight: 700,
+															color: completeness === 100 ? LIVE_GREEN : BRAND_BLUE,
+															letterSpacing: "-0.005em",
+															fontVariantNumeric: "tabular-nums",
+														}}
+													>
 														{completeness.toFixed(0)}%
 													</Typography>
 												</Stack>
-												<LinearProgress
-													variant="determinate"
-													value={completeness}
+												<Box
 													sx={{
+														width: "100%",
 														height: 6,
-														borderRadius: 3,
-														bgcolor: alpha(theme.palette.primary.main, 0.1),
-														"& .MuiLinearProgress-bar": {
-															borderRadius: 3,
-														},
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08),
+														borderRadius: 1,
+														overflow: "hidden",
 													}}
-												/>
+												>
+													<Box
+														sx={{
+															width: `${completeness}%`,
+															height: "100%",
+															bgcolor: completeness === 100 ? LIVE_GREEN : BRAND_BLUE,
+															transition: "width 300ms ease",
+														}}
+													/>
+												</Box>
 											</Box>
 										</Stack>
 									</Grid>
 									<Grid item xs={12} md={4}>
-										<Stack spacing={2} alignItems={{ xs: "flex-start", md: "flex-end" }}>
-											{!isEditing && (
+										<Stack spacing={1.5} alignItems={{ xs: "flex-start", md: "flex-end" }}>
+											{!isEditing && canUpdate && (
 												<Button
 													variant="contained"
 													onClick={handleEdit}
-													startIcon={<Edit2 size={18} />}
+													startIcon={<Edit2 size={16} variant="Bulk" />}
 													fullWidth
-													sx={{ maxWidth: { md: 200 } }}
+													sx={{
+														maxWidth: { md: 200 },
+														textTransform: "none",
+														fontWeight: 600,
+														letterSpacing: "-0.005em",
+														bgcolor: BRAND_BLUE,
+														color: "#fff",
+														borderRadius: 1,
+														py: 1,
+														boxShadow: "none",
+														"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+													}}
 												>
-													Editar Información
+													Editar información
 												</Button>
 											)}
 											{duration !== null && (
 												<Box textAlign={{ xs: "left", md: "right" }}>
-													<Typography variant="caption" color="text.secondary">
+													<Typography
+														sx={{
+															fontSize: "0.6rem",
+															fontWeight: 600,
+															letterSpacing: "0.08em",
+															textTransform: "uppercase",
+															color: "text.secondary",
+														}}
+													>
 														Duración del proceso
 													</Typography>
-													<Typography variant="h6" fontWeight={600} color="primary">
-														{duration} días
+													<Typography
+														sx={{
+															fontSize: "1.1rem",
+															fontWeight: 700,
+															color: BRAND_BLUE,
+															letterSpacing: "-0.015em",
+															fontVariantNumeric: "tabular-nums",
+														}}
+													>
+														{duration}{" "}
+														<Box component="span" sx={{ fontSize: "0.78rem", fontWeight: 500, color: "text.secondary" }}>
+															días
+														</Box>
 													</Typography>
 												</Box>
 											)}
 										</Stack>
 									</Grid>
 								</Grid>
-							</Paper>
+							</Box>
 
 							{/* Main Data Grid */}
 							<Grid container spacing={2.5}>
@@ -494,68 +593,110 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 								{/* Description - Full Width */}
 								{(folder?.description || isEditing) && (
 									<Grid item xs={12}>
-										<Paper
-											elevation={0}
+										<Box
 											sx={{
-												p: 2.5,
-												border: `1px solid ${theme.palette.divider}`,
+												p: 2,
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 												borderRadius: 1.5,
-												bgcolor: folder?.description ? "background.paper" : alpha(theme.palette.grey[100], 0.3),
+												bgcolor: folder?.description ? theme.palette.background.paper : alpha(theme.palette.text.disabled, isDark ? 0.04 : 0.02),
 											}}
 										>
-											<Stack spacing={1.5}>
-												<Typography
-													variant="caption"
-													sx={{
-														color: "text.secondary",
-														fontWeight: 500,
-														fontSize: "0.75rem",
-														textTransform: "uppercase",
-														letterSpacing: 0.5,
-													}}
-												>
-													Descripción / Observaciones
-												</Typography>
+											<Stack spacing={1}>
+												<Stack direction="row" spacing={0.5} alignItems="center">
+													<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+													<Typography
+														sx={{
+															fontSize: "0.6rem",
+															fontWeight: 600,
+															letterSpacing: "0.08em",
+															textTransform: "uppercase",
+															color: "text.secondary",
+														}}
+													>
+														Descripción / observaciones
+													</Typography>
+												</Stack>
 												{isEditing ? (
 													<InputField
 														name="description"
 														multiline
 														rows={3}
 														fullWidth
-														placeholder="Ingrese una descripción o observaciones..."
+														placeholder="Ingresá una descripción o observaciones…"
 														sx={customInputStyles}
 													/>
 												) : (
-													<Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
+													<Typography
+														sx={{
+															fontSize: "0.88rem",
+															color: "text.primary",
+															letterSpacing: "-0.005em",
+															lineHeight: 1.6,
+															whiteSpace: "pre-wrap",
+															textWrap: "pretty" as any,
+														}}
+													>
 														{folder?.description}
 													</Typography>
 												)}
 											</Stack>
-										</Paper>
+										</Box>
 									</Grid>
 								)}
 							</Grid>
 
-							{/* Actions */}
+							{/* Actions — ghost cancel + sober brand submit */}
 							{isEditing && (
-								<Paper
-									elevation={0}
+								<Box
 									sx={{
-										p: 2,
-										border: `1px solid ${theme.palette.divider}`,
+										p: 1.75,
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 										borderRadius: 1.5,
-										bgcolor: alpha(theme.palette.primary.main, 0.02),
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
 									}}
 								>
-									<Stack direction="row" spacing={2} justifyContent="flex-end">
-										<Button size="large" variant="outlined" onClick={() => setIsEditing(false)} sx={{ minWidth: 120 }}>
+									<Stack direction="row" spacing={1.25} justifyContent="flex-end">
+										<Button
+											onClick={() => setIsEditing(false)}
+											sx={{
+												minWidth: 120,
+												textTransform: "none",
+												fontWeight: 600,
+												letterSpacing: "-0.005em",
+												color: "text.secondary",
+												borderRadius: 1.25,
+												py: 1,
+												border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+												"&:hover": {
+													color: BRAND_BLUE,
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+													borderColor: alpha(BRAND_BLUE, 0.28),
+												},
+											}}
+										>
 											Cancelar
 										</Button>
-										<Button size="large" type="submit" variant="contained" disabled={isSubmitting} sx={{ minWidth: 120 }}>
-											Guardar Cambios
+										<Button
+											type="submit"
+											variant="contained"
+											disabled={isSubmitting}
+											sx={{
+												minWidth: 120,
+												textTransform: "none",
+												fontWeight: 600,
+												letterSpacing: "-0.005em",
+												bgcolor: BRAND_BLUE,
+												color: "#fff",
+												borderRadius: 1.25,
+												py: 1,
+												boxShadow: "none",
+												"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+											}}
+										>
+											Guardar cambios
 										</Button>
 									</Stack>
-								</Paper>
+								</Box>
 							)}
 						</Stack>
 					</Form>

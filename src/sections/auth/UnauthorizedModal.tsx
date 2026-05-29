@@ -2,11 +2,8 @@ import React from "react";
 import { useState, useRef, FC, useEffect } from "react";
 import {
 	Dialog,
-	DialogTitle,
 	DialogContent,
 	Button,
-	Alert,
-	AlertTitle,
 	Box,
 	Typography,
 	Grid,
@@ -17,8 +14,10 @@ import {
 	InputAdornment,
 	Divider,
 	CircularProgress,
+	useTheme,
 } from "@mui/material";
-import { Eye, EyeSlash } from "iconsax-react";
+import { alpha } from "@mui/material/styles";
+import { Eye, EyeSlash, ShieldCross, InfoCircle } from "iconsax-react";
 import * as Yup from "yup";
 import { Formik, FormikHelpers } from "formik";
 import IconButton from "components/@extended/IconButton";
@@ -29,6 +28,7 @@ import { useDispatch } from "react-redux";
 import { openSnackbar } from "store/reducers/snackbar";
 import { AppDispatch } from "store";
 import { requestQueueService } from "services/requestQueueService";
+import { BRAND_BLUE, STALE_AMBER } from "themes/dashboardTokens";
 
 const validationSchema = Yup.object().shape({
 	email: Yup.string().email("Debe ser un e-mail válido").required("El e-mail es requerido").trim(),
@@ -293,143 +293,317 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 		scope: "email profile",
 	});
 
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const errorColor = theme.palette.error.main;
+
+	// Click fuera del modal o tecla Escape: comportarse como "Cancelar" (cerrar sesión).
+	// Esto deja al usuario en un estado consistente — sin sesión válida —
+	// en lugar de quedarse en una vista a la que ya no puede acceder.
+	const handleBackdropCancel = () => {
+		if (isSubmitting) return;
+		setInternalOpen(false);
+		setTimeout(() => onLogout(), 50);
+	};
+
 	return (
 		<Dialog
 			open={internalOpen}
 			maxWidth="xs"
 			fullWidth
 			disableEscapeKeyDown={isSubmitting}
-			onClose={() => {
-				// Manejo seguro al cerrar el modal
-				setInternalOpen(false);
-				setTimeout(() => onClose(), 50);
+			onClose={handleBackdropCancel}
+			PaperProps={{
+				sx: {
+					borderRadius: 2,
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+					boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+					overflow: "hidden",
+				},
 			}}
 		>
-			<DialogTitle>
-				<Box display="flex" alignItems="center">
-					<Typography variant="h5">Sesión Expirada</Typography>
-				</Box>
-			</DialogTitle>
-			<DialogContent>
-				<Alert severity="error" sx={{ mb: 2 }}>
-					<AlertTitle>No Autorizado</AlertTitle>
-					Tu sesión ha expirado o no tienes autorización para acceder a este recurso. Por favor, inicia sesión nuevamente.
-					{queuedRequests > 0 && (
-						<Typography variant="body2" sx={{ mt: 1 }}>
-							<strong>Nota:</strong> Tienes {queuedRequests} {queuedRequests === 1 ? "petición pendiente" : "peticiones pendientes"} que se
-							procesarán automáticamente después de iniciar sesión.
+			<DialogContent sx={{ p: { xs: 3, sm: 3.5 }, position: "relative" }}>
+				{/* Radial blob destructivo */}
+				<Box
+					sx={{
+						position: "absolute",
+						top: -80,
+						left: "50%",
+						transform: "translateX(-50%)",
+						width: 280,
+						height: 280,
+						borderRadius: "50%",
+						background: `radial-gradient(circle, ${alpha(errorColor, isDark ? 0.18 : 0.1)} 0%, transparent 70%)`,
+						pointerEvents: "none",
+					}}
+				/>
+				<Stack alignItems="center" spacing={2.25} sx={{ position: "relative" }}>
+					{/* Icon ring sober destructivo */}
+					<Box
+						sx={{
+							width: 60,
+							height: 60,
+							borderRadius: 1.5,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(errorColor, isDark ? 0.16 : 0.08),
+							border: `1px solid ${alpha(errorColor, isDark ? 0.32 : 0.2)}`,
+							color: errorColor,
+						}}
+					>
+						<ShieldCross size={26} variant="Bulk" />
+					</Box>
+
+					{/* Eyebrow + título + body */}
+					<Stack spacing={1} alignItems="center" sx={{ width: 1 }}>
+						<Stack direction="row" spacing={0.5} alignItems="center">
+							<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: errorColor }} />
+							<Typography
+								sx={{
+									fontSize: "0.6rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+								}}
+							>
+								No autorizado
+							</Typography>
+						</Stack>
+						<Typography
+							sx={{
+								fontSize: "1.05rem",
+								fontWeight: 600,
+								letterSpacing: "-0.015em",
+								color: "text.primary",
+								textAlign: "center",
+								textWrap: "balance" as any,
+							}}
+						>
+							Sesión expirada
 						</Typography>
+						<Typography
+							sx={{
+								fontSize: "0.82rem",
+								color: "text.secondary",
+								letterSpacing: "-0.005em",
+								textAlign: "center",
+								textWrap: "pretty" as any,
+								lineHeight: 1.5,
+							}}
+						>
+							Tu sesión expiró o no tenés autorización para acceder a este recurso. Iniciá sesión nuevamente para continuar.
+						</Typography>
+					</Stack>
+
+					{/* Aviso de peticiones en cola */}
+					{queuedRequests > 0 && (
+						<Box
+							sx={{
+								display: "flex",
+								alignItems: "center",
+								gap: 1,
+								p: 1.25,
+								width: 1,
+								borderRadius: 1.25,
+								bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.06),
+								border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+							}}
+						>
+							<InfoCircle size={16} variant="Bulk" color={STALE_AMBER} />
+							<Typography sx={{ fontSize: "0.74rem", color: "text.primary", letterSpacing: "-0.005em", lineHeight: 1.5 }}>
+								Tenés{" "}
+								<Box component="span" sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+									{queuedRequests}
+								</Box>{" "}
+								{queuedRequests === 1 ? "petición pendiente" : "peticiones pendientes"} que se procesarán automáticamente al iniciar
+								sesión.
+							</Typography>
+						</Box>
 					)}
-				</Alert>
 
-				<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleFormSubmit}>
-					{({ errors, handleBlur, handleChange, handleSubmit, touched, values }) => (
-						<form noValidate onSubmit={handleSubmit}>
-							<Grid container spacing={3}>
-								<Grid item xs={12}>
-									<Stack spacing={1}>
-										<InputLabel htmlFor="email-login">Email</InputLabel>
-										<OutlinedInput
-											id="email-login"
-											type="email"
-											value={values.email}
-											name="email"
-											onBlur={handleBlur}
-											onChange={handleChange}
-											placeholder="Ingresa tu email"
-											fullWidth
-											error={Boolean(touched.email && errors.email)}
-											disabled={isSubmitting}
-										/>
-										{touched.email && errors.email && <FormHelperText error>{errors.email}</FormHelperText>}
-									</Stack>
-								</Grid>
-
-								<Grid item xs={12}>
-									<Stack spacing={1}>
-										<InputLabel htmlFor="password-login">Password</InputLabel>
-										<OutlinedInput
-											fullWidth
-											error={Boolean(touched.password && errors.password)}
-											id="password-login"
-											type={showPassword ? "text" : "password"}
-											value={values.password}
-											name="password"
-											onBlur={handleBlur}
-											onChange={handleChange}
-											disabled={isSubmitting}
-											endAdornment={
-												<InputAdornment position="end">
-													<IconButton onClick={() => setShowPassword(!showPassword)} edge="end" color="secondary" disabled={isSubmitting}>
-														{showPassword ? <Eye /> : <EyeSlash />}
-													</IconButton>
-												</InputAdornment>
-											}
-											placeholder="Ingresa tu password"
-										/>
-										{touched.password && errors.password && <FormHelperText error>{errors.password}</FormHelperText>}
-									</Stack>
-								</Grid>
-
-								<Grid item xs={12}>
-									<Stack spacing={2}>
-										<Button variant="contained" type="submit" fullWidth disabled={isSubmitting}>
-											{isSubmitting ? (
-												<Stack direction="row" spacing={1} alignItems="center">
-													<CircularProgress size={20} color="inherit" />
-													<Typography>Iniciando sesión...</Typography>
-												</Stack>
-											) : (
-												"Iniciar Sesión"
-											)}
-										</Button>
-
-										<Divider>
-											<Typography variant="caption" color="textSecondary">
-												O
-											</Typography>
-										</Divider>
-
-										<Box sx={{ width: "100%", position: "relative" }}>
-											<CustomGoogleButton
-												onClick={() => googleLogin()}
-												disabled={isSubmitting}
-												text={isSubmitting ? "Iniciando sesión..." : "Iniciar sesión con Google"}
+					{/* Formulario */}
+					<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleFormSubmit}>
+						{({ errors, handleBlur, handleChange, handleSubmit, touched, values }) => (
+							<form noValidate onSubmit={handleSubmit} style={{ width: "100%" }}>
+								<Grid container spacing={1.75}>
+									<Grid item xs={12}>
+										<Stack spacing={0.75}>
+											<InputLabel
+												htmlFor="email-login"
+												sx={{ fontSize: "0.78rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em" }}
+											>
+												Email
+											</InputLabel>
+											<OutlinedInput
+												id="email-login"
+												type="email"
+												value={values.email}
+												name="email"
+												onBlur={handleBlur}
+												onChange={handleChange}
+												placeholder="Ingresá tu email"
 												fullWidth
-												customHeight="36.49px"
+												error={Boolean(touched.email && errors.email)}
+												disabled={isSubmitting}
+												sx={{
+													borderRadius: 1,
+													"& .MuiOutlinedInput-notchedOutline": {
+														borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
+													},
+													"&:hover .MuiOutlinedInput-notchedOutline": {
+														borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+													},
+													"&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+														borderColor: BRAND_BLUE,
+													},
+												}}
 											/>
-											{isSubmitting && (
-												<CircularProgress
-													size={20}
-													sx={{
-														position: "absolute",
-														top: "50%",
-														left: 16,
-														marginTop: "-10px",
-													}}
-												/>
-											)}
-										</Box>
+											{touched.email && errors.email && <FormHelperText error>{errors.email}</FormHelperText>}
+										</Stack>
+									</Grid>
 
-										<Button
-											variant="outlined"
-											color="secondary"
-											onClick={() => {
-												// Manejo seguro para el botón de cancelar
-												setInternalOpen(false);
-												setTimeout(() => onLogout(), 50);
-											}}
-											fullWidth
-											disabled={isSubmitting}
-										>
-											Cancelar
-										</Button>
-									</Stack>
+									<Grid item xs={12}>
+										<Stack spacing={0.75}>
+											<InputLabel
+												htmlFor="password-login"
+												sx={{ fontSize: "0.78rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em" }}
+											>
+												Contraseña
+											</InputLabel>
+											<OutlinedInput
+												fullWidth
+												error={Boolean(touched.password && errors.password)}
+												id="password-login"
+												type={showPassword ? "text" : "password"}
+												value={values.password}
+												name="password"
+												onBlur={handleBlur}
+												onChange={handleChange}
+												disabled={isSubmitting}
+												endAdornment={
+													<InputAdornment position="end">
+														<IconButton onClick={() => setShowPassword(!showPassword)} edge="end" color="secondary" disabled={isSubmitting}>
+															{showPassword ? <Eye size={18} variant="Bulk" /> : <EyeSlash size={18} variant="Bulk" />}
+														</IconButton>
+													</InputAdornment>
+												}
+												placeholder="Ingresá tu contraseña"
+												sx={{
+													borderRadius: 1,
+													"& .MuiOutlinedInput-notchedOutline": {
+														borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
+													},
+													"&:hover .MuiOutlinedInput-notchedOutline": {
+														borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+													},
+													"&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+														borderColor: BRAND_BLUE,
+													},
+												}}
+											/>
+											{touched.password && errors.password && <FormHelperText error>{errors.password}</FormHelperText>}
+										</Stack>
+									</Grid>
+
+									<Grid item xs={12}>
+										<Stack spacing={1.25} sx={{ mt: 0.5 }}>
+											<Button
+												variant="contained"
+												type="submit"
+												fullWidth
+												disabled={isSubmitting}
+												sx={{
+													textTransform: "none",
+													fontWeight: 600,
+													letterSpacing: "-0.005em",
+													bgcolor: BRAND_BLUE,
+													color: "#fff",
+													borderRadius: 1.25,
+													py: 1,
+													boxShadow: "none",
+													"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+												}}
+											>
+												{isSubmitting ? (
+													<Stack direction="row" spacing={1} alignItems="center">
+														<CircularProgress size={16} sx={{ color: "#fff" }} />
+														<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, letterSpacing: "-0.005em" }}>
+															Iniciando sesión…
+														</Typography>
+													</Stack>
+												) : (
+													"Iniciar sesión"
+												)}
+											</Button>
+
+											<Stack direction="row" alignItems="center" spacing={1}>
+												<Box sx={{ flex: 1, height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.12) }} />
+												<Typography
+													sx={{
+														fontSize: "0.62rem",
+														fontWeight: 600,
+														letterSpacing: "0.08em",
+														textTransform: "uppercase",
+														color: "text.secondary",
+													}}
+												>
+													o
+												</Typography>
+												<Box sx={{ flex: 1, height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.12) }} />
+											</Stack>
+
+											<Box sx={{ width: "100%", position: "relative" }}>
+												<CustomGoogleButton
+													onClick={() => googleLogin()}
+													disabled={isSubmitting}
+													text={isSubmitting ? "Iniciando sesión…" : "Iniciar sesión con Google"}
+													fullWidth
+													customHeight="36.49px"
+												/>
+												{isSubmitting && (
+													<CircularProgress
+														size={18}
+														sx={{
+															color: BRAND_BLUE,
+															position: "absolute",
+															top: "50%",
+															left: 16,
+															marginTop: "-9px",
+														}}
+													/>
+												)}
+											</Box>
+
+											<Button
+												onClick={handleBackdropCancel}
+												fullWidth
+												disabled={isSubmitting}
+												sx={{
+													textTransform: "none",
+													fontWeight: 600,
+													letterSpacing: "-0.005em",
+													color: "text.secondary",
+													borderRadius: 1.25,
+													py: 1,
+													border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+													"&:hover": {
+														color: BRAND_BLUE,
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+														borderColor: alpha(BRAND_BLUE, 0.28),
+													},
+												}}
+											>
+												Cancelar
+											</Button>
+										</Stack>
+									</Grid>
 								</Grid>
-							</Grid>
-						</form>
-					)}
-				</Formik>
+							</form>
+						)}
+					</Formik>
+				</Stack>
 			</DialogContent>
 		</Dialog>
 	);

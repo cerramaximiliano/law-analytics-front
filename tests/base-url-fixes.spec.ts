@@ -80,10 +80,7 @@ function assertHitEndpoint(urls: string[], fragment: string): void {
 /**
  * PNG transparente de 1x1 px (67 bytes) — fixture mínimo para tests de upload.
  */
-const TINY_PNG = Buffer.from(
-	"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
-	"base64",
-);
+const TINY_PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
 
 /**
  * Helper: mockear un endpoint del backend con una respuesta JSON 200.
@@ -199,9 +196,15 @@ test.describe("URL fixes — flujos con login", () => {
 	test("SupportModal: enviar consulta apunta a localhost:5000/api/support-contacts", async ({ page }) => {
 		await page.goto("/dashboard/default");
 
-		const isNavCardVisible = await page.getByText("¿Necesita ayuda?").isVisible().catch(() => false);
+		const isNavCardVisible = await page
+			.getByText("¿Necesita ayuda?")
+			.isVisible()
+			.catch(() => false);
 		if (!isNavCardVisible) {
-			await page.getByRole("button", { name: /open drawer/i }).click().catch(() => {});
+			await page
+				.getByRole("button", { name: /open drawer/i })
+				.click()
+				.catch(() => {});
 		}
 		await page.getByRole("button", { name: "Soporte", exact: true }).click();
 		await expect(page.getByRole("dialog")).toBeVisible({ timeout: 8_000 });
