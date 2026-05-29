@@ -163,6 +163,19 @@ const PjnPdfViewer = ({ open, onClose, folderId, movement, onPrev, onNext, hasPr
 		};
 	}, [open, movement, folderId]);
 
+	// Fallback si el iframe no logra cargar el PDF embebido. Cubre el caso en que
+	// el backend firma una presigned URL OK pero el objeto S3 no existe (DB con
+	// pdfStatus=downloaded huérfano) o hay un fallo de red al traerlo. Caemos al
+	// estado de "PDF no disponible" reutilizando el link original al PJN.
+	const handleIframeError = () => {
+		setState((s) => ({
+			...s,
+			pdfUrl: null,
+			fallbackUrl: s.fallbackUrl ?? movement?.url ?? null,
+			errorMsg: "No se pudo cargar el PDF. Probá abrirlo en el portal del PJN.",
+		}));
+	};
+
 	const status = statusLabel(movement?.pdfStatus ?? state.pdfStatus);
 	// Drawer ancho: en mobile fullscreen, en desktop ~92vw (deja una franja
 	// del listado a la izquierda para mantener contexto visual sin perder
@@ -271,6 +284,7 @@ const PjnPdfViewer = ({ open, onClose, folderId, movement, onPrev, onNext, hasPr
 							src={state.pdfUrl}
 							title="PDF del movimiento"
 							style={{ width: "100%", height: "100%", border: 0 }}
+							onError={handleIframeError}
 						/>
 					)}
 
