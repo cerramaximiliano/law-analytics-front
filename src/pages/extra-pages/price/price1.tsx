@@ -278,6 +278,8 @@ const Pricing = () => {
 						close: false,
 					}),
 				);
+				// Registrar el intento fallido (fire-and-forget, no bloquea el redirect)
+				ApiService.reportFailedCheckout(planId, response.message || "Respuesta no exitosa al iniciar el checkout");
 				// Redireccionar a la página de error
 				window.location.href = errorUrl;
 			}
@@ -301,6 +303,8 @@ const Pricing = () => {
 					close: false,
 				}),
 			);
+			// Registrar el intento fallido (fire-and-forget, no bloquea el flujo)
+			ApiService.reportFailedCheckout(planId, message);
 		} finally {
 			setLoadingPlanId(null); // Limpiar loading al finalizar
 		}

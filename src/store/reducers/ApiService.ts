@@ -992,6 +992,26 @@ class ApiService {
 		}
 	}
 
+	/**
+	 * Reporta un intento de checkout fallido (fallo pre-Stripe: la sesión no se
+	 * pudo crear o el backend devolvió error). Fire-and-forget: nunca lanza ni
+	 * bloquea el flujo de UX, solo deja el registro para estadísticas.
+	 * @param planId - Plan que se intentó contratar
+	 * @param reason - Motivo legible del fallo
+	 */
+	static async reportFailedCheckout(planId: string, reason?: string): Promise<void> {
+		try {
+			await axios.post(
+				`${API_BASE_URL}/api/subscriptions/payment-attempt-failed`,
+				{ planId, reason },
+				{ withCredentials: true },
+			);
+		} catch (error) {
+			// Best-effort: no propagar — el registro de telemetría no debe romper el front
+			console.warn("No se pudo reportar el intento de checkout fallido", error);
+		}
+	}
+
 	// getPaymentHistory method has been removed - payment history is now fetched during login
 	// and stored in Redux auth state. Use the fetchPaymentHistory action from auth reducer instead.
 
