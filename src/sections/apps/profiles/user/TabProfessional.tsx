@@ -25,7 +25,7 @@ import { alpha, useTheme } from "@mui/material/styles";
 // third-party
 import * as Yup from "yup";
 import { Formik } from "formik";
-import axios from "axios";
+import axios from "utils/axios";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -375,6 +375,9 @@ const TabProfessional = () => {
 											<Autocomplete
 												fullWidth
 												id="add-college"
+												loading={collegesLoading}
+												loadingText="Cargando colegios..."
+												noOptionsText="No se encontraron colegios"
 												options={collegesList.filter((c) => !values.colleges.some((college) => college.name === c.name))}
 												getOptionLabel={(option) => option.name}
 												groupBy={(option) => option.province}
