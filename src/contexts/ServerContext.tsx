@@ -349,10 +349,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 						try {
 							const refreshResponse = await refreshAccessToken();
 
-							// Si el refresh es exitoso, reintentar la petición original
+							// Si el refresh es exitoso, reintentar la petición original.
+							// _retry: true marca que esta request YA pasó por un refresh;
+							// si el reintento vuelve a dar 401 (ej. header Authorization
+							// stale embebido en la config) el guard `!_retry` corta el ciclo
+							// en vez de refrescar+reintentar infinitamente.
 							if (refreshResponse.status === 200) {
 								return axios({
 									...originalRequest,
+									_retry: true,
 									_hasBeenHandled: false,
 								});
 							}

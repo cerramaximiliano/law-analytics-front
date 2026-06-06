@@ -167,9 +167,7 @@ export const connectGoogleCalendar = () => async (dispatch: any, getState: any) 
 				console.log("Guardando en backend:", updateData);
 
 				await axios.put(`${baseUrl}/api/users/${userId}/google-calendar-connection`, updateData, {
-					headers: {
-						Authorization: `Bearer ${localStorage.getItem("token")}`,
-					},
+					withCredentials: true,
 				});
 				console.log("Estado de Google Calendar guardado en el backend");
 			} catch (error) {
@@ -460,9 +458,7 @@ export const disconnectGoogleCalendar = () => async (dispatch: any, getState: an
 						lastSync: null,
 					},
 					{
-						headers: {
-							Authorization: `Bearer ${localStorage.getItem("token")}`,
-						},
+						withCredentials: true,
 					},
 				);
 				console.log("Estado de desconexión guardado en el backend");
@@ -662,10 +658,12 @@ export const checkGoogleCalendarConnection = () => async (dispatch: any, getStat
 		if (!userId) return;
 
 		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
+		// Auth via cookie httpOnly + interceptor global (igual que el resto de la app).
+		// NO setear Authorization manualmente desde localStorage["token"]: ese slot no
+		// se usa para el token de sesión (vive en authTokenService/memoria), así que
+		// mandaba "Bearer null" y el backend respondía 401 → loop de refresh infinito.
 		const response = await axios.get(`${baseUrl}/api/users/${userId}/google-calendar-status`, {
-			headers: {
-				Authorization: `Bearer ${localStorage.getItem("token")}`,
-			},
+			withCredentials: true,
 		});
 
 		if (response.data?.googleCalendarStatus?.connected) {
