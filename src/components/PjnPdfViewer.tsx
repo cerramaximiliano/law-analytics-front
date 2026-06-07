@@ -52,7 +52,10 @@ const initialState: State = {
 	errorMsg: null,
 };
 
-function statusLabel(s: PjnMovementPdfStatus | null | undefined): { label: string; color: "default" | "success" | "warning" | "error" | "info" } {
+function statusLabel(s: PjnMovementPdfStatus | null | undefined): {
+	label: string;
+	color: "default" | "success" | "warning" | "error" | "info";
+} {
 	switch (s) {
 		case "downloaded":
 			return { label: "PDF disponible", color: "success" };
@@ -204,13 +207,7 @@ const PjnPdfViewer = ({ open, onClose, folderId, movement, onPrev, onNext, hasPr
 	}, [open, hasPrev, hasNext, onPrev, onNext]);
 
 	return (
-		<Drawer
-			anchor="right"
-			open={open}
-			onClose={onClose}
-			PaperProps={{ sx: { width: drawerWidth } }}
-			ModalProps={{ keepMounted: false }}
-		>
+		<Drawer anchor="right" open={open} onClose={onClose} PaperProps={{ sx: { width: drawerWidth } }} ModalProps={{ keepMounted: false }}>
 			<Stack sx={{ height: "100%" }}>
 				{/* Header */}
 				<Stack
@@ -347,13 +344,7 @@ const PjnPdfViewer = ({ open, onClose, folderId, movement, onPrev, onNext, hasPr
 							</Button>
 							{movement?.url && (
 								<Tooltip title="Abrir el documento original en el portal del PJN (útil si el PDF embebido no carga)">
-									<Button
-										size="small"
-										startIcon={<ExportSquare size="18" />}
-										href={movement.url}
-										target="_blank"
-										rel="noopener noreferrer"
-									>
+									<Button size="small" startIcon={<ExportSquare size="18" />} href={movement.url} target="_blank" rel="noopener noreferrer">
 										Original PJN
 									</Button>
 								</Tooltip>

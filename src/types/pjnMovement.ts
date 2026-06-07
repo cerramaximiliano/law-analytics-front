@@ -4,12 +4,7 @@
 // Convive con el tipo Movement existente (de la colección movements del usuario).
 // PjnMovement representa un movimiento del expediente PJN, NO una agenda/recordatorio.
 
-export type PjnMovementPdfStatus =
-	| "downloaded"
-	| "pending"
-	| "expired"
-	| "failed"
-	| "not_applicable";
+export type PjnMovementPdfStatus = "downloaded" | "pending" | "expired" | "failed" | "not_applicable";
 
 export interface PjnMovement {
 	_id: string; // formato: "{causaId}:{sourceId}"

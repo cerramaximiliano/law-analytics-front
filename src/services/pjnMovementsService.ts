@@ -8,19 +8,11 @@
 // endpoint viejo para la vista clásica del expediente.
 
 import axios from "axios";
-import type {
-	PjnMovementsListParams,
-	PjnMovementsListResponse,
-	PjnMovementPdfUrlResponse,
-} from "types/pjnMovement";
+import type { PjnMovementsListParams, PjnMovementsListResponse, PjnMovementPdfUrlResponse } from "types/pjnMovement";
 
 function getBaseUrl(): string {
 	// Mismo patrón que judicialMovementsService.ts
-	if (
-		process.env.NODE_ENV === "production" &&
-		typeof window !== "undefined" &&
-		window.location.hostname === "lawanalytics.app"
-	) {
+	if (process.env.NODE_ENV === "production" && typeof window !== "undefined" && window.location.hostname === "lawanalytics.app") {
 		return "https://server.lawanalytics.app";
 	}
 	return "";
@@ -42,10 +34,7 @@ function buildQueryString(params?: PjnMovementsListParams): string {
 }
 
 // Lista paginada de movimientos del folder leídos desde pjn-movements.
-export async function getPjnMovementsByFolder(
-	folderId: string,
-	params?: PjnMovementsListParams,
-): Promise<PjnMovementsListResponse> {
+export async function getPjnMovementsByFolder(folderId: string, params?: PjnMovementsListParams): Promise<PjnMovementsListResponse> {
 	const url = `${getBaseUrl()}/api/folders/${folderId}/movimientos${buildQueryString(params)}`;
 	const response = await axios.get<PjnMovementsListResponse>(url, {
 		withCredentials: true,
@@ -55,10 +44,7 @@ export async function getPjnMovementsByFolder(
 
 // Presigned URL del PDF (5 min). Devuelve null en pdfUrl si no hay PDF disponible
 // (en ese caso fallbackUrl puede traer el link original al PJN).
-export async function getPjnMovementPdfUrl(
-	folderId: string,
-	movementId: string,
-): Promise<PjnMovementPdfUrlResponse> {
+export async function getPjnMovementPdfUrl(folderId: string, movementId: string): Promise<PjnMovementPdfUrlResponse> {
 	// movementId tiene formato "{causaId}:{sourceId}" — necesita encoding por los ":"
 	const encoded = encodeURIComponent(movementId);
 	const url = `${getBaseUrl()}/api/folders/${folderId}/movimientos/${encoded}/pdf-url`;

@@ -6,7 +6,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-	Box,
 	Card,
 	CardContent,
 	CardHeader,
@@ -26,17 +25,12 @@ import {
 	TextField,
 	Tooltip,
 	Typography,
-	useTheme,
 	Alert,
 } from "@mui/material";
-import { DocumentText, Eye, ExportSquare, SearchNormal1 } from "iconsax-react";
+import { DocumentText, ExportSquare, SearchNormal1 } from "iconsax-react";
 import PjnPdfViewer from "components/PjnPdfViewer";
 import { getPjnMovementsByFolder } from "services/pjnMovementsService";
-import type {
-	PjnMovement,
-	PjnMovementPdfStatus,
-	PjnMovementsListResponse,
-} from "types/pjnMovement";
+import type { PjnMovementPdfStatus, PjnMovementsListResponse } from "types/pjnMovement";
 
 interface Props {
 	folderId: string;
@@ -75,7 +69,6 @@ function pdfStatusChip(status: PjnMovementPdfStatus) {
 }
 
 const PjnMovementsViewerSection = ({ folderId }: Props) => {
-	const theme = useTheme();
 	const [page, setPage] = useState(1);
 	const [limit] = useState(20);
 	const [search, setSearch] = useState("");
@@ -128,11 +121,6 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 	const movements = data?.data ?? [];
 	const total = data?.count ?? 0;
 	const totalPages = data?.pagination?.totalPages ?? 0;
-
-	// Si el folder no tiene causa PJN, el endpoint devuelve count=0 con mensaje
-	if (data && total === 0 && !search && pdfStatusFilter === "all" && data.message?.includes("no tiene causa PJN")) {
-		return null; // No renderizar nada — mejor UX para folders no-PJN
-	}
 
 	const handleOpenViewer = (idx: number) => {
 		setSelectedIdx(idx);
@@ -192,14 +180,16 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 
 	const selected = selectedIdx !== null ? movements[selectedIdx] ?? null : null;
 	// hasPrev/hasNext consideran cross-page también.
-	const hasPrev =
-		selectedIdx !== null &&
-		(movements.slice(0, selectedIdx).some((m) => m.hasPdf) ||
-			Boolean(data?.pagination?.hasPrevPage));
+	const hasPrev = selectedIdx !== null && (movements.slice(0, selectedIdx).some((m) => m.hasPdf) || Boolean(data?.pagination?.hasPrevPage));
 	const hasNext =
-		selectedIdx !== null &&
-		(movements.slice(selectedIdx + 1).some((m) => m.hasPdf) ||
-			Boolean(data?.pagination?.hasNextPage));
+		selectedIdx !== null && (movements.slice(selectedIdx + 1).some((m) => m.hasPdf) || Boolean(data?.pagination?.hasNextPage));
+
+	// Si el folder no tiene causa PJN, el endpoint devuelve count=0 con mensaje.
+	// Este guard va DESPUÉS de todos los hooks (rules-of-hooks): un return temprano
+	// antes de un useEffect cambia el número de hooks entre renders y crashea React.
+	if (data && total === 0 && !search && pdfStatusFilter === "all" && data.message?.includes("no tiene causa PJN")) {
+		return null; // No renderizar nada — mejor UX para folders no-PJN
+	}
 
 	return (
 		<Card>
@@ -278,8 +268,12 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 										<TableCell sx={{ width: 110 }}>Fecha</TableCell>
 										<TableCell sx={{ width: 200 }}>Tipo</TableCell>
 										<TableCell>Detalle</TableCell>
-										<TableCell sx={{ width: 100 }} align="center">PDF</TableCell>
-										<TableCell sx={{ width: 80 }} align="right">Acciones</TableCell>
+										<TableCell sx={{ width: 100 }} align="center">
+											PDF
+										</TableCell>
+										<TableCell sx={{ width: 80 }} align="right">
+											Acciones
+										</TableCell>
 									</TableRow>
 								</TableHead>
 								<TableBody>
@@ -350,13 +344,7 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 
 						{totalPages > 1 && (
 							<Stack alignItems="center" sx={{ mt: 2 }}>
-								<Pagination
-									count={totalPages}
-									page={page}
-									onChange={(_, p) => setPage(p)}
-									color="primary"
-									size="small"
-								/>
+								<Pagination count={totalPages} page={page} onChange={(_, p) => setPage(p)} color="primary" size="small" />
 							</Stack>
 						)}
 					</>
