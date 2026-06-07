@@ -76,7 +76,9 @@ function formatFecha(iso: string | null): string {
 	if (!iso) return "Sin fecha";
 	try {
 		const d = new Date(iso);
-		return d.toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" });
+		// Fecha-calendario guardada como medianoche UTC: formatear en UTC para no
+		// correr el día al huso del navegador (ver nota en PjnMovementsViewerSection).
+		return d.toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
 	} catch {
 		return iso;
 	}

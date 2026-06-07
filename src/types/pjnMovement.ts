@@ -35,6 +35,12 @@ export interface PjnMovementsListResponse {
 	};
 	data: PjnMovement[];
 	message?: string;
+	// Gate de plan: cuando el usuario es free, el backend devuelve solo un preview
+	// (últimos N movimientos) y marca requiresUpgrade. count refleja el total real.
+	requiresUpgrade?: boolean;
+	currentPlan?: string | null;
+	requiredPlans?: string[];
+	previewCount?: number;
 }
 
 export interface PjnMovementsListParams {
@@ -58,4 +64,8 @@ export interface PjnMovementPdfUrlResponse {
 	message?: string;
 	pdfStatus?: PjnMovementPdfStatus;
 	fallbackUrl?: string | null;
+	// Gate de plan: free no accede al PDF de nuestro S3, cae al fallback de PJN.
+	requiresUpgrade?: boolean;
+	currentPlan?: string | null;
+	requiredPlans?: string[];
 }

@@ -54,8 +54,10 @@ export async function getPjnMovementPdfUrl(folderId: string, movementId: string)
 		});
 		return response.data;
 	} catch (err: any) {
-		// 404 con fallbackUrl es un caso esperado, no un error real
-		if (axios.isAxiosError(err) && err.response?.status === 404 && err.response.data) {
+		// Casos esperados (no errores reales), el body trae fallbackUrl/requiresUpgrade:
+		//   404 → PDF no disponible en nuestra plataforma
+		//   403 → gate de plan (usuario free): cae al link original de PJN
+		if (axios.isAxiosError(err) && (err.response?.status === 404 || err.response?.status === 403) && err.response.data) {
 			return err.response.data as PjnMovementPdfUrlResponse;
 		}
 		throw err;

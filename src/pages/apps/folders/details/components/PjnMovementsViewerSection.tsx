@@ -47,7 +47,10 @@ const PDF_STATUS_OPTIONS: { value: PjnMovementPdfStatus | "all"; label: string }
 function formatDate(iso: string | null): string {
 	if (!iso) return "—";
 	try {
-		return new Date(iso).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+		// Las fechas de movimientos son fecha-calendario guardadas como medianoche
+		// UTC (ej. 2026-06-02T00:00:00Z). Formatear en UTC para no correr el día al
+		// convertir al huso del navegador (UTC-3 mostraría 01/06 en vez de 02/06).
+		return new Date(iso).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
 	} catch {
 		return iso;
 	}
@@ -121,6 +124,8 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 	const movements = data?.data ?? [];
 	const total = data?.count ?? 0;
 	const totalPages = data?.pagination?.totalPages ?? 0;
+	// Plan free: el backend devuelve solo un preview (últimos N) y marca requiresUpgrade.
+	const requiresUpgrade = Boolean(data?.requiresUpgrade);
 
 	const handleOpenViewer = (idx: number) => {
 		setSelectedIdx(idx);
@@ -204,40 +209,50 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 				}
 			/>
 			<CardContent>
-				{/* Filtros */}
-				<Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 2 }}>
-					<TextField
-						size="small"
-						placeholder="Buscar en tipo o detalle..."
-						value={searchInput}
-						onChange={(e) => setSearchInput(e.target.value)}
-						InputProps={{
-							startAdornment: (
-								<InputAdornment position="start">
-									<SearchNormal1 size="18" />
-								</InputAdornment>
-							),
-						}}
-						sx={{ flex: 1, maxWidth: 360 }}
-					/>
-					<TextField
-						select
-						size="small"
-						label="Estado del PDF"
-						value={pdfStatusFilter}
-						onChange={(e) => {
-							setPage(1);
-							setPdfStatusFilter(e.target.value as PjnMovementPdfStatus | "all");
-						}}
-						sx={{ minWidth: 180 }}
-					>
-						{PDF_STATUS_OPTIONS.map((opt) => (
-							<MenuItem key={opt.value} value={opt.value}>
-								{opt.label}
-							</MenuItem>
-						))}
-					</TextField>
-				</Stack>
+				{/* Banner de upgrade (plan free): preview limitado, sin filtros ni PDF */}
+				{requiresUpgrade && (
+					<Alert severity="info" sx={{ mb: 2 }}>
+						Estás viendo los últimos {movements.length} movimientos de {total}. Actualizá a un plan Standard o Premium para ver el
+						expediente completo y abrir los PDF desde la plataforma.
+					</Alert>
+				)}
+
+				{/* Filtros — ocultos en preview free (no operan sobre el set limitado) */}
+				{!requiresUpgrade && (
+					<Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 2 }}>
+						<TextField
+							size="small"
+							placeholder="Buscar en tipo o detalle..."
+							value={searchInput}
+							onChange={(e) => setSearchInput(e.target.value)}
+							InputProps={{
+								startAdornment: (
+									<InputAdornment position="start">
+										<SearchNormal1 size="18" />
+									</InputAdornment>
+								),
+							}}
+							sx={{ flex: 1, maxWidth: 360 }}
+						/>
+						<TextField
+							select
+							size="small"
+							label="Estado del PDF"
+							value={pdfStatusFilter}
+							onChange={(e) => {
+								setPage(1);
+								setPdfStatusFilter(e.target.value as PjnMovementPdfStatus | "all");
+							}}
+							sx={{ minWidth: 180 }}
+						>
+							{PDF_STATUS_OPTIONS.map((opt) => (
+								<MenuItem key={opt.value} value={opt.value}>
+									{opt.label}
+								</MenuItem>
+							))}
+						</TextField>
+					</Stack>
+				)}
 
 				{error && (
 					<Alert severity="error" sx={{ mb: 2 }}>
