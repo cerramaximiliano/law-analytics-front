@@ -1304,6 +1304,10 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														onRefresh={handleRefreshMovements}
 														isRefreshing={movementsData.isLoading}
 													/>
+												) : scrapingSource === "pjn" && id ? (
+													// PJN: el viewer paginado (pjn-movements) REEMPLAZA la tabla clásica —
+													// una sola tabla. Otros fueros (EJE/SCBA/MEV/manual) usan MovementsTable.
+													<PjnMovementsViewerSection folderId={id} />
 												) : (
 													<MovementsTable
 														movements={movementsData.movements}
@@ -1320,11 +1324,6 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														pjnAccess={movementsData.pjnAccess ?? movementsData.scbaAccess}
 													/>
 												))}
-											{activeTab === "movements" && id && (
-												<Box sx={{ mt: 2 }}>
-													<PjnMovementsViewerSection folderId={id} />
-												</Box>
-											)}
 											{activeTab === "notifications" && (
 												<NotificationsTable
 													notifications={notificationsData.notifications}
@@ -1727,6 +1726,10 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														onRefresh={handleRefreshMovements}
 														isRefreshing={movementsData.isLoading}
 													/>
+												) : scrapingSource === "pjn" && id ? (
+													// PJN: el viewer paginado (pjn-movements) REEMPLAZA la tabla clásica —
+													// una sola tabla. Otros fueros (EJE/SCBA/MEV/manual) usan MovementsTable.
+													<PjnMovementsViewerSection folderId={id} />
 												) : (
 													<MovementsTable
 														movements={movementsData.movements}
@@ -1744,11 +1747,6 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														pjnAccess={movementsData.pjnAccess ?? movementsData.scbaAccess}
 													/>
 												))}
-											{activeTab === "movements" && id && (
-												<Box sx={{ mt: 2 }}>
-													<PjnMovementsViewerSection folderId={id} />
-												</Box>
-											)}
 											{activeTab === "notifications" && (
 												<NotificationsTable
 													notifications={notificationsData.notifications}
