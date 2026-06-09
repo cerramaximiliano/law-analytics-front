@@ -55,6 +55,9 @@ export const GTMEvents = {
 	OAUTH_CONSENT_ACCEPT: "oauth_consent_accept",
 	OAUTH_CONSENT_REJECT: "oauth_consent_reject",
 	OAUTH_UPGRADE_VIEW: "oauth_upgrade_view",
+	// Vista pública de documentos de movimientos (/m/:token) — pending GTM tag
+	NOTIFICATION_MOVEMENT_OPEN: "notification_movement_open",
+	NOTIFICATION_MOVEMENT_CTA_CLICK: "notification_movement_cta_click",
 	// Onboarding checklist events (pending GTM tags creation post-deploy)
 	ONBOARDING_SHOWN: "onboarding_shown",
 	ONBOARDING_STEP_CLICKED: "onboarding_step_clicked",
@@ -343,6 +346,34 @@ export const trackOauthUpgradeView = (reason: string, plan?: string): void => {
 	pushGTMEvent(GTMEvents.OAUTH_UPGRADE_VIEW, {
 		reason,
 		plan: plan || null,
+	});
+};
+
+// =============================================================================
+// Vista pública de documentos de movimientos (/m/:token)
+//
+// El user llega desde el link "Ver documento" del email de movimientos nuevos,
+// sin necesidad de estar logueado. Mide la apertura de la notificación (señal
+// de engagement + re-engagement) y el click al CTA de "gestionar en la app".
+//
+// Tags GTM a crear post-deploy:
+//   - notification_movement_open      → GA4 event con dimensiones source, fuero, has_pdf
+//   - notification_movement_cta_click → GA4 event con dimensión has_folder
+// =============================================================================
+
+/** Mount de /m/:token — el user abrió el documento de un movimiento desde el email. */
+export const trackNotificationMovementOpen = (params: { source?: string; fuero?: string | null; hasPdf: boolean }): void => {
+	pushGTMEvent(GTMEvents.NOTIFICATION_MOVEMENT_OPEN, {
+		source: params.source || "email",
+		fuero: params.fuero || null,
+		has_pdf: params.hasPdf,
+	});
+};
+
+/** Click en el CTA "Iniciar sesión / gestionar" de la vista pública del documento. */
+export const trackNotificationMovementCtaClick = (hasFolder: boolean): void => {
+	pushGTMEvent(GTMEvents.NOTIFICATION_MOVEMENT_CTA_CLICK, {
+		has_folder: hasFolder,
 	});
 };
 
