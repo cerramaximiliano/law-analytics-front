@@ -203,12 +203,28 @@ const MovementDocPublicPage = () => {
 								) : (
 									<>
 										<Alert severity="info" sx={{ width: "100%", textAlign: "left" }}>
-											El documento todavía no está disponible en nuestra plataforma.
-											{fallbackUrl ? " Podés verlo en el portal oficial del Poder Judicial." : ""}
+											Este documento todavía no está disponible en nuestra plataforma. Iniciá sesión para verlo y gestionarlo desde tu cuenta.
 										</Alert>
+										<Button
+											component={RouterLink}
+											to={ctaHref}
+											onClick={handleCtaClick}
+											variant="contained"
+											startIcon={<LoginCurve size="18" />}
+										>
+											Iniciar sesión y gestionar
+										</Button>
 										{fallbackUrl && (
-											<Button variant="contained" startIcon={<ExportSquare size="18" />} href={fallbackUrl} target="_blank" rel="noopener noreferrer">
-												Ver en el portal del PJN
+											<Button
+												size="small"
+												variant="text"
+												color="secondary"
+												startIcon={<ExportSquare size="16" />}
+												href={fallbackUrl}
+												target="_blank"
+												rel="noopener noreferrer"
+											>
+												Ver en el portal del PJN (requiere tu login del PJN)
 											</Button>
 										)}
 									</>
