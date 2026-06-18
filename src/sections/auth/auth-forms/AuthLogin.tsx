@@ -3,6 +3,7 @@ import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
 import {
+	Alert,
 	Button,
 	Checkbox,
 	CircularProgress,
@@ -25,6 +26,7 @@ import { Formik } from "formik";
 // project-imports
 import useAuth from "hooks/useAuth";
 import useScriptRef from "hooks/useScriptRef";
+import sessionService from "store/reducers/sessionService";
 import IconButton from "components/@extended/IconButton";
 import AnimateButton from "components/@extended/AnimateButton";
 
@@ -43,6 +45,9 @@ interface AuthLoginProps {
 
 const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLoginProps) => {
 	const [checked, setChecked] = useState(false);
+	// Cuenta desactivada detectada en el login → ofrecer reactivación inline (opción A).
+	const [reactivateCreds, setReactivateCreds] = useState<{ email: string; password: string } | null>(null);
+	const [reactivating, setReactivating] = useState(false);
 
 	const { isLoggedIn, login } = useAuth();
 	const scriptedRef = useScriptRef();
@@ -54,6 +59,53 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 
 	const handleMouseDownPassword = (event: SyntheticEvent) => {
 		event.preventDefault();
+	};
+
+	// Reactiva la cuenta con las credenciales ya ingresadas y completa el login.
+	const handleReactivate = async () => {
+		if (!reactivateCreds) return;
+		setReactivating(true);
+		if (onLoadingChange) onLoadingChange(true);
+		try {
+			const res = await sessionService.reactivateAccount({ email: reactivateCreds.email, password: reactivateCreds.password });
+			if (res.success) {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "¡Bienvenido de nuevo! Tu cuenta fue reactivada.",
+						variant: "alert",
+						alert: { color: "success" },
+						close: false,
+					}),
+				);
+				// La cuenta ya está activa → completar el login normal (setea el estado de auth).
+				await login(reactivateCreds.email, reactivateCreds.password, checked);
+				setReactivateCreds(null);
+			} else {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: res.message || "No pudimos reactivar tu cuenta. Verificá tus credenciales.",
+						variant: "alert",
+						alert: { color: "error" },
+						close: true,
+					}),
+				);
+			}
+		} catch (e: any) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: e?.message || "No pudimos reactivar tu cuenta. Verificá tus credenciales.",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+		} finally {
+			setReactivating(false);
+			if (onLoadingChange) onLoadingChange(false);
+		}
 	};
 
 	return (
@@ -69,6 +121,7 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 					password: Yup.string().max(255).required("La contraseña es requerida"),
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
+					setReactivateCreds(null);
 					try {
 						if (onLoadingChange) {
 							onLoadingChange(true);
@@ -81,6 +134,14 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 					} catch (err: any) {
 						if (scriptedRef.current) {
 							setStatus({ success: false });
+
+							// Cuenta desactivada → en vez de un error muerto, ofrecer reactivación inline.
+							if (err?.response?.data?.error?.code === "ACCOUNT_INACTIVE") {
+								setReactivateCreds({ email: values.email, password: values.password });
+								setSubmitting(false);
+								if (onLoadingChange) onLoadingChange(false);
+								return;
+							}
 
 							// Safely extract error message with proper checks
 							let errorMessage = "Error al iniciar sesión";
@@ -292,6 +353,25 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 										</Link>
 									</Stack>
 								</Grid>
+								{reactivateCreds && (
+									<Grid item xs={12}>
+										<Alert severity="warning">
+											<Typography variant="body2" sx={{ mb: 1 }}>
+												Tu cuenta está desactivada. Podés reactivarla ahora mismo con estas credenciales.
+											</Typography>
+											<Button
+												variant="contained"
+												color="warning"
+												size="small"
+												disabled={reactivating}
+												onClick={handleReactivate}
+												startIcon={reactivating ? <CircularProgress size={16} color="inherit" /> : null}
+											>
+												{reactivating ? "Reactivando..." : "Reactivar mi cuenta"}
+											</Button>
+										</Alert>
+									</Grid>
+								)}
 								<Grid item xs={12}>
 									<AnimateButton>
 										<Button

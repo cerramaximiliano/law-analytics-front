@@ -552,7 +552,7 @@ class ApiService {
 	 */
 	static async reactivateAccount(data: ReactivateAccountData): Promise<ApiResponse> {
 		try {
-			const response = await axios.post<ApiResponse>(`${API_BASE_URL}/api/reactivate-account`, data);
+			const response = await axios.post<ApiResponse>(`${API_BASE_URL}/api/auth/reactivate-account`, data);
 			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);
