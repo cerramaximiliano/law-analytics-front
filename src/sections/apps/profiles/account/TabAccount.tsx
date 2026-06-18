@@ -554,6 +554,8 @@ const TabAccount = () => {
 			const response = await sessionService.deactivateAccount({
 				password: deactivateFormData.password,
 				reason: finalReason,
+				reasonCode: deactivateFormData.reason || undefined,
+				otherReason: deactivateFormData.reason === "other" ? deactivateFormData.otherReason : undefined,
 			});
 			setDeactivateLoading(false);
 			if (response.success) {
