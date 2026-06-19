@@ -15,6 +15,7 @@ export interface PjnMovement {
 	pdfStatus: PjnMovementPdfStatus;
 	pdfBytes?: number;
 	hasPdf: boolean; // shortcut: pdfStatus === 'downloaded'
+	read?: boolean; // leído por el usuario autenticado (per-viewer)
 }
 
 export interface PjnMovementsPagination {

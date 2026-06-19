@@ -63,3 +63,15 @@ export async function getPjnMovementPdfUrl(folderId: string, movementId: string)
 		throw err;
 	}
 }
+
+// Marca un movimiento como leído / no leído para el usuario autenticado (per-viewer).
+export async function setPjnMovementReadStatus(
+	folderId: string,
+	movementId: string,
+	read: boolean,
+): Promise<{ success: boolean; read: boolean }> {
+	const encoded = encodeURIComponent(movementId);
+	const url = `${getBaseUrl()}/api/folders/${folderId}/movimientos/${encoded}/read-status`;
+	const response = await axios.put<{ success: boolean; read: boolean }>(url, { read }, { withCredentials: true });
+	return response.data;
+}

@@ -177,10 +177,10 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const scrapingSource: "mev" | "pjn" | "scba" | "eje" = movementsData.scbaAccess
 		? "scba"
 		: movementsData.pjnAccess
-			? "pjn"
-			: movementsData.ejeAccess
-				? "eje"
-				: "mev";
+		? "pjn"
+		: movementsData.ejeAccess
+		? "eje"
+		: "mev";
 
 	// En EJE el parser resuelve adjuntos via API pública del portal, pero
 	// solo una minoría de movimientos tiene PDF asociado (en muchas causas
@@ -208,10 +208,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	// En esa ventana mostramos un empty state contextual en lugar de tabla vacía.
 	// (Si scrapingProgress está en vuelo, ScrapingProgressBanner ya cubre el caso.)
 	const isScbaFirstSyncPending =
-		!!movementsData.scbaAccess &&
-		!movementsData.causaLastSyncDate &&
-		(movementsData.movements?.length ?? 0) === 0 &&
-		!scrapingProgress;
+		!!movementsData.scbaAccess && !movementsData.causaLastSyncDate && (movementsData.movements?.length ?? 0) === 0 && !scrapingProgress;
 
 	// Load data on mount y cuando cambien los filtros
 	useEffect(() => {
@@ -1182,7 +1179,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 																	border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.22)}`,
 																}}
 															>
-																<Typography sx={{ fontSize: "0.66rem", fontWeight: 700, color: BRAND_BLUE, fontVariantNumeric: "tabular-nums" }}>
+																<Typography
+																	sx={{ fontSize: "0.66rem", fontWeight: 700, color: BRAND_BLUE, fontVariantNumeric: "tabular-nums" }}
+																>
 																	{movementsData.totalWithLinks}
 																</Typography>
 															</Box>
@@ -1205,41 +1204,46 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													</Typography>
 												)}
 
-											<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1) }} />
+											{/* "Expediente digital" oculto en folders PJN (el viewer paginado ya lo cubre,
+											    con notas + tareas). Se mantiene para MEV/SCBA/EJE/manual. */}
+											{scrapingSource !== "pjn" && (
+												<>
+													<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1) }} />
 
-											{/* Expediente digital — sober brand */}
-											<Button
-												variant="contained"
-												size="small"
-												fullWidth
-												startIcon={<Gallery size={16} variant="Bulk" />}
-												onClick={() => {
-													const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
-													if (movementsWithLinks.length > 0) {
-														setCurrentDocumentMovement(movementsWithLinks[0]);
-														setDocumentNavigationOpen(true);
-													}
-												}}
-												disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
-												sx={{
-													textTransform: "none",
-													fontWeight: 600,
-													letterSpacing: "-0.005em",
-													bgcolor: BRAND_BLUE,
-													color: "#fff",
-													borderRadius: 1,
-													py: 0.875,
-													boxShadow: "none",
-													"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
-													"&.Mui-disabled": {
-														bgcolor: alpha(theme.palette.text.disabled, 0.12),
-														color: theme.palette.text.disabled,
-													},
-												}}
-											>
-												Expediente digital
-												{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
-											</Button>
+													<Button
+														variant="contained"
+														size="small"
+														fullWidth
+														startIcon={<Gallery size={16} variant="Bulk" />}
+														onClick={() => {
+															const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
+															if (movementsWithLinks.length > 0) {
+																setCurrentDocumentMovement(movementsWithLinks[0]);
+																setDocumentNavigationOpen(true);
+															}
+														}}
+														disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
+														sx={{
+															textTransform: "none",
+															fontWeight: 600,
+															letterSpacing: "-0.005em",
+															bgcolor: BRAND_BLUE,
+															color: "#fff",
+															borderRadius: 1,
+															py: 0.875,
+															boxShadow: "none",
+															"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+															"&.Mui-disabled": {
+																bgcolor: alpha(theme.palette.text.disabled, 0.12),
+																color: theme.palette.text.disabled,
+															},
+														}}
+													>
+														Expediente digital
+														{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
+													</Button>
+												</>
+											)}
 										</Stack>
 									</Box>
 								)}
@@ -1284,9 +1288,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														/>
 													</Box>
 												)}
-												{!scrapingProgress && !isScbaFirstSyncPending && (movementsData.pjnAccess || movementsData.scbaAccess || movementsData.ejeAccess) && (
-													<FolderSyncStatus source={scrapingSource} causaLastSyncDate={movementsData.causaLastSyncDate} />
-												)}
+												{!scrapingProgress &&
+													!isScbaFirstSyncPending &&
+													(movementsData.pjnAccess || movementsData.scbaAccess || movementsData.ejeAccess) && (
+														<FolderSyncStatus source={scrapingSource} causaLastSyncDate={movementsData.causaLastSyncDate} />
+													)}
 											</>
 										)}
 
@@ -1564,7 +1570,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 																		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.22)}`,
 																	}}
 																>
-																	<Typography sx={{ fontSize: "0.66rem", fontWeight: 700, color: BRAND_BLUE, fontVariantNumeric: "tabular-nums" }}>
+																	<Typography
+																		sx={{ fontSize: "0.66rem", fontWeight: 700, color: BRAND_BLUE, fontVariantNumeric: "tabular-nums" }}
+																	>
 																		{movementsData.totalWithLinks}
 																	</Typography>
 																</Box>
@@ -1573,40 +1581,47 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													}
 												/>
 
-												<Box sx={{ width: 1, height: 20, bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.12) }} />
+												{/* "Expediente digital" (visor clásico + DocumentExplorer) NO se muestra en
+												    folders PJN: ahí el viewer paginado (PjnMovementsViewerSection + PjnPdfViewer)
+												    ya es el expediente digital, con notas y tareas. Se mantiene para MEV/SCBA/EJE/manual. */}
+												{scrapingSource !== "pjn" && (
+													<>
+														<Box sx={{ width: 1, height: 20, bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.12) }} />
 
-												<Button
-													variant="contained"
-													size="small"
-													startIcon={<Gallery size={16} variant="Bulk" />}
-													onClick={() => {
-														const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
-														if (movementsWithLinks.length > 0) {
-															setCurrentDocumentMovement(movementsWithLinks[0]);
-															setDocumentNavigationOpen(true);
-														}
-													}}
-													disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
-													sx={{
-														textTransform: "none",
-														fontWeight: 600,
-														letterSpacing: "-0.005em",
-														bgcolor: BRAND_BLUE,
-														color: "#fff",
-														borderRadius: 1,
-														px: 1.5,
-														py: 0.75,
-														boxShadow: "none",
-														"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
-														"&.Mui-disabled": {
-															bgcolor: alpha(theme.palette.text.disabled, 0.12),
-															color: theme.palette.text.disabled,
-														},
-													}}
-												>
-													Expediente digital
-													{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
-												</Button>
+														<Button
+															variant="contained"
+															size="small"
+															startIcon={<Gallery size={16} variant="Bulk" />}
+															onClick={() => {
+																const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
+																if (movementsWithLinks.length > 0) {
+																	setCurrentDocumentMovement(movementsWithLinks[0]);
+																	setDocumentNavigationOpen(true);
+																}
+															}}
+															disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
+															sx={{
+																textTransform: "none",
+																fontWeight: 600,
+																letterSpacing: "-0.005em",
+																bgcolor: BRAND_BLUE,
+																color: "#fff",
+																borderRadius: 1,
+																px: 1.5,
+																py: 0.75,
+																boxShadow: "none",
+																"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+																"&.Mui-disabled": {
+																	bgcolor: alpha(theme.palette.text.disabled, 0.12),
+																	color: theme.palette.text.disabled,
+																},
+															}}
+														>
+															Expediente digital
+															{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
+														</Button>
+													</>
+												)}
 											</Stack>
 
 											{filters.onlyWithDocuments &&
@@ -1706,9 +1721,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														/>
 													</Box>
 												)}
-												{!scrapingProgress && !isScbaFirstSyncPending && (movementsData.pjnAccess || movementsData.scbaAccess || movementsData.ejeAccess) && (
-													<FolderSyncStatus source={scrapingSource} causaLastSyncDate={movementsData.causaLastSyncDate} />
-												)}
+												{!scrapingProgress &&
+													!isScbaFirstSyncPending &&
+													(movementsData.pjnAccess || movementsData.scbaAccess || movementsData.ejeAccess) && (
+														<FolderSyncStatus source={scrapingSource} causaLastSyncDate={movementsData.causaLastSyncDate} />
+													)}
 											</>
 										)}
 
@@ -1835,108 +1852,23 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			/>
 
 			{/* View Movement Details Dialog */}
-			{viewMovementDetails && (() => {
-				// Mapeo de tipo de movimiento a brand accent
-				const movementAccentMap: Record<string, string> = {
-					"Escrito-Actor": LIVE_GREEN,
-					"Escrito-Demandado": theme.palette.error.main,
-					Despacho: BRAND_BLUE,
-					Cédula: BRAND_BLUE,
-					Oficio: BRAND_BLUE,
-					Evento: STALE_AMBER,
-				};
-				const movementAccent = movementAccentMap[viewMovementDetails.movement || ""] ?? theme.palette.text.secondary;
+			{viewMovementDetails &&
+				(() => {
+					// Mapeo de tipo de movimiento a brand accent
+					const movementAccentMap: Record<string, string> = {
+						"Escrito-Actor": LIVE_GREEN,
+						"Escrito-Demandado": theme.palette.error.main,
+						Despacho: BRAND_BLUE,
+						Cédula: BRAND_BLUE,
+						Oficio: BRAND_BLUE,
+						Evento: STALE_AMBER,
+					};
+					const movementAccent = movementAccentMap[viewMovementDetails.movement || ""] ?? theme.palette.text.secondary;
 
-				// Reusable: tarjeta de campo (eyebrow + value box)
-				const FieldRow = ({
-					label,
-					children,
-				}: {
-					label: string;
-					children: React.ReactNode;
-				}) => (
-					<Box>
-						<Stack direction="row" spacing={0.5} alignItems="center" mb={0.625}>
-							<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
-							<Typography
-								sx={{
-									fontSize: "0.6rem",
-									fontWeight: 600,
-									letterSpacing: "0.08em",
-									textTransform: "uppercase",
-									color: "text.secondary",
-								}}
-							>
-								{label}
-							</Typography>
-						</Stack>
-						<Box
-							sx={{
-								p: 1.25,
-								bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
-								borderRadius: 1.25,
-								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
-							}}
-						>
-							{children}
-						</Box>
-					</Box>
-				);
-
-				return (
-				<Dialog
-					maxWidth="sm"
-					fullWidth
-					open={!!viewMovementDetails}
-					onClose={() => setViewMovementDetails(null)}
-					TransitionComponent={PopupTransition}
-					PaperProps={{
-						sx: {
-							width: 600,
-							maxWidth: 600,
-							p: 0,
-							borderRadius: 2,
-							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
-							boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
-							overflow: "hidden",
-							display: "flex",
-							flexDirection: "column",
-							maxHeight: { xs: "90vh", sm: "85vh" },
-						},
-					}}
-					sx={{ "& .MuiBackdrop-root": { opacity: "0.5 !important" } }}
-				>
-					{/* Header brand */}
-					<Box
-						sx={{
-							display: "flex",
-							alignItems: "center",
-							gap: 1.25,
-							px: 2.5,
-							py: 1.75,
-							bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
-							borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
-							flexShrink: 0,
-						}}
-					>
-						<Box
-							sx={{
-								width: 32,
-								height: 32,
-								borderRadius: 1,
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
-								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
-								color: BRAND_BLUE,
-								flexShrink: 0,
-							}}
-						>
-							<TableDocument size={18} variant="Bulk" />
-						</Box>
-						<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
-							<Stack direction="row" spacing={0.5} alignItems="center">
+					// Reusable: tarjeta de campo (eyebrow + value box)
+					const FieldRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
+						<Box>
+							<Stack direction="row" spacing={0.5} alignItems="center" mb={0.625}>
 								<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
 								<Typography
 									sx={{
@@ -1947,204 +1879,76 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 										color: "text.secondary",
 									}}
 								>
-									Detalle
+									{label}
 								</Typography>
 							</Stack>
-							<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
-								Detalles del movimiento
-							</Typography>
-							{folderName && (
-								<Typography
+							<Box
+								sx={{
+									p: 1.25,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+									borderRadius: 1.25,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+								}}
+							>
+								{children}
+							</Box>
+						</Box>
+					);
+
+					return (
+						<Dialog
+							maxWidth="sm"
+							fullWidth
+							open={!!viewMovementDetails}
+							onClose={() => setViewMovementDetails(null)}
+							TransitionComponent={PopupTransition}
+							PaperProps={{
+								sx: {
+									width: 600,
+									maxWidth: 600,
+									p: 0,
+									borderRadius: 2,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+									boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+									overflow: "hidden",
+									display: "flex",
+									flexDirection: "column",
+									maxHeight: { xs: "90vh", sm: "85vh" },
+								},
+							}}
+							sx={{ "& .MuiBackdrop-root": { opacity: "0.5 !important" } }}
+						>
+							{/* Header brand */}
+							<Box
+								sx={{
+									display: "flex",
+									alignItems: "center",
+									gap: 1.25,
+									px: 2.5,
+									py: 1.75,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+									borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+									flexShrink: 0,
+								}}
+							>
+								<Box
 									sx={{
-										fontSize: "0.72rem",
-										color: "text.secondary",
-										letterSpacing: "-0.005em",
-										overflow: "hidden",
-										textOverflow: "ellipsis",
-										whiteSpace: "nowrap",
+										width: 32,
+										height: 32,
+										borderRadius: 1,
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+										color: BRAND_BLUE,
+										flexShrink: 0,
 									}}
 								>
-									{folderName}
-								</Typography>
-							)}
-						</Stack>
-					</Box>
-
-					{/* Content scrollable */}
-					<Box sx={{ p: 2.5, overflowY: "auto", flex: 1 }}>
-						<Stack spacing={1.75}>
-							{/* Título */}
-							<FieldRow label="Título">
-								<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
-									{viewMovementDetails.title}
-								</Typography>
-							</FieldRow>
-
-							{/* Tipo de Movimiento — pill brand-aligned */}
-							{viewMovementDetails.movement && (
-								<FieldRow label="Tipo de movimiento">
-									<Box
-										sx={{
-											display: "inline-flex",
-											alignItems: "center",
-											gap: 0.625,
-											px: 0.875,
-											py: 0.25,
-											borderRadius: 0.75,
-											bgcolor: alpha(movementAccent, isDark ? 0.16 : 0.1),
-											border: `1px solid ${alpha(movementAccent, isDark ? 0.32 : 0.22)}`,
-										}}
-									>
-										<Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: movementAccent }} />
-										<Typography
-											sx={{
-												fontSize: "0.66rem",
-												fontWeight: 600,
-												color: movementAccent,
-												letterSpacing: "0.04em",
-												textTransform: "uppercase",
-												lineHeight: 1,
-											}}
-										>
-											{viewMovementDetails.movement}
-										</Typography>
-									</Box>
-								</FieldRow>
-							)}
-
-							{/* Fecha de Dictado */}
-							<FieldRow label="Fecha de dictado">
-								<Stack direction="row" spacing={0.875} alignItems="center">
-									<Calendar size={14} variant="Bulk" color={BRAND_BLUE} />
-									<Typography
-										sx={{
-											fontSize: "0.88rem",
-											fontWeight: 500,
-											color: "text.primary",
-											letterSpacing: "-0.005em",
-											fontVariantNumeric: "tabular-nums",
-										}}
-									>
-										{formatDate(viewMovementDetails.time)}
-									</Typography>
-								</Stack>
-							</FieldRow>
-
-							{/* Fecha de Vencimiento */}
-							{viewMovementDetails.dateExpiration && (
-								<FieldRow label="Fecha de vencimiento">
-									<Stack direction="row" spacing={0.875} alignItems="center">
-										<Calendar size={14} variant="Bulk" color={STALE_AMBER} />
-										<Typography
-											sx={{
-												fontSize: "0.88rem",
-												fontWeight: 500,
-												color: "text.primary",
-												letterSpacing: "-0.005em",
-												fontVariantNumeric: "tabular-nums",
-											}}
-										>
-											{formatDate(viewMovementDetails.dateExpiration)}
-										</Typography>
-									</Stack>
-								</FieldRow>
-							)}
-
-							{/* Estado de Completitud */}
-							{viewMovementDetails.completed !== undefined && viewMovementDetails.completed !== null && (
-								<FieldRow label="Estado">
-									<Stack direction="row" spacing={0.875} alignItems="center">
-										<Box
-											sx={{
-												width: 18,
-												height: 18,
-												borderRadius: "50%",
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												bgcolor: alpha(
-													viewMovementDetails.completed ? LIVE_GREEN : STALE_AMBER,
-													isDark ? 0.16 : 0.1,
-												),
-												border: `1px solid ${alpha(
-													viewMovementDetails.completed ? LIVE_GREEN : STALE_AMBER,
-													isDark ? 0.32 : 0.22,
-												)}`,
-												color: viewMovementDetails.completed ? LIVE_GREEN : STALE_AMBER,
-											}}
-										>
-											<TickCircle size={11} variant="Bulk" />
-										</Box>
-										<Typography
-											sx={{
-												fontSize: "0.85rem",
-												fontWeight: 600,
-												color: viewMovementDetails.completed ? LIVE_GREEN : STALE_AMBER,
-												letterSpacing: "-0.005em",
-											}}
-										>
-											{viewMovementDetails.completed ? "Completado" : "Pendiente"}
-										</Typography>
-									</Stack>
-								</FieldRow>
-							)}
-
-							{/* Descripción */}
-							{viewMovementDetails.description && (
-								<FieldRow label="Descripción">
-									<Typography
-										sx={{
-											fontSize: "0.85rem",
-											color: "text.primary",
-											letterSpacing: "-0.005em",
-											lineHeight: 1.6,
-											whiteSpace: "pre-wrap",
-											textWrap: "pretty" as any,
-										}}
-									>
-										{viewMovementDetails.description}
-									</Typography>
-								</FieldRow>
-							)}
-
-							{/* Link */}
-							{viewMovementDetails.link && (
-								<FieldRow label="Documento">
-									<Box
-										onClick={() => {
-											setPdfUrlFromDetails(viewMovementDetails.link || "");
-											setPdfTitleFromDetails(viewMovementDetails.title || "Documento");
-											setPdfViewerFromDetailsOpen(true);
-										}}
-										sx={{
-											display: "inline-flex",
-											alignItems: "center",
-											gap: 0.75,
-											cursor: "pointer",
-											color: BRAND_BLUE,
-											"&:hover": { textDecoration: "underline" },
-										}}
-									>
-										<Link21 size={14} variant="Bulk" color={BRAND_BLUE} />
-										<Typography
-											sx={{
-												fontSize: "0.85rem",
-												fontWeight: 600,
-												color: BRAND_BLUE,
-												letterSpacing: "-0.005em",
-												wordBreak: "break-all",
-											}}
-										>
-											Ver documento adjunto
-										</Typography>
-									</Box>
-								</FieldRow>
-							)}
-
-							{/* Origen — sync notice brand */}
-							{(viewMovementDetails.source === "pjn" || viewMovementDetails.source === "mev") && (
-								<Box>
-									<Stack direction="row" spacing={0.5} alignItems="center" mb={0.625}>
+									<TableDocument size={18} variant="Bulk" />
+								</Box>
+								<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+									<Stack direction="row" spacing={0.5} alignItems="center">
 										<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
 										<Typography
 											sx={{
@@ -2155,70 +1959,272 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												color: "text.secondary",
 											}}
 										>
-											Origen
+											Detalle
 										</Typography>
 									</Stack>
-									<Box
-										sx={{
-											display: "flex",
-											alignItems: "center",
-											gap: 0.875,
-											p: 1.25,
-											borderRadius: 1.25,
-											bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
-											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
-										}}
-									>
-										<ExportSquare size={14} variant="Bulk" color={BRAND_BLUE} />
-										<Typography sx={{ fontSize: "0.78rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em" }}>
-											Sincronizado desde{" "}
-											<Box component="span" sx={{ fontWeight: 700, color: BRAND_BLUE }}>
-												{viewMovementDetails.source === "pjn"
-													? "Poder Judicial de la Nación (PJN)"
-													: "Poder Judicial de Buenos Aires (MEV)"}
-											</Box>
+									<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+										Detalles del movimiento
+									</Typography>
+									{folderName && (
+										<Typography
+											sx={{
+												fontSize: "0.72rem",
+												color: "text.secondary",
+												letterSpacing: "-0.005em",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												whiteSpace: "nowrap",
+											}}
+										>
+											{folderName}
 										</Typography>
-									</Box>
-								</Box>
-							)}
-						</Stack>
-					</Box>
+									)}
+								</Stack>
+							</Box>
 
-					{/* Actions — ghost brand */}
-					<Box
-						sx={{
-							px: 2.5,
-							py: 1.75,
-							display: "flex",
-							justifyContent: "flex-end",
-							borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
-							flexShrink: 0,
-						}}
-					>
-						<Button
-							onClick={() => setViewMovementDetails(null)}
-							sx={{
-								textTransform: "none",
-								fontWeight: 600,
-								letterSpacing: "-0.005em",
-								color: "text.secondary",
-								borderRadius: 1.25,
-								px: 2,
-								py: 0.875,
-								border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
-								"&:hover": {
-									color: BRAND_BLUE,
-									bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
-									borderColor: alpha(BRAND_BLUE, 0.28),
-								},
-							}}
-						>
-							Cerrar
-						</Button>
-					</Box>
-				</Dialog>
-				);
-			})()}
+							{/* Content scrollable */}
+							<Box sx={{ p: 2.5, overflowY: "auto", flex: 1 }}>
+								<Stack spacing={1.75}>
+									{/* Título */}
+									<FieldRow label="Título">
+										<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+											{viewMovementDetails.title}
+										</Typography>
+									</FieldRow>
+
+									{/* Tipo de Movimiento — pill brand-aligned */}
+									{viewMovementDetails.movement && (
+										<FieldRow label="Tipo de movimiento">
+											<Box
+												sx={{
+													display: "inline-flex",
+													alignItems: "center",
+													gap: 0.625,
+													px: 0.875,
+													py: 0.25,
+													borderRadius: 0.75,
+													bgcolor: alpha(movementAccent, isDark ? 0.16 : 0.1),
+													border: `1px solid ${alpha(movementAccent, isDark ? 0.32 : 0.22)}`,
+												}}
+											>
+												<Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: movementAccent }} />
+												<Typography
+													sx={{
+														fontSize: "0.66rem",
+														fontWeight: 600,
+														color: movementAccent,
+														letterSpacing: "0.04em",
+														textTransform: "uppercase",
+														lineHeight: 1,
+													}}
+												>
+													{viewMovementDetails.movement}
+												</Typography>
+											</Box>
+										</FieldRow>
+									)}
+
+									{/* Fecha de Dictado */}
+									<FieldRow label="Fecha de dictado">
+										<Stack direction="row" spacing={0.875} alignItems="center">
+											<Calendar size={14} variant="Bulk" color={BRAND_BLUE} />
+											<Typography
+												sx={{
+													fontSize: "0.88rem",
+													fontWeight: 500,
+													color: "text.primary",
+													letterSpacing: "-0.005em",
+													fontVariantNumeric: "tabular-nums",
+												}}
+											>
+												{formatDate(viewMovementDetails.time)}
+											</Typography>
+										</Stack>
+									</FieldRow>
+
+									{/* Fecha de Vencimiento */}
+									{viewMovementDetails.dateExpiration && (
+										<FieldRow label="Fecha de vencimiento">
+											<Stack direction="row" spacing={0.875} alignItems="center">
+												<Calendar size={14} variant="Bulk" color={STALE_AMBER} />
+												<Typography
+													sx={{
+														fontSize: "0.88rem",
+														fontWeight: 500,
+														color: "text.primary",
+														letterSpacing: "-0.005em",
+														fontVariantNumeric: "tabular-nums",
+													}}
+												>
+													{formatDate(viewMovementDetails.dateExpiration)}
+												</Typography>
+											</Stack>
+										</FieldRow>
+									)}
+
+									{/* Estado de Completitud */}
+									{viewMovementDetails.completed !== undefined && viewMovementDetails.completed !== null && (
+										<FieldRow label="Estado">
+											<Stack direction="row" spacing={0.875} alignItems="center">
+												<Box
+													sx={{
+														width: 18,
+														height: 18,
+														borderRadius: "50%",
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														bgcolor: alpha(viewMovementDetails.completed ? LIVE_GREEN : STALE_AMBER, isDark ? 0.16 : 0.1),
+														border: `1px solid ${alpha(viewMovementDetails.completed ? LIVE_GREEN : STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+														color: viewMovementDetails.completed ? LIVE_GREEN : STALE_AMBER,
+													}}
+												>
+													<TickCircle size={11} variant="Bulk" />
+												</Box>
+												<Typography
+													sx={{
+														fontSize: "0.85rem",
+														fontWeight: 600,
+														color: viewMovementDetails.completed ? LIVE_GREEN : STALE_AMBER,
+														letterSpacing: "-0.005em",
+													}}
+												>
+													{viewMovementDetails.completed ? "Completado" : "Pendiente"}
+												</Typography>
+											</Stack>
+										</FieldRow>
+									)}
+
+									{/* Descripción */}
+									{viewMovementDetails.description && (
+										<FieldRow label="Descripción">
+											<Typography
+												sx={{
+													fontSize: "0.85rem",
+													color: "text.primary",
+													letterSpacing: "-0.005em",
+													lineHeight: 1.6,
+													whiteSpace: "pre-wrap",
+													textWrap: "pretty" as any,
+												}}
+											>
+												{viewMovementDetails.description}
+											</Typography>
+										</FieldRow>
+									)}
+
+									{/* Link */}
+									{viewMovementDetails.link && (
+										<FieldRow label="Documento">
+											<Box
+												onClick={() => {
+													setPdfUrlFromDetails(viewMovementDetails.link || "");
+													setPdfTitleFromDetails(viewMovementDetails.title || "Documento");
+													setPdfViewerFromDetailsOpen(true);
+												}}
+												sx={{
+													display: "inline-flex",
+													alignItems: "center",
+													gap: 0.75,
+													cursor: "pointer",
+													color: BRAND_BLUE,
+													"&:hover": { textDecoration: "underline" },
+												}}
+											>
+												<Link21 size={14} variant="Bulk" color={BRAND_BLUE} />
+												<Typography
+													sx={{
+														fontSize: "0.85rem",
+														fontWeight: 600,
+														color: BRAND_BLUE,
+														letterSpacing: "-0.005em",
+														wordBreak: "break-all",
+													}}
+												>
+													Ver documento adjunto
+												</Typography>
+											</Box>
+										</FieldRow>
+									)}
+
+									{/* Origen — sync notice brand */}
+									{(viewMovementDetails.source === "pjn" || viewMovementDetails.source === "mev") && (
+										<Box>
+											<Stack direction="row" spacing={0.5} alignItems="center" mb={0.625}>
+												<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+												<Typography
+													sx={{
+														fontSize: "0.6rem",
+														fontWeight: 600,
+														letterSpacing: "0.08em",
+														textTransform: "uppercase",
+														color: "text.secondary",
+													}}
+												>
+													Origen
+												</Typography>
+											</Stack>
+											<Box
+												sx={{
+													display: "flex",
+													alignItems: "center",
+													gap: 0.875,
+													p: 1.25,
+													borderRadius: 1.25,
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+													border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+												}}
+											>
+												<ExportSquare size={14} variant="Bulk" color={BRAND_BLUE} />
+												<Typography sx={{ fontSize: "0.78rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em" }}>
+													Sincronizado desde{" "}
+													<Box component="span" sx={{ fontWeight: 700, color: BRAND_BLUE }}>
+														{viewMovementDetails.source === "pjn"
+															? "Poder Judicial de la Nación (PJN)"
+															: "Poder Judicial de Buenos Aires (MEV)"}
+													</Box>
+												</Typography>
+											</Box>
+										</Box>
+									)}
+								</Stack>
+							</Box>
+
+							{/* Actions — ghost brand */}
+							<Box
+								sx={{
+									px: 2.5,
+									py: 1.75,
+									display: "flex",
+									justifyContent: "flex-end",
+									borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+									flexShrink: 0,
+								}}
+							>
+								<Button
+									onClick={() => setViewMovementDetails(null)}
+									sx={{
+										textTransform: "none",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										color: "text.secondary",
+										borderRadius: 1.25,
+										px: 2,
+										py: 0.875,
+										border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+										"&:hover": {
+											color: BRAND_BLUE,
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+											borderColor: alpha(BRAND_BLUE, 0.28),
+										},
+									}}
+								>
+									Cerrar
+								</Button>
+							</Box>
+						</Dialog>
+					);
+				})()}
 
 			{/* View Notification Details Dialog */}
 			{viewNotificationDetails && (

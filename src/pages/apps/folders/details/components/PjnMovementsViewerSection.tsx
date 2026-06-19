@@ -4,8 +4,9 @@
 // Es una sección nueva que coexiste con el MovementsTable clásico. No reemplaza
 // nada existente. Si el folder no es PJN, no se renderiza.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+	Box,
 	Card,
 	CardContent,
 	CardHeader,
@@ -28,10 +29,18 @@ import {
 	Alert,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { DocumentText, ExportSquare, SearchNormal1 } from "iconsax-react";
+import { DocumentText, ExportSquare, Note1, SearchNormal1, TaskSquare, TickCircle } from "iconsax-react";
 import PjnPdfViewer from "components/PjnPdfViewer";
-import { getPjnMovementsByFolder } from "services/pjnMovementsService";
+import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
+import ModalTasks from "pages/apps/folders/details/modals/MoldalTasks";
+import { dispatch, useSelector } from "store";
+import { getNotesByFolderId } from "store/reducers/notes";
+import { getTasksByFolderId } from "store/reducers/tasks";
+import { openSnackbar } from "store/reducers/snackbar";
+import { getPjnMovementsByFolder, setPjnMovementReadStatus } from "services/pjnMovementsService";
 import type { PjnMovementPdfStatus, PjnMovementsListResponse } from "types/pjnMovement";
+import type { Note } from "types/note";
+import type { TaskType } from "types/task";
 
 interface Props {
 	folderId: string;
@@ -130,6 +139,33 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 		return () => clearTimeout(t);
 	}, [searchInput, search]);
 
+	// Notas y tareas del folder (para mostrar en la tabla qué movimientos tienen).
+	// Se leen de redux y se cuentan por movementRef (= movement._id en PJN). Reactivo:
+	// al crear/borrar una nota o tarea desde el drawer, los indicadores se actualizan solos.
+	useEffect(() => {
+		if (folderId) {
+			dispatch(getNotesByFolderId(folderId));
+			dispatch(getTasksByFolderId(folderId));
+		}
+	}, [folderId]);
+
+	const folderNotes = useSelector((s: any) => s.notesReducer?.selectedNotes ?? []);
+	const folderTasks = useSelector((s: any) => s.tasksReducer?.selectedTasks ?? []);
+	const notesCountByMov = useMemo(() => {
+		const map: Record<string, number> = {};
+		(folderNotes as Note[]).forEach((n) => {
+			if (n.movementRef) map[n.movementRef] = (map[n.movementRef] || 0) + 1;
+		});
+		return map;
+	}, [folderNotes]);
+	const tasksCountByMov = useMemo(() => {
+		const map: Record<string, number> = {};
+		(folderTasks as TaskType[]).forEach((t) => {
+			if (t.movementRef) map[t.movementRef] = (map[t.movementRef] || 0) + 1;
+		});
+		return map;
+	}, [folderTasks]);
+
 	const movements = data?.data ?? [];
 	const total = data?.count ?? 0;
 	const totalPages = data?.pagination?.totalPages ?? 0;
@@ -150,6 +186,48 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 	const handleOpenViewer = (idx: number) => {
 		setSelectedIdx(idx);
 		setViewerOpen(true);
+	};
+
+	// Actualiza el flag `read` de un movimiento en la lista cargada (optimista),
+	// cuando el viewer lo marca leído/no leído (auto al abrir o toggle manual).
+	const handleReadStatusChange = (movementId: string, read: boolean) => {
+		setData((prev) => (prev ? { ...prev, data: prev.data.map((m) => (m._id === movementId ? { ...m, read } : m)) } : prev));
+	};
+
+	// Acciones rápidas desde la tabla (sin abrir el visor): agregar nota / tarea
+	// vinculada al movimiento. actionMovId guarda a qué movimiento aplica el modal.
+	const [actionMovId, setActionMovId] = useState<string | null>(null);
+	const [noteModalOpen, setNoteModalOpen] = useState(false);
+	const [taskModalOpen, setTaskModalOpen] = useState(false);
+	const openNoteModal = (movId: string) => {
+		setActionMovId(movId);
+		setNoteModalOpen(true);
+	};
+	const openTaskModal = (movId: string) => {
+		setActionMovId(movId);
+		setTaskModalOpen(true);
+	};
+
+	// Marcar leído / no leído desde la tabla (sin abrir el visor). Cubre también los
+	// movimientos sin PDF, que no se pueden abrir y por eso nunca se auto-marcaban.
+	const handleToggleReadRow = async (movId: string, currentRead: boolean) => {
+		const next = !currentRead;
+		// Optimista: reflejar en la lista de inmediato.
+		handleReadStatusChange(movId, next);
+		try {
+			await setPjnMovementReadStatus(folderId, movId, next);
+		} catch {
+			handleReadStatusChange(movId, currentRead); // revertir
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "No se pudo actualizar el estado de lectura.",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+		}
 	};
 
 	// Prev/next navegan entre movimientos con PDF descargado.
@@ -330,9 +408,45 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 											>
 												<TableCell>{formatDate(m.fecha)}</TableCell>
 												<TableCell>
-													<Typography variant="body2" sx={{ fontWeight: 500 }}>
-														{m.tipo || "—"}
-													</Typography>
+													<Stack spacing={0.25}>
+														<Stack direction="row" alignItems="center" spacing={0.75}>
+															{!m.read && (
+																<Tooltip title="No leído">
+																	<Box
+																		component="span"
+																		sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "primary.main", flexShrink: 0 }}
+																	/>
+																</Tooltip>
+															)}
+															<Typography variant="body2" sx={{ fontWeight: m.read ? 500 : 700 }}>
+																{m.tipo || "—"}
+															</Typography>
+														</Stack>
+														{(notesCountByMov[m._id] || tasksCountByMov[m._id]) && (
+															<Stack direction="row" alignItems="center" spacing={1}>
+																{notesCountByMov[m._id] ? (
+																	<Tooltip title={`${notesCountByMov[m._id]} nota${notesCountByMov[m._id] > 1 ? "s" : ""}`}>
+																		<Stack direction="row" alignItems="center" spacing={0.25} sx={{ color: "primary.main" }}>
+																			<Note1 size="13" variant="Bulk" />
+																			<Typography variant="caption" sx={{ fontWeight: 600 }}>
+																				{notesCountByMov[m._id]}
+																			</Typography>
+																		</Stack>
+																	</Tooltip>
+																) : null}
+																{tasksCountByMov[m._id] ? (
+																	<Tooltip title={`${tasksCountByMov[m._id]} tarea${tasksCountByMov[m._id] > 1 ? "s" : ""}`}>
+																		<Stack direction="row" alignItems="center" spacing={0.25} sx={{ color: "success.main" }}>
+																			<TaskSquare size="13" variant="Bulk" />
+																			<Typography variant="caption" sx={{ fontWeight: 600 }}>
+																				{tasksCountByMov[m._id]}
+																			</Typography>
+																		</Stack>
+																	</Tooltip>
+																) : null}
+															</Stack>
+														)}
+													</Stack>
 												</TableCell>
 												<TableCell>
 													<Typography
@@ -351,6 +465,18 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 												<TableCell align="center">{pdfStatusChip(m.pdfStatus)}</TableCell>
 												<TableCell align="right">
 													<Stack direction="row" spacing={0.5} justifyContent="flex-end">
+														<Tooltip title={m.read ? "Marcar como no leído" : "Marcar como leído"}>
+															<IconButton
+																size="small"
+																color={m.read ? "success" : "default"}
+																onClick={(e) => {
+																	e.stopPropagation();
+																	handleToggleReadRow(m._id, Boolean(m.read));
+																}}
+															>
+																<TickCircle size={18} variant={m.read ? "Bold" : "Linear"} />
+															</IconButton>
+														</Tooltip>
 														{m.hasPdf && (
 															<Tooltip title="Ver PDF">
 																<IconButton
@@ -378,6 +504,31 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 																</IconButton>
 															</Tooltip>
 														)}
+														{/* Acciones rápidas: agregar nota / tarea vinculada a este movimiento */}
+														<Tooltip title="Agregar nota">
+															<IconButton
+																size="small"
+																color="primary"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	openNoteModal(m._id);
+																}}
+															>
+																<Note1 size={18} />
+															</IconButton>
+														</Tooltip>
+														<Tooltip title="Agregar tarea">
+															<IconButton
+																size="small"
+																sx={{ color: "success.main" }}
+																onClick={(e) => {
+																	e.stopPropagation();
+																	openTaskModal(m._id);
+																}}
+															>
+																<TaskSquare size={18} />
+															</IconButton>
+														</Tooltip>
 													</Stack>
 												</TableCell>
 											</TableRow>
@@ -405,7 +556,30 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 				onNext={handleNext}
 				hasPrev={hasPrev}
 				hasNext={hasNext}
+				onReadStatusChange={handleReadStatusChange}
 			/>
+
+			{/* Modales de acción rápida desde la tabla (nota / tarea vinculada al movimiento) */}
+			{actionMovId && (
+				<ModalNotes
+					open={noteModalOpen}
+					setOpen={setNoteModalOpen}
+					folderId={folderId}
+					note={null}
+					initialValues={{ movementRef: actionMovId, movementSource: "pjn" }}
+				/>
+			)}
+			{actionMovId && (
+				<ModalTasks
+					open={taskModalOpen}
+					setOpen={setTaskModalOpen}
+					folderId={folderId}
+					folderName=""
+					editMode={false}
+					taskToEdit={null}
+					initialValues={{ movementRef: actionMovId, movementSource: "pjn" }}
+				/>
+			)}
 		</Card>
 	);
 };

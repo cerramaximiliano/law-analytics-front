@@ -159,8 +159,12 @@ export const getTasksByUserId =
 			}
 
 			dispatch({ type: SET_LOADING });
-			// Campos optimizados para listas
-			const fields = "_id,name,description,status,priority,dueDate,folderId,folderName,tags,attachments,createdAt,updatedAt,completedAt";
+			// Campos optimizados para listas. Incluye movementRef/movementSource para que
+			// las tareas vinculadas a un movimiento (viewer PJN) se puedan filtrar/mostrar
+			// (sin estos campos la proyección los descartaba y la tarea no aparecía en el
+			// movimiento, a diferencia de las notas que se traen completas). + checked.
+			const fields =
+				"_id,name,description,status,priority,dueDate,checked,folderId,folderName,movementRef,movementSource,tags,attachments,createdAt,updatedAt,completedAt";
 			const url = `${import.meta.env.VITE_BASE_URL}/api/tasks/user/${userId}`;
 			const response = await axios.get(url, {
 				params: { fields },
