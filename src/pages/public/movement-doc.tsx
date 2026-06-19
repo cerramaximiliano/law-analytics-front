@@ -16,7 +16,21 @@
 import { useEffect, useRef, useState } from "react";
 import { Link as RouterLink, useParams, useSearchParams } from "react-router-dom";
 
-import { Alert, AppBar, Box, Button, Chip, CircularProgress, Container, Paper, Stack, Toolbar, Typography, useMediaQuery, useTheme } from "@mui/material";
+import {
+	Alert,
+	AppBar,
+	Box,
+	Button,
+	Chip,
+	CircularProgress,
+	Container,
+	Paper,
+	Stack,
+	Toolbar,
+	Typography,
+	useMediaQuery,
+	useTheme,
+} from "@mui/material";
 import { DocumentDownload, ExportSquare, LoginCurve } from "iconsax-react";
 
 import Logo from "components/logo";
@@ -106,7 +120,13 @@ const MovementDocPublicPage = () => {
 	const expediente = data?.expediente;
 	const movimiento = data?.movimiento;
 	const folderId = data?.folderId || null;
-	const ctaHref = folderId ? `/apps/folders/details/${folderId}` : "/apps/folders/list";
+	const movimientoId = data?.movimientoId || null;
+	// CTA "gestionar": al folder del usuario, con deep-link al movimiento puntual
+	// (?movement=<id>) para resaltarlo. El detalle abre la pestaña Actividad y hace
+	// scroll/highlight a esa fila. Si no resolvimos el folder, cae al listado.
+	const ctaHref = folderId
+		? `/apps/folders/details/${folderId}${movimientoId ? `?movement=${encodeURIComponent(movimientoId)}` : ""}`
+		: "/apps/folders/list";
 	const fallbackUrl = data?.fallbackUrl || null;
 	const showPdf = Boolean(pdfUrl) && !iframeFailed;
 
@@ -140,7 +160,10 @@ const MovementDocPublicPage = () => {
 				<Box sx={{ bgcolor: "#fff", borderBottom: `1px solid ${theme.palette.divider}`, px: { xs: 2, md: 4 }, py: 1.5 }}>
 					<Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5, flexWrap: "wrap" }}>
 						{expedienteLabel(expediente) && (
-							<Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+							<Typography
+								variant="caption"
+								sx={{ color: theme.palette.primary.main, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}
+							>
 								{expedienteLabel(expediente)}
 							</Typography>
 						)}
@@ -196,14 +219,21 @@ const MovementDocPublicPage = () => {
 												? "Este enlace expiró. Iniciá sesión para ver el documento desde tu cuenta."
 												: "No pudimos abrir este documento desde el enlace."}
 										</Alert>
-										<Button component={RouterLink} to={ctaHref} onClick={handleCtaClick} variant="contained" startIcon={<LoginCurve size="18" />}>
+										<Button
+											component={RouterLink}
+											to={ctaHref}
+											onClick={handleCtaClick}
+											variant="contained"
+											startIcon={<LoginCurve size="18" />}
+										>
 											Iniciar sesión
 										</Button>
 									</>
 								) : (
 									<>
 										<Alert severity="info" sx={{ width: "100%", textAlign: "left" }}>
-											Este documento todavía no está disponible en nuestra plataforma. Iniciá sesión para verlo y gestionarlo desde tu cuenta.
+											Este documento todavía no está disponible en nuestra plataforma. Iniciá sesión para verlo y gestionarlo desde tu
+											cuenta.
 										</Alert>
 										<Button
 											component={RouterLink}
@@ -248,7 +278,12 @@ const MovementDocPublicPage = () => {
 						Documento del Poder Judicial · vista pública de Law Analytics
 					</Typography>
 					<Stack direction="row" spacing={1}>
-						<Button size="small" startIcon={<DocumentDownload size="18" />} href={pdfUrl as string} download={`${movimiento?.tipo || "documento"}.pdf`}>
+						<Button
+							size="small"
+							startIcon={<DocumentDownload size="18" />}
+							href={pdfUrl as string}
+							download={`${movimiento?.tipo || "documento"}.pdf`}
+						>
 							Descargar
 						</Button>
 						{fallbackUrl && (

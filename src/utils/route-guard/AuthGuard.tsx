@@ -15,7 +15,13 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 		if (isLoggedIn && needsVerification) {
 			navigate("/code-verification", { replace: true });
 		} else if (!isLoggedIn) {
-			navigate("/login", {
+			// Preservar la ruta COMPLETA (path + query + hash) para volver a ella tras
+			// el login. Antes solo se guardaba `pathname` en state.from, que perdía el
+			// query string (ej. el deep-link ?movement=<id> de la vista pública /m/:token).
+			// Lo pasamos como `?redirect=` en vez de state porque sobrevive a refresh del
+			// /login y a entradas frías desde links externos (donde state de RR se pierde).
+			const target = `${location.pathname}${location.search}${location.hash}`;
+			navigate(`/login?redirect=${encodeURIComponent(target)}`, {
 				state: { from: location.pathname },
 				replace: true,
 			});

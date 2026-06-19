@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, ReactNode, SyntheticEvent } from "react";
 import { useParams, useNavigate } from "react-router";
+import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
 	Skeleton,
@@ -122,6 +123,7 @@ const Details = () => {
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
 	const [tabValue, setTabValue] = useState(0);
 	const [folderNotFound, setFolderNotFound] = useState(false);
+	const [searchParams] = useSearchParams();
 	// const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false); // Removed: Using icon tabs instead
 	const { setCustomLabel, clearCustomLabel } = useBreadcrumb();
 
@@ -166,6 +168,15 @@ const Details = () => {
 		// Reset tab to first tab when changing folders
 		setTabValue(0);
 	}, [id, fetchData]);
+
+	// Deep-link a un movimiento (?movement=<id>, ej. desde la vista pública /m/:token):
+	// abrir la pestaña Actividad para que ActivityTables monte y resalte el movimiento.
+	// Va después del reset de arriba: en mount el reset pone 0 y esto lo lleva a 1.
+	useEffect(() => {
+		if (searchParams.get("movement")) {
+			setTabValue(1);
+		}
+	}, [searchParams]);
 
 	// Handle folder not found - redirect after showing message
 	useEffect(() => {

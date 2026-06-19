@@ -8,6 +8,15 @@ import useAuth from "hooks/useAuth";
 // types
 import { GuardProps } from "types/auth";
 
+// Sólo aceptar rutas internas como destino post-login. Previene open-redirect:
+// el valor debe empezar con un único "/" (no "//host" protocol-relative ni "/\").
+const sanitizeInternalPath = (raw?: string | null): string | null => {
+	if (!raw) return null;
+	if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return null;
+	if (raw === "/login" || raw === "/register") return null;
+	return raw;
+};
+
 // ==============================|| GUEST GUARD ||============================== //
 
 const GuestGuard = ({ children }: GuardProps) => {
@@ -28,10 +37,14 @@ const GuestGuard = ({ children }: GuardProps) => {
 			return;
 		}
 
-		// De lo contrario, redirigir a la ruta por defecto si está autenticado
+		// De lo contrario, redirigir tras el login. Prioridad de destino:
+		//   1. ?redirect= (ruta completa con query+hash, ej. deep-link a un movimiento)
+		//   2. state.from (path-only; lo siguen seteando ServerContext/Unauthorized/invitaciones)
+		//   3. APP_DEFAULT_PATH
 		if (isLoggedIn) {
-			const from = location?.state?.from;
-			const destination = from && from !== "/login" && from !== "/register" ? from : APP_DEFAULT_PATH;
+			const redirectParam = sanitizeInternalPath(searchParams.get("redirect"));
+			const fromState = sanitizeInternalPath(location?.state?.from);
+			const destination = redirectParam || fromState || APP_DEFAULT_PATH;
 			navigate(destination, {
 				state: {
 					from: "",

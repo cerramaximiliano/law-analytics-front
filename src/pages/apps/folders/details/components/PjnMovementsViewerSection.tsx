@@ -4,7 +4,7 @@
 // Es una sección nueva que coexiste con el MovementsTable clásico. No reemplaza
 // nada existente. Si el folder no es PJN, no se renderiza.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Card,
 	CardContent,
@@ -27,6 +27,7 @@ import {
 	Typography,
 	Alert,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { DocumentText, ExportSquare, SearchNormal1 } from "iconsax-react";
 import PjnPdfViewer from "components/PjnPdfViewer";
 import { getPjnMovementsByFolder } from "services/pjnMovementsService";
@@ -34,6 +35,11 @@ import type { PjnMovementPdfStatus, PjnMovementsListResponse } from "types/pjnMo
 
 interface Props {
 	folderId: string;
+	// Deep-link: _id del movimiento a resaltar ("{causaId}:{sourceId}"), si llega
+	// vía ?movement=<id> desde la vista pública /m/:token. Best-effort: solo resalta
+	// si el movimiento está en la página cargada (el sort default es fecha desc, así
+	// que un movimiento recién notificado cae en la página 1).
+	highlightMovementId?: string | null;
 }
 
 const PDF_STATUS_OPTIONS: { value: PjnMovementPdfStatus | "all"; label: string }[] = [
@@ -71,7 +77,7 @@ function pdfStatusChip(status: PjnMovementPdfStatus) {
 	}
 }
 
-const PjnMovementsViewerSection = ({ folderId }: Props) => {
+const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => {
 	const [page, setPage] = useState(1);
 	const [limit] = useState(20);
 	const [search, setSearch] = useState("");
@@ -87,6 +93,9 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 	// Cuando navegamos cross-page (prev/next cruza límite), marcamos qué hacer
 	// al cargar la nueva página: saltar al primero o al último mov con PDF.
 	const [pendingNavOnLoad, setPendingNavOnLoad] = useState<"first" | "last" | null>(null);
+	// Fila resaltada por deep-link: ref para hacer scrollIntoView una vez cargada.
+	const highlightRowRef = useRef<HTMLTableRowElement | null>(null);
+	const hasScrolledToHighlight = useRef(false);
 
 	const fetchData = useCallback(async () => {
 		setLoading(true);
@@ -126,6 +135,17 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 	const totalPages = data?.pagination?.totalPages ?? 0;
 	// Plan free: el backend devuelve solo un preview (últimos N) y marca requiresUpgrade.
 	const requiresUpgrade = Boolean(data?.requiresUpgrade);
+
+	// Deep-link: una vez cargada la página que contiene el movimiento resaltado,
+	// hacer scroll hacia su fila (una sola vez por id). Si no está en la página
+	// cargada no hace nada — el usuario igual aterriza en el expediente correcto.
+	useEffect(() => {
+		if (!highlightMovementId || hasScrolledToHighlight.current) return;
+		if (movements.some((m) => m._id === highlightMovementId) && highlightRowRef.current) {
+			highlightRowRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+			hasScrolledToHighlight.current = true;
+		}
+	}, [highlightMovementId, movements]);
 
 	const handleOpenViewer = (idx: number) => {
 		setSelectedIdx(idx);
@@ -292,67 +312,77 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 									</TableRow>
 								</TableHead>
 								<TableBody>
-									{movements.map((m, idx) => (
-										<TableRow
-											key={m._id}
-											hover
-											sx={{ cursor: m.hasPdf ? "pointer" : "default" }}
-											onClick={() => m.hasPdf && handleOpenViewer(idx)}
-										>
-											<TableCell>{formatDate(m.fecha)}</TableCell>
-											<TableCell>
-												<Typography variant="body2" sx={{ fontWeight: 500 }}>
-													{m.tipo || "—"}
-												</Typography>
-											</TableCell>
-											<TableCell>
-												<Typography
-													variant="body2"
-													color="text.secondary"
-													sx={{
-														display: "-webkit-box",
-														WebkitLineClamp: 2,
-														WebkitBoxOrient: "vertical",
-														overflow: "hidden",
-													}}
-												>
-													{m.detalle || "—"}
-												</Typography>
-											</TableCell>
-											<TableCell align="center">{pdfStatusChip(m.pdfStatus)}</TableCell>
-											<TableCell align="right">
-												<Stack direction="row" spacing={0.5} justifyContent="flex-end">
-													{m.hasPdf && (
-														<Tooltip title="Ver PDF">
-															<IconButton
-																size="small"
-																color="primary"
-																onClick={(e) => {
-																	e.stopPropagation();
-																	handleOpenViewer(idx);
-																}}
-															>
-																<DocumentText size={18} />
-															</IconButton>
-														</Tooltip>
-													)}
-													{!m.hasPdf && m.url && (
-														<Tooltip title="Abrir en PJN">
-															<IconButton
-																size="small"
-																href={m.url}
-																target="_blank"
-																rel="noopener noreferrer"
-																onClick={(e) => e.stopPropagation()}
-															>
-																<ExportSquare size={18} />
-															</IconButton>
-														</Tooltip>
-													)}
-												</Stack>
-											</TableCell>
-										</TableRow>
-									))}
+									{movements.map((m, idx) => {
+										const isHighlighted = Boolean(highlightMovementId) && m._id === highlightMovementId;
+										return (
+											<TableRow
+												key={m._id}
+												ref={isHighlighted ? highlightRowRef : undefined}
+												hover
+												sx={(theme) => ({
+													cursor: m.hasPdf ? "pointer" : "default",
+													...(isHighlighted && {
+														bgcolor: alpha(theme.palette.primary.main, 0.12),
+														"&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.18) },
+													}),
+												})}
+												onClick={() => m.hasPdf && handleOpenViewer(idx)}
+											>
+												<TableCell>{formatDate(m.fecha)}</TableCell>
+												<TableCell>
+													<Typography variant="body2" sx={{ fontWeight: 500 }}>
+														{m.tipo || "—"}
+													</Typography>
+												</TableCell>
+												<TableCell>
+													<Typography
+														variant="body2"
+														color="text.secondary"
+														sx={{
+															display: "-webkit-box",
+															WebkitLineClamp: 2,
+															WebkitBoxOrient: "vertical",
+															overflow: "hidden",
+														}}
+													>
+														{m.detalle || "—"}
+													</Typography>
+												</TableCell>
+												<TableCell align="center">{pdfStatusChip(m.pdfStatus)}</TableCell>
+												<TableCell align="right">
+													<Stack direction="row" spacing={0.5} justifyContent="flex-end">
+														{m.hasPdf && (
+															<Tooltip title="Ver PDF">
+																<IconButton
+																	size="small"
+																	color="primary"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		handleOpenViewer(idx);
+																	}}
+																>
+																	<DocumentText size={18} />
+																</IconButton>
+															</Tooltip>
+														)}
+														{!m.hasPdf && m.url && (
+															<Tooltip title="Abrir en PJN">
+																<IconButton
+																	size="small"
+																	href={m.url}
+																	target="_blank"
+																	rel="noopener noreferrer"
+																	onClick={(e) => e.stopPropagation()}
+																>
+																	<ExportSquare size={18} />
+																</IconButton>
+															</Tooltip>
+														)}
+													</Stack>
+												</TableCell>
+											</TableRow>
+										);
+									})}
 								</TableBody>
 							</Table>
 						</TableContainer>

@@ -41,6 +41,7 @@ import {
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useParams } from "react-router";
+import { useSearchParams } from "react-router-dom";
 import { useSelector, dispatch } from "store";
 import { getMovementsByFolderId } from "store/reducers/movements";
 import { getNotificationsByFolderId } from "store/reducers/notifications";
@@ -97,6 +98,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const isDark = theme.palette.mode === "dark";
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const { id } = useParams<{ id: string }>();
+	const [searchParams] = useSearchParams();
+	// Deep-link a un movimiento puntual (?movement=<id>, desde la vista pública /m/:token).
+	const highlightMovementId = searchParams.get("movement");
 	const { canCreate } = useTeam();
 	const [activeTab, setActiveTab] = useState<TabValue>("movements");
 	const [searchQuery, setSearchQuery] = useState("");
@@ -1305,7 +1309,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												) : scrapingSource === "pjn" && id ? (
 													// PJN: el viewer paginado (pjn-movements) REEMPLAZA la tabla clásica —
 													// una sola tabla. Otros fueros (EJE/SCBA/MEV/manual) usan MovementsTable.
-													<PjnMovementsViewerSection folderId={id} />
+													<PjnMovementsViewerSection folderId={id} highlightMovementId={highlightMovementId} />
 												) : (
 													<MovementsTable
 														movements={movementsData.movements}
@@ -1727,7 +1731,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												) : scrapingSource === "pjn" && id ? (
 													// PJN: el viewer paginado (pjn-movements) REEMPLAZA la tabla clásica —
 													// una sola tabla. Otros fueros (EJE/SCBA/MEV/manual) usan MovementsTable.
-													<PjnMovementsViewerSection folderId={id} />
+													<PjnMovementsViewerSection folderId={id} highlightMovementId={highlightMovementId} />
 												) : (
 													<MovementsTable
 														movements={movementsData.movements}

@@ -28,6 +28,9 @@ export interface PublicMovementDocResponse {
 	pdfStatus?: string | null;
 	movimiento?: PublicMovementInfo;
 	expediente?: PublicMovementExpediente;
+	// _id del movimiento ("{causaId}:{sourceId}"). Usado para el deep-link
+	// ?movement=<id> que resalta el movimiento en el detalle del folder.
+	movimientoId?: string | null;
 	// Folder del usuario para el CTA "gestionar" (null si no se pudo resolver).
 	folderId?: string | null;
 }
