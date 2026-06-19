@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useGoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { useState } from "react";
 // material-ui
-import { Grid, Stack, Alert, Typography, Box, LinearProgress } from "@mui/material";
+import { Grid, Stack, Alert, Typography, Box, LinearProgress, Button, CircularProgress } from "@mui/material";
 
 // project-imports
 import Logo from "components/logo";
@@ -20,6 +20,9 @@ const Login = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [isEmailLoading, setIsEmailLoading] = useState<boolean>(false);
+	// Cuenta Google desactivada: retenemos el credential para ofrecer reactivar.
+	const [reactivateCred, setReactivateCred] = useState<CredentialResponse | null>(null);
+	const [reactivating, setReactivating] = useState<boolean>(false);
 
 	// Estado combinado de loading
 	const isAnyLoading = isLoading || isEmailLoading;
@@ -30,21 +33,41 @@ const Login = () => {
 	const handleGoogleSuccess = async (tokenResponse: any) => {
 		setIsLoading(true);
 		setIsEmailLoading(true); // Bloquear también el formulario de email
+		// Crear un objeto de credencial para mantener la compatibilidad con el sistema existente
+		const credentialResponse: CredentialResponse = {
+			clientId: tokenResponse.clientId || "",
+			credential: tokenResponse.access_token,
+			select_by: "user",
+		};
 		try {
-			// Crear un objeto de credencial para mantener la compatibilidad con el sistema existente
-			const credentialResponse: CredentialResponse = {
-				clientId: tokenResponse.clientId || "",
-				credential: tokenResponse.access_token,
-				select_by: "user",
-			};
-
 			// Llamar a la función de login existente
 			await loginWithGoogle(credentialResponse);
-		} catch (error) {
-			setError("Error al autenticar con Google. Por favor, intenta nuevamente.");
+		} catch (err: any) {
+			const errData = err?.response?.data?.error;
+			if (errData?.code === "ACCOUNT_INACTIVE" && errData?.canReactivate) {
+				// Cuenta desactivada: ofrecemos reactivar reutilizando el mismo credential.
+				setReactivateCred(credentialResponse);
+				setError(null);
+			} else {
+				setError("Error al autenticar con Google. Por favor, intenta nuevamente.");
+			}
 		} finally {
 			setIsLoading(false);
 			setIsEmailLoading(false);
+		}
+	};
+
+	const handleReactivateGoogle = async () => {
+		if (!reactivateCred) return;
+		setReactivating(true);
+		setError(null);
+		try {
+			// Re-enviamos el flujo de Google con confirmReactivation → el backend
+			// reactiva (token ya verificado) y deja la sesión iniciada.
+			await loginWithGoogle(reactivateCred, true);
+		} catch (err) {
+			setError("No pudimos reactivar tu cuenta. Intentá nuevamente.");
+			setReactivating(false);
 		}
 	};
 
@@ -136,14 +159,38 @@ const Login = () => {
 						</AuthDivider>
 					</Grid>
 					<Grid item xs={12}>
-						{/* Botón personalizado que llama a googleLogin.login() */}
-						<CustomGoogleButton
-							onClick={() => googleLogin()}
-							disabled={isLoading || isEmailLoading}
-							text={isLoading ? "Iniciando sesión..." : "Iniciar sesión con Google"}
-							fullWidth
-							showLoader={isLoading}
-						/>
+						{reactivateCred ? (
+							<Alert severity="warning" sx={{ "& .MuiAlert-message": { width: "100%" } }}>
+								<Stack spacing={1.25}>
+									<Typography variant="body2">
+										Tu cuenta está desactivada. ¿Querés reactivarla y volver a ingresar?
+									</Typography>
+									<Stack direction="row" spacing={1}>
+										<Button
+											variant="contained"
+											size="small"
+											onClick={handleReactivateGoogle}
+											disabled={reactivating}
+											startIcon={reactivating ? <CircularProgress size={16} color="inherit" /> : null}
+										>
+											{reactivating ? "Reactivando..." : "Reactivar mi cuenta"}
+										</Button>
+										<Button variant="text" size="small" onClick={() => setReactivateCred(null)} disabled={reactivating}>
+											Cancelar
+										</Button>
+									</Stack>
+								</Stack>
+							</Alert>
+						) : (
+							/* Botón personalizado que llama a googleLogin.login() */
+							<CustomGoogleButton
+								onClick={() => googleLogin()}
+								disabled={isLoading || isEmailLoading}
+								text={isLoading ? "Iniciando sesión..." : "Iniciar sesión con Google"}
+								fullWidth
+								showLoader={isLoading}
+							/>
+						)}
 					</Grid>
 				</Grid>
 			</Box>

@@ -80,6 +80,7 @@ export type UserProfile = {
 	profileCompletionScore?: number;
 	onboarding?: UserOnboarding;
 	activeFoldersCount?: number;
+	authProvider?: string;
 };
 
 type User = {
@@ -181,7 +182,7 @@ export interface ServerContextType extends AuthProps {
 	updateProfile: (userData: Partial<UserProfile>) => Promise<void>;
 	setIsLoggedIn: (value: boolean) => void;
 	setNeedsVerification: (value: boolean) => void;
-	loginWithGoogle: (tokenResponse: CredentialResponse) => Promise<{ success: boolean; isNewUser?: boolean }>;
+	loginWithGoogle: (tokenResponse: CredentialResponse, confirmReactivation?: boolean) => Promise<{ success: boolean; isNewUser?: boolean }>;
 	handleLogoutAndRedirect?: () => Promise<void>;
 	resetPassword: (email: string) => Promise<void>;
 	verifyResetCode: (email: string, code: string) => Promise<boolean>;

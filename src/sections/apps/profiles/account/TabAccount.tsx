@@ -286,6 +286,10 @@ const TabAccount = () => {
 	const [checked, setChecked] = useState(["ln", "la"]);
 	const auth = useSelector((state) => state.auth);
 	const email = auth.user?.email || "";
+	// Las cuentas creadas con Google no tienen contraseña: el backend omite la
+	// verificación (authProvider === 'google'), así que el form de baja tampoco
+	// debe pedirla ni bloquear el botón por su ausencia.
+	const isGoogleUser = auth.user?.authProvider === "google";
 
 	const [timeZone, setTimeZone] = useState("");
 	const [dateFormat, setDateFormat] = useState("DD/MM/YYYY");
@@ -525,7 +529,7 @@ const TabAccount = () => {
 	};
 
 	const validateDeactivateForm = () => {
-		if (!deactivateFormData.password) {
+		if (!isGoogleUser && !deactivateFormData.password) {
 			setDeactivateError("Por favor, introducí tu contraseña para confirmar la desactivación");
 			return false;
 		}
@@ -1348,21 +1352,23 @@ const TabAccount = () => {
 							</Stack>
 						)}
 
-						<Stack spacing={0.75}>
-							<InputLabel sx={labelSx}>Contraseña</InputLabel>
-							<TextField
-								type="password"
-								name="password"
-								value={deactivateFormData.password}
-								onChange={handleDeactivateFormChange}
-								fullWidth
-								required
-								error={!!deactivateError}
-								autoComplete="current-password"
-								placeholder="Introducí tu contraseña para confirmar"
-								sx={inputSx}
-							/>
-						</Stack>
+						{!isGoogleUser && (
+							<Stack spacing={0.75}>
+								<InputLabel sx={labelSx}>Contraseña</InputLabel>
+								<TextField
+									type="password"
+									name="password"
+									value={deactivateFormData.password}
+									onChange={handleDeactivateFormChange}
+									fullWidth
+									required
+									error={!!deactivateError}
+									autoComplete="current-password"
+									placeholder="Introducí tu contraseña para confirmar"
+									sx={inputSx}
+								/>
+							</Stack>
+						)}
 
 						<Stack direction="row" justifyContent="flex-end" spacing={1.25} sx={{ pt: 0.5 }}>
 							<Button onClick={() => setShowDeactivateForm(false)} sx={ghostBtnSx}>
@@ -1371,7 +1377,7 @@ const TabAccount = () => {
 							<Button
 								variant="contained"
 								onClick={handleOpenDeactivateConfirmDialog}
-								disabled={deactivateLoading || !deactivateFormData.password}
+								disabled={deactivateLoading || (!isGoogleUser && !deactivateFormData.password)}
 								sx={destructiveBtnSx}
 							>
 								Desactivar cuenta

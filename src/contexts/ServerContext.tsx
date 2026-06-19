@@ -139,7 +139,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	};
 
 	// Iniciar sesión con Google
-	const loginWithGoogle = async (tokenResponse: CredentialResponse): Promise<{ success: boolean; isNewUser?: boolean }> => {
+	const loginWithGoogle = async (
+		tokenResponse: CredentialResponse,
+		confirmReactivation: boolean = false,
+	): Promise<{ success: boolean; isNewUser?: boolean }> => {
 		try {
 			const credential = tokenResponse.credential;
 			if (credential) {
@@ -147,6 +150,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				const result = await axios.post<LoginResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/google`, {
 					token: credential,
 					attribution: getAttributionPayload(resolveInternalSource(params), params.get("feature")),
+					// Confirma la reactivación de una cuenta desactivada (cuentas Google,
+					// sin password): el backend ya verificó el token → reactiva y loguea.
+					...(confirmReactivation ? { confirmReactivation: true } : {}),
 				});
 
 				const { user, success, subscription, paymentHistory, customer, isNewUser } = result.data;
@@ -195,8 +201,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				}
 			}
 			throw new Error("No se recibió credencial de Google");
-		} catch (error) {
-			showSnackbar("Error al iniciar sesión con Google", "error");
+		} catch (error: any) {
+			// Cuenta desactivada: no mostramos el snackbar genérico — la UI de login
+			// ofrece reactivar (re-envía con confirmReactivation). Re-lanzamos con
+			// el response intacto para que login.tsx detecte ACCOUNT_INACTIVE.
+			if (error?.response?.data?.error?.code !== "ACCOUNT_INACTIVE") {
+				showSnackbar("Error al iniciar sesión con Google", "error");
+			}
 			throw error;
 		}
 	};
