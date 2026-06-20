@@ -529,6 +529,14 @@ const TabAccount = () => {
 	};
 
 	const validateDeactivateForm = () => {
+		if (!deactivateFormData.reason) {
+			setDeactivateError("Por favor, seleccioná un motivo para continuar");
+			return false;
+		}
+		if (deactivateFormData.reason === "other" && !deactivateFormData.otherReason.trim()) {
+			setDeactivateError("Por favor, especificá el motivo");
+			return false;
+		}
 		if (!isGoogleUser && !deactivateFormData.password) {
 			setDeactivateError("Por favor, introducí tu contraseña para confirmar la desactivación");
 			return false;
@@ -1377,7 +1385,12 @@ const TabAccount = () => {
 							<Button
 								variant="contained"
 								onClick={handleOpenDeactivateConfirmDialog}
-								disabled={deactivateLoading || (!isGoogleUser && !deactivateFormData.password)}
+								disabled={
+									deactivateLoading ||
+									!deactivateFormData.reason ||
+									(deactivateFormData.reason === "other" && !deactivateFormData.otherReason.trim()) ||
+									(!isGoogleUser && !deactivateFormData.password)
+								}
 								sx={destructiveBtnSx}
 							>
 								Desactivar cuenta
