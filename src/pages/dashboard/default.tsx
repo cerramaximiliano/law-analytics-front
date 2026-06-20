@@ -16,6 +16,7 @@ import ActiveFoldersWidget from "sections/widget/chart/ActiveFoldersWidget";
 
 import ProjectRelease from "sections/widget/chart/ProjectRelease";
 import AssignUsers from "sections/widget/chart/TaskWidget";
+import UpcomingMovementEventsWidget from "sections/widget/chart/UpcomingMovementEventsWidget";
 import StorageWidget from "sections/widget/chart/StorageWidget";
 import ResourceUsageWidget from "sections/widget/chart/ResourceUsageWidget";
 
@@ -561,6 +562,11 @@ const DashboardDefault = () => {
 							</Grid>
 							<Grid item xs={12} md={6} lg={4}>
 								<ProjectRelease />
+							</Grid>
+
+							{/* row 3 - Próximos vencimientos/audiencias vinculados a movimientos */}
+							<Grid item xs={12} md={6} lg={5}>
+								<UpcomingMovementEventsWidget />
 							</Grid>
 						</Grid>
 					</Fade>
