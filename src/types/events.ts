@@ -14,6 +14,8 @@ export interface Event {
 	groupId?: string; // ID del grupo asociado (opcional)
 	folderId?: string;
 	folderName?: string;
+	movementRef?: string; // movimiento vinculado ("{causaId}:{sourceId}" en PJN)
+	movementSource?: "pjn" | "mev" | null;
 	googleCalendarId?: string; // ID del evento en Google Calendar
 	syncedWithGoogle?: boolean; // Si el evento está sincronizado con Google
 }

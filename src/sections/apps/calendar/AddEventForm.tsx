@@ -40,7 +40,7 @@ import googleCalendarService from "services/googleCalendarService";
 import { useTeam } from "contexts/TeamContext";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
-const getInitialValues = (event: FormikValues | null, range: DateRange | null) => {
+const getInitialValues = (event: FormikValues | null, range: DateRange | null, defaultType?: string) => {
 	if (event) {
 		return {
 			title: event.title || "",
@@ -62,7 +62,7 @@ const getInitialValues = (event: FormikValues | null, range: DateRange | null) =
 		allDay: false,
 		start: range ? new Date(range.start) : new Date(),
 		end: range ? new Date(range.end) : new Date(),
-		type: "",
+		type: defaultType || "",
 	};
 };
 
@@ -81,9 +81,24 @@ export interface AddEventFormProps {
 	userId?: string;
 	folderId?: string;
 	folderName?: string;
+	// Vincular el evento a un movimiento (vencimientos desde el viewer PJN).
+	movementRef?: string;
+	movementSource?: "pjn" | "mev" | null;
+	// Tipo preseleccionado al crear (ej. "vencimiento" desde el viewer).
+	defaultType?: string;
 }
 
-const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: AddEventFormProps) => {
+const AddEventFrom = ({
+	event,
+	range,
+	onCancel,
+	userId,
+	folderId,
+	folderName,
+	movementRef,
+	movementSource,
+	defaultType,
+}: AddEventFormProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const errorColor = theme.palette.error.main;
@@ -121,7 +136,7 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 		);
 	};
 
-	const initialValues = useMemo(() => getInitialValues(event || null, range), [event, range]);
+	const initialValues = useMemo(() => getInitialValues(event || null, range, defaultType), [event, range, defaultType]);
 
 	const formik = useFormik({
 		initialValues: initialValues,
@@ -151,6 +166,7 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 					userId: userId,
 					...(groupId && { groupId }),
 					folderId: folderId || undefined,
+					...(movementRef && { movementRef, movementSource: movementSource || "pjn" }),
 					title: values.title,
 					description: values.description,
 					color: values.color,
@@ -388,7 +404,10 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 						{/* Título */}
 						<Stack spacing={0.5}>
 							<InputLabel htmlFor="event-title" sx={eyebrowLabelSx}>
-								Título <Box component="span" sx={{ color: errorColor }}>*</Box>
+								Título{" "}
+								<Box component="span" sx={{ color: errorColor }}>
+									*
+								</Box>
 							</InputLabel>
 							<TextField
 								id="event-title"
@@ -484,7 +503,10 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 							<Grid item xs={12} md={6}>
 								<Stack spacing={0.5}>
 									<InputLabel id="event-type-label" sx={eyebrowLabelSx}>
-										Tipo <Box component="span" sx={{ color: errorColor }}>*</Box>
+										Tipo{" "}
+										<Box component="span" sx={{ color: errorColor }}>
+											*
+										</Box>
 									</InputLabel>
 									<FormControl fullWidth error={Boolean(touched.type && errors.type)}>
 										<Select
@@ -495,9 +517,7 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 											{...getFieldProps("type")}
 											renderValue={(value: any) => {
 												if (!value) {
-													return (
-														<Typography sx={{ fontSize: "0.85rem", color: "text.secondary" }}>Seleccioná un tipo</Typography>
-													);
+													return <Typography sx={{ fontSize: "0.85rem", color: "text.secondary" }}>Seleccioná un tipo</Typography>;
 												}
 												const selected = eventTypes.find((t) => t.value === value);
 												if (!selected) return value;
@@ -550,9 +570,7 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 																	flexShrink: 0,
 																}}
 															/>
-															<Typography sx={{ fontSize: "0.85rem", letterSpacing: "-0.005em", flex: 1 }}>
-																{type.label}
-															</Typography>
+															<Typography sx={{ fontSize: "0.85rem", letterSpacing: "-0.005em", flex: 1 }}>{type.label}</Typography>
 														</Stack>
 													</MenuItem>
 												);
@@ -571,7 +589,10 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 							<Grid item xs={12} md={6}>
 								<Stack spacing={0.5}>
 									<InputLabel htmlFor="cal-start-date" sx={eyebrowLabelSx}>
-										Fecha de inicio <Box component="span" sx={{ color: errorColor }}>*</Box>
+										Fecha de inicio{" "}
+										<Box component="span" sx={{ color: errorColor }}>
+											*
+										</Box>
 									</InputLabel>
 									<MobileDateTimePicker
 										value={values.start}
@@ -603,7 +624,10 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 							<Grid item xs={12} md={6}>
 								<Stack spacing={0.5}>
 									<InputLabel htmlFor="cal-end-date" sx={eyebrowLabelSx}>
-										Fecha de fin <Box component="span" sx={{ color: errorColor }}>*</Box>
+										Fecha de fin{" "}
+										<Box component="span" sx={{ color: errorColor }}>
+											*
+										</Box>
 									</InputLabel>
 									<MobileDateTimePicker
 										value={values.end}

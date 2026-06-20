@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import MovementLinkChip from "components/MovementLinkChip";
 import { Stack, Skeleton, Button, Typography, IconButton, Checkbox, Box, useTheme, useMediaQuery, alpha, Tooltip } from "@mui/material";
 import MainCard from "components/MainCard";
 import { Add, TaskSquare, Trash, TickCircle, Calendar, Filter, Edit2, Clock } from "iconsax-react";
@@ -334,6 +335,11 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 							>
 								{task.name}
 							</Typography>
+							{task.movementRef ? (
+								<Box sx={{ mt: 0.5 }}>
+									<MovementLinkChip movementRef={task.movementRef} />
+								</Box>
+							) : null}
 							{task.description && (
 								<Typography
 									sx={{
@@ -481,7 +487,12 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 						{/* Stats */}
 						<Stack spacing={1.5} sx={{ flexShrink: 0, mb: 1.5 }}>
 							<Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }} useFlexGap>
-								<StatCard icon={<TickCircle size={16} variant="Bulk" />} label="Completadas" value={taskStats.completed} accent={LIVE_GREEN} />
+								<StatCard
+									icon={<TickCircle size={16} variant="Bulk" />}
+									label="Completadas"
+									value={taskStats.completed}
+									accent={LIVE_GREEN}
+								/>
 								<StatCard icon={<Clock size={16} variant="Bulk" />} label="Pendientes" value={taskStats.pending} accent={STALE_AMBER} />
 								{taskStats.overdue > 0 && (
 									<StatCard icon={<Calendar size={16} variant="Bulk" />} label="Vencidas" value={taskStats.overdue} accent={errorColor} />

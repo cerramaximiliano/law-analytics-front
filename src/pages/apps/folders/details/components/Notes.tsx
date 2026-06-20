@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import MovementLinkChip from "components/MovementLinkChip";
 import {
 	Stack,
 	Button,
@@ -232,6 +233,11 @@ const Notes: React.FC<NotesProps> = ({ title, folderId, folderName }) => {
 												>
 													{note.title}
 												</Typography>
+												{note.movementRef ? (
+													<Box sx={{ mb: 0.5 }}>
+														<MovementLinkChip movementRef={note.movementRef} />
+													</Box>
+												) : null}
 												<Typography
 													sx={{
 														fontSize: "0.82rem",
@@ -278,14 +284,24 @@ const Notes: React.FC<NotesProps> = ({ title, folderId, folderName }) => {
 											<Stack direction="row" spacing={0.625} sx={{ flexShrink: 0 }}>
 												{canUpdate && (
 													<Tooltip title="Editar">
-														<IconButton size="small" aria-label="edit" onClick={() => handleEditClick(note)} sx={brandIconButtonSx(BRAND_BLUE)}>
+														<IconButton
+															size="small"
+															aria-label="edit"
+															onClick={() => handleEditClick(note)}
+															sx={brandIconButtonSx(BRAND_BLUE)}
+														>
 															<Edit2 size={14} variant="Bulk" />
 														</IconButton>
 													</Tooltip>
 												)}
 												{canDelete && (
 													<Tooltip title="Eliminar">
-														<IconButton size="small" aria-label="delete" onClick={() => handleDeleteClick(note)} sx={brandIconButtonSx(errorColor)}>
+														<IconButton
+															size="small"
+															aria-label="delete"
+															onClick={() => handleDeleteClick(note)}
+															sx={brandIconButtonSx(errorColor)}
+														>
 															<Trash size={14} variant="Bulk" />
 														</IconButton>
 													</Tooltip>

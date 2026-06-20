@@ -12,6 +12,7 @@ import {
 	CardHeader,
 	Chip,
 	CircularProgress,
+	Dialog,
 	IconButton,
 	InputAdornment,
 	MenuItem,
@@ -29,18 +30,21 @@ import {
 	Alert,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { DocumentText, ExportSquare, Note1, SearchNormal1, TaskSquare, TickCircle } from "iconsax-react";
+import { Calendar, DocumentText, ExportSquare, Note1, SearchNormal1, TaskSquare, TickCircle } from "iconsax-react";
 import PjnPdfViewer from "components/PjnPdfViewer";
 import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
 import ModalTasks from "pages/apps/folders/details/modals/MoldalTasks";
+import AddEventFrom from "sections/apps/calendar/AddEventForm";
 import { dispatch, useSelector } from "store";
 import { getNotesByFolderId } from "store/reducers/notes";
 import { getTasksByFolderId } from "store/reducers/tasks";
+import { getEventsById } from "store/reducers/events";
 import { openSnackbar } from "store/reducers/snackbar";
 import { getPjnMovementsByFolder, setPjnMovementReadStatus } from "services/pjnMovementsService";
 import type { PjnMovementPdfStatus, PjnMovementsListResponse } from "types/pjnMovement";
 import type { Note } from "types/note";
 import type { TaskType } from "types/task";
+import type { Event as CalendarEvent } from "types/events";
 
 interface Props {
 	folderId: string;
@@ -146,11 +150,13 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 		if (folderId) {
 			dispatch(getNotesByFolderId(folderId));
 			dispatch(getTasksByFolderId(folderId));
+			dispatch(getEventsById(folderId));
 		}
 	}, [folderId]);
 
 	const folderNotes = useSelector((s: any) => s.notesReducer?.selectedNotes ?? []);
 	const folderTasks = useSelector((s: any) => s.tasksReducer?.selectedTasks ?? []);
+	const folderEvents = useSelector((s: any) => s.events?.events ?? []);
 	const notesCountByMov = useMemo(() => {
 		const map: Record<string, number> = {};
 		(folderNotes as Note[]).forEach((n) => {
@@ -165,6 +171,13 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 		});
 		return map;
 	}, [folderTasks]);
+	const eventsCountByMov = useMemo(() => {
+		const map: Record<string, number> = {};
+		(folderEvents as CalendarEvent[]).forEach((e) => {
+			if (e.movementRef) map[e.movementRef] = (map[e.movementRef] || 0) + 1;
+		});
+		return map;
+	}, [folderEvents]);
 
 	const movements = data?.data ?? [];
 	const total = data?.count ?? 0;
@@ -199,6 +212,8 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 	const [actionMovId, setActionMovId] = useState<string | null>(null);
 	const [noteModalOpen, setNoteModalOpen] = useState(false);
 	const [taskModalOpen, setTaskModalOpen] = useState(false);
+	const [eventModalOpen, setEventModalOpen] = useState(false);
+	const eventUserId = useSelector((s: any) => s.auth?.user?._id);
 	const openNoteModal = (movId: string) => {
 		setActionMovId(movId);
 		setNoteModalOpen(true);
@@ -206,6 +221,10 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 	const openTaskModal = (movId: string) => {
 		setActionMovId(movId);
 		setTaskModalOpen(true);
+	};
+	const openEventModal = (movId: string) => {
+		setActionMovId(movId);
+		setEventModalOpen(true);
 	};
 
 	// Marcar leído / no leído desde la tabla (sin abrir el visor). Cubre también los
@@ -398,13 +417,13 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 												ref={isHighlighted ? highlightRowRef : undefined}
 												hover
 												sx={(theme) => ({
-													cursor: m.hasPdf ? "pointer" : "default",
+													cursor: "pointer", // clickeable aun sin PDF: abre el panel de notas/tareas/vencimientos
 													...(isHighlighted && {
 														bgcolor: alpha(theme.palette.primary.main, 0.12),
 														"&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.18) },
 													}),
 												})}
-												onClick={() => m.hasPdf && handleOpenViewer(idx)}
+												onClick={() => handleOpenViewer(idx)}
 											>
 												<TableCell>{formatDate(m.fecha)}</TableCell>
 												<TableCell>
@@ -422,7 +441,7 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 																{m.tipo || "—"}
 															</Typography>
 														</Stack>
-														{(notesCountByMov[m._id] || tasksCountByMov[m._id]) && (
+														{(notesCountByMov[m._id] || tasksCountByMov[m._id] || eventsCountByMov[m._id]) && (
 															<Stack direction="row" alignItems="center" spacing={1}>
 																{notesCountByMov[m._id] ? (
 																	<Tooltip title={`${notesCountByMov[m._id]} nota${notesCountByMov[m._id] > 1 ? "s" : ""}`}>
@@ -440,6 +459,16 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 																			<TaskSquare size="13" variant="Bulk" />
 																			<Typography variant="caption" sx={{ fontWeight: 600 }}>
 																				{tasksCountByMov[m._id]}
+																			</Typography>
+																		</Stack>
+																	</Tooltip>
+																) : null}
+																{eventsCountByMov[m._id] ? (
+																	<Tooltip title={`${eventsCountByMov[m._id]} vencimiento${eventsCountByMov[m._id] > 1 ? "s" : ""}`}>
+																		<Stack direction="row" alignItems="center" spacing={0.25} sx={{ color: "error.main" }}>
+																			<Calendar size="13" variant="Bulk" />
+																			<Typography variant="caption" sx={{ fontWeight: 600 }}>
+																				{eventsCountByMov[m._id]}
 																			</Typography>
 																		</Stack>
 																	</Tooltip>
@@ -529,6 +558,18 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 																<TaskSquare size={18} />
 															</IconButton>
 														</Tooltip>
+														<Tooltip title="Agregar vencimiento">
+															<IconButton
+																size="small"
+																color="error"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	openEventModal(m._id);
+																}}
+															>
+																<Calendar size={18} />
+															</IconButton>
+														</Tooltip>
 													</Stack>
 												</TableCell>
 											</TableRow>
@@ -579,6 +620,26 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 					taskToEdit={null}
 					initialValues={{ movementRef: actionMovId, movementSource: "pjn" }}
 				/>
+			)}
+			{actionMovId && (
+				<Dialog
+					open={eventModalOpen}
+					onClose={() => setEventModalOpen(false)}
+					maxWidth="sm"
+					fullWidth
+					sx={{ "& .MuiDialog-paper": { p: 0 } }}
+				>
+					<AddEventFrom
+						event={null}
+						range={null}
+						onCancel={() => setEventModalOpen(false)}
+						userId={eventUserId}
+						folderId={folderId}
+						movementRef={actionMovId}
+						movementSource="pjn"
+						defaultType="vencimiento"
+					/>
+				</Dialog>
 			)}
 		</Card>
 	);

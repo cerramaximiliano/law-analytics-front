@@ -1,4 +1,5 @@
 import React from "react";
+import MovementLinkChip from "components/MovementLinkChip";
 import { useEffect, useMemo, useState, Fragment, MouseEvent, useCallback, useRef } from "react";
 
 // material-ui
@@ -476,10 +477,7 @@ function ReactTable({
 												}}
 											>
 												{row.cells.map((cell: Cell<TaskType>, k: number) => (
-													<TableCell
-														key={`cell-${i}-${k}`}
-														{...(cell.getCellProps([{ className: cell.column.className }]) as any)}
-													>
+													<TableCell key={`cell-${i}-${k}`} {...(cell.getCellProps([{ className: cell.column.className }]) as any)}>
 														{cell.render("Cell")}
 													</TableCell>
 												))}
@@ -601,7 +599,6 @@ function ReactTable({
 				</ScrollX>
 				<TablePagination gotoPage={handleGotoPage} rows={rows} setPageSize={handleSetPageSize} pageIndex={pageIndex} pageSize={pageSize} />
 			</Stack>
-
 		</>
 	);
 }
@@ -748,6 +745,7 @@ const Tasks = () => {
 								{value}
 							</Typography>
 							<TaskPriorityPill priority={priority} />
+							<MovementLinkChip movementRef={row.original.movementRef} />
 						</Stack>
 					);
 				},
@@ -883,8 +881,9 @@ const Tasks = () => {
 	);
 	const overdueTasks = useMemo(() => {
 		const today = dayjs();
-		return filteredData.filter((t: any) => t.dueDate && dayjs(t.dueDate).isBefore(today, "day") && t.status !== "completada" && t.status !== "cancelada")
-			.length;
+		return filteredData.filter(
+			(t: any) => t.dueDate && dayjs(t.dueDate).isBefore(today, "day") && t.status !== "completada" && t.status !== "cancelada",
+		).length;
 	}, [filteredData]);
 
 	return (

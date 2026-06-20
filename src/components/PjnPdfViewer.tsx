@@ -49,13 +49,16 @@ import {
 import { dispatch, useSelector } from "store";
 import { deleteNote, getNotesByFolderId } from "store/reducers/notes";
 import { deleteTask, getTasksByFolderId } from "store/reducers/tasks";
+import { deleteEvent, getEventsById } from "store/reducers/events";
 import { openSnackbar } from "store/reducers/snackbar";
 import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
 import ModalTasks from "pages/apps/folders/details/modals/MoldalTasks";
+import AddEventFrom from "sections/apps/calendar/AddEventForm";
 import { getPjnMovementPdfUrl, setPjnMovementReadStatus } from "services/pjnMovementsService";
 import type { PjnMovement, PjnMovementPdfStatus } from "types/pjnMovement";
 import type { Note } from "types/note";
 import type { TaskType } from "types/task";
+import type { Event as CalendarEvent } from "types/events";
 
 interface PjnPdfViewerProps {
 	open: boolean;
@@ -164,14 +167,24 @@ const PjnPdfViewer = ({
 		() => (movement ? (allTasks as TaskType[]).filter((t) => t.movementRef === movement._id) : []),
 		[allTasks, movement],
 	);
+	const allEvents = useSelector((s: any) => s.events?.events ?? []);
+	const movementEvents: CalendarEvent[] = useMemo(
+		() => (movement ? (allEvents as CalendarEvent[]).filter((e) => e.movementRef === movement._id) : []),
+		[allEvents, movement],
+	);
+	const userId = useSelector((s: any) => s.auth?.user?._id);
+
 	const [panelOpen, setPanelOpen] = useState(false);
-	const [panelTab, setPanelTab] = useState<"notas" | "tareas">("notas");
+	const [panelTab, setPanelTab] = useState<"notas" | "tareas" | "vencimientos">("notas");
 	const [noteModalOpen, setNoteModalOpen] = useState(false);
 	const [editingNote, setEditingNote] = useState<Note | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<Note | null>(null);
 	const [taskModalOpen, setTaskModalOpen] = useState(false);
 	const [editingTask, setEditingTask] = useState<TaskType | null>(null);
 	const [deleteTaskTarget, setDeleteTaskTarget] = useState<TaskType | null>(null);
+	const [eventModalOpen, setEventModalOpen] = useState(false);
+	const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+	const [deleteEventTarget, setDeleteEventTarget] = useState<CalendarEvent | null>(null);
 
 	const isRead = Boolean(movement?.read);
 
@@ -247,11 +260,12 @@ const PjnPdfViewer = ({
 		};
 	}, [open, movement, folderId]);
 
-	// Cargar notas y tareas del folder al abrir (cacheado por folder en cada slice).
+	// Cargar notas, tareas y eventos (vencimientos) del folder al abrir.
 	useEffect(() => {
 		if (open && folderId) {
 			dispatch(getNotesByFolderId(folderId));
 			dispatch(getTasksByFolderId(folderId));
+			dispatch(getEventsById(folderId));
 		}
 	}, [open, folderId]);
 
@@ -363,6 +377,40 @@ const PjnPdfViewer = ({
 		} catch {
 			return String(d);
 		}
+	};
+
+	const formatEventDate = (d?: Date | string): string => {
+		if (!d) return "";
+		try {
+			return new Date(d).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" });
+		} catch {
+			return String(d);
+		}
+	};
+
+	const handleAddVencimiento = () => {
+		setEditingEvent(null);
+		setEventModalOpen(true);
+	};
+
+	const handleEditVencimiento = (ev: CalendarEvent) => {
+		setEditingEvent(ev);
+		setEventModalOpen(true);
+	};
+
+	const handleConfirmDeleteEvent = async () => {
+		if (!deleteEventTarget?._id) return;
+		const res: any = await dispatch(deleteEvent(deleteEventTarget._id));
+		dispatch(
+			openSnackbar({
+				open: true,
+				message: res?.success ? "Vencimiento eliminado." : "No se pudo eliminar el vencimiento.",
+				variant: "alert",
+				alert: { color: res?.success ? "success" : "error" },
+				close: true,
+			}),
+		);
+		setDeleteEventTarget(null);
 	};
 
 	const status = statusLabel(movement?.pdfStatus ?? state.pdfStatus);
@@ -543,12 +591,17 @@ const PjnPdfViewer = ({
 								<Tab
 									value="notas"
 									label={`Notas${movementNotes.length ? ` (${movementNotes.length})` : ""}`}
-									sx={{ minHeight: 44, py: 1 }}
+									sx={{ minHeight: 44, py: 1, minWidth: 0, px: 1, fontSize: "0.75rem" }}
 								/>
 								<Tab
 									value="tareas"
 									label={`Tareas${movementTasks.length ? ` (${movementTasks.length})` : ""}`}
-									sx={{ minHeight: 44, py: 1 }}
+									sx={{ minHeight: 44, py: 1, minWidth: 0, px: 1, fontSize: "0.75rem" }}
+								/>
+								<Tab
+									value="vencimientos"
+									label={`Vencim.${movementEvents.length ? ` (${movementEvents.length})` : ""}`}
+									sx={{ minHeight: 44, py: 1, minWidth: 0, px: 1, fontSize: "0.75rem" }}
 								/>
 							</Tabs>
 							<Box sx={{ flex: 1, overflowY: "auto", p: 1.5 }}>
@@ -691,6 +744,73 @@ const PjnPdfViewer = ({
 										)}
 									</>
 								)}
+								{panelTab === "vencimientos" && (
+									<>
+										<Stack direction="row" justifyContent="flex-end" sx={{ mb: 1 }}>
+											<Button size="small" variant="text" startIcon={<Add size="16" />} onClick={handleAddVencimiento}>
+												Agregar vencimiento
+											</Button>
+										</Stack>
+										{movementEvents.length === 0 ? (
+											<Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 1.5 }}>
+												Sin vencimientos para este movimiento.
+											</Typography>
+										) : (
+											<Stack spacing={1}>
+												{movementEvents.map((ev) => (
+													<Box
+														key={ev._id}
+														sx={{
+															p: 1.5,
+															borderRadius: 1.5,
+															border: `1px solid ${theme.palette.divider}`,
+															bgcolor: alpha(theme.palette.error.main, 0.04),
+														}}
+													>
+														<Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
+															<Typography variant="subtitle2" sx={{ fontWeight: 600, wordBreak: "break-word" }}>
+																{ev.title}
+															</Typography>
+															<Stack direction="row" spacing={0.25}>
+																<Tooltip title="Editar">
+																	<IconButton size="small" onClick={() => handleEditVencimiento(ev)} aria-label="Editar vencimiento">
+																		<Edit2 size="16" />
+																	</IconButton>
+																</Tooltip>
+																<Tooltip title="Eliminar">
+																	<IconButton
+																		size="small"
+																		color="error"
+																		onClick={() => setDeleteEventTarget(ev)}
+																		aria-label="Eliminar vencimiento"
+																	>
+																		<Trash size="16" />
+																	</IconButton>
+																</Tooltip>
+															</Stack>
+														</Stack>
+														<Chip
+															size="small"
+															color="error"
+															variant="outlined"
+															label={`Vence ${formatEventDate(ev.start)}`}
+															sx={{ mt: 0.75, height: 22 }}
+														/>
+														{ev.description ? (
+															<Typography
+																variant="body2"
+																color="text.secondary"
+																sx={{ mt: 0.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+															>
+																{ev.description}
+															</Typography>
+														) : null}
+													</Box>
+												))}
+											</Stack>
+										)}
+									</>
+								)}
 							</Box>
 						</Box>
 					)}
@@ -791,6 +911,48 @@ const PjnPdfViewer = ({
 						Cancelar
 					</Button>
 					<Button onClick={handleConfirmDeleteTask} color="error" variant="contained">
+						Eliminar
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			{/* Modal de vencimiento (crear / editar) — reusa AddEventForm con folderId + movementRef */}
+			{movement && (
+				<Dialog
+					open={eventModalOpen}
+					onClose={() => setEventModalOpen(false)}
+					maxWidth="sm"
+					fullWidth
+					sx={{ "& .MuiDialog-paper": { p: 0 } }}
+				>
+					<AddEventFrom
+						event={editingEvent}
+						range={null}
+						onCancel={() => setEventModalOpen(false)}
+						userId={userId}
+						folderId={folderId}
+						folderName={folderName}
+						movementRef={movement._id}
+						movementSource="pjn"
+						defaultType="vencimiento"
+					/>
+				</Dialog>
+			)}
+
+			{/* Confirmación de borrado de vencimiento */}
+			<Dialog open={Boolean(deleteEventTarget)} onClose={() => setDeleteEventTarget(null)} maxWidth="xs" fullWidth>
+				<DialogTitle>Eliminar vencimiento</DialogTitle>
+				<DialogContent>
+					<DialogContentText>
+						¿Seguro que querés eliminar el vencimiento{deleteEventTarget?.title ? ` "${deleteEventTarget.title}"` : ""}? Esta acción no se
+						puede deshacer.
+					</DialogContentText>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setDeleteEventTarget(null)} color="secondary">
+						Cancelar
+					</Button>
+					<Button onClick={handleConfirmDeleteEvent} color="error" variant="contained">
 						Eliminar
 					</Button>
 				</DialogActions>
