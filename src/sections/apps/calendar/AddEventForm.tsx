@@ -66,6 +66,8 @@ const getInitialValues = (event: FormikValues | null, range: DateRange | null, d
 	};
 };
 
+// Lista completa de referencia — se usa para resolver label/color de cualquier
+// evento (incluidos los legacy "reunion"/"otro" y los importados "google").
 const eventTypes = [
 	{ label: "Audiencia", value: "audiencia", color: "#1890ff" },
 	{ label: "Vencimiento", value: "vencimiento", color: "#ff4d4f" },
@@ -73,6 +75,10 @@ const eventTypes = [
 	{ label: "Google Calendar", value: "google", color: "#4285f4" },
 	{ label: "Otro", value: "otro", color: "#faad14" },
 ];
+
+// Tipos que el usuario puede elegir al crear/editar un evento manualmente.
+// Los demás (reunion/otro/google) son legacy o se crean por importación.
+const SELECTABLE_TYPE_VALUES = ["audiencia", "vencimiento"];
 
 export interface AddEventFormProps {
 	event?: FormikValues | null;
@@ -284,6 +290,18 @@ const AddEventFrom = ({
 	});
 
 	const { values, errors, touched, handleSubmit, isSubmitting, getFieldProps, setFieldValue } = formik;
+
+	// Opciones elegibles del select de Tipo: solo Audiencia/Vencimiento. Si se
+	// edita un evento con un tipo legacy (reunion/otro/google), se incluye su
+	// tipo actual para no romper el Select ni forzar un cambio no deseado.
+	const typeOptions = useMemo(() => {
+		const base = eventTypes.filter((t) => SELECTABLE_TYPE_VALUES.includes(t.value));
+		if (values.type && !base.some((t) => t.value === values.type)) {
+			const legacy = eventTypes.find((t) => t.value === values.type);
+			if (legacy) return [...base, legacy];
+		}
+		return base;
+	}, [values.type]);
 
 	// Input sx común — brand border + focus brand
 	const inputBrandSx = {
@@ -556,7 +574,7 @@ const AddEventFrom = ({
 												},
 											}}
 										>
-											{eventTypes.map((type) => {
+											{typeOptions.map((type) => {
 												const accent = typeAccentMap[type.value] ?? type.color;
 												return (
 													<MenuItem value={type.value} key={type.value} sx={{ py: 1 }}>
