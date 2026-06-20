@@ -76,8 +76,9 @@ const eventTypes = [
 	{ label: "Otro", value: "otro", color: "#faad14" },
 ];
 
-// Tipos que el usuario puede elegir al crear/editar un evento manualmente.
-// Los demás (reunion/otro/google) son legacy o se crean por importación.
+// Tipos elegibles cuando el evento se agrega desde un movimiento (un
+// vencimiento o una audiencia surgen del movimiento judicial). En el
+// calendario general no se aplica esta restricción.
 const SELECTABLE_TYPE_VALUES = ["audiencia", "vencimiento"];
 
 export interface AddEventFormProps {
@@ -291,17 +292,20 @@ const AddEventFrom = ({
 
 	const { values, errors, touched, handleSubmit, isSubmitting, getFieldProps, setFieldValue } = formik;
 
-	// Opciones elegibles del select de Tipo: solo Audiencia/Vencimiento. Si se
-	// edita un evento con un tipo legacy (reunion/otro/google), se incluye su
-	// tipo actual para no romper el Select ni forzar un cambio no deseado.
+	// Opciones del select de Tipo. Solo cuando el evento está vinculado a un
+	// movimiento (movementRef presente, ej. el sub-tab "Vencim." del viewer PJN)
+	// se limita a Audiencia/Vencimiento; en el calendario general se ofrecen
+	// todos los tipos. Si se edita un evento de movimiento con un tipo legacy,
+	// se incluye su tipo actual para no romper el Select ni forzarlo a cambiar.
 	const typeOptions = useMemo(() => {
+		if (!movementRef) return eventTypes;
 		const base = eventTypes.filter((t) => SELECTABLE_TYPE_VALUES.includes(t.value));
 		if (values.type && !base.some((t) => t.value === values.type)) {
 			const legacy = eventTypes.find((t) => t.value === values.type);
 			if (legacy) return [...base, legacy];
 		}
 		return base;
-	}, [values.type]);
+	}, [values.type, movementRef]);
 
 	// Input sx común — brand border + focus brand
 	const inputBrandSx = {
