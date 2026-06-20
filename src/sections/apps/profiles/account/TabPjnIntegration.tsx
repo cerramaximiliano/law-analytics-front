@@ -20,6 +20,8 @@ import MainCard from "components/MainCard";
 import PjnAccountConnect from "sections/apps/folders/step-components/PjnAccountConnect";
 import ScbaAccountConnect from "sections/apps/folders/step-components/ScbaAccountConnect";
 import ApiService from "store/reducers/ApiService";
+import { dispatch } from "store";
+import { fetchPjnSiteStatus } from "store/reducers/pjnSiteStatus";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // ==============================|| ACCOUNT PROFILE - PJN INTEGRATION ||============================== //
@@ -81,6 +83,14 @@ const TabPjnIntegration = () => {
 	useEffect(() => {
 		loadPreferences();
 	}, [loadPreferences]);
+
+	// Estado del portal PJN fresco al entrar al tab: el banner/guard de
+	// PjnAccountConnect depende de pjnSiteStatus, que puede estar stale si el
+	// mantenimiento empezó después del login (broadcast one-shot perdido).
+	useEffect(() => {
+		dispatch(fetchPjnSiteStatus());
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	const handleToggleSyncContacts = async () => {
 		const newValue = !syncContactsEnabled;

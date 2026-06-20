@@ -287,6 +287,19 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 		}
 	}, [isLoggedIn, autoConnect, connect, disconnect, userId, dispatch]);
 
+	// Re-hidratar el estado de los portales (PJN/SCBA) en cada (re)conexión del
+	// socket, no solo al login. El broadcast de mantenimiento es one-shot: se
+	// emite únicamente en la transición healthy→maintenance. Si el socket
+	// reconecta (sleep, blip de red) o la sesión ya estaba abierta cuando el
+	// portal entró en mantenimiento, sin esto el estado queda stale hasta un
+	// refresh manual y los guards de alta no se activan.
+	useEffect(() => {
+		if (isLoggedIn && userId && connectionState === ConnectionState.CONNECTED) {
+			dispatch(fetchPjnSiteStatus() as any);
+			dispatch(fetchScbaSiteStatus() as any);
+		}
+	}, [connectionState, isLoggedIn, userId, dispatch]);
+
 	// Actualizar userId cuando cambie
 	useEffect(() => {
 		if (userId && webSocketService.isConnected()) {

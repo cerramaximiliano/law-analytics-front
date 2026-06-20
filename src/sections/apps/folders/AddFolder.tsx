@@ -31,6 +31,7 @@ import SecondStep from "./step-components/secondStep";
 import JudicialPowerSelection from "./step-components/judicialPowerSelection";
 import { dispatch } from "store";
 import { addFolder, updateFolderById } from "store/reducers/folder";
+import { fetchPjnSiteStatus } from "store/reducers/pjnSiteStatus";
 import { enqueueSnackbar } from "notistack";
 import AlertFolderDelete from "./AlertFolderDelete";
 import { PropsAddFolder } from "types/folders";
@@ -307,6 +308,10 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 	useEffect(() => {
 		// Cuando el modal se abre, resetear los estados relacionados con la verificación
 		if (open) {
+			// Re-hidratar el estado del portal PJN al abrir: el guard de
+			// mantenimiento (en AutomaticStep) necesita estado fresco aunque el
+			// broadcast one-shot se haya perdido con la sesión ya abierta.
+			dispatch(fetchPjnSiteStatus());
 			// Si estamos creando, verificar límites
 			if (isCreating) {
 				// Resetear valores con overrides (entryMethod, judicialPower) para que steps sea correcto
