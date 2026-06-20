@@ -135,7 +135,7 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 		const sourceLabel = folder?.pjn
 			? "Poder Judicial de la Nación"
 			: folder?.mev
-			? "Mesa de Entradas Virtual (CABA)"
+			? "Mesa de Entradas Virtual (Buenos Aires)"
 			: folder?.eje
 			? "Expediente Judicial Electrónico (CABA)"
 			: folder?.scba
