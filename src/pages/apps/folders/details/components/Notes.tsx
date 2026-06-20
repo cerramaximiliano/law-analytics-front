@@ -235,7 +235,7 @@ const Notes: React.FC<NotesProps> = ({ title, folderId, folderName }) => {
 												</Typography>
 												{note.movementRef ? (
 													<Box sx={{ mb: 0.5 }}>
-														<MovementLinkChip movementRef={note.movementRef} />
+														<MovementLinkChip movementRef={note.movementRef} folderId={folderId} />
 													</Box>
 												) : null}
 												<Typography

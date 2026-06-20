@@ -337,7 +337,7 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 							</Typography>
 							{task.movementRef ? (
 								<Box sx={{ mt: 0.5 }}>
-									<MovementLinkChip movementRef={task.movementRef} />
+									<MovementLinkChip movementRef={task.movementRef} folderId={id || ""} />
 								</Box>
 							) : null}
 							{task.description && (

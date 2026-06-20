@@ -745,7 +745,7 @@ const Tasks = () => {
 								{value}
 							</Typography>
 							<TaskPriorityPill priority={priority} />
-							<MovementLinkChip movementRef={row.original.movementRef} />
+							<MovementLinkChip movementRef={row.original.movementRef} folderId={row.original.folderId} />
 						</Stack>
 					);
 				},

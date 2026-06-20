@@ -196,6 +196,12 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 		}
 	}, [highlightMovementId, movements]);
 
+	// Si cambia el movimiento objetivo (ej. el usuario clickea otro chip de
+	// vínculo sin desmontar la sección), reabrir el scroll para el nuevo id.
+	useEffect(() => {
+		hasScrolledToHighlight.current = false;
+	}, [highlightMovementId]);
+
 	const handleOpenViewer = (idx: number) => {
 		setSelectedIdx(idx);
 		setViewerOpen(true);
