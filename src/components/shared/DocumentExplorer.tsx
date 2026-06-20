@@ -17,7 +17,6 @@ import {
 	Badge,
 } from "@mui/material";
 import {
-	Add,
 	Edit,
 	Calendar,
 	Clock,
@@ -30,8 +29,6 @@ import {
 	ArrowLeft2,
 	ArrowRight2,
 	HambergerMenu,
-	Category,
-	CloseCircle,
 	TickSquare,
 } from "iconsax-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -97,11 +94,14 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({
 	const [isLoadingPage, setIsLoadingPage] = React.useState(false);
 
 	// Inline form state
-	const [inlineForm, setInlineForm] = useState<"task" | "note" | null>(null);
+	const [inlineForm, setInlineForm] = useState<"task" | "note" | "event" | null>(null);
 	const [inlineTaskName, setInlineTaskName] = useState("");
 	const [inlineTaskDate, setInlineTaskDate] = useState("");
 	const [inlineNoteTitle, setInlineNoteTitle] = useState("");
 	const [inlineNoteContent, setInlineNoteContent] = useState("");
+	const [inlineEventTitle, setInlineEventTitle] = useState("");
+	const [inlineEventDate, setInlineEventDate] = useState("");
+	const [inlineEventType, setInlineEventType] = useState<"vencimiento" | "audiencia">("vencimiento");
 	const [inlineSubmitting, setInlineSubmitting] = useState(false);
 
 	// Sync activeMovement when initialMovement changes
@@ -155,17 +155,19 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({
 		return syncedActiveMovement.source === "pjn" ? syncedActiveMovement.link : syncedActiveMovement._id;
 	}, [syncedActiveMovement]);
 
-	// Linked notes and tasks
+	// Linked notes, tasks and events
 	const [linkedNotes, setLinkedNotes] = useState<Note[]>([]);
 	const [linkedTasks, setLinkedTasks] = useState<TaskType[]>([]);
+	const [linkedEvents, setLinkedEvents] = useState<any[]>([]);
 	const [linkedLoading, setLinkedLoading] = useState(false);
 	const [linkedVersion, setLinkedVersion] = useState(0);
 
-	// Fetch linked notes/tasks when movement changes
+	// Fetch linked notes/tasks/events when movement changes
 	useEffect(() => {
 		if (!open || !folderId || !movementRef) {
 			setLinkedNotes([]);
 			setLinkedTasks([]);
+			setLinkedEvents([]);
 			return;
 		}
 
@@ -174,18 +176,24 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({
 			setLinkedLoading(true);
 			try {
 				const headers = getRequestHeaders();
-				const [notesRes, tasksRes] = await Promise.all([
+				// El endpoint de eventos por folder no filtra por movementRef, así que
+				// traemos los del folder y filtramos en cliente por el movimiento activo.
+				const [notesRes, tasksRes, eventsRes] = await Promise.all([
 					axios.get(`/api/notes/folder/${folderId}`, { params: { movementRef }, headers }),
 					axios.get(`/api/tasks/folder/${folderId}`, { params: { movementRef }, headers }),
+					axios.get(`/api/events/folder/${folderId}`, { headers }),
 				]);
 				if (!cancelled) {
 					setLinkedNotes(notesRes.data?.notes || []);
 					setLinkedTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
+					const allEvents = eventsRes.data?.events || [];
+					setLinkedEvents(allEvents.filter((e: any) => e.movementRef === movementRef));
 				}
 			} catch {
 				if (!cancelled) {
 					setLinkedNotes([]);
 					setLinkedTasks([]);
+					setLinkedEvents([]);
 				}
 			} finally {
 				if (!cancelled) setLinkedLoading(false);
@@ -324,6 +332,49 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({
 					groupId: getTeamIdForResource(),
 					movementRef: movementRef || undefined,
 					movementSource: syncedActiveMovement.source || undefined,
+				},
+				{ headers: getRequestHeaders() },
+			);
+			setInlineForm(null);
+			setLinkedVersion((v) => v + 1);
+		} catch {
+			// Error silencioso
+		} finally {
+			setInlineSubmitting(false);
+		}
+	};
+
+	const handleOpenInlineEvent = () => {
+		if (!syncedActiveMovement) return;
+		setInlineForm("event");
+		setInlineEventType("vencimiento");
+		setInlineEventTitle(`[${syncedActiveMovement.movement}] ${syncedActiveMovement.title}`);
+		setInlineEventDate(syncedActiveMovement.dateExpiration ? formatDate(syncedActiveMovement.dateExpiration) : "");
+	};
+
+	const handleSubmitInlineEvent = async () => {
+		if (!inlineEventTitle.trim() || !inlineEventDate.trim() || !syncedActiveMovement) return;
+		const parsed = parseDate(inlineEventDate.trim());
+		if (!parsed || parsed.getTime() === 0 || isNaN(parsed.getTime())) return;
+		setInlineSubmitting(true);
+		try {
+			await axios.post(
+				"/api/events",
+				{
+					title: inlineEventTitle.trim(),
+					description: "",
+					type: inlineEventType,
+					color: inlineEventType === "audiencia" ? "#1890ff" : "#ff4d4f",
+					allDay: true,
+					start: parsed,
+					end: parsed,
+					folderId,
+					folderName,
+					userId: getUserIdForResource(),
+					groupId: getTeamIdForResource(),
+					movementRef: movementRef || undefined,
+					// Jurisdicción del movimiento; "manual" si el movimiento no la trae.
+					movementSource: syncedActiveMovement.source || "manual",
 				},
 				{ headers: getRequestHeaders() },
 			);
@@ -1046,6 +1097,104 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({
 											)}
 										</AnimatePresence>
 
+										<Button
+											variant={inlineForm === "event" ? "contained" : "outlined"}
+											size="small"
+											startIcon={<Calendar size={16} />}
+											disabled={!syncedActiveMovement}
+											onClick={handleOpenInlineEvent}
+											sx={{ textTransform: "none", justifyContent: "flex-start", fontSize: "0.8rem" }}
+										>
+											Crear vencimiento
+											{linkedEvents.length > 0 && (
+												<Chip
+													label={linkedEvents.length}
+													size="small"
+													color={inlineForm === "event" ? "default" : "primary"}
+													sx={{ height: 18, fontSize: "0.65rem", ml: "auto", "& .MuiChip-label": { px: 0.5 } }}
+												/>
+											)}
+										</Button>
+
+										{/* Inline event/vencimiento form */}
+										<AnimatePresence>
+											{inlineForm === "event" && (
+												<motion.div
+													initial={{ opacity: 0, height: 0, marginTop: 0 }}
+													animate={{ opacity: 1, height: "auto", marginTop: 8 }}
+													exit={{ opacity: 0, height: 0, marginTop: 0 }}
+													transition={{ duration: 0.2, ease: "easeOut" }}
+													style={{ overflow: "hidden" }}
+												>
+													<Box
+														sx={{
+															p: 1.5,
+															borderRadius: 2,
+															bgcolor: theme.palette.background.default,
+															border: `1px solid ${alpha(theme.palette.primary.main, 0.25)}`,
+															boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.1)}`,
+														}}
+													>
+														<Stack spacing={1.5}>
+															<Stack direction="row" spacing={1}>
+																{(["vencimiento", "audiencia"] as const).map((t) => (
+																	<Button
+																		key={t}
+																		size="small"
+																		variant={inlineEventType === t ? "contained" : "outlined"}
+																		onClick={() => setInlineEventType(t)}
+																		sx={{ textTransform: "none", fontSize: "0.72rem", flex: 1, py: 0.4 }}
+																	>
+																		{t === "vencimiento" ? "Vencimiento" : "Audiencia"}
+																	</Button>
+																))}
+															</Stack>
+															<TextField
+																size="small"
+																label="Título"
+																value={inlineEventTitle}
+																onChange={(e) => setInlineEventTitle(e.target.value)}
+																fullWidth
+																autoFocus
+																inputProps={{ style: { fontSize: "0.8rem" } }}
+																InputLabelProps={{ style: { fontSize: "0.8rem" } }}
+															/>
+															<TextField
+																size="small"
+																label="Fecha (DD/MM/AAAA)"
+																value={inlineEventDate}
+																onChange={(e) => setInlineEventDate(e.target.value)}
+																fullWidth
+																placeholder="DD/MM/AAAA"
+																inputProps={{ style: { fontSize: "0.8rem" } }}
+																InputLabelProps={{ style: { fontSize: "0.8rem" } }}
+															/>
+															<Stack direction="row" spacing={1} justifyContent="flex-end">
+																<Button
+																	size="small"
+																	onClick={handleCancelInline}
+																	disabled={inlineSubmitting}
+																	sx={{ textTransform: "none", fontSize: "0.75rem" }}
+																>
+																	Cancelar
+																</Button>
+																<Button
+																	size="small"
+																	variant="contained"
+																	onClick={handleSubmitInlineEvent}
+																	disabled={!inlineEventTitle.trim() || !inlineEventDate.trim() || inlineSubmitting}
+																	startIcon={inlineSubmitting ? <CircularProgress size={12} /> : <TickSquare size={14} />}
+																	sx={{ textTransform: "none", fontSize: "0.75rem" }}
+																>
+																	Crear
+																</Button>
+															</Stack>
+														</Stack>
+													</Box>
+												</motion.div>
+											)}
+										</AnimatePresence>
+
 										{isManualMovement && (
 											<Button
 												variant="outlined"
@@ -1212,12 +1361,37 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({
 														Cargando...
 													</Typography>
 												</Stack>
-											) : linkedNotes.length === 0 && linkedTasks.length === 0 ? (
+											) : linkedNotes.length === 0 && linkedTasks.length === 0 && linkedEvents.length === 0 ? (
 												<Typography variant="caption" color="text.secondary">
-													Sin notas ni tareas vinculadas
+													Sin notas, tareas ni vencimientos vinculados
 												</Typography>
 											) : (
 												<Stack spacing={1}>
+													{linkedEvents.map((event) => (
+														<Box
+															key={event._id}
+															sx={{
+																p: 1,
+																borderRadius: 1,
+																bgcolor: alpha(event.type === "audiencia" ? theme.palette.info.main : theme.palette.error.main, 0.04),
+																border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+															}}
+														>
+															<Stack direction="row" spacing={0.5} alignItems="center">
+																<Calendar
+																	size={12}
+																	color={event.type === "audiencia" ? theme.palette.info.main : theme.palette.error.main}
+																/>
+																<Typography
+																	variant="caption"
+																	fontWeight={500}
+																	sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+																>
+																	{event.title}
+																</Typography>
+															</Stack>
+														</Box>
+													))}
 													{linkedTasks.map((task) => (
 														<Box
 															key={task._id}

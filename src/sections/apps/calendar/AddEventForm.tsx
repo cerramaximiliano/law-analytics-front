@@ -88,9 +88,9 @@ export interface AddEventFormProps {
 	userId?: string;
 	folderId?: string;
 	folderName?: string;
-	// Vincular el evento a un movimiento (vencimientos desde el viewer PJN).
+	// Vincular el evento a un movimiento (vencimientos desde los viewers de movimientos).
 	movementRef?: string;
-	movementSource?: "pjn" | "mev" | null;
+	movementSource?: "pjn" | "mev" | "scba" | "eje" | "manual" | null;
 	// Tipo preseleccionado al crear (ej. "vencimiento" desde el viewer).
 	defaultType?: string;
 }
@@ -173,7 +173,7 @@ const AddEventFrom = ({
 					userId: userId,
 					...(groupId && { groupId }),
 					folderId: folderId || undefined,
-					...(movementRef && { movementRef, movementSource: movementSource || "pjn" }),
+					...(movementRef && { movementRef, ...(movementSource ? { movementSource } : {}) }),
 					title: values.title,
 					description: values.description,
 					color: values.color,
