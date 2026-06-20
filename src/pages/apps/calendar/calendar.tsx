@@ -1,5 +1,6 @@
 import React from "react";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 // material-ui
@@ -7,13 +8,11 @@ import { alpha, Theme, useTheme } from "@mui/material/styles";
 import {
 	useMediaQuery,
 	Box,
-	Dialog,
 	Tooltip,
 	Typography,
 	Button,
 	Stack,
 	IconButton,
-	Divider,
 	Grid,
 	DialogTitle,
 	DialogContent,
@@ -27,6 +26,8 @@ import {
 	CircularProgress,
 	Skeleton,
 	Card,
+	Chip,
+	Link,
 } from "@mui/material";
 import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 
@@ -67,6 +68,7 @@ import {
 	Calendar1,
 	Category,
 	Grid6,
+	DocumentText,
 } from "iconsax-react";
 import { dispatch, useSelector } from "store";
 import { addBatchEvents, deleteEvent, getEventsByUserId, getEventsByGroupId, selectEvent, updateEvent } from "store/reducers/events";
@@ -75,7 +77,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 // Importación de eventos y carpetas types
 import { Event } from "types/events";
 import { Folder } from "types/folders";
-import { getFoldersByUserId, getFoldersByGroupId } from "store/reducers/folder";
+import { getFoldersByUserId } from "store/reducers/folder";
 import { useTeam } from "contexts/TeamContext";
 import googleCalendarService from "services/googleCalendarService";
 
@@ -205,7 +207,23 @@ interface EventDetailsViewProps {
 // Componente para la visualización detallada de un evento
 const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete, canUpdate = true, canDelete = true }: EventDetailsViewProps) => {
 	const theme = useTheme();
+	const navigate = useNavigate();
 	const eventType = event?.type || "";
+
+	// Navegar a la carpeta vinculada (la ruta cambia → el diálogo se desmonta).
+	const handleGoToFolder = () => {
+		if (!event?.folderId) return;
+		onClose();
+		navigate(`/apps/folders/details/${event.folderId}`);
+	};
+
+	// Navegar al movimiento puntual que originó este evento (deep-link de Fase 4:
+	// abre la pestaña Actividad + resalta la fila del movimiento).
+	const handleGoToMovement = () => {
+		if (!event?.movementRef || !event?.folderId) return;
+		onClose();
+		navigate(`/apps/folders/details/${event.folderId}?movement=${encodeURIComponent(event.movementRef)}`);
+	};
 
 	// Mapeo de tipos a etiquetas en español
 	const eventTypeLabels: Record<string, string> = {
@@ -328,9 +346,46 @@ const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete, canUpdate 
 								<Typography variant="subtitle2" color="textSecondary">
 									Carpeta:
 								</Typography>
-								<Typography variant="body1" sx={{ mb: 1 }}>
-									{event.folderName}
+								{event?.folderId ? (
+									<Link
+										component="button"
+										type="button"
+										onClick={handleGoToFolder}
+										sx={{
+											mb: 1,
+											fontSize: "1rem",
+											fontWeight: 500,
+											color: theme.palette.primary.main,
+											textDecorationColor: alpha(theme.palette.primary.main, 0.4),
+											cursor: "pointer",
+										}}
+									>
+										{event.folderName}
+									</Link>
+								) : (
+									<Typography variant="body1" sx={{ mb: 1 }}>
+										{event.folderName}
+									</Typography>
+								)}
+							</Grid>
+						)}
+
+						{event?.movementRef && event?.folderId && (
+							<Grid item xs={12}>
+								<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.75 }}>
+									Movimiento vinculado:
 								</Typography>
+								<Tooltip title="Ir al movimiento del expediente">
+									<Chip
+										icon={<DocumentText size={16} />}
+										label="Ir al movimiento"
+										color="info"
+										variant="outlined"
+										clickable
+										onClick={handleGoToMovement}
+										sx={{ fontWeight: 600 }}
+									/>
+								</Tooltip>
 							</Grid>
 						)}
 					</Grid>
@@ -962,6 +1017,8 @@ const Calendar = () => {
 			type: event.type,
 			folderId: event.folderId,
 			folderName: event.folderName,
+			movementRef: event.movementRef,
+			movementSource: event.movementSource,
 		},
 	}));
 
@@ -1437,8 +1494,10 @@ const Calendar = () => {
 						const title = eventArg.event.title;
 						// timeText can be empty for all-day events; only render when present
 						const time = eventArg.timeText;
+						// Marcador para vencimientos vinculados a un movimiento judicial.
+						const hasMovement = Boolean(eventArg.event.extendedProps?.movementRef);
 						return (
-							<Tooltip title={title} placement="top" arrow>
+							<Tooltip title={hasMovement ? `${title} · vinculado a un movimiento` : title} placement="top" arrow>
 								<Box
 									sx={{
 										display: "flex",
@@ -1448,6 +1507,11 @@ const Calendar = () => {
 										px: 0.5,
 									}}
 								>
+									{hasMovement && (
+										<Box component="span" sx={{ flexShrink: 0, mr: 0.4, display: "inline-flex", alignItems: "center" }}>
+											<DocumentText size={11} variant="Bold" />
+										</Box>
+									)}
 									{time && (
 										<Typography
 											component="span"

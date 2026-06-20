@@ -170,7 +170,8 @@ export const getEventsByUserId = (userId: string) => async (dispatch: Dispatch) 
 	dispatch({ type: SET_LOADING });
 	try {
 		// Campos optimizados para listas - IMPORTANTE: incluir googleCalendarId
-		const fields = "_id,title,description,type,color,allDay,start,end,folderId,folderName,googleCalendarId,syncedWithGoogle";
+		const fields =
+			"_id,title,description,type,color,allDay,start,end,folderId,folderName,googleCalendarId,syncedWithGoogle,movementRef,movementSource";
 		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 		const response = await axios.get(`${baseUrl}/api/events/user/${userId}`, {
 			params: { fields },
