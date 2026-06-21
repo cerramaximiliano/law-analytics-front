@@ -23,8 +23,10 @@ import {
 	Radio,
 	Button,
 	Tooltip,
+	IconButton,
+	InputAdornment,
 } from "@mui/material";
-import { DocumentUpload, Link1, DocumentText1, InfoCircle, SearchNormal1, ArrowRight2, TickCircle } from "iconsax-react";
+import { DocumentUpload, Link1, DocumentText1, InfoCircle, SearchNormal1, ArrowRight2, TickCircle, Eye, EyeSlash, ShieldTick } from "iconsax-react";
 import { alpha, useTheme } from "@mui/material/styles";
 import { BRAND_BLUE, LIVE_GREEN } from "themes/dashboardTokens";
 import { useFormikContext } from "formik";
@@ -235,6 +237,7 @@ const AutomaticStep = () => {
 	// Modo de importación Buenos Aires: conectar cuenta SCBA o importar expediente individual.
 	// Mismo patrón que `pjnImportMode`.
 	const [baImportMode, setBaImportMode] = useState<BaImportMode>((values.baImportMode as BaImportMode) || "connect");
+	const [showMevPassword, setShowMevPassword] = useState(false);
 
 	// Estado para errores de EJE (CABA)
 	const [cuijError, setCuijError] = useState("");
@@ -1625,6 +1628,54 @@ const AutomaticStep = () => {
 									</Grid>
 									<Grid item xs={12}>
 										{renderNotice("El expediente debe ser de acceso público.", "warning")}
+									</Grid>
+
+									{/* Credenciales del portal MEV del usuario (obligatorias): el scraping
+									    de esta causa usa la cuenta del usuario, sin fallback al sistema. */}
+									<Grid item xs={12}>
+										<Divider sx={{ my: 0.5 }}>
+											<Typography sx={{ ...labelSx, color: "text.secondary" }}>Credenciales del portal MEV</Typography>
+										</Divider>
+										{renderNotice(
+											"Para consultar esta causa usamos tu cuenta del portal MEV (mev.scba.gov.ar). Tu contraseña se guarda encriptada (AES-256).",
+											"info",
+										)}
+									</Grid>
+									<Grid item xs={12} sm={6}>
+										<Stack spacing={0.625}>
+											<InputLabel htmlFor="mevUsername" sx={labelSx}>
+												Usuario MEV
+											</InputLabel>
+											<InputField fullWidth sx={fieldSx} id="mev-username" name="mevUsername" placeholder="Tu usuario del portal MEV" autoComplete="off" />
+										</Stack>
+									</Grid>
+									<Grid item xs={12} sm={6}>
+										<Stack spacing={0.625}>
+											<InputLabel htmlFor="mevPassword" sx={labelSx}>
+												Contraseña MEV
+											</InputLabel>
+											<InputField
+												fullWidth
+												sx={fieldSx}
+												id="mev-password"
+												name="mevPassword"
+												type={showMevPassword ? "text" : "password"}
+												placeholder="Tu contraseña del portal MEV"
+												autoComplete="new-password"
+												InputProps={{
+													endAdornment: (
+														<InputAdornment position="end">
+															<Tooltip title="Se almacena encriptada (AES-256)">
+																<ShieldTick size={16} variant="Bulk" color={BRAND_BLUE} />
+															</Tooltip>
+															<IconButton onClick={() => setShowMevPassword((s) => !s)} edge="end" size="small">
+																{showMevPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
+															</IconButton>
+														</InputAdornment>
+													),
+												}}
+											/>
+										</Stack>
 									</Grid>
 
 									<Grid item xs={12}>

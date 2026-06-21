@@ -68,6 +68,8 @@ const getInitialValues = (
 		ejeCuij: "", // CUIJ para búsqueda en EJE
 		pjnImportMode: overrides?.pjnImportMode ?? "connect", // Modo de importación PJN: "connect" o "single"
 		baImportMode: overrides?.baImportMode ?? "connect", // Modo de importación BA: "connect" o "single"
+		mevUsername: "", // Credencial del portal MEV del usuario (importar expediente individual)
+		mevPassword: "", // Contraseña del portal MEV del usuario
 	};
 
 	if (folder) {
@@ -164,6 +166,18 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 		organismoBA: Yup.string().required("Seleccione un organismo"),
 		expedientNumber: Yup.string().required("Ingrese el número de expediente"),
 		expedientYear: Yup.string().required("Ingrese el año del expediente"),
+		// Credenciales del portal MEV: obligatorias al importar un expediente
+		// individual (el scraping usa la cuenta del usuario, sin fallback al sistema).
+		mevUsername: Yup.string().when("baImportMode", {
+			is: "single",
+			then: (schema) => schema.required("Ingrese su usuario del portal MEV"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
+		mevPassword: Yup.string().when("baImportMode", {
+			is: "single",
+			then: (schema) => schema.required("Ingrese su contraseña del portal MEV"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
 	});
 
 	// Esquema para CABA (EJE) - validación dinámica según tipo de búsqueda
@@ -417,7 +431,14 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 						...folderDataToSend,
 						mev: true,
 						// navigationCode ya viene del formulario
-						// Opcionalmente podríamos limpiar campos no necesarios para MEV
+						// Credenciales del usuario para el scraping de esta causa (obligatorias
+						// al importar un expediente individual). El backend las encripta.
+						...(values.baImportMode === "single" && {
+							mevCredentials: {
+								username: values.mevUsername,
+								password: values.mevPassword,
+							},
+						}),
 					};
 				} else if (values.judicialPower === "nacional") {
 					folderDataToSend = {
