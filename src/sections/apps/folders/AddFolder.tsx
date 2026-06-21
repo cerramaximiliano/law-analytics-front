@@ -70,6 +70,7 @@ const getInitialValues = (
 		baImportMode: overrides?.baImportMode ?? "connect", // Modo de importación BA: "connect" o "single"
 		mevUsername: "", // Credencial del portal MEV del usuario (importar expediente individual)
 		mevPassword: "", // Contraseña del portal MEV del usuario
+		hasGlobalMevCred: false, // true si el usuario ya tiene credencial MEV global vinculada
 	};
 
 	if (folder) {
@@ -168,13 +169,15 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 		expedientYear: Yup.string().required("Ingrese el año del expediente"),
 		// Credenciales del portal MEV: obligatorias al importar un expediente
 		// individual (el scraping usa la cuenta del usuario, sin fallback al sistema).
-		mevUsername: Yup.string().when("baImportMode", {
-			is: "single",
+		// Requeridas solo al importar individual Y si el usuario NO tiene credencial
+		// MEV global vinculada (en ese caso, la global cubre la causa).
+		mevUsername: Yup.string().when(["baImportMode", "hasGlobalMevCred"], {
+			is: (mode: string, hasGlobal: boolean) => mode === "single" && !hasGlobal,
 			then: (schema) => schema.required("Ingrese su usuario del portal MEV"),
 			otherwise: (schema) => schema.notRequired(),
 		}),
-		mevPassword: Yup.string().when("baImportMode", {
-			is: "single",
+		mevPassword: Yup.string().when(["baImportMode", "hasGlobalMevCred"], {
+			is: (mode: string, hasGlobal: boolean) => mode === "single" && !hasGlobal,
 			then: (schema) => schema.required("Ingrese su contraseña del portal MEV"),
 			otherwise: (schema) => schema.notRequired(),
 		}),
@@ -431,9 +434,10 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 						...folderDataToSend,
 						mev: true,
 						// navigationCode ya viene del formulario
-						// Credenciales del usuario para el scraping de esta causa (obligatorias
-						// al importar un expediente individual). El backend las encripta.
-						...(values.baImportMode === "single" && {
+						// Credenciales del usuario para el scraping de esta causa. Solo se
+						// mandan si NO tiene credencial global (esa cubre la causa). El backend
+						// las encripta.
+						...(values.baImportMode === "single" && !values.hasGlobalMevCred && {
 							mevCredentials: {
 								username: values.mevUsername,
 								password: values.mevPassword,

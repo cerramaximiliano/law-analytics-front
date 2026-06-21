@@ -33,6 +33,7 @@ import { useFormikContext } from "formik";
 import InputField from "components/UI/InputField";
 import { useState, useEffect, useRef } from "react";
 import mevWorkersService, { NavigationCode } from "api/workersMev";
+import mevCredentialsService from "api/mevCredentials";
 import ejeWorkersService from "api/workersEje";
 import PjnAccountConnect, { PjnAccountConnectRef } from "./PjnAccountConnect";
 import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
@@ -202,6 +203,9 @@ interface FormValues {
 	// "single" via `initialFormValues` y el `useState` local los recoja al mount.
 	pjnImportMode?: string;
 	baImportMode?: string;
+	mevUsername?: string;
+	mevPassword?: string;
+	hasGlobalMevCred?: boolean;
 }
 
 // Modos de importación para PJN Nacional y Buenos Aires
@@ -277,6 +281,28 @@ const AutomaticStep = () => {
 		if (values.judicialPower === "buenosaires" && baImportMode === "single") {
 			loadNavigationCodes();
 		}
+	}, [values.judicialPower, baImportMode]);
+
+	// Detectar si el usuario ya tiene credencial MEV global vinculada. Si la tiene,
+	// no le pedimos credencial por causa (la global cubre todas).
+	useEffect(() => {
+		let cancelled = false;
+		if (values.judicialPower === "buenosaires" && baImportMode === "single") {
+			mevCredentialsService
+				.getCredentialsStatus()
+				.then((res) => {
+					if (cancelled) return;
+					const hasGlobal = !!(res.success && res.data && res.data.global && res.data.global.enabled);
+					setFieldValue("hasGlobalMevCred", hasGlobal);
+				})
+				.catch(() => {
+					if (!cancelled) setFieldValue("hasGlobalMevCred", false);
+				});
+		}
+		return () => {
+			cancelled = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [values.judicialPower, baImportMode]);
 
 	const loadNavigationCodes = async () => {
@@ -1630,53 +1656,64 @@ const AutomaticStep = () => {
 										{renderNotice("El expediente debe ser de acceso público.", "warning")}
 									</Grid>
 
-									{/* Credenciales del portal MEV del usuario (obligatorias): el scraping
-									    de esta causa usa la cuenta del usuario, sin fallback al sistema. */}
-									<Grid item xs={12}>
-										<Divider sx={{ my: 0.5 }}>
-											<Typography sx={{ ...labelSx, color: "text.secondary" }}>Credenciales del portal MEV</Typography>
-										</Divider>
-										{renderNotice(
-											"Para consultar esta causa usamos tu cuenta del portal MEV (mev.scba.gov.ar). Tu contraseña se guarda encriptada (AES-256).",
-											"info",
-										)}
-									</Grid>
-									<Grid item xs={12} sm={6}>
-										<Stack spacing={0.625}>
-											<InputLabel htmlFor="mevUsername" sx={labelSx}>
-												Usuario MEV
-											</InputLabel>
-											<InputField fullWidth sx={fieldSx} id="mev-username" name="mevUsername" placeholder="Tu usuario del portal MEV" autoComplete="off" />
-										</Stack>
-									</Grid>
-									<Grid item xs={12} sm={6}>
-										<Stack spacing={0.625}>
-											<InputLabel htmlFor="mevPassword" sx={labelSx}>
-												Contraseña MEV
-											</InputLabel>
-											<InputField
-												fullWidth
-												sx={fieldSx}
-												id="mev-password"
-												name="mevPassword"
-												type={showMevPassword ? "text" : "password"}
-												placeholder="Tu contraseña del portal MEV"
-												autoComplete="new-password"
-												InputProps={{
-													endAdornment: (
-														<InputAdornment position="end">
-															<Tooltip title="Se almacena encriptada (AES-256)">
-																<ShieldTick size={16} variant="Bulk" color={BRAND_BLUE} />
-															</Tooltip>
-															<IconButton onClick={() => setShowMevPassword((s) => !s)} edge="end" size="small">
-																{showMevPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
-															</IconButton>
-														</InputAdornment>
-													),
-												}}
-											/>
-										</Stack>
-									</Grid>
+									{!values.hasGlobalMevCred ? (
+										<>
+										{/* Credenciales del portal MEV del usuario (obligatorias): el scraping
+										    de esta causa usa la cuenta del usuario, sin fallback al sistema. */}
+										<Grid item xs={12}>
+											<Divider sx={{ my: 0.5 }}>
+												<Typography sx={{ ...labelSx, color: "text.secondary" }}>Credenciales del portal MEV</Typography>
+											</Divider>
+											{renderNotice(
+												"Para consultar esta causa usamos tu cuenta del portal MEV (mev.scba.gov.ar). Tu contraseña se guarda encriptada (AES-256).",
+												"info",
+											)}
+										</Grid>
+										<Grid item xs={12} sm={6}>
+											<Stack spacing={0.625}>
+												<InputLabel htmlFor="mevUsername" sx={labelSx}>
+													Usuario MEV
+												</InputLabel>
+												<InputField fullWidth sx={fieldSx} id="mev-username" name="mevUsername" placeholder="Tu usuario del portal MEV" autoComplete="off" />
+											</Stack>
+										</Grid>
+										<Grid item xs={12} sm={6}>
+											<Stack spacing={0.625}>
+												<InputLabel htmlFor="mevPassword" sx={labelSx}>
+													Contraseña MEV
+												</InputLabel>
+												<InputField
+													fullWidth
+													sx={fieldSx}
+													id="mev-password"
+													name="mevPassword"
+													type={showMevPassword ? "text" : "password"}
+													placeholder="Tu contraseña del portal MEV"
+													autoComplete="new-password"
+													InputProps={{
+														endAdornment: (
+															<InputAdornment position="end">
+																<Tooltip title="Se almacena encriptada (AES-256)">
+																	<ShieldTick size={16} variant="Bulk" color={BRAND_BLUE} />
+																</Tooltip>
+																<IconButton onClick={() => setShowMevPassword((s) => !s)} edge="end" size="small">
+																	{showMevPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
+																</IconButton>
+															</InputAdornment>
+														),
+													}}
+												/>
+											</Stack>
+										</Grid>
+										</>
+									) : (
+										<Grid item xs={12}>
+											{renderNotice(
+												"Usaremos tu cuenta MEV vinculada para consultar esta causa. Podés gestionarla en tu perfil → Integraciones → MEV.",
+												"info",
+											)}
+										</Grid>
+									)}
 
 									<Grid item xs={12}>
 										<Button

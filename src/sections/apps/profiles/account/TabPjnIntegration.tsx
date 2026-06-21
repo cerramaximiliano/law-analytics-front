@@ -19,6 +19,7 @@ import { enqueueSnackbar } from "notistack";
 import MainCard from "components/MainCard";
 import PjnAccountConnect from "sections/apps/folders/step-components/PjnAccountConnect";
 import ScbaAccountConnect from "sections/apps/folders/step-components/ScbaAccountConnect";
+import MevAccountConnect from "sections/apps/profiles/account/MevAccountConnect";
 import ApiService from "store/reducers/ApiService";
 import { dispatch } from "store";
 import { fetchPjnSiteStatus } from "store/reducers/pjnSiteStatus";
@@ -36,27 +37,30 @@ const TabPjnIntegration = () => {
 	type ConnectionStatus = "connected" | "error" | "disconnected" | null;
 	const [isConnected, setIsConnected] = useState<ConnectionStatus>(null);
 	const [isScbaConnected, setIsScbaConnected] = useState<ConnectionStatus>(null);
+	const [isMevConnected, setIsMevConnected] = useState<ConnectionStatus>(null);
 
 	// Vista activa (PJN o SCBA) sincronizada con el query param `view`.
 	// Permite que badges externos (FoldersSyncBadges) y links directos abran la
 	// integración correcta sin que el user tenga que clickear el toggle. Default
 	// 'pjn' si no hay param o el valor no es válido. Diseñado para extender a
 	// nuevas integraciones (MEV, EJE, etc.): sumar valor al union + ToggleButton.
+	type IntegrationView = "pjn" | "scba" | "mev";
+	const parseView = (v: string | null): IntegrationView => (v === "scba" ? "scba" : v === "mev" ? "mev" : "pjn");
 	const [searchParams, setSearchParams] = useSearchParams();
-	const initialView: "pjn" | "scba" = searchParams.get("view") === "scba" ? "scba" : "pjn";
-	const [view, setView] = useState<"pjn" | "scba">(initialView);
+	const initialView: IntegrationView = parseView(searchParams.get("view"));
+	const [view, setView] = useState<IntegrationView>(initialView);
 
 	// Mantener sincronizado view ← URL: si el user navega con el back/forward
 	// del browser, el toggle refleja el cambio.
 	useEffect(() => {
-		const fromUrl = searchParams.get("view") === "scba" ? "scba" : "pjn";
+		const fromUrl = parseView(searchParams.get("view"));
 		if (fromUrl !== view) setView(fromUrl);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [searchParams]);
 
 	// Mantener sincronizado URL ← view: si el user toca el toggle, la URL refleja
 	// el tab seleccionado (sharing-friendly + reactivo a back/forward).
-	const handleViewChange = (next: "pjn" | "scba") => {
+	const handleViewChange = (next: IntegrationView) => {
 		setView(next);
 		setSearchParams(prev => {
 			const params = new URLSearchParams(prev);
@@ -295,6 +299,13 @@ const TabPjnIntegration = () => {
 							<ViewStatusDot status={isScbaConnected} />
 						</Stack>
 					</ToggleButton>
+					<ToggleButton value="mev" sx={toggleButtonSx}>
+						<Stack direction="row" alignItems="center" spacing={1}>
+							<Buildings2 size={15} variant="Bulk" />
+							<span>Mesa de Entradas Virtual (MEV)</span>
+							<ViewStatusDot status={isMevConnected} />
+						</Stack>
+					</ToggleButton>
 				</ToggleButtonGroup>
 			</Box>
 
@@ -413,7 +424,7 @@ const TabPjnIntegration = () => {
 				</SectionCard>
 			</Grid>
 			</Grid>
-			) : (
+			) : view === "scba" ? (
 				<Grid container spacing={2.5}>
 					<Grid item xs={12} md={6}>
 						<SectionCard
@@ -422,6 +433,20 @@ const TabPjnIntegration = () => {
 							subtitle="Vincula tu domicilio electrónico de la Suprema Corte de Buenos Aires para sincronizar tus causas provinciales."
 							icon={<Link1 size={16} variant="Bulk" />}
 							rightSlot={isScbaConnected !== null ? <StatusPill status={isScbaConnected} /> : undefined}
+						>
+							<ScbaAccountConnect onConnectionStatusChange={(connected) => setIsScbaConnected(connected)} />
+						</SectionCard>
+					</Grid>
+				</Grid>
+			) : (
+				<Grid container spacing={2.5}>
+					<Grid item xs={12} md={6}>
+						<SectionCard
+							eyebrow="Integración · MEV"
+							title="Cuenta MEV"
+							subtitle="Vinculá tu cuenta del portal MEV (mev.scba.gov.ar). Con una sola credencial cubrimos todas tus causas de Buenos Aires."
+							icon={<Link1 size={16} variant="Bulk" />}
+							rightSlot={isMevConnected !== null ? <StatusPill status={isMevConnected} /> : undefined}
 						>
 							<ScbaAccountConnect onConnectionStatusChange={(connected) => setIsScbaConnected(connected)} />
 						</SectionCard>
