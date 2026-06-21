@@ -448,7 +448,7 @@ const TabPjnIntegration = () => {
 							icon={<Link1 size={16} variant="Bulk" />}
 							rightSlot={isMevConnected !== null ? <StatusPill status={isMevConnected} /> : undefined}
 						>
-							<ScbaAccountConnect onConnectionStatusChange={(connected) => setIsScbaConnected(connected)} />
+							<MevAccountConnect onConnectionStatusChange={(connected) => setIsMevConnected(connected)} />
 						</SectionCard>
 					</Grid>
 				</Grid>

@@ -120,7 +120,8 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 			<TextField
 				fullWidth
 				size="small"
-				label="Usuario MEV"
+				label="Nombre de usuario"
+				placeholder="Tu nombre de usuario del portal MEV"
 				value={username}
 				onChange={(e) => setUsername(e.target.value)}
 				autoComplete="off"
