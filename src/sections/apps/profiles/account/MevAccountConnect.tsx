@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { Box, Stack, Typography, TextField, Button, InputAdornment, IconButton, Tooltip, CircularProgress, Chip, alpha, useTheme } from "@mui/material";
 import { Eye, EyeSlash, ShieldTick, TickCircle, CloseCircle, Link1, Trash } from "iconsax-react";
 import { useSnackbar } from "notistack";
+import { useSelector } from "react-redux";
+import { dispatch as storeDispatch } from "store";
+import { getFoldersByUserId } from "store/reducers/folder";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import mevCredentialsService, { MevCredentialData } from "api/mevCredentials";
 
@@ -33,6 +36,14 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const { enqueueSnackbar } = useSnackbar();
+	const authUser = useSelector((state: any) => state.auth?.user);
+
+	// Refresca el listado de folders en el store para que la tabla refleje los
+	// cambios de mevCredentialStatus (ej. tras desvincular → 'missing').
+	const refreshFolders = () => {
+		const uid = authUser?._id || authUser?.id;
+		if (uid) storeDispatch(getFoldersByUserId(uid, true) as any);
+	};
 
 	const [loading, setLoading] = useState(true);
 	const [global, setGlobal] = useState<MevCredentialData | null>(null);
@@ -78,6 +89,7 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 				setPassword("");
 				setEditing(false);
 				await fetchStatus();
+				refreshFolders();
 			} else {
 				enqueueSnackbar(res.error || "No se pudo guardar la credencial", { variant: "error" });
 			}
@@ -94,6 +106,7 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 			if (res.success) {
 				enqueueSnackbar("Credencial MEV eliminada", { variant: "success" });
 				await fetchStatus();
+				refreshFolders();
 			} else {
 				enqueueSnackbar(res.error || "No se pudo eliminar la credencial", { variant: "error" });
 			}
