@@ -2839,6 +2839,42 @@ const FoldersLayout = () => {
 						);
 					}
 
+					// MEV: problema con la credencial del usuario → warning (en vez del tilde/pendiente).
+					// La causa no se scrapea hasta que el usuario corrija/cargue su credencial.
+					if (folder.mev === true && ["missing", "invalid", "expired", "disabled"].includes(folder.mevCredentialStatus)) {
+						const credMsg = ({
+							missing: "Falta cargar tu credencial del portal MEV para consultar esta causa. Cargala en tu perfil → Integraciones → MEV.",
+							invalid: "No pudimos iniciar sesión en el portal MEV con tus credenciales. Revisalas y recargalas en tu perfil.",
+							expired: "Tu contraseña del portal MEV expiró. Actualizala y recargala en tu perfil.",
+							disabled: "Desactivamos tu credencial MEV por fallos repetidos. Verificala y recargala en tu perfil.",
+						} as Record<string, string>)[folder.mevCredentialStatus];
+						const credLabel = ({ missing: "Credencial requerida", invalid: "Credencial inválida", expired: "Contraseña expirada", disabled: "Credencial desactivada" } as Record<string, string>)[folder.mevCredentialStatus];
+						return (
+							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
+								<Box
+									onClick={(e) => { e.stopPropagation(); navigate("/apps/profiles/account/pjn?view=mev"); }}
+									sx={{
+										display: "inline-flex", alignItems: "center", gap: 0.625, px: 0.875, py: 0.25, borderRadius: 0.75,
+										bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
+										border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+										cursor: "pointer",
+										"&:hover": { bgcolor: alpha(STALE_AMBER, isDark ? 0.22 : 0.14) },
+									}}
+								>
+									<Warning2 size={12} variant="Bulk" color={STALE_AMBER} />
+									<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
+										{credLabel}
+									</Typography>
+								</Box>
+								<Tooltip title={credMsg}>
+									<IconButton size="small" onClick={(e) => { e.stopPropagation(); navigate("/apps/profiles/account/pjn?view=mev"); }} sx={{ padding: 0.5, "&:hover": { backgroundColor: "warning.lighter" } }}>
+										<Warning2 size={16} variant="Bold" color="#F59E0B" />
+									</IconButton>
+								</Tooltip>
+							</Stack>
+						);
+					}
+
 					// Si causaVerified es false o no está verificado (pendiente), mostrar chip de pendiente con botón de actualización
 					if (
 						folder.causaVerified === false ||
