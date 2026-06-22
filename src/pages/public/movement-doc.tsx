@@ -34,7 +34,7 @@ import {
 import { DocumentDownload, ExportSquare, LoginCurve } from "iconsax-react";
 
 import Logo from "components/logo";
-import { getPublicMovementDoc } from "services/publicMovementsService";
+import { getPublicMovementDoc, sendPublicMovementEvent } from "services/publicMovementsService";
 import { trackNotificationMovementCtaClick, trackNotificationMovementOpen } from "utils/gtm";
 import type { PublicMovementDocResponse } from "types/publicMovement";
 
@@ -84,7 +84,7 @@ const MovementDocPublicPage = () => {
 
 		const fetchDoc = (silent = false) => {
 			if (!silent) setLoading(true);
-			getPublicMovementDoc(token)
+			getPublicMovementDoc(token, silent)
 				.then((res) => {
 					if (cancelled) return;
 					setData(res);
@@ -95,6 +95,9 @@ const MovementDocPublicPage = () => {
 					if (!trackedRef.current) {
 						trackedRef.current = true;
 						trackNotificationMovementOpen({ source, fuero: res.expediente?.fuero ?? null, hasPdf: Boolean(res.pdfUrl) });
+						// Beacon server-side: vista confirmada (corrió JS → humano real,
+						// descuenta bots/prefetchers del `open` que registra el GET).
+						sendPublicMovementEvent(token, "view_confirmed", source);
 					}
 
 					// Reprogramar refresco de la presigned URL mientras hay PDF.
@@ -130,7 +133,16 @@ const MovementDocPublicPage = () => {
 	const fallbackUrl = data?.fallbackUrl || null;
 	const showPdf = Boolean(pdfUrl) && !iframeFailed;
 
-	const handleCtaClick = () => trackNotificationMovementCtaClick(Boolean(folderId));
+	const handleCtaClick = () => {
+		trackNotificationMovementCtaClick(Boolean(folderId));
+		if (token) sendPublicMovementEvent(token, "cta_click", source);
+	};
+	const handleDownloadClick = () => {
+		if (token) sendPublicMovementEvent(token, "download", source);
+	};
+	const handleFallbackClick = () => {
+		if (token) sendPublicMovementEvent(token, "fallback_click", source);
+	};
 
 	return (
 		<Box sx={{ display: "flex", flexDirection: "column", height: "100vh", bgcolor: theme.palette.grey[100] }}>
@@ -253,6 +265,7 @@ const MovementDocPublicPage = () => {
 												href={fallbackUrl}
 												target="_blank"
 												rel="noopener noreferrer"
+												onClick={handleFallbackClick}
 											>
 												Ver en el portal del PJN (requiere tu login del PJN)
 											</Button>
@@ -283,11 +296,19 @@ const MovementDocPublicPage = () => {
 							startIcon={<DocumentDownload size="18" />}
 							href={pdfUrl as string}
 							download={`${movimiento?.tipo || "documento"}.pdf`}
+							onClick={handleDownloadClick}
 						>
 							Descargar
 						</Button>
 						{fallbackUrl && (
-							<Button size="small" startIcon={<ExportSquare size="18" />} href={fallbackUrl} target="_blank" rel="noopener noreferrer">
+							<Button
+								size="small"
+								startIcon={<ExportSquare size="18" />}
+								href={fallbackUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								onClick={handleFallbackClick}
+							>
 								Original PJN
 							</Button>
 						)}
