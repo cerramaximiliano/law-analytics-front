@@ -1241,7 +1241,9 @@ const PostalTrackingPage = () => {
 																				row.processingStatus === "paused" ||
 																				row.processingStatus === "error" ||
 																				(row.processingStatus === "completed" &&
-																					(row.manuallyCompleted || row.autoCompletedReason === "code_reuse_detected"));
+																					(row.manuallyCompleted ||
+											row.autoCompletedReason === "code_reuse_detected" ||
+											row.autoCompletedReason === "disappeared_from_source"));
 																			const reactivateTooltip =
 																				row.processingStatus === "not_found"
 																					? "No se puede reactivar un seguimiento no encontrado por el sitio"
