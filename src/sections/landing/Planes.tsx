@@ -94,7 +94,7 @@ const PLAN_DEFAULTS: Plan[] = [
 	{
 		id: "standard",
 		name: "Estándar",
-		price: "$19.99",
+		price: "$7.99",
 		priceSuffix: "/mes",
 		rows: [
 			{ label: "50 causas activas", enabled: true },
@@ -110,7 +110,7 @@ const PLAN_DEFAULTS: Plan[] = [
 	{
 		id: "pro",
 		name: "Pro",
-		price: "$24.99",
+		price: "$14.99",
 		priceSuffix: "/mes",
 		rows: [
 			{ label: "200 causas activas", enabled: true },
@@ -126,7 +126,7 @@ const PLAN_DEFAULTS: Plan[] = [
 	{
 		id: "premium",
 		name: "Premium",
-		price: "$49.99",
+		price: "$29.99",
 		priceSuffix: "/mes",
 		rows: [
 			{ label: "500 causas activas", enabled: true },

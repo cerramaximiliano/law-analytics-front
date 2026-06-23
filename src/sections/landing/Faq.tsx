@@ -29,7 +29,7 @@ const FAQS: FaqItem[] = [
 		id: "pricing",
 		question: "¿Hay una prueba gratis? ¿Cómo es el pricing?",
 		answer:
-			"Tenés un plan Gratuito para siempre con 5 causas activas. Estándar ($19.99/mes) llega a 50 causas y Premium ($49.99/mes) a 500, ambos con integraciones PJN/MEV, escritos con IA y más. Podés probar cualquier plan sin tarjeta y cancelar cuando quieras.",
+			"Tenés un plan Gratuito para siempre con 5 causas activas. Estándar ($7.99/mes) llega a 50 causas y Premium ($29.99/mes) a 500, ambos con integraciones PJN/MEV, escritos con IA y más. Podés probar cualquier plan sin tarjeta y cancelar cuando quieras.",
 	},
 	{
 		id: "security",
