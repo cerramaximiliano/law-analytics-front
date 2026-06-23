@@ -42,7 +42,7 @@ interface PlanDiscount {
 }
 
 interface Plan {
-	id: "free" | "standard" | "premium";
+	id: "free" | "standard" | "pro" | "premium";
 	name: string;
 	price: string;
 	priceSuffix: string;
@@ -89,7 +89,7 @@ const PLAN_DEFAULTS: Plan[] = [
 		cta: "Empezar gratis",
 		ctaTo: "/register?source=plan_teaser&plan=free",
 		highlighted: false,
-		mobileOrder: 2,
+		mobileOrder: 4,
 	},
 	{
 		id: "standard",
@@ -105,6 +105,22 @@ const PLAN_DEFAULTS: Plan[] = [
 		cta: "Probar Estándar",
 		ctaTo: "/register?source=plan_teaser&plan=standard",
 		highlighted: true,
+		mobileOrder: 2,
+	},
+	{
+		id: "pro",
+		name: "Pro",
+		price: "$24.99",
+		priceSuffix: "/mes",
+		rows: [
+			{ label: "200 causas activas", enabled: true },
+			{ label: "Sincronización con PJN, MEV y EJE", enabled: true },
+			{ label: "750 consultas IA/mes", enabled: true },
+			{ label: "Sistema de reservas online", enabled: true },
+		],
+		cta: "Probar Pro",
+		ctaTo: "/register?source=plan_teaser&plan=pro",
+		highlighted: false,
 		mobileOrder: 1,
 	},
 	{
@@ -124,6 +140,11 @@ const PLAN_DEFAULTS: Plan[] = [
 		mobileOrder: 3,
 	},
 ];
+
+// Defaults estables que SÍ se muestran siempre (free/standard/premium). PRO se
+// excluye del fallback: solo aparece cuando el API (PlanConfig 'pro' activo) lo
+// devuelve. Así el front queda listo para PRO sin exponerlo en prod antes del seeding.
+const STABLE_PLAN_DEFAULTS: Plan[] = PLAN_DEFAULTS.filter((p) => p.id !== "pro");
 
 const billingSuffixShort = (period: string): string => {
 	switch (period) {
@@ -194,7 +215,7 @@ const Planes = () => {
 	const isDark = theme.palette.mode === "dark";
 	void LIVE_GREEN;
 
-	const [plans, setPlans] = useState<Plan[]>(PLAN_DEFAULTS);
+	const [plans, setPlans] = useState<Plan[]>(STABLE_PLAN_DEFAULTS);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -208,9 +229,15 @@ const Planes = () => {
 				const response = await ApiService.getPublicPlans({ landingOnly: true });
 				if (cancelled || !response?.success || !response.data) return;
 
-				const merged = PLAN_DEFAULTS.map((def) => {
+				const merged = PLAN_DEFAULTS.map((def): Plan | null => {
 					const apiPlan = response.data!.find((p) => p.planId === def.id);
-					if (!apiPlan) return def;
+					if (!apiPlan) {
+						// PRO solo se muestra cuando el backend lo expone (PlanConfig 'pro'
+						// activo). Sin eso, no hay card de PRO ni siquiera como fallback —
+						// evita mostrarlo en prod antes del seeding (Fase 2).
+						if (def.id === "pro") return null;
+						return def;
+					}
 
 					const pricing = getPlanPricing(apiPlan);
 					const isFree = def.id === "free" || pricing.basePrice === 0;
@@ -244,7 +271,12 @@ const Planes = () => {
 							: undefined,
 					};
 				});
-				setPlans(merged);
+				const finalPlans = merged.filter((p): p is Plan => p !== null);
+				// "RECOMENDADO" se mueve a PRO cuando el plan existe (API lo devuelve);
+				// mientras PRO no esté sembrado, se mantiene en Standard (fallback de
+				// PLAN_DEFAULTS) para no dejar la landing sin plan recomendado.
+				const hasPro = finalPlans.some((p) => p.id === "pro");
+				setPlans(hasPro ? finalPlans.map((p) => ({ ...p, highlighted: p.id === "pro" })) : finalPlans);
 			} catch {
 				// silencioso: mantenemos los valores hardcodeados como fallback
 			}
@@ -336,13 +368,19 @@ const Planes = () => {
 				<Grid container spacing={3} alignItems="stretch" justifyContent="center" sx={{ pt: { xs: 2, md: 2 } }}>
 					{plans.map((plan, idx) => {
 						const isHighlighted = plan.highlighted;
+						// Layout adaptativo según cantidad de planes:
+						//  - 3 planes: xs=1 / sm=2 / md+=3 columnas (comportamiento original).
+						//  - 4 planes (con PRO): xs=1 / sm=2 / md=2×2 / lg=4 across — evita
+						//    apretar 4 cards en el rango md (~900-1200px).
+						const isFour = plans.length >= 4;
 
 						return (
 							<Grid
 								item
 								xs={12}
 								sm={6}
-								md={4}
+								md={isFour ? 6 : 4}
+								lg={isFour ? 3 : 4}
 								key={plan.id}
 								sx={{
 									order: { xs: plan.mobileOrder, md: 0 },

@@ -875,6 +875,7 @@ const Pricing = () => {
 		const planDisplayNames: Record<string, string> = {
 			free: "Gratuito",
 			standard: "Estándar",
+			pro: "Pro",
 			premium: "Premium",
 		};
 		const ownerPlanName = ownerSubscription?.planName
@@ -1305,7 +1306,7 @@ const Pricing = () => {
 						plan.planId === "free" &&
 						currentPlanId &&
 						currentPlanId !== "free" &&
-						(currentPlanId === "standard" || currentPlanId === "premium") &&
+						(currentPlanId === "standard" || currentPlanId === "pro" || currentPlanId === "premium") &&
 						!isAlreadyCanceled;
 
 					// Obtener la información de precios según el entorno
@@ -1351,7 +1352,7 @@ const Pricing = () => {
 						(plan.planId === "free" &&
 							isAlreadyCanceled &&
 							currentPlanId !== "free" &&
-							(currentPlanId === "standard" || currentPlanId === "premium"));
+							(currentPlanId === "standard" || currentPlanId === "pro" || currentPlanId === "premium"));
 
 					const handleCtaClick = () => {
 						if (plan.isActive && !loadingPlanId && !reactivating) {
@@ -1375,7 +1376,7 @@ const Pricing = () => {
 						plan.planId === "free" &&
 						isAlreadyCanceled &&
 						currentPlanId !== "free" &&
-						(currentPlanId === "standard" || currentPlanId === "premium") &&
+						(currentPlanId === "standard" || currentPlanId === "pro" || currentPlanId === "premium") &&
 						currentSubscription?.currentPeriodEnd
 					) {
 						contextMessage = {
@@ -1395,10 +1396,10 @@ const Pricing = () => {
 					}
 
 					return (
-						<Grid item xs={12} sm={6} md={4} key={plan.planId}>
+						<Grid item xs={12} sm={6} md={plans.length >= 4 ? 6 : 4} lg={plans.length >= 4 ? 3 : 4} key={plan.planId}>
 							<PlanCard
 								plan={plan}
-								highlighted={plan.planId === "standard" && !isCurrentPlan}
+								highlighted={(plans.some((pp) => pp.planId === "pro") ? plan.planId === "pro" : plan.planId === "standard") && !isCurrentPlan}
 								isCurrent={isCurrentPlan}
 								contextMessage={contextMessage}
 								showInactiveOverlay={isInactive}
@@ -1408,7 +1409,7 @@ const Pricing = () => {
 									onClick: handleCtaClick,
 									disabled: ctaDisabled,
 									loading: loadingPlanId === plan.planId || reactivating,
-									variant: isInactive ? "outlined" : isCurrentPlan || plan.planId === "standard" || plan.planId === "premium" ? "contained" : "outlined",
+									variant: isInactive ? "outlined" : isCurrentPlan || plan.planId === "standard" || plan.planId === "pro" || plan.planId === "premium" ? "contained" : "outlined",
 									color: ctaColor,
 									startIcon: isInactive ? <Lock size={16} /> : undefined,
 									dataTestId: `sub-action-btn-${plan.planId}`,
