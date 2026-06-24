@@ -289,8 +289,6 @@ export interface Subscription {
 	features: {
 		advancedAnalytics: boolean;
 		exportReports: boolean;
-		taskAutomation: boolean;
-		bulkOperations: boolean;
 		prioritySupport: boolean;
 	};
 	createdAt: string;

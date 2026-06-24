@@ -195,22 +195,6 @@ const SubscriptionInfo: React.FC<{ showUpgradeButton?: boolean }> = ({ showUpgra
 						</Grid>
 						<Grid item xs={12} sm={6} md={4}>
 							<Chip
-								label="Task Automation"
-								color={hasFeatureLocal("taskAutomation") ? "primary" : "default"}
-								variant={hasFeatureLocal("taskAutomation") ? "filled" : "outlined"}
-								sx={{ m: 0.5 }}
-							/>
-						</Grid>
-						<Grid item xs={12} sm={6} md={4}>
-							<Chip
-								label="Bulk Operations"
-								color={hasFeatureLocal("bulkOperations") ? "primary" : "default"}
-								variant={hasFeatureLocal("bulkOperations") ? "filled" : "outlined"}
-								sx={{ m: 0.5 }}
-							/>
-						</Grid>
-						<Grid item xs={12} sm={6} md={4}>
-							<Chip
 								label="Priority Support"
 								color={hasFeatureLocal("prioritySupport") ? "primary" : "default"}
 								variant={hasFeatureLocal("prioritySupport") ? "filled" : "outlined"}

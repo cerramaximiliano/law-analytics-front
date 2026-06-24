@@ -101,8 +101,6 @@ export interface Subscription {
 	features: {
 		advancedAnalytics?: boolean;
 		exportReports?: boolean;
-		taskAutomation?: boolean;
-		bulkOperations?: boolean;
 		prioritySupport?: boolean;
 		vinculateFolders?: boolean;
 		booking?: boolean;
@@ -155,8 +153,6 @@ export interface Subscription {
 		originalFeatures?: {
 			advancedAnalytics: boolean;
 			exportReports: boolean;
-			taskAutomation: boolean;
-			bulkOperations: boolean;
 			prioritySupport: boolean;
 			vinculateFolders: boolean;
 			booking: boolean;

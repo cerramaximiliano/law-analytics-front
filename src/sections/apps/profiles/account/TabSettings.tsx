@@ -1231,8 +1231,6 @@ const TabSubscription = () => {
 								const featureNames: { [key: string]: string } = {
 									advancedAnalytics: "Análisis avanzados",
 									exportReports: "Exportación de reportes",
-									taskAutomation: "Automatización de tareas",
-									bulkOperations: "Operaciones masivas",
 									prioritySupport: "Soporte prioritario",
 									movements: "Movimientos judiciales",
 									vinculateFolders: "Vincular carpetas",
