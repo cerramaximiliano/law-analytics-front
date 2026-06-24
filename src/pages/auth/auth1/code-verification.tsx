@@ -84,7 +84,7 @@ const CodeVerification = () => {
 					) : inferredMode === "register" ? (
 						<Grid item xs={12}>
 							<AnimateButton>
-								<Button component={Link} to="/register" disableElevation fullWidth size="large" variant="contained" color="primary">
+								<Button component={Link} to="/register?source=verify_resend" disableElevation fullWidth size="large" variant="contained" color="primary">
 									Crear cuenta
 								</Button>
 							</AnimateButton>
@@ -107,7 +107,7 @@ const CodeVerification = () => {
 								</AnimateButton>
 							</Grid>
 							<Grid item xs={12}>
-								<Button component={Link} to="/register" fullWidth size="large" variant="outlined" color="secondary">
+								<Button component={Link} to="/register?source=verify_resend" fullWidth size="large" variant="outlined" color="secondary">
 									Crear cuenta nueva
 								</Button>
 							</Grid>

@@ -150,19 +150,26 @@ export const getAttributionPayload = (internalSource?: string | null, internalFe
 };
 
 /**
- * Resuelve el `source` interno del query string con fallback a `utm_source`.
+ * Resuelve el `source` interno del query string con fallback a `utm_source` y,
+ * por último, a inferencia por click ID de tráfico pago.
  *
  * Prioridad:
  *   1. `?source=hero|modal|plan_teaser|...` (CTAs internos del landing)
  *   2. `?utm_source=email|newsletter|facebook|...` (campañas externas con UTMs)
- *   3. null (caerá a "direct" en los helpers de tracking)
+ *   3. `?gclid=` → "google_ads" / `?fbclid=` → "facebook_ads" (paga sin UTM)
+ *   4. null (caerá a "direct" en los helpers de tracking)
  *
- * El fallback resuelve el caso de los emails de marketing y campañas externas
- * que inyectan UTMs (la-marketing-service, Google Ads, etc.) sin pasar el
- * query param interno `?source=`.
+ * El fallback (2) resuelve emails de marketing y campañas externas con UTMs. El
+ * fallback (3) resuelve el tráfico de Google/Facebook Ads que aterriza DIRECTO en
+ * `/register` (URL solo con `?gclid=`/`?fbclid=`, sin UTM ni `?source=`): antes caía
+ * a "direct" aunque GA4 sabía por sesión que era `google/cpc`. Ahora queda atribuido.
  */
 export const resolveInternalSource = (params: URLSearchParams): string | null => {
-	return params.get("source") || params.get("utm_source") || null;
+	return (
+		params.get("source") ||
+		params.get("utm_source") ||
+		(params.get("gclid") ? "google_ads" : params.get("fbclid") ? "facebook_ads" : null)
+	);
 };
 
 /**
