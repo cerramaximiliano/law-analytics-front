@@ -195,8 +195,11 @@ const SubscriptionSuccess = () => {
 	// Características del plan - usar datos dinámicos o fallback
 	const planFeatures = React.useMemo(() => {
 		if (planDetails && planDetails.features && planDetails.features.length > 0) {
-			// Usar características del plan desde la API
-			return planDetails.features.map((feature: any) => {
+			// Usar características del plan desde la API, ordenadas por `order`
+			// (mismo ordenamiento canónico que el resto de las vistas).
+			return [...planDetails.features]
+				.sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99))
+				.map((feature: any) => {
 				const IconComponent = getIconComponent(feature.icon);
 				return {
 					icon: <IconComponent />,
