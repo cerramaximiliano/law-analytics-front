@@ -132,7 +132,7 @@ const Login = () => {
 							<Typography variant="h3">Iniciar sesión</Typography>
 							<Typography
 								component={isAnyLoading ? Box : Link}
-								to={isAnyLoading ? undefined : "/register"}
+								to={isAnyLoading ? undefined : "/register?source=login"}
 								variant="body1"
 								sx={{
 									textDecoration: "none",
