@@ -33,6 +33,7 @@ import { BRAND_BLUE } from "themes/dashboardTokens";
 // hooks
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffectiveUser } from "hooks/useEffectiveUser";
+import { useUpcomingDeadlines } from "hooks/useUpcomingDeadlines";
 
 // Key para sessionStorage (evitar multiples incrementos por sesion)
 const ONBOARDING_SESSION_KEY = "onboarding_session_checked";
@@ -79,6 +80,12 @@ const DashboardDefault = () => {
 
 	// Get effective user for team-aware data fetching
 	const { effectiveUserId, isReady: isTeamReady } = useEffectiveUser();
+
+	// Fuente de verdad EN VIVO de los vencimientos — compartida con el widget de
+	// lista y la card de Vencimientos 7/15/30. La KPI "Próximos vencimientos" de
+	// abajo lee de acá (antes leía dashboardData.deadlines.nextWeek, que estaba
+	// cacheado 24 h y bugueado a 0 por un mismatch de claves en el backend).
+	const { counts: deadlineCounts } = useUpcomingDeadlines();
 
 	// Sync del query param al sessionStorage + state. Solo admin.
 	useEffect(() => {
@@ -297,7 +304,13 @@ const DashboardDefault = () => {
 				</Grid>
 			))}
 			<Grid item xs={12} md={6} lg={5}>
-				<Skeleton variant="rectangular" height={360} sx={{ borderRadius: 1.5 }} />
+				<Skeleton variant="rectangular" height={420} sx={{ borderRadius: 1.5 }} />
+			</Grid>
+			<Grid item xs={12} md={6} lg={4}>
+				<Stack spacing={2.75}>
+					<Skeleton variant="rectangular" height={300} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={240} sx={{ borderRadius: 1.5 }} />
+				</Stack>
 			</Grid>
 			<Grid item xs={12} md={6} lg={3}>
 				<Stack spacing={3}>
@@ -305,9 +318,6 @@ const DashboardDefault = () => {
 					<Skeleton variant="rectangular" height={100} sx={{ borderRadius: 1.5 }} />
 					<Skeleton variant="rectangular" height={70} sx={{ borderRadius: 1.5 }} />
 				</Stack>
-			</Grid>
-			<Grid item xs={12} md={6} lg={4}>
-				<Skeleton variant="rectangular" height={360} sx={{ borderRadius: 1.5 }} />
 			</Grid>
 		</>
 	);
@@ -535,13 +545,13 @@ const DashboardDefault = () => {
 							<Grid item xs={12} sm={6} lg={3}>
 								<EcommerceDataCard
 									title="Próximos vencimientos"
-									count={(dashboardData?.deadlines?.nextWeek || 0).toString()}
+									count={(deadlineCounts.next7Days || 0).toString()}
 									color="error"
 									iconPrimary={<CloudChange size={20} variant="Bulk" />}
 									onClick={() => navigate("/apps/calendar")}
 									percentage={
 										<Typography variant="caption" sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}>
-											En los próximos 7 días
+											Vencimientos y audiencias · próx. 7 días
 										</Typography>
 									}
 								>
@@ -549,9 +559,22 @@ const DashboardDefault = () => {
 								</EcommerceDataCard>
 							</Grid>
 
-							{/* row 2 */}
+							{/* row 2 — tres columnas balanceadas:
+							    · izquierda (lg=5): el chart principal de distribución
+							    · centro (lg=4): columna de vencimientos — el widget de
+							      "Próximos vencimientos" elevado a posición central +
+							      su resumen 7/15/30 días (ProjectRelease) debajo
+							    · derecha (lg=3): stack de utilidades (recursos / storage / tareas)
+							    Antes "Próximos vencimientos" colgaba solo en una fila propia
+							    debajo de todo, dejando 7 columnas de aire a su derecha. */}
 							<Grid item xs={12} md={6} lg={5}>
 								<RepeatCustomerRate />
+							</Grid>
+							<Grid item xs={12} md={6} lg={4}>
+								<Stack spacing={2.75}>
+									<UpcomingMovementEventsWidget />
+									<ProjectRelease />
+								</Stack>
 							</Grid>
 							<Grid item xs={12} md={6} lg={3}>
 								<Stack spacing={3}>
@@ -559,14 +582,6 @@ const DashboardDefault = () => {
 									<StorageWidget />
 									<AssignUsers />
 								</Stack>
-							</Grid>
-							<Grid item xs={12} md={6} lg={4}>
-								<ProjectRelease />
-							</Grid>
-
-							{/* row 3 - Próximos vencimientos/audiencias vinculados a movimientos */}
-							<Grid item xs={12} md={6} lg={5}>
-								<UpcomingMovementEventsWidget />
 							</Grid>
 						</Grid>
 					</Fade>

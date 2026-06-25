@@ -1,21 +1,19 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { alpha, useTheme } from "@mui/material/styles";
 import { Box, CircularProgress, Stack, Typography, Button, Divider, List, ListItem, ListItemText, ListItemIcon, Chip } from "@mui/material";
 import MainCard from "components/MainCard";
-import { useSelector, RootState } from "store";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, CalendarTick, DocumentText } from "iconsax-react";
 import dayjs from "utils/dayjs-config";
 
-import { useTeam } from "contexts/TeamContext";
-import { getUpcomingMovementEvents, UpcomingMovementEvent } from "services/upcomingMovementsService";
+import { useUpcomingDeadlines } from "hooks/useUpcomingDeadlines";
+import { UpcomingMovementEvent } from "services/upcomingMovementsService";
 import { BRAND_BLUE, navActiveBg } from "themes/dashboardTokens";
 import { ThemeMode } from "types/config";
 
-const LIMIT = 8;
 const PREVIEW = 5;
 
-// Etiqueta + color por tipo de evento (solo audiencia/vencimiento en movimientos).
+// Etiqueta + color por tipo de evento (vencimiento / audiencia).
 const typeMeta = (type: string, theme: any): { label: string; color: string } => {
 	switch (type) {
 		case "vencimiento":
@@ -40,38 +38,20 @@ const relativeLabel = (start: Date | string): string => {
 	return `en ${Math.round(days / 30)} meses`;
 };
 
-// Widget del dashboard: lista de los próximos eventos (vencimientos/audiencias)
-// vinculados a un movimiento judicial. Cada fila lleva al movimiento puntual
-// (deep-link ?movement= — abre la pestaña Actividad del folder y resalta la fila).
+// Widget del dashboard: lista de los próximos vencimientos y audiencias
+// agendados. Los datos vienen del hook unificado [[useUpcomingDeadlines]], que
+// es la fuente de verdad en vivo compartida con la KPI card y la card de
+// Vencimientos 7/15/30. Si el evento está vinculado a un movimiento judicial
+// (movementRef), la fila hace deep-link al movimiento puntual (?movement= —
+// abre la pestaña Actividad del folder y resalta la fila); si no, navega a la
+// carpeta.
 const UpcomingMovementEventsWidget = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === ThemeMode.DARK;
 	const navigate = useNavigate();
 
-	const user = useSelector((state: RootState) => state.auth.user);
-	const userId = user?._id;
-	const { activeTeam, isTeamMode } = useTeam();
-
-	const [events, setEvents] = useState<UpcomingMovementEvent[]>([]);
-	const [loading, setLoading] = useState<boolean>(true);
+	const { events, loading } = useUpcomingDeadlines();
 	const [showAll, setShowAll] = useState<boolean>(false);
-
-	const load = useCallback(async () => {
-		setLoading(true);
-		try {
-			const groupId = isTeamMode && activeTeam?._id ? activeTeam._id : undefined;
-			const data = await getUpcomingMovementEvents({ limit: LIMIT, groupId });
-			setEvents(data);
-		} catch (error) {
-			setEvents([]);
-		} finally {
-			setLoading(false);
-		}
-	}, [isTeamMode, activeTeam?._id]);
-
-	useEffect(() => {
-		if (userId) load();
-	}, [userId, load]);
 
 	const handleOpenMovement = (event: UpcomingMovementEvent) => {
 		if (event.folderId && event.movementRef) {
@@ -150,7 +130,7 @@ const UpcomingMovementEventsWidget = () => {
 				<Stack spacing={2}>
 					{renderHeader(
 						<Typography variant="caption" sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}>
-							Vinculados a movimientos
+							Vencimientos y audiencias
 						</Typography>,
 					)}
 					<Box
@@ -182,7 +162,7 @@ const UpcomingMovementEventsWidget = () => {
 							<CalendarTick size={24} variant="Bulk" />
 						</Box>
 						<Typography variant="body2" sx={{ color: "text.secondary", letterSpacing: "-0.005em", textAlign: "center", textWrap: "balance" }}>
-							No tenés vencimientos ni audiencias próximos vinculados a movimientos.
+							No tenés vencimientos ni audiencias próximos agendados.
 						</Typography>
 					</Box>
 				</Stack>
@@ -195,7 +175,7 @@ const UpcomingMovementEventsWidget = () => {
 			<Stack spacing={2}>
 				{renderHeader(
 					<Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.005em" }}>
-						{events.length} vinculado{events.length === 1 ? "" : "s"} a movimientos
+						{events.length} próximo{events.length === 1 ? "" : "s"}
 					</Typography>,
 				)}
 

@@ -1,11 +1,9 @@
 import React from "react";
-import { useEffect } from "react";
 import { alpha, useTheme } from "@mui/material/styles";
 import { Box, CircularProgress, LinearProgress, Stack, Typography } from "@mui/material";
 import MainCard from "components/MainCard";
 import { useNavigate } from "react-router-dom";
-import { useSelector, dispatch } from "store";
-import { getUnifiedStats } from "store/reducers/unifiedStats";
+import { useUpcomingDeadlines } from "hooks/useUpcomingDeadlines";
 import { CalendarRemove, Timer1 } from "iconsax-react";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import { ThemeMode } from "types/config";
@@ -14,9 +12,6 @@ const ProjectRelease = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === ThemeMode.DARK;
 	const navigate = useNavigate();
-
-	const user = useSelector((state) => state.auth.user);
-	const userId = user?._id;
 
 	// Card clickeable — navega al calendar donde se ven los vencimientos.
 	const cardClickableSx = {
@@ -30,22 +25,12 @@ const ProjectRelease = () => {
 	};
 	const handleClickCard = () => navigate("/apps/calendar");
 
-	const { data: unifiedData, isLoading, isInitialized } = useSelector((state) => state.unifiedStats);
-	const upcomingDeadlines = unifiedData?.folders?.upcomingDeadlines;
+	// Misma fuente en vivo que la KPI card y el widget de lista — los tres
+	// muestran siempre los mismos números (ver [[useUpcomingDeadlines]]).
+	const { counts, loading: isLoading } = useUpcomingDeadlines();
 
-	const deadlinesData = upcomingDeadlines
-		? {
-				next7Days: upcomingDeadlines.next7Days || 0,
-				next15Days: upcomingDeadlines.next15Days || 0,
-				next30Days: upcomingDeadlines.next30Days || 0,
-		  }
-		: null;
-
-	useEffect(() => {
-		if (userId && !isInitialized && !unifiedData?.folders) {
-			dispatch(getUnifiedStats(userId, "folders"));
-		}
-	}, [userId, isInitialized, unifiedData]);
+	// Empty state cuando no hay ningún vencimiento en los próximos 30 días.
+	const deadlinesData = counts.next30Days > 0 ? counts : null;
 
 	// Header reusable — brand-tinted icon + título + caption.
 	const renderHeader = (caption: React.ReactNode) => (
