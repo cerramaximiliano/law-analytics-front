@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import {
 	Box,
 	CircularProgress,
+	Divider,
 	FormControlLabel,
 	Grid,
 	Stack,
@@ -21,6 +22,7 @@ import PjnAccountConnect from "sections/apps/folders/step-components/PjnAccountC
 import ScbaAccountConnect from "sections/apps/folders/step-components/ScbaAccountConnect";
 import MevAccountConnect from "sections/apps/profiles/account/MevAccountConnect";
 import ApiService from "store/reducers/ApiService";
+import pjnCredentialsService from "api/pjnCredentials";
 import { dispatch } from "store";
 import { fetchPjnSiteStatus } from "store/reducers/pjnSiteStatus";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
@@ -73,11 +75,21 @@ const TabPjnIntegration = () => {
 	const [syncContactsLoading, setSyncContactsLoading] = useState(false);
 	const [prefsLoaded, setPrefsLoaded] = useState(false);
 
+	// Notificaciones de bandeja (cédulas) — fuente de verdad: la credencial PJN.
+	const [bandejaNotifEnabled, setBandejaNotifEnabled] = useState(false);
+	const [bandejaNotifLoading, setBandejaNotifLoading] = useState(false);
+
 	const loadPreferences = useCallback(async () => {
 		try {
-			const response = await ApiService.getUserPreferences();
-			if (response.success && response.data) {
-				setSyncContactsEnabled(response.data.pjn?.syncContactsFromIntervinientes ?? false);
+			const [prefRes, credRes] = await Promise.all([
+				ApiService.getUserPreferences(),
+				pjnCredentialsService.getCredentialsStatus(),
+			]);
+			if (prefRes.success && prefRes.data) {
+				setSyncContactsEnabled(prefRes.data.pjn?.syncContactsFromIntervinientes ?? false);
+			}
+			if (credRes.success && credRes.data) {
+				setBandejaNotifEnabled(credRes.data.bandejaNotificationsEnabled ?? false);
 			}
 		} finally {
 			setPrefsLoaded(true);
@@ -116,6 +128,27 @@ const TabPjnIntegration = () => {
 			enqueueSnackbar("Error de conexión", { variant: "error" });
 		} finally {
 			setSyncContactsLoading(false);
+		}
+	};
+
+	const handleToggleBandejaNotif = async () => {
+		const newValue = !bandejaNotifEnabled;
+		setBandejaNotifLoading(true);
+		try {
+			const response = await pjnCredentialsService.toggleBandejaNotifications(newValue);
+			if (response.success) {
+				setBandejaNotifEnabled(newValue);
+				enqueueSnackbar(newValue ? "Notificaciones de cédulas activadas" : "Notificaciones de cédulas desactivadas", {
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				});
+			} else {
+				enqueueSnackbar(response.error || "Error al actualizar la preferencia", { variant: "error" });
+			}
+		} catch (error) {
+			enqueueSnackbar("Error de conexión", { variant: "error" });
+		} finally {
+			setBandejaNotifLoading(false);
 		}
 	};
 
@@ -419,6 +452,31 @@ const TabPjnIntegration = () => {
 									</Typography>
 								</Stack>
 							</Box>
+
+							<Divider sx={{ my: 0.5 }} />
+
+							<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5}>
+								<FormControlLabel
+									control={
+										<Switch
+											checked={bandejaNotifEnabled}
+											onChange={handleToggleBandejaNotif}
+											disabled={bandejaNotifLoading}
+											sx={switchSx}
+										/>
+									}
+									label={
+										<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+											Notificaciones de cédulas (bandeja)
+										</Typography>
+									}
+								/>
+								{bandejaNotifLoading && <CircularProgress size={18} sx={{ color: BRAND_BLUE, flexShrink: 0 }} />}
+							</Stack>
+							<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+								Recibí un email cuando lleguen nuevas cédulas electrónicas a tu bandeja del PJN (se incluyen junto a los movimientos
+								del día).
+							</Typography>
 						</Stack>
 					)}
 				</SectionCard>

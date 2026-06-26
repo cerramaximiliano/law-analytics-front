@@ -41,6 +41,7 @@ export interface PjnCredentialsStatus {
 	id: string;
 	cuil?: string;
 	enabled: boolean;
+	bandejaNotificationsEnabled?: boolean;
 	verified: boolean;
 	verifiedAt: string | null;
 	isValid: boolean;
@@ -252,6 +253,26 @@ class PjnCredentialsService {
 			return {
 				success: false,
 				error: axiosError.response?.data?.error || "Error al cambiar estado de credenciales",
+			};
+		}
+	}
+
+	/**
+	 * Activa/desactiva las notificaciones de bandeja (cédulas) de la credencial
+	 */
+	async toggleBandejaNotifications(bandejaNotificationsEnabled: boolean): Promise<GenericResponse> {
+		try {
+			const response = await axios.patch(
+				`${BASE_URL}/api/pjn-credentials/bandeja-notifications`,
+				{ bandejaNotificationsEnabled },
+				{ withCredentials: true }
+			);
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return {
+				success: false,
+				error: axiosError.response?.data?.error || "Error al actualizar notificaciones de bandeja",
 			};
 		}
 	}
