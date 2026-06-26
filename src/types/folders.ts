@@ -18,6 +18,17 @@ interface JudFolder {
 	numberJudFolder?: string; // Número del juicio
 	statusJudFolder?: string; // Estado del juicio
 	descriptionJudFolder?: string; // Descripción del juicio
+	courtNumber?: string; // N° de juzgado (origen)
+	secretaryNumber?: string; // N° de secretaría
+	salaNumber?: string; // N° de sala (Cámara)
+	vocaliaNumber?: string; // N° de vocalía (Cámara)
+	// Ubicación ACTUAL del expediente (dónde está hoy), distinta del juzgado de
+	// origen en courtNumber. Sólo presente en folders de causas PJN.
+	currentLocation?: {
+		text?: string;
+		tipo?: string;
+		updatedAt?: string;
+	};
 }
 
 // Tipos principales de la carpeta (folder)

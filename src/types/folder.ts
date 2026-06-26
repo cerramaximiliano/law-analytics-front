@@ -33,6 +33,15 @@ export type JudFolderData = {
 	descriptionJudFolder: string;
 	courtNumber?: string;
 	secretaryNumber?: string;
+	salaNumber?: string;
+	vocaliaNumber?: string;
+	// Ubicación ACTUAL del expediente (dónde está hoy), distinta del juzgado de
+	// origen en courtNumber. Sólo presente en folders de causas PJN.
+	currentLocation?: {
+		text?: string;
+		tipo?: string;
+		updatedAt?: string;
+	};
 };
 
 export type FolderData = {

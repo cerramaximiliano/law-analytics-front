@@ -4,7 +4,7 @@ import { dispatch } from "store";
 import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, useTheme, alpha, useMediaQuery } from "@mui/material";
 import dayjs from "utils/dayjs-config";
 import data from "data/folder.json";
-import { Edit2, Clock, TickCircle, Briefcase, DollarCircle, Calendar1, DocumentText } from "iconsax-react";
+import { Edit2, Clock, TickCircle, Briefcase, DollarCircle, Calendar1, DocumentText, Location } from "iconsax-react";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
@@ -565,7 +565,11 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 								</Grid>
 
 								{/* Judicial Data if exists */}
-								{(folder?.judFolder?.courtNumber || folder?.judFolder?.secretaryNumber) && (
+								{(folder?.judFolder?.courtNumber ||
+									folder?.judFolder?.secretaryNumber ||
+									folder?.judFolder?.salaNumber ||
+									folder?.judFolder?.vocaliaNumber ||
+									folder?.judFolder?.currentLocation?.text) && (
 									<>
 										{folder?.judFolder?.courtNumber && (
 											<Grid item xs={12} sm={6} md={3}>
@@ -584,6 +588,45 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 													value={folder?.judFolder?.secretaryNumber}
 													isLoading={isLoader}
 													icon={<DocumentText size={16} />}
+												/>
+											</Grid>
+										)}
+										{folder?.judFolder?.salaNumber && (
+											<Grid item xs={12} sm={6} md={3}>
+												<FieldCard
+													label="N° de Sala"
+													value={folder?.judFolder?.salaNumber}
+													isLoading={isLoader}
+													icon={<Briefcase size={16} />}
+												/>
+											</Grid>
+										)}
+										{folder?.judFolder?.vocaliaNumber && (
+											<Grid item xs={12} sm={6} md={3}>
+												<FieldCard
+													label="N° de Vocalía"
+													value={folder?.judFolder?.vocaliaNumber}
+													isLoading={isLoader}
+													icon={<DocumentText size={16} />}
+												/>
+											</Grid>
+										)}
+										{/* Ubicación actual: sólo en folders de causas PJN (dónde está
+										    hoy el expediente). Ancho completo por el texto largo. */}
+										{folder?.judFolder?.currentLocation?.text && (
+											<Grid item xs={12}>
+												<FieldCard
+													label="Ubicación actual"
+													value={folder?.judFolder?.currentLocation?.text}
+													isLoading={isLoader}
+													icon={<Location size={16} />}
+													helper={
+														folder?.judFolder?.currentLocation?.tipo === "sala-vocalia"
+															? "Cámara"
+															: folder?.judFolder?.currentLocation?.tipo === "juzgado-secretaria"
+																? "Primera instancia"
+																: undefined
+													}
 												/>
 											</Grid>
 										)}

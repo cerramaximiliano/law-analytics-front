@@ -418,6 +418,25 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 									)}
 								</Grid>
 							</Grid>
+							{/* Ubicación actual: sólo en folders de causas PJN (dónde está hoy el
+							    expediente). Read-only — la setean los workers, no es editable. */}
+							{folder?.judFolder?.currentLocation?.text && (
+								<Grid item xs={12} columns={4} sx={{ display: "flex", justifyContent: "space-between" }}>
+									<Grid item xs={12}>
+										{isLoader ? (
+											<>
+												<Skeleton />
+												<Skeleton />
+											</>
+										) : (
+											<>
+												<Typography variant="subtitle1">Ubicación actual</Typography>
+												<Typography variant="body2">{folder?.judFolder?.currentLocation?.text}</Typography>
+											</>
+										)}
+									</Grid>
+								</Grid>
+							)}
 							<Grid item xs={12} columns={4} sx={{ display: "flex", justifyContent: "space-between" }}>
 								<Grid item xs={5}>
 									{isLoader ? (
