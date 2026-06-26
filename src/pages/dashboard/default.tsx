@@ -14,7 +14,6 @@ import RepeatCustomerRate from "sections/widget/chart/FoldersDataRate";
 import FinancialWidget from "sections/widget/chart/FinancialWidget";
 import ActiveFoldersWidget from "sections/widget/chart/ActiveFoldersWidget";
 
-import ProjectRelease from "sections/widget/chart/ProjectRelease";
 import AssignUsers from "sections/widget/chart/TaskWidget";
 import UpcomingMovementEventsWidget from "sections/widget/chart/UpcomingMovementEventsWidget";
 import StorageWidget from "sections/widget/chart/StorageWidget";
@@ -307,10 +306,7 @@ const DashboardDefault = () => {
 				<Skeleton variant="rectangular" height={420} sx={{ borderRadius: 1.5 }} />
 			</Grid>
 			<Grid item xs={12} md={6} lg={4}>
-				<Stack spacing={2.75}>
-					<Skeleton variant="rectangular" height={300} sx={{ borderRadius: 1.5 }} />
-					<Skeleton variant="rectangular" height={240} sx={{ borderRadius: 1.5 }} />
-				</Stack>
+				<Skeleton variant="rectangular" height={420} sx={{ borderRadius: 1.5 }} />
 			</Grid>
 			<Grid item xs={12} md={6} lg={3}>
 				<Stack spacing={3}>
@@ -545,13 +541,13 @@ const DashboardDefault = () => {
 							<Grid item xs={12} sm={6} lg={3}>
 								<EcommerceDataCard
 									title="Próximos vencimientos"
-									count={(deadlineCounts.next7Days || 0).toString()}
+									count={(deadlineCounts.total || 0).toString()}
 									color="error"
 									iconPrimary={<CloudChange size={20} variant="Bulk" />}
 									onClick={() => navigate("/apps/calendar")}
 									percentage={
 										<Typography variant="caption" sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}>
-											Vencimientos y audiencias · próx. 7 días
+											Vencimientos y audiencias agendados
 										</Typography>
 									}
 								>
@@ -559,22 +555,17 @@ const DashboardDefault = () => {
 								</EcommerceDataCard>
 							</Grid>
 
-							{/* row 2 — tres columnas balanceadas:
+							{/* row 2 — tres columnas:
 							    · izquierda (lg=5): el chart principal de distribución
-							    · centro (lg=4): columna de vencimientos — el widget de
-							      "Próximos vencimientos" elevado a posición central +
-							      su resumen 7/15/30 días (ProjectRelease) debajo
-							    · derecha (lg=3): stack de utilidades (recursos / storage / tareas)
-							    Antes "Próximos vencimientos" colgaba solo en una fila propia
-							    debajo de todo, dejando 7 columnas de aire a su derecha. */}
+							    · centro (lg=4): "Próximos vencimientos" (la lista) — único
+							      widget de vencimientos del dashboard; su contador vive en la
+							      KPI de la fila 1, que muestra el mismo total
+							    · derecha (lg=3): stack de utilidades (recursos / storage / tareas) */}
 							<Grid item xs={12} md={6} lg={5}>
 								<RepeatCustomerRate />
 							</Grid>
 							<Grid item xs={12} md={6} lg={4}>
-								<Stack spacing={2.75}>
-									<UpcomingMovementEventsWidget />
-									<ProjectRelease />
-								</Stack>
+								<UpcomingMovementEventsWidget />
 							</Grid>
 							<Grid item xs={12} md={6} lg={3}>
 								<Stack spacing={3}>

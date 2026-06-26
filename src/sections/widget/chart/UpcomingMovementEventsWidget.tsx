@@ -50,7 +50,7 @@ const UpcomingMovementEventsWidget = () => {
 	const isDark = theme.palette.mode === ThemeMode.DARK;
 	const navigate = useNavigate();
 
-	const { events, loading } = useUpcomingDeadlines();
+	const { events, counts, loading } = useUpcomingDeadlines();
 	const [showAll, setShowAll] = useState<boolean>(false);
 
 	const handleOpenMovement = (event: UpcomingMovementEvent) => {
@@ -175,7 +175,7 @@ const UpcomingMovementEventsWidget = () => {
 			<Stack spacing={2}>
 				{renderHeader(
 					<Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.005em" }}>
-						{events.length} próximo{events.length === 1 ? "" : "s"}
+						{counts.total} próximo{counts.total === 1 ? "" : "s"}
 					</Typography>,
 				)}
 

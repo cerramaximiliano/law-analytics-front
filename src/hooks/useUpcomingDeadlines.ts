@@ -13,7 +13,7 @@ import { getUpcomingDeadlines, UpcomingMovementEvent, DeadlineCounts } from "ser
 
 const LIMIT = 8;
 const CACHE_TTL_MS = 60000;
-const EMPTY_COUNTS: DeadlineCounts = { next7Days: 0, next15Days: 0, next30Days: 0 };
+const EMPTY_COUNTS: DeadlineCounts = { next7Days: 0, next15Days: 0, next30Days: 0, total: 0 };
 
 export interface UpcomingDeadlinesState {
 	events: UpcomingMovementEvent[];

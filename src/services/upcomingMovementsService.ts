@@ -20,6 +20,9 @@ export interface DeadlineCounts {
 	next7Days: number;
 	next15Days: number;
 	next30Days: number;
+	// Total de próximos vencimientos/audiencias sin tope de días — coincide con lo
+	// que lista el widget. La KPI del dashboard usa este valor.
+	total: number;
 }
 
 export interface UpcomingDeadlines {
@@ -27,7 +30,7 @@ export interface UpcomingDeadlines {
 	counts: DeadlineCounts;
 }
 
-const EMPTY_COUNTS: DeadlineCounts = { next7Days: 0, next15Days: 0, next30Days: 0 };
+const EMPTY_COUNTS: DeadlineCounts = { next7Days: 0, next15Days: 0, next30Days: 0, total: 0 };
 
 const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 
