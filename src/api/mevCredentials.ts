@@ -13,6 +13,12 @@ const BASE_URL = import.meta.env.VITE_BASE_URL;
 export interface MevCredentialData {
 	id: string;
 	causaId?: string | null;
+	/** Label legible de la causa (nombre de carpeta / nº de expediente). Solo en per-causa. */
+	causaLabel?: string | null;
+	/** Id de la carpeta MEV vinculada a la causa (para deep-link). Solo en per-causa. */
+	folderId?: string | null;
+	/** Estado de credencial reflejado en la carpeta (valid/invalid/expired/disabled/missing/pending). Solo en per-causa. */
+	mevCredentialStatus?: string | null;
 	enabled: boolean;
 	verified: boolean;
 	verifiedAt: string | null;
@@ -56,6 +62,19 @@ export interface GenericMevCredResponse {
 	error?: string;
 }
 
+export interface MevUnlinkImpact {
+	/** true si la credencial a desvincular es la global. */
+	isGlobal: boolean;
+	/** true si (por-causa) la causa seguirá cubierta por la credencial global → impacto 0. */
+	coveredByGlobal: boolean;
+	folders: {
+		total: number;
+		active: number;
+		archived: number;
+		names: string[];
+	};
+}
+
 class MevCredentialsService {
 	/** Estado de las credenciales MEV del usuario (global + por causa). */
 	async getCredentialsStatus(): Promise<GetMevCredentialsResponse> {
@@ -96,6 +115,20 @@ class MevCredentialsService {
 			if (e.response?.status === 401) return { success: false, error: "Sesión expirada. Iniciá sesión de nuevo." };
 			if (e.response?.status === 409) return { success: false, error: e.response.data?.error || "Ya existen credenciales para esa causa" };
 			return { success: false, error: e.response?.data?.error || "Error al guardar las credenciales MEV" };
+		}
+	}
+
+	/**
+	 * Impacto de desvincular una credencial (cuántas causas dejarán de seguirse).
+	 * MEV no borra carpetas: solo pausa el seguimiento (folders → 'missing').
+	 */
+	async getUnlinkImpact(id: string): Promise<{ success: boolean; data?: MevUnlinkImpact; error?: string }> {
+		try {
+			const response = await axios.get(`${BASE_URL}/api/mev-credentials/${id}/unlink-impact`, { withCredentials: true });
+			return response.data;
+		} catch (error) {
+			const e = error as AxiosError<any>;
+			return { success: false, error: e.response?.data?.error || "Error al analizar el impacto de desvinculación" };
 		}
 	}
 
