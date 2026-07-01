@@ -23,7 +23,7 @@ import {
 	Typography,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { CloseSquare, DocumentText, Profile2User, Save2 } from "iconsax-react";
+import { Add, CloseSquare, DocumentText, Profile2User, Save2, Trash } from "iconsax-react";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { dispatch, useSelector } from "store";
 import { fetchPdfTemplates, createPostalDocument, updatePostalDocument } from "store/reducers/postalDocuments";
@@ -32,6 +32,7 @@ import { createPostalTracking, fetchAllTrackings } from "store/reducers/postalTr
 import { getFoldersByUserId } from "store/reducers/folder";
 import { PdfTemplate, PdfTemplateField } from "types/postal-document";
 import { Contact } from "types/contact";
+import { OBJETOS_JUICIO_CIVIL, ObjetoJuicio } from "data/objetosJuicioCivil";
 import { FolderData } from "types/folder";
 import { PostalTrackingType } from "types/postal-tracking";
 import { BRAND_BLUE, STALE_AMBER } from "themes/dashboardTokens";
@@ -71,6 +72,7 @@ const GROUP_LABELS: Record<string, string> = {
 	apoderado: "Apoderado (letrado)",
 	cuerpo: "Cuerpo del telegrama",
 	tipo: "Tipo de comunicación",
+	Objeto: "Objeto del juicio",
 };
 
 const RADIO_OPTION_LABELS: Record<string, string> = {
@@ -251,6 +253,89 @@ function contactToFormValues(contact: Contact, group: ContactGroupKey): Record<s
 	};
 }
 
+// ── Mapeo Planilla Civil (actores / demandados / abogado) ─────────────────────
+
+/** Tipo y número de documento de un contacto (prioriza CUIT). */
+function contactDocParts(contact: Contact): { tipo: string; numero: string } {
+	if (contact.cuit) return { tipo: "CUIT", numero: contact.cuit };
+	if (contact.document) return { tipo: "DNI", numero: contact.document };
+	return { tipo: "", numero: "" };
+}
+
+/** Nombre a mostrar de un contacto (razón social si es jurídica). */
+function contactDisplayName(contact: Contact): string {
+	if (contact.type === "Jurídica" && contact.company) return contact.company;
+	const full = `${contact.lastName || ""}${contact.lastName ? ", " : ""}${contact.name || ""}`.trim();
+	return full || contact.company || "";
+}
+
+/** Vuelca una lista de contactos en filas prefijadas (actor1_*, demandado1_*, ...).
+ *  El selector es la fuente de verdad: rellena las filas seleccionadas y vacía el resto. */
+function contactsToRowValues(contacts: Contact[], prefix: string, maxRows: number): Record<string, string> {
+	const out: Record<string, string> = {};
+	for (let i = 0; i < maxRows; i++) {
+		const n = i + 1;
+		const c = contacts[i];
+		const { tipo, numero } = c ? contactDocParts(c) : { tipo: "", numero: "" };
+		out[`${prefix}${n}_nombre`] = c ? contactDisplayName(c) : "";
+		out[`${prefix}${n}_tipo_doc`] = tipo;
+		out[`${prefix}${n}_numero`] = numero;
+		out[`${prefix}${n}_nacionalidad`] = c ? contact_nationality(c) : "";
+	}
+	return out;
+}
+
+function contact_nationality(c: Contact): string {
+	return c.nationality || "";
+}
+
+/** Parsea Tomo/Folio de un registrationNumber tipo "T123 F456", "T° 123 F° 456" o "123/456". */
+function parseTomoFolio(reg?: string): { tomo: string; folio: string } {
+	if (!reg) return { tomo: "", folio: "" };
+	const m = reg.match(/T[°º.\s]*(\d+)\s*F[°º.\s]*(\d+)/i) || reg.match(/^(\d+)\s*\/\s*(\d+)$/);
+	return m ? { tomo: m[1], folio: m[2] } : { tomo: "", folio: "" };
+}
+
+/** Rol de parte de un contacto para la Planilla: 'actor' | 'demandado' | null. */
+function contactPartyRole(contact: Contact): "actor" | "demandado" | null {
+	const tp = (contact.intervinienteRef?.tipoParte || "").toUpperCase();
+	if (tp.includes("ACTOR")) return "actor";
+	if (tp.includes("DEMANDA")) return "demandado";
+	const roles = (Array.isArray(contact.role) ? contact.role : [contact.role || ""]).join(" ").toLowerCase();
+	if (/actor|cliente|peticionante|causante/.test(roles)) return "actor";
+	if (/demandad|contraparte/.test(roles)) return "demandado";
+	return null;
+}
+
+// ── Filas repetibles data-driven ──────────────────────────────────────────────
+// Detecta grupos con campos tipo `<base><n>_<attr>` (ej. actor1_nombre, demandado3_numero)
+// y los agrupa por fila. Data-driven: sirve para cualquier modelo futuro con el mismo patrón.
+
+interface RepeatableRows {
+	base: string; // "actor" / "demandado"
+	rows: number[]; // índices de fila presentes en el template, ordenados
+	byRow: Map<number, PdfTemplateField[]>; // fila → campos de esa fila
+}
+
+const REPEATABLE_RE = /^(.+?)(\d+)_(.+)$/;
+
+function parseRepeatableRows(fields: PdfTemplateField[]): RepeatableRows | null {
+	const byRow = new Map<number, PdfTemplateField[]>();
+	let base: string | null = null;
+	for (const f of fields) {
+		const m = f.name.match(REPEATABLE_RE);
+		if (!m) return null; // algún campo no encaja → no es un grupo repetible
+		if (base === null) base = m[1];
+		else if (base !== m[1]) return null; // bases mezcladas → no repetible
+		const row = Number(m[2]);
+		if (!byRow.has(row)) byRow.set(row, []);
+		byRow.get(row)!.push(f);
+	}
+	if (base === null || byRow.size < 2) return null;
+	const rows = [...byRow.keys()].sort((a, b) => a - b);
+	return { base, rows, byRow };
+}
+
 function formValuesToContact(
 	values: Record<string, string>,
 	group: ContactGroupKey,
@@ -407,6 +492,12 @@ export default function CreatePostalDocumentModal({
 		poderdante: null,
 	});
 
+	// Planilla Civil: selección multi-contacto para las filas de Actores / Demandados
+	const [selectedActores, setSelectedActores] = useState<Contact[]>([]);
+	const [selectedDemandados, setSelectedDemandados] = useState<Contact[]>([]);
+	// Filas visibles por grupo repetible (data-driven): arranca en 1, se amplía con "Agregar".
+	const [visibleRows, setVisibleRows] = useState<Record<string, number>>({});
+
 	const [saveDialog, setSaveDialog] = useState<SaveContactDialogState>({
 		open: false,
 		group: null,
@@ -461,6 +552,9 @@ export default function CreatePostalDocumentModal({
 		setNewTrackingNumberId("");
 		setNewTrackingLabel("");
 		setSelectedContacts({ destinatario: null, remitente: null, poderdante: null });
+		setSelectedActores([]);
+		setSelectedDemandados([]);
+		setVisibleRows({});
 		setSaveDialog({ open: false, group: null, contactType: "Humana", role: "" });
 	};
 
@@ -475,6 +569,9 @@ export default function CreatePostalDocumentModal({
 		setTitle("");
 		setDescription("");
 		setLinkedFolder(null);
+		setSelectedActores([]);
+		setSelectedDemandados([]);
+		setVisibleRows({});
 		setTrackingMode("link");
 		setLinkedTracking(null);
 		setNewTrackingCodeId("TC");
@@ -527,6 +624,53 @@ export default function CreatePostalDocumentModal({
 			apoderado_telefono: user.contact || user.phone || "",
 		}));
 	};
+
+	// ── Planilla Civil: autocompletado v1 (abogado + actores + demandados) ────────
+
+	const applyUserToAbogado = () => {
+		if (!user) return;
+		const skill = user.skill?.[0];
+		const fullName = `${user.lastName || ""}${user.lastName ? ", " : ""}${user.firstName || user.name || ""}`.trim();
+		const { tomo, folio } = parseTomoFolio(skill?.registrationNumber);
+		setFormValues((prev) => ({
+			...prev,
+			abogado_nombre: fullName,
+			abogado_tomo: tomo,
+			abogado_folio: folio,
+		}));
+	};
+
+	// Cuántas filas admite el template para un base dado (data-driven, sin hardcodear).
+	const rowCountForBase = (base: string): number => {
+		const s = new Set<string>();
+		(selectedTemplate?.fields || []).forEach((f) => {
+			const m = f.name.match(new RegExp(`^${base}(\\d+)_`));
+			if (m) s.add(m[1]);
+		});
+		return s.size || 1;
+	};
+
+	// Vuelca una lista de contactos en las filas de un grupo (actor/demandado) y expande la vista.
+	const applyContactsToGroup = (contacts: Contact[], base: string, groupKey: string) => {
+		const max = rowCountForBase(base);
+		const list = contacts.slice(0, max);
+		if (base === "actor") setSelectedActores(list);
+		if (base === "demandado") setSelectedDemandados(list);
+		setFormValues((prev) => ({ ...prev, ...contactsToRowValues(list, base, max) }));
+		setVisibleRows((prev) => ({ ...prev, [groupKey]: Math.max(prev[groupKey] || 1, list.length || 1) }));
+	};
+
+	// Auto-relleno desde el expediente vinculado (solo para la Planilla Civil):
+	// reparte los contactos del folder por rol de parte en las filas de actores/demandados.
+	useEffect(() => {
+		if (!linkedFolder || selectedTemplate?.slug !== "planilla_inicio_civil") return;
+		const folderContacts = allContacts.filter((c) => c.folderIds?.includes(linkedFolder._id));
+		const actores = folderContacts.filter((c) => contactPartyRole(c) === "actor");
+		const demandados = folderContacts.filter((c) => contactPartyRole(c) === "demandado");
+		if (actores.length) applyContactsToGroup(actores, "actor", "Actores");
+		if (demandados.length) applyContactsToGroup(demandados, "demandado", "Demandados");
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [linkedFolder, selectedTemplate]);
 
 	const newTrackingNumberIdValid = /^\d{9}$/.test(newTrackingNumberId);
 	const willCreateTracking =
@@ -824,6 +968,116 @@ export default function CreatePostalDocumentModal({
 		</Stack>
 	);
 
+	// Render data-driven de un grupo de filas repetibles (actorN_*, demandadoN_*, ...):
+	// muestra 1 fila por defecto (o las que ya tengan datos), en cards, con "Agregar"/"Quitar".
+	// Los grupos de partes (Actores/Demandados) suman un selector multi-contacto arriba.
+	const renderRepeatableGroup = (groupKey: string, rep: RepeatableRows) => {
+		const max = rep.rows.length;
+		const contactRole: "actor" | "demandado" | null =
+			groupKey === "Actores" ? "actor" : groupKey === "Demandados" ? "demandado" : null;
+		const selected = contactRole === "actor" ? selectedActores : contactRole === "demandado" ? selectedDemandados : [];
+		const activeContacts = allContacts.filter((c: Contact) => c.status !== "archived");
+		const filled = rep.rows.filter((r) => rep.byRow.get(r)!.some((f) => (formValues[f.name] || "").trim() !== "")).length;
+		const visible = Math.min(max, Math.max(1, filled, visibleRows[groupKey] || 0));
+		const baseLabel = rep.base.charAt(0).toUpperCase() + rep.base.slice(1);
+
+		const addRow = () =>
+			setVisibleRows((prev) => ({ ...prev, [groupKey]: Math.min(max, Math.max(1, filled, prev[groupKey] || 0) + 1) }));
+		const removeRow = (idx: number) => {
+			const clear: Record<string, string> = {};
+			rep.byRow.get(rep.rows[idx])!.forEach((f) => (clear[f.name] = ""));
+			setFormValues((prev) => ({ ...prev, ...clear }));
+			setVisibleRows((prev) => ({ ...prev, [groupKey]: Math.max(1, visible - 1) }));
+			if (contactRole === "actor") setSelectedActores((prev) => prev.filter((_, i) => i !== idx));
+			if (contactRole === "demandado") setSelectedDemandados((prev) => prev.filter((_, i) => i !== idx));
+		};
+
+		return (
+			<Box key={groupKey}>
+				{groupHeader(GROUP_LABELS[groupKey] || groupKey)}
+				{contactRole && (
+					<Autocomplete
+						multiple
+						size="small"
+						options={activeContacts}
+						value={selected}
+						getOptionLabel={(c: Contact) => getContactLabel(c)}
+						isOptionEqualToValue={(opt, val) => opt._id === val._id}
+						getOptionDisabled={() => selected.length >= max}
+						renderOption={(props, c: Contact) => (
+							<Box component="li" {...props} key={c._id}>
+								<Stack>
+									<Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{getContactLabel(c)}</Typography>
+									{c.role && (
+										<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
+											{Array.isArray(c.role) ? c.role.join(", ") : c.role}
+											{c.city ? ` · ${c.city}` : ""}
+										</Typography>
+									)}
+								</Stack>
+							</Box>
+						)}
+						onChange={(_e, contacts) => applyContactsToGroup(contacts as Contact[], rep.base, groupKey)}
+						renderInput={(params) => (
+							<TextField
+								{...params}
+								placeholder={`Buscar contactos para ${groupKey.toLowerCase()}...`}
+								sx={inputSx}
+								InputProps={{
+									...params.InputProps,
+									startAdornment: (
+										<>
+											<Profile2User size={15} style={{ marginRight: 6, opacity: 0.55, color: theme.palette.text.secondary }} />
+											{params.InputProps.startAdornment}
+										</>
+									),
+								}}
+							/>
+						)}
+						sx={{ mb: 1.5 }}
+						noOptionsText="Sin contactos — podés completar manualmente"
+					/>
+				)}
+
+				<Stack spacing={1.25}>
+					{rep.rows.slice(0, visible).map((rowNum, idx) => (
+						<Box
+							key={rowNum}
+							sx={{
+								borderRadius: 1.5,
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+								p: 1.5,
+							}}
+						>
+							<Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+								<Typography
+									sx={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "text.secondary" }}
+								>
+									{baseLabel} {idx + 1}
+								</Typography>
+								{idx + 1 === visible && visible > 1 && (
+									<Tooltip title="Quitar">
+										<IconButton size="small" onClick={() => removeRow(idx)} sx={iconBtnSx}>
+											<Trash size={14} variant="Linear" />
+										</IconButton>
+									</Tooltip>
+								)}
+							</Stack>
+							<Stack spacing={1.25}>{rep.byRow.get(rowNum)!.map((f) => renderField(f))}</Stack>
+						</Box>
+					))}
+				</Stack>
+
+				{visible < max && (
+					<Button size="small" startIcon={<Add size={14} variant="Linear" />} onClick={addRow} sx={{ ...smallActionSx, mt: 1.25 }}>
+						Agregar {rep.base}
+					</Button>
+				)}
+			</Box>
+		);
+	};
+
 	const renderGroup = (groupKey: string, fields: PdfTemplateField[]) => {
 		const isContactGroup = (CONTACT_GROUPS as string[]).includes(groupKey);
 		const group = groupKey as ContactGroupKey;
@@ -853,6 +1107,91 @@ export default function CreatePostalDocumentModal({
 					</Stack>
 				</Box>
 			);
+		}
+
+		// Planilla Civil — Objeto del juicio: select buscable de códigos (número + descripción)
+		if (groupKey === "Objeto") {
+			const selectedObjeto = OBJETOS_JUICIO_CIVIL.find((o) => o.code === formValues.objeto_codigo) || null;
+			return (
+				<Box key={groupKey}>
+					{groupHeader(GROUP_LABELS[groupKey] || groupKey)}
+					<Autocomplete
+						size="small"
+						options={OBJETOS_JUICIO_CIVIL}
+						value={selectedObjeto}
+						getOptionLabel={(o: ObjetoJuicio) => `${o.code} - ${o.description}`}
+						isOptionEqualToValue={(opt, val) => opt.code === val.code}
+						onChange={(_e, o) =>
+							setFormValues((prev) => ({
+								...prev,
+								objeto_codigo: o ? o.code : "",
+								objeto_descripcion: o ? o.description : "",
+							}))
+						}
+						renderOption={(props, o: ObjetoJuicio) => (
+							<Box component="li" {...props} key={o.code}>
+								<Typography sx={{ fontSize: "0.85rem" }}>
+									<Box component="span" sx={{ fontWeight: 700 }}>
+										{o.code}
+									</Box>
+									{" - "}
+									{o.description}
+								</Typography>
+							</Box>
+						)}
+						renderInput={(params) => (
+							<TextField {...params} placeholder="Buscar objeto por código o descripción..." sx={inputSx} />
+						)}
+						sx={{ mb: 1.5 }}
+						noOptionsText="Sin coincidencias"
+					/>
+					<Stack spacing={1.5}>
+						{groupFieldsForRender(fields).map((item, i) =>
+							Array.isArray(item) ? (
+								<Stack key={i} direction="row" flexWrap="wrap" useFlexGap>
+									{item.map((f) => renderField(f))}
+								</Stack>
+							) : (
+								renderField(item)
+							),
+						)}
+					</Stack>
+				</Box>
+			);
+		}
+
+		// Planilla Civil — Abogados: botón "Mis datos" (perfil profesional → nombre + T°/F°)
+		if (groupKey === "Abogados") {
+			return (
+				<Box key={groupKey}>
+					{groupHeader(
+						groupKey,
+						<Tooltip title="Completar con tus datos profesionales del perfil (nombre y matrícula)">
+							<Button size="small" startIcon={<Profile2User size={13} variant="Linear" />} onClick={applyUserToAbogado} sx={smallActionSx}>
+								Mis datos
+							</Button>
+						</Tooltip>,
+					)}
+					<Stack spacing={1.5}>
+						{groupFieldsForRender(fields).map((item, i) =>
+							Array.isArray(item) ? (
+								<Stack key={i} direction="row" flexWrap="wrap" useFlexGap>
+									{item.map((f) => renderField(f))}
+								</Stack>
+							) : (
+								renderField(item)
+							),
+						)}
+					</Stack>
+				</Box>
+			);
+		}
+
+		// Planilla Civil — grupos de filas repetibles (Actores, Demandados y futuros modelos):
+		// detección data-driven por el patrón de nombres → cards por fila + "Agregar"/"Quitar".
+		const repeatable = parseRepeatableRows(fields);
+		if (repeatable) {
+			return renderRepeatableGroup(groupKey, repeatable);
 		}
 
 		return (
