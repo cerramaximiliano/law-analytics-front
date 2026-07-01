@@ -283,8 +283,8 @@ const AutomaticStep = () => {
 		}
 	}, [values.judicialPower, baImportMode]);
 
-	// Detectar si el usuario ya tiene credencial MEV global vinculada. Si la tiene,
-	// no le pedimos credencial por causa (la global cubre todas).
+	// Detectar si el usuario ya tiene cargada la credencial de su cuenta MEV. Si la
+	// tiene, no le pedimos una credencial por causa (la de su cuenta cubre todas).
 	useEffect(() => {
 		let cancelled = false;
 		if (values.judicialPower === "buenosaires" && baImportMode === "single") {
@@ -1665,7 +1665,7 @@ const AutomaticStep = () => {
 												<Typography sx={{ ...labelSx, color: "text.secondary" }}>Credenciales del portal MEV</Typography>
 											</Divider>
 											{renderNotice(
-												"Para consultar esta causa usamos tu cuenta del portal MEV (mev.scba.gov.ar). Tu contraseña se guarda encriptada (AES-256).",
+												"Con tu cuenta del portal MEV (mev.scba.gov.ar) consultamos esta y todas tus causas de Buenos Aires. La guardamos como la credencial de tu cuenta (una sola, para todas). Tu contraseña se almacena encriptada (AES-256).",
 												"info",
 											)}
 										</Grid>

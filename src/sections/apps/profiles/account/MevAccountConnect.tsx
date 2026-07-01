@@ -296,7 +296,7 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 						) : (
 							<CloseCircle size={18} variant="Bulk" color={theme.palette.warning.main} />
 						)}
-						<Typography sx={{ fontSize: "0.88rem", fontWeight: 600 }}>Cuenta MEV global</Typography>
+						<Typography sx={{ fontSize: "0.88rem", fontWeight: 600 }}>Credencial de tu cuenta MEV</Typography>
 						<Chip size="small" label={meta.label} color={meta.color} sx={{ ml: "auto" }} />
 					</Stack>
 					{g.lastError && status !== "valid" && (
@@ -406,7 +406,7 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 							Credenciales por causa ({perCausa.length})
 						</Typography>
 						<Typography sx={{ fontSize: "0.74rem", color: "text.secondary" }}>
-							Credenciales específicas que sobrescriben la global para una causa puntual.
+							Credenciales específicas que sobrescriben la credencial de tu cuenta para una causa puntual.
 						</Typography>
 						{perCausa.map(renderPerCausaRow)}
 					</Stack>
@@ -476,7 +476,7 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 										<TickCircle size={16} variant="Bulk" color={theme.palette.success.main} />
 										<Typography sx={{ fontSize: "0.78rem", color: "text.secondary" }}>
 											{unlinkImpact?.coveredByGlobal
-												? "Esta causa seguirá sincronizándose con tu credencial MEV global."
+												? "Esta causa seguirá sincronizándose con la credencial de tu cuenta MEV."
 												: "Ninguna causa quedará sin seguimiento."}
 										</Typography>
 									</Stack>

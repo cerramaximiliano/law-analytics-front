@@ -1,9 +1,10 @@
 /**
  * API Service para credenciales MEV (Mesa de Entradas Virtual — Buenos Aires).
  *
- * El scraping de causas MEV usa la cuenta del usuario en el portal MEV
- * (mev.scba.gov.ar). Una credencial GLOBAL (causaId=null) cubre todas las causas
- * MEV del usuario; también se pueden cargar credenciales por causa.
+ * El scraping de causas MEV usa la credencial PROPIA del usuario en el portal MEV
+ * (mev.scba.gov.ar) — ya no existe una credencial de sistema. La credencial de la
+ * cuenta del usuario (causaId=null) cubre todas sus causas MEV; además se pueden
+ * cargar credenciales específicas por causa que la sobrescriben.
  */
 
 import axios, { AxiosError } from "axios";
@@ -99,8 +100,8 @@ class MevCredentialsService {
 	}
 
 	/**
-	 * Guarda/actualiza credenciales MEV. Sin causaId → credencial GLOBAL (cubre
-	 * todas las causas del usuario). Con causaId → credencial específica.
+	 * Guarda/actualiza credenciales MEV. Sin causaId → credencial de la cuenta del
+	 * usuario (cubre todas sus causas). Con causaId → credencial específica de la causa.
 	 */
 	async saveCredentials(username: string, password: string, causaId?: string | null): Promise<SaveMevCredentialsResponse> {
 		try {

@@ -32,6 +32,7 @@ import JudicialPowerSelection from "./step-components/judicialPowerSelection";
 import { dispatch } from "store";
 import { addFolder, updateFolderById } from "store/reducers/folder";
 import { fetchPjnSiteStatus } from "store/reducers/pjnSiteStatus";
+import mevCredentialsService from "api/mevCredentials";
 import { enqueueSnackbar } from "notistack";
 import AlertFolderDelete from "./AlertFolderDelete";
 import { PropsAddFolder } from "types/folders";
@@ -434,16 +435,27 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 						...folderDataToSend,
 						mev: true,
 						// navigationCode ya viene del formulario
-						// Credenciales del usuario para el scraping de esta causa. Solo se
-						// mandan si NO tiene credencial global (esa cubre la causa). El backend
-						// las encripta.
-						...(values.baImportMode === "single" && !values.hasGlobalMevCred && {
-							mevCredentials: {
-								username: values.mevUsername,
-								password: values.mevPassword,
-							},
-						}),
 					};
+
+					// Si el usuario carga credenciales en el alta (modo single, sin credencial
+					// de cuenta), las guardamos como la credencial de SU CUENTA (global), que
+					// cubre TODAS sus causas. Así garantizamos UNA sola credencial por usuario
+					// (la UI es la contenedora del modelo): no creamos credenciales per-causa
+					// duplicadas (una por carpeta). El backend la encripta (AES-256).
+					if (values.baImportMode === "single" && !values.hasGlobalMevCred && values.mevUsername && values.mevPassword) {
+						const credRes = await mevCredentialsService.saveCredentials(String(values.mevUsername).trim(), values.mevPassword, null);
+						if (!credRes.success) {
+							enqueueSnackbar(credRes.error || "No se pudo guardar tu credencial MEV", {
+								variant: "error",
+								anchorOrigin: { vertical: "bottom", horizontal: "right" },
+								TransitionComponent: Zoom,
+								autoHideDuration: 4000,
+							});
+							setIsProcessing(false);
+							actions.setSubmitting(false);
+							return;
+						}
+					}
 				} else if (values.judicialPower === "nacional") {
 					folderDataToSend = {
 						...folderDataToSend,
