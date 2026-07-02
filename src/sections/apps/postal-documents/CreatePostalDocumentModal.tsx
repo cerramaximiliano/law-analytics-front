@@ -23,7 +23,8 @@ import {
 	Typography,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { Add, CloseSquare, DocumentText, Profile2User, Save2, Trash } from "iconsax-react";
+import { Add, CloseSquare, DocumentDownload, DocumentText, FolderOpen, Profile2User, Save2, TickCircle, Trash } from "iconsax-react";
+import { useNavigate } from "react-router-dom";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { dispatch, useSelector } from "store";
 import { fetchPdfTemplates, createPostalDocument, updatePostalDocument } from "store/reducers/postalDocuments";
@@ -86,6 +87,54 @@ const CONTACT_GROUPS: ContactGroupKey[] = ["destinatario", "remitente", "poderda
 const EXCLUSIVE_CHECKBOX_PAIRS: [string, string][] = [["suscribe_sexo_f", "suscribe_sexo_m"]];
 
 const DEV_FILL_DATA: Record<string, { title: string; fields: Record<string, string> }> = {
+	planilla_inicio_civil: {
+		title: "Test Planilla Civil — González c/ Empresa S.A.",
+		fields: {
+			solicitud_medidas: "X",
+			objeto_codigo: "257",
+			objeto_descripcion: "DAÑOS Y PERJUICIOS",
+			abogado_pad: "P",
+			abogado_tomo: "101",
+			abogado_folio: "543",
+			abogado_nombre: "PÉREZ, María Laura",
+			conexo_juz: "45",
+			conexo_expediente_nro: "12345",
+			conexo_expediente_anio: "2026",
+			mediacion_juz: "12",
+			mediacion_tipo: "Judicial",
+			def_menores: "No",
+			def_pobres: "No",
+			fiscalia: "Sí",
+			monto_cod: "01",
+			monto_valor: "$ 1.500.000",
+			actor1_nombre: "GONZÁLEZ, Juan Carlos",
+			actor1_tipo_doc: "DNI",
+			actor1_numero: "30.123.456",
+			actor1_nacionalidad: "Argentina",
+			actor2_nombre: "GONZÁLEZ, Ana María",
+			actor2_tipo_doc: "DNI",
+			actor2_numero: "32.987.654",
+			actor2_nacionalidad: "Argentina",
+			demandado1_nombre: "EMPRESA S.A.",
+			demandado1_tipo_doc: "CUIT",
+			demandado1_numero: "30-71234567-8",
+			demandado1_nacionalidad: "Argentina",
+			demandado2_nombre: "SEGUROS DEL SUR S.A.",
+			demandado2_tipo_doc: "CUIT",
+			demandado2_numero: "30-65432198-2",
+			demandado2_nacionalidad: "Argentina",
+			exhorto_nro_exp: "9876/24",
+			exhorto_fecha_dia: "01",
+			exhorto_fecha_mes: "07",
+			exhorto_fecha_anio: "2026",
+			exhorto_dependencia: "Juzgado Civil N° 5",
+			exhorto_juez: "Dr. Rodríguez",
+			exhorto_caratula: "González c/ Empresa S.A.",
+			fecha_formulario_dia: "01",
+			fecha_formulario_mes: "07",
+			fecha_formulario_anio: "2026",
+		},
+	},
 	carta_poder_srt: {
 		title: "Test Carta Poder SRT",
 		fields: {
@@ -469,7 +518,10 @@ export default function CreatePostalDocumentModal({
 	const userId = useSelector((state: any) => state.auth?.user?._id);
 	const user = useSelector((state: any) => state.auth?.user);
 
+	const navigate = useNavigate();
 	const [step, setStep] = useState<0 | 1>(0);
+	// Documento recién generado → pantalla de resultado (para que el usuario sepa dónde quedó)
+	const [generatedDoc, setGeneratedDoc] = useState<any | null>(null);
 	const [templates, setTemplates] = useState<PdfTemplate[]>([]);
 	const [loadingTemplates, setLoadingTemplates] = useState(false);
 	const [selectedTemplate, setSelectedTemplate] = useState<PdfTemplate | null>(null);
@@ -540,6 +592,7 @@ export default function CreatePostalDocumentModal({
 
 	const resetState = () => {
 		setStep(0);
+		setGeneratedDoc(null);
 		setSelectedTemplate(null);
 		setFormValues({});
 		setTitle("");
@@ -710,8 +763,8 @@ export default function CreatePostalDocumentModal({
 		setGenerating(false);
 		if (result.success) {
 			showSnackbar("Documento generado exitosamente", "success");
-			resetState();
-			handleClose();
+			// No cerramos: mostramos la pantalla de resultado con acceso al PDF y a Documentos.
+			setGeneratedDoc(result.document || { title });
 		} else if ((result as any).limitInfo) {
 			setLimitErrorMessage(result.error || "Has alcanzado el límite de escritos para tu plan actual");
 			setLimitErrorInfo((result as any).limitInfo);
@@ -1287,6 +1340,7 @@ export default function CreatePostalDocumentModal({
 			sx={{
 				position: "relative",
 				overflow: "hidden",
+				flexShrink: 0,
 				p: { xs: 2.25, sm: 2.5 },
 				bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
 				borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
@@ -1384,8 +1438,38 @@ export default function CreatePostalDocumentModal({
 				{dialogHeader}
 
 				<DialogContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+					{/* ── Pantalla de resultado: documento generado ── */}
+					{generatedDoc && (
+						<Stack alignItems="center" spacing={2} sx={{ py: { xs: 3, sm: 5 }, textAlign: "center" }}>
+							<Box
+								sx={{
+									width: 64,
+									height: 64,
+									borderRadius: "50%",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									bgcolor: alpha(theme.palette.success.main, isDark ? 0.16 : 0.1),
+									color: theme.palette.success.main,
+								}}
+							>
+								<TickCircle size={36} variant="Bulk" />
+							</Box>
+							<Typography sx={{ fontSize: "1.1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+								¡Documento generado!
+							</Typography>
+							{generatedDoc.title && (
+								<Typography sx={{ fontSize: "0.9rem", color: "text.primary", fontWeight: 500 }}>"{generatedDoc.title}"</Typography>
+							)}
+							<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", maxWidth: 420, textWrap: "pretty" }}>
+								Ya está disponible en <Box component="span" sx={{ fontWeight: 600, color: BRAND_BLUE }}>Documentos → Escritos</Box>. Podés verlo,
+								descargarlo o editarlo desde ahí cuando quieras.
+							</Typography>
+						</Stack>
+					)}
+
 					{/* ── Step 0: template selection (solo modelos del sistema) ── */}
-					{step === 0 && (
+					{!generatedDoc && step === 0 && (
 						<>
 							{loadingTemplates ? (
 								<Stack alignItems="center" justifyContent="center" sx={{ py: 6 }}>
@@ -1478,7 +1562,7 @@ export default function CreatePostalDocumentModal({
 					)}
 
 					{/* ── Step 1: form ── */}
-					{step === 1 && selectedTemplate && (
+					{!generatedDoc && step === 1 && selectedTemplate && (
 						<Stack spacing={2.5}>
 							{/* Document metadata */}
 							<Grid container spacing={2} alignItems="center">
@@ -1727,15 +1811,39 @@ export default function CreatePostalDocumentModal({
 				</DialogContent>
 
 				<DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
-					{step === 0 && (
+					{generatedDoc ? (
+						<>
+							<Button onClick={handleClose_} sx={ghostBtnSx}>
+								Cerrar
+							</Button>
+							{generatedDoc.documentUrl && (
+								<Button
+									onClick={() => window.open(generatedDoc.documentUrl, "_blank")}
+									startIcon={<DocumentDownload size={16} variant="Linear" />}
+									sx={ghostBtnSx}
+								>
+									Ver PDF
+								</Button>
+							)}
+							<Button
+								onClick={() => {
+									handleClose_();
+									navigate("/documentos/escritos");
+								}}
+								startIcon={<FolderOpen size={16} variant="Linear" />}
+								sx={brandPrimarySx}
+							>
+								Ir a Documentos
+							</Button>
+						</>
+					) : step === 0 ? (
 						<Button onClick={handleClose_} sx={ghostBtnSx}>
 							Cancelar
 						</Button>
-					)}
-					{step === 1 && (
+					) : (
 						<>
-							<Button onClick={handleBack} sx={ghostBtnSx}>
-								Volver
+							<Button onClick={preselectedTemplate ? handleClose_ : handleBack} sx={ghostBtnSx}>
+								{preselectedTemplate ? "Cancelar" : "Volver"}
 							</Button>
 							<Button
 								onClick={handleSubmit}
@@ -1762,6 +1870,7 @@ export default function CreatePostalDocumentModal({
 					sx={{
 						position: "relative",
 						overflow: "hidden",
+						flexShrink: 0,
 						p: { xs: 2.25, sm: 2.5 },
 						bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
 						borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
