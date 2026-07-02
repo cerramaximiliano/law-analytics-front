@@ -10,14 +10,13 @@ import {
 	Tooltip,
 	CircularProgress,
 	Chip,
-	Divider,
 	Dialog,
 	DialogContent,
 	DialogActions,
 	alpha,
 	useTheme,
 } from "@mui/material";
-import { Eye, EyeSlash, ShieldTick, TickCircle, CloseCircle, Link1, Trash, Edit2, Refresh, Warning2 } from "iconsax-react";
+import { Eye, EyeSlash, ShieldTick, TickCircle, CloseCircle, Link1, Trash, Edit2, Warning2 } from "iconsax-react";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
 import { dispatch as storeDispatch } from "store";
@@ -51,9 +50,13 @@ const STATUS_META: Record<CredStatus, { label: string; color: "success" | "warni
 
 const isErrorStatus = (s: CredStatus) => s === "invalid" || s === "expired" || s === "disabled";
 
-// EditTarget: a qué credencial apunta el formulario abierto.
-type EditTarget = { type: "global" } | { type: "causa"; causaId: string; label: string } | null;
-
+/**
+ * Modelo "una credencial MEV por usuario": esta vista gestiona ÚNICAMENTE la
+ * credencial de la cuenta del usuario (global, causaId=null), que cubre todas sus
+ * causas de Buenos Aires. Las credenciales per-causa quedaron deprecadas y no se
+ * exponen; al guardar la credencial de la cuenta, la API elimina cualquier per-causa
+ * remanente (ver saveCredentials en el server).
+ */
 const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
@@ -69,31 +72,27 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 
 	const [loading, setLoading] = useState(true);
 	const [global, setGlobal] = useState<MevCredentialData | null>(null);
-	const [perCausa, setPerCausa] = useState<MevCredentialData[]>([]);
 
-	// Formulario (compartido entre global y per-causa según editTarget)
-	const [editTarget, setEditTarget] = useState<EditTarget>(null);
+	// Formulario de la credencial de la cuenta
+	const [editing, setEditing] = useState(false);
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
-	const [togglingId, setTogglingId] = useState<string | null>(null);
 
 	// Diálogo de impacto de desvinculación
-	const [unlinkTarget, setUnlinkTarget] = useState<MevCredentialData | null>(null);
+	const [unlinkOpen, setUnlinkOpen] = useState(false);
 	const [unlinkImpact, setUnlinkImpact] = useState<MevUnlinkImpact | null>(null);
 	const [loadingImpact, setLoadingImpact] = useState(false);
 	const [unlinking, setUnlinking] = useState(false);
 
 	const reportOverall = useCallback(
-		(g: MevCredentialData | null, pc: MevCredentialData[]) => {
-			const all = [g, ...pc].filter(Boolean) as MevCredentialData[];
-			if (all.length === 0) {
+		(g: MevCredentialData | null) => {
+			if (!g) {
 				onConnectionStatusChange?.("disconnected");
 				return;
 			}
-			const anyError = all.some((c) => isErrorStatus(deriveStatus(c)));
-			onConnectionStatusChange?.(anyError ? "error" : "connected");
+			onConnectionStatusChange?.(isErrorStatus(deriveStatus(g)) ? "error" : "connected");
 		},
 		[onConnectionStatusChange],
 	);
@@ -103,13 +102,10 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 			setLoading(true);
 			const res = await mevCredentialsService.getCredentialsStatus();
 			const g = res.success && res.data ? res.data.global : null;
-			const pc = res.success && res.data ? res.data.perCausa || [] : [];
 			setGlobal(g);
-			setPerCausa(pc);
-			reportOverall(g, pc);
+			reportOverall(g);
 		} catch {
 			setGlobal(null);
-			setPerCausa([]);
 			onConnectionStatusChange?.("disconnected");
 		} finally {
 			setLoading(false);
@@ -120,14 +116,14 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 		fetchStatus();
 	}, [fetchStatus]);
 
-	const startEdit = (target: EditTarget) => {
+	const startEdit = () => {
 		setUsername("");
 		setPassword("");
 		setShowPassword(false);
-		setEditTarget(target);
+		setEditing(true);
 	};
 	const cancelEdit = () => {
-		setEditTarget(null);
+		setEditing(false);
 		setUsername("");
 		setPassword("");
 	};
@@ -137,10 +133,10 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 			enqueueSnackbar("Ingresá usuario y contraseña del portal MEV", { variant: "warning" });
 			return;
 		}
-		const causaId = editTarget?.type === "causa" ? editTarget.causaId : null;
 		try {
 			setSubmitting(true);
-			const res = await mevCredentialsService.saveCredentials(username.trim(), password, causaId);
+			// causaId null → credencial de la cuenta (una por usuario).
+			const res = await mevCredentialsService.saveCredentials(username.trim(), password, null);
 			if (res.success) {
 				enqueueSnackbar("Credencial MEV guardada. La validaremos al consultar tus causas.", { variant: "success" });
 				cancelEdit();
@@ -154,29 +150,14 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 		}
 	};
 
-	const handleToggle = async (cred: MevCredentialData) => {
-		try {
-			setTogglingId(cred.id);
-			const res = await mevCredentialsService.toggleCredentials(cred.id);
-			if (res.success) {
-				enqueueSnackbar(`Credencial ${cred.enabled ? "deshabilitada" : "habilitada"}`, { variant: "success" });
-				await fetchStatus();
-				refreshFolders();
-			} else {
-				enqueueSnackbar(res.error || "No se pudo cambiar el estado", { variant: "error" });
-			}
-		} finally {
-			setTogglingId(null);
-		}
-	};
-
-	// Abre el diálogo de impacto antes de desvincular (global o per-causa).
-	const openUnlink = async (cred: MevCredentialData) => {
-		setUnlinkTarget(cred);
+	// Abre el diálogo de impacto antes de desvincular la credencial de la cuenta.
+	const openUnlink = async () => {
+		if (!global) return;
+		setUnlinkOpen(true);
 		setUnlinkImpact(null);
 		setLoadingImpact(true);
 		try {
-			const res = await mevCredentialsService.getUnlinkImpact(cred.id);
+			const res = await mevCredentialsService.getUnlinkImpact(global.id);
 			setUnlinkImpact(res.success && res.data ? res.data : null);
 		} catch {
 			setUnlinkImpact(null);
@@ -187,18 +168,18 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 
 	const closeUnlink = () => {
 		if (unlinking) return;
-		setUnlinkTarget(null);
+		setUnlinkOpen(false);
 		setUnlinkImpact(null);
 	};
 
 	const confirmUnlink = async () => {
-		if (!unlinkTarget) return;
+		if (!global) return;
 		try {
 			setUnlinking(true);
-			const res = await mevCredentialsService.deleteCredentials(unlinkTarget.id);
+			const res = await mevCredentialsService.deleteCredentials(global.id);
 			if (res.success) {
 				enqueueSnackbar("Credencial MEV desvinculada", { variant: "success" });
-				setUnlinkTarget(null);
+				setUnlinkOpen(false);
 				setUnlinkImpact(null);
 				await fetchStatus();
 				refreshFolders();
@@ -214,19 +195,17 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 		return (
 			<Stack alignItems="center" sx={{ py: 4 }} spacing={1}>
 				<CircularProgress size={24} sx={{ color: BRAND_BLUE }} />
-				<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>Cargando credenciales MEV…</Typography>
+				<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>Cargando credencial MEV…</Typography>
 			</Stack>
 		);
 	}
 
-	const renderForm = (submitLabel: string, showHelp: boolean, onCancel?: () => void) => (
+	const renderForm = () => (
 		<Stack spacing={1.5}>
-			{showHelp && (
-				<Typography sx={{ fontSize: "0.82rem", color: "text.secondary" }}>
-					Cargá tu usuario y contraseña del portal MEV (mev.scba.gov.ar). Con esta credencial consultamos automáticamente
-					tus causas de Buenos Aires. Tu contraseña se guarda encriptada (AES-256).
-				</Typography>
-			)}
+			<Typography sx={{ fontSize: "0.82rem", color: "text.secondary" }}>
+				Cargá tu usuario y contraseña del portal MEV (mev.scba.gov.ar). Con esta credencial consultamos automáticamente
+				todas tus causas de Buenos Aires. Tu contraseña se guarda encriptada (AES-256).
+			</Typography>
 			<TextField
 				fullWidth
 				size="small"
@@ -266,10 +245,10 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 					startIcon={submitting ? <CircularProgress size={14} color="inherit" /> : <Link1 size={16} />}
 					sx={{ bgcolor: BRAND_BLUE, "&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88) } }}
 				>
-					{submitting ? "Guardando…" : submitLabel}
+					{submitting ? "Guardando…" : global ? "Actualizar credencial" : "Conectar cuenta MEV"}
 				</Button>
-				{onCancel && (
-					<Button size="small" onClick={onCancel} disabled={submitting} sx={{ color: "text.secondary" }}>
+				{editing && global && (
+					<Button size="small" onClick={cancelEdit} disabled={submitting} sx={{ color: "text.secondary" }}>
 						Cancelar
 					</Button>
 				)}
@@ -299,11 +278,14 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 						<Typography sx={{ fontSize: "0.88rem", fontWeight: 600 }}>Credencial de tu cuenta MEV</Typography>
 						<Chip size="small" label={meta.label} color={meta.color} sx={{ ml: "auto" }} />
 					</Stack>
+					<Typography sx={{ fontSize: "0.76rem", color: "text.secondary" }}>
+						Con esta credencial consultamos todas tus causas de Buenos Aires.
+					</Typography>
 					{g.lastError && status !== "valid" && (
-						<Typography sx={{ fontSize: "0.76rem", color: "text.secondary" }}>{g.lastError.message}</Typography>
+						<Typography sx={{ fontSize: "0.76rem", color: "text.secondary", mt: 0.5 }}>{g.lastError.message}</Typography>
 					)}
 					{status === "pending" && (
-						<Typography sx={{ fontSize: "0.76rem", color: "text.secondary" }}>
+						<Typography sx={{ fontSize: "0.76rem", color: "text.secondary", mt: 0.5 }}>
 							La validaremos automáticamente cuando consultemos tus causas.
 						</Typography>
 					)}
@@ -312,13 +294,13 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 					<Button
 						size="small"
 						variant="outlined"
-						onClick={() => startEdit({ type: "global" })}
+						onClick={startEdit}
 						startIcon={<Edit2 size={15} />}
 						sx={{ borderColor: BRAND_BLUE, color: BRAND_BLUE }}
 					>
 						Actualizar credencial
 					</Button>
-					<Button size="small" color="error" onClick={() => openUnlink(g)} disabled={submitting} startIcon={<Trash size={16} />}>
+					<Button size="small" color="error" onClick={openUnlink} disabled={submitting} startIcon={<Trash size={16} />}>
 						Desvincular
 					</Button>
 				</Stack>
@@ -326,95 +308,17 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 		);
 	};
 
-	const renderPerCausaRow = (c: MevCredentialData) => {
-		const status = deriveStatus(c);
-		const meta = STATUS_META[status];
-		const isEditingThis = editTarget?.type === "causa" && editTarget.causaId === String(c.causaId);
-		const isError = isErrorStatus(status);
-		return (
-			<Box
-				key={c.id}
-				sx={{
-					p: 1.25,
-					borderRadius: 1.25,
-					bgcolor: alpha(theme.palette.text.primary, isDark ? 0.04 : 0.02),
-					border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.12 : 0.08)}`,
-				}}
-			>
-				<Stack direction="row" alignItems="center" spacing={1}>
-					<Stack sx={{ minWidth: 0, flex: 1 }}>
-						<Typography noWrap sx={{ fontSize: "0.82rem", fontWeight: 600 }}>
-							{c.causaLabel || "Causa MEV"}
-						</Typography>
-						{c.lastError && status !== "valid" && (
-							<Typography noWrap sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
-								{c.lastError.message}
-							</Typography>
-						)}
-					</Stack>
-					<Chip size="small" label={meta.label} color={meta.color} />
-				</Stack>
-				<Stack direction="row" spacing={0.5} sx={{ mt: 1 }}>
-					<Button
-						size="small"
-						variant={isError ? "contained" : "text"}
-						onClick={() => startEdit({ type: "causa", causaId: String(c.causaId), label: c.causaLabel || "Causa MEV" })}
-						startIcon={isError ? <Refresh size={15} /> : <Edit2 size={15} />}
-						sx={isError ? { bgcolor: BRAND_BLUE, "&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88) } } : { color: BRAND_BLUE }}
-					>
-						{isError ? "Recargar" : "Editar"}
-					</Button>
-					<Button
-						size="small"
-						onClick={() => handleToggle(c)}
-						disabled={togglingId === c.id}
-						sx={{ color: "text.secondary" }}
-					>
-						{togglingId === c.id ? "…" : c.enabled ? "Deshabilitar" : "Habilitar"}
-					</Button>
-					<Button size="small" color="error" onClick={() => openUnlink(c)} startIcon={<Trash size={15} />} sx={{ ml: "auto" }}>
-						Desvincular
-					</Button>
-				</Stack>
-				{isEditingThis && (
-					<Box sx={{ mt: 1.25 }}>{renderForm("Guardar credencial", false, cancelEdit)}</Box>
-				)}
-			</Box>
-		);
-	};
-
-	const showGlobalForm = editTarget?.type === "global" || (!global && editTarget === null);
-
+	// Con credencial cargada y sin editar → tarjeta; si no → formulario.
+	const showForm = editing || !global;
 	const impactWarn = unlinkImpact && unlinkImpact.folders.total > 0;
 	const tone = impactWarn ? theme.palette.error.main : theme.palette.success.main;
 
 	return (
 		<>
-			<Stack spacing={2}>
-				{/* ===== Credencial GLOBAL ===== */}
-				{showGlobalForm
-					? renderForm(global ? "Actualizar credencial" : "Conectar cuenta MEV", true, editTarget?.type === "global" ? cancelEdit : undefined)
-					: global
-						? renderGlobalCard(global)
-						: null}
-
-				{/* ===== Credenciales POR CAUSA ===== */}
-				{perCausa.length > 0 && (
-					<Stack spacing={1}>
-						<Divider />
-						<Typography sx={{ fontSize: "0.78rem", fontWeight: 700, color: "text.secondary", letterSpacing: "0.02em" }}>
-							Credenciales por causa ({perCausa.length})
-						</Typography>
-						<Typography sx={{ fontSize: "0.74rem", color: "text.secondary" }}>
-							Credenciales específicas que sobrescriben la credencial de tu cuenta para una causa puntual.
-						</Typography>
-						{perCausa.map(renderPerCausaRow)}
-					</Stack>
-				)}
-			</Stack>
+			{showForm ? renderForm() : global ? renderGlobalCard(global) : renderForm()}
 
 			{/* ===== Diálogo de impacto de desvinculación ===== */}
-			<Dialog open={!!unlinkTarget} onClose={closeUnlink} maxWidth="xs" fullWidth>
+			<Dialog open={unlinkOpen} onClose={closeUnlink} maxWidth="xs" fullWidth>
 				<DialogContent sx={{ pt: 2.5 }}>
 					<Stack spacing={1.5}>
 						<Stack direction="row" alignItems="center" spacing={1}>
@@ -431,7 +335,7 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 							>
 								<Trash size={18} variant="Bulk" color={theme.palette.error.main} />
 							</Box>
-							<Typography sx={{ fontSize: "1rem", fontWeight: 700 }}>¿Desvincular esta credencial MEV?</Typography>
+							<Typography sx={{ fontSize: "1rem", fontWeight: 700 }}>¿Desvincular tu credencial MEV?</Typography>
 						</Stack>
 
 						{loadingImpact ? (
@@ -458,7 +362,7 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 											</Typography>
 										</Stack>
 										<Typography sx={{ fontSize: "0.76rem", color: "text.secondary" }}>
-											No vamos a consultar movimientos nuevos de esas causas del MEV hasta que vincules una credencial de
+											No vamos a consultar movimientos nuevos de tus causas del MEV hasta que vincules una credencial de
 											nuevo. Las carpetas no se borran.
 										</Typography>
 										{unlinkImpact!.folders.names.length > 0 && (
@@ -475,9 +379,7 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 									<Stack direction="row" alignItems="center" spacing={0.75}>
 										<TickCircle size={16} variant="Bulk" color={theme.palette.success.main} />
 										<Typography sx={{ fontSize: "0.78rem", color: "text.secondary" }}>
-											{unlinkImpact?.coveredByGlobal
-												? "Esta causa seguirá sincronizándose con la credencial de tu cuenta MEV."
-												: "Ninguna causa quedará sin seguimiento."}
+											Ninguna causa quedará sin seguimiento.
 										</Typography>
 									</Stack>
 								)}
