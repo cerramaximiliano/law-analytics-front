@@ -43,7 +43,7 @@ import {
 	DocumentText,
 	Eye,
 	FolderOpen,
-	More,
+	Printer,
 	Routing,
 	SearchNormal1,
 	Trash,
@@ -55,8 +55,9 @@ import {
 	fetchRichTextTemplates,
 	deleteRichTextDocument,
 	updateRichTextDocument,
+	previewRichTextDocument,
 } from "store/reducers/richTextDocuments";
-import { fetchPostalDocuments, deletePostalDocument, updatePostalDocument, getPostalDocumentById } from "store/reducers/postalDocuments";
+import { fetchPostalDocuments, deletePostalDocument, updatePostalDocument, previewPostalDocument } from "store/reducers/postalDocuments";
 import { createPostalTracking, fetchAllTrackings, updatePostalTracking } from "store/reducers/postalTracking";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
@@ -81,7 +82,7 @@ const TRACKING_SLUGS = ["telegrama_laboral"];
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type TypeFilter = "all" | "postal" | "richtext";
+type TypeFilter = "all" | "system" | "user"; // origen del modelo: sistema vs propio
 
 interface DocRow {
 	kind: "postal" | "richtext";
@@ -89,17 +90,22 @@ interface DocRow {
 	title: string;
 	templateName: string;
 	templateSlug?: string;
+	category?: string;
+	source?: "system" | "user";
 	status: string;
 	linkedFolderId?: string | null;
 	linkedTrackingId?: string | null;
 	supportsTracking?: boolean;
 	documentUrl?: string;
 	createdAt?: string;
+	docKind?: "formulario" | "documento";
+	linkedDocumentId?: string | null;
 	rawPostal?: PostalDocumentType;
 	rawRichText?: RichTextDocument;
 }
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 10;
+const FETCH_LIMIT = 500; // paginación client-side sobre el set completo
 
 // ── Status configs (brand-aware) ───────────────────────────────────────────────
 
@@ -111,6 +117,20 @@ const POSTAL_STATUS_LABELS: Record<string, string> = {
 };
 
 const RT_STATUS_LABELS: Record<string, string> = { draft: "Borrador", final: "Final" };
+
+const DOC_CATEGORY_LABELS: Record<string, string> = {
+	judicial: "Judicial",
+	laboral: "Laboral",
+	societario: "Societario",
+	notarial: "Notarial",
+	postal: "Postal",
+	civil: "Civil",
+	penal: "Penal",
+	familia: "Familia",
+	otros: "Otros",
+	otro: "Otro",
+};
+const catLabel = (c: string) => DOC_CATEGORY_LABELS[c] || c.charAt(0).toUpperCase() + c.slice(1);
 
 function formatDate(iso?: string | null) {
 	if (!iso) return "—";
@@ -126,12 +146,16 @@ function toDocRow(doc: PostalDocumentType | RichTextDocument, kind: "postal" | "
 			title: d.title,
 			templateName: d.templateName || "—",
 			templateSlug: d.templateSlug,
+			category: d.templateCategory,
+			source: ((d as any).templateSource as "system" | "user") || "system",
 			status: d.status,
 			linkedFolderId: d.linkedFolderId as string | null | undefined,
 			linkedTrackingId: d.linkedTrackingId as string | null | undefined,
 			supportsTracking: Boolean(d.supportsTracking) || TRACKING_SLUGS.includes(d.templateSlug ?? ""),
 			documentUrl: d.documentUrl,
 			createdAt: d.createdAt,
+			docKind: d.docKind,
+			linkedDocumentId: (d.linkedDocumentId as string | null | undefined) ?? null,
 			rawPostal: d,
 		};
 	} else {
@@ -141,6 +165,8 @@ function toDocRow(doc: PostalDocumentType | RichTextDocument, kind: "postal" | "
 			id: d._id,
 			title: d.title,
 			templateName: d.templateName || "—",
+			category: (d as any).templateCategory,
+			source: ((d as any).templateSource as "system" | "user") || "user",
 			status: d.status,
 			linkedFolderId: d.linkedFolderId,
 			createdAt: d.createdAt,
@@ -197,12 +223,14 @@ const RichTextStatusPill = ({ value }: { value: string }) => {
 	return <BrandPill color={color} label={RT_STATUS_LABELS[value] ?? value} />;
 };
 
-const TypePill = ({ kind }: { kind: "postal" | "richtext" }) => {
+const TypePill = ({ docKind }: { docKind?: "formulario" | "documento" }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
-	const isPostal = kind === "postal";
-	const color = isPostal ? BRAND_BLUE : theme.palette.text.secondary;
-	const Icon = isPostal ? DocumentDownload : DocumentText;
+	// Todo es "Formulario" (planilla de captura) o "Documento" (escrito generado, incluidos los del editor).
+	const isForm = docKind === "formulario";
+	const label = isForm ? "Formulario" : "Documento";
+	const color = isForm ? theme.palette.warning.main : BRAND_BLUE;
+	const Icon = DocumentText;
 	return (
 		<Box
 			sx={{
@@ -219,7 +247,7 @@ const TypePill = ({ kind }: { kind: "postal" | "richtext" }) => {
 		>
 			<Icon size={11} variant="Linear" />
 			<Typography sx={{ fontSize: "0.66rem", fontWeight: 600, color, letterSpacing: "0.01em", lineHeight: 1 }}>
-				{isPostal ? "Postal" : "Escrito"}
+				{label}
 			</Typography>
 		</Box>
 	);
@@ -248,6 +276,7 @@ const TrackingMicroPill = () => {
 		</Box>
 	);
 };
+
 
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 
@@ -1111,15 +1140,21 @@ const PostalDetailDialog = ({ open, doc, onClose }: PostalDetailDialogProps) => 
 	const dispatch = useDispatch();
 	const folders = useSelector((state: any) => state.folder?.folders || []);
 	const { brandPrimaryButtonSx, ghostCancelSx, dialogPaperSx, isDark } = useBrandStyles();
-	const [freshUrl, setFreshUrl] = useState<string | null>(null);
+	const [freshUrl, setFreshUrl] = useState<string | null>(null); // PDF de preview (para el iframe)
+	const [downloadUrl, setDownloadUrl] = useState<string | null>(null); // archivo original (para descargar)
 	const [urlLoading, setUrlLoading] = useState(false);
 
 	useEffect(() => {
 		if (!open || !doc?._id) return;
 		setFreshUrl(null);
+		setDownloadUrl(null);
 		setUrlLoading(true);
-		(dispatch as any)(getPostalDocumentById(doc._id)).then((res: any) => {
-			if (res?.success && res.document?.documentUrl) setFreshUrl(res.document.documentUrl);
+		// Preview: si es .docx el server lo convierte a PDF; devuelve también la URL de descarga del original.
+		(dispatch as any)(previewPostalDocument(doc._id)).then((res: any) => {
+			if (res?.success) {
+				setFreshUrl(res.url || null);
+				setDownloadUrl(res.downloadUrl || res.url || null);
+			}
 			setUrlLoading(false);
 		});
 	}, [open, doc?._id]);
@@ -1160,10 +1195,11 @@ const PostalDetailDialog = ({ open, doc, onClose }: PostalDetailDialogProps) => 
 								<CircularProgress size={28} sx={{ color: BRAND_BLUE }} />
 							</Stack>
 						) : freshUrl ? (
+							// El server ya devuelve un PDF (convertido si el original era .docx) → se previsualiza en el iframe.
 							<iframe src={freshUrl} title={doc.title} style={{ width: "100%", height: "100%", border: "none", display: "block" }} />
 						) : (
 							<Stack alignItems="center" justifyContent="center" sx={{ height: "100%" }}>
-								<Typography sx={{ fontSize: "0.85rem", color: "text.secondary" }}>El PDF no está disponible.</Typography>
+								<Typography sx={{ fontSize: "0.85rem", color: "text.secondary" }}>El documento no está disponible.</Typography>
 							</Stack>
 						)}
 					</Grid>
@@ -1203,10 +1239,19 @@ const PostalDetailDialog = ({ open, doc, onClose }: PostalDetailDialogProps) => 
 				{freshUrl && (
 					<Button
 						onClick={() => window.open(freshUrl, "_blank")}
+						startIcon={<Printer size={16} variant="Linear" />}
+						sx={ghostCancelSx}
+					>
+						Imprimir (PDF)
+					</Button>
+				)}
+				{downloadUrl && (
+					<Button
+						onClick={() => window.open(downloadUrl, "_blank")}
 						startIcon={<DocumentDownload size={16} variant="Linear" />}
 						sx={brandPrimaryButtonSx}
 					>
-						Descargar PDF
+						Descargar
 					</Button>
 				)}
 			</DialogActions>
@@ -1339,14 +1384,15 @@ const EscritosPage = () => {
 	const dispatch = useDispatch();
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-	const { brandPrimaryButtonSx, ghostCancelSx, iconBtnSx, iconBtnDestructiveSx, tableSx, inputSx, menuPaperSx, isDark } = useBrandStyles();
+	const { brandPrimaryButtonSx, iconBtnSx, iconBtnDestructiveSx, tableSx, inputSx, menuPaperSx, isDark } = useBrandStyles();
 
-	const { documents: rtDocs, documentsTotal: rtTotal, isLoader: rtLoading } = useSelector((state: any) => state.richTextDocumentsReducer);
-	const { documents: postalDocs, total: postalTotal, isLoader: postalLoading } = useSelector((state: any) => state.postalDocumentsReducer);
+	const { documents: rtDocs, isLoader: rtLoading } = useSelector((state: any) => state.richTextDocumentsReducer);
+	const { documents: postalDocs, isLoader: postalLoading } = useSelector((state: any) => state.postalDocumentsReducer);
 	const folders = useSelector((state: any) => state.folder?.folders || []);
 	const userId = useSelector((state: any) => state.auth?.user?._id);
 
 	const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+	const [catFilter, setCatFilter] = useState<string>("");
 	const [searchInput, setSearchInput] = useState("");
 	const [search, setSearch] = useState("");
 	const [page, setPage] = useState(1);
@@ -1364,7 +1410,6 @@ const EscritosPage = () => {
 		currentCount: string;
 		limit: number;
 	} | null>(null);
-	const [rowMenuAnchor, setRowMenuAnchor] = useState<{ el: HTMLElement; row: DocRow } | null>(null);
 
 	useEffect(() => {
 		if (folders.length === 0 && userId) {
@@ -1373,33 +1418,36 @@ const EscritosPage = () => {
 	}, [dispatch, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	useEffect(() => {
-		const fetchPage = typeFilter === "all" ? 1 : page;
-		if (typeFilter === "all" || typeFilter === "postal") {
-			dispatch(fetchPostalDocuments({ page: fetchPage, limit: PAGE_SIZE, search: search || undefined }) as any);
-		}
-		if (typeFilter === "all" || typeFilter === "richtext") {
-			dispatch(fetchRichTextDocuments({ page: fetchPage, limit: PAGE_SIZE, search: search || undefined }));
-		}
-	}, [dispatch, page, search, typeFilter]);
+		// Siempre traemos ambos orígenes; el filtro (sistema/propio) se aplica client-side por `source`.
+		dispatch(fetchPostalDocuments({ page: 1, limit: FETCH_LIMIT, search: search || undefined }) as any);
+		dispatch(fetchRichTextDocuments({ page: 1, limit: FETCH_LIMIT, search: search || undefined }));
+	}, [dispatch, search]);
 
 	const rows = useMemo((): DocRow[] => {
-		let result: DocRow[] = [];
-		if (typeFilter !== "richtext") {
-			result.push(...(postalDocs as PostalDocumentType[]).map((d) => toDocRow(d, "postal")));
-		}
-		if (typeFilter !== "postal") {
-			result.push(...(rtDocs as RichTextDocument[]).map((d) => toDocRow(d, "richtext")));
-		}
-		if (typeFilter === "all") {
-			result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-			result = result.slice(0, PAGE_SIZE);
-		}
+		const result: DocRow[] = [
+			...(postalDocs as PostalDocumentType[]).map((d) => toDocRow(d, "postal")),
+			...(rtDocs as RichTextDocument[]).map((d) => toDocRow(d, "richtext")),
+		];
+		result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 		return result;
-	}, [postalDocs, rtDocs, typeFilter]);
+	}, [postalDocs, rtDocs]);
 
-	const totalItems = typeFilter === "postal" ? postalTotal : typeFilter === "richtext" ? rtTotal : postalTotal + rtTotal;
-	const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+	// Filtro por origen (sistema/propio) + categoría. Categorías presentes para el dropdown.
+	const availableCategories = useMemo(() => [...new Set(rows.map((r) => r.category).filter(Boolean) as string[])].sort(), [rows]);
+	const filteredRows = useMemo(
+		() => rows.filter((r) => (typeFilter === "all" || r.source === typeFilter) && (!catFilter || r.category === catFilter)),
+		[rows, typeFilter, catFilter],
+	);
+	const systemCount = useMemo(() => rows.filter((r) => r.source === "system").length, [rows]);
+	const userCount = useMemo(() => rows.filter((r) => r.source === "user").length, [rows]);
+
+	const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
+	const pagedRows = useMemo(() => filteredRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filteredRows, page]);
 	const isLoading = postalLoading || rtLoading;
+
+	useEffect(() => {
+		if (page > totalPages) setPage(totalPages);
+	}, [page, totalPages]);
 
 	const handleSearchSubmit = () => {
 		setSearch(searchInput);
@@ -1434,14 +1482,19 @@ const EscritosPage = () => {
 		dispatch(openSnackbar({ open: true, message, variant: "alert", alert: { color: severity }, close: true }));
 	};
 
-	const refreshDocuments = (currentPage = page) => {
-		const fetchPage = typeFilter === "all" ? 1 : currentPage;
-		if (typeFilter === "all" || typeFilter === "postal") {
-			dispatch(fetchPostalDocuments({ page: fetchPage, limit: PAGE_SIZE, search: search || undefined }) as any);
-		}
-		if (typeFilter === "all" || typeFilter === "richtext") {
-			dispatch(fetchRichTextDocuments({ page: fetchPage, limit: PAGE_SIZE, search: search || undefined }));
-		}
+	// "Imprimir": abre el PDF del documento (convertido si el original es .docx, o TipTap→PDF si es del editor).
+	const handlePrint = async (row: DocRow) => {
+		const res: any =
+			row.kind === "richtext"
+				? await (dispatch as any)(previewRichTextDocument(row.id))
+				: await (dispatch as any)(previewPostalDocument(row.id));
+		if (res?.success && res.url) window.open(res.url, "_blank");
+		else showSnackbar(res?.error || "No se pudo obtener el PDF", "error");
+	};
+
+	const refreshDocuments = () => {
+		dispatch(fetchPostalDocuments({ page: 1, limit: FETCH_LIMIT, search: search || undefined }) as any);
+		dispatch(fetchRichTextDocuments({ page: 1, limit: FETCH_LIMIT, search: search || undefined }));
 		if (userId) dispatch(getFoldersByUserId(userId) as any);
 	};
 
@@ -1569,9 +1622,9 @@ const EscritosPage = () => {
 
 					{/* Métricas */}
 					<Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0, display: { xs: "none", sm: "flex" } }}>
-						<HeaderStat label="Totales" value={postalTotal + rtTotal} tone="primary" />
-						<HeaderStat label="Sistema" value={postalTotal} tone="neutral" />
-						<HeaderStat label="Mis modelos" value={rtTotal} tone="amber" />
+						<HeaderStat label="Totales" value={rows.length} tone="primary" />
+						<HeaderStat label="Del sistema" value={systemCount} tone="neutral" />
+						<HeaderStat label="Mis modelos" value={userCount} tone="amber" />
 					</Stack>
 
 					{/* CTA */}
@@ -1693,10 +1746,37 @@ const EscritosPage = () => {
 							"&.Mui-focused fieldset": { borderColor: BRAND_BLUE },
 						}}
 					>
-						<MuiMenuItem value="all">Todos los tipos</MuiMenuItem>
-						<MuiMenuItem value="postal">Del sistema</MuiMenuItem>
-						<MuiMenuItem value="richtext">Mis modelos</MuiMenuItem>
+						<MuiMenuItem value="all">Todos los modelos</MuiMenuItem>
+						<MuiMenuItem value="system">Del sistema</MuiMenuItem>
+						<MuiMenuItem value="user">Mis modelos</MuiMenuItem>
 					</Select>
+					{availableCategories.length > 0 && (
+						<Select
+							size="small"
+							displayEmpty
+							value={catFilter}
+							onChange={(e) => {
+								setCatFilter(e.target.value as string);
+								setPage(1);
+							}}
+							sx={{
+								minWidth: { sm: 160 },
+								width: { xs: "100%", sm: "auto" },
+								borderRadius: 1.25,
+								fontSize: "0.875rem",
+								"& fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.14) },
+								"&:hover fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.28) },
+								"&.Mui-focused fieldset": { borderColor: BRAND_BLUE },
+							}}
+						>
+							<MuiMenuItem value="">Todas las categorías</MuiMenuItem>
+							{availableCategories.map((c) => (
+								<MuiMenuItem key={c} value={c}>
+									{catLabel(c)}
+								</MuiMenuItem>
+							))}
+						</Select>
+					)}
 					<Box sx={{ flex: 1 }} />
 					<Button size="small" onClick={handleSearchSubmit} sx={{ ...brandPrimaryButtonSx, minWidth: 110 }}>
 						Buscar
@@ -1727,10 +1807,10 @@ const EscritosPage = () => {
 										</Stack>
 									</Box>
 								))
-						) : rows.length === 0 ? (
+						) : filteredRows.length === 0 ? (
 							<EmptyState search={search} />
 						) : (
-							rows.map((row) => {
+							pagedRows.map((row) => {
 								const isPostal = row.kind === "postal";
 								const linkedFolder = row.linkedFolderId ? folders.find((f: any) => f._id === row.linkedFolderId) : null;
 								const hasTracking = isPostal && Boolean(row.linkedTrackingId);
@@ -1760,7 +1840,7 @@ const EscritosPage = () => {
 												>
 													{row.title}
 												</Typography>
-												<TypePill kind={row.kind} />
+												<TypePill docKind={row.docKind} />
 											</Stack>
 
 											<Stack direction="row" spacing={0.75} flexWrap="wrap" alignItems="center" useFlexGap>
@@ -1827,23 +1907,35 @@ const EscritosPage = () => {
 														</IconButton>
 													</Tooltip>
 													{row.documentUrl && (
-														<Tooltip title="Descargar PDF">
+														<Tooltip title="Descargar">
 															<IconButton sx={iconBtnSx} onClick={() => window.open(row.documentUrl, "_blank")}>
 																<DocumentDownload size={16} variant="Linear" />
 															</IconButton>
 														</Tooltip>
 													)}
+													<Tooltip title="Imprimir (PDF)">
+														<IconButton sx={iconBtnSx} onClick={() => handlePrint(row)}>
+															<Printer size={16} variant="Linear" />
+														</IconButton>
+													</Tooltip>
 												</>
 											) : (
-												<Tooltip title="Ver / Editar">
-													<IconButton
-														sx={iconBtnSx}
-														onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)}
-														data-testid="escritos-edit-btn"
-													>
-														<Eye size={16} variant="Linear" />
-													</IconButton>
-												</Tooltip>
+												<>
+													<Tooltip title="Ver / Editar">
+														<IconButton
+															sx={iconBtnSx}
+															onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)}
+															data-testid="escritos-edit-btn"
+														>
+															<Eye size={16} variant="Linear" />
+														</IconButton>
+													</Tooltip>
+													<Tooltip title="Imprimir (PDF)">
+														<IconButton sx={iconBtnSx} onClick={() => handlePrint(row)}>
+															<Printer size={16} variant="Linear" />
+														</IconButton>
+													</Tooltip>
+												</>
 											)}
 											<Tooltip title={row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}>
 												<IconButton sx={iconBtnSx} onClick={() => setVincularRow(row)}>
@@ -1884,14 +1976,14 @@ const EscritosPage = () => {
 									Array(5)
 										.fill(0)
 										.map((_, i) => <RowSkeleton key={i} />)
-								) : rows.length === 0 ? (
+								) : filteredRows.length === 0 ? (
 									<TableRow>
 										<TableCell colSpan={7} sx={{ p: 0 }}>
 											<EmptyState search={search} />
 										</TableCell>
 									</TableRow>
 								) : (
-									rows.map((row) => {
+									pagedRows.map((row) => {
 										const isPostal = row.kind === "postal";
 										const linkedFolder = row.linkedFolderId ? folders.find((f: any) => f._id === row.linkedFolderId) : null;
 										const hasTracking = isPostal && Boolean(row.linkedTrackingId);
@@ -1918,7 +2010,7 @@ const EscritosPage = () => {
 													</Stack>
 												</TableCell>
 												<TableCell>
-													<TypePill kind={row.kind} />
+													<TypePill docKind={row.docKind} />
 												</TableCell>
 												<TableCell>
 													<Typography
@@ -1960,16 +2052,53 @@ const EscritosPage = () => {
 														{formatDate(row.createdAt)}
 													</Typography>
 												</TableCell>
-												<TableCell align="right" sx={{ width: 56 }}>
-													<Tooltip title="Acciones">
-														<IconButton
-															sx={iconBtnSx}
-															onClick={(e) => setRowMenuAnchor({ el: e.currentTarget, row })}
-															data-testid="escritos-row-menu-btn"
-														>
-															<More size={16} variant="Linear" style={{ transform: "rotate(90deg)" }} />
-														</IconButton>
-													</Tooltip>
+												<TableCell align="right">
+													<Stack direction="row" spacing={0.25} justifyContent="flex-end">
+														{isPostal ? (
+															<>
+																<Tooltip title="Ver documento">
+																	<IconButton sx={iconBtnSx} onClick={() => setPostalDetail(row.rawPostal!)} data-testid="escritos-row-view-btn">
+																		<Eye size={16} variant="Linear" />
+																	</IconButton>
+																</Tooltip>
+																{row.documentUrl && (
+																	<Tooltip title="Descargar">
+																		<IconButton sx={iconBtnSx} onClick={() => window.open(row.documentUrl, "_blank")}>
+																			<DocumentDownload size={16} variant="Linear" />
+																		</IconButton>
+																	</Tooltip>
+																)}
+																<Tooltip title="Imprimir (PDF)">
+																	<IconButton sx={iconBtnSx} onClick={() => handlePrint(row)}>
+																		<Printer size={16} variant="Linear" />
+																	</IconButton>
+																</Tooltip>
+															</>
+														) : (
+															<>
+																<Tooltip title="Ver / Editar">
+																	<IconButton sx={iconBtnSx} onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)} data-testid="escritos-edit-btn">
+																		<Eye size={16} variant="Linear" />
+																	</IconButton>
+																</Tooltip>
+																<Tooltip title="Imprimir (PDF)">
+																	<IconButton sx={iconBtnSx} onClick={() => handlePrint(row)}>
+																		<Printer size={16} variant="Linear" />
+																	</IconButton>
+																</Tooltip>
+															</>
+														)}
+														<Tooltip title={row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}>
+															<IconButton sx={iconBtnSx} onClick={() => setVincularRow(row)}>
+																<Routing size={16} variant="Linear" />
+															</IconButton>
+														</Tooltip>
+														<Tooltip title="Eliminar">
+															<IconButton sx={iconBtnDestructiveSx} onClick={() => setDeleteTarget({ kind: row.kind, id: row.id, title: row.title })} data-testid="escritos-delete-btn">
+																<Trash size={16} variant="Linear" />
+															</IconButton>
+														</Tooltip>
+													</Stack>
 												</TableCell>
 											</TableRow>
 										);
@@ -1980,107 +2109,9 @@ const EscritosPage = () => {
 					</TableContainer>
 				)}
 
-				{/* Row actions menu */}
-				<Menu
-					anchorEl={rowMenuAnchor?.el}
-					open={Boolean(rowMenuAnchor)}
-					onClose={() => setRowMenuAnchor(null)}
-					transformOrigin={{ horizontal: "right", vertical: "top" }}
-					anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
-					PaperProps={{ elevation: 0, sx: menuPaperSx }}
-				>
-					{rowMenuAnchor?.row.kind === "postal"
-						? [
-								<MuiMenuItem
-									key="ver"
-									onClick={() => {
-										setPostalDetail(rowMenuAnchor.row.rawPostal!);
-										setRowMenuAnchor(null);
-									}}
-								>
-									<Eye size={15} variant="Linear" style={{ marginRight: 10, color: theme.palette.text.secondary }} />
-									Ver documento
-								</MuiMenuItem>,
-								rowMenuAnchor.row.documentUrl ? (
-									<MuiMenuItem
-										key="descargar"
-										onClick={() => {
-											window.open(rowMenuAnchor.row.documentUrl, "_blank");
-											setRowMenuAnchor(null);
-										}}
-									>
-										<DocumentDownload size={15} variant="Linear" style={{ marginRight: 10, color: theme.palette.text.secondary }} />
-										Descargar PDF
-									</MuiMenuItem>
-								) : null,
-								<MuiMenuItem
-									key="vincular"
-									onClick={() => {
-										setVincularRow(rowMenuAnchor.row);
-										setRowMenuAnchor(null);
-									}}
-								>
-									<Routing size={15} variant="Linear" style={{ marginRight: 10, color: theme.palette.text.secondary }} />
-									{rowMenuAnchor.row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}
-								</MuiMenuItem>,
-								<Divider key="divider" sx={{ borderColor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />,
-								<MuiMenuItem
-									key="eliminar"
-									onClick={() => {
-										setDeleteTarget({ kind: rowMenuAnchor.row.kind, id: rowMenuAnchor.row.id, title: rowMenuAnchor.row.title });
-										setRowMenuAnchor(null);
-									}}
-									sx={{
-										color: theme.palette.error.main,
-										"&:hover": { bgcolor: alpha(theme.palette.error.main, isDark ? 0.12 : 0.06) + " !important" },
-									}}
-								>
-									<Trash size={15} variant="Linear" style={{ marginRight: 10 }} />
-									Eliminar
-								</MuiMenuItem>,
-						  ]
-						: [
-								<MuiMenuItem
-									key="editar"
-									onClick={() => {
-										navigate(`/documentos/escritos/${rowMenuAnchor?.row.id}/editar`);
-										setRowMenuAnchor(null);
-									}}
-									data-testid="escritos-edit-btn"
-								>
-									<Eye size={15} variant="Linear" style={{ marginRight: 10, color: theme.palette.text.secondary }} />
-									Ver / Editar
-								</MuiMenuItem>,
-								<MuiMenuItem
-									key="vincular"
-									onClick={() => {
-										setVincularRow(rowMenuAnchor!.row);
-										setRowMenuAnchor(null);
-									}}
-								>
-									<Routing size={15} variant="Linear" style={{ marginRight: 10, color: theme.palette.text.secondary }} />
-									{rowMenuAnchor?.row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}
-								</MuiMenuItem>,
-								<Divider key="divider" sx={{ borderColor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />,
-								<MuiMenuItem
-									key="eliminar"
-									onClick={() => {
-										setDeleteTarget({ kind: rowMenuAnchor!.row.kind, id: rowMenuAnchor!.row.id, title: rowMenuAnchor!.row.title });
-										setRowMenuAnchor(null);
-									}}
-									sx={{
-										color: theme.palette.error.main,
-										"&:hover": { bgcolor: alpha(theme.palette.error.main, isDark ? 0.12 : 0.06) + " !important" },
-									}}
-								>
-									<Trash size={15} variant="Linear" style={{ marginRight: 10 }} />
-									Eliminar
-								</MuiMenuItem>,
-						  ]}
-				</Menu>
 
 				{/* Pagination */}
-				{typeFilter !== "all" && totalPages > 1 && (
+				{totalPages > 1 && (
 					<Box display="flex" justifyContent="center" sx={{ py: 2 }}>
 						<Pagination
 							count={totalPages}
@@ -2099,40 +2130,6 @@ const EscritosPage = () => {
 					</Box>
 				)}
 
-				{typeFilter === "all" && postalTotal + rtTotal > PAGE_SIZE && (
-					<Box
-						sx={{
-							mx: { xs: 2, sm: 3 },
-							mb: 2,
-							p: 1.5,
-							borderRadius: 1.25,
-							bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
-							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
-						}}
-					>
-						<Stack
-							direction={{ xs: "column", sm: "row" }}
-							spacing={1.25}
-							alignItems={{ xs: "flex-start", sm: "center" }}
-							justifyContent="space-between"
-						>
-							<Stack direction="row" spacing={1} alignItems="center">
-								<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
-								<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
-									Mostrando los {PAGE_SIZE} documentos más recientes. Filtrá por tipo para ver el historial paginado.
-								</Typography>
-							</Stack>
-							<Stack direction="row" spacing={1}>
-								<Button size="small" onClick={() => handleTypeChange("richtext")} sx={ghostCancelSx}>
-									Ver escritos
-								</Button>
-								<Button size="small" onClick={() => handleTypeChange("postal")} sx={ghostCancelSx}>
-									Ver postales
-								</Button>
-							</Stack>
-						</Stack>
-					</Box>
-				)}
 			</MainCard>
 
 			{/* Modals */}
@@ -2167,8 +2164,8 @@ const EscritosPage = () => {
 				open={openCreatePostal}
 				handleClose={() => {
 					setOpenCreatePostal(false);
-					dispatch(fetchPostalDocuments({ page: 1, limit: PAGE_SIZE, search: search || undefined }) as any);
-					if (typeFilter !== "richtext") setPage(1);
+					refreshDocuments();
+					setPage(1);
 				}}
 				showSnackbar={showSnackbar}
 			/>

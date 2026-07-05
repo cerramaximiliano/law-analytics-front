@@ -20,15 +20,16 @@ import {
 	useMediaQuery,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { Add, ClipboardText, CloseSquare, DocumentText, DocumentUpload, Edit2, Eye, SearchNormal1, Setting2, Trash } from "iconsax-react";
+import { Add, ClipboardText, CloseSquare, DocumentText, DocumentUpload, Edit2, Eye, SearchNormal1, Setting2, Trash, Warning2 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { dispatch, useSelector } from "store";
-import { fetchPdfTemplates, getPdfTemplate } from "store/reducers/postalDocuments";
+import { fetchPdfTemplates, getPdfTemplate, previewGeneratedEscrito } from "store/reducers/postalDocuments";
 import { fetchRichTextTemplates, deleteRichTextTemplate } from "store/reducers/richTextDocuments";
 import { openSnackbar } from "store/reducers/snackbar";
 import { PdfTemplate } from "types/postal-document";
 import { RichTextTemplate, RichTextTemplateCategory } from "types/rich-text-document";
 import CreatePostalDocumentModal from "sections/apps/postal-documents/CreatePostalDocumentModal";
+import CreateFormModelWizard from "sections/apps/postal-documents/CreateFormModelWizard";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 import { BRAND_BLUE, STALE_AMBER } from "themes/dashboardTokens";
 
@@ -294,18 +295,20 @@ interface PreviewDialogProps {
 	pdfUrl: string | null;
 	loading: boolean;
 	onClose: () => void;
+	titleOverride?: string | null;
+	subtitleOverride?: string | null;
 }
 
-const PreviewDialog = ({ open, template, pdfUrl, loading, onClose }: PreviewDialogProps) => {
+const PreviewDialog = ({ open, template, pdfUrl, loading, onClose, titleOverride, subtitleOverride }: PreviewDialogProps) => {
 	const { dialogPaperSx } = useBrandStyles();
 	if (!template) return null;
 	const modelTypeLabel = template?.modelType === "dynamic" ? "Dinámico" : "Estático";
 	return (
 		<Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth PaperProps={{ sx: dialogPaperSx }}>
 			<DialogBrandHeader
-				eyebrow="Vista previa"
-				title={template.name}
-				subtitle={`${template.category ?? "—"} · ${modelTypeLabel}`}
+				eyebrow={titleOverride ? "Escrito vinculado" : "Vista previa"}
+				title={titleOverride || template.name}
+				subtitle={subtitleOverride || `${template.category ?? "—"} · ${modelTypeLabel}`}
 				icon={<DocumentText size={20} variant="Bulk" />}
 				onClose={onClose}
 			/>
@@ -332,12 +335,24 @@ interface ModelCardProps {
 	template: PdfTemplate;
 	onPreview: (t: PdfTemplate) => void;
 	onUse: (t: PdfTemplate) => void;
+	onPreviewGenerated?: (t: PdfTemplate, gen: { slug: string; name: string }) => void;
+	onEdit?: (t: PdfTemplate) => void;
 }
 
-const ModelCard = ({ template, onPreview, onUse }: ModelCardProps) => {
+const ModelCard = ({ template, onPreview, onUse, onPreviewGenerated, onEdit }: ModelCardProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const { brandPrimarySx, ghostBtnSx } = useBrandStyles();
+	const isDocxMerge = template.fillMethod === "docx-merge";
+	const needsDoc = isDocxMerge && !template.s3Key;
+	// Placeholders del documento que ningún campo del formulario mapea (mapeo incompleto).
+	const freePlaceholders =
+		isDocxMerge && template.s3Key && template.docxPlaceholders?.length
+			? (() => {
+					const mapped = new Set((template.fields || []).map((f) => f.docxField).filter(Boolean));
+					return template.docxPlaceholders.filter((p) => !mapped.has(p));
+			  })()
+			: [];
 	return (
 		<Box
 			sx={{
@@ -372,14 +387,130 @@ const ModelCard = ({ template, onPreview, onUse }: ModelCardProps) => {
 						{template.fields?.length ?? 0} campo{template.fields?.length !== 1 ? "s" : ""} completables
 					</Typography>
 				</Stack>
+				{template.generates && template.generates.length > 0 && (
+					<Box
+						sx={{
+							mt: 0.25,
+							px: 1,
+							py: 0.875,
+							borderRadius: 1,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.05),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.1)}`,
+						}}
+					>
+						<Typography
+							sx={{
+								fontSize: "0.6rem",
+								fontWeight: 700,
+								letterSpacing: "0.09em",
+								textTransform: "uppercase",
+								color: alpha(BRAND_BLUE, isDark ? 0.75 : 0.7),
+								display: "block",
+								mb: 0.5,
+							}}
+						>
+							{template.generates.length > 1 ? `Genera ${template.generates.length} escritos` : "Genera"}
+						</Typography>
+						<Stack spacing={0.5}>
+							{template.generates.map((g) => {
+								const clickable = Boolean(onPreviewGenerated);
+								return (
+									<Stack
+										key={g.slug}
+										direction="row"
+										alignItems="center"
+										spacing={0.75}
+										onClick={clickable ? () => onPreviewGenerated!(template, g) : undefined}
+										sx={{
+											borderRadius: 0.75,
+											mx: -0.5,
+											px: 0.5,
+											py: 0.25,
+											...(clickable && {
+												cursor: "pointer",
+												transition: "background-color 0.15s ease",
+												"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.09) },
+												"&:hover .gen-eye": { opacity: 1 },
+											}),
+										}}
+									>
+										<DocumentText size={14} color={BRAND_BLUE} variant="Bulk" />
+										<Typography
+											sx={{
+												flex: 1,
+												minWidth: 0,
+												fontSize: "0.75rem",
+												fontWeight: 600,
+												color: "text.primary",
+												letterSpacing: "-0.005em",
+												lineHeight: 1.25,
+												textWrap: "pretty",
+											}}
+										>
+											{g.name}
+										</Typography>
+										{clickable && (
+											<Eye
+												size={13}
+												variant="Linear"
+												color={BRAND_BLUE}
+												className="gen-eye"
+												style={{ opacity: 0.5, transition: "opacity 0.15s ease", flexShrink: 0 }}
+											/>
+										)}
+									</Stack>
+								);
+							})}
+						</Stack>
+					</Box>
+				)}
+				{needsDoc && (
+					<Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 0.25 }}>
+						<Warning2 size={14} color={STALE_AMBER} variant="Bulk" />
+						<Typography sx={{ fontSize: "0.7rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "-0.005em" }}>
+							Falta vincular documento
+						</Typography>
+					</Stack>
+				)}
+				{freePlaceholders.length > 0 && (
+					<Tooltip title={`Sin vincular: ${freePlaceholders.map((p) => `[${p}]`).join(", ")}`}>
+						<Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 0.25 }}>
+							<Warning2 size={14} color={STALE_AMBER} variant="Bulk" />
+							<Typography sx={{ fontSize: "0.7rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "-0.005em" }}>
+								Mapeo incompleto — {freePlaceholders.length} campo{freePlaceholders.length !== 1 ? "s" : ""} del documento sin vincular
+							</Typography>
+						</Stack>
+					</Tooltip>
+				)}
 			</Stack>
 			<Stack direction="row" spacing={1} sx={{ pt: 1.5 }}>
-				<Button size="small" startIcon={<Eye size={14} variant="Linear" />} onClick={() => onPreview(template)} sx={{ ...ghostBtnSx, flex: 1 }}>
-					Vista previa
-				</Button>
-				<Button size="small" onClick={() => onUse(template)} sx={{ ...brandPrimarySx, flex: 1, minWidth: 0 }}>
-					Usar modelo
-				</Button>
+				{isDocxMerge ? (
+					<>
+						{onEdit && (
+							<Button size="small" startIcon={<Edit2 size={14} variant="Linear" />} onClick={() => onEdit(template)} sx={{ ...ghostBtnSx, flex: 1 }}>
+								Editar
+							</Button>
+						)}
+						{needsDoc ? (
+							<Button size="small" onClick={() => onEdit?.(template)} sx={{ ...brandPrimarySx, flex: 1, minWidth: 0 }}>
+								Vincular documento
+							</Button>
+						) : (
+							<Button size="small" onClick={() => onUse(template)} sx={{ ...brandPrimarySx, flex: 1, minWidth: 0 }}>
+								Usar modelo
+							</Button>
+						)}
+					</>
+				) : (
+					<>
+						<Button size="small" startIcon={<Eye size={14} variant="Linear" />} onClick={() => onPreview(template)} sx={{ ...ghostBtnSx, flex: 1 }}>
+							Vista previa
+						</Button>
+						<Button size="small" onClick={() => onUse(template)} sx={{ ...brandPrimarySx, flex: 1, minWidth: 0 }}>
+							Usar modelo
+						</Button>
+					</>
+				)}
 			</Stack>
 		</Box>
 	);
@@ -718,6 +849,9 @@ const ModelosPage = () => {
 	const [previewTemplate, setPreviewTemplate] = useState<PdfTemplate | null>(null);
 	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 	const [previewLoading, setPreviewLoading] = useState(false);
+	const [previewGenTitle, setPreviewGenTitle] = useState<string | null>(null);
+	const [wizardOpen, setWizardOpen] = useState(false);
+	const [editTemplate, setEditTemplate] = useState<PdfTemplate | null>(null);
 	const [createFromTemplate, setCreateFromTemplate] = useState<PdfTemplate | null>(null);
 
 	const [rtTemplates, setRtTemplates] = useState<RichTextTemplate[]>([]);
@@ -786,6 +920,7 @@ const ModelosPage = () => {
 	}, [rtSearch, cardsPerPage]);
 
 	const handlePreview = async (tpl: PdfTemplate) => {
+		setPreviewGenTitle(null);
 		setPreviewTemplate(tpl);
 		setPreviewUrl(null);
 		setPreviewLoading(true);
@@ -794,6 +929,26 @@ const ModelosPage = () => {
 			setPreviewUrl(res.template.previewUrl);
 		} else {
 			showSnackbar("No se pudo obtener la vista previa", "error");
+		}
+		setPreviewLoading(false);
+	};
+
+	// Vista previa del escrito .docx vinculado (docx→pdf en el server) en el mismo visor.
+	const handleEditTemplate = (tpl: PdfTemplate) => {
+		setEditTemplate(tpl);
+		setWizardOpen(true);
+	};
+
+	const handlePreviewGenerated = async (tpl: PdfTemplate, gen: { slug: string; name: string }) => {
+		setPreviewGenTitle(gen.name);
+		setPreviewTemplate(tpl);
+		setPreviewUrl(null);
+		setPreviewLoading(true);
+		const res = await dispatch(previewGeneratedEscrito(tpl.slug, gen.slug));
+		if (res?.success && res.url) {
+			setPreviewUrl(res.url);
+		} else {
+			showSnackbar("No se pudo obtener la vista previa del escrito", "error");
 		}
 		setPreviewLoading(false);
 	};
@@ -827,7 +982,19 @@ const ModelosPage = () => {
 		return t.name.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q);
 	});
 
+	// Modelos de tipo formulario (PdfTemplate) propios del usuario — se muestran en "Mis modelos".
+	// La API solo devuelve al dueño sus propios PdfTemplate (source=user + userId), así que quedan aislados.
+	const myPdfTemplates = pdfTemplates
+		.filter((t) => t.source === "user" && t.userId === userId)
+		.filter((t) => {
+			if (!rtSearch.trim()) return true;
+			const q = rtSearch.toLowerCase();
+			return t.name.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q) || t.category?.toLowerCase().includes(q);
+		});
+
 	const systemTotal = pdfTemplates.filter((t) => t.source === "system" || t.isPublic || !t.userId).length;
+	// "Mis modelos" = formularios propios (PdfTemplate) + modelos de texto (RichText)
+	const myTotalCount = myModelsCount + pdfTemplates.filter((t) => t.source === "user" && t.userId === userId).length;
 
 	// Calcula slice de cards y total de páginas, dejando un slot libre en la primera página para la dashed card
 	function paginateWithDashed<T>(items: T[], page: number) {
@@ -975,7 +1142,7 @@ const ModelosPage = () => {
 
 					<Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0, display: { xs: "none", sm: "flex" } }}>
 						<HeaderStat label="Sistema" value={systemTotal} tone="primary" />
-						<HeaderStat label="Míos" value={myModelsCount} tone="amber" />
+						<HeaderStat label="Míos" value={myTotalCount} tone="amber" />
 					</Stack>
 				</Stack>
 			</Box>
@@ -1004,7 +1171,7 @@ const ModelosPage = () => {
 								<Stack direction="row" alignItems="center" spacing={1}>
 									<ClipboardText size={15} variant="Linear" />
 									<span>Mis modelos</span>
-									{myModelsCount > 0 && (
+									{myTotalCount > 0 && (
 										<Box
 											sx={{
 												ml: 0.25,
@@ -1020,7 +1187,7 @@ const ModelosPage = () => {
 												lineHeight: 1.4,
 											}}
 										>
-											{myModelsCount > 99 ? "99+" : myModelsCount}
+											{myTotalCount > 99 ? "99+" : myTotalCount}
 										</Box>
 									)}
 								</Stack>
@@ -1090,7 +1257,7 @@ const ModelosPage = () => {
 									<Grid container spacing={2}>
 										{pdfPagination.slice.map((tpl) => (
 											<Grid item xs={12} sm={6} md={4} lg={3} key={tpl._id}>
-												<ModelCard template={tpl} onPreview={handlePreview} onUse={setCreateFromTemplate} />
+												<ModelCard template={tpl} onPreview={handlePreview} onUse={setCreateFromTemplate} onPreviewGenerated={handlePreviewGenerated} />
 											</Grid>
 										))}
 										{pdfPagination.isFirstPage && (
@@ -1155,18 +1322,29 @@ const ModelosPage = () => {
 									/>
 									<Button
 										size="small"
-										startIcon={<Add size={15} variant="Linear" />}
+										startIcon={<DocumentUpload size={15} variant="Linear" />}
 										onClick={() => navigate("/documentos/modelos/nuevo")}
+										sx={ghostBtnSx}
+									>
+										Modelo de texto
+									</Button>
+									<Button
+										size="small"
+										startIcon={<Add size={15} variant="Linear" />}
+										onClick={() => {
+							setEditTemplate(null);
+							setWizardOpen(true);
+						}}
 										sx={brandPrimarySx}
 									>
-										Crear modelo
+										Crear formulario
 									</Button>
 								</Stack>
 							</Stack>
 
-							{rtLoading ? (
+							{rtLoading || pdfLoading ? (
 								<CardsSkeleton count={cardsPerPage} />
-							) : filteredRtTemplates.length === 0 ? (
+							) : myPdfTemplates.length === 0 && filteredRtTemplates.length === 0 ? (
 								<EmptyState
 									title={rtSearch.trim() ? "Sin resultados" : "Sin modelos propios"}
 									message={
@@ -1189,38 +1367,82 @@ const ModelosPage = () => {
 								/>
 							) : (
 								<>
-									<Grid container spacing={2}>
-										{rtPagination.slice.map((tpl) => (
-											<Grid item xs={12} sm={6} md={4} lg={3} key={tpl._id}>
-												<RichTextModelCard
-													template={tpl}
-													onEdit={(t) => navigate(`/documentos/modelos/${t._id}/editar`)}
-													onDelete={setDeleteTarget}
-													onUse={(t) => navigate(`/documentos/escritos/nuevo?templateId=${t._id}`)}
-												/>
+									{/* Formularios propios (PdfTemplate) — se completan con el modal de campos, sin editor */}
+									{myPdfTemplates.length > 0 && (
+										<Box sx={{ mb: filteredRtTemplates.length > 0 ? 3 : 0 }}>
+											<Typography
+												sx={{
+													fontSize: "0.7rem",
+													fontWeight: 700,
+													letterSpacing: "0.06em",
+													textTransform: "uppercase",
+													color: "text.secondary",
+													mb: 1.25,
+												}}
+											>
+												Formularios
+											</Typography>
+											<Grid container spacing={2}>
+												{myPdfTemplates.map((tpl) => (
+													<Grid item xs={12} sm={6} md={4} lg={3} key={tpl._id}>
+														<ModelCard template={tpl} onPreview={handlePreview} onUse={setCreateFromTemplate} onPreviewGenerated={handlePreviewGenerated} onEdit={handleEditTemplate} />
+													</Grid>
+												))}
 											</Grid>
-										))}
-										{rtPagination.isFirstPage && (
-											<Grid item xs={12} sm={6} md={4} lg={3}>
-												<DashedCard
-													icon={<Add size={22} variant="Linear" />}
-													title="Nuevo modelo"
-													subtitle="Creá uno desde cero con campos dinámicos."
-													onClick={() => navigate("/documentos/modelos/nuevo")}
-												/>
-											</Grid>
-										)}
-									</Grid>
-									{rtPagination.totalPages > 1 && (
-										<Box display="flex" justifyContent="center" sx={{ pt: 2.5 }}>
-											<Pagination
-												count={rtPagination.totalPages}
-												page={rtPage}
-												onChange={(_e, v) => setRtPage(v)}
-												size="small"
-												sx={paginationSx}
-											/>
 										</Box>
+									)}
+
+									{/* Modelos de texto (RichText) — se editan en el editor */}
+									{filteredRtTemplates.length > 0 && (
+										<>
+											{myPdfTemplates.length > 0 && (
+												<Typography
+													sx={{
+														fontSize: "0.7rem",
+														fontWeight: 700,
+														letterSpacing: "0.06em",
+														textTransform: "uppercase",
+														color: "text.secondary",
+														mb: 1.25,
+													}}
+												>
+													Modelos de texto
+												</Typography>
+											)}
+											<Grid container spacing={2}>
+												{rtPagination.slice.map((tpl) => (
+													<Grid item xs={12} sm={6} md={4} lg={3} key={tpl._id}>
+														<RichTextModelCard
+															template={tpl}
+															onEdit={(t) => navigate(`/documentos/modelos/${t._id}/editar`)}
+															onDelete={setDeleteTarget}
+															onUse={(t) => navigate(`/documentos/escritos/nuevo?templateId=${t._id}`)}
+														/>
+													</Grid>
+												))}
+												{rtPagination.isFirstPage && (
+													<Grid item xs={12} sm={6} md={4} lg={3}>
+														<DashedCard
+															icon={<Add size={22} variant="Linear" />}
+															title="Nuevo modelo"
+															subtitle="Creá uno desde cero con campos dinámicos."
+															onClick={() => navigate("/documentos/modelos/nuevo")}
+														/>
+													</Grid>
+												)}
+											</Grid>
+											{rtPagination.totalPages > 1 && (
+												<Box display="flex" justifyContent="center" sx={{ pt: 2.5 }}>
+													<Pagination
+														count={rtPagination.totalPages}
+														page={rtPage}
+														onChange={(_e, v) => setRtPage(v)}
+														size="small"
+														sx={paginationSx}
+													/>
+												</Box>
+											)}
+										</>
 									)}
 								</>
 							)}
@@ -1235,9 +1457,26 @@ const ModelosPage = () => {
 				template={previewTemplate}
 				pdfUrl={previewUrl}
 				loading={previewLoading}
+				titleOverride={previewGenTitle}
+				subtitleOverride={previewGenTitle ? "Escrito Word · se completa desde el formulario" : null}
 				onClose={() => {
 					setPreviewTemplate(null);
 					setPreviewUrl(null);
+					setPreviewGenTitle(null);
+				}}
+			/>
+
+			<CreateFormModelWizard
+				open={wizardOpen}
+				editTemplate={editTemplate}
+				onClose={() => {
+					setWizardOpen(false);
+					setEditTemplate(null);
+				}}
+				onCreated={() => {
+					dispatch(fetchPdfTemplates()).then((res: any) => {
+						if (res.success) setPdfTemplates(res.templates || []);
+					});
 				}}
 			/>
 
