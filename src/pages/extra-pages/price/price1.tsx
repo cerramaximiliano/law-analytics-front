@@ -734,8 +734,8 @@ const Pricing = () => {
 
 				{/* Plan cards skeleton */}
 				<Grid container spacing={3}>
-					{[0, 1, 2].map((i) => (
-						<Grid item xs={12} sm={6} md={4} key={i}>
+					{[0, 1, 2, 3].map((i) => (
+						<Grid item xs={12} sm={6} md={6} lg={3} key={i}>
 							<Box
 								sx={{
 									position: "relative",
