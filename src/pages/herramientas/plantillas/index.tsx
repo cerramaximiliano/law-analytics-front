@@ -875,6 +875,7 @@ const ModelosPage = () => {
 	const cardsPerPage = isLg ? 8 : isMd ? 6 : isSm ? 4 : 2;
 	const [pdfPage, setPdfPage] = useState(1);
 	const [rtPage, setRtPage] = useState(1);
+	const [myTab, setMyTab] = useState(0); // sub-tab de "Mis modelos": 0 = Formularios, 1 = Modelos de texto
 
 	const showSnackbar = (message: string, severity: "success" | "error") => {
 		dispatch(openSnackbar({ open: true, message, variant: "alert", alert: { color: severity }, close: true }));
@@ -1367,21 +1368,16 @@ const ModelosPage = () => {
 								/>
 							) : (
 								<>
-									{/* Formularios propios (PdfTemplate) — se completan con el modal de campos, sin editor */}
-									{myPdfTemplates.length > 0 && (
-										<Box sx={{ mb: filteredRtTemplates.length > 0 ? 3 : 0 }}>
-											<Typography
-												sx={{
-													fontSize: "0.7rem",
-													fontWeight: 700,
-													letterSpacing: "0.06em",
-													textTransform: "uppercase",
-													color: "text.secondary",
-													mb: 1.25,
-												}}
-											>
-												Formularios
-											</Typography>
+									<Tabs
+										value={myTab}
+										onChange={(_e, v) => setMyTab(v)}
+										sx={{ mb: 2, minHeight: 0, borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`, "& .MuiTab-root": { minHeight: 0, py: 1.25, textTransform: "none", fontSize: "0.82rem", fontWeight: 600, letterSpacing: "-0.005em" }, "& .Mui-selected": { color: BRAND_BLUE }, "& .MuiTabs-indicator": { bgcolor: BRAND_BLUE } }}
+									>
+										<Tab label={`Formularios (${myPdfTemplates.length})`} />
+										<Tab label={`Modelos de texto (${filteredRtTemplates.length})`} />
+									</Tabs>
+									{myTab === 0 ? (
+										myPdfTemplates.length > 0 ? (
 											<Grid container spacing={2}>
 												{myPdfTemplates.map((tpl) => (
 													<Grid item xs={12} sm={6} md={4} lg={3} key={tpl._id}>
@@ -1389,60 +1385,41 @@ const ModelosPage = () => {
 													</Grid>
 												))}
 											</Grid>
-										</Box>
-									)}
-
-									{/* Modelos de texto (RichText) — se editan en el editor */}
-									{filteredRtTemplates.length > 0 && (
+										) : (
+											<Box sx={{ py: 5, textAlign: "center" }}>
+												<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", mb: 1.5 }}>Todavía no tenés formularios.</Typography>
+												<Button size="small" startIcon={<Add size={15} variant="Linear" />} onClick={() => { setEditTemplate(null); setWizardOpen(true); }} sx={brandPrimarySx}>
+													Crear formulario
+												</Button>
+											</Box>
+										)
+									) : filteredRtTemplates.length > 0 ? (
 										<>
-											{myPdfTemplates.length > 0 && (
-												<Typography
-													sx={{
-														fontSize: "0.7rem",
-														fontWeight: 700,
-														letterSpacing: "0.06em",
-														textTransform: "uppercase",
-														color: "text.secondary",
-														mb: 1.25,
-													}}
-												>
-													Modelos de texto
-												</Typography>
-											)}
 											<Grid container spacing={2}>
 												{rtPagination.slice.map((tpl) => (
 													<Grid item xs={12} sm={6} md={4} lg={3} key={tpl._id}>
-														<RichTextModelCard
-															template={tpl}
-															onEdit={(t) => navigate(`/documentos/modelos/${t._id}/editar`)}
-															onDelete={setDeleteTarget}
-															onUse={(t) => navigate(`/documentos/escritos/nuevo?templateId=${t._id}`)}
-														/>
+														<RichTextModelCard template={tpl} onEdit={(t) => navigate(`/documentos/modelos/${t._id}/editar`)} onDelete={setDeleteTarget} onUse={(t) => navigate(`/documentos/escritos/nuevo?templateId=${t._id}`)} />
 													</Grid>
 												))}
 												{rtPagination.isFirstPage && (
 													<Grid item xs={12} sm={6} md={4} lg={3}>
-														<DashedCard
-															icon={<Add size={22} variant="Linear" />}
-															title="Nuevo modelo"
-															subtitle="Creá uno desde cero con campos dinámicos."
-															onClick={() => navigate("/documentos/modelos/nuevo")}
-														/>
+														<DashedCard icon={<Add size={22} variant="Linear" />} title="Nuevo modelo" subtitle="Creá uno desde cero con campos dinámicos." onClick={() => navigate("/documentos/modelos/nuevo")} />
 													</Grid>
 												)}
 											</Grid>
 											{rtPagination.totalPages > 1 && (
 												<Box display="flex" justifyContent="center" sx={{ pt: 2.5 }}>
-													<Pagination
-														count={rtPagination.totalPages}
-														page={rtPage}
-														onChange={(_e, v) => setRtPage(v)}
-														size="small"
-														sx={paginationSx}
-													/>
+													<Pagination count={rtPagination.totalPages} page={rtPage} onChange={(_e, v) => setRtPage(v)} size="small" sx={paginationSx} />
 												</Box>
 											)}
 										</>
+									) : (
+										<Box sx={{ py: 5, textAlign: "center" }}>
+											<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", mb: 1.5 }}>Todavía no tenés modelos de texto.</Typography>
+											<Button size="small" startIcon={<Add size={15} variant="Linear" />} onClick={() => navigate("/documentos/modelos/nuevo")} sx={brandPrimarySx}>
+												Crear modelo de texto
+											</Button>
+										</Box>
 									)}
 								</>
 							)}
