@@ -27,7 +27,7 @@ import { Add, CloseSquare, DocumentDownload, DocumentText, FolderOpen, Profile2U
 import { useNavigate } from "react-router-dom";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { dispatch, useSelector } from "store";
-import { fetchPdfTemplates, createPostalDocument, updatePostalDocument } from "store/reducers/postalDocuments";
+import { fetchPdfTemplates, createPostalDocument, updatePostalDocument, generateDemanda, generateDocument } from "store/reducers/postalDocuments";
 import { getContactsByUserId, addContact, updateContact } from "store/reducers/contacts";
 import { createPostalTracking, fetchAllTrackings } from "store/reducers/postalTracking";
 import { getFoldersByUserId } from "store/reducers/folder";
@@ -86,7 +86,136 @@ const CONTACT_GROUPS: ContactGroupKey[] = ["destinatario", "remitente", "poderda
 
 const EXCLUSIVE_CHECKBOX_PAIRS: [string, string][] = [["suscribe_sexo_f", "suscribe_sexo_m"]];
 
+// Datos de prueba del Formulario Civil (compartido por las copias por-usuario).
+const FORMULARIO_CIVIL_FILL = {
+	title: "Test Formulario Civil — Pérez c/ Gómez",
+	fields: {
+		// Actor
+		actor_nombre_apellido: "PÉREZ, María Fernanda",
+		actor_dni: "28.456.789",
+		actor_domicilio: "Av. Rivadavia 4521, Piso 3 Dto. B",
+		actor_telefono: "011 4903-5521",
+		actor_email: "mfperez@gmail.com",
+		actor_licencia: "B1 28456789",
+		actor_conyuge: "GÓMEZ, Roberto Luis",
+		actor_padre: "PÉREZ, Juan Carlos",
+		actor_madre: "LÓPEZ, Ana María",
+		actor_ocupacion: "Contadora Pública",
+		actor_empresa: "Estudio Contable Sur SRL",
+		actor_empresa_domicilio: "Lavalle 1234, CABA",
+		actor_hijos: "2 (menores)",
+		actor_escuela: "Instituto San José",
+		actor_nacionalidad: "Argentina",
+		actor_localidad: "CABA",
+		actor_celular: "11 6234-5566",
+		actor_fecha_nac: "15/03/1981",
+		actor_estado_civil: "Casada",
+		actor_estudios: "Universitarios",
+		actor_ingresos: "$ 850.000",
+		// Datos del hecho
+		hecho_lugar: "Av. Córdoba y Callao",
+		hecho_fecha: "12/05/2026",
+		hecho_comisaria: "Comisaría 3ª",
+		hecho_ufi: "UFI 12",
+		hecho_causa: "45678/26",
+		hecho_localidad: "CABA",
+		hecho_hora: "14:30",
+		hecho_instructor: "Of. Ramírez",
+		hecho_juzgado: "Civil N° 45",
+		// Demandado
+		dem_conductor: "GÓMEZ, Diego Alberto",
+		dem_conductor_dni: "30.123.456",
+		dem_conductor_domicilio: "Perón 2345, CABA",
+		dem_asegurado: "GÓMEZ, Diego Alberto",
+		dem_asegurado_dni: "30.123.456",
+		dem_asegurado_domicilio: "Perón 2345, CABA",
+		dem_titular: "TRANSPORTES DEL SUR SA",
+		dem_titular_dni: "30-71234567-8",
+		dem_titular_domicilio: "Av. Warnes 890, CABA",
+		// Vehículo demandado
+		veh_dem_marca: "Ford",
+		veh_dem_modelo: "Ranger 2022",
+		veh_dem_dominio: "AF345BC",
+		veh_dem_seguro: "La Segunda Seguros",
+		veh_dem_poliza: "7788990",
+		veh_dem_stro: "1122334",
+		veh_dem_danos: "Frontal",
+		// Vehículo cliente
+		veh_cli_marca: "Volkswagen",
+		veh_cli_modelo: "Gol Trend 2019",
+		veh_cli_dominio: "AC128KJ",
+		veh_cli_seguro: "Sancor Seguros",
+		veh_cli_stro: "9988776",
+		veh_cli_poliza: "5566778",
+		veh_cli_danos: "Lateral izq.",
+		// Hospitales
+		hospital_1: "Hospital Fernández",
+		hospital_2: "Sanatorio Güemes",
+		hospital_3: "Clínica Bazterrica",
+		hospital_4: "Hospital Durand",
+		hospital_5: "Clínica del Sol",
+		historia_clinica: "HC N° 445.678 — Hospital Fernández, Servicio de Traumatología, ingreso 12/05/2026",
+		// Testigos del hecho
+		th1_nombre: "MARTÍNEZ, Carla",
+		th1_domicilio: "Salguero 456, CABA",
+		th1_ocupacion: "Comerciante",
+		th1_dni: "27.888.999",
+		th1_telefono: "11 5544-3322",
+		th2_nombre: "SOSA, Julián",
+		th2_domicilio: "Bulnes 789, CABA",
+		th2_ocupacion: "Empleado",
+		th2_dni: "33.444.555",
+		th2_telefono: "11 6677-8899",
+		// Testigos del beneficio
+		tb1_nombre: "RÍOS, Marta",
+		tb1_domicilio: "Medrano 1010, CABA",
+		tb1_ocupacion: "Docente",
+		tb1_telefono: "11 4455-6677",
+		tb2_nombre: "ACOSTA, Pedro",
+		tb2_domicilio: "Yatay 222, CABA",
+		tb2_ocupacion: "Jubilado",
+		tb2_telefono: "11 2233-4455",
+		tb3_nombre: "VEGA, Lucía",
+		tb3_domicilio: "Gascón 333, CABA",
+		tb3_ocupacion: "Enfermera",
+		tb3_telefono: "11 8899-0011",
+		tb1_dni: "26.111.222",
+		tb2_dni: "24.333.444",
+		tb3_dni: "31.555.666",
+		// Datos del cliente
+		cli_propiedades: "Departamento (Rivadavia 4521)",
+		cli_tarjetas: "Visa, Mastercard",
+		cli_convivientes: "Cónyuge + 2 hijos",
+		cli_vivienda: "3 amb., buen estado",
+		cli_automovil: "VW Gol 2019",
+		cli_moto: "No",
+		cli_alquiler: "No (propietaria)",
+		cli_viajo_exterior: "No",
+		cli_obra_social: "OSDE 210",
+		cli_art: "Provincia ART",
+		// Campos adicionales para la demanda (capture-only)
+		aseg_cuit: "30-68012345-9",
+		aseg_domicilio: "Av. Corrientes 456, Piso 10, CABA",
+		hospital_1_direccion: "Cerviño 3356, CABA",
+		lesion_1: "Traumatismo de cráneo",
+		lesion_2: "Fractura de muñeca derecha",
+		lesion_3: "Cervicalgia post-traumática",
+		taller_nombre: "Taller Mecánico El Rápido",
+		taller_direccion: "Av. Warnes 1200, CABA",
+		taller_fecha_presupuesto: "20/05/2026",
+		doc_bono: "X",
+		doc_dni_cedula_licencia: "X",
+		doc_acta_mediacion: "X",
+		doc_certificados_medicos: "X",
+		doc_presupuesto: "X",
+		doc_fotos_danos: "X",
+		doc_recibo_sueldo: "X",
+	},
+};
+
 const DEV_FILL_DATA: Record<string, { title: string; fields: Record<string, string> }> = {
+	formulario_civil_spoltore: FORMULARIO_CIVIL_FILL,
+	formulario_civil_artista: FORMULARIO_CIVIL_FILL,
 	planilla_inicio_civil: {
 		title: "Test Planilla Civil — González c/ Empresa S.A.",
 		fields: {
@@ -522,6 +651,38 @@ export default function CreatePostalDocumentModal({
 	const [step, setStep] = useState<0 | 1>(0);
 	// Documento recién generado → pantalla de resultado (para que el usuario sepa dónde quedó)
 	const [generatedDoc, setGeneratedDoc] = useState<any | null>(null);
+	const [demandaLoading, setDemandaLoading] = useState(false);
+
+	// Genera la demanda (.docx) desde un documento del formulario civil recién generado.
+	const handleGenerateDemanda = async () => {
+		if (!generatedDoc?._id) return;
+		setDemandaLoading(true);
+		const res: any = await dispatch(generateDemanda(generatedDoc._id) as any);
+		setDemandaLoading(false);
+		if (res?.success && res.url) {
+			window.open(res.url, "_blank");
+			showSnackbar(
+				res.missing?.length ? `Demanda generada (${res.missing.length} campo/s sin dato)` : "Demanda generada",
+				"success",
+			);
+		} else {
+			showSnackbar(res?.error || "Error al generar la demanda", "error");
+		}
+	};
+
+	// Genera "el documento" (.docx merged, con campos IA) desde un FORMULARIO self-service recién guardado.
+	const handleGenerateDocument = async () => {
+		if (!generatedDoc?._id) return;
+		setDemandaLoading(true);
+		const res: any = await dispatch(generateDocument(generatedDoc._id) as any);
+		setDemandaLoading(false);
+		if (res?.success && res.url) {
+			window.open(res.url, "_blank");
+			showSnackbar("Documento generado — disponible en Documentos → Escritos", "success");
+		} else {
+			showSnackbar(res?.error || "Error al generar el documento", "error");
+		}
+	};
 	const [templates, setTemplates] = useState<PdfTemplate[]>([]);
 	const [loadingTemplates, setLoadingTemplates] = useState(false);
 	const [selectedTemplate, setSelectedTemplate] = useState<PdfTemplate | null>(null);
@@ -984,6 +1145,30 @@ export default function CreatePostalDocumentModal({
 					onChange={(e) => handleFieldChange(field.name, e.target.value)}
 					sx={inputSx}
 				/>
+			);
+		}
+		if (field.type === "select") {
+			return (
+				<TextField
+					key={field.name}
+					label={field.label}
+					required={field.required}
+					select
+					size="small"
+					fullWidth
+					value={formValues[field.name] || ""}
+					onChange={(e) => handleFieldChange(field.name, e.target.value)}
+					sx={inputSx}
+				>
+					<MenuItem value="">
+						<em>— sin seleccionar —</em>
+					</MenuItem>
+					{(field.options || []).map((opt) => (
+						<MenuItem key={opt} value={opt}>
+							{opt}
+						</MenuItem>
+					))}
+				</TextField>
 			);
 		}
 		return (
@@ -1627,7 +1812,8 @@ export default function CreatePostalDocumentModal({
 									[...selectedTemplate.fields]
 										.sort((a, b) => a.order - b.order)
 										.forEach((f) => {
-											if (f.group === "__system" || f.type === "flow-section") return;
+											// Los campos IA se computan al generar (no los completa el usuario).
+											if (f.group === "__system" || f.type === "flow-section" || f.type === "ai-prompt") return;
 											if (!gs[f.group]) {
 												gs[f.group] = [];
 												go.push(f.group);
@@ -1822,7 +2008,27 @@ export default function CreatePostalDocumentModal({
 									startIcon={<DocumentDownload size={16} variant="Linear" />}
 									sx={ghostBtnSx}
 								>
-									Ver PDF
+									{selectedTemplate?.fillMethod === "docx-merge" ? "Ver planilla" : "Ver PDF"}
+								</Button>
+							)}
+							{String(generatedDoc.templateSlug || "").startsWith("formulario_civil_") && (
+								<Button
+									onClick={handleGenerateDemanda}
+									disabled={demandaLoading}
+									startIcon={demandaLoading ? <CircularProgress size={14} color="inherit" /> : <DocumentText size={16} variant="Linear" />}
+									sx={ghostBtnSx}
+								>
+									Generar demanda
+								</Button>
+							)}
+							{selectedTemplate?.fillMethod === "docx-merge" && (
+								<Button
+									onClick={handleGenerateDocument}
+									disabled={demandaLoading}
+									startIcon={demandaLoading ? <CircularProgress size={14} sx={{ color: "#fff" }} /> : <DocumentText size={16} variant="Linear" />}
+									sx={brandPrimarySx}
+								>
+									{demandaLoading ? "Generando…" : "Generar documento"}
 								</Button>
 							)}
 							<Button

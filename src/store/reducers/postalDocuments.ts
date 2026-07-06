@@ -101,6 +101,86 @@ export const getPdfTemplate = (slug: string) => async (_dispatch: Dispatch) => {
 	}
 };
 
+// Vista previa (PDF) de un escrito .docx vinculado a un formulario (entrada de `generates`).
+export const previewGeneratedEscrito = (slug: string, genSlug: string) => async (_dispatch: Dispatch) => {
+	try {
+		const res = await axios.get(`${BASE_URL}/templates/${slug}/generates/${genSlug}/preview`);
+		return { success: true, url: res.data.url as string, name: res.data.name as string };
+	} catch (error: unknown) {
+		const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al obtener la vista previa" : "Error al obtener la vista previa";
+		return { success: false, error: msg };
+	}
+};
+
+// ── Constructor self-service de modelos docx-merge ──────────────────────────────
+
+// Sube un .docx y devuelve sus placeholders detectados + el s3Key donde quedó guardado.
+export const parseDocxTemplate = (file: File) => async (_dispatch: Dispatch) => {
+	try {
+		const form = new FormData();
+		form.append("docx", file);
+		const res = await axios.post(`${BASE_URL}/templates/parse-docx`, form, { headers: { "Content-Type": "multipart/form-data" } });
+		return { success: true, placeholders: (res.data.placeholders || []) as string[], s3Key: res.data.s3Key as string };
+	} catch (error: unknown) {
+		const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al procesar el documento" : "Error al procesar el documento";
+		return { success: false, error: msg };
+	}
+};
+
+export interface UserTemplatePayload {
+	name: string;
+	description?: string;
+	category?: string;
+	s3Key?: string;
+	docxName?: string;
+	docxPlaceholders?: string[];
+	fields: Array<Record<string, unknown>>;
+}
+
+// Crea un modelo propio (formulario docx-merge). El documento (s3Key) es opcional.
+export const createUserTemplate = (payload: UserTemplatePayload) => async (_dispatch: Dispatch) => {
+	try {
+		const res = await axios.post(`${BASE_URL}/templates`, payload);
+		return { success: true, template: res.data.template as PdfTemplate };
+	} catch (error: unknown) {
+		const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al crear el modelo" : "Error al crear el modelo";
+		return { success: false, error: msg };
+	}
+};
+
+// Elimina un modelo propio (formulario). No borra los documentos ya generados.
+export const deleteUserTemplate = (id: string) => async (_dispatch: Dispatch) => {
+	try {
+		await axios.delete(`${BASE_URL}/templates/${id}`);
+		return { success: true };
+	} catch (error: unknown) {
+		const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al eliminar el modelo" : "Error al eliminar el modelo";
+		return { success: false, error: msg };
+	}
+};
+
+// Placeholders del .docx ya vinculado a un modelo propio (para re-mapear al editar).
+export const getTemplatePlaceholders = (id: string) => async (_dispatch: Dispatch) => {
+	try {
+		const res = await axios.get(`${BASE_URL}/templates/${id}/placeholders`);
+		return { success: true, placeholders: (res.data.placeholders || []) as string[] };
+	} catch (error: unknown) {
+		const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al leer el documento" : "Error al leer el documento";
+		return { success: false, error: msg };
+	}
+};
+
+// Edita un modelo propio (vincular el .docx después, actualizar campos/mapeo).
+export const updateUserTemplate = (id: string, payload: Partial<UserTemplatePayload>) => async (_dispatch: Dispatch) => {
+	try {
+		const res = await axios.patch(`${BASE_URL}/templates/${id}`, payload);
+		return { success: true, template: res.data.template as PdfTemplate };
+	} catch (error: unknown) {
+		const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al actualizar el modelo" : "Error al actualizar el modelo";
+		return { success: false, error: msg };
+	}
+};
+
 export const createPostalDocument =
 	(data: {
 		pdfTemplateId: string;
@@ -128,6 +208,28 @@ export const createPostalDocument =
 		}
 	};
 
+// Genera la demanda (.docx) a partir de un documento del formulario civil.
+export const generateDemanda = (id: string) => async (_dispatch: Dispatch) => {
+	try {
+		const res = await axios.post(`${BASE_URL}/${id}/generate-demanda`);
+		return { success: true, url: res.data?.data?.url as string, missing: (res.data?.data?.missing || []) as string[] };
+	} catch (error: unknown) {
+		const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al generar la demanda" : "Error al generar la demanda";
+		return { success: false, error: msg };
+	}
+};
+
+// Genera "el documento" (.docx merged) desde un FORMULARIO self-service. Puede tocar el límite de IA (403).
+export const generateDocument = (id: string) => async (_dispatch: Dispatch) => {
+	try {
+		const res = await axios.post(`${BASE_URL}/${id}/generate-document`);
+		return { success: true, url: res.data?.data?.url as string, documentId: res.data?.data?.documentId as string };
+	} catch (error: unknown) {
+		const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al generar el documento" : "Error al generar el documento";
+		return { success: false, error: msg };
+	}
+};
+
 export const fetchPostalDocuments =
 	(params: { page?: number; limit?: number; search?: string; templateSlug?: string; status?: string; folderId?: string }) =>
 	async (dispatch: Dispatch) => {
@@ -150,6 +252,17 @@ export const getPostalDocumentById = (id: string) => async (dispatch: Dispatch) 
 	} catch (error: unknown) {
 		const msg =
 			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener el documento" : "Error al obtener el documento";
+		return { success: false, error: msg };
+	}
+};
+
+// Vista previa (PDF) de un documento: si es .docx lo convierte a PDF en el server. Devuelve url (preview) + downloadUrl (original).
+export const previewPostalDocument = (id: string) => async (_dispatch: Dispatch) => {
+	try {
+		const res = await axios.get(`${BASE_URL}/${id}/preview`);
+		return { success: true, url: res.data.url as string, downloadUrl: res.data.downloadUrl as string, isDocx: Boolean(res.data.isDocx) };
+	} catch (error: unknown) {
+		const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al obtener la vista previa" : "Error al obtener la vista previa";
 		return { success: false, error: msg };
 	}
 };
