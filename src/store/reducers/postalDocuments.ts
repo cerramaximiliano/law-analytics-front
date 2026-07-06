@@ -148,6 +148,17 @@ export const createUserTemplate = (payload: UserTemplatePayload) => async (_disp
 	}
 };
 
+// Elimina un modelo propio (formulario). No borra los documentos ya generados.
+export const deleteUserTemplate = (id: string) => async (_dispatch: Dispatch) => {
+	try {
+		await axios.delete(`${BASE_URL}/templates/${id}`);
+		return { success: true };
+	} catch (error: unknown) {
+		const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al eliminar el modelo" : "Error al eliminar el modelo";
+		return { success: false, error: msg };
+	}
+};
+
 // Placeholders del .docx ya vinculado a un modelo propio (para re-mapear al editar).
 export const getTemplatePlaceholders = (id: string) => async (_dispatch: Dispatch) => {
 	try {

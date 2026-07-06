@@ -23,7 +23,7 @@ import { alpha, useTheme } from "@mui/material/styles";
 import { Add, ClipboardText, CloseSquare, DocumentText, DocumentUpload, Edit2, Eye, SearchNormal1, Setting2, Trash, Warning2 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { dispatch, useSelector } from "store";
-import { fetchPdfTemplates, getPdfTemplate, previewGeneratedEscrito } from "store/reducers/postalDocuments";
+import { fetchPdfTemplates, getPdfTemplate, previewGeneratedEscrito, deleteUserTemplate } from "store/reducers/postalDocuments";
 import { fetchRichTextTemplates, deleteRichTextTemplate } from "store/reducers/richTextDocuments";
 import { openSnackbar } from "store/reducers/snackbar";
 import { PdfTemplate } from "types/postal-document";
@@ -337,12 +337,13 @@ interface ModelCardProps {
 	onUse: (t: PdfTemplate) => void;
 	onPreviewGenerated?: (t: PdfTemplate, gen: { slug: string; name: string }) => void;
 	onEdit?: (t: PdfTemplate) => void;
+	onDelete?: (t: PdfTemplate) => void;
 }
 
-const ModelCard = ({ template, onPreview, onUse, onPreviewGenerated, onEdit }: ModelCardProps) => {
+const ModelCard = ({ template, onPreview, onUse, onPreviewGenerated, onEdit, onDelete }: ModelCardProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
-	const { brandPrimarySx, ghostBtnSx } = useBrandStyles();
+	const { brandPrimarySx, ghostBtnSx, iconBtnDestructiveSx } = useBrandStyles();
 	const isDocxMerge = template.fillMethod === "docx-merge";
 	const needsDoc = isDocxMerge && !template.s3Key;
 	// Placeholders del documento que ningún campo del formulario mapea (mapeo incompleto).
@@ -500,6 +501,13 @@ const ModelCard = ({ template, onPreview, onUse, onPreviewGenerated, onEdit }: M
 								Usar modelo
 							</Button>
 						)}
+						{onDelete && (
+							<Tooltip title="Eliminar formulario">
+								<IconButton onClick={() => onDelete(template)} sx={iconBtnDestructiveSx} aria-label="eliminar">
+									<Trash size={15} variant="Linear" />
+								</IconButton>
+							</Tooltip>
+						)}
 					</>
 				) : (
 					<>
@@ -509,6 +517,13 @@ const ModelCard = ({ template, onPreview, onUse, onPreviewGenerated, onEdit }: M
 						<Button size="small" onClick={() => onUse(template)} sx={{ ...brandPrimarySx, flex: 1, minWidth: 0 }}>
 							Usar modelo
 						</Button>
+						{onDelete && (
+							<Tooltip title="Eliminar formulario">
+								<IconButton onClick={() => onDelete(template)} sx={iconBtnDestructiveSx} aria-label="eliminar">
+									<Trash size={15} variant="Linear" />
+								</IconButton>
+							</Tooltip>
+						)}
 					</>
 				)}
 			</Stack>
@@ -857,7 +872,7 @@ const ModelosPage = () => {
 	const [rtTemplates, setRtTemplates] = useState<RichTextTemplate[]>([]);
 	const [rtLoading, setRtLoading] = useState(false);
 	const [rtSearch, setRtSearch] = useState("");
-	const [deleteTarget, setDeleteTarget] = useState<RichTextTemplate | null>(null);
+	const [deleteTarget, setDeleteTarget] = useState<{ kind: "rt" | "pdf"; id: string; name: string } | null>(null);
 	const [deleteLoading, setDeleteLoading] = useState(false);
 	const [myModelsCount, setMyModelsCount] = useState<number>(0);
 
@@ -957,13 +972,23 @@ const ModelosPage = () => {
 	const handleDeleteConfirm = async () => {
 		if (!deleteTarget) return;
 		setDeleteLoading(true);
-		const res = await dispatch(deleteRichTextTemplate(deleteTarget._id));
-		if (res.success) {
-			setRtTemplates((prev) => prev.filter((t) => t._id !== deleteTarget._id));
-			setMyModelsCount((c) => Math.max(0, c - 1));
-			showSnackbar("Modelo eliminado", "success");
+		if (deleteTarget.kind === "rt") {
+			const res = await dispatch(deleteRichTextTemplate(deleteTarget.id));
+			if (res.success) {
+				setRtTemplates((prev) => prev.filter((t) => t._id !== deleteTarget.id));
+				setMyModelsCount((c) => Math.max(0, c - 1));
+				showSnackbar("Modelo eliminado", "success");
+			} else {
+				showSnackbar(res.error || "Error al eliminar", "error");
+			}
 		} else {
-			showSnackbar(res.error || "Error al eliminar", "error");
+			const res = await dispatch(deleteUserTemplate(deleteTarget.id));
+			if (res?.success) {
+				setPdfTemplates((prev) => prev.filter((t) => t._id !== deleteTarget.id));
+				showSnackbar("Formulario eliminado", "success");
+			} else {
+				showSnackbar(res?.error || "Error al eliminar", "error");
+			}
 		}
 		setDeleteLoading(false);
 		setDeleteTarget(null);
@@ -1381,7 +1406,14 @@ const ModelosPage = () => {
 											<Grid container spacing={2}>
 												{myPdfTemplates.map((tpl) => (
 													<Grid item xs={12} sm={6} md={4} lg={3} key={tpl._id}>
-														<ModelCard template={tpl} onPreview={handlePreview} onUse={setCreateFromTemplate} onPreviewGenerated={handlePreviewGenerated} onEdit={handleEditTemplate} />
+														<ModelCard
+														template={tpl}
+														onPreview={handlePreview}
+														onUse={setCreateFromTemplate}
+														onPreviewGenerated={handlePreviewGenerated}
+														onEdit={handleEditTemplate}
+														onDelete={(t) => setDeleteTarget({ kind: "pdf", id: t._id, name: t.name })}
+													/>
 													</Grid>
 												))}
 											</Grid>
@@ -1398,7 +1430,7 @@ const ModelosPage = () => {
 											<Grid container spacing={2}>
 												{rtPagination.slice.map((tpl) => (
 													<Grid item xs={12} sm={6} md={4} lg={3} key={tpl._id}>
-														<RichTextModelCard template={tpl} onEdit={(t) => navigate(`/documentos/modelos/${t._id}/editar`)} onDelete={setDeleteTarget} onUse={(t) => navigate(`/documentos/escritos/nuevo?templateId=${t._id}`)} />
+														<RichTextModelCard template={tpl} onEdit={(t) => navigate(`/documentos/modelos/${t._id}/editar`)} onDelete={(t) => setDeleteTarget({ kind: "rt", id: t._id, name: t.name })} onUse={(t) => navigate(`/documentos/escritos/nuevo?templateId=${t._id}`)} />
 													</Grid>
 												))}
 												{rtPagination.isFirstPage && (
