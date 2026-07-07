@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	Autocomplete,
 	Box,
@@ -23,7 +23,7 @@ import {
 	Typography,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { Add, CloseSquare, DocumentDownload, DocumentText, FolderOpen, Profile2User, Save2, TickCircle, Trash } from "iconsax-react";
+import { Add, CloseSquare, DocumentDownload, DocumentText, DocumentUpload, FolderOpen, MagicStar, Profile2User, Save2, TickCircle, Trash } from "iconsax-react";
 import { useNavigate } from "react-router-dom";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { dispatch, useSelector } from "store";
@@ -568,7 +568,8 @@ function formValuesToContact(
 
 function getInitialFormValues(fields: PdfTemplateField[]): Record<string, string> {
 	return fields.reduce((acc, f) => {
-		acc[f.name] = "";
+		// Los campos IA se precargan con la instrucción del modelo (editable por generación).
+		acc[f.name] = f.type === "ai-prompt" ? f.aiPrompt || "" : "";
 		return acc;
 	}, {} as Record<string, string>);
 }
@@ -674,9 +675,10 @@ export default function CreatePostalDocumentModal({
 	const handleGenerateDocument = async () => {
 		if (!generatedDoc?._id) return;
 		setDemandaLoading(true);
-		const res: any = await dispatch(generateDocument(generatedDoc._id) as any);
+		const res: any = await dispatch(generateDocument(generatedDoc._id, contextFiles.length ? contextFiles : undefined) as any);
 		setDemandaLoading(false);
 		if (res?.success && res.url) {
+			setContextFiles([]);
 			window.open(res.url, "_blank");
 			showSnackbar("Documento generado — disponible en Documentos → Escritos", "success");
 		} else {
@@ -690,6 +692,9 @@ export default function CreatePostalDocumentModal({
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const [generating, setGenerating] = useState(false);
+	// Documentos de contexto para los campos IA (por generación): se suben junto al "Generar documento".
+	const [contextFiles, setContextFiles] = useState<File[]>([]);
+	const contextInputRef = useRef<HTMLInputElement>(null);
 
 	const [linkedFolder, setLinkedFolder] = useState<FolderData | null>(null);
 
@@ -1653,6 +1658,71 @@ export default function CreatePostalDocumentModal({
 						</Stack>
 					)}
 
+					{/* Documentos de contexto para la IA (por generación) — sólo si el modelo tiene campos IA */}
+					{generatedDoc && selectedTemplate?.fillMethod === "docx-merge" && (selectedTemplate?.fields || []).some((f: any) => f.type === "ai-prompt") && (
+						<Box
+							sx={{
+								maxWidth: 520,
+								mx: "auto",
+								mb: 1,
+								p: 2,
+								borderRadius: 1.5,
+								border: `1px dashed ${alpha(BRAND_BLUE, isDark ? 0.3 : 0.22)}`,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
+							}}
+						>
+							<Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+								<MagicStar size={16} color={BRAND_BLUE} variant="Bulk" />
+								<Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "text.primary" }}>Documentos de contexto para la IA (opcional)</Typography>
+							</Stack>
+							<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", mb: 1.25, textWrap: "pretty" }}>
+								Adjuntá los hechos, la prueba o un escrito relacionado (PDF, Word o texto). La IA usará su contenido al redactar los campos generados. Máx. 5 archivos.
+							</Typography>
+							<input
+								ref={contextInputRef}
+								type="file"
+								accept=".pdf,.docx,.txt"
+								multiple
+								hidden
+								onChange={(e) => {
+									const files = Array.from(e.target.files || []);
+									setContextFiles((prev) => [...prev, ...files].slice(0, 5));
+									e.target.value = "";
+								}}
+							/>
+							<Button
+								size="small"
+								startIcon={<DocumentUpload size={15} variant="Linear" />}
+								onClick={() => contextInputRef.current?.click()}
+								disabled={contextFiles.length >= 5}
+								sx={ghostBtnSx}
+							>
+								Agregar documentos
+							</Button>
+							{contextFiles.length > 0 && (
+								<Stack spacing={0.5} sx={{ mt: 1.25 }}>
+									{contextFiles.map((f, i) => (
+										<Stack
+											key={`${f.name}-${i}`}
+											direction="row"
+											spacing={1}
+											alignItems="center"
+											sx={{ px: 1, py: 0.5, borderRadius: 1, bgcolor: alpha(theme.palette.text.primary, isDark ? 0.06 : 0.04) }}
+										>
+											<DocumentText size={14} color={theme.palette.text.secondary} />
+											<Typography sx={{ fontSize: "0.75rem", color: "text.primary", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+												{f.name}
+											</Typography>
+											<IconButton size="small" onClick={() => setContextFiles((prev) => prev.filter((_, j) => j !== i))} sx={{ width: 22, height: 22 }} aria-label="quitar">
+												<CloseSquare size={14} color={theme.palette.text.secondary} />
+											</IconButton>
+										</Stack>
+									))}
+								</Stack>
+							)}
+						</Box>
+					)}
+
 					{/* ── Step 0: template selection (solo modelos del sistema) ── */}
 					{!generatedDoc && step === 0 && (
 						<>
@@ -1857,6 +1927,97 @@ export default function CreatePostalDocumentModal({
 									);
 								});
 							})()}
+
+							{/* Campos generados con IA — instrucción editable por generación */}
+							{selectedTemplate.fields.some((f) => f.type === "ai-prompt") && (
+								<>
+									<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />
+									<Box
+										sx={{
+											p: 2,
+											borderRadius: 1.5,
+											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.24 : 0.16)}`,
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
+										}}
+									>
+										<Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+											<MagicStar size={16} color={BRAND_BLUE} variant="Bulk" />
+											<Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "text.primary" }}>Campos generados con IA</Typography>
+										</Stack>
+										<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", mb: 1.5, textWrap: "pretty" }}>
+											La IA redacta estos campos al generar el documento (no aparecen en la planilla). Podés ajustar la instrucción para este caso; la IA usará los datos del formulario y los documentos de contexto que adjuntes.
+										</Typography>
+										<Stack spacing={1.5}>
+											{selectedTemplate.fields
+												.filter((f) => f.type === "ai-prompt")
+												.map((f) => (
+													<Box key={f.name}>
+														<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "0.02em", mb: 0.5, fontWeight: 600 }}>
+															{f.label}
+														</Typography>
+														<TextField
+															fullWidth
+															multiline
+															minRows={2}
+															size="small"
+															value={formValues[f.name] ?? ""}
+															onChange={(e) => handleFieldChange(f.name, e.target.value)}
+															placeholder="Instrucción para la IA…"
+															sx={inputSx}
+														/>
+													</Box>
+												))}
+										</Stack>
+										<Box sx={{ height: 1, my: 1.5, bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />
+										<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "text.primary", mb: 0.25 }}>Documentos de contexto (opcional)</Typography>
+										<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", mb: 1, textWrap: "pretty" }}>
+											Adjuntá los hechos, la prueba o un escrito relacionado (PDF, Word o texto). La IA usará su contenido al redactar. Máx. 5 archivos.
+										</Typography>
+										<input
+											ref={contextInputRef}
+											type="file"
+											accept=".pdf,.docx,.txt"
+											multiple
+											hidden
+											onChange={(e) => {
+												const files = Array.from(e.target.files || []);
+												setContextFiles((prev) => [...prev, ...files].slice(0, 5));
+												e.target.value = "";
+											}}
+										/>
+										<Button
+											size="small"
+											startIcon={<DocumentUpload size={15} variant="Linear" />}
+											onClick={() => contextInputRef.current?.click()}
+											disabled={contextFiles.length >= 5}
+											sx={ghostBtnSx}
+										>
+											Agregar documentos
+										</Button>
+										{contextFiles.length > 0 && (
+											<Stack spacing={0.5} sx={{ mt: 1.25 }}>
+												{contextFiles.map((f, i) => (
+													<Stack
+														key={`${f.name}-${i}`}
+														direction="row"
+														spacing={1}
+														alignItems="center"
+														sx={{ px: 1, py: 0.5, borderRadius: 1, bgcolor: alpha(theme.palette.text.primary, isDark ? 0.06 : 0.04) }}
+													>
+														<DocumentText size={14} color={theme.palette.text.secondary} />
+														<Typography sx={{ fontSize: "0.75rem", color: "text.primary", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+															{f.name}
+														</Typography>
+														<IconButton size="small" onClick={() => setContextFiles((prev) => prev.filter((_, j) => j !== i))} sx={{ width: 22, height: 22 }} aria-label="quitar">
+															<CloseSquare size={14} color={theme.palette.text.secondary} />
+														</IconButton>
+													</Stack>
+												))}
+											</Stack>
+										)}
+									</Box>
+								</>
+							)}
 
 							{/* Vincular */}
 							<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />

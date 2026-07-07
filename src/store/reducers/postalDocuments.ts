@@ -220,9 +220,16 @@ export const generateDemanda = (id: string) => async (_dispatch: Dispatch) => {
 };
 
 // Genera "el documento" (.docx merged) desde un FORMULARIO self-service. Puede tocar el límite de IA (403).
-export const generateDocument = (id: string) => async (_dispatch: Dispatch) => {
+export const generateDocument = (id: string, contextFiles?: File[]) => async (_dispatch: Dispatch) => {
 	try {
-		const res = await axios.post(`${BASE_URL}/${id}/generate-document`);
+		let res;
+		if (contextFiles && contextFiles.length) {
+			const form = new FormData();
+			contextFiles.forEach((f) => form.append("contextDocs", f));
+			res = await axios.post(`${BASE_URL}/${id}/generate-document`, form, { headers: { "Content-Type": "multipart/form-data" } });
+		} else {
+			res = await axios.post(`${BASE_URL}/${id}/generate-document`);
+		}
 		return { success: true, url: res.data?.data?.url as string, documentId: res.data?.data?.documentId as string };
 	} catch (error: unknown) {
 		const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al generar el documento" : "Error al generar el documento";

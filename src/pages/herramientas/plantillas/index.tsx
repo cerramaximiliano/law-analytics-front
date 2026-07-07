@@ -20,7 +20,7 @@ import {
 	useMediaQuery,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { Add, ClipboardText, CloseSquare, DocumentText, DocumentUpload, Edit2, Eye, SearchNormal1, Setting2, Trash, Warning2 } from "iconsax-react";
+import { Add, ClipboardText, CloseCircle, CloseSquare, DocumentText, DocumentUpload, Edit2, Eye, InfoCircle, SearchNormal1, Setting2, TickCircle, Trash, Warning2 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { dispatch, useSelector } from "store";
 import { fetchPdfTemplates, getPdfTemplate, previewGeneratedEscrito, deleteUserTemplate } from "store/reducers/postalDocuments";
@@ -30,6 +30,7 @@ import { PdfTemplate } from "types/postal-document";
 import { RichTextTemplate, RichTextTemplateCategory } from "types/rich-text-document";
 import CreatePostalDocumentModal from "sections/apps/postal-documents/CreatePostalDocumentModal";
 import CreateFormModelWizard from "sections/apps/postal-documents/CreateFormModelWizard";
+import FormBuilderGuideModal from "sections/apps/postal-documents/FormBuilderGuideModal";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 import { BRAND_BLUE, STALE_AMBER } from "themes/dashboardTokens";
 
@@ -329,6 +330,99 @@ const PreviewDialog = ({ open, template, pdfUrl, loading, onClose, titleOverride
 	);
 };
 
+// ── Header de tipo de modelo (formulario / modelo de texto) + origen ───────────
+
+const STATUS_META = {
+	ok: { Icon: TickCircle, tone: "success" as const },
+	warn: { Icon: Warning2, tone: "amber" as const },
+	missing: { Icon: CloseCircle, tone: "error" as const },
+};
+
+const CardTypeHeader = ({
+	kind,
+	origin,
+	status,
+	statusTooltip,
+}: {
+	kind: "formulario" | "texto";
+	origin: "system" | "user";
+	status?: "ok" | "warn" | "missing";
+	statusTooltip?: string;
+}) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const Icon = kind === "formulario" ? ClipboardText : DocumentText;
+	const typeLabel = kind === "formulario" ? "Formulario" : "Modelo de texto";
+	const sm = status ? STATUS_META[status] : null;
+	const StatusIcon = sm?.Icon;
+	const statusColor = sm
+		? sm.tone === "success"
+			? theme.palette.success.main
+			: sm.tone === "amber"
+				? STALE_AMBER
+				: theme.palette.error.main
+		: "";
+	return (
+		<Stack direction="row" alignItems="center" spacing={1}>
+			<Box sx={{ position: "relative", flexShrink: 0 }}>
+				<Box
+					sx={{
+						width: 30,
+						height: 30,
+						borderRadius: 1,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.16)}`,
+						color: BRAND_BLUE,
+					}}
+				>
+					<Icon size={16} variant="Bulk" />
+				</Box>
+				{StatusIcon && (
+					<Tooltip title={statusTooltip || ""} arrow>
+						<Box
+							sx={{
+								position: "absolute",
+								bottom: -5,
+								right: -5,
+								borderRadius: "50%",
+								bgcolor: "background.paper",
+								lineHeight: 0,
+								p: "1.5px",
+								cursor: "default",
+							}}
+						>
+							<StatusIcon size={15} variant="Bold" color={statusColor} />
+						</Box>
+					</Tooltip>
+				)}
+			</Box>
+			<Typography sx={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.055em", textTransform: "uppercase", color: "text.secondary" }}>
+				{typeLabel}
+			</Typography>
+			<Box sx={{ flex: 1 }} />
+			<Typography
+				sx={{
+					fontSize: "0.6rem",
+					fontWeight: 600,
+					letterSpacing: "0.04em",
+					textTransform: "uppercase",
+					color: alpha(theme.palette.text.primary, isDark ? 0.55 : 0.5),
+					border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.18 : 0.14)}`,
+					borderRadius: 0.75,
+					px: 0.75,
+					py: 0.2,
+					flexShrink: 0,
+				}}
+			>
+				{origin === "system" ? "Sistema" : "Propio"}
+			</Typography>
+		</Stack>
+	);
+};
+
 // ── Tarjeta modelo PDF ─────────────────────────────────────────────────────────
 
 interface ModelCardProps {
@@ -354,6 +448,32 @@ const ModelCard = ({ template, onPreview, onUse, onPreviewGenerated, onEdit, onD
 					return template.docxPlaceholders.filter((p) => !mapped.has(p));
 			  })()
 			: [];
+	const isSystem = template.source === "system" || template.isPublic || !template.userId;
+	// Estado de vinculación (solo aplica a formularios docx-merge que generan un .docx).
+	const generatesDoc = Boolean(template.generates && template.generates.length > 0);
+	// docx-merge: estado según el mapeo de placeholders. Overlay que genera un documento
+	// (ej. la demanda de Augusto, mapeo hardcodeado): siempre ✓. Otros (PDF sin salida): sin badge.
+	const linkStatus: "ok" | "warn" | "missing" | null = isDocxMerge
+		? !template.s3Key
+			? "missing"
+			: freePlaceholders.length > 0
+				? "warn"
+				: "ok"
+		: generatesDoc
+			? "ok"
+			: null;
+	const statusTooltip =
+		linkStatus === "ok"
+			? isDocxMerge
+				? "Documento vinculado · mapeo completo"
+				: "Genera un documento vinculado"
+			: linkStatus === "warn"
+				? `Mapeo incompleto — ${freePlaceholders.length} campo${freePlaceholders.length !== 1 ? "s" : ""} del documento sin vincular: ${freePlaceholders
+						.map((p) => `[${p}]`)
+						.join(", ")}`
+				: linkStatus === "missing"
+					? "Sin documento vinculado — vinculá un .docx para generar el escrito"
+					: undefined;
 	return (
 		<Box
 			sx={{
@@ -369,24 +489,23 @@ const ModelCard = ({ template, onPreview, onUse, onPreviewGenerated, onEdit, onD
 			}}
 		>
 			<Stack spacing={1.25} sx={{ flex: 1 }}>
-				<Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-					<Pill label={template.category} tone="primary" />
-					<Pill label={template.modelType === "dynamic" ? "Dinámico" : "Estático"} tone={template.modelType === "dynamic" ? "amber" : "neutral"} />
-				</Stack>
+				<CardTypeHeader kind="formulario" origin={isSystem ? "system" : "user"} status={linkStatus ?? undefined} statusTooltip={statusTooltip} />
 				<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary", lineHeight: 1.3 }}>
 					{template.name}
 				</Typography>
 				{template.description && (
-					<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+					<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
 						{template.description}
 					</Typography>
 				)}
-				<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.06), mt: 0.5 }} />
-				<Stack direction="row" alignItems="center" spacing={0.75}>
-					<DocumentText size={13} color={theme.palette.text.secondary} variant="Linear" />
-					<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
-						{template.fields?.length ?? 0} campo{template.fields?.length !== 1 ? "s" : ""} completables
-					</Typography>
+				<Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap" useFlexGap>
+					<Pill label={template.category} tone="primary" />
+					<Stack direction="row" alignItems="center" spacing={0.5}>
+						<DocumentText size={13} color={theme.palette.text.secondary} variant="Linear" />
+						<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+							{template.fields?.length ?? 0} campo{template.fields?.length !== 1 ? "s" : ""}
+						</Typography>
+					</Stack>
 				</Stack>
 				{template.generates && template.generates.length > 0 && (
 					<Box
@@ -465,24 +584,6 @@ const ModelCard = ({ template, onPreview, onUse, onPreviewGenerated, onEdit, onD
 						</Stack>
 					</Box>
 				)}
-				{needsDoc && (
-					<Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 0.25 }}>
-						<Warning2 size={14} color={STALE_AMBER} variant="Bulk" />
-						<Typography sx={{ fontSize: "0.7rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "-0.005em" }}>
-							Falta vincular documento
-						</Typography>
-					</Stack>
-				)}
-				{freePlaceholders.length > 0 && (
-					<Tooltip title={`Sin vincular: ${freePlaceholders.map((p) => `[${p}]`).join(", ")}`}>
-						<Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 0.25 }}>
-							<Warning2 size={14} color={STALE_AMBER} variant="Bulk" />
-							<Typography sx={{ fontSize: "0.7rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "-0.005em" }}>
-								Mapeo incompleto — {freePlaceholders.length} campo{freePlaceholders.length !== 1 ? "s" : ""} del documento sin vincular
-							</Typography>
-						</Stack>
-					</Tooltip>
-				)}
 			</Stack>
 			<Stack direction="row" spacing={1} sx={{ pt: 1.5 }}>
 				{isDocxMerge ? (
@@ -543,7 +644,7 @@ interface RichTextModelCardProps {
 const RichTextModelCard = ({ template, onEdit, onDelete, onUse }: RichTextModelCardProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
-	const { brandPrimarySx, ghostBtnSx, iconBtnSx, iconBtnDestructiveSx } = useBrandStyles();
+	const { brandPrimarySx, ghostBtnSx, iconBtnDestructiveSx } = useBrandStyles();
 	return (
 		<Box
 			sx={{
@@ -559,37 +660,43 @@ const RichTextModelCard = ({ template, onEdit, onDelete, onUse }: RichTextModelC
 			}}
 		>
 			<Stack spacing={1.25} sx={{ flex: 1 }}>
-				<Stack direction="row" alignItems="center" justifyContent="space-between">
-					<Pill label={RT_CATEGORY_LABELS[template.category] ?? template.category} tone="primary" />
-					<Stack direction="row" spacing={0.25}>
-						<Tooltip title="Editar">
-							<IconButton sx={iconBtnSx} onClick={() => onEdit(template)}>
-								<Edit2 size={14} variant="Linear" />
-							</IconButton>
-						</Tooltip>
-						<Tooltip title="Eliminar">
-							<IconButton sx={iconBtnDestructiveSx} onClick={() => onDelete(template)}>
-								<Trash size={14} variant="Linear" />
-							</IconButton>
-						</Tooltip>
-					</Stack>
-				</Stack>
+				<CardTypeHeader kind="texto" origin="user" />
 				<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary", lineHeight: 1.3 }}>
 					{template.name}
 				</Typography>
 				{template.description && (
-					<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+					<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
 						{template.description}
 					</Typography>
 				)}
-				<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.06), mt: 0.5 }} />
-				<Stack direction="row" alignItems="center" spacing={0.75}>
-					<DocumentText size={13} color={theme.palette.text.secondary} variant="Linear" />
-					<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
-						{template.mergeFields?.length ?? 0} campo{template.mergeFields?.length !== 1 ? "s" : ""} dinámico
-						{template.mergeFields?.length !== 1 ? "s" : ""}
-					</Typography>
+				<Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap" useFlexGap>
+					<Pill label={RT_CATEGORY_LABELS[template.category] ?? template.category} tone="primary" />
+					<Stack direction="row" alignItems="center" spacing={0.5}>
+						<DocumentText size={13} color={theme.palette.text.secondary} variant="Linear" />
+						<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+							{template.mergeFields?.length ?? 0} campo{template.mergeFields?.length !== 1 ? "s" : ""} dinámico{template.mergeFields?.length !== 1 ? "s" : ""}
+						</Typography>
+					</Stack>
 				</Stack>
+				<Box
+					sx={{
+						mt: 0.25,
+						display: "inline-flex",
+						alignItems: "center",
+						gap: 0.75,
+						alignSelf: "flex-start",
+						px: 1,
+						py: 0.5,
+						borderRadius: 1,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.05),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.1)}`,
+					}}
+				>
+					<Edit2 size={13} color={BRAND_BLUE} variant="Bulk" />
+					<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: alpha(BRAND_BLUE, isDark ? 0.85 : 0.75), letterSpacing: "-0.005em" }}>
+						Se edita en el editor de texto
+					</Typography>
+				</Box>
 			</Stack>
 			<Stack direction="row" spacing={1} sx={{ pt: 1.5 }}>
 				<Button size="small" startIcon={<Edit2 size={14} variant="Linear" />} onClick={() => onEdit(template)} sx={{ ...ghostBtnSx, flex: 1 }}>
@@ -603,6 +710,11 @@ const RichTextModelCard = ({ template, onEdit, onDelete, onUse }: RichTextModelC
 				>
 					Crear documento
 				</Button>
+				<Tooltip title="Eliminar modelo">
+					<IconButton onClick={() => onDelete(template)} sx={iconBtnDestructiveSx} aria-label="eliminar">
+						<Trash size={15} variant="Linear" />
+					</IconButton>
+				</Tooltip>
 			</Stack>
 		</Box>
 	);
@@ -867,6 +979,7 @@ const ModelosPage = () => {
 	const [previewGenTitle, setPreviewGenTitle] = useState<string | null>(null);
 	const [wizardOpen, setWizardOpen] = useState(false);
 	const [editTemplate, setEditTemplate] = useState<PdfTemplate | null>(null);
+	const [guideOpen, setGuideOpen] = useState(false);
 	const [createFromTemplate, setCreateFromTemplate] = useState<PdfTemplate | null>(null);
 
 	const [rtTemplates, setRtTemplates] = useState<RichTextTemplate[]>([]);
@@ -1348,6 +1461,14 @@ const ModelosPage = () => {
 									/>
 									<Button
 										size="small"
+										startIcon={<InfoCircle size={15} variant="Linear" />}
+										onClick={() => setGuideOpen(true)}
+										sx={ghostBtnSx}
+									>
+										¿Cómo funciona?
+									</Button>
+									<Button
+										size="small"
 										startIcon={<DocumentUpload size={15} variant="Linear" />}
 										onClick={() => navigate("/documentos/modelos/nuevo")}
 										sx={ghostBtnSx}
@@ -1486,6 +1607,15 @@ const ModelosPage = () => {
 					dispatch(fetchPdfTemplates()).then((res: any) => {
 						if (res.success) setPdfTemplates(res.templates || []);
 					});
+				}}
+			/>
+
+			<FormBuilderGuideModal
+				open={guideOpen}
+				onClose={() => setGuideOpen(false)}
+				onCreate={() => {
+					setEditTemplate(null);
+					setWizardOpen(true);
 				}}
 			/>
 
