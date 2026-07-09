@@ -27,7 +27,16 @@ import { Add, CloseSquare, DocumentDownload, DocumentText, DocumentUpload, Folde
 import { useNavigate } from "react-router-dom";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { dispatch, useSelector } from "store";
-import { fetchPdfTemplates, createPostalDocument, updatePostalDocument, generateDemanda, generateDocument } from "store/reducers/postalDocuments";
+import {
+	fetchPdfTemplates,
+	createPostalDocument,
+	updatePostalDocument,
+	generateDemanda,
+	generatePlanilla,
+	generateDocument,
+	saveDraft,
+	deletePostalDocument,
+} from "store/reducers/postalDocuments";
 import { getContactsByUserId, addContact, updateContact } from "store/reducers/contacts";
 import { createPostalTracking, fetchAllTrackings } from "store/reducers/postalTracking";
 import { getFoldersByUserId } from "store/reducers/folder";
@@ -46,6 +55,8 @@ interface Props {
 	prefilledTrackingId?: string | null;
 	preselectedTemplate?: PdfTemplate | null;
 	prefilledFolderId?: string | null;
+	// Retomar un borrador: prefila los datos cargados y actualiza ese doc al guardar/generar.
+	resumeDoc?: { _id: string; title?: string; description?: string; formData?: Record<string, string> } | null;
 	showSnackbar: (msg: string, sev: "success" | "error") => void;
 }
 
@@ -210,6 +221,36 @@ const FORMULARIO_CIVIL_FILL = {
 		doc_presupuesto: "X",
 		doc_fotos_danos: "X",
 		doc_recibo_sueldo: "X",
+		// Monto
+		monto_reclamado: "$ 2.400.000",
+		monto_cod: "01",
+		// Datos del letrado (del perfil, editable)
+		abogado_nombre: "PÉREZ, María Laura",
+		abogado_tomo: "101",
+		abogado_folio: "543",
+		abogado_pad: "P",
+		// Objeto del juicio (select de código: 257 = Daños y Perjuicios)
+		objeto_codigo: "257",
+		objeto_descripcion: "DAÑOS Y PERJUICIOS",
+		// Mediación
+		mediacion_juz: "Mediación N° 12",
+		mediacion_tipo: "Privada",
+		// Defensorías y Fiscalía
+		def_menores: "No",
+		def_pobres: "No",
+		fiscalia: "No",
+		// Conexidad
+		conexo_juz: "Juzgado Civil N° 45",
+		conexo_expediente_nro: "12345",
+		conexo_expediente_anio: "2024",
+		// Exhorto
+		exhorto_nro_exp: "9876/24",
+		exhorto_dependencia: "Juzgado Civil N° 5, Córdoba",
+		exhorto_juez: "Dr. Rodríguez",
+		exhorto_caratula: "Pérez c/ Gómez s/ Daños",
+		exhorto_fecha_dia: "01",
+		exhorto_fecha_mes: "07",
+		exhorto_fecha_anio: "2026",
 	},
 };
 
@@ -637,6 +678,7 @@ export default function CreatePostalDocumentModal({
 	prefilledTrackingId,
 	preselectedTemplate,
 	prefilledFolderId,
+	resumeDoc,
 	showSnackbar,
 }: Props) {
 	const theme = useTheme();
@@ -653,22 +695,41 @@ export default function CreatePostalDocumentModal({
 	// Documento recién generado → pantalla de resultado (para que el usuario sepa dónde quedó)
 	const [generatedDoc, setGeneratedDoc] = useState<any | null>(null);
 	const [demandaLoading, setDemandaLoading] = useState(false);
+	const [genLoadingSlug, setGenLoadingSlug] = useState<string | null>(null);
+	// Paso 2 completado: los documentos finales ya se generaron → cambia el mensaje de la pantalla de resultado.
+	const [docsGenerated, setDocsGenerated] = useState(false);
+	const [generatedResults, setGeneratedResults] = useState<Array<{ name: string; url?: string }>>([]);
 
 	// Genera la demanda (.docx) desde un documento del formulario civil recién generado.
-	const handleGenerateDemanda = async () => {
+	// Un solo botón genera TODOS los documentos vinculados (generates[]), despachando por slug.
+	const handleGenerateAll = async () => {
 		if (!generatedDoc?._id) return;
-		setDemandaLoading(true);
-		const res: any = await dispatch(generateDemanda(generatedDoc._id) as any);
-		setDemandaLoading(false);
-		if (res?.success && res.url) {
-			window.open(res.url, "_blank");
-			showSnackbar(
-				res.missing?.length ? `Demanda generada (${res.missing.length} campo/s sin dato)` : "Demanda generada",
-				"success",
-			);
-		} else {
-			showSnackbar(res?.error || "Error al generar la demanda", "error");
+		const gens = selectedTemplate?.generates || [];
+		if (!gens.length) return;
+		setGenLoadingSlug("__all__");
+		let ok = 0;
+		let firstError = "";
+		const results: Array<{ name: string; url?: string }> = [];
+		for (const gen of gens) {
+			const thunk =
+				gen.slug === "demanda_danos_perjuicios"
+					? generateDemanda(generatedDoc._id)
+					: gen.slug === "planilla_inicio_civil"
+						? generatePlanilla(generatedDoc._id)
+						: generateDocument(generatedDoc._id, contextFiles.length ? contextFiles : undefined);
+			const res: any = await dispatch(thunk as any);
+			if (res?.success) {
+				ok += 1;
+				results.push({ name: gen.name, url: res.url });
+			} else if (!firstError) firstError = res?.error || "";
 		}
+		setGenLoadingSlug(null);
+		setContextFiles([]);
+		if (ok) {
+			setGeneratedResults(results);
+			setDocsGenerated(true);
+			showSnackbar(`${ok} documento${ok !== 1 ? "s" : ""} generado${ok !== 1 ? "s" : ""} — en Documentos → Escritos`, "success");
+		} else showSnackbar(firstError || "No se pudieron generar los documentos", "error");
 	};
 
 	// Genera "el documento" (.docx merged, con campos IA) desde un FORMULARIO self-service recién guardado.
@@ -679,8 +740,17 @@ export default function CreatePostalDocumentModal({
 		setDemandaLoading(false);
 		if (res?.success && res.url) {
 			setContextFiles([]);
-			window.open(res.url, "_blank");
-			showSnackbar("Documento generado — disponible en Documentos → Escritos", "success");
+			const docs =
+				Array.isArray(res.documents) && res.documents.length
+					? res.documents.map((d: any) => ({ name: d.name || "Documento", url: d.url }))
+					: [{ name: generatedDoc?.title || "Documento", url: res.url }];
+			setGeneratedResults(docs);
+			setDocsGenerated(true);
+			if ((res.count || 1) === 1) window.open(res.url, "_blank");
+			showSnackbar(
+				(res.count || 1) > 1 ? `${res.count} documentos generados — en Documentos → Escritos` : "Documento generado — disponible en Documentos → Escritos",
+				"success",
+			);
 		} else {
 			showSnackbar(res?.error || "Error al generar el documento", "error");
 		}
@@ -690,8 +760,14 @@ export default function CreatePostalDocumentModal({
 	const [selectedTemplate, setSelectedTemplate] = useState<PdfTemplate | null>(null);
 	const [formValues, setFormValues] = useState<Record<string, string>>({});
 	const [title, setTitle] = useState("");
+	// Flujo de 2 pasos: paso 1 genera "el formulario", paso 2 (pantalla de resultado) genera los documentos.
+	// Aplica a docx-merge (self-service) y a formularios overlay que declaran generates[] (ej. civil de Augusto).
+	const hasSecondStep = selectedTemplate?.fillMethod === "docx-merge" || (selectedTemplate?.generates?.length ?? 0) > 0;
 	const [description, setDescription] = useState("");
 	const [generating, setGenerating] = useState(false);
+	// Borrador en curso: si está seteado, "Guardar borrador" actualiza ese doc y al generar se finaliza.
+	const [currentDocId, setCurrentDocId] = useState<string | null>(null);
+	const [savingDraft, setSavingDraft] = useState(false);
 	// Documentos de contexto para los campos IA (por generación): se suben junto al "Generar documento".
 	const [contextFiles, setContextFiles] = useState<File[]>([]);
 	const contextInputRef = useRef<HTMLInputElement>(null);
@@ -728,11 +804,38 @@ export default function CreatePostalDocumentModal({
 	const [limitErrorMessage, setLimitErrorMessage] = useState("");
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
 
+	// Prefill del letrado (perfil) + objeto del juicio (editables) — formulario civil de Augusto.
+	useEffect(() => {
+		if (!selectedTemplate || !String(selectedTemplate.slug || "").startsWith("formulario_civil_")) return;
+		const nombre =
+			user?.lastName || user?.firstName
+				? `${user?.lastName || ""}${user?.lastName && user?.firstName ? ", " : ""}${user?.firstName || ""}`.trim()
+				: (user as any)?.name || "";
+		setFormValues((prev) => {
+			const next = { ...prev };
+			if (nombre && !prev.abogado_nombre) next.abogado_nombre = nombre;
+			// Objeto por defecto: código 257 = "DAÑOS Y PERJUICIOS" (tabla CPACF). Editable desde el select.
+			if (!prev.objeto_codigo) {
+				next.objeto_codigo = "257";
+				next.objeto_descripcion = "DAÑOS Y PERJUICIOS";
+			}
+			return next;
+		});
+	}, [selectedTemplate, user]);
+
 	useEffect(() => {
 		if (!open) return;
 		if (preselectedTemplate) {
 			setSelectedTemplate(preselectedTemplate);
-			setFormValues(getInitialFormValues(preselectedTemplate.fields));
+			if (resumeDoc) {
+				// Retomar borrador: prefila los datos cargados.
+				setFormValues({ ...getInitialFormValues(preselectedTemplate.fields), ...(resumeDoc.formData || {}) });
+				setTitle(resumeDoc.title || "");
+				setDescription(resumeDoc.description || "");
+				setCurrentDocId(resumeDoc._id || null);
+			} else {
+				setFormValues(getInitialFormValues(preselectedTemplate.fields));
+			}
 			setStep(1);
 		} else {
 			setLoadingTemplates(true);
@@ -759,6 +862,8 @@ export default function CreatePostalDocumentModal({
 	const resetState = () => {
 		setStep(0);
 		setGeneratedDoc(null);
+		setDocsGenerated(false);
+		setGeneratedResults([]);
 		setSelectedTemplate(null);
 		setFormValues({});
 		setTitle("");
@@ -775,6 +880,7 @@ export default function CreatePostalDocumentModal({
 		setSelectedDemandados([]);
 		setVisibleRows({});
 		setSaveDialog({ open: false, group: null, contactType: "Humana", role: "" });
+		setCurrentDocId(null);
 	};
 
 	const handleClose_ = () => {
@@ -895,6 +1001,33 @@ export default function CreatePostalDocumentModal({
 	const willCreateTracking =
 		selectedTemplate?.supportsTracking && !prefilledTrackingId && !linkedTracking && trackingMode === "create" && newTrackingNumberIdValid;
 
+	const handleSaveDraft = async () => {
+		if (!selectedTemplate) return;
+		if (!title.trim()) {
+			showSnackbar("Poné un título para guardar el borrador", "error");
+			return;
+		}
+		setSavingDraft(true);
+		const res: any = await dispatch(
+			saveDraft({
+				docId: currentDocId || undefined,
+				pdfTemplateId: selectedTemplate._id,
+				title,
+				description,
+				formData: formValues,
+				linkedFolderId: linkedFolder?._id || null,
+			}) as any,
+		);
+		setSavingDraft(false);
+		if (res?.success) {
+			setCurrentDocId(res.document?._id || currentDocId);
+			showSnackbar("Borrador guardado — retomalo desde Documentos → Escritos", "success");
+			handleClose_();
+		} else {
+			showSnackbar(res?.error || "No se pudo guardar el borrador", "error");
+		}
+	};
+
 	const handleSubmit = async () => {
 		if (!selectedTemplate) return;
 		setGenerating(true);
@@ -928,8 +1061,15 @@ export default function CreatePostalDocumentModal({
 
 		setGenerating(false);
 		if (result.success) {
-			showSnackbar("Documento generado exitosamente", "success");
+			// Si veníamos de un borrador, se finaliza: eliminamos el borrador (quedó el documento generado).
+			if (currentDocId) {
+				dispatch(deletePostalDocument(currentDocId) as any);
+				setCurrentDocId(null);
+			}
+			showSnackbar(hasSecondStep ? "Formulario generado — ahora generá los documentos" : "Documento generado exitosamente", "success");
 			// No cerramos: mostramos la pantalla de resultado con acceso al PDF y a Documentos.
+			setDocsGenerated(false);
+			setGeneratedResults([]);
 			setGeneratedDoc(result.document || { title });
 		} else if ((result as any).limitInfo) {
 			setLimitErrorMessage(result.error || "Has alcanzado el límite de escritos para tu plan actual");
@@ -1124,7 +1264,7 @@ export default function CreatePostalDocumentModal({
 				<TextField
 					key={field.name}
 					label={field.label}
-					required={field.required}
+					required={false}
 					placeholder={field.placeholder}
 					multiline
 					rows={6}
@@ -1141,7 +1281,7 @@ export default function CreatePostalDocumentModal({
 				<TextField
 					key={field.name}
 					label={field.label}
-					required={field.required}
+					required={false}
 					type="date"
 					size="small"
 					fullWidth
@@ -1157,7 +1297,7 @@ export default function CreatePostalDocumentModal({
 				<TextField
 					key={field.name}
 					label={field.label}
-					required={field.required}
+					required={false}
 					select
 					size="small"
 					fullWidth
@@ -1388,17 +1528,6 @@ export default function CreatePostalDocumentModal({
 						sx={{ mb: 1.5 }}
 						noOptionsText="Sin coincidencias"
 					/>
-					<Stack spacing={1.5}>
-						{groupFieldsForRender(fields).map((item, i) =>
-							Array.isArray(item) ? (
-								<Stack key={i} direction="row" flexWrap="wrap" useFlexGap>
-									{item.map((f) => renderField(f))}
-								</Stack>
-							) : (
-								renderField(item)
-							),
-						)}
-					</Stack>
 				</Box>
 			);
 		}
@@ -1646,20 +1775,76 @@ export default function CreatePostalDocumentModal({
 								<TickCircle size={36} variant="Bulk" />
 							</Box>
 							<Typography sx={{ fontSize: "1.1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
-								¡Documento generado!
+								{!hasSecondStep ? "¡Documento generado!" : docsGenerated ? "¡Documentos generados!" : "¡Formulario generado!"}
 							</Typography>
 							{generatedDoc.title && (
 								<Typography sx={{ fontSize: "0.9rem", color: "text.primary", fontWeight: 500 }}>"{generatedDoc.title}"</Typography>
 							)}
-							<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", maxWidth: 420, textWrap: "pretty" }}>
-								Ya está disponible en <Box component="span" sx={{ fontWeight: 600, color: BRAND_BLUE }}>Documentos → Escritos</Box>. Podés verlo,
-								descargarlo o editarlo desde ahí cuando quieras.
+							<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", maxWidth: 440, textWrap: "pretty" }}>
+								{!hasSecondStep ? (
+									<>
+										Ya está disponible en{" "}
+										<Box component="span" sx={{ fontWeight: 600, color: BRAND_BLUE }}>
+											Documentos → Escritos
+										</Box>
+										. Podés verlo, descargarlo o editarlo desde ahí cuando quieras.
+									</>
+								) : docsGenerated ? (
+									<>
+										Tus documentos ya están en{" "}
+										<Box component="span" sx={{ fontWeight: 600, color: BRAND_BLUE }}>
+											Documentos → Escritos
+										</Box>
+										. Podés verlos, descargarlos o editarlos desde ahí.
+									</>
+								) : (
+									<>
+										El formulario quedó guardado. Ahora generá {(selectedTemplate?.generates?.length ?? 0) > 1 ? "los documentos" : "el documento"} con el botón de
+										abajo.
+									</>
+								)}
 							</Typography>
+							{docsGenerated && generatedResults.length > 0 && (
+								<Stack spacing={0.75} sx={{ width: "100%", maxWidth: 440, mt: 0.5 }}>
+									{generatedResults.map((d, i) => (
+										<Stack
+											key={`${d.name}-${i}`}
+											direction="row"
+											alignItems="center"
+											justifyContent="space-between"
+											sx={{
+												px: 1.5,
+												py: 1,
+												borderRadius: 1.25,
+												bgcolor: alpha(theme.palette.success.main, isDark ? 0.1 : 0.06),
+												border: `1px solid ${alpha(theme.palette.success.main, isDark ? 0.28 : 0.18)}`,
+											}}
+										>
+											<Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
+												<TickCircle size={16} variant="Bulk" color={theme.palette.success.main} style={{ flexShrink: 0 }} />
+												<Typography sx={{ fontSize: "0.82rem", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+													{d.name}
+												</Typography>
+											</Stack>
+											{d.url && (
+												<Button
+													size="small"
+													onClick={() => window.open(d.url, "_blank")}
+													startIcon={<DocumentDownload size={14} variant="Linear" />}
+													sx={{ textTransform: "none", fontSize: "0.72rem", color: BRAND_BLUE, flexShrink: 0, minWidth: 0 }}
+												>
+													Ver
+												</Button>
+											)}
+										</Stack>
+									))}
+								</Stack>
+							)}
 						</Stack>
 					)}
 
 					{/* Documentos de contexto para la IA (por generación) — sólo si el modelo tiene campos IA */}
-					{generatedDoc && selectedTemplate?.fillMethod === "docx-merge" && (selectedTemplate?.fields || []).some((f: any) => f.type === "ai-prompt") && (
+					{generatedDoc && !docsGenerated && selectedTemplate?.fillMethod === "docx-merge" && (selectedTemplate?.fields || []).some((f: any) => f.type === "ai-prompt") && (
 						<Box
 							sx={{
 								maxWidth: 520,
@@ -1850,7 +2035,20 @@ export default function CreatePostalDocumentModal({
 												fullWidth
 												onClick={() => {
 													const dev = DEV_FILL_DATA[selectedTemplate!.slug!];
-													setFormValues((prev) => ({ ...prev, ...dev.fields }));
+													// Empieza por los datos curados y completa TODO campo restante con un dummy por tipo.
+													const complete: Record<string, string> = { ...dev.fields };
+													for (const f of selectedTemplate!.fields || []) {
+														if (f.type === "ai-prompt" || f.type === "flow-section") continue;
+														if (complete[f.name] != null && complete[f.name] !== "") continue;
+														if (f.type === "checkbox") complete[f.name] = "X";
+														else if (f.type === "radio" || f.type === "select") complete[f.name] = f.options?.[0] || "Opción 1";
+														else if (/dni|cuit|doc|numero|matricula/i.test(f.name)) complete[f.name] = "30.123.456";
+														else if (/email/i.test(f.name)) complete[f.name] = "test@example.com";
+														else if (/telefono|celular/i.test(f.name)) complete[f.name] = "11 5555-5555";
+														else if (/fecha/i.test(f.name)) complete[f.name] = "01/07/2026";
+														else complete[f.name] = `[${f.label || f.name}]`;
+													}
+													setFormValues((prev) => ({ ...prev, ...complete }));
 													if (!title) setTitle(dev.title);
 												}}
 												sx={{
@@ -2172,24 +2370,30 @@ export default function CreatePostalDocumentModal({
 									{selectedTemplate?.fillMethod === "docx-merge" ? "Ver planilla" : "Ver PDF"}
 								</Button>
 							)}
-							{String(generatedDoc.templateSlug || "").startsWith("formulario_civil_") && (
+							{!docsGenerated && selectedTemplate?.fillMethod !== "docx-merge" && (selectedTemplate?.generates?.length ?? 0) > 0 && (
 								<Button
-									onClick={handleGenerateDemanda}
-									disabled={demandaLoading}
-									startIcon={demandaLoading ? <CircularProgress size={14} color="inherit" /> : <DocumentText size={16} variant="Linear" />}
-									sx={ghostBtnSx}
+									onClick={handleGenerateAll}
+									disabled={genLoadingSlug === "__all__"}
+									startIcon={
+										genLoadingSlug === "__all__" ? <CircularProgress size={14} sx={{ color: "#fff" }} /> : <DocumentText size={16} variant="Linear" />
+									}
+									sx={brandPrimarySx}
 								>
-									Generar demanda
+									{genLoadingSlug === "__all__" ? "Generando…" : `Generar documentos (${selectedTemplate?.generates?.length})`}
 								</Button>
 							)}
-							{selectedTemplate?.fillMethod === "docx-merge" && (
+							{!docsGenerated && selectedTemplate?.fillMethod === "docx-merge" && (
 								<Button
 									onClick={handleGenerateDocument}
 									disabled={demandaLoading}
 									startIcon={demandaLoading ? <CircularProgress size={14} sx={{ color: "#fff" }} /> : <DocumentText size={16} variant="Linear" />}
 									sx={brandPrimarySx}
 								>
-									{demandaLoading ? "Generando…" : "Generar documento"}
+									{demandaLoading
+										? "Generando…"
+										: (selectedTemplate?.generates?.length ?? 0) > 1
+											? `Generar documentos (${selectedTemplate?.generates?.length})`
+											: "Generar documento"}
 								</Button>
 							)}
 							<Button
@@ -2213,12 +2417,20 @@ export default function CreatePostalDocumentModal({
 								{preselectedTemplate ? "Cancelar" : "Volver"}
 							</Button>
 							<Button
+								onClick={handleSaveDraft}
+								disabled={savingDraft || !title.trim()}
+								startIcon={savingDraft ? <CircularProgress size={14} color="inherit" /> : <Save2 size={16} variant="Linear" />}
+								sx={ghostBtnSx}
+							>
+								{savingDraft ? "Guardando…" : "Guardar borrador"}
+							</Button>
+							<Button
 								onClick={handleSubmit}
 								disabled={generating || !title.trim()}
 								startIcon={generating ? <CircularProgress size={14} color="inherit" /> : undefined}
 								sx={brandPrimarySx}
 							>
-								Generar documento
+								{generating ? "Generando…" : hasSecondStep ? "Generar formulario" : "Generar documento"}
 							</Button>
 						</>
 					)}

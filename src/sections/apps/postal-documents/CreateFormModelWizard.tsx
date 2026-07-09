@@ -123,13 +123,16 @@ const CreateFormModelWizard = ({ open, onClose, onCreated, editTemplate }: Props
 	const [description, setDescription] = useState("");
 	const [category, setCategory] = useState("judicial");
 
-	const [docxName, setDocxName] = useState<string>("");
-	const [s3Key, setS3Key] = useState<string>("");
-	const [placeholders, setPlaceholders] = useState<string[]>([]);
+	// Documentos que genera el formulario (opcional; 0, 1 o varios).
+	const [documents, setDocuments] = useState<Array<{ name: string; s3Key: string; placeholders: string[] }>>([]);
 	const [parsing, setParsing] = useState(false);
 
 	const [fields, setFields] = useState<BuilderField[]>([]);
 	const [saving, setSaving] = useState(false);
+
+	// Placeholders agregados de TODOS los documentos (para el mapeo + validación).
+	const placeholders = useMemo(() => Array.from(new Set(documents.flatMap((d) => d.placeholders))), [documents]);
+	const hasDoc = documents.length > 0;
 
 	// Prefill al abrir en modo edición.
 	useEffect(() => {
@@ -139,16 +142,16 @@ const CreateFormModelWizard = ({ open, onClose, onCreated, editTemplate }: Props
 		setDescription(editTemplate.description || "");
 		setCategory(editTemplate.category || "otros");
 		setFields(toBuilderFields(editTemplate));
-		if (editTemplate.s3Key) {
-			setS3Key(editTemplate.s3Key);
-			setDocxName("Documento vinculado");
+		// Documentos desde generates[] (multi-doc). Retrocompat: si no traen placeholders, se re-extraen.
+		const gens = (editTemplate.generates || []).filter((g) => g.s3Key);
+		let docs = gens.map((g) => ({ name: g.name || "Documento", s3Key: g.s3Key as string, placeholders: g.docxPlaceholders || [] }));
+		if (!docs.length && editTemplate.s3Key) docs = [{ name: "Documento vinculado", s3Key: editTemplate.s3Key, placeholders: [] }];
+		setDocuments(docs);
+		// Single-doc viejo (generates sin docxPlaceholders): re-extraer del template.
+		if (docs.length === 1 && !docs[0].placeholders.length && editTemplate.s3Key) {
 			dispatch(getTemplatePlaceholders(editTemplate._id)).then((r) => {
-				if (r?.success) setPlaceholders(r.placeholders ?? []);
+				if (r?.success) setDocuments((prev) => prev.map((d, i) => (i === 0 ? { ...d, placeholders: r.placeholders ?? [] } : d)));
 			});
-		} else {
-			setS3Key("");
-			setDocxName("");
-			setPlaceholders([]);
 		}
 	}, [open, editTemplate]);
 
@@ -157,9 +160,7 @@ const CreateFormModelWizard = ({ open, onClose, onCreated, editTemplate }: Props
 		setName("");
 		setDescription("");
 		setCategory("judicial");
-		setDocxName("");
-		setS3Key("");
-		setPlaceholders([]);
+		setDocuments([]);
 		setFields([]);
 	};
 
@@ -183,22 +184,14 @@ const CreateFormModelWizard = ({ open, onClose, onCreated, editTemplate }: Props
 		setParsing(false);
 		if (res?.success) {
 			const phs = res.placeholders ?? [];
-			setDocxName(file.name);
-			setS3Key(res.s3Key ?? "");
-			setPlaceholders(phs);
-			snack(`Documento vinculado — ${phs.length} campos detectados`, "success");
+			setDocuments((prev) => [...prev, { name: file.name, s3Key: res.s3Key ?? "", placeholders: phs }]);
+			snack(`Documento agregado — ${phs.length} campos detectados`, "success");
 		} else {
 			snack(res?.error || "No se pudo procesar el documento");
 		}
 	};
 
-	const clearDoc = () => {
-		setDocxName("");
-		setS3Key("");
-		setPlaceholders([]);
-		// desvincula el mapeo de los campos
-		setFields((prev) => prev.map((f) => ({ ...f, docxField: "" })));
-	};
+	const removeDoc = (index: number) => setDocuments((prev) => prev.filter((_, i) => i !== index));
 
 	// crea un campo por cada placeholder detectado (auto-mapeado)
 	const autofillFromPlaceholders = () => {
@@ -232,10 +225,9 @@ const CreateFormModelWizard = ({ open, onClose, onCreated, editTemplate }: Props
 		const broken = fields.filter((f) => f.docxField && !phSet.has(f.docxField));
 		const unmappedFields = fields.filter((f) => !f.docxField);
 		const freePlaceholders = placeholders.filter((p) => !usedPh.has(p));
-		return { matched, broken, unmappedFields, freePlaceholders };
-	}, [fields, placeholders]);
-
-	const hasDoc = Boolean(s3Key);
+		const perDoc = documents.map((d) => ({ name: d.name, free: d.placeholders.filter((p) => !usedPh.has(p)) }));
+		return { matched, broken, unmappedFields, freePlaceholders, perDoc };
+	}, [fields, placeholders, documents]);
 
 	// ── Guardar ────────────────────────────────────────────────────────────────
 
@@ -271,9 +263,7 @@ const CreateFormModelWizard = ({ open, onClose, onCreated, editTemplate }: Props
 			name: name.trim(),
 			description: description.trim(),
 			category,
-			s3Key: s3Key || undefined,
-			docxName: docxName || undefined,
-			docxPlaceholders: placeholders,
+			documents: documents.map((d) => ({ name: d.name, s3Key: d.s3Key, docxPlaceholders: d.placeholders })),
 			fields: payloadFields,
 		};
 		setSaving(true);
@@ -417,7 +407,7 @@ const CreateFormModelWizard = ({ open, onClose, onCreated, editTemplate }: Props
 							))}
 						</TextField>
 
-						{/* Documento (opcional) */}
+						{/* Documentos que genera (opcional; 0, 1 o varios) */}
 						<Box
 							sx={{
 								mt: 0.5,
@@ -438,42 +428,59 @@ const CreateFormModelWizard = ({ open, onClose, onCreated, editTemplate }: Props
 									e.target.value = "";
 								}}
 							/>
-							{!hasDoc ? (
-								<Stack spacing={1.25} alignItems="flex-start">
-									<Stack direction="row" alignItems="center" spacing={1}>
-										<Typography sx={{ fontSize: "0.85rem", fontWeight: 600 }}>Documento modelo (.doc / .docx)</Typography>
-										<Chip label="Opcional" size="small" sx={{ height: 18, fontSize: "0.6rem", bgcolor: alpha(theme.palette.text.primary, 0.08) }} />
-									</Stack>
-									<Typography sx={{ fontSize: "0.75rem", color: "text.secondary" }}>
-										Subí tu Word con los campos entre corchetes, por ejemplo <code>[nombre del actor]</code>. Detectamos los campos automáticamente para
-										vincularlos. Si todavía no lo tenés, podés crear el formulario ahora y vincular el documento después.
-									</Typography>
-									<Button
-										onClick={() => fileRef.current?.click()}
-										disabled={parsing}
-										startIcon={parsing ? <CircularProgress size={14} sx={{ color: BRAND_BLUE }} /> : <DocumentUpload size={16} variant="Linear" />}
-										sx={ghostSx}
-										size="small"
-									>
-										{parsing ? "Procesando…" : "Subir documento"}
-									</Button>
-								</Stack>
-							) : (
-								<Stack direction="row" alignItems="center" justifyContent="space-between">
-									<Stack direction="row" alignItems="center" spacing={1.25}>
-										<TickCircle size={20} color={theme.palette.success.main} variant="Bulk" />
-										<Box>
-											<Typography sx={{ fontSize: "0.82rem", fontWeight: 600 }}>{docxName}</Typography>
-											<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>{placeholders.length} campos detectados en el documento</Typography>
-										</Box>
-									</Stack>
-									<Tooltip title="Quitar documento">
-										<IconButton onClick={clearDoc} size="small" sx={{ color: "text.secondary" }}>
-											<Trash size={16} variant="Linear" />
-										</IconButton>
-									</Tooltip>
+							<Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+								<Typography sx={{ fontSize: "0.85rem", fontWeight: 600 }}>Documentos que genera</Typography>
+								<Chip label="Opcional" size="small" sx={{ height: 18, fontSize: "0.6rem", bgcolor: alpha(theme.palette.text.primary, 0.08) }} />
+							</Stack>
+							<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", mb: 1.25 }}>
+								Subí uno o varios Word con los campos entre corchetes, por ejemplo <code>[nombre del actor]</code>. Se detectan solos y comparten los
+								campos del formulario. Podés crear el formulario sin documentos y vincularlos después.
+							</Typography>
+							{documents.length > 0 && (
+								<Stack spacing={0.75} sx={{ mb: 1.25 }}>
+									{documents.map((d, i) => (
+										<Stack
+											key={`${d.s3Key}-${i}`}
+											direction="row"
+											alignItems="center"
+											justifyContent="space-between"
+											sx={{
+												px: 1.25,
+												py: 0.75,
+												borderRadius: 1,
+												bgcolor: alpha(theme.palette.success.main, isDark ? 0.12 : 0.07),
+												border: `1px solid ${alpha(theme.palette.success.main, isDark ? 0.28 : 0.18)}`,
+											}}
+										>
+											<Stack direction="row" alignItems="center" spacing={1.25} sx={{ minWidth: 0 }}>
+												<TickCircle size={18} color={theme.palette.success.main} variant="Bulk" style={{ flexShrink: 0 }} />
+												<Box sx={{ minWidth: 0 }}>
+													<Typography sx={{ fontSize: "0.8rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+														{d.name}
+													</Typography>
+													<Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }}>
+														{d.placeholders.length} campo{d.placeholders.length !== 1 ? "s" : ""} detectado{d.placeholders.length !== 1 ? "s" : ""}
+													</Typography>
+												</Box>
+											</Stack>
+											<Tooltip title="Quitar documento">
+												<IconButton onClick={() => removeDoc(i)} size="small" sx={{ color: "text.secondary", flexShrink: 0 }}>
+													<Trash size={16} variant="Linear" />
+												</IconButton>
+											</Tooltip>
+										</Stack>
+									))}
 								</Stack>
 							)}
+							<Button
+								onClick={() => fileRef.current?.click()}
+								disabled={parsing}
+								startIcon={parsing ? <CircularProgress size={14} sx={{ color: BRAND_BLUE }} /> : <DocumentUpload size={16} variant="Linear" />}
+								sx={ghostSx}
+								size="small"
+							>
+								{parsing ? "Procesando…" : documents.length ? "Agregar otro documento" : "Agregar documento"}
+							</Button>
 						</Box>
 					</Stack>
 				)}
@@ -560,6 +567,30 @@ const CreateFormModelWizard = ({ open, onClose, onCreated, editTemplate }: Props
 										title={`${validation.freePlaceholders.length} placeholder${validation.freePlaceholders.length !== 1 ? "s" : ""} sin campo`}
 										detail={`Quedarán vacíos al generar: ${validation.freePlaceholders.map((p) => `[${p}]`).join(", ")}`}
 									/>
+								)}
+								{documents.length > 1 && (
+									<Box sx={{ mt: 0.5 }}>
+										<Typography sx={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "text.secondary", mb: 0.75 }}>
+											Por documento
+										</Typography>
+										<Stack spacing={0.625}>
+											{validation.perDoc.map((pd, i) => (
+												<Stack key={`${pd.name}-${i}`} direction="row" alignItems="flex-start" spacing={1}>
+													{pd.free.length === 0 ? (
+														<TickCircle size={15} variant="Bulk" color={theme.palette.success.main} style={{ flexShrink: 0, marginTop: 1 }} />
+													) : (
+														<Warning2 size={15} variant="Bulk" color="#E3A008" style={{ flexShrink: 0, marginTop: 1 }} />
+													)}
+													<Typography sx={{ fontSize: "0.75rem", color: "text.primary", textWrap: "pretty" }}>
+														<b>{pd.name}</b> —{" "}
+														{pd.free.length === 0
+															? "todos los campos vinculados"
+															: `${pd.free.length} sin vincular: ${pd.free.map((p) => `[${p}]`).join(", ")}`}
+													</Typography>
+												</Stack>
+											))}
+										</Stack>
+									</Box>
 								)}
 							</Stack>
 						)}

@@ -8,7 +8,6 @@ import {
 	Dialog,
 	DialogActions,
 	DialogContent,
-	DialogTitle,
 	Fab,
 	FormControl,
 	Grid,
@@ -41,6 +40,7 @@ import {
 	CloseSquare,
 	DocumentDownload,
 	DocumentText,
+	Edit,
 	Eye,
 	FolderOpen,
 	Printer,
@@ -57,7 +57,13 @@ import {
 	updateRichTextDocument,
 	previewRichTextDocument,
 } from "store/reducers/richTextDocuments";
-import { fetchPostalDocuments, deletePostalDocument, updatePostalDocument, previewPostalDocument } from "store/reducers/postalDocuments";
+import {
+	fetchPostalDocuments,
+	deletePostalDocument,
+	updatePostalDocument,
+	previewPostalDocument,
+	getPdfTemplate,
+} from "store/reducers/postalDocuments";
 import { createPostalTracking, fetchAllTrackings, updatePostalTracking } from "store/reducers/postalTracking";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
@@ -73,9 +79,59 @@ import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 const VALID_CODE_IDS = [
-	"CC", "CD", "CL", "CM", "CO", "CP", "DE", "DI", "EC", "EE", "EO", "EP", "GC", "GD", "GE", "GF", "GO", "GR", "GS",
-	"HC", "HD", "HE", "HO", "HU", "HX", "IN", "IS", "JP", "LC", "LS", "ND", "MD", "ME", "MC", "MS", "MU", "MX", "OL",
-	"PC", "PP", "RD", "RE", "RP", "RR", "SD", "SL", "SP", "SR", "ST", "TC", "TD", "TL", "UP",
+	"CC",
+	"CD",
+	"CL",
+	"CM",
+	"CO",
+	"CP",
+	"DE",
+	"DI",
+	"EC",
+	"EE",
+	"EO",
+	"EP",
+	"GC",
+	"GD",
+	"GE",
+	"GF",
+	"GO",
+	"GR",
+	"GS",
+	"HC",
+	"HD",
+	"HE",
+	"HO",
+	"HU",
+	"HX",
+	"IN",
+	"IS",
+	"JP",
+	"LC",
+	"LS",
+	"ND",
+	"MD",
+	"ME",
+	"MC",
+	"MS",
+	"MU",
+	"MX",
+	"OL",
+	"PC",
+	"PP",
+	"RD",
+	"RE",
+	"RP",
+	"RR",
+	"SD",
+	"SL",
+	"SP",
+	"SR",
+	"ST",
+	"TC",
+	"TD",
+	"TL",
+	"UP",
 ];
 
 const TRACKING_SLUGS = ["telegrama_laboral"];
@@ -194,9 +250,7 @@ const BrandPill = ({ color, label, dot = true }: { color: string; label: string;
 			}}
 		>
 			{dot && <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: color }} />}
-			<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color, letterSpacing: "0.01em", lineHeight: 1 }}>
-				{label}
-			</Typography>
+			<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color, letterSpacing: "0.01em", lineHeight: 1 }}>{label}</Typography>
 		</Box>
 	);
 };
@@ -246,9 +300,7 @@ const TypePill = ({ docKind }: { docKind?: "formulario" | "documento" }) => {
 			}}
 		>
 			<Icon size={11} variant="Linear" />
-			<Typography sx={{ fontSize: "0.66rem", fontWeight: 600, color, letterSpacing: "0.01em", lineHeight: 1 }}>
-				{label}
-			</Typography>
+			<Typography sx={{ fontSize: "0.66rem", fontWeight: 600, color, letterSpacing: "0.01em", lineHeight: 1 }}>{label}</Typography>
 		</Box>
 	);
 };
@@ -276,7 +328,6 @@ const TrackingMicroPill = () => {
 		</Box>
 	);
 };
-
 
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 
@@ -408,7 +459,18 @@ const useBrandStyles = () => {
 		borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 	};
 
-	return { brandPrimaryButtonSx, ghostCancelSx, iconBtnSx, iconBtnDestructiveSx, tableSx, dialogPaperSx, inputSx, menuPaperSx, dialogHeaderSx, isDark };
+	return {
+		brandPrimaryButtonSx,
+		ghostCancelSx,
+		iconBtnSx,
+		iconBtnDestructiveSx,
+		tableSx,
+		dialogPaperSx,
+		inputSx,
+		menuPaperSx,
+		dialogHeaderSx,
+		isDark,
+	};
 };
 
 // ── Dialog header atmosférico reusable ─────────────────────────────────────────
@@ -665,9 +727,7 @@ const TemplatePickerDialog = ({ open, onClose }: TemplatePickerDialogProps) => {
 											borderRadius: 1.25,
 											cursor: "pointer",
 											bgcolor: isSelected ? alpha(BRAND_BLUE, isDark ? 0.14 : 0.06) : "background.paper",
-											border: `1px solid ${
-												isSelected ? alpha(BRAND_BLUE, 0.55) : alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)
-											}`,
+											border: `1px solid ${isSelected ? alpha(BRAND_BLUE, 0.55) : alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`,
 											transition: "border-color 0.15s ease, background-color 0.15s ease",
 											"&:hover": {
 												borderColor: alpha(BRAND_BLUE, isSelected ? 0.65 : 0.32),
@@ -691,10 +751,7 @@ const TemplatePickerDialog = ({ open, onClose }: TemplatePickerDialogProps) => {
 													<BrandPill color={BRAND_BLUE} label={CATEGORY_LABELS[tpl.category]} dot={false} />
 												</Stack>
 												{tpl.description && (
-													<Typography
-														sx={{ fontSize: "0.75rem", color: "text.secondary", letterSpacing: "-0.005em" }}
-														noWrap
-													>
+													<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", letterSpacing: "-0.005em" }} noWrap>
 														{tpl.description}
 													</Typography>
 												)}
@@ -755,7 +812,6 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 	const trackings: PostalTrackingType[] = useSelector((state: any) => state.postalTrackingReducer?.allTrackings || []);
 	const userId = useSelector((state: any) => state.auth?.user?._id);
 	const { brandPrimaryButtonSx, ghostCancelSx, inputSx, dialogPaperSx, isDark } = useBrandStyles();
-	const theme = useTheme();
 
 	const isPostal = docRow?.kind === "postal";
 	const supportsTracking = isPostal && Boolean(docRow?.supportsTracking);
@@ -938,9 +994,7 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 								<Box component="li" {...props} key={f._id}>
 									<Stack>
 										<Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{f.folderName}</Typography>
-										{f.folderFuero && (
-											<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>{f.folderFuero}</Typography>
-										)}
+										{f.folderFuero && <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>{f.folderFuero}</Typography>}
 									</Stack>
 								</Box>
 							)}
@@ -1055,9 +1109,7 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 														<Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>
 															{t.codeId} {t.numberId}
 														</Typography>
-														{t.label && (
-															<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>{t.label}</Typography>
-														)}
+														{t.label && <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>{t.label}</Typography>}
 													</Stack>
 												</Box>
 											)}
@@ -1184,12 +1236,7 @@ const PostalDetailDialog = ({ open, doc, onClose }: PostalDetailDialogProps) => 
 
 			<DialogContent sx={{ p: 0 }}>
 				<Grid container sx={{ height: 480 }}>
-					<Grid
-						item
-						xs={12}
-						md={8}
-						sx={{ height: "100%", borderRight: { md: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` } }}
-					>
+					<Grid item xs={12} md={8} sx={{ height: "100%", borderRight: { md: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` } }}>
 						{urlLoading ? (
 							<Stack alignItems="center" justifyContent="center" sx={{ height: "100%" }}>
 								<CircularProgress size={28} sx={{ color: BRAND_BLUE }} />
@@ -1237,11 +1284,7 @@ const PostalDetailDialog = ({ open, doc, onClose }: PostalDetailDialogProps) => 
 					Cerrar
 				</Button>
 				{freshUrl && (
-					<Button
-						onClick={() => window.open(freshUrl, "_blank")}
-						startIcon={<Printer size={16} variant="Linear" />}
-						sx={ghostCancelSx}
-					>
+					<Button onClick={() => window.open(freshUrl, "_blank")} startIcon={<Printer size={16} variant="Linear" />} sx={ghostCancelSx}>
 						Imprimir (PDF)
 					</Button>
 				)}
@@ -1307,10 +1350,14 @@ const DeleteDialog = ({ open, title, loading, onConfirm, onClose }: DeleteDialog
 						<Trash size={26} variant="Bulk" />
 					</Box>
 					<Stack spacing={1} alignItems="center">
-						<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary", textAlign: "center" }}>
+						<Typography
+							sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary", textAlign: "center" }}
+						>
 							¿Eliminar este documento?
 						</Typography>
-						<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", letterSpacing: "-0.005em", textAlign: "center", textWrap: "pretty" }}>
+						<Typography
+							sx={{ fontSize: "0.85rem", color: "text.secondary", letterSpacing: "-0.005em", textAlign: "center", textWrap: "pretty" }}
+						>
 							Vas a eliminar{" "}
 							<Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
 								"{title}"
@@ -1365,7 +1412,9 @@ const HeaderStat = ({ label, value, tone = "primary" }: { label: string; value: 
 				minWidth: 86,
 			}}
 		>
-			<Typography sx={{ fontSize: "0.58rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
+			<Typography
+				sx={{ fontSize: "0.58rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}
+			>
 				{label}
 			</Typography>
 			<Typography
@@ -1398,6 +1447,12 @@ const EscritosPage = () => {
 	const [page, setPage] = useState(1);
 	const [newDocMenuAnchor, setNewDocMenuAnchor] = useState<null | HTMLElement>(null);
 	const [openCreatePostal, setOpenCreatePostal] = useState(false);
+	// Retomar un borrador: template + datos del doc para reabrir el modal de llenado.
+	const [resumeData, setResumeData] = useState<{
+		template: any;
+		doc: { _id: string; title?: string; description?: string; formData?: Record<string, string> };
+	} | null>(null);
+	const [continuing, setContinuing] = useState(false);
 	const [openTemplatePicker, setOpenTemplatePicker] = useState(false);
 	const [postalDetail, setPostalDetail] = useState<PostalDocumentType | null>(null);
 	const [vincularRow, setVincularRow] = useState<DocRow | null>(null);
@@ -1483,6 +1538,27 @@ const EscritosPage = () => {
 	};
 
 	// "Imprimir": abre el PDF del documento (convertido si el original es .docx, o TipTap→PDF si es del editor).
+	const handleContinue = async (row: DocRow) => {
+		const d = row.rawPostal;
+		if (!d || !row.templateSlug) return;
+		setContinuing(true);
+		const res: any = await dispatch(getPdfTemplate(row.templateSlug) as any);
+		setContinuing(false);
+		if (res?.success && res.template) {
+			setResumeData({
+				template: res.template,
+				doc: {
+					_id: row.id,
+					title: d.title,
+					description: (d as any).description,
+					formData: ((d as any).formData as Record<string, string>) || {},
+				},
+			});
+		} else {
+			showSnackbar("No se pudo cargar el formulario del borrador", "error");
+		}
+	};
+
 	const handlePrint = async (row: DocRow) => {
 		const res: any =
 			row.kind === "richtext"
@@ -1900,25 +1976,33 @@ const EscritosPage = () => {
 
 										<Stack direction="row" spacing={0.25} sx={{ p: 0.75, justifyContent: "flex-end" }}>
 											{isPostal ? (
-												<>
-													<Tooltip title="Ver documento">
-														<IconButton sx={iconBtnSx} onClick={() => setPostalDetail(row.rawPostal!)}>
-															<Eye size={16} variant="Linear" />
+												row.status === "draft" ? (
+													<Tooltip title="Continuar el borrador">
+														<IconButton sx={iconBtnSx} onClick={() => handleContinue(row)} disabled={continuing}>
+															<Edit size={16} variant="Linear" />
 														</IconButton>
 													</Tooltip>
-													{row.documentUrl && (
-														<Tooltip title="Descargar">
-															<IconButton sx={iconBtnSx} onClick={() => window.open(row.documentUrl, "_blank")}>
-																<DocumentDownload size={16} variant="Linear" />
+												) : (
+													<>
+														<Tooltip title="Ver documento">
+															<IconButton sx={iconBtnSx} onClick={() => setPostalDetail(row.rawPostal!)}>
+																<Eye size={16} variant="Linear" />
 															</IconButton>
 														</Tooltip>
-													)}
-													<Tooltip title="Imprimir (PDF)">
-														<IconButton sx={iconBtnSx} onClick={() => handlePrint(row)}>
-															<Printer size={16} variant="Linear" />
-														</IconButton>
-													</Tooltip>
-												</>
+														{row.documentUrl && (
+															<Tooltip title="Descargar">
+																<IconButton sx={iconBtnSx} onClick={() => window.open(row.documentUrl, "_blank")}>
+																	<DocumentDownload size={16} variant="Linear" />
+																</IconButton>
+															</Tooltip>
+														)}
+														<Tooltip title="Imprimir (PDF)">
+															<IconButton sx={iconBtnSx} onClick={() => handlePrint(row)}>
+																<Printer size={16} variant="Linear" />
+															</IconButton>
+														</Tooltip>
+													</>
+												)
 											) : (
 												<>
 													<Tooltip title="Ver / Editar">
@@ -2006,7 +2090,11 @@ const EscritosPage = () => {
 														>
 															{row.title}
 														</Typography>
-														{hasTracking && <Box sx={{ alignSelf: "flex-start" }}><TrackingMicroPill /></Box>}
+														{hasTracking && (
+															<Box sx={{ alignSelf: "flex-start" }}>
+																<TrackingMicroPill />
+															</Box>
+														)}
 													</Stack>
 												</TableCell>
 												<TableCell>
@@ -2055,29 +2143,45 @@ const EscritosPage = () => {
 												<TableCell align="right">
 													<Stack direction="row" spacing={0.25} justifyContent="flex-end">
 														{isPostal ? (
-															<>
-																<Tooltip title="Ver documento">
-																	<IconButton sx={iconBtnSx} onClick={() => setPostalDetail(row.rawPostal!)} data-testid="escritos-row-view-btn">
-																		<Eye size={16} variant="Linear" />
+															row.status === "draft" ? (
+																<Tooltip title="Continuar el borrador">
+																	<IconButton sx={iconBtnSx} onClick={() => handleContinue(row)} disabled={continuing}>
+																		<Edit size={16} variant="Linear" />
 																	</IconButton>
 																</Tooltip>
-																{row.documentUrl && (
-																	<Tooltip title="Descargar">
-																		<IconButton sx={iconBtnSx} onClick={() => window.open(row.documentUrl, "_blank")}>
-																			<DocumentDownload size={16} variant="Linear" />
+															) : (
+																<>
+																	<Tooltip title="Ver documento">
+																		<IconButton
+																			sx={iconBtnSx}
+																			onClick={() => setPostalDetail(row.rawPostal!)}
+																			data-testid="escritos-row-view-btn"
+																		>
+																			<Eye size={16} variant="Linear" />
 																		</IconButton>
 																	</Tooltip>
-																)}
-																<Tooltip title="Imprimir (PDF)">
-																	<IconButton sx={iconBtnSx} onClick={() => handlePrint(row)}>
-																		<Printer size={16} variant="Linear" />
-																	</IconButton>
-																</Tooltip>
-															</>
+																	{row.documentUrl && (
+																		<Tooltip title="Descargar">
+																			<IconButton sx={iconBtnSx} onClick={() => window.open(row.documentUrl, "_blank")}>
+																				<DocumentDownload size={16} variant="Linear" />
+																			</IconButton>
+																		</Tooltip>
+																	)}
+																	<Tooltip title="Imprimir (PDF)">
+																		<IconButton sx={iconBtnSx} onClick={() => handlePrint(row)}>
+																			<Printer size={16} variant="Linear" />
+																		</IconButton>
+																	</Tooltip>
+																</>
+															)
 														) : (
 															<>
 																<Tooltip title="Ver / Editar">
-																	<IconButton sx={iconBtnSx} onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)} data-testid="escritos-edit-btn">
+																	<IconButton
+																		sx={iconBtnSx}
+																		onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)}
+																		data-testid="escritos-edit-btn"
+																	>
 																		<Eye size={16} variant="Linear" />
 																	</IconButton>
 																</Tooltip>
@@ -2094,7 +2198,11 @@ const EscritosPage = () => {
 															</IconButton>
 														</Tooltip>
 														<Tooltip title="Eliminar">
-															<IconButton sx={iconBtnDestructiveSx} onClick={() => setDeleteTarget({ kind: row.kind, id: row.id, title: row.title })} data-testid="escritos-delete-btn">
+															<IconButton
+																sx={iconBtnDestructiveSx}
+																onClick={() => setDeleteTarget({ kind: row.kind, id: row.id, title: row.title })}
+																data-testid="escritos-delete-btn"
+															>
 																<Trash size={16} variant="Linear" />
 															</IconButton>
 														</Tooltip>
@@ -2108,7 +2216,6 @@ const EscritosPage = () => {
 						</Table>
 					</TableContainer>
 				)}
-
 
 				{/* Pagination */}
 				{totalPages > 1 && (
@@ -2129,7 +2236,6 @@ const EscritosPage = () => {
 						/>
 					</Box>
 				)}
-
 			</MainCard>
 
 			{/* Modals */}
@@ -2161,9 +2267,12 @@ const EscritosPage = () => {
 			/>
 
 			<CreatePostalDocumentModal
-				open={openCreatePostal}
+				open={openCreatePostal || Boolean(resumeData)}
+				preselectedTemplate={resumeData?.template || null}
+				resumeDoc={resumeData?.doc || null}
 				handleClose={() => {
 					setOpenCreatePostal(false);
+					setResumeData(null);
 					refreshDocuments();
 					setPage(1);
 				}}

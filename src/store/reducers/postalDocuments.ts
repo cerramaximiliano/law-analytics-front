@@ -134,6 +134,7 @@ export interface UserTemplatePayload {
 	s3Key?: string;
 	docxName?: string;
 	docxPlaceholders?: string[];
+	documents?: Array<{ name: string; s3Key: string; docxPlaceholders: string[] }>;
 	fields: Array<Record<string, unknown>>;
 }
 
@@ -208,6 +209,27 @@ export const createPostalDocument =
 		}
 	};
 
+// Guarda el formulario como BORRADOR (sin generar). Crea uno nuevo o actualiza (docId).
+export const saveDraft =
+	(data: {
+		docId?: string;
+		pdfTemplateId: string;
+		title: string;
+		description?: string;
+		formData: Record<string, string>;
+		linkedFolderId?: string | null;
+		linkedTrackingId?: string | null;
+	}) =>
+	async (_dispatch: Dispatch) => {
+		try {
+			const res = await axios.post(`${BASE_URL}/draft`, data);
+			return { success: true, document: res.data.document };
+		} catch (error: unknown) {
+			const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al guardar el borrador" : "Error al guardar el borrador";
+			return { success: false, error: msg };
+		}
+	};
+
 // Genera la demanda (.docx) a partir de un documento del formulario civil.
 export const generateDemanda = (id: string) => async (_dispatch: Dispatch) => {
 	try {
@@ -215,6 +237,17 @@ export const generateDemanda = (id: string) => async (_dispatch: Dispatch) => {
 		return { success: true, url: res.data?.data?.url as string, missing: (res.data?.data?.missing || []) as string[] };
 	} catch (error: unknown) {
 		const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al generar la demanda" : "Error al generar la demanda";
+		return { success: false, error: msg };
+	}
+};
+
+// Genera la "Planilla de Inicio de Causas" (overlay PDF) desde el formulario civil de Augusto.
+export const generatePlanilla = (id: string) => async (_dispatch: Dispatch) => {
+	try {
+		const res = await axios.post(`${BASE_URL}/${id}/generate-planilla`);
+		return { success: true, url: res.data?.data?.url as string };
+	} catch (error: unknown) {
+		const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al generar la planilla" : "Error al generar la planilla";
 		return { success: false, error: msg };
 	}
 };
@@ -230,7 +263,12 @@ export const generateDocument = (id: string, contextFiles?: File[]) => async (_d
 		} else {
 			res = await axios.post(`${BASE_URL}/${id}/generate-document`);
 		}
-		return { success: true, url: res.data?.data?.url as string, documentId: res.data?.data?.documentId as string };
+		return {
+			success: true,
+			url: res.data?.data?.url as string,
+			documentId: res.data?.data?.documentId as string,
+			count: (res.data?.data?.count as number) || 1,
+		};
 	} catch (error: unknown) {
 		const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al generar el documento" : "Error al generar el documento";
 		return { success: false, error: msg };

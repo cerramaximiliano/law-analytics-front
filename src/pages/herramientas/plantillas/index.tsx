@@ -441,38 +441,51 @@ const ModelCard = ({ template, onPreview, onUse, onPreviewGenerated, onEdit, onD
 	const isDocxMerge = template.fillMethod === "docx-merge";
 	const needsDoc = isDocxMerge && !template.s3Key;
 	// Placeholders del documento que ningún campo del formulario mapea (mapeo incompleto).
+	// Placeholders de TODOS los documentos vinculados (multi-doc): unión de generates[].docxPlaceholders
+	// (fallback al docxPlaceholders del template para modelos single-doc viejos).
+	const allDocPlaceholders = isDocxMerge
+		? (() => {
+				const fromGenerates = (template.generates || []).flatMap((g) => g.docxPlaceholders || []);
+				return Array.from(new Set(fromGenerates.length ? fromGenerates : template.docxPlaceholders || []));
+		  })()
+		: [];
 	const freePlaceholders =
-		isDocxMerge && template.s3Key && template.docxPlaceholders?.length
+		isDocxMerge && template.s3Key
 			? (() => {
 					const mapped = new Set((template.fields || []).map((f) => f.docxField).filter(Boolean));
-					return template.docxPlaceholders.filter((p) => !mapped.has(p));
+					return allDocPlaceholders.filter((p) => !mapped.has(p));
 			  })()
 			: [];
 	const isSystem = template.source === "system" || template.isPublic || !template.userId;
 	// Estado de vinculación (solo aplica a formularios docx-merge que generan un .docx).
-	const generatesDoc = Boolean(template.generates && template.generates.length > 0);
-	// docx-merge: estado según el mapeo de placeholders. Overlay que genera un documento
-	// (ej. la demanda de Augusto, mapeo hardcodeado): siempre ✓. Otros (PDF sin salida): sin badge.
-	const linkStatus: "ok" | "warn" | "missing" | null = isDocxMerge
-		? !template.s3Key
-			? "missing"
-			: freePlaceholders.length > 0
-				? "warn"
-				: "ok"
-		: generatesDoc
-			? "ok"
-			: null;
+	// Estado agregado sobre TODOS los documentos vinculados (generates[]).
+	// docx-merge: según el mapeo de placeholders. Overlay: chequea que cada documento tenga su archivo.
+	const linkedDocs = template.generates || [];
+	const anyDocMissing = isDocxMerge ? !template.s3Key : linkedDocs.some((g) => !g.s3Key);
+	const linkStatus: "ok" | "warn" | "missing" | null = anyDocMissing
+		? "missing"
+		: isDocxMerge && freePlaceholders.length > 0
+			? "warn"
+			: isDocxMerge
+				? "ok"
+				: linkedDocs.length > 0
+					? "ok"
+					: null;
 	const statusTooltip =
 		linkStatus === "ok"
 			? isDocxMerge
 				? "Documento vinculado · mapeo completo"
-				: "Genera un documento vinculado"
+				: `${linkedDocs.length} documento${linkedDocs.length !== 1 ? "s" : ""} vinculado${linkedDocs.length !== 1 ? "s" : ""} · listo${
+						linkedDocs.length !== 1 ? "s" : ""
+				  } para generar`
 			: linkStatus === "warn"
 				? `Mapeo incompleto — ${freePlaceholders.length} campo${freePlaceholders.length !== 1 ? "s" : ""} del documento sin vincular: ${freePlaceholders
 						.map((p) => `[${p}]`)
 						.join(", ")}`
 				: linkStatus === "missing"
-					? "Sin documento vinculado — vinculá un .docx para generar el escrito"
+					? isDocxMerge
+						? "Sin documento vinculado — vinculá un .docx para generar el escrito"
+						: "Falta el archivo de alguno de los documentos vinculados"
 					: undefined;
 	return (
 		<Box

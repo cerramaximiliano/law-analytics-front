@@ -41,7 +41,7 @@ export interface PdfTemplate {
 	fillMethod?: "acroform" | "overlay" | "docx-merge";
 	userId?: string;
 	visibility?: "all" | "development" | "production" | "none";
-	generates?: Array<{ slug: string; name: string; kind: string }>;
+	generates?: Array<{ slug: string; name: string; kind: string; s3Key?: string; docxPlaceholders?: string[] }>;
 	docxPlaceholders?: string[];
 	fillConfig: { flatten: boolean };
 	previewUrl?: string;
