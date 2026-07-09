@@ -434,6 +434,47 @@ const DEV_FILL_DATA: Record<string, { title: string; fields: Record<string, stri
 	},
 };
 
+// ── Validación de obligatorios para GENERAR ──────────────────────────────────
+// El borrador solo requiere título; GENERAR exige los campos obligatorios del modelo.
+// Devuelve la lista de rótulos faltantes (vacío = se puede generar).
+function getMissingRequired(template: PdfTemplate | null, values: Record<string, string>): string[] {
+	if (!template) return [];
+	const has = (k: string) => !!(values[k] || "").trim();
+	const missing: string[] = [];
+	const slug = template.slug || "";
+	if (slug.startsWith("formulario_civil_")) {
+		if (!has("actor_nombre_apellido")) missing.push("Actor: nombre y apellido");
+		if (!has("actor_dni")) missing.push("Actor: DNI");
+		if (!has("dem_conductor") && !has("dem_titular") && !has("dem_asegurado")) missing.push("Al menos un demandado (conductor, titular o asegurado)");
+		if (!has("hecho_lugar")) missing.push("Hecho: lugar");
+		if (!has("hecho_fecha")) missing.push("Hecho: fecha");
+		if (!has("monto_reclamado")) missing.push("Monto reclamado");
+		if (!has("abogado_nombre")) missing.push("Abogado: nombre");
+		if (!has("abogado_tomo")) missing.push("Abogado: tomo");
+		if (!has("abogado_folio")) missing.push("Abogado: folio");
+		if (!has("abogado_pad")) missing.push("Abogado: P/A/D");
+		if (!has("objeto_codigo")) missing.push("Objeto del juicio");
+		return missing;
+	}
+	if (slug === "planilla_inicio_civil") {
+		if (!has("objeto_codigo")) missing.push("Objeto del juicio");
+		if (!has("abogado_nombre")) missing.push("Abogado: nombre");
+		if (!has("abogado_tomo")) missing.push("Abogado: tomo");
+		if (!has("abogado_folio")) missing.push("Abogado: folio");
+		if (!has("abogado_pad")) missing.push("Abogado: P/A/D");
+		if (!has("monto_cod")) missing.push("Monto: código");
+		if (!has("monto_valor")) missing.push("Monto: valor");
+		if (!has("actor1_nombre")) missing.push("Al menos un actor");
+		if (!has("demandado1_nombre")) missing.push("Al menos un demandado");
+		return missing;
+	}
+	// Genérico: cualquier campo con required:true en el template.
+	for (const f of template.fields || []) {
+		if (f.required && f.type !== "ai-prompt" && f.type !== "flow-section" && !has(f.name)) missing.push(f.label || f.name);
+	}
+	return missing;
+}
+
 // ── Mapeo contactos (sin cambios) ────────────────────────────────────────────
 
 function contactToFormValues(contact: Contact, group: ContactGroupKey): Record<string, string> {
@@ -509,10 +550,31 @@ function contact_nationality(c: Contact): string {
 }
 
 /** Parsea Tomo/Folio de un registrationNumber tipo "T123 F456", "T° 123 F° 456" o "123/456". */
+// Extrae Tomo y Folio de la matrícula guardada como string. Regla: primer número = Tomo,
+// segundo número = Folio. Cubre "Tº109Fº47", "Tomo 109 Folio 47", "Tomo109, Folio47", "109/47", etc.
 function parseTomoFolio(reg?: string): { tomo: string; folio: string } {
 	if (!reg) return { tomo: "", folio: "" };
-	const m = reg.match(/T[°º.\s]*(\d+)\s*F[°º.\s]*(\d+)/i) || reg.match(/^(\d+)\s*\/\s*(\d+)$/);
-	return m ? { tomo: m[1], folio: m[2] } : { tomo: "", folio: "" };
+	const s = String(reg);
+	// Patrón explícito T…(número)…F…(número) (prioridad: evita tomar un número suelto previo).
+	const tf = s.match(/T[^\d]*(\d+)[^\d]*?F[^\d]*(\d+)/i);
+	if (tf) return { tomo: tf[1], folio: tf[2] };
+	// Fallback: los primeros dos grupos de números en orden.
+	const nums = s.match(/\d+/g);
+	if (nums && nums.length >= 2) return { tomo: nums[0], folio: nums[1] };
+	if (nums && nums.length === 1) return { tomo: nums[0], folio: "" };
+	return { tomo: "", folio: "" };
+}
+
+// Nombre exacto del colegio para el fuero nacional (matrícula usada en estos formularios).
+const CPACF_NAME = "Colegio Público de Abogados de la Capital Federal";
+
+// Extrae los datos del abogado desde el perfil, matcheando la matrícula del CPACF (fuero nacional).
+function getAbogadoFromProfile(user: any): { nombre: string; tomo: string; folio: string; cpacfFound: boolean } {
+	const skills = Array.isArray(user?.skill) ? user.skill : [];
+	const cpacf = skills.find((s: any) => s?.name === CPACF_NAME);
+	const { tomo, folio } = parseTomoFolio(cpacf?.registrationNumber);
+	const nombre = `${user?.lastName || ""}${user?.lastName ? ", " : ""}${user?.firstName || user?.name || ""}`.trim();
+	return { nombre, tomo, folio, cpacfFound: !!cpacf };
 }
 
 /** Rol de parte de un contacto para la Planilla: 'actor' | 'demandado' | null. */
@@ -699,6 +761,8 @@ export default function CreatePostalDocumentModal({
 	// Paso 2 completado: los documentos finales ya se generaron → cambia el mensaje de la pantalla de resultado.
 	const [docsGenerated, setDocsGenerated] = useState(false);
 	const [generatedResults, setGeneratedResults] = useState<Array<{ name: string; url?: string }>>([]);
+	// Modal de ayuda cuando faltan datos del abogado en el perfil (nombre y/o matrícula del CPACF).
+	const [abogadoHelp, setAbogadoHelp] = useState<{ open: boolean; name: boolean; matricula: boolean }>({ open: false, name: false, matricula: false });
 
 	// Genera la demanda (.docx) desde un documento del formulario civil recién generado.
 	// Un solo botón genera TODOS los documentos vinculados (generates[]), despachando por slug.
@@ -763,6 +827,9 @@ export default function CreatePostalDocumentModal({
 	// Flujo de 2 pasos: paso 1 genera "el formulario", paso 2 (pantalla de resultado) genera los documentos.
 	// Aplica a docx-merge (self-service) y a formularios overlay que declaran generates[] (ej. civil de Augusto).
 	const hasSecondStep = selectedTemplate?.fillMethod === "docx-merge" || (selectedTemplate?.generates?.length ?? 0) > 0;
+	// Obligatorios para GENERAR (el borrador solo necesita título).
+	const missingRequired = getMissingRequired(selectedTemplate, formValues);
+	const canGenerate = title.trim().length > 0 && missingRequired.length === 0;
 	const [description, setDescription] = useState("");
 	const [generating, setGenerating] = useState(false);
 	// Borrador en curso: si está seteado, "Guardar borrador" actualiza ese doc y al generar se finaliza.
@@ -804,16 +871,15 @@ export default function CreatePostalDocumentModal({
 	const [limitErrorMessage, setLimitErrorMessage] = useState("");
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
 
-	// Prefill del letrado (perfil) + objeto del juicio (editables) — formulario civil de Augusto.
+	// Prefill del letrado (perfil, matrícula CPACF) + objeto del juicio (editables) — formulario civil de Augusto.
 	useEffect(() => {
 		if (!selectedTemplate || !String(selectedTemplate.slug || "").startsWith("formulario_civil_")) return;
-		const nombre =
-			user?.lastName || user?.firstName
-				? `${user?.lastName || ""}${user?.lastName && user?.firstName ? ", " : ""}${user?.firstName || ""}`.trim()
-				: (user as any)?.name || "";
+		const { nombre, tomo, folio } = getAbogadoFromProfile(user);
 		setFormValues((prev) => {
 			const next = { ...prev };
 			if (nombre && !prev.abogado_nombre) next.abogado_nombre = nombre;
+			if (tomo && !prev.abogado_tomo) next.abogado_tomo = tomo;
+			if (folio && !prev.abogado_folio) next.abogado_folio = folio;
 			// Objeto por defecto: código 257 = "DAÑOS Y PERJUICIOS" (tabla CPACF). Editable desde el select.
 			if (!prev.objeto_codigo) {
 				next.objeto_codigo = "257";
@@ -953,16 +1019,17 @@ export default function CreatePostalDocumentModal({
 	// ── Planilla Civil: autocompletado v1 (abogado + actores + demandados) ────────
 
 	const applyUserToAbogado = () => {
-		if (!user) return;
-		const skill = user.skill?.[0];
-		const fullName = `${user.lastName || ""}${user.lastName ? ", " : ""}${user.firstName || user.name || ""}`.trim();
-		const { tomo, folio } = parseTomoFolio(skill?.registrationNumber);
+		const { nombre, tomo, folio, cpacfFound } = getAbogadoFromProfile(user);
 		setFormValues((prev) => ({
 			...prev,
-			abogado_nombre: fullName,
-			abogado_tomo: tomo,
-			abogado_folio: folio,
+			...(nombre ? { abogado_nombre: nombre } : {}),
+			...(tomo ? { abogado_tomo: tomo } : {}),
+			...(folio ? { abogado_folio: folio } : {}),
 		}));
+		// Si falta el nombre y/o la matrícula del CPACF, guiar al usuario a cargarlos en el perfil.
+		const missingName = !nombre;
+		const missingMatricula = !cpacfFound || (!tomo && !folio);
+		if (missingName || missingMatricula) setAbogadoHelp({ open: true, name: missingName, matricula: missingMatricula });
 	};
 
 	// Cuántas filas admite el template para un base dado (data-driven, sin hardcodear).
@@ -1264,7 +1331,7 @@ export default function CreatePostalDocumentModal({
 				<TextField
 					key={field.name}
 					label={field.label}
-					required={false}
+					required={field.required}
 					placeholder={field.placeholder}
 					multiline
 					rows={6}
@@ -1281,7 +1348,7 @@ export default function CreatePostalDocumentModal({
 				<TextField
 					key={field.name}
 					label={field.label}
-					required={false}
+					required={field.required}
 					type="date"
 					size="small"
 					fullWidth
@@ -1297,7 +1364,7 @@ export default function CreatePostalDocumentModal({
 				<TextField
 					key={field.name}
 					label={field.label}
-					required={false}
+					required={field.required}
 					select
 					size="small"
 					fullWidth
@@ -1532,8 +1599,8 @@ export default function CreatePostalDocumentModal({
 			);
 		}
 
-		// Planilla Civil — Abogados: botón "Mis datos" (perfil profesional → nombre + T°/F°)
-		if (groupKey === "Abogados") {
+		// Abogados / Datos del letrado: botón "Mis datos" (perfil profesional CPACF → nombre + T°/F°)
+		if (groupKey === "Abogados" || groupKey === "Datos del letrado") {
 			return (
 				<Box key={groupKey}>
 					{groupHeader(
@@ -2424,14 +2491,27 @@ export default function CreatePostalDocumentModal({
 							>
 								{savingDraft ? "Guardando…" : "Guardar borrador"}
 							</Button>
-							<Button
-								onClick={handleSubmit}
-								disabled={generating || !title.trim()}
-								startIcon={generating ? <CircularProgress size={14} color="inherit" /> : undefined}
-								sx={brandPrimarySx}
+							<Tooltip
+								title={
+									!title.trim()
+										? "Poné un título"
+										: missingRequired.length > 0
+											? `Faltan campos obligatorios: ${missingRequired.join(", ")}`
+											: ""
+								}
+								arrow
 							>
-								{generating ? "Generando…" : hasSecondStep ? "Generar formulario" : "Generar documento"}
-							</Button>
+								<Box component="span" sx={{ display: "inline-flex" }}>
+									<Button
+										onClick={handleSubmit}
+										disabled={generating || !canGenerate}
+										startIcon={generating ? <CircularProgress size={14} color="inherit" /> : undefined}
+										sx={brandPrimarySx}
+									>
+										{generating ? "Generando…" : hasSecondStep ? "Generar formulario" : "Generar documento"}
+									</Button>
+								</Box>
+							</Tooltip>
 						</>
 					)}
 				</DialogActions>
@@ -2572,6 +2652,110 @@ export default function CreatePostalDocumentModal({
 						sx={brandPrimarySx}
 					>
 						Guardar contacto
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			{/* Ayuda: cómo cargar los datos del abogado (nombre y/o matrícula CPACF) en el perfil */}
+			<Dialog
+				open={abogadoHelp.open}
+				onClose={() => setAbogadoHelp((h) => ({ ...h, open: false }))}
+				maxWidth="xs"
+				fullWidth
+				PaperProps={{ sx: dialogPaperSx }}
+			>
+				<Box
+					sx={{
+						position: "relative",
+						overflow: "hidden",
+						p: { xs: 2.25, sm: 2.5 },
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+						borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+					}}
+				>
+					<Stack direction="row" alignItems="center" spacing={1.5}>
+						<Box
+							sx={{
+								width: 40,
+								height: 40,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+							}}
+						>
+							<Profile2User size={20} variant="Bulk" />
+						</Box>
+						<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+							{abogadoHelp.name && abogadoHelp.matricula ? "Completá tus datos" : abogadoHelp.name ? "Cargá tu nombre" : "Cargá tu matrícula"}
+						</Typography>
+					</Stack>
+				</Box>
+				<DialogContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+					<Stack spacing={1.75}>
+						<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", textWrap: "pretty" }}>
+							Para completar los datos del abogado con un clic, cargá {abogadoHelp.name && abogadoHelp.matricula ? "estos datos" : "este dato"} en tu
+							perfil:
+						</Typography>
+						{abogadoHelp.name && (
+							<Box
+								sx={{
+									p: 1.5,
+									borderRadius: 1.25,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.03),
+								}}
+							>
+								<Typography sx={{ fontSize: "0.8rem", fontWeight: 600, color: "text.primary", mb: 0.25 }}>Nombre y apellido</Typography>
+								<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", textWrap: "pretty" }}>
+									En{" "}
+									<Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
+										Perfil → Usuario → Información Personal
+									</Box>
+									, cargá tu nombre y apellido.
+								</Typography>
+							</Box>
+						)}
+						{abogadoHelp.matricula && (
+							<Box
+								sx={{
+									p: 1.5,
+									borderRadius: 1.25,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.03),
+								}}
+							>
+								<Typography sx={{ fontSize: "0.8rem", fontWeight: 600, color: "text.primary", mb: 0.25 }}>Matrícula (fuero nacional)</Typography>
+								<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", textWrap: "pretty" }}>
+									En{" "}
+									<Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
+										Perfil → Usuario → Información Profesional
+									</Box>
+									, agregá el “Colegio Público de Abogados de la Capital Federal” y cargá tu matrícula (por ejemplo Tº 109 Fº 47).
+								</Typography>
+							</Box>
+						)}
+						<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", textWrap: "pretty" }}>
+							Una vez guardado, el botón “Mis datos” lo completará automáticamente. Mientras tanto, podés escribirlo a mano.
+						</Typography>
+					</Stack>
+				</DialogContent>
+				<DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
+					<Button onClick={() => setAbogadoHelp((h) => ({ ...h, open: false }))} sx={ghostBtnSx}>
+						Cerrar
+					</Button>
+					<Button
+						onClick={() => {
+							setAbogadoHelp((h) => ({ ...h, open: false }));
+							navigate(abogadoHelp.matricula ? "/apps/profiles/user/professional" : "/apps/profiles/user/personal");
+						}}
+						startIcon={<Profile2User size={16} variant="Linear" />}
+						sx={brandPrimarySx}
+					>
+						Ir a mi perfil
 					</Button>
 				</DialogActions>
 			</Dialog>
