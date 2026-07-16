@@ -21,7 +21,7 @@ import {
 	Typography,
 	useTheme,
 } from "@mui/material";
-import { DocumentUpload, Trash } from "iconsax-react";
+import { CloseSquare, DocumentUpload, Trash } from "iconsax-react";
 import { PopupTransition } from "components/@extended/Transitions";
 import { PostalTrackingType } from "types/postal-tracking";
 import { dispatch } from "store";
@@ -127,9 +127,15 @@ const PostalTrackingDetail = ({ open, tracking, loading, handleClose }: Props) =
 							</Typography>
 						)}
 					</Stack>
-					<Box sx={{ bgcolor: "#FFCE00", borderRadius: 1, px: 1, py: 0.5, display: "flex", alignItems: "center" }}>
-						<Box component="img" src={CORREO_LOGO} alt="Correo Argentino" sx={{ height: 28, width: "auto" }} />
-					</Box>
+					<Stack direction="row" alignItems="center" spacing={1}>
+						<Box sx={{ bgcolor: "#FFCE00", borderRadius: 1, px: 1, py: 0.5, display: "flex", alignItems: "center" }}>
+							<Box component="img" src={CORREO_LOGO} alt="Correo Argentino" sx={{ height: 28, width: "auto" }} />
+						</Box>
+						{/* Cierre explícito — mismo patrón que los demás modals (X CloseSquare en el header). */}
+						<IconButton onClick={handleClose} aria-label="cerrar" size="small" sx={{ color: "text.secondary" }}>
+							<CloseSquare size={20} variant="Linear" />
+						</IconButton>
+					</Stack>
 				</Stack>
 
 				{tracking && (
