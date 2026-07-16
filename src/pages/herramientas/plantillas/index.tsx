@@ -512,7 +512,12 @@ const ModelCard = ({ template, onPreview, onUse, onPreviewGenerated, onEdit, onD
 					</Typography>
 				)}
 				<Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap" useFlexGap>
-					<Pill label={template.category} tone="primary" />
+					{/* Tags data-driven del template (jurisdicción/fuero); fallback a la categoría. */}
+					{template.tags && template.tags.length > 0 ? (
+						template.tags.map((tag, i) => <Pill key={tag} label={tag} tone={i === 0 ? "primary" : "neutral"} />)
+					) : (
+						<Pill label={template.category} tone="primary" />
+					)}
 					<Stack direction="row" alignItems="center" spacing={0.5}>
 						<DocumentText size={13} color={theme.palette.text.secondary} variant="Linear" />
 						<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
@@ -1125,7 +1130,12 @@ const ModelosPage = () => {
 		.filter((t) => {
 			if (!pdfSearch.trim()) return true;
 			const q = pdfSearch.toLowerCase();
-			return t.name.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q) || t.category?.toLowerCase().includes(q);
+			return (
+				t.name.toLowerCase().includes(q) ||
+				t.description?.toLowerCase().includes(q) ||
+				t.category?.toLowerCase().includes(q) ||
+				t.tags?.some((tag) => tag.toLowerCase().includes(q))
+			);
 		});
 
 	const filteredRtTemplates = rtTemplates.filter((t) => {

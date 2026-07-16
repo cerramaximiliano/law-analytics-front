@@ -31,6 +31,8 @@ export interface PdfTemplate {
 	slug: string;
 	description: string;
 	category: string;
+	// Etiquetas de clasificación data-driven (jurisdicción, fuero, ley) que la card muestra como pills.
+	tags?: string[];
 	s3Key: string;
 	fields: PdfTemplateField[];
 	isActive: boolean;
