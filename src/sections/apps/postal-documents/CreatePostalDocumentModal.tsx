@@ -43,9 +43,32 @@ import { getFoldersByUserId } from "store/reducers/folder";
 import { PdfTemplate, PdfTemplateField } from "types/postal-document";
 import { Contact } from "types/contact";
 import { OBJETOS_JUICIO_CIVIL, ObjetoJuicio } from "data/objetosJuicioCivil";
+import { OBJETOS_JUICIO_CIVCOMFED } from "data/objetosJuicioCivComFed";
+import { OBJETOS_JUICIO_TRABAJO } from "data/objetosJuicioTrabajo";
+import { OBJETOS_JUICIO_COMERCIAL } from "data/objetosJuicioComercial";
+import { OBJETOS_JUICIO_CONADMFED } from "data/objetosJuicioConAdmFed";
+import { MATERIAS_SCBA_CIVIL_COMERCIAL } from "data/materiasScbaCivilComercial";
+import { MATERIAS_SCBA_LABORAL } from "data/materiasScbaLaboral";
+import { MATERIAS_SCBA_CONTENCIOSO } from "data/materiasScbaContencioso";
 import { FolderData } from "types/folder";
 import { PostalTrackingType } from "types/postal-tracking";
 import { BRAND_BLUE, STALE_AMBER } from "themes/dashboardTokens";
+
+// Nomenclador de objetos de juicio según el fuero de cada modelo de sistema.
+const OBJETOS_JUICIO_BY_SLUG: Record<string, ObjetoJuicio[]> = {
+	planilla_inicio_civil: OBJETOS_JUICIO_CIVIL,
+	formulario_ingreso_demandas_ccf: OBJETOS_JUICIO_CIVCOMFED,
+	formulario_inicio_laboral_anexo2: OBJETOS_JUICIO_TRABAJO,
+	formulario_inicio_comercial: OBJETOS_JUICIO_COMERCIAL,
+	formulario_inicio_conadmfed: OBJETOS_JUICIO_CONADMFED,
+};
+
+// SCBA Ley 13.951: la materia depende del fuero marcado en el propio formulario.
+const MATERIAS_SCBA_BY_FUERO: { field: string; label: string; materias: ObjetoJuicio[] }[] = [
+	{ field: "fuero_civil_comercial", label: "Civil y Comercial", materias: MATERIAS_SCBA_CIVIL_COMERCIAL },
+	{ field: "fuero_laboral", label: "Laboral", materias: MATERIAS_SCBA_LABORAL },
+	{ field: "fuero_contencioso", label: "Contencioso Administrativo", materias: MATERIAS_SCBA_CONTENCIOSO },
+];
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -95,7 +118,17 @@ const RADIO_OPTION_LABELS: Record<string, string> = {
 
 const CONTACT_GROUPS: ContactGroupKey[] = ["destinatario", "remitente", "poderdante"];
 
-const EXCLUSIVE_CHECKBOX_PAIRS: [string, string][] = [["suscribe_sexo_f", "suscribe_sexo_m"]];
+const EXCLUSIVE_CHECKBOX_PAIRS: string[][] = [
+	["suscribe_sexo_f", "suscribe_sexo_m"],
+	["mediacion_ley26589", "mediacion_promesa"],
+	["tasa_abonar", "tasa_exento", "tasa_no_alcanzado", "tasa_pago_diferido"],
+	// SCBA demandados / inicio: tipo de persona F/J/O por fila
+	...[1, 2, 3, 4].map((n) => [`demandado${n}_tipo_f`, `demandado${n}_tipo_j`, `demandado${n}_tipo_o`]),
+	...[1, 2].map((n) => [`actor${n}_tipo_f`, `actor${n}_tipo_j`, `actor${n}_tipo_o`]),
+	// SCBA inicio (Ley 13.951): fuero y casillero (10)
+	["fuero_civil_comercial", "fuero_laboral", "fuero_contencioso"],
+	["prorroga_jurisdiccion", "beneficio_litigar", "tasa_justicia"],
+];
 
 // Datos de prueba del Formulario Civil (compartido por las copias por-usuario).
 const FORMULARIO_CIVIL_FILL = {
@@ -285,6 +318,15 @@ const DEV_FILL_DATA: Record<string, { title: string; fields: Record<string, stri
 			actor2_tipo_doc: "DNI",
 			actor2_numero: "32.987.654",
 			actor2_nacionalidad: "Argentina",
+			// Filas 3-6 cubiertas para verificar todos los renglones.
+			...Object.fromEntries(
+				Array.from({ length: 4 }, (_, i) => i + 3).flatMap((n) => [
+					[`actor${n}_nombre`, `ACTOR DE PRUEBA ${n} — RENGLÓN ${n}`],
+					[`actor${n}_tipo_doc`, "DNI"],
+					[`actor${n}_numero`, `${String(20 + n)}.111.${String(100 + n)}`],
+					[`actor${n}_nacionalidad`, "Argentina"],
+				]),
+			),
 			demandado1_nombre: "EMPRESA S.A.",
 			demandado1_tipo_doc: "CUIT",
 			demandado1_numero: "30-71234567-8",
@@ -293,6 +335,15 @@ const DEV_FILL_DATA: Record<string, { title: string; fields: Record<string, stri
 			demandado2_tipo_doc: "CUIT",
 			demandado2_numero: "30-65432198-2",
 			demandado2_nacionalidad: "Argentina",
+			// Filas 3-7 cubiertas para verificar todos los renglones.
+			...Object.fromEntries(
+				Array.from({ length: 5 }, (_, i) => i + 3).flatMap((n) => [
+					[`demandado${n}_nombre`, `DEMANDADO DE PRUEBA ${n} S.A. — RENGLÓN ${n}`],
+					[`demandado${n}_tipo_doc`, "CUIT"],
+					[`demandado${n}_numero`, `30-7000000${n}-5`],
+					[`demandado${n}_nacionalidad`, "Argentina"],
+				]),
+			),
 			exhorto_nro_exp: "9876/24",
 			exhorto_fecha_dia: "01",
 			exhorto_fecha_mes: "07",
@@ -303,6 +354,291 @@ const DEV_FILL_DATA: Record<string, { title: string; fields: Record<string, stri
 			fecha_formulario_dia: "01",
 			fecha_formulario_mes: "07",
 			fecha_formulario_anio: "2026",
+		},
+	},
+	formulario_ingreso_demandas_ccf: {
+		title: "Test CCF — Pérez c/ Obra Social Unión Personal",
+		fields: {
+			objeto_codigo: "304",
+			objeto_descripcion: "AMPARO DE SALUD",
+			abogado1_pa: "P",
+			abogado1_tomo: "101",
+			abogado1_folio: "543",
+			abogado1_nombre: "PÉREZ, María Laura",
+			abogado1_cuit: "27-28765432-1",
+			abogado2_pa: "A",
+			abogado2_tomo: "98",
+			abogado2_folio: "222",
+			abogado2_nombre: "GÓMEZ, Carlos Alberto",
+			abogado2_cuit: "20-22333444-5",
+			judicial_juzgado: "7",
+			judicial_secretaria: "14",
+			judicial_expte_anio: "4521/2024",
+			judicial_caratula: "PÉREZ, JUAN C/ OBRA SOCIAL UNIÓN PERSONAL S/ AMPARO DE SALUD",
+			admin_organismo: "SSSalud",
+			admin_exp_principal: "EX-2024-12345678-APN — PÉREZ JUAN S/ RECLAMO PRESTACIONAL",
+			admin_incidente: "INC-2024-555 — MEDIDA CAUTELAR",
+			admin_resolucion: "RESOL-2024-99-APN",
+			actor1_nombre: "PÉREZ, Juan Carlos",
+			actor1_dni: "20-30123456-7",
+			actor2_nombre: "PÉREZ, Ana María",
+			actor2_dni: "27-32987654-3",
+			actor3_nombre: "PÉREZ, Lucía Beatriz",
+			actor3_dni: "23-35111222-4",
+			actor4_nombre: "SUCESIÓN DE PÉREZ, ROBERTO",
+			actor4_dni: "20-08123456-1",
+			demandado1_nombre: "OBRA SOCIAL UNIÓN PERSONAL",
+			demandado1_dni: "30-54666554-9",
+			demandado2_nombre: "ESTADO NACIONAL — MINISTERIO DE SALUD",
+			demandado2_dni: "30-54666023-8",
+			demandado3_nombre: "SWISS MEDICAL S.A.",
+			demandado3_dni: "30-65485264-5",
+			demandado4_nombre: "GALENO ARGENTINA S.A.",
+			demandado4_dni: "30-68626371-9",
+			mediacion_numero: "8877",
+			mediacion_anio: "2025",
+			mediacion_ley26589: "X",
+			mediacion_promesa: "",
+			monto_moneda: "PESOS",
+			monto_importe: "15.000.000",
+			tasa_abonar: "",
+			tasa_exento: "X",
+			tasa_no_alcanzado: "",
+			tasa_pago_diferido: "",
+			fecha_formulario: "01/07/2026",
+		},
+	},
+	formulario_inicio_laboral_anexo2: {
+		title: "Test Anexo II Laboral — Espinosa c/ Cervecería Quilmes",
+		fields: {
+			// Todas las filas cubiertas para verificar cada renglón del formulario.
+			...Object.fromEntries(
+				Array.from({ length: 20 }, (_, i) => i + 1).flatMap((n) => [
+					[`actor${n}_poder`, String(n)],
+					[`actor${n}_nombre`, `ACTOR DE PRUEBA ${n} — RENGLÓN ${n}`],
+					[`actor${n}_dni`, `${String(20 + n)}.111.${String(100 + n)}`],
+				]),
+			),
+			actor1_poder: "1",
+			actor1_nombre: "ESPINOSA MARIA PAULA",
+			actor1_dni: "25.805.121",
+			...Object.fromEntries(
+				Array.from({ length: 9 }, (_, i) => i + 1).flatMap((n) => [
+					[`demandado${n}_nombre`, `DEMANDADO DE PRUEBA ${n} S.A. CUIT 30-7000000${n}-5 — RENGLÓN ${n}`],
+					[`demandado${n}_domicilio`, `CALLE DE PRUEBA ${n * 100}, PISO ${n}, CABA — RENGLÓN ${n}`],
+				]),
+			),
+			demandado1_nombre: "CERVECERÍA Y MALTERÍA QUILMES S.A.I.C.A. y G. CUIT 33-50835825-9",
+			demandado1_domicilio: "12 DE OCTUBRE 100, QUILMES (B1878AAB), BUENOS AIRES",
+			patrocinante_nombre: "PÉREZ, María Laura",
+			patrocinante_tomo: "109",
+			patrocinante_folio: "47",
+			patrocinante_matricula: "CPACF",
+			apoderado_nombre: "GÓMEZ, Carlos Alberto",
+			apoderado_tomo: "98",
+			apoderado_folio: "222",
+			apoderado_matricula: "CPACF",
+			objeto_codigo: "1A",
+			monto: "26.099.921,84",
+			previno_juzgado: "15",
+			expte_nro: "4521/2026",
+			domicilio_actora: "Av. CALLAO 1103 2º A, CABA",
+		},
+	},
+	formulario_inicio_comercial: {
+		title: "Test Comercial — Pérez c/ Distribuidora del Plata",
+		fields: {
+			objeto_codigo: "13",
+			objeto_descripcion: "CONCURSO PREVENTIVO",
+			abogado1_pa: "P",
+			abogado1_tomo: "109",
+			abogado1_folio: "47",
+			abogado1_nombre: "PÉREZ, María Laura",
+			abogado1_cuit: "27-28765432-1",
+			abogado2_pa: "A",
+			abogado2_tomo: "98",
+			abogado2_folio: "222",
+			abogado2_nombre: "GÓMEZ, Carlos Alberto",
+			abogado2_cuit: "20-22333444-5",
+			monto_moneda: "A",
+			monto_importe: "15.000.000",
+			// Todas las filas cubiertas para verificar cada renglón.
+			...Object.fromEntries(
+				Array.from({ length: 7 }, (_, i) => i + 1).flatMap((n) => [
+					[`actor${n}_nombre`, `ACTOR DE PRUEBA ${n} — RENGLÓN ${n}`],
+					[`actor${n}_tipo_doc`, "DU"],
+					[`actor${n}_numero`, `${String(20 + n)}.111.${String(100 + n)}`],
+					[`actor${n}_cuit`, `20-${String(20 + n)}111${String(100 + n)}-3`],
+				]),
+			),
+			actor1_nombre: "PÉREZ, Juan Carlos",
+			actor1_numero: "30.123.456",
+			actor1_cuit: "20-30123456-7",
+			...Object.fromEntries(
+				Array.from({ length: 4 }, (_, i) => i + 1).flatMap((n) => [
+					[`demandado${n}_nombre`, `DEMANDADO DE PRUEBA ${n} S.A. — RENGLÓN ${n}`],
+					[`demandado${n}_cuit`, `30-7000000${n}-5`],
+				]),
+			),
+			demandado1_nombre: "DISTRIBUIDORA DEL PLATA S.A.",
+			demandado1_cuit: "30-71234567-8",
+			mediacion_numero: "8877",
+			mediacion_anio: "2025",
+			fecha_formulario: "01/07/2026",
+		},
+	},
+	formulario_inicio_conadmfed: {
+		title: "Test ConAdmFed — Pérez c/ Estado Nacional",
+		fields: {
+			tasa_abonar: "",
+			tasa_exento: "X",
+			tasa_no_alcanzado: "",
+			tasa_pago_diferido: "",
+			objeto_codigo: "3",
+			objeto_descripcion: "EMPLEO PUBLICO",
+			...Object.fromEntries(
+				Array.from({ length: 3 }, (_, i) => i + 1).flatMap((n) => [
+					[`abogado${n}_nombre`, `ABOGADO DE PRUEBA ${n}`],
+					[`abogado${n}_pa`, n === 1 ? "P" : "A"],
+					[`abogado${n}_tomo`, `10${n}`],
+					[`abogado${n}_folio`, `4${n}`],
+					[`abogado${n}_cuit`, `20-1112223${n}-4`],
+				]),
+			),
+			abogado1_nombre: "PÉREZ, María Laura",
+			expediente_caratula: "PÉREZ C/ EN-M INTERIOR S/ EMPLEO PÚBLICO",
+			expediente_nro: "4521/2025",
+			sala_juzgado: "JUZG. 7",
+			monto_moneda: "A",
+			monto_importe: "15.000.000",
+			// 12 bloques de actores completos para verificar cada campo de cada bloque.
+			...Object.fromEntries(
+				Array.from({ length: 12 }, (_, i) => i + 1).flatMap((n) => [
+					[`actor${n}_nombre`, `ACTOR DE PRUEBA ${n} — BLOQUE ${n}`],
+					[`actor${n}_igj`, n % 3 === 0 ? `IGJ ${1000 + n}` : ""],
+					[`actor${n}_tipo_doc`, "DNI"],
+					[`actor${n}_numero`, `${String(20 + n)}.111.${String(100 + n)}`],
+					[`actor${n}_cuit`, `20-${String(20 + n)}111${String(100 + n)}-3`],
+					[`actor${n}_apellido_materno`, `MATERNO ${n}`],
+					[`actor${n}_dd_calle`, `CALLE DENUNCIADA ${n * 100}`],
+					[`actor${n}_dd_piso`, String(n)],
+					[`actor${n}_dd_dto`, "A"],
+					[`actor${n}_dd_cp`, `10${String(40 + n)}`],
+					[`actor${n}_dd_ciudad`, "CABA"],
+					[`actor${n}_dd_provincia`, "BUENOS AIRES"],
+					[`actor${n}_dc_calle`, `CALLE CONSTITUIDA ${n * 100}`],
+					[`actor${n}_dc_piso`, String(n)],
+					[`actor${n}_dc_dto`, "B"],
+					[`actor${n}_dc_cp`, `10${String(40 + n)}`],
+				]),
+			),
+			actor1_nombre: "PÉREZ, Juan Carlos",
+			...Object.fromEntries(
+				Array.from({ length: 4 }, (_, i) => i + 1).map((n) => [`demandado${n}_nombre`, `ESTADO NACIONAL — DEMANDADO ${n} — RENGLÓN ${n}`]),
+			),
+			fecha_formulario: "01/07/2026",
+		},
+	},
+	formulario_inicio_scba: {
+		title: "Test SCBA Inicio 13951 — González c/ Transportes La Costa",
+		fields: {
+			receptoria_departamento: "Depto. Judicial La Plata",
+			urgente: "X",
+			sortear_mediador: "X",
+			fuero_civil_comercial: "X",
+			fuero_laboral: "",
+			fuero_contencioso: "",
+			materia_codigo: "100",
+			actores_cantidad: "2",
+			demandados_cantidad: "2",
+			formularios_adicionales: "1",
+			actor1_tipo_f: "X",
+			actor1_tipo_j: "",
+			actor1_tipo_o: "",
+			actor1_tipo_doc: "D.N.I.",
+			actor1_numero: "30.123.456",
+			actor1_nombre: "GONZÁLEZ DE PÉREZ, MARÍA LAURA",
+			actor2_tipo_f: "",
+			actor2_tipo_j: "X",
+			actor2_tipo_o: "",
+			actor2_tipo_doc: "S.A.",
+			actor2_numero: "30-71234567-8",
+			actor2_nombre: "EMPRESA ACTORA S.A.",
+			demandado1_tipo_f: "",
+			demandado1_tipo_j: "X",
+			demandado1_tipo_o: "",
+			demandado1_tipo_doc: "S.R.L.",
+			demandado1_numero: "30-99887766-1",
+			demandado1_nombre: "TRANSPORTES LA COSTA S.R.L.",
+			demandado2_tipo_f: "",
+			demandado2_tipo_j: "",
+			demandado2_tipo_o: "X",
+			demandado2_tipo_doc: "S. del Edo.",
+			demandado2_numero: "30-54666554-9",
+			demandado2_nombre: "FISCO DE LA PROVINCIA DE BUENOS AIRES",
+			prorroga_jurisdiccion: "",
+			beneficio_litigar: "X",
+			tasa_justicia: "",
+			asignacion1_juzgado: "5",
+			asignacion1_causa_anio: "4521/24",
+			asignacion1_caratula: "PÉREZ C/ TRANSPORTES S/ DAÑOS — RENGLÓN 1",
+			asignacion1_cod_materia: "100",
+			asignacion2_juzgado: "7",
+			asignacion2_causa_anio: "881/23",
+			asignacion2_caratula: "SEGUNDA ASIGNACIÓN DE PRUEBA — RENGLÓN 2",
+			asignacion2_cod_materia: "96",
+			asignacion3_juzgado: "2",
+			asignacion3_causa_anio: "15/22",
+			asignacion3_caratula: "TERCERA ASIGNACIÓN DE PRUEBA — RENGLÓN 3",
+			asignacion3_cod_materia: "80",
+			monto_juicio: "15.000.000",
+			localidad: "LA PLATA",
+			partido: "LA PLATA",
+			complemento_caratula: "DAÑOS Y PERJUICIOS — ACCIDENTE DE TRÁNSITO",
+			observaciones: "OBSERVACIONES DE PRUEBA DEL FORMULARIO",
+			abogado1_cuit: "27-28765432-1",
+			abogado1_jurisdiccion: "6 - La Plata",
+			abogado1_nombre: "PÉREZ, María Laura",
+			abogado2_cuit: "20-22333444-5",
+			abogado2_jurisdiccion: "13 - Quilmes",
+			abogado2_nombre: "GÓMEZ, Carlos Alberto",
+			organo_denominacion: "DEFENSORÍA CIVIL N° 3 DE LA PLATA",
+			organo_numero: "3",
+		},
+	},
+	formulario_demandados_scba: {
+		title: "Test SCBA Demandados — González c/ Empresa del Sur",
+		fields: {
+			receptoria_departamento: "LA PLATA",
+			nro_causa: "123456",
+			anio: "2026",
+			fuero: "Civil y Comercial",
+			juzgado_tribunal: "5",
+			demandado1_tipo_f: "X",
+			demandado1_tipo_j: "",
+			demandado1_tipo_o: "",
+			demandado1_tipo_doc: "D.N.I.",
+			demandado1_numero_doc: "30.123.456",
+			demandado1_nombre: "GONZÁLEZ DE PÉREZ, MARÍA LAURA",
+			demandado2_tipo_f: "",
+			demandado2_tipo_j: "X",
+			demandado2_tipo_o: "",
+			demandado2_tipo_doc: "S.A.",
+			demandado2_numero_doc: "30-71234567-8",
+			demandado2_nombre: "EMPRESA CONSTRUCTORA DEL SUR S.A.",
+			demandado3_tipo_f: "",
+			demandado3_tipo_j: "X",
+			demandado3_tipo_o: "",
+			demandado3_tipo_doc: "S.R.L.",
+			demandado3_numero_doc: "30-99887766-1",
+			demandado3_nombre: "TRANSPORTES LA COSTA S.R.L.",
+			demandado4_tipo_f: "",
+			demandado4_tipo_j: "",
+			demandado4_tipo_o: "X",
+			demandado4_tipo_doc: "S. del Edo.",
+			demandado4_numero_doc: "30-54666554-9",
+			demandado4_nombre: "FISCO DE LA PROVINCIA DE BUENOS AIRES",
+			cantidad_demandados: "4",
 		},
 	},
 	carta_poder_srt: {
@@ -541,6 +877,21 @@ function contactsToRowValues(contacts: Contact[], prefix: string, maxRows: numbe
 		out[`${prefix}${n}_tipo_doc`] = tipo;
 		out[`${prefix}${n}_numero`] = numero;
 		out[`${prefix}${n}_nacionalidad`] = c ? contact_nationality(c) : "";
+		// Variante CCF: una sola columna de documento (actorN_dni / demandadoN_dni).
+		out[`${prefix}${n}_dni`] = numero;
+		// Variante SCBA demandados: N° de doc/CUIT + checkboxes de tipo de persona (F/J).
+		out[`${prefix}${n}_numero_doc`] = numero;
+		out[`${prefix}${n}_tipo_f`] = c ? (c.type === "Jurídica" ? "" : "X") : "";
+		out[`${prefix}${n}_tipo_j`] = c && c.type === "Jurídica" ? "X" : "";
+		out[`${prefix}${n}_tipo_o`] = "";
+		// Variante Anexo II laboral: domicilio del demandado.
+		out[`${prefix}${n}_domicilio`] = c?.address || "";
+		// Variante Comercial: CUIT/CUIL en columna propia (además del documento).
+		out[`${prefix}${n}_cuit`] = c?.cuit || "";
+		// Variante ConAdmFed: domicilio denunciado (calle/ciudad/provincia del contacto).
+		out[`${prefix}${n}_dd_calle`] = c?.address || "";
+		out[`${prefix}${n}_dd_ciudad`] = c?.city || "";
+		out[`${prefix}${n}_dd_provincia`] = c?.state || "";
 	}
 	return out;
 }
@@ -569,12 +920,13 @@ function parseTomoFolio(reg?: string): { tomo: string; folio: string } {
 const CPACF_NAME = "Colegio Público de Abogados de la Capital Federal";
 
 // Extrae los datos del abogado desde el perfil, matcheando la matrícula del CPACF (fuero nacional).
-function getAbogadoFromProfile(user: any): { nombre: string; tomo: string; folio: string; cpacfFound: boolean } {
+function getAbogadoFromProfile(user: any): { nombre: string; tomo: string; folio: string; cuit: string; cpacfFound: boolean } {
 	const skills = Array.isArray(user?.skill) ? user.skill : [];
 	const cpacf = skills.find((s: any) => s?.name === CPACF_NAME);
 	const { tomo, folio } = parseTomoFolio(cpacf?.registrationNumber);
 	const nombre = `${user?.lastName || ""}${user?.lastName ? ", " : ""}${user?.firstName || user?.name || ""}`.trim();
-	return { nombre, tomo, folio, cpacfFound: !!cpacf };
+	const cuit = String(cpacf?.taxCode || skills.find((s: any) => s?.taxCode)?.taxCode || "");
+	return { nombre, tomo, folio, cuit, cpacfFound: !!cpacf };
 }
 
 /** Rol de parte de un contacto para la Planilla: 'actor' | 'demandado' | null. */
@@ -1019,14 +1371,33 @@ export default function CreatePostalDocumentModal({
 	// ── Planilla Civil: autocompletado v1 (abogado + actores + demandados) ────────
 
 	const applyUserToAbogado = () => {
+		const { nombre, tomo, folio, cuit, cpacfFound } = getAbogadoFromProfile(user);
+		// Prefijo según el template: filas numeradas (abogado1_*, CCF) o campos planos (abogado_*, Planilla Civil).
+		const fieldNames = new Set((selectedTemplate?.fields || []).map((f) => f.name));
+		const p = fieldNames.has("abogado1_nombre") ? "abogado1_" : "abogado_";
+		setFormValues((prev) => ({
+			...prev,
+			...(nombre ? { [`${p}nombre`]: nombre } : {}),
+			...(tomo ? { [`${p}tomo`]: tomo } : {}),
+			...(folio ? { [`${p}folio`]: folio } : {}),
+			...(cuit && fieldNames.has(`${p}cuit`) ? { [`${p}cuit`]: cuit } : {}),
+		}));
+		// Si falta el nombre y/o la matrícula del CPACF, guiar al usuario a cargarlos en el perfil.
+		const missingName = !nombre;
+		const missingMatricula = !cpacfFound || (!tomo && !folio);
+		if (missingName || missingMatricula) setAbogadoHelp({ open: true, name: missingName, matricula: missingMatricula });
+	};
+
+	// Letrados del Anexo II laboral: mismo perfil profesional, con prefijo por rol.
+	const applyUserToLetrado = (prefix: "patrocinante_" | "apoderado_") => {
 		const { nombre, tomo, folio, cpacfFound } = getAbogadoFromProfile(user);
 		setFormValues((prev) => ({
 			...prev,
-			...(nombre ? { abogado_nombre: nombre } : {}),
-			...(tomo ? { abogado_tomo: tomo } : {}),
-			...(folio ? { abogado_folio: folio } : {}),
+			...(nombre ? { [`${prefix}nombre`]: nombre } : {}),
+			...(tomo ? { [`${prefix}tomo`]: tomo } : {}),
+			...(folio ? { [`${prefix}folio`]: folio } : {}),
+			...(cpacfFound ? { [`${prefix}matricula`]: "CPACF" } : {}),
 		}));
-		// Si falta el nombre y/o la matrícula del CPACF, guiar al usuario a cargarlos en el perfil.
 		const missingName = !nombre;
 		const missingMatricula = !cpacfFound || (!tomo && !folio);
 		if (missingName || missingMatricula) setAbogadoHelp({ open: true, name: missingName, matricula: missingMatricula });
@@ -1048,19 +1419,42 @@ export default function CreatePostalDocumentModal({
 		const list = contacts.slice(0, max);
 		if (base === "actor") setSelectedActores(list);
 		if (base === "demandado") setSelectedDemandados(list);
-		setFormValues((prev) => ({ ...prev, ...contactsToRowValues(list, base, max) }));
+		const values = contactsToRowValues(list, base, max);
+		// Si el template define tipo_doc como select (ej. SCBA: "D.N.I.", tipos de sociedad;
+		// Comercial: DU/LE/LC/CI/PS), normalizar el valor del contacto ("DNI"/"CUIT") a la
+		// opción equivalente o dejar vacío. "DU" es la denominación del DNI en el fuero comercial.
+		for (const f of selectedTemplate?.fields || []) {
+			if (f.type === "select" && /_tipo_doc$/.test(f.name) && values[f.name] != null && values[f.name] !== "") {
+				const norm = (s: string) => s.replace(/[.\s]/g, "").toUpperCase();
+				const v = norm(String(values[f.name]));
+				const opts = f.options || [];
+				const match = opts.find((o) => norm(o) === v) || (v === "DNI" && opts.includes("DU") ? "DU" : undefined);
+				values[f.name] = match || "";
+			}
+		}
+		setFormValues((prev) => ({ ...prev, ...values }));
 		setVisibleRows((prev) => ({ ...prev, [groupKey]: Math.max(prev[groupKey] || 1, list.length || 1) }));
 	};
 
-	// Auto-relleno desde el expediente vinculado (solo para la Planilla Civil):
+	// Auto-relleno desde el expediente vinculado (planillas de inicio con filas de partes):
 	// reparte los contactos del folder por rol de parte en las filas de actores/demandados.
 	useEffect(() => {
-		if (!linkedFolder || selectedTemplate?.slug !== "planilla_inicio_civil") return;
+		const PLANILLA_SLUGS = [
+			"planilla_inicio_civil",
+			"formulario_ingreso_demandas_ccf",
+			"formulario_inicio_laboral_anexo2",
+			"formulario_inicio_comercial",
+			"formulario_inicio_conadmfed",
+			"formulario_inicio_scba",
+		];
+		if (!linkedFolder || !PLANILLA_SLUGS.includes(selectedTemplate?.slug || "")) return;
+		// El groupKey real de cada base sale del template ("Actores" en Civil, "Actores o peticionarios" en CCF).
+		const groupOf = (fieldName: string) => selectedTemplate?.fields?.find((f) => f.name === fieldName)?.group || "";
 		const folderContacts = allContacts.filter((c) => c.folderIds?.includes(linkedFolder._id));
 		const actores = folderContacts.filter((c) => contactPartyRole(c) === "actor");
 		const demandados = folderContacts.filter((c) => contactPartyRole(c) === "demandado");
-		if (actores.length) applyContactsToGroup(actores, "actor", "Actores");
-		if (demandados.length) applyContactsToGroup(demandados, "demandado", "Demandados");
+		if (actores.length) applyContactsToGroup(actores, "actor", groupOf("actor1_nombre") || "Actores");
+		if (demandados.length) applyContactsToGroup(demandados, "demandado", groupOf("demandado1_nombre") || "Demandados");
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [linkedFolder, selectedTemplate]);
 
@@ -1424,7 +1818,7 @@ export default function CreatePostalDocumentModal({
 	const renderRepeatableGroup = (groupKey: string, rep: RepeatableRows) => {
 		const max = rep.rows.length;
 		const contactRole: "actor" | "demandado" | null =
-			groupKey === "Actores" ? "actor" : groupKey === "Demandados" ? "demandado" : null;
+			rep.base === "actor" ? "actor" : rep.base === "demandado" ? "demandado" : null;
 		const selected = contactRole === "actor" ? selectedActores : contactRole === "demandado" ? selectedDemandados : [];
 		const activeContacts = allContacts.filter((c: Contact) => c.status !== "archived");
 		const filled = rep.rows.filter((r) => rep.byRow.get(r)!.some((f) => (formValues[f.name] || "").trim() !== "")).length;
@@ -1444,7 +1838,16 @@ export default function CreatePostalDocumentModal({
 
 		return (
 			<Box key={groupKey}>
-				{groupHeader(GROUP_LABELS[groupKey] || groupKey)}
+				{groupHeader(
+					GROUP_LABELS[groupKey] || groupKey,
+					rep.base === "abogado" ? (
+						<Tooltip title="Completar con tus datos profesionales del perfil (nombre, matrícula y CUIT)">
+							<Button size="small" startIcon={<Profile2User size={13} variant="Linear" />} onClick={applyUserToAbogado} sx={smallActionSx}>
+								Mis datos
+							</Button>
+						</Tooltip>
+					) : undefined,
+				)}
 				{contactRole && (
 					<Autocomplete
 						multiple
@@ -1559,15 +1962,60 @@ export default function CreatePostalDocumentModal({
 			);
 		}
 
-		// Planilla Civil — Objeto del juicio: select buscable de códigos (número + descripción)
-		if (groupKey === "Objeto") {
-			const selectedObjeto = OBJETOS_JUICIO_CIVIL.find((o) => o.code === formValues.objeto_codigo) || null;
+		// SCBA Ley 13.951 — Materia: el nomenclador depende del fuero marcado en el formulario.
+		if (groupKey === "Materia") {
+			const fuero = MATERIAS_SCBA_BY_FUERO.find((f) => formValues[f.field] === "X") || null;
+			const materias = fuero?.materias || [];
+			const selectedMateria = materias.find((o) => o.code === formValues.materia_codigo) || null;
 			return (
 				<Box key={groupKey}>
 					{groupHeader(GROUP_LABELS[groupKey] || groupKey)}
 					<Autocomplete
 						size="small"
-						options={OBJETOS_JUICIO_CIVIL}
+						options={materias}
+						value={selectedMateria}
+						disabled={!fuero}
+						getOptionLabel={(o: ObjetoJuicio) => `${o.code} - ${o.description}`}
+						isOptionEqualToValue={(opt, val) => opt.code === val.code}
+						onChange={(_e, o) => setFormValues((prev) => ({ ...prev, materia_codigo: o ? o.code : "" }))}
+						renderOption={(props, o: ObjetoJuicio) => (
+							<Box component="li" {...props} key={o.code}>
+								<Typography sx={{ fontSize: "0.85rem" }}>
+									<Box component="span" sx={{ fontWeight: 700 }}>
+										{o.code}
+									</Box>
+									{" - "}
+									{o.description}
+								</Typography>
+							</Box>
+						)}
+						renderInput={(params) => (
+							<TextField
+								{...params}
+								placeholder={fuero ? `Buscar materia del fuero ${fuero.label}...` : "Elegí primero el fuero"}
+								sx={inputSx}
+							/>
+						)}
+						sx={{ mb: 1.5 }}
+						noOptionsText="Sin coincidencias"
+					/>
+				</Box>
+			);
+		}
+
+		// Objeto del juicio: select buscable de códigos (número + descripción), con el
+		// nomenclador del fuero del template (resuelto por slug; fallback por groupKey).
+		if (groupKey === "Objeto" || groupKey === "Objeto de juicio") {
+			const objetos =
+				OBJETOS_JUICIO_BY_SLUG[selectedTemplate?.slug || ""] ||
+				(groupKey === "Objeto de juicio" ? OBJETOS_JUICIO_CIVCOMFED : OBJETOS_JUICIO_CIVIL);
+			const selectedObjeto = objetos.find((o) => o.code === formValues.objeto_codigo) || null;
+			return (
+				<Box key={groupKey}>
+					{groupHeader(GROUP_LABELS[groupKey] || groupKey)}
+					<Autocomplete
+						size="small"
+						options={objetos}
 						value={selectedObjeto}
 						getOptionLabel={(o: ObjetoJuicio) => `${o.code} - ${o.description}`}
 						isOptionEqualToValue={(opt, val) => opt.code === val.code}
@@ -1595,6 +2043,39 @@ export default function CreatePostalDocumentModal({
 						sx={{ mb: 1.5 }}
 						noOptionsText="Sin coincidencias"
 					/>
+				</Box>
+			);
+		}
+
+		// Anexo II laboral — Patrocinante / Apoderado: botón "Mis datos" con prefijo por rol.
+		if (groupKey === "Patrocinante" || groupKey === "Apoderado") {
+			const prefix = groupKey === "Patrocinante" ? ("patrocinante_" as const) : ("apoderado_" as const);
+			return (
+				<Box key={groupKey}>
+					{groupHeader(
+						groupKey,
+						<Tooltip title="Completar con tus datos profesionales del perfil (nombre, matrícula y colegio)">
+							<Button
+								size="small"
+								startIcon={<Profile2User size={13} variant="Linear" />}
+								onClick={() => applyUserToLetrado(prefix)}
+								sx={smallActionSx}
+							>
+								Mis datos
+							</Button>
+						</Tooltip>,
+					)}
+					<Stack spacing={1.5}>
+						{groupFieldsForRender(fields).map((item, i) =>
+							Array.isArray(item) ? (
+								<Stack key={i} direction="row" flexWrap="wrap" useFlexGap>
+									{item.map((f) => renderField(f))}
+								</Stack>
+							) : (
+								renderField(item)
+							),
+						)}
+					</Stack>
 				</Box>
 			);
 		}
@@ -1631,6 +2112,48 @@ export default function CreatePostalDocumentModal({
 		const repeatable = parseRepeatableRows(fields);
 		if (repeatable) {
 			return renderRepeatableGroup(groupKey, repeatable);
+		}
+
+		// Grupo compuesto solo por checkboxes mutuamente excluyentes (ej. Tasa de justicia CCF):
+		// radio group con opción "Sin indicar" (el campo es optativo en el formulario papel).
+		const exclusiveSet = EXCLUSIVE_CHECKBOX_PAIRS.find((set) => fields.every((f) => f.type === "checkbox" && set.includes(f.name)));
+		if (exclusiveSet && fields.length > 1) {
+			const checkedField = fields.find((f) => formValues[f.name] === "X")?.name || "";
+			// Los labels vienen prefijados con el grupo ("Tasa de justicia — Abonar tasa") → mostrar solo la opción.
+			const optionLabel = (f: PdfTemplateField) => (f.label || f.name).split("—").slice(-1)[0].trim();
+			const radioSx = { color: alpha(BRAND_BLUE, isDark ? 0.4 : 0.32), "&.Mui-checked": { color: BRAND_BLUE } };
+			return (
+				<Box key={groupKey}>
+					{groupHeader(GROUP_LABELS[groupKey] || groupKey)}
+					<RadioGroup
+						value={checkedField}
+						onChange={(e) => {
+							const sel = e.target.value;
+							setFormValues((prev) => {
+								const updated = { ...prev };
+								fields.forEach((f) => (updated[f.name] = f.name === sel ? "X" : ""));
+								// SCBA Ley 13.951: al cambiar el fuero, la materia elegida deja de ser válida.
+								if (fields.some((f) => f.name.startsWith("fuero_"))) updated.materia_codigo = "";
+								return updated;
+							});
+						}}
+					>
+						{fields.map((f) => (
+							<FormControlLabel
+								key={f.name}
+								value={f.name}
+								control={<Radio size="small" sx={radioSx} />}
+								label={<Typography sx={{ fontSize: "0.82rem", color: "text.primary" }}>{optionLabel(f)}</Typography>}
+							/>
+						))}
+						<FormControlLabel
+							value=""
+							control={<Radio size="small" sx={radioSx} />}
+							label={<Typography sx={{ fontSize: "0.82rem", color: "text.secondary" }}>Sin indicar</Typography>}
+						/>
+					</RadioGroup>
+				</Box>
+			);
 		}
 
 		return (
@@ -2106,6 +2629,8 @@ export default function CreatePostalDocumentModal({
 													const complete: Record<string, string> = { ...dev.fields };
 													for (const f of selectedTemplate!.fields || []) {
 														if (f.type === "ai-prompt" || f.type === "flow-section") continue;
+														// Un "" curado significa "dejar vacío a propósito" (ej. checkboxes excluyentes).
+														if (Object.prototype.hasOwnProperty.call(dev.fields, f.name)) continue;
 														if (complete[f.name] != null && complete[f.name] !== "") continue;
 														if (f.type === "checkbox") complete[f.name] = "X";
 														else if (f.type === "radio" || f.type === "select") complete[f.name] = f.options?.[0] || "Opción 1";
