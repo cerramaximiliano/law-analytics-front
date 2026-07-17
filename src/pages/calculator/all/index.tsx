@@ -49,19 +49,7 @@ import {
 import { Checkbox, Menu, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
 import ScrollX from "components/ScrollX";
 
-import {
-	useFilters,
-	useExpanded,
-	useGlobalFilter,
-	useRowSelect,
-	useSortBy,
-	useTable,
-	usePagination,
-	Column,
-	Row,
-	Cell,
-	HeaderGroup,
-} from "react-table";
+import { useFilters, useGlobalFilter, useRowSelect, useSortBy, useTable, usePagination, Column, Row, Cell, HeaderGroup } from "react-table";
 import { HeaderSort, SortingSelect, TablePagination, TableRowSelection } from "components/third-party/ReactTable";
 import { CSVLink } from "react-csv";
 
@@ -741,7 +729,6 @@ function ReactTable({
 		useGlobalFilter,
 		useFilters,
 		useSortBy,
-		useExpanded,
 		usePagination,
 		useRowSelect,
 		(hooks) => {
@@ -1036,12 +1023,7 @@ function ReactTable({
 										{...row.getRowProps()}
 										onClick={() => {
 											if (!row.isSelected) {
-												if (expandedRowId === row.id) {
-													setExpandedRowId(null);
-												} else {
-													setExpandedRowId(row.id);
-												}
-												row.toggleRowExpanded();
+												setExpandedRowId(expandedRowId === row.id ? null : row.id);
 											}
 										}}
 										sx={{
@@ -1064,7 +1046,7 @@ function ReactTable({
 													}
 												}}
 											>
-												{cell.render("Cell")}
+												{cell.render("Cell", { expandedRowId, setExpandedRowId })}
 											</TableCell>
 										))}
 									</TableRow>
@@ -1707,9 +1689,18 @@ const AllCalculators = () => {
 				accessor: "variables", // Utilizamos variables como accessor para tener acceso a la data completa
 				className: "cell-center",
 				disableSortBy: true,
-				Cell: ({ row }: { row: Row<CalculatorType> }) => {
+				Cell: ({
+					row,
+					expandedRowId,
+					setExpandedRowId,
+				}: {
+					row: Row<CalculatorType>;
+					expandedRowId?: string | null;
+					setExpandedRowId?: React.Dispatch<React.SetStateAction<string | null>>;
+				}) => {
 					const isDarkMode = theme.palette.mode === "dark";
-					const collapseIcon = row.isExpanded ? <Add size={18} style={{ transform: "rotate(45deg)" }} /> : <Eye variant="Bulk" size={18} />;
+					const isRowExpanded = expandedRowId === row.id;
+					const collapseIcon = isRowExpanded ? <Add size={18} style={{ transform: "rotate(45deg)" }} /> : <Eye variant="Bulk" size={18} />;
 
 					// Monocromo + intent: brand-blue para acciones normales,
 					// red sólo para destructive.
@@ -1738,7 +1729,7 @@ const AllCalculators = () => {
 									sx={actionIconSx}
 									onClick={(e: MouseEvent<HTMLButtonElement>) => {
 										e.stopPropagation();
-										row.toggleRowExpanded();
+										setExpandedRowId?.((prev) => (prev === row.id ? null : row.id));
 									}}
 								>
 									{collapseIcon}
