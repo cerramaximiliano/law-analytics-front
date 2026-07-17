@@ -23,9 +23,21 @@ import {
 	Typography,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { Add, CloseSquare, DocumentDownload, DocumentText, DocumentUpload, FolderOpen, MagicStar, Profile2User, Save2, TickCircle, Trash } from "iconsax-react";
+import {
+	Add,
+	CloseSquare,
+	DocumentDownload,
+	DocumentText,
+	DocumentUpload,
+	FolderOpen,
+	MagicStar,
+	Profile2User,
+	Save2,
+	TickCircle,
+	Trash,
+	Warning2,
+} from "iconsax-react";
 import { useNavigate } from "react-router-dom";
-import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { dispatch, useSelector } from "store";
 import {
 	fetchPdfTemplates,
@@ -53,6 +65,7 @@ import { MATERIAS_SCBA_CONTENCIOSO } from "data/materiasScbaContencioso";
 import { FolderData } from "types/folder";
 import { PostalTrackingType } from "types/postal-tracking";
 import { BRAND_BLUE, STALE_AMBER } from "themes/dashboardTokens";
+import ApiService from "store/reducers/ApiService";
 
 // Nomenclador de objetos de juicio según el fuero de cada modelo de sistema.
 const OBJETOS_JUICIO_BY_SLUG: Record<string, ObjetoJuicio[]> = {
@@ -95,9 +108,59 @@ interface SaveContactDialogState {
 // ── Constantes ───────────────────────────────────────────────────────────────
 
 const VALID_CODE_IDS = [
-	"CC", "CD", "CL", "CM", "CO", "CP", "DE", "DI", "EC", "EE", "EO", "EP", "GC", "GD", "GE", "GF", "GO", "GR", "GS",
-	"HC", "HD", "HE", "HO", "HU", "HX", "IN", "IS", "JP", "LC", "LS", "ND", "MD", "ME", "MC", "MS", "MU", "MX", "OL",
-	"PC", "PP", "RD", "RE", "RP", "RR", "SD", "SL", "SP", "SR", "ST", "TC", "TD", "TL", "UP",
+	"CC",
+	"CD",
+	"CL",
+	"CM",
+	"CO",
+	"CP",
+	"DE",
+	"DI",
+	"EC",
+	"EE",
+	"EO",
+	"EP",
+	"GC",
+	"GD",
+	"GE",
+	"GF",
+	"GO",
+	"GR",
+	"GS",
+	"HC",
+	"HD",
+	"HE",
+	"HO",
+	"HU",
+	"HX",
+	"IN",
+	"IS",
+	"JP",
+	"LC",
+	"LS",
+	"ND",
+	"MD",
+	"ME",
+	"MC",
+	"MS",
+	"MU",
+	"MX",
+	"OL",
+	"PC",
+	"PP",
+	"RD",
+	"RE",
+	"RP",
+	"RR",
+	"SD",
+	"SL",
+	"SP",
+	"SR",
+	"ST",
+	"TC",
+	"TD",
+	"TL",
+	"UP",
 ];
 
 const GROUP_LABELS: Record<string, string> = {
@@ -781,7 +844,8 @@ function getMissingRequired(template: PdfTemplate | null, values: Record<string,
 	if (slug.startsWith("formulario_civil_")) {
 		if (!has("actor_nombre_apellido")) missing.push("Actor: nombre y apellido");
 		if (!has("actor_dni")) missing.push("Actor: DNI");
-		if (!has("dem_conductor") && !has("dem_titular") && !has("dem_asegurado")) missing.push("Al menos un demandado (conductor, titular o asegurado)");
+		if (!has("dem_conductor") && !has("dem_titular") && !has("dem_asegurado"))
+			missing.push("Al menos un demandado (conductor, titular o asegurado)");
 		if (!has("hecho_lugar")) missing.push("Hecho: lugar");
 		if (!has("hecho_fecha")) missing.push("Hecho: fecha");
 		if (!has("monto_reclamado")) missing.push("Monto reclamado");
@@ -1077,7 +1141,9 @@ const CategoryPill = ({ label }: { label: string }) => {
 				alignSelf: "flex-start",
 			}}
 		>
-			<Typography sx={{ fontSize: "0.66rem", fontWeight: 600, color: BRAND_BLUE, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>
+			<Typography
+				sx={{ fontSize: "0.66rem", fontWeight: 600, color: BRAND_BLUE, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}
+			>
 				{label}
 			</Typography>
 		</Box>
@@ -1114,12 +1180,20 @@ export default function CreatePostalDocumentModal({
 	const [docsGenerated, setDocsGenerated] = useState(false);
 	const [generatedResults, setGeneratedResults] = useState<Array<{ name: string; url?: string }>>([]);
 	// Modal de ayuda cuando faltan datos del abogado en el perfil (nombre y/o matrícula del CPACF).
-	const [abogadoHelp, setAbogadoHelp] = useState<{ open: boolean; name: boolean; matricula: boolean }>({ open: false, name: false, matricula: false });
+	const [abogadoHelp, setAbogadoHelp] = useState<{ open: boolean; name: boolean; matricula: boolean }>({
+		open: false,
+		name: false,
+		matricula: false,
+	});
+	// Pre-chequeo del límite de documentos del plan (al abrir el modal): si está alcanzado se
+	// avisa temprano con un banner y se deshabilita "Generar" — los borradores no consumen límite
+	// y siguen habilitados. Fail-open ante error: el 403 del middleware es el backstop.
+	const [docLimit, setDocLimit] = useState<{ currentCount?: number; limit?: number; plan?: string } | null>(null);
 
 	// Genera la demanda (.docx) desde un documento del formulario civil recién generado.
 	// Un solo botón genera TODOS los documentos vinculados (generates[]), despachando por slug.
 	const handleGenerateAll = async () => {
-		if (!generatedDoc?._id) return;
+		if (!generatedDoc?._id || docLimit) return;
 		const gens = selectedTemplate?.generates || [];
 		if (!gens.length) return;
 		setGenLoadingSlug("__all__");
@@ -1131,8 +1205,8 @@ export default function CreatePostalDocumentModal({
 				gen.slug === "demanda_danos_perjuicios"
 					? generateDemanda(generatedDoc._id)
 					: gen.slug === "planilla_inicio_civil"
-						? generatePlanilla(generatedDoc._id)
-						: generateDocument(generatedDoc._id, contextFiles.length ? contextFiles : undefined);
+					? generatePlanilla(generatedDoc._id)
+					: generateDocument(generatedDoc._id, contextFiles.length ? contextFiles : undefined);
 			const res: any = await dispatch(thunk as any);
 			if (res?.success) {
 				ok += 1;
@@ -1150,7 +1224,7 @@ export default function CreatePostalDocumentModal({
 
 	// Genera "el documento" (.docx merged, con campos IA) desde un FORMULARIO self-service recién guardado.
 	const handleGenerateDocument = async () => {
-		if (!generatedDoc?._id) return;
+		if (!generatedDoc?._id || docLimit) return;
 		setDemandaLoading(true);
 		const res: any = await dispatch(generateDocument(generatedDoc._id, contextFiles.length ? contextFiles : undefined) as any);
 		setDemandaLoading(false);
@@ -1164,7 +1238,9 @@ export default function CreatePostalDocumentModal({
 			setDocsGenerated(true);
 			if ((res.count || 1) === 1) window.open(res.url, "_blank");
 			showSnackbar(
-				(res.count || 1) > 1 ? `${res.count} documentos generados — en Documentos → Escritos` : "Documento generado — disponible en Documentos → Escritos",
+				(res.count || 1) > 1
+					? `${res.count} documentos generados — en Documentos → Escritos`
+					: "Documento generado — disponible en Documentos → Escritos",
 				"success",
 			);
 		} else {
@@ -1219,10 +1295,6 @@ export default function CreatePostalDocumentModal({
 	});
 	const [savingContact, setSavingContact] = useState(false);
 
-	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
-	const [limitErrorMessage, setLimitErrorMessage] = useState("");
-	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
-
 	// Prefill del letrado (perfil, matrícula CPACF) + objeto del juicio (editables) — formulario civil de Augusto.
 	useEffect(() => {
 		if (!selectedTemplate || !String(selectedTemplate.slug || "").startsWith("formulario_civil_")) return;
@@ -1269,6 +1341,16 @@ export default function CreatePostalDocumentModal({
 			dispatch(getFoldersByUserId(userId) as any);
 		}
 		dispatch(fetchAllTrackings() as any);
+		// Pre-chequeo del límite de documentos (mismo patrón que AddFolder, endpoint informacional 200).
+		ApiService.checkResourceLimit("postalDocuments")
+			.then((res: any) => {
+				if (res?.success && res.data?.hasReachedLimit) {
+					setDocLimit({ currentCount: res.data.currentCount, limit: res.data.limit, plan: res.data.currentPlan });
+				} else {
+					setDocLimit(null);
+				}
+			})
+			.catch(() => setDocLimit(null));
 	}, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	useEffect(() => {
@@ -1490,7 +1572,7 @@ export default function CreatePostalDocumentModal({
 	};
 
 	const handleSubmit = async () => {
-		if (!selectedTemplate) return;
+		if (!selectedTemplate || docLimit) return;
 		setGenerating(true);
 
 		const result = await dispatch(
@@ -1533,9 +1615,8 @@ export default function CreatePostalDocumentModal({
 			setGeneratedResults([]);
 			setGeneratedDoc(result.document || { title });
 		} else if ((result as any).limitInfo) {
-			setLimitErrorMessage(result.error || "Has alcanzado el límite de escritos para tu plan actual");
-			setLimitErrorInfo((result as any).limitInfo);
-			setLimitErrorOpen(true);
+			// 403 de límite de plan: el interceptor global de ServerContext ya muestra su
+			// LimitErrorModal — abrir otro acá duplicaba el modal (había que cerrarlo dos veces).
 		} else {
 			showSnackbar(result.error || "Error al generar", "error");
 		}
@@ -1708,10 +1789,7 @@ export default function CreatePostalDocumentModal({
 								key={opt}
 								value={opt}
 								control={
-									<Radio
-										size="small"
-										sx={{ color: alpha(BRAND_BLUE, isDark ? 0.4 : 0.32), "&.Mui-checked": { color: BRAND_BLUE } }}
-									/>
+									<Radio size="small" sx={{ color: alpha(BRAND_BLUE, isDark ? 0.4 : 0.32), "&.Mui-checked": { color: BRAND_BLUE } }} />
 								}
 								label={<Typography sx={{ fontSize: "0.82rem", color: "text.primary" }}>{RADIO_OPTION_LABELS[opt] || opt}</Typography>}
 							/>
@@ -1817,16 +1895,14 @@ export default function CreatePostalDocumentModal({
 	// Los grupos de partes (Actores/Demandados) suman un selector multi-contacto arriba.
 	const renderRepeatableGroup = (groupKey: string, rep: RepeatableRows) => {
 		const max = rep.rows.length;
-		const contactRole: "actor" | "demandado" | null =
-			rep.base === "actor" ? "actor" : rep.base === "demandado" ? "demandado" : null;
+		const contactRole: "actor" | "demandado" | null = rep.base === "actor" ? "actor" : rep.base === "demandado" ? "demandado" : null;
 		const selected = contactRole === "actor" ? selectedActores : contactRole === "demandado" ? selectedDemandados : [];
 		const activeContacts = allContacts.filter((c: Contact) => c.status !== "archived");
 		const filled = rep.rows.filter((r) => rep.byRow.get(r)!.some((f) => (formValues[f.name] || "").trim() !== "")).length;
 		const visible = Math.min(max, Math.max(1, filled, visibleRows[groupKey] || 0));
 		const baseLabel = rep.base.charAt(0).toUpperCase() + rep.base.slice(1);
 
-		const addRow = () =>
-			setVisibleRows((prev) => ({ ...prev, [groupKey]: Math.min(max, Math.max(1, filled, prev[groupKey] || 0) + 1) }));
+		const addRow = () => setVisibleRows((prev) => ({ ...prev, [groupKey]: Math.min(max, Math.max(1, filled, prev[groupKey] || 0) + 1) }));
 		const removeRow = (idx: number) => {
 			const clear: Record<string, string> = {};
 			rep.byRow.get(rep.rows[idx])!.forEach((f) => (clear[f.name] = ""));
@@ -1942,7 +2018,12 @@ export default function CreatePostalDocumentModal({
 					{groupHeader(
 						GROUP_LABELS[groupKey],
 						<Tooltip title="Completar automáticamente con tus datos profesionales del perfil">
-							<Button size="small" startIcon={<Profile2User size={13} variant="Linear" />} onClick={applyUserToApoderado} sx={smallActionSx}>
+							<Button
+								size="small"
+								startIcon={<Profile2User size={13} variant="Linear" />}
+								onClick={applyUserToApoderado}
+								sx={smallActionSx}
+							>
 								Mis datos
 							</Button>
 						</Tooltip>,
@@ -2037,9 +2118,7 @@ export default function CreatePostalDocumentModal({
 								</Typography>
 							</Box>
 						)}
-						renderInput={(params) => (
-							<TextField {...params} placeholder="Buscar objeto por código o descripción..." sx={inputSx} />
-						)}
+						renderInput={(params) => <TextField {...params} placeholder="Buscar objeto por código o descripción..." sx={inputSx} />}
 						sx={{ mb: 1.5 }}
 						noOptionsText="Sin coincidencias"
 					/>
@@ -2160,29 +2239,32 @@ export default function CreatePostalDocumentModal({
 			<Box key={groupKey}>
 				{groupHeader(
 					GROUP_LABELS[groupKey] || groupKey,
-					isContactGroup && hasGroupData(formValues, group)
-						? selectedContacts[group]
-							? (
-								<Tooltip title={`Actualizar contacto "${getContactLabel(selectedContacts[group]!)}" con los datos actuales`}>
-									<Button
-										size="small"
-										startIcon={savingContact ? <CircularProgress size={12} color="inherit" /> : <Save2 size={13} variant="Linear" />}
-										onClick={() => handleUpdateContact(group)}
-										disabled={savingContact}
-										sx={smallActionSx}
-									>
-										Actualizar contacto
-									</Button>
-								</Tooltip>
-							  )
-							: (
-								<Tooltip title={`Guardar datos de ${GROUP_LABELS[group] || group} como nuevo contacto`}>
-									<Button size="small" startIcon={<Save2 size={13} variant="Linear" />} onClick={() => openSaveDialog(group)} sx={smallActionSx}>
-										Guardar como contacto
-									</Button>
-								</Tooltip>
-							  )
-						: undefined,
+					isContactGroup && hasGroupData(formValues, group) ? (
+						selectedContacts[group] ? (
+							<Tooltip title={`Actualizar contacto "${getContactLabel(selectedContacts[group]!)}" con los datos actuales`}>
+								<Button
+									size="small"
+									startIcon={savingContact ? <CircularProgress size={12} color="inherit" /> : <Save2 size={13} variant="Linear" />}
+									onClick={() => handleUpdateContact(group)}
+									disabled={savingContact}
+									sx={smallActionSx}
+								>
+									Actualizar contacto
+								</Button>
+							</Tooltip>
+						) : (
+							<Tooltip title={`Guardar datos de ${GROUP_LABELS[group] || group} como nuevo contacto`}>
+								<Button
+									size="small"
+									startIcon={<Save2 size={13} variant="Linear" />}
+									onClick={() => openSaveDialog(group)}
+									sx={smallActionSx}
+								>
+									Guardar como contacto
+								</Button>
+							</Tooltip>
+						)
+					) : undefined,
 				)}
 
 				{isContactGroup && (
@@ -2324,12 +2406,8 @@ export default function CreatePostalDocumentModal({
 					>
 						{step === 0 ? "Elegí una plantilla" : selectedTemplate?.name || "Plantilla"}
 					</Typography>
-					<Typography
-						sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}
-					>
-						{step === 0
-							? "Seleccioná el modelo que querés usar para tu documento."
-							: "Completá los datos para generar el PDF."}
+					<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+						{step === 0 ? "Seleccioná el modelo que querés usar para tu documento." : "Completá los datos para generar el PDF."}
 					</Typography>
 				</Stack>
 				<IconButton onClick={handleClose_} sx={iconBtnSx} aria-label="cerrar">
@@ -2347,6 +2425,29 @@ export default function CreatePostalDocumentModal({
 				{dialogHeader}
 
 				<DialogContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+					{/* ── Banner de límite alcanzado: aviso temprano, sin bloquear borradores ── */}
+					{docLimit && !generatedDoc && (
+						<Box
+							sx={{
+								mb: 2,
+								px: 1.5,
+								py: 1.25,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								gap: 1,
+								bgcolor: alpha(STALE_AMBER, isDark ? 0.14 : 0.08),
+								border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.4 : 0.3)}`,
+							}}
+						>
+							<Warning2 size={18} color={STALE_AMBER} variant="Linear" style={{ flexShrink: 0 }} />
+							<Typography sx={{ fontSize: "0.8rem", color: "text.primary" }}>
+								Alcanzaste el límite de documentos de tu plan{docLimit.plan ? ` ${docLimit.plan}` : ""}
+								{docLimit.limit != null ? ` (${docLimit.currentCount}/${docLimit.limit})` : ""}. Podés guardar borradores, pero para generar
+								documentos necesitás liberar cupo eliminando documentos o mejorar tu plan.
+							</Typography>
+						</Box>
+					)}
 					{/* ── Pantalla de resultado: documento generado ── */}
 					{generatedDoc && (
 						<Stack alignItems="center" spacing={2} sx={{ py: { xs: 3, sm: 5 }, textAlign: "center" }}>
@@ -2389,8 +2490,8 @@ export default function CreatePostalDocumentModal({
 									</>
 								) : (
 									<>
-										El formulario quedó guardado. Ahora generá {(selectedTemplate?.generates?.length ?? 0) > 1 ? "los documentos" : "el documento"} con el botón de
-										abajo.
+										El formulario quedó guardado. Ahora generá{" "}
+										{(selectedTemplate?.generates?.length ?? 0) > 1 ? "los documentos" : "el documento"} con el botón de abajo.
 									</>
 								)}
 							</Typography>
@@ -2412,7 +2513,9 @@ export default function CreatePostalDocumentModal({
 										>
 											<Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
 												<TickCircle size={16} variant="Bulk" color={theme.palette.success.main} style={{ flexShrink: 0 }} />
-												<Typography sx={{ fontSize: "0.82rem", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+												<Typography
+													sx={{ fontSize: "0.82rem", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+												>
 													{d.name}
 												</Typography>
 											</Stack>
@@ -2434,69 +2537,89 @@ export default function CreatePostalDocumentModal({
 					)}
 
 					{/* Documentos de contexto para la IA (por generación) — sólo si el modelo tiene campos IA */}
-					{generatedDoc && !docsGenerated && selectedTemplate?.fillMethod === "docx-merge" && (selectedTemplate?.fields || []).some((f: any) => f.type === "ai-prompt") && (
-						<Box
-							sx={{
-								maxWidth: 520,
-								mx: "auto",
-								mb: 1,
-								p: 2,
-								borderRadius: 1.5,
-								border: `1px dashed ${alpha(BRAND_BLUE, isDark ? 0.3 : 0.22)}`,
-								bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
-							}}
-						>
-							<Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
-								<MagicStar size={16} color={BRAND_BLUE} variant="Bulk" />
-								<Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "text.primary" }}>Documentos de contexto para la IA (opcional)</Typography>
-							</Stack>
-							<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", mb: 1.25, textWrap: "pretty" }}>
-								Adjuntá los hechos, la prueba o un escrito relacionado (PDF, Word o texto). La IA usará su contenido al redactar los campos generados. Máx. 5 archivos.
-							</Typography>
-							<input
-								ref={contextInputRef}
-								type="file"
-								accept=".pdf,.docx,.txt"
-								multiple
-								hidden
-								onChange={(e) => {
-									const files = Array.from(e.target.files || []);
-									setContextFiles((prev) => [...prev, ...files].slice(0, 5));
-									e.target.value = "";
+					{generatedDoc &&
+						!docsGenerated &&
+						selectedTemplate?.fillMethod === "docx-merge" &&
+						(selectedTemplate?.fields || []).some((f: any) => f.type === "ai-prompt") && (
+							<Box
+								sx={{
+									maxWidth: 520,
+									mx: "auto",
+									mb: 1,
+									p: 2,
+									borderRadius: 1.5,
+									border: `1px dashed ${alpha(BRAND_BLUE, isDark ? 0.3 : 0.22)}`,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
 								}}
-							/>
-							<Button
-								size="small"
-								startIcon={<DocumentUpload size={15} variant="Linear" />}
-								onClick={() => contextInputRef.current?.click()}
-								disabled={contextFiles.length >= 5}
-								sx={ghostBtnSx}
 							>
-								Agregar documentos
-							</Button>
-							{contextFiles.length > 0 && (
-								<Stack spacing={0.5} sx={{ mt: 1.25 }}>
-									{contextFiles.map((f, i) => (
-										<Stack
-											key={`${f.name}-${i}`}
-											direction="row"
-											spacing={1}
-											alignItems="center"
-											sx={{ px: 1, py: 0.5, borderRadius: 1, bgcolor: alpha(theme.palette.text.primary, isDark ? 0.06 : 0.04) }}
-										>
-											<DocumentText size={14} color={theme.palette.text.secondary} />
-											<Typography sx={{ fontSize: "0.75rem", color: "text.primary", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-												{f.name}
-											</Typography>
-											<IconButton size="small" onClick={() => setContextFiles((prev) => prev.filter((_, j) => j !== i))} sx={{ width: 22, height: 22 }} aria-label="quitar">
-												<CloseSquare size={14} color={theme.palette.text.secondary} />
-											</IconButton>
-										</Stack>
-									))}
+								<Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+									<MagicStar size={16} color={BRAND_BLUE} variant="Bulk" />
+									<Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "text.primary" }}>
+										Documentos de contexto para la IA (opcional)
+									</Typography>
 								</Stack>
-							)}
-						</Box>
-					)}
+								<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", mb: 1.25, textWrap: "pretty" }}>
+									Adjuntá los hechos, la prueba o un escrito relacionado (PDF, Word o texto). La IA usará su contenido al redactar los
+									campos generados. Máx. 5 archivos.
+								</Typography>
+								<input
+									ref={contextInputRef}
+									type="file"
+									accept=".pdf,.docx,.txt"
+									multiple
+									hidden
+									onChange={(e) => {
+										const files = Array.from(e.target.files || []);
+										setContextFiles((prev) => [...prev, ...files].slice(0, 5));
+										e.target.value = "";
+									}}
+								/>
+								<Button
+									size="small"
+									startIcon={<DocumentUpload size={15} variant="Linear" />}
+									onClick={() => contextInputRef.current?.click()}
+									disabled={contextFiles.length >= 5}
+									sx={ghostBtnSx}
+								>
+									Agregar documentos
+								</Button>
+								{contextFiles.length > 0 && (
+									<Stack spacing={0.5} sx={{ mt: 1.25 }}>
+										{contextFiles.map((f, i) => (
+											<Stack
+												key={`${f.name}-${i}`}
+												direction="row"
+												spacing={1}
+												alignItems="center"
+												sx={{ px: 1, py: 0.5, borderRadius: 1, bgcolor: alpha(theme.palette.text.primary, isDark ? 0.06 : 0.04) }}
+											>
+												<DocumentText size={14} color={theme.palette.text.secondary} />
+												<Typography
+													sx={{
+														fontSize: "0.75rem",
+														color: "text.primary",
+														flex: 1,
+														overflow: "hidden",
+														textOverflow: "ellipsis",
+														whiteSpace: "nowrap",
+													}}
+												>
+													{f.name}
+												</Typography>
+												<IconButton
+													size="small"
+													onClick={() => setContextFiles((prev) => prev.filter((_, j) => j !== i))}
+													sx={{ width: 22, height: 22 }}
+													aria-label="quitar"
+												>
+													<CloseSquare size={14} color={theme.palette.text.secondary} />
+												</IconButton>
+											</Stack>
+										))}
+									</Stack>
+								)}
+							</Box>
+						)}
 
 					{/* ── Step 0: template selection (solo modelos del sistema) ── */}
 					{!generatedDoc && step === 0 && (
@@ -2529,7 +2652,9 @@ export default function CreatePostalDocumentModal({
 												<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>
 													Sin modelos del sistema
 												</Typography>
-												<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", textAlign: "center", maxWidth: 320, textWrap: "pretty" }}>
+												<Typography
+													sx={{ fontSize: "0.82rem", color: "text.secondary", textAlign: "center", maxWidth: 320, textWrap: "pretty" }}
+												>
 													No hay modelos del sistema disponibles en este momento.
 												</Typography>
 											</Stack>
@@ -2735,14 +2860,17 @@ export default function CreatePostalDocumentModal({
 											<Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "text.primary" }}>Campos generados con IA</Typography>
 										</Stack>
 										<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", mb: 1.5, textWrap: "pretty" }}>
-											La IA redacta estos campos al generar el documento (no aparecen en la planilla). Podés ajustar la instrucción para este caso; la IA usará los datos del formulario y los documentos de contexto que adjuntes.
+											La IA redacta estos campos al generar el documento (no aparecen en la planilla). Podés ajustar la instrucción para
+											este caso; la IA usará los datos del formulario y los documentos de contexto que adjuntes.
 										</Typography>
 										<Stack spacing={1.5}>
 											{selectedTemplate.fields
 												.filter((f) => f.type === "ai-prompt")
 												.map((f) => (
 													<Box key={f.name}>
-														<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "0.02em", mb: 0.5, fontWeight: 600 }}>
+														<Typography
+															sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "0.02em", mb: 0.5, fontWeight: 600 }}
+														>
 															{f.label}
 														</Typography>
 														<TextField
@@ -2759,9 +2887,12 @@ export default function CreatePostalDocumentModal({
 												))}
 										</Stack>
 										<Box sx={{ height: 1, my: 1.5, bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />
-										<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "text.primary", mb: 0.25 }}>Documentos de contexto (opcional)</Typography>
+										<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "text.primary", mb: 0.25 }}>
+											Documentos de contexto (opcional)
+										</Typography>
 										<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", mb: 1, textWrap: "pretty" }}>
-											Adjuntá los hechos, la prueba o un escrito relacionado (PDF, Word o texto). La IA usará su contenido al redactar. Máx. 5 archivos.
+											Adjuntá los hechos, la prueba o un escrito relacionado (PDF, Word o texto). La IA usará su contenido al redactar. Máx.
+											5 archivos.
 										</Typography>
 										<input
 											ref={contextInputRef}
@@ -2795,10 +2926,24 @@ export default function CreatePostalDocumentModal({
 														sx={{ px: 1, py: 0.5, borderRadius: 1, bgcolor: alpha(theme.palette.text.primary, isDark ? 0.06 : 0.04) }}
 													>
 														<DocumentText size={14} color={theme.palette.text.secondary} />
-														<Typography sx={{ fontSize: "0.75rem", color: "text.primary", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+														<Typography
+															sx={{
+																fontSize: "0.75rem",
+																color: "text.primary",
+																flex: 1,
+																overflow: "hidden",
+																textOverflow: "ellipsis",
+																whiteSpace: "nowrap",
+															}}
+														>
 															{f.name}
 														</Typography>
-														<IconButton size="small" onClick={() => setContextFiles((prev) => prev.filter((_, j) => j !== i))} sx={{ width: 22, height: 22 }} aria-label="quitar">
+														<IconButton
+															size="small"
+															onClick={() => setContextFiles((prev) => prev.filter((_, j) => j !== i))}
+															sx={{ width: 22, height: 22 }}
+															aria-label="quitar"
+														>
 															<CloseSquare size={14} color={theme.palette.text.secondary} />
 														</IconButton>
 													</Stack>
@@ -2825,13 +2970,13 @@ export default function CreatePostalDocumentModal({
 											<Box component="li" {...props} key={f._id}>
 												<Stack>
 													<Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{f.folderName}</Typography>
-													{f.folderFuero && (
-														<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>{f.folderFuero}</Typography>
-													)}
+													{f.folderFuero && <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>{f.folderFuero}</Typography>}
 												</Stack>
 											</Box>
 										)}
-										renderInput={(params) => <TextField {...params} label="Vincular con carpeta" placeholder="Buscar carpeta..." sx={inputSx} />}
+										renderInput={(params) => (
+											<TextField {...params} label="Vincular con carpeta" placeholder="Buscar carpeta..." sx={inputSx} />
+										)}
 										noOptionsText="Sin carpetas disponibles"
 									/>
 									{selectedTemplate.supportsTracking && !prefilledTrackingId && (
@@ -2963,30 +3108,44 @@ export default function CreatePostalDocumentModal({
 								</Button>
 							)}
 							{!docsGenerated && selectedTemplate?.fillMethod !== "docx-merge" && (selectedTemplate?.generates?.length ?? 0) > 0 && (
-								<Button
-									onClick={handleGenerateAll}
-									disabled={genLoadingSlug === "__all__"}
-									startIcon={
-										genLoadingSlug === "__all__" ? <CircularProgress size={14} sx={{ color: "#fff" }} /> : <DocumentText size={16} variant="Linear" />
-									}
-									sx={brandPrimarySx}
-								>
-									{genLoadingSlug === "__all__" ? "Generando…" : `Generar documentos (${selectedTemplate?.generates?.length})`}
-								</Button>
+								<Tooltip title={docLimit ? "Alcanzaste el límite de documentos de tu plan" : ""} arrow>
+									<Box component="span" sx={{ display: "inline-flex" }}>
+										<Button
+											onClick={handleGenerateAll}
+											disabled={genLoadingSlug === "__all__" || !!docLimit}
+											startIcon={
+												genLoadingSlug === "__all__" ? (
+													<CircularProgress size={14} sx={{ color: "#fff" }} />
+												) : (
+													<DocumentText size={16} variant="Linear" />
+												)
+											}
+											sx={brandPrimarySx}
+										>
+											{genLoadingSlug === "__all__" ? "Generando…" : `Generar documentos (${selectedTemplate?.generates?.length})`}
+										</Button>
+									</Box>
+								</Tooltip>
 							)}
 							{!docsGenerated && selectedTemplate?.fillMethod === "docx-merge" && (
-								<Button
-									onClick={handleGenerateDocument}
-									disabled={demandaLoading}
-									startIcon={demandaLoading ? <CircularProgress size={14} sx={{ color: "#fff" }} /> : <DocumentText size={16} variant="Linear" />}
-									sx={brandPrimarySx}
-								>
-									{demandaLoading
-										? "Generando…"
-										: (selectedTemplate?.generates?.length ?? 0) > 1
-											? `Generar documentos (${selectedTemplate?.generates?.length})`
-											: "Generar documento"}
-								</Button>
+								<Tooltip title={docLimit ? "Alcanzaste el límite de documentos de tu plan" : ""} arrow>
+									<Box component="span" sx={{ display: "inline-flex" }}>
+										<Button
+											onClick={handleGenerateDocument}
+											disabled={demandaLoading || !!docLimit}
+											startIcon={
+												demandaLoading ? <CircularProgress size={14} sx={{ color: "#fff" }} /> : <DocumentText size={16} variant="Linear" />
+											}
+											sx={brandPrimarySx}
+										>
+											{demandaLoading
+												? "Generando…"
+												: (selectedTemplate?.generates?.length ?? 0) > 1
+												? `Generar documentos (${selectedTemplate?.generates?.length})`
+												: "Generar documento"}
+										</Button>
+									</Box>
+								</Tooltip>
 							)}
 							<Button
 								onClick={() => {
@@ -3018,18 +3177,20 @@ export default function CreatePostalDocumentModal({
 							</Button>
 							<Tooltip
 								title={
-									!title.trim()
+									docLimit
+										? "Alcanzaste el límite de documentos de tu plan — podés guardar borradores"
+										: !title.trim()
 										? "Poné un título"
 										: missingRequired.length > 0
-											? `Faltan campos obligatorios: ${missingRequired.join(", ")}`
-											: ""
+										? `Faltan campos obligatorios: ${missingRequired.join(", ")}`
+										: ""
 								}
 								arrow
 							>
 								<Box component="span" sx={{ display: "inline-flex" }}>
 									<Button
 										onClick={handleSubmit}
-										disabled={generating || !canGenerate}
+										disabled={generating || !canGenerate || !!docLimit}
 										startIcon={generating ? <CircularProgress size={14} color="inherit" /> : undefined}
 										sx={brandPrimarySx}
 									>
@@ -3215,15 +3376,19 @@ export default function CreatePostalDocumentModal({
 							<Profile2User size={20} variant="Bulk" />
 						</Box>
 						<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
-							{abogadoHelp.name && abogadoHelp.matricula ? "Completá tus datos" : abogadoHelp.name ? "Cargá tu nombre" : "Cargá tu matrícula"}
+							{abogadoHelp.name && abogadoHelp.matricula
+								? "Completá tus datos"
+								: abogadoHelp.name
+								? "Cargá tu nombre"
+								: "Cargá tu matrícula"}
 						</Typography>
 					</Stack>
 				</Box>
 				<DialogContent sx={{ p: { xs: 2.5, sm: 3 } }}>
 					<Stack spacing={1.75}>
 						<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", textWrap: "pretty" }}>
-							Para completar los datos del abogado con un clic, cargá {abogadoHelp.name && abogadoHelp.matricula ? "estos datos" : "este dato"} en tu
-							perfil:
+							Para completar los datos del abogado con un clic, cargá{" "}
+							{abogadoHelp.name && abogadoHelp.matricula ? "estos datos" : "este dato"} en tu perfil:
 						</Typography>
 						{abogadoHelp.name && (
 							<Box
@@ -3253,7 +3418,9 @@ export default function CreatePostalDocumentModal({
 									bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.03),
 								}}
 							>
-								<Typography sx={{ fontSize: "0.8rem", fontWeight: 600, color: "text.primary", mb: 0.25 }}>Matrícula (fuero nacional)</Typography>
+								<Typography sx={{ fontSize: "0.8rem", fontWeight: 600, color: "text.primary", mb: 0.25 }}>
+									Matrícula (fuero nacional)
+								</Typography>
 								<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", textWrap: "pretty" }}>
 									En{" "}
 									<Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
@@ -3284,14 +3451,6 @@ export default function CreatePostalDocumentModal({
 					</Button>
 				</DialogActions>
 			</Dialog>
-
-			<LimitErrorModal
-				open={limitErrorOpen}
-				onClose={() => setLimitErrorOpen(false)}
-				message={limitErrorMessage}
-				limitInfo={limitErrorInfo}
-				upgradeRequired
-			/>
 		</>
 	);
 }
