@@ -74,6 +74,10 @@ const TEASER_ROWS: TeaserRowDef[] = [
 // Fallback estático para mostrar antes de que cargue el API (o si falla).
 // Cada plan tiene 4 rows que matchean el schema TEASER_ROWS — cuando el API
 // responde, estos rows se reemplazan con datos reales (mismo topic, mismos labels).
+// Los valores de estas filas son el fallback que se muestra mientras el API
+// responde, y si falla. Tienen que coincidir con `planconfigs` en la base: son
+// la fuente de verdad de los cupos. Estuvieron 10x por encima en consultas de
+// IA, prometiendo al visitante algo que el plan no otorgaba.
 const PLAN_DEFAULTS: Plan[] = [
 	{
 		id: "free",
@@ -83,7 +87,7 @@ const PLAN_DEFAULTS: Plan[] = [
 		rows: [
 			{ label: "5 causas activas", enabled: true },
 			{ label: "Sincronización con PJN, MEV y EJE", enabled: false },
-			{ label: "50 consultas IA/mes", enabled: true },
+			{ label: "5 consultas IA/mes", enabled: true },
 			{ label: "Sistema de reservas online", enabled: false },
 		],
 		cta: "Empezar gratis",
@@ -99,7 +103,7 @@ const PLAN_DEFAULTS: Plan[] = [
 		rows: [
 			{ label: "50 causas activas", enabled: true },
 			{ label: "Sincronización con PJN, MEV y EJE", enabled: true },
-			{ label: "200 consultas IA/mes", enabled: true },
+			{ label: "50 consultas IA/mes", enabled: true },
 			{ label: "Sistema de reservas online", enabled: true },
 		],
 		cta: "Probar Estándar",
@@ -115,7 +119,7 @@ const PLAN_DEFAULTS: Plan[] = [
 		rows: [
 			{ label: "200 causas activas", enabled: true },
 			{ label: "Sincronización con PJN, MEV y EJE", enabled: true },
-			{ label: "750 consultas IA/mes", enabled: true },
+			{ label: "200 consultas IA/mes", enabled: true },
 			{ label: "Sistema de reservas online", enabled: true },
 		],
 		cta: "Probar Pro",
@@ -131,7 +135,7 @@ const PLAN_DEFAULTS: Plan[] = [
 		rows: [
 			{ label: "500 causas activas", enabled: true },
 			{ label: "Sincronización con PJN, MEV y EJE", enabled: true },
-			{ label: "1500 consultas IA/mes", enabled: true },
+			{ label: "500 consultas IA/mes", enabled: true },
 			{ label: "Sistema de reservas online", enabled: true },
 		],
 		cta: "Probar Premium",
