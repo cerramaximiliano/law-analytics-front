@@ -214,7 +214,7 @@ const FAQS: Faq[] = [
 		category: "plataforma",
 		question: "¿Qué debo hacer si encuentro un error en alguna funcionalidad?",
 		answer:
-			'Si detectas algún error o inconsistencia en la plataforma, puedes contactar con soporte técnico a través del formulario en la sección "Contacto" o enviando un email a soporte@lawanalytics.com.ar. Por favor, incluye detalles específicos sobre el problema encontrado para que podamos resolverlo lo antes posible.',
+			'Si detectas algún error o inconsistencia en la plataforma, puedes contactar con soporte técnico a través del formulario en la sección "Contacto" o enviando un email a soporte@lawanalytics.app. Por favor, incluye detalles específicos sobre el problema encontrado para que podamos resolverlo lo antes posible.',
 	},
 	{
 		id: "plat4",
