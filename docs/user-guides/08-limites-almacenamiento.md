@@ -34,15 +34,25 @@ Los límites nos permiten:
 
 ### 📋 Comparación de Planes
 
-| Característica              | Plan Free | Plan Standard     | Plan Premium |
-| --------------------------- | --------- | ----------------- | ------------ |
-| **Carpetas Activas**        | 5         | 50                | 500          |
-| **Calculadoras Activas**    | 3         | 20                | 200          |
-| **Contactos Activos**       | 10        | 100               | 1,000        |
-| **Almacenamiento Total**    | 50 MB     | 1 GB              | 5 GB         |
-| **Analíticas Avanzadas**    | ❌        | ✅                | ✅           |
-| **Exportación de Reportes** | ❌        | ✅                | ✅           |
-| **Soporte**                 | Email     | Email Prioritario | Chat y Email |
+| Característica              | Free  | Estándar | Pro    | Premium |
+| --------------------------- | ----- | -------- | ------ | ------- |
+| **Causas activas**          | 5     | 50       | 200    | 500     |
+| **Calculadoras activas**    | 3     | 20       | 100    | 200     |
+| **Contactos activos**       | 10    | 100      | 500    | 1.000   |
+| **Almacenamiento**          | 50 MB | 100 MB   | 150 MB | 200 MB  |
+| **Consultas IA / mes**      | 5     | 50       | 200    | 500     |
+| **Seguimientos postales**   | 5     | 30       | 60     | 100     |
+| **Documentos postales**     | 5     | 50       | 200    | 500     |
+| **Miembros de equipo**      | —     | 5        | 8      | 10      |
+| **Sincronización judicial** | ❌    | ✅       | ✅     | ✅      |
+| **Analíticas avanzadas**    | ❌    | ✅       | ✅     | ✅      |
+| **Exportación de reportes** | ❌    | ✅       | ✅     | ✅      |
+| **Reservas online**         | ❌    | ✅       | ✅     | ✅      |
+| **Equipos**                 | ❌    | ✅       | ✅     | ✅      |
+| **Soporte prioritario**     | ❌    | ❌       | ❌     | ✅      |
+
+> Los valores salen de la configuración de planes en producción (`planconfigs`).
+> Si cambian ahí, esta tabla queda desactualizada: es la fuente a consultar.
 
 ### 🎯 ¿Qué plan es para ti?
 

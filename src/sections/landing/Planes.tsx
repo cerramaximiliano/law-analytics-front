@@ -141,10 +141,11 @@ const PLAN_DEFAULTS: Plan[] = [
 	},
 ];
 
-// Defaults estables que SÍ se muestran siempre (free/standard/premium). PRO se
-// excluye del fallback: solo aparece cuando el API (PlanConfig 'pro' activo) lo
-// devuelve. Así el front queda listo para PRO sin exponerlo en prod antes del seeding.
-const STABLE_PLAN_DEFAULTS: Plan[] = PLAN_DEFAULTS.filter((p) => p.id !== "pro");
+// Defaults estables que se muestran mientras el API responde y si falla.
+// PRO ya está activo en producción (PlanConfig 'pro', isActive: true), así que
+// entra en el fallback: excluirlo escondía un plan real cada vez que la llamada
+// al API fallaba.
+const STABLE_PLAN_DEFAULTS: Plan[] = PLAN_DEFAULTS;
 
 const billingSuffixShort = (period: string): string => {
 	switch (period) {
@@ -232,10 +233,6 @@ const Planes = () => {
 				const merged = PLAN_DEFAULTS.map((def): Plan | null => {
 					const apiPlan = response.data!.find((p) => p.planId === def.id);
 					if (!apiPlan) {
-						// PRO solo se muestra cuando el backend lo expone (PlanConfig 'pro'
-						// activo). Sin eso, no hay card de PRO ni siquiera como fallback —
-						// evita mostrarlo en prod antes del seeding (Fase 2).
-						if (def.id === "pro") return null;
 						return def;
 					}
 

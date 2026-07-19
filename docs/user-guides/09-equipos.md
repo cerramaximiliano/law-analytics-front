@@ -42,15 +42,16 @@ Cuando creas un equipo, todos tus recursos (causas, contactos, calculadoras, doc
 
 Para crear un equipo necesitas:
 
-- **Plan Standard o Premium**: Los usuarios con plan Free no pueden crear equipos
+- **Plan Estándar, Pro o Premium**: Los usuarios con plan Free no pueden crear equipos
 - **No pertenecer a otro equipo**: Solo puedes pertenecer a un equipo a la vez
 
 ### Limites de miembros por plan:
 
-| Plan         | Miembros Maximos | Equipos       |
+| Plan         | Miembros máximos | Equipos       |
 | ------------ | ---------------- | ------------- |
-| **Free**     | -                | No disponible |
-| **Standard** | 5 miembros       | 1 equipo      |
+| **Free**     | —                | No disponible |
+| **Estándar** | 5 miembros       | 1 equipo      |
+| **Pro**      | 8 miembros       | 1 equipo      |
 | **Premium**  | 10 miembros      | 1 equipo      |
 
 > **💡 Nota**: El limite de miembros se refiere a los invitados. El propietario no cuenta dentro de ese limite.
@@ -277,12 +278,12 @@ Cuando creas una causa, contacto, nota o cualquier otro recurso:
 
 Los limites de recursos son los del plan del propietario:
 
-| Recurso            | Standard | Premium |
-| ------------------ | -------- | ------- |
-| **Causas**         | 50       | 500     |
-| **Calculadoras**   | 20       | 200     |
-| **Contactos**      | 100      | 1.000   |
-| **Almacenamiento** | 1 GB     | 10 GB   |
+| Recurso            | Estándar | Pro    | Premium |
+| ------------------ | -------- | ------ | ------- |
+| **Causas**         | 50       | 200    | 500     |
+| **Calculadoras**   | 20       | 100    | 200     |
+| **Contactos**      | 100      | 500    | 1.000   |
+| **Almacenamiento** | 100 MB   | 150 MB | 200 MB  |
 
 > **💡 Nota**: Todos los recursos creados por cualquier miembro cuentan contra estos limites. Si el equipo alcanza el limite de causas, ningun miembro podra crear causas nuevas hasta que se archiven/eliminen existentes o el propietario mejore su plan.
 
@@ -472,7 +473,7 @@ Principiante - Intermedio
 ### Prerrequisitos
 
 - Cuenta activa en Law Analytics
-- Plan Standard o Premium (para crear equipos)
+- Plan Estándar, Pro o Premium (para crear equipos)
 
 ### Formatos de Salida Posibles
 
