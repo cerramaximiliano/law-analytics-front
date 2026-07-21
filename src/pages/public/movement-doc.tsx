@@ -34,7 +34,7 @@ import {
 import { DocumentDownload, ExportSquare, LoginCurve } from "iconsax-react";
 
 import Logo from "components/logo";
-import { getPublicMovementDoc, sendPublicMovementEvent } from "services/publicMovementsService";
+import { getPublicMovementDoc, markPendingLoginContinue, sendPublicMovementEvent } from "services/publicMovementsService";
 import { trackNotificationMovementCtaClick, trackNotificationMovementOpen } from "utils/gtm";
 import type { PublicMovementDocResponse } from "types/publicMovement";
 
@@ -135,7 +135,12 @@ const MovementDocPublicPage = () => {
 
 	const handleCtaClick = () => {
 		trackNotificationMovementCtaClick(Boolean(folderId));
-		if (token) sendPublicMovementEvent(token, "cta_click", source);
+		if (token) {
+			sendPublicMovementEvent(token, "cta_click", source);
+			// Flag para que AuthGuard emita `login_continue` cuando llegue autenticado
+			// a la app (con o sin paso por /login) — cierra el funnel cta → sesión.
+			markPendingLoginContinue(token, source);
+		}
 	};
 	const handleDownloadClick = () => {
 		if (token) sendPublicMovementEvent(token, "download", source);

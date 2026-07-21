@@ -2,6 +2,7 @@ import React from "react";
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useAuth from "hooks/useAuth";
+import { flushPendingLoginContinue } from "services/publicMovementsService";
 
 // ==============================|| AUTH GUARD ||============================== //
 
@@ -12,6 +13,11 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 	const location = useLocation();
 
 	useEffect(() => {
+		if (isLoggedIn && !needsVerification) {
+			// Si el usuario venía del CTA de la vista pública /m/:token, emitir el
+			// beacon `login_continue` (una sola vez — el flush limpia el flag).
+			flushPendingLoginContinue();
+		}
 		if (isLoggedIn && needsVerification) {
 			navigate("/code-verification", { replace: true });
 		} else if (!isLoggedIn) {

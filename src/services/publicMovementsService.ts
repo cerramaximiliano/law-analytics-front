@@ -38,7 +38,7 @@ export async function getPublicMovementDoc(token: string, silent = false): Promi
 	}
 }
 
-export type PublicMovementBeaconEvent = "view_confirmed" | "cta_click" | "download" | "fallback_click";
+export type PublicMovementBeaconEvent = "view_confirmed" | "cta_click" | "download" | "fallback_click" | "login_continue";
 
 // Beacon de interacciones de la vista pública. Atribución server-side (el token
 // trae userId/causaId) que GA4 anónimo no puede dar. Fire-and-forget: usa
@@ -57,5 +57,42 @@ export function sendPublicMovementEvent(token: string, event: PublicMovementBeac
 		void fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
 	} catch {
 		// Tracking best-effort: nunca romper la UX por un beacon.
+	}
+}
+
+// ---------------------------------------------------------------------------
+// login_continue — cierra el funnel "¿hizo login para seguir trabajando?".
+//
+// El click en el CTA de /m/:token deja un flag en sessionStorage (sobrevive al
+// redirect de login porque es la misma pestaña/SPA). Cuando el usuario llega
+// AUTENTICADO a cualquier ruta protegida, AuthGuard hace flush: emite el beacon
+// `login_continue` con el mismo token (la credencial de atribución) y limpia.
+// Si abandona el login y vuelve otro día, la pestaña nueva no tiene el flag y
+// el TTL descarta sesiones viejas de la misma pestaña.
+// ---------------------------------------------------------------------------
+
+const LOGIN_CONTINUE_KEY = "la.movementLoginContinue";
+const LOGIN_CONTINUE_TTL_MS = 60 * 60 * 1000; // 1 hora: "siguió trabajando" es acción inmediata al email.
+
+export function markPendingLoginContinue(token: string, source?: string): void {
+	try {
+		sessionStorage.setItem(LOGIN_CONTINUE_KEY, JSON.stringify({ token, source: source || null, ts: Date.now() }));
+	} catch {
+		// sessionStorage puede no estar disponible (Safari private, etc.) — best-effort.
+	}
+}
+
+export function flushPendingLoginContinue(): void {
+	try {
+		const raw = sessionStorage.getItem(LOGIN_CONTINUE_KEY);
+		if (!raw) return;
+		// Limpiar ANTES de emitir: el evento es de una sola vez por click de CTA.
+		sessionStorage.removeItem(LOGIN_CONTINUE_KEY);
+		const pending = JSON.parse(raw) as { token?: string; source?: string | null; ts?: number };
+		if (!pending?.token || typeof pending.ts !== "number") return;
+		if (Date.now() - pending.ts > LOGIN_CONTINUE_TTL_MS) return;
+		sendPublicMovementEvent(pending.token, "login_continue", pending.source || undefined);
+	} catch {
+		// Best-effort.
 	}
 }
