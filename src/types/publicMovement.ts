@@ -33,4 +33,19 @@ export interface PublicMovementDocResponse {
 	movimientoId?: string | null;
 	// Folder del usuario para el CTA "gestionar" (null si no se pudo resolver).
 	folderId?: string | null;
+	// Promo de descuento activa (universal de landing o dirigida al dueño del
+	// token — el server la resuelve con el userId del token). null si no hay.
+	promo?: PublicMovementPromo | null;
+}
+
+export interface PublicMovementPromo {
+	code: string;
+	name: string;
+	badge: string | null;
+	promotionalMessage: string | null;
+	discountType: "percentage" | "fixed";
+	discountValue: number;
+	validUntil: string | null;
+	durationInMonths: number | null;
+	isTargeted: boolean;
 }

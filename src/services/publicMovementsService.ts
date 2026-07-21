@@ -38,17 +38,25 @@ export async function getPublicMovementDoc(token: string, silent = false): Promi
 	}
 }
 
-export type PublicMovementBeaconEvent = "view_confirmed" | "cta_click" | "download" | "fallback_click" | "login_continue";
+export type PublicMovementBeaconEvent = "view_confirmed" | "cta_click" | "download" | "fallback_click" | "login_continue" | "promo_click";
+
+// Sub-acción opcional de un cta_click (botones de acción rápida de la vista).
+export type PublicMovementBeaconAction = "vencimiento" | "nota" | "tarea";
 
 // Beacon de interacciones de la vista pública. Atribución server-side (el token
 // trae userId/causaId) que GA4 anónimo no puede dar. Fire-and-forget: usa
 // navigator.sendBeacon (sobrevive al unload, ej. click en CTA que navega) y cae
 // a fetch keepalive si no está disponible. Nunca lanza.
-export function sendPublicMovementEvent(token: string, event: PublicMovementBeaconEvent, source?: string): void {
+export function sendPublicMovementEvent(
+	token: string,
+	event: PublicMovementBeaconEvent,
+	source?: string,
+	action?: PublicMovementBeaconAction,
+): void {
 	try {
 		const sourceParam = source ? `?source=${encodeURIComponent(source)}` : "";
 		const url = `${getBaseUrl()}/api/public/movimientos/${encodeURIComponent(token)}/event${sourceParam}`;
-		const body = JSON.stringify({ event });
+		const body = JSON.stringify(action ? { event, action } : { event });
 		if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
 			const blob = new Blob([body], { type: "application/json" });
 			navigator.sendBeacon(url, blob);

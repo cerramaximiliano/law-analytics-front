@@ -73,6 +73,9 @@ interface PjnPdfViewerProps {
 	hasNext?: boolean;
 	// Notifica al padre cuando cambia el estado leído (para refrescar la lista).
 	onReadStatusChange?: (movementId: string, read: boolean) => void;
+	// Abre el visor con el panel lateral desplegado en esta sub-pestaña (deep-link
+	// ?action= de la vista pública). null/undefined = comportamiento normal.
+	initialPanelTab?: "notas" | "tareas" | "vencimientos" | null;
 }
 
 interface State {
@@ -151,6 +154,7 @@ const PjnPdfViewer = ({
 	hasPrev,
 	hasNext,
 	onReadStatusChange,
+	initialPanelTab,
 }: PjnPdfViewerProps) => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -176,6 +180,15 @@ const PjnPdfViewer = ({
 
 	const [panelOpen, setPanelOpen] = useState(false);
 	const [panelTab, setPanelTab] = useState<"notas" | "tareas" | "vencimientos">("notas");
+
+	// Deep-link ?action=: al abrir con initialPanelTab, desplegar el panel en esa
+	// sub-pestaña (el usuario vino de "Agregar vencimiento/nota/tarea" del email).
+	useEffect(() => {
+		if (open && initialPanelTab) {
+			setPanelOpen(true);
+			setPanelTab(initialPanelTab);
+		}
+	}, [open, initialPanelTab]);
 	const [noteModalOpen, setNoteModalOpen] = useState(false);
 	const [editingNote, setEditingNote] = useState<Note | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<Note | null>(null);

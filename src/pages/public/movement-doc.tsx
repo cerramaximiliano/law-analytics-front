@@ -31,10 +31,12 @@ import {
 	useMediaQuery,
 	useTheme,
 } from "@mui/material";
-import { DocumentDownload, ExportSquare, LoginCurve } from "iconsax-react";
+import { alpha } from "@mui/material/styles";
+import { CalendarAdd, DocumentDownload, ExportSquare, LoginCurve, NoteAdd, TaskSquare, TicketDiscount } from "iconsax-react";
 
 import Logo from "components/logo";
 import { getPublicMovementDoc, markPendingLoginContinue, sendPublicMovementEvent } from "services/publicMovementsService";
+import type { PublicMovementBeaconAction } from "services/publicMovementsService";
 import { trackNotificationMovementCtaClick, trackNotificationMovementOpen } from "utils/gtm";
 import type { PublicMovementDocResponse } from "types/publicMovement";
 
@@ -132,6 +134,17 @@ const MovementDocPublicPage = () => {
 		: "/apps/folders/list";
 	const fallbackUrl = data?.fallbackUrl || null;
 	const showPdf = Boolean(pdfUrl) && !iframeFailed;
+	const promo = data?.promo || null;
+
+	// CTA contextual: si resolvimos la causa del usuario, el botón dice qué hay
+	// del otro lado en vez del genérico "Iniciar sesión y gestionar".
+	const ctaLabel = folderId ? "Ver la causa completa" : "Iniciar sesión y gestionar";
+
+	// Etiqueta corta de la promo (mismo criterio que DiscountBanner de la landing).
+	const promoLabel = promo ? promo.badge || (promo.discountType === "percentage" ? `${promo.discountValue}% OFF` : promo.name) : "";
+	const promoValidLabel = promo?.validUntil
+		? new Date(promo.validUntil).toLocaleDateString("es-AR", { day: "numeric", month: "long", timeZone: "UTC" })
+		: null;
 
 	const handleCtaClick = () => {
 		trackNotificationMovementCtaClick(Boolean(folderId));
@@ -148,6 +161,28 @@ const MovementDocPublicPage = () => {
 	const handleFallbackClick = () => {
 		if (token) sendPublicMovementEvent(token, "fallback_click", source);
 	};
+	// Acción rápida (vencimiento/nota/tarea): mismo destino que el CTA pero con
+	// ?action=<x> para que el visor interno abra el panel correspondiente.
+	const handleQuickActionClick = (action: PublicMovementBeaconAction) => {
+		trackNotificationMovementCtaClick(Boolean(folderId));
+		if (token) {
+			sendPublicMovementEvent(token, "cta_click", source, action);
+			markPendingLoginContinue(token, source);
+		}
+	};
+	const handlePromoClick = () => {
+		if (token) {
+			sendPublicMovementEvent(token, "promo_click", source);
+			markPendingLoginContinue(token, source);
+		}
+	};
+
+	const quickActions: { action: PublicMovementBeaconAction; label: string; icon: React.ReactNode }[] = [
+		{ action: "vencimiento", label: "Vencimiento", icon: <CalendarAdd size="16" /> },
+		{ action: "nota", label: "Nota", icon: <NoteAdd size="16" /> },
+		{ action: "tarea", label: "Tarea", icon: <TaskSquare size="16" /> },
+	];
+	const canQuickAction = Boolean(folderId && movimientoId);
 
 	return (
 		<Box sx={{ display: "flex", flexDirection: "column", height: "100vh", bgcolor: theme.palette.grey[100] }}>
@@ -167,7 +202,7 @@ const MovementDocPublicPage = () => {
 						startIcon={<LoginCurve size="18" />}
 						size={isMobile ? "small" : "medium"}
 					>
-						{isMobile ? "Ingresar" : "Iniciar sesión y gestionar"}
+						{isMobile ? "Ingresar" : ctaLabel}
 					</Button>
 				</Toolbar>
 			</AppBar>
@@ -202,6 +237,38 @@ const MovementDocPublicPage = () => {
 							{movimiento.detalle ? ` — ${movimiento.detalle}` : ""}
 						</Typography>
 					)}
+				</Box>
+			)}
+
+			{/* Promo activa (universal de landing o dirigida al usuario). Sutil: una
+			    strip fina, sin robar protagonismo al documento. */}
+			{!loading && promo && (
+				<Box
+					sx={{
+						px: { xs: 2, md: 4 },
+						py: 0.75,
+						bgcolor: alpha(theme.palette.warning.main, 0.08),
+						borderBottom: `1px solid ${alpha(theme.palette.warning.main, 0.25)}`,
+					}}
+				>
+					<Stack direction="row" spacing={1} alignItems="center" justifyContent="center" flexWrap="wrap" rowGap={0.5}>
+						<TicketDiscount size="16" color={theme.palette.warning.dark} />
+						<Chip size="small" color="warning" label={promoLabel} sx={{ fontWeight: 600 }} />
+						<Typography variant="caption" color="text.secondary">
+							{promo.promotionalMessage || `Usá el código ${promo.code} en tu suscripción`}
+							{promoValidLabel ? ` · hasta el ${promoValidLabel}` : ""}
+						</Typography>
+						<Button
+							component={RouterLink}
+							to={`/suscripciones/tables?promo=${encodeURIComponent(promo.code)}`}
+							onClick={handlePromoClick}
+							size="small"
+							color="warning"
+							sx={{ fontWeight: 600, textTransform: "none", py: 0 }}
+						>
+							Ver planes
+						</Button>
+					</Stack>
 				</Box>
 			)}
 
@@ -259,7 +326,7 @@ const MovementDocPublicPage = () => {
 											variant="contained"
 											startIcon={<LoginCurve size="18" />}
 										>
-											Iniciar sesión y gestionar
+											{ctaLabel}
 										</Button>
 										{fallbackUrl && (
 											<Button
@@ -292,9 +359,31 @@ const MovementDocPublicPage = () => {
 					justifyContent="space-between"
 					sx={{ p: 1.5, bgcolor: "#fff", borderTop: `1px solid ${theme.palette.divider}` }}
 				>
-					<Typography variant="caption" color="text.secondary" sx={{ display: { xs: "none", sm: "block" } }}>
-						Documento del Poder Judicial · vista pública de Law Analytics
-					</Typography>
+					{canQuickAction ? (
+						<Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" rowGap={0.5}>
+							<Typography variant="caption" color="text.secondary" sx={{ mr: 0.5, display: { xs: "none", sm: "block" } }}>
+								Agregar a la causa:
+							</Typography>
+							{quickActions.map((qa) => (
+								<Button
+									key={qa.action}
+									component={RouterLink}
+									to={`${ctaHref}&action=${qa.action}`}
+									onClick={() => handleQuickActionClick(qa.action)}
+									size="small"
+									color="secondary"
+									startIcon={qa.icon}
+									sx={{ textTransform: "none" }}
+								>
+									{qa.label}
+								</Button>
+							))}
+						</Stack>
+					) : (
+						<Typography variant="caption" color="text.secondary" sx={{ display: { xs: "none", sm: "block" } }}>
+							Documento del Poder Judicial · vista pública de Law Analytics
+						</Typography>
+					)}
 					<Stack direction="row" spacing={1}>
 						<Button
 							size="small"

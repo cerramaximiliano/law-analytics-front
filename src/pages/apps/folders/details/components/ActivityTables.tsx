@@ -101,6 +101,10 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const [searchParams] = useSearchParams();
 	// Deep-link a un movimiento puntual (?movement=<id>, desde la vista pública /m/:token).
 	const highlightMovementId = searchParams.get("movement");
+	// Acción rápida del deep-link (?action=): auto-abre el visor del movimiento con
+	// el panel de vencimientos/notas/tareas. Sanitizada a los 3 valores conocidos.
+	const rawAction = searchParams.get("action");
+	const quickAction = rawAction === "vencimiento" || rawAction === "nota" || rawAction === "tarea" ? rawAction : null;
 	const { canCreate } = useTeam();
 	const [activeTab, setActiveTab] = useState<TabValue>("movements");
 	const [searchQuery, setSearchQuery] = useState("");
@@ -1315,7 +1319,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												) : scrapingSource === "pjn" && id ? (
 													// PJN: el viewer paginado (pjn-movements) REEMPLAZA la tabla clásica —
 													// una sola tabla. Otros fueros (EJE/SCBA/MEV/manual) usan MovementsTable.
-													<PjnMovementsViewerSection folderId={id} highlightMovementId={highlightMovementId} />
+													<PjnMovementsViewerSection folderId={id} highlightMovementId={highlightMovementId} quickAction={quickAction} />
 												) : (
 													<MovementsTable
 														movements={movementsData.movements}
@@ -1748,7 +1752,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												) : scrapingSource === "pjn" && id ? (
 													// PJN: el viewer paginado (pjn-movements) REEMPLAZA la tabla clásica —
 													// una sola tabla. Otros fueros (EJE/SCBA/MEV/manual) usan MovementsTable.
-													<PjnMovementsViewerSection folderId={id} highlightMovementId={highlightMovementId} />
+													<PjnMovementsViewerSection folderId={id} highlightMovementId={highlightMovementId} quickAction={quickAction} />
 												) : (
 													<MovementsTable
 														movements={movementsData.movements}

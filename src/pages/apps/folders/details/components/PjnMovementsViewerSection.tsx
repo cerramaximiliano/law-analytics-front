@@ -53,7 +53,18 @@ interface Props {
 	// si el movimiento está en la página cargada (el sort default es fecha desc, así
 	// que un movimiento recién notificado cae en la página 1).
 	highlightMovementId?: string | null;
+	// Acción rápida del deep-link (?action=vencimiento|nota|tarea, desde los botones
+	// de la vista pública): auto-abre el visor del movimiento resaltado con el panel
+	// lateral en la sub-pestaña correspondiente. A diferencia del highlight puro
+	// (que NO auto-abre, decisión Fase 4), acá el usuario pidió explícitamente crear algo.
+	quickAction?: "vencimiento" | "nota" | "tarea" | null;
 }
+
+const QUICK_ACTION_TO_PANEL_TAB = {
+	vencimiento: "vencimientos",
+	nota: "notas",
+	tarea: "tareas",
+} as const;
 
 const PDF_STATUS_OPTIONS: { value: PjnMovementPdfStatus | "all"; label: string }[] = [
 	{ value: "all", label: "Todos" },
@@ -90,7 +101,7 @@ function pdfStatusChip(status: PjnMovementPdfStatus) {
 	}
 }
 
-const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => {
+const PjnMovementsViewerSection = ({ folderId, highlightMovementId, quickAction }: Props) => {
 	const [page, setPage] = useState(1);
 	const [limit] = useState(20);
 	const [search, setSearch] = useState("");
@@ -201,6 +212,23 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 	useEffect(() => {
 		hasScrolledToHighlight.current = false;
 	}, [highlightMovementId]);
+
+	// Acción rápida del deep-link: auto-abrir el visor del movimiento resaltado con
+	// el panel en la sub-pestaña pedida (una sola vez por combinación id+acción).
+	const [autoPanelTab, setAutoPanelTab] = useState<"notas" | "tareas" | "vencimientos" | null>(null);
+	const hasAutoOpened = useRef(false);
+	useEffect(() => {
+		hasAutoOpened.current = false;
+	}, [highlightMovementId, quickAction]);
+	useEffect(() => {
+		if (!quickAction || !highlightMovementId || hasAutoOpened.current) return;
+		const idx = movements.findIndex((m) => m._id === highlightMovementId);
+		if (idx === -1) return;
+		hasAutoOpened.current = true;
+		setAutoPanelTab(QUICK_ACTION_TO_PANEL_TAB[quickAction]);
+		setSelectedIdx(idx);
+		setViewerOpen(true);
+	}, [quickAction, highlightMovementId, movements]);
 
 	const handleOpenViewer = (idx: number) => {
 		setSelectedIdx(idx);
@@ -596,9 +624,14 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId }: Props) => 
 
 			<PjnPdfViewer
 				open={viewerOpen}
-				onClose={() => setViewerOpen(false)}
+				onClose={() => {
+					setViewerOpen(false);
+					// El auto-tab es de un solo uso: aperturas manuales posteriores no lo heredan.
+					setAutoPanelTab(null);
+				}}
 				folderId={folderId}
 				movement={selected}
+				initialPanelTab={autoPanelTab}
 				onPrev={handlePrev}
 				onNext={handleNext}
 				hasPrev={hasPrev}
