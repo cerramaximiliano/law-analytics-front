@@ -53,6 +53,7 @@ const LaborLayout = Loadable(lazyRetry(() => import("pages/calculator/labor/inde
 const CivilLayouts = Loadable(lazyRetry(() => import("pages/calculator/civil/index")));
 const InteresesLayouts = Loadable(lazyRetry(() => import("pages/calculator/intereses/index")));
 const AllCalculatorsLayout = Loadable(lazyRetry(() => import("pages/calculator/all/index")));
+const ValoresArancelariosLayout = Loadable(lazyRetry(() => import("pages/calculator/valores/index"), "ValoresArancelarios"));
 
 // render - documents
 const DocumentsLayout = Loadable(lazyRetry(() => import("pages/documents/index")));
@@ -201,6 +202,10 @@ const MainRoutes = {
 								{
 									path: "intereses",
 									element: <InteresesLayouts />,
+								},
+								{
+									path: "valores",
+									element: <ValoresArancelariosLayout />,
 								},
 							],
 						},

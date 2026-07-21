@@ -83,6 +83,12 @@ const applications: NavItemType = {
 					url: "/apps/calc/intereses",
 				},
 				{
+					id: "valores-arancelarios",
+					title: <FormattedMessage id="Valores arancelarios" />,
+					type: "item",
+					url: "/apps/calc/valores",
+				},
+				{
 					id: "civil-calculator",
 					title: <FormattedMessage id="civil" />,
 					type: "item",
