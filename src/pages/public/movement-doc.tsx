@@ -35,6 +35,7 @@ import { alpha } from "@mui/material/styles";
 import { ArrowRight, CalendarAdd, DocumentDownload, ExportSquare, Flash, LoginCurve, NoteAdd, TaskSquare } from "iconsax-react";
 
 import Logo from "components/logo";
+import PdfCanvasViewer from "components/PdfCanvasViewer";
 import { getPublicMovementDoc, markPendingLoginContinue, sendPublicMovementEvent } from "services/publicMovementsService";
 import type { PublicMovementBeaconAction } from "services/publicMovementsService";
 import { trackNotificationMovementCtaClick, trackNotificationMovementOpen } from "utils/gtm";
@@ -78,6 +79,8 @@ const MovementDocPublicPage = () => {
 	const [data, setData] = useState<PublicMovementDocResponse | null>(null);
 	const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 	const [iframeFailed, setIframeFailed] = useState(false);
+	// El render por canvas (mobile) falló → caer al iframe nativo como fallback.
+	const [canvasFailed, setCanvasFailed] = useState(false);
 	const trackedRef = useRef(false);
 
 	useEffect(() => {
@@ -392,7 +395,13 @@ const MovementDocPublicPage = () => {
 					</Stack>
 				)}
 
-				{!loading && showPdf && (
+				{/* Mobile: los browsers (Chrome Android sobre todo) no renderizan PDFs en
+				    iframe — muestran "archivo.pdf" + botón Abrir. Ahí usamos el render
+				    por canvas (pdfjs). Desktop conserva el iframe nativo (toolbar/zoom). */}
+				{!loading && showPdf && isMobile && !canvasFailed && (
+					<PdfCanvasViewer url={pdfUrl as string} docKey={movimientoId || token || "doc"} onError={() => setCanvasFailed(true)} />
+				)}
+				{!loading && showPdf && (!isMobile || canvasFailed) && (
 					<iframe
 						src={pdfUrl as string}
 						title="Documento del movimiento"

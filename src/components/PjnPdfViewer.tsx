@@ -51,6 +51,7 @@ import { deleteNote, getNotesByFolderId } from "store/reducers/notes";
 import { deleteTask, getTasksByFolderId } from "store/reducers/tasks";
 import { deleteEvent, getEventsById } from "store/reducers/events";
 import { openSnackbar } from "store/reducers/snackbar";
+import PdfCanvasViewer from "components/PdfCanvasViewer";
 import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
 import ModalTasks from "pages/apps/folders/details/modals/MoldalTasks";
 import AddEventFrom from "sections/apps/calendar/AddEventForm";
@@ -180,6 +181,8 @@ const PjnPdfViewer = ({
 
 	const [panelOpen, setPanelOpen] = useState(false);
 	const [panelTab, setPanelTab] = useState<"notas" | "tareas" | "vencimientos">("notas");
+	// El render por canvas (mobile) falló → caer al iframe nativo como fallback.
+	const [canvasFailed, setCanvasFailed] = useState(false);
 
 	// Deep-link ?action=: al abrir con initialPanelTab, desplegar el panel en esa
 	// sub-pestaña (el usuario vino de "Agregar vencimiento/nota/tarea" del email).
@@ -189,6 +192,11 @@ const PjnPdfViewer = ({
 			setPanelTab(initialPanelTab);
 		}
 	}, [open, initialPanelTab]);
+
+	// Reset del fallback de canvas al cambiar de movimiento.
+	useEffect(() => {
+		setCanvasFailed(false);
+	}, [movement?._id]);
 	const [noteModalOpen, setNoteModalOpen] = useState(false);
 	const [editingNote, setEditingNote] = useState<Note | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<Note | null>(null);
@@ -531,8 +539,11 @@ const PjnPdfViewer = ({
 					</Stack>
 				</Stack>
 
-				{/* Body: PDF + (opcional) panel de notas */}
+				{/* Body: PDF + (opcional) panel de notas. En mobile el panel abierto ocupa
+			    todo el ancho (100%) — ocultamos el área del PDF para que no queden los
+			    dos apretados en la misma fila; el toggle del panel vuelve al documento. */}
 				<Stack direction="row" sx={{ flex: 1, minHeight: 0 }}>
+					{(!isMobile || !panelOpen) && (
 					<Box sx={{ flex: 1, position: "relative", bgcolor: theme.palette.grey[100], minWidth: 0 }}>
 						{state.loading && (
 							<Stack alignItems="center" justifyContent="center" sx={{ height: "100%" }}>
@@ -543,7 +554,12 @@ const PjnPdfViewer = ({
 							</Stack>
 						)}
 
-						{!state.loading && state.pdfUrl && (
+						{/* Mobile: iframe con PDF no renderiza (placeholder "archivo.pdf" +
+						    Abrir) — render por canvas con pdfjs. Desktop: iframe nativo. */}
+						{!state.loading && state.pdfUrl && isMobile && !canvasFailed && (
+							<PdfCanvasViewer url={state.pdfUrl} docKey={movement?._id || "doc"} onError={() => setCanvasFailed(true)} />
+						)}
+						{!state.loading && state.pdfUrl && (!isMobile || canvasFailed) && (
 							<iframe
 								src={state.pdfUrl}
 								title="PDF del movimiento"
@@ -582,6 +598,7 @@ const PjnPdfViewer = ({
 							</Stack>
 						)}
 					</Box>
+					)}
 
 					{/* Panel lateral de notas y tareas */}
 					{panelOpen && (
