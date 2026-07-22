@@ -148,7 +148,6 @@ const formatDate = (dateString: string) => {
 const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, searchQuery, onEdit, onDelete, onView }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
-	const errorColor = theme.palette.error.main;
 	const { canUpdate, canDelete } = useTeam();
 	const [order, setOrder] = useState<Order>("desc");
 	const [orderBy, setOrderBy] = useState<keyof NotificationType>("time");

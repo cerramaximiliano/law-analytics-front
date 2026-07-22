@@ -4,7 +4,6 @@ import {
 	Box,
 	Typography,
 	Alert,
-	Chip,
 	Stack,
 	FormControl,
 	InputLabel,
@@ -17,7 +16,6 @@ import {
 	Paper,
 	Collapse,
 	SelectChangeEvent,
-	Divider,
 	Skeleton,
 } from "@mui/material";
 import {
@@ -236,22 +234,6 @@ const FIELD_LABELS: Record<string, string> = {
  */
 const getFieldLabel = (fieldName: string): string => {
 	return FIELD_LABELS[fieldName] || fieldName;
-};
-
-// Color mapping for MUI (legacy fallback for timeline dot)
-const getMuiColor = (color: string): "success" | "info" | "warning" | "error" | "primary" | "secondary" => {
-	switch (color) {
-		case "success":
-			return "success";
-		case "info":
-			return "info";
-		case "warning":
-			return "warning";
-		case "error":
-			return "error";
-		default:
-			return "primary";
-	}
 };
 
 // Brand accent mapping for action types

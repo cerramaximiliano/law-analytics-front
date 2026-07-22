@@ -2,10 +2,6 @@ import {
 	Stack,
 	Skeleton,
 	IconButton,
-	List,
-	ListItem,
-	ListItemAvatar,
-	ListItemText,
 	Typography,
 	Dialog,
 	Box,
@@ -49,7 +45,7 @@ import { deleteContact, unlinkFolderFromContact, filterContactsByFolder, archive
 import { dispatch, useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { useTeam } from "contexts/TeamContext";
-import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
+import { BRAND_BLUE, STALE_AMBER } from "themes/dashboardTokens";
 
 interface MembersProps {
 	title: string;
