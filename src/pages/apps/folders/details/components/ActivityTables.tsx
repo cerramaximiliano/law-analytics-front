@@ -108,9 +108,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const { canCreate } = useTeam();
 	const [activeTab, setActiveTab] = useState<TabValue>("movements");
 	const [searchQuery, setSearchQuery] = useState("");
-	// Filtro por estado de PDF del expediente PJN (el select vive en el toolbar;
-	// la tabla es PjnMovementsViewerSection).
+	// Filtros del expediente PJN (viven en el toolbar; la tabla es
+	// PjnMovementsViewerSection y el endpoint pjn-movements los soporta nativos).
 	const [pjnPdfFilter, setPjnPdfFilter] = useState<PjnMovementPdfStatus | "all">("all");
+	const [pjnDateFrom, setPjnDateFrom] = useState("");
+	const [pjnDateTo, setPjnDateTo] = useState("");
 	const [showFilters, setShowFilters] = useState(false);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [filters, setFilters] = useState<any>({
@@ -1132,21 +1134,42 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 								    compactos en vez de la caja "Opciones de visualización". PJN: solo el
 								    filtro de estado de PDF (los clásicos no operan sobre pjn-movements). */}
 								{activeTab === "movements" && scrapingSource === "pjn" && (
-									<TextField
-										select
-										size="small"
-										fullWidth
-										label="Estado del PDF"
-										value={pjnPdfFilter}
-										onChange={(e) => setPjnPdfFilter(e.target.value as PjnMovementPdfStatus | "all")}
-										sx={{ mt: 1.5 }}
-									>
-										{PDF_STATUS_OPTIONS.map((opt) => (
-											<MenuItem key={opt.value} value={opt.value}>
-												{opt.label}
-											</MenuItem>
-										))}
-									</TextField>
+									<Stack spacing={1.25} sx={{ mt: 1.5 }}>
+										<TextField
+											select
+											size="small"
+											fullWidth
+											label="Estado del PDF"
+											value={pjnPdfFilter}
+											onChange={(e) => setPjnPdfFilter(e.target.value as PjnMovementPdfStatus | "all")}
+										>
+											{PDF_STATUS_OPTIONS.map((opt) => (
+												<MenuItem key={opt.value} value={opt.value}>
+													{opt.label}
+												</MenuItem>
+											))}
+										</TextField>
+										<Stack direction="row" spacing={1}>
+											<TextField
+												size="small"
+												type="date"
+												label="Desde"
+												value={pjnDateFrom}
+												onChange={(e) => setPjnDateFrom(e.target.value)}
+												InputLabelProps={{ shrink: true }}
+												sx={{ flex: 1 }}
+											/>
+											<TextField
+												size="small"
+												type="date"
+												label="Hasta"
+												value={pjnDateTo}
+												onChange={(e) => setPjnDateTo(e.target.value)}
+												InputLabelProps={{ shrink: true }}
+												sx={{ flex: 1 }}
+											/>
+										</Stack>
+									</Stack>
 								)}
 								{activeTab === "movements" && scrapingSource !== "pjn" && (
 									<Stack spacing={1.25} sx={{ mt: 1.5 }}>
@@ -1282,6 +1305,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														quickAction={quickAction}
 														searchQuery={searchQuery}
 														pdfFilter={pjnPdfFilter}
+														dateFrom={pjnDateFrom}
+														dateTo={pjnDateTo}
 														causaLastSyncDate={movementsData.causaLastSyncDate}
 													/>
 												) : (
@@ -1297,7 +1322,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														totalWithLinks={movementsData.totalWithLinks}
 														documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
 														documentsInThisPage={movementsData.documentsInThisPage}
-														pjnAccess={movementsData.pjnAccess ?? movementsData.scbaAccess}
+														pjnAccess={movementsData.pjnAccess ?? movementsData.mevAccess ?? movementsData.scbaAccess ?? movementsData.ejeAccess}
 													/>
 												))}
 											{activeTab === "notifications" && (
@@ -1423,23 +1448,43 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 											}}
 										/>
 
-										{/* PJN: filtro por estado de PDF en el toolbar (la tabla PJN no usa
-										    los filtros clásicos — rediseño 2026-07) */}
+										{/* PJN: filtros nativos del expediente en el toolbar (estado de PDF +
+										    rango de fechas — el endpoint pjn-movements los soporta) */}
 										{activeTab === "movements" && scrapingSource === "pjn" && (
-											<TextField
-												select
-												size="small"
-												label="PDF"
-												value={pjnPdfFilter}
-												onChange={(e) => setPjnPdfFilter(e.target.value as PjnMovementPdfStatus | "all")}
-												sx={{ minWidth: 160 }}
-											>
-												{PDF_STATUS_OPTIONS.map((opt) => (
-													<MenuItem key={opt.value} value={opt.value}>
-														{opt.label}
-													</MenuItem>
-												))}
-											</TextField>
+											<>
+												<TextField
+													select
+													size="small"
+													label="PDF"
+													value={pjnPdfFilter}
+													onChange={(e) => setPjnPdfFilter(e.target.value as PjnMovementPdfStatus | "all")}
+													sx={{ minWidth: 160 }}
+												>
+													{PDF_STATUS_OPTIONS.map((opt) => (
+														<MenuItem key={opt.value} value={opt.value}>
+															{opt.label}
+														</MenuItem>
+													))}
+												</TextField>
+												<TextField
+													size="small"
+													type="date"
+													label="Desde"
+													value={pjnDateFrom}
+													onChange={(e) => setPjnDateFrom(e.target.value)}
+													InputLabelProps={{ shrink: true }}
+													sx={{ width: 150 }}
+												/>
+												<TextField
+													size="small"
+													type="date"
+													label="Hasta"
+													value={pjnDateTo}
+													onChange={(e) => setPjnDateTo(e.target.value)}
+													InputLabelProps={{ shrink: true }}
+													sx={{ width: 150 }}
+												/>
+											</>
 										)}
 									</Stack>
 
@@ -1679,6 +1724,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														quickAction={quickAction}
 														searchQuery={searchQuery}
 														pdfFilter={pjnPdfFilter}
+														dateFrom={pjnDateFrom}
+														dateTo={pjnDateTo}
 														causaLastSyncDate={movementsData.causaLastSyncDate}
 													/>
 												) : (
@@ -1695,7 +1742,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														totalWithLinks={movementsData.totalWithLinks}
 														documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
 														documentsInThisPage={movementsData.documentsInThisPage}
-														pjnAccess={movementsData.pjnAccess ?? movementsData.scbaAccess}
+														pjnAccess={movementsData.pjnAccess ?? movementsData.mevAccess ?? movementsData.scbaAccess ?? movementsData.ejeAccess}
 													/>
 												))}
 											{activeTab === "notifications" && (

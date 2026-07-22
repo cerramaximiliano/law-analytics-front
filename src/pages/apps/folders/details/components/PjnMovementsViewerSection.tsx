@@ -5,10 +5,8 @@
 // nada existente. Si el folder no es PJN, no se renderiza.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
 	Box,
-	Button,
 	Chip,
 	Dialog,
 	IconButton,
@@ -29,6 +27,7 @@ import { alpha } from "@mui/material/styles";
 import { Calendar, DocumentText, ExportSquare, Note1, TaskSquare, TickCircle } from "iconsax-react";
 import dayjs from "utils/dayjs-config";
 import PjnPdfViewer from "components/PjnPdfViewer";
+import MovementsUpgradeBanner from "components/shared/MovementsUpgradeBanner";
 import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
 import ModalTasks from "pages/apps/folders/details/modals/MoldalTasks";
 import AddEventFrom from "sections/apps/calendar/AddEventForm";
@@ -60,6 +59,9 @@ interface Props {
 	searchQuery?: string;
 	// Filtro por estado de PDF, cuyo select vive en el toolbar del padre.
 	pdfFilter?: PjnMovementPdfStatus | "all";
+	// Rango de fechas (YYYY-MM-DD) — los date pickers viven en el toolbar del padre.
+	dateFrom?: string;
+	dateTo?: string;
 	// Última sincronización de la causa — se muestra en la línea de info densa
 	// (reemplaza al banner FolderSyncStatus para PJN).
 	causaLastSyncDate?: string | null;
@@ -121,9 +123,10 @@ const PjnMovementsViewerSection = ({
 	quickAction,
 	searchQuery = "",
 	pdfFilter = "all",
+	dateFrom = "",
+	dateTo = "",
 	causaLastSyncDate = null,
 }: Props) => {
-	const navigate = useNavigate();
 	const [page, setPage] = useState(1);
 	const [limit] = useState(20);
 	const [search, setSearch] = useState("");
@@ -150,6 +153,8 @@ const PjnMovementsViewerSection = ({
 				limit,
 				search: search || undefined,
 				pdfStatus: pdfFilter !== "all" ? pdfFilter : undefined,
+				dateFrom: dateFrom || undefined,
+				dateTo: dateTo || undefined,
 			});
 			setData(res);
 		} catch (err: any) {
@@ -157,7 +162,7 @@ const PjnMovementsViewerSection = ({
 		} finally {
 			setLoading(false);
 		}
-	}, [folderId, page, limit, search, pdfFilter]);
+	}, [folderId, page, limit, search, pdfFilter, dateFrom, dateTo]);
 
 	useEffect(() => {
 		fetchData();
@@ -174,10 +179,10 @@ const PjnMovementsViewerSection = ({
 		return () => clearTimeout(t);
 	}, [searchQuery, search]);
 
-	// Cambio de filtro de PDF (select del toolbar) → volver a página 1.
+	// Cambio de filtros del toolbar (PDF / rango de fechas) → volver a página 1.
 	useEffect(() => {
 		setPage(1);
-	}, [pdfFilter]);
+	}, [pdfFilter, dateFrom, dateTo]);
 
 	// Notas y tareas del folder (para mostrar en la tabla qué movimientos tienen).
 	// Se leen de redux y se cuentan por movementRef (= movement._id en PJN). Reactivo:
@@ -368,7 +373,7 @@ const PjnMovementsViewerSection = ({
 	// Si el folder no tiene causa PJN, el endpoint devuelve count=0 con mensaje.
 	// Este guard va DESPUÉS de todos los hooks (rules-of-hooks): un return temprano
 	// antes de un useEffect cambia el número de hooks entre renders y crashea React.
-	if (data && total === 0 && !search && pdfFilter === "all" && data.message?.includes("no tiene causa PJN")) {
+	if (data && total === 0 && !search && pdfFilter === "all" && !dateFrom && !dateTo && data.message?.includes("no tiene causa PJN")) {
 		return null; // No renderizar nada — mejor UX para folders no-PJN
 	}
 
@@ -410,36 +415,10 @@ const PjnMovementsViewerSection = ({
 			</Stack>
 
 			<Box sx={{ p: 2, pt: 1.5 }}>
-				{/* Banner de upgrade (plan free): una sola línea densa + CTA */}
+				{/* Banner de upgrade (plan free): componente UNIFICADO — mismo diseño y
+				    copy que la tabla clásica y la Vista combinada. */}
 				{requiresUpgrade && (
-					<Stack
-						direction={{ xs: "column", sm: "row" }}
-						spacing={1}
-						alignItems={{ xs: "flex-start", sm: "center" }}
-						justifyContent="space-between"
-						sx={(t) => ({
-							mb: 1.5,
-							px: 1.5,
-							py: 0.75,
-							borderRadius: 1,
-							border: `1px solid ${alpha(t.palette.info.main, 0.3)}`,
-							bgcolor: alpha(t.palette.info.main, 0.06),
-						})}
-					>
-						<Typography variant="caption" color="text.secondary">
-							Estás viendo los últimos {movements.length} de {total.toLocaleString("es-AR")} movimientos. Los planes pagos (Estándar,
-							Pro o Premium) desbloquean el expediente completo y los PDF.
-						</Typography>
-						<Button
-							size="small"
-							variant="outlined"
-							color="info"
-							onClick={() => navigate("/suscripciones/tables")}
-							sx={{ textTransform: "none", fontWeight: 600, flexShrink: 0, py: 0.25 }}
-						>
-							Ver planes
-						</Button>
-					</Stack>
+					<MovementsUpgradeBanner previewCount={movements.length} totalMovements={total} unlockSuffix=" y los PDF" />
 				)}
 
 				{error && (
@@ -458,7 +437,7 @@ const PjnMovementsViewerSection = ({
 
 				{!loading && movements.length === 0 && !error && (
 					<Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
-						{search || pdfFilter !== "all"
+						{search || pdfFilter !== "all" || dateFrom || dateTo
 							? "No hay movimientos que coincidan con los filtros."
 							: "No hay movimientos para este expediente."}
 					</Typography>
