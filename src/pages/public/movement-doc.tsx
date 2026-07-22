@@ -23,7 +23,9 @@ import {
 	Button,
 	Chip,
 	CircularProgress,
+	Collapse,
 	Container,
+	IconButton,
 	Paper,
 	Stack,
 	Toolbar,
@@ -32,7 +34,7 @@ import {
 	useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { ArrowRight, CalendarAdd, DocumentDownload, ExportSquare, Flash, LoginCurve, NoteAdd, TaskSquare } from "iconsax-react";
+import { ArrowRight, CalendarAdd, CloseCircle, DocumentDownload, ExportSquare, Flash, LoginCurve, NoteAdd, TaskSquare } from "iconsax-react";
 
 import Logo from "components/logo";
 import PdfCanvasViewer from "components/PdfCanvasViewer";
@@ -183,6 +185,31 @@ const MovementDocPublicPage = () => {
 		}
 	};
 	const navigate = useNavigate();
+
+	// Cierre suave de la promo: colapsa animado y se recuerda POR SESIÓN y por
+	// código (sessionStorage) — en esta pestaña no reaparece; el próximo email
+	// (pestaña nueva) la vuelve a mostrar. Un código nuevo también resetea.
+	const [promoDismissed, setPromoDismissed] = useState(false);
+	useEffect(() => {
+		if (!promo?.code) return;
+		try {
+			setPromoDismissed(sessionStorage.getItem(`la.promoDismissed.${promo.code}`) === "1");
+		} catch {
+			// sessionStorage no disponible — mostrarla siempre.
+		}
+	}, [promo?.code]);
+	const handlePromoDismiss = (e: { stopPropagation: () => void }) => {
+		e.stopPropagation();
+		setPromoDismissed(true);
+		if (promo?.code) {
+			try {
+				sessionStorage.setItem(`la.promoDismissed.${promo.code}`, "1");
+			} catch {
+				// best-effort
+			}
+		}
+	};
+
 	// El strip entero es clickeable (igual que el banner de la landing): trackea
 	// y navega a los planes de la app con el código pre-cargado.
 	const handlePromoClick = () => {
@@ -260,17 +287,22 @@ const MovementDocPublicPage = () => {
 			    que DiscountBanner de la landing: strip con gradiente animado, entera
 			    clickeable. Acá va inline (no fixed) entre el header y el documento. */}
 			{!loading && promo && (
+				<Collapse in={!promoDismissed} unmountOnExit>
 				<Box
 					role="button"
 					tabIndex={0}
 					onClick={handlePromoClick}
 					onKeyDown={(e) => {
+						// Solo cuando el foco está en la strip misma — Enter sobre la X
+						// (hijo) burbujea hasta acá y no debe navegar.
+						if (e.target !== e.currentTarget) return;
 						if (e.key === "Enter" || e.key === " ") {
 							e.preventDefault();
 							handlePromoClick();
 						}
 					}}
 					sx={{
+						position: "relative",
 						cursor: "pointer",
 						background: BRAND_GRADIENT_BG,
 						backgroundSize: "300% 100%",
@@ -290,7 +322,8 @@ const MovementDocPublicPage = () => {
 						columnGap: { xs: 1.25, sm: 1.5, md: 2 },
 						rowGap: 0.25,
 						py: { xs: 0.75, md: 1 },
-						px: { xs: 1.5, sm: 2, md: 3 },
+						pl: { xs: 1.5, sm: 2, md: 3 },
+						pr: { xs: 5, md: 6 },
 						textAlign: "center",
 						lineHeight: 1.25,
 					}}
@@ -381,7 +414,25 @@ const MovementDocPublicPage = () => {
 							<ArrowRight size={14} color="#fff" />
 						</Box>
 					</Box>
+
+					{/* Cierre suave: colapsa la strip y se recuerda por sesión. */}
+					<IconButton
+						size="small"
+						aria-label="Cerrar promoción"
+						onClick={handlePromoDismiss}
+						sx={{
+							position: "absolute",
+							right: { xs: 4, md: 8 },
+							top: "50%",
+							transform: "translateY(-50%)",
+							color: alpha("#fff", 0.8),
+							"&:hover": { color: "#fff", bgcolor: alpha("#fff", 0.12) },
+						}}
+					>
+						<CloseCircle size={18} />
+					</IconButton>
 				</Box>
+				</Collapse>
 			)}
 
 			{/* Body: PDF / fallback / error */}
