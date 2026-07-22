@@ -468,18 +468,20 @@ const MovementDocPublicPage = () => {
 				)}
 			</Box>
 
-			{/* Footer: acciones rápidas cuando hay PDF */}
+			{/* Footer: acciones rápidas cuando hay PDF. En mobile pasa a dos filas
+			    (acciones / descarga) con botones de ancho parejo; en desktop queda
+			    la fila única con los grupos a izquierda y derecha. */}
 			{!loading && showPdf && (
 				<Stack
-					direction="row"
+					direction={{ xs: "column", sm: "row" }}
 					spacing={1}
-					alignItems="center"
+					alignItems={{ xs: "stretch", sm: "center" }}
 					justifyContent="space-between"
 					sx={{ p: 1.5, bgcolor: "#fff", borderTop: `1px solid ${theme.palette.divider}` }}
 				>
 					{canQuickAction ? (
-						<Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" rowGap={0.5}>
-							<Typography variant="caption" color="text.secondary" sx={{ mr: 0.5, display: { xs: "none", sm: "block" } }}>
+						<Stack direction="row" spacing={0.5} alignItems="center" justifyContent={{ xs: "space-between", sm: "flex-start" }}>
+							<Typography variant="caption" color="text.secondary" sx={{ mr: 0.5, display: { xs: "none", md: "block" } }}>
 								Agregar a la causa:
 							</Typography>
 							{quickActions.map((qa) => (
@@ -491,7 +493,7 @@ const MovementDocPublicPage = () => {
 									size="small"
 									color="secondary"
 									startIcon={qa.icon}
-									sx={{ textTransform: "none" }}
+									sx={{ textTransform: "none", flex: { xs: 1, sm: "0 0 auto" }, whiteSpace: "nowrap" }}
 								>
 									{qa.label}
 								</Button>
@@ -502,13 +504,14 @@ const MovementDocPublicPage = () => {
 							Documento del Poder Judicial · vista pública de Law Analytics
 						</Typography>
 					)}
-					<Stack direction="row" spacing={1}>
+					<Stack direction="row" spacing={1} justifyContent={{ xs: "space-between", sm: "flex-end" }}>
 						<Button
 							size="small"
 							startIcon={<DocumentDownload size="18" />}
 							href={pdfUrl as string}
 							download={`${movimiento?.tipo || "documento"}.pdf`}
 							onClick={handleDownloadClick}
+							sx={{ flex: { xs: 1, sm: "0 0 auto" }, whiteSpace: "nowrap" }}
 						>
 							Descargar
 						</Button>
@@ -520,6 +523,7 @@ const MovementDocPublicPage = () => {
 								target="_blank"
 								rel="noopener noreferrer"
 								onClick={handleFallbackClick}
+								sx={{ flex: { xs: 1, sm: "0 0 auto" }, whiteSpace: "nowrap" }}
 							>
 								Original PJN
 							</Button>
