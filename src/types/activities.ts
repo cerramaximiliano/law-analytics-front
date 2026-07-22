@@ -90,6 +90,11 @@ export interface CombinedActivitiesState {
 	stats?: ActivityStats;
 	documentsInfo?: DocumentsInfo;
 	pjnAccess?: PjnAccess;
+	// Access objects de las otras fuentes sincronizadas (mismo shape que
+	// PjnAccess; el server solo los incluye cuando el plan limitó el preview).
+	mevAccess?: PjnAccess;
+	scbaAccess?: PjnAccess;
+	ejeAccess?: PjnAccess;
 	isLoading: boolean;
 	error?: string;
 }

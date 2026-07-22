@@ -35,6 +35,12 @@ const activitiesReducer = (state = initialState, action: any): CombinedActivitie
 				stats: action.payload.stats,
 				documentsInfo: action.payload.documentsInfo,
 				pjnAccess: action.payload.pjnAccess,
+				// Access objects de las otras fuentes sincronizadas (solo llegan
+				// cuando el plan free limitó el preview) — alimentan el banner
+				// unificado de upgrade en la Vista combinada.
+				mevAccess: action.payload.mevAccess,
+				scbaAccess: action.payload.scbaAccess,
+				ejeAccess: action.payload.ejeAccess,
 				isLoading: false,
 				error: undefined,
 			};

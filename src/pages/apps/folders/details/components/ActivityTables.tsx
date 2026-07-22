@@ -1354,7 +1354,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													pagination={activitiesData.pagination}
 													isLoading={activitiesData.isLoading}
 													stats={activitiesData.stats}
-													pjnAccess={activitiesData.pjnAccess}
+													pjnAccess={activitiesData.pjnAccess ?? activitiesData.mevAccess ?? activitiesData.scbaAccess ?? activitiesData.ejeAccess}
 												/>
 											)}
 										</Paper>
@@ -1774,7 +1774,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													pagination={activitiesData.pagination}
 													isLoading={activitiesData.isLoading}
 													stats={activitiesData.stats}
-													pjnAccess={activitiesData.pjnAccess}
+													pjnAccess={activitiesData.pjnAccess ?? activitiesData.mevAccess ?? activitiesData.scbaAccess ?? activitiesData.ejeAccess}
 												/>
 											)}
 										</Paper>
