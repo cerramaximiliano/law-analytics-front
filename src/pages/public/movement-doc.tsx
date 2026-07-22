@@ -14,7 +14,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { Link as RouterLink, useParams, useSearchParams } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import {
 	Alert,
@@ -32,7 +32,7 @@ import {
 	useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { CalendarAdd, DocumentDownload, ExportSquare, LoginCurve, NoteAdd, TaskSquare, TicketDiscount } from "iconsax-react";
+import { ArrowRight, CalendarAdd, DocumentDownload, ExportSquare, Flash, LoginCurve, NoteAdd, TaskSquare } from "iconsax-react";
 
 import Logo from "components/logo";
 import { getPublicMovementDoc, markPendingLoginContinue, sendPublicMovementEvent } from "services/publicMovementsService";
@@ -42,6 +42,12 @@ import type { PublicMovementDocResponse } from "types/publicMovement";
 
 // Refresco silencioso de la presigned URL (dura 300s) antes de que expire.
 const REFRESH_MS = 4 * 60 * 1000;
+
+// Tokens del strip de promo — mismos que DiscountBanner de la landing, para que
+// la promo se vea idéntica en ambos lugares.
+const BRAND_BLUE = "#3A7BFF";
+const BRAND_PURPLE = "#8A5CFF";
+const BRAND_GRADIENT_BG = `linear-gradient(90deg, ${BRAND_BLUE} 0%, ${BRAND_PURPLE} 50%, ${BRAND_BLUE} 100%)`;
 
 function formatFecha(iso: string | null | undefined): string {
 	if (!iso) return "";
@@ -140,10 +146,13 @@ const MovementDocPublicPage = () => {
 	// del otro lado en vez del genérico "Iniciar sesión y gestionar".
 	const ctaLabel = folderId ? "Ver la causa completa" : "Iniciar sesión y gestionar";
 
-	// Etiqueta corta de la promo (mismo criterio que DiscountBanner de la landing).
+	// Etiquetas de la promo (mismo criterio que DiscountBanner de la landing).
 	const promoLabel = promo ? promo.badge || (promo.discountType === "percentage" ? `${promo.discountValue}% OFF` : promo.name) : "";
 	const promoValidLabel = promo?.validUntil
 		? new Date(promo.validUntil).toLocaleDateString("es-AR", { day: "numeric", month: "long", timeZone: "UTC" })
+		: null;
+	const promoDurationLabel = promo?.durationInMonths
+		? `${promo.durationInMonths} ${promo.durationInMonths === 1 ? "mes" : "meses"}`
 		: null;
 
 	const handleCtaClick = () => {
@@ -170,11 +179,15 @@ const MovementDocPublicPage = () => {
 			markPendingLoginContinue(token, source);
 		}
 	};
+	const navigate = useNavigate();
+	// El strip entero es clickeable (igual que el banner de la landing): trackea
+	// y navega a los planes de la app con el código pre-cargado.
 	const handlePromoClick = () => {
 		if (token) {
 			sendPublicMovementEvent(token, "promo_click", source);
 			markPendingLoginContinue(token, source);
 		}
+		if (promo) navigate(`/suscripciones/tables?promo=${encodeURIComponent(promo.code)}`);
 	};
 
 	const quickActions: { action: PublicMovementBeaconAction; label: string; icon: React.ReactNode }[] = [
@@ -240,35 +253,131 @@ const MovementDocPublicPage = () => {
 				</Box>
 			)}
 
-			{/* Promo activa (universal de landing o dirigida al usuario). Sutil: una
-			    strip fina, sin robar protagonismo al documento. */}
+			{/* Promo activa (universal de landing o dirigida al usuario). Mismo diseño
+			    que DiscountBanner de la landing: strip con gradiente animado, entera
+			    clickeable. Acá va inline (no fixed) entre el header y el documento. */}
 			{!loading && promo && (
 				<Box
+					role="button"
+					tabIndex={0}
+					onClick={handlePromoClick}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							handlePromoClick();
+						}
+					}}
 					sx={{
-						px: { xs: 2, md: 4 },
-						py: 0.75,
-						bgcolor: alpha(theme.palette.warning.main, 0.08),
-						borderBottom: `1px solid ${alpha(theme.palette.warning.main, 0.25)}`,
+						cursor: "pointer",
+						background: BRAND_GRADIENT_BG,
+						backgroundSize: "300% 100%",
+						color: "#fff",
+						borderBottom: `1px solid ${alpha("#000", 0.18)}`,
+						animation: "discountShift 16s linear infinite",
+						"@keyframes discountShift": {
+							"0%": { backgroundPosition: "0% 50%" },
+							"100%": { backgroundPosition: "300% 50%" },
+						},
+						"&:hover .banner-arrow": { transform: "translateX(4px)" },
+						"&:focus-visible": { outline: `2px solid #fff`, outlineOffset: -2 },
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						flexWrap: { xs: "wrap", md: "nowrap" },
+						columnGap: { xs: 1.25, sm: 1.5, md: 2 },
+						rowGap: 0.25,
+						py: { xs: 0.75, md: 1 },
+						px: { xs: 1.5, sm: 2, md: 3 },
+						textAlign: "center",
+						lineHeight: 1.25,
 					}}
 				>
-					<Stack direction="row" spacing={1} alignItems="center" justifyContent="center" flexWrap="wrap" rowGap={0.5}>
-						<TicketDiscount size="16" color={theme.palette.warning.dark} />
-						<Chip size="small" color="warning" label={promoLabel} sx={{ fontWeight: 600 }} />
-						<Typography variant="caption" color="text.secondary">
-							{promo.promotionalMessage || `Usá el código ${promo.code} en tu suscripción`}
-							{promoValidLabel ? ` · hasta el ${promoValidLabel}` : ""}
-						</Typography>
-						<Button
-							component={RouterLink}
-							to={`/suscripciones/tables?promo=${encodeURIComponent(promo.code)}`}
-							onClick={handlePromoClick}
-							size="small"
-							color="warning"
-							sx={{ fontWeight: 600, textTransform: "none", py: 0 }}
-						>
-							Ver planes
-						</Button>
-					</Stack>
+					{/* Bloque 1 — chip de descuento */}
+					<Box
+						component="span"
+						sx={{
+							display: "inline-flex",
+							alignItems: "center",
+							gap: 0.5,
+							flexShrink: 0,
+							fontSize: { xs: "0.78rem", sm: "0.82rem", md: "0.86rem" },
+							fontWeight: 700,
+							letterSpacing: "0.02em",
+							textTransform: "uppercase",
+							whiteSpace: "nowrap",
+						}}
+					>
+						<Flash size={14} variant="Bold" color="#fff" />
+						<Box component="span">{promoLabel}</Box>
+					</Box>
+
+					{/* Separador vertical — solo desktop */}
+					<Box
+						aria-hidden
+						sx={{ display: { xs: "none", md: "inline-block" }, width: "1px", height: 14, bgcolor: alpha("#fff", 0.4), flexShrink: 0 }}
+					/>
+
+					{/* Bloque 2 — detalles del descuento */}
+					<Box
+						component="span"
+						sx={{
+							display: "inline-flex",
+							alignItems: "center",
+							flexWrap: "wrap",
+							justifyContent: "center",
+							columnGap: 0.5,
+							flexShrink: 0,
+							fontSize: { xs: "0.76rem", sm: "0.8rem", md: "0.84rem" },
+							fontWeight: 500,
+							color: alpha("#fff", 0.95),
+							letterSpacing: "0.005em",
+						}}
+					>
+						{promoDurationLabel && (
+							<>
+								<Box component="span">durante</Box>
+								<Box component="span" sx={{ fontWeight: 700, color: "#fff", whiteSpace: "nowrap" }}>
+									{promoDurationLabel}
+								</Box>
+							</>
+						)}
+						{promoDurationLabel && promoValidLabel && (
+							<Box component="span" sx={{ opacity: 0.55, px: 0.25 }}>
+								·
+							</Box>
+						)}
+						{promoValidLabel && (
+							<>
+								<Box component="span">hasta el</Box>
+								<Box component="span" sx={{ fontWeight: 700, color: "#fff", whiteSpace: "nowrap" }}>
+									{promoValidLabel}
+								</Box>
+							</>
+						)}
+					</Box>
+
+					{/* Bloque 3 — CTA */}
+					<Box
+						component="span"
+						sx={{
+							display: "inline-flex",
+							alignItems: "center",
+							gap: 0.5,
+							flexShrink: 0,
+							fontSize: { xs: "0.78rem", sm: "0.82rem", md: "0.86rem" },
+							fontWeight: 700,
+							letterSpacing: "0.01em",
+							whiteSpace: "nowrap",
+							ml: { md: 0.5 },
+						}}
+					>
+						<Box component="span" sx={{ borderBottom: `1.5px solid ${alpha("#fff", 0.7)}`, pb: "1px" }}>
+							Aprovechar promo
+						</Box>
+						<Box className="banner-arrow" component="span" sx={{ display: "inline-flex", transition: "transform 0.2s ease" }}>
+							<ArrowRight size={14} color="#fff" />
+						</Box>
+					</Box>
 				</Box>
 			)}
 
