@@ -1300,7 +1300,7 @@ const Pricing = () => {
 					const isAlreadyCanceled = currentSubscription?.cancelAtPeriodEnd === true;
 
 					// Determinar si es plan Free y hay otro plan activo (para el caso de downgrade)
-					// Solo permitir cancelación si el usuario tiene un plan de pago activo (standard o premium)
+					// Solo permitir cancelación si el usuario tiene un plan de pago activo (standard, pro o premium)
 					// Y la suscripción NO está ya cancelada
 					const isDowngradeToFree =
 						plan.planId === "free" &&

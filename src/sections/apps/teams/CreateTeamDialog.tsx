@@ -94,7 +94,7 @@ export default function CreateTeamDialog({ open, onClose, onSuccess }: CreateTea
 				<DialogTitle>Crear Equipo</DialogTitle>
 				<DialogContent>
 					<Alert severity="warning">
-						La funcionalidad de equipos no está disponible en tu plan actual. Actualiza a un plan Standard o Premium para crear equipos.
+						La funcionalidad de equipos no está disponible en tu plan actual. Actualiza a un plan Estándar, Pro o Premium para crear equipos.
 					</Alert>
 				</DialogContent>
 				<DialogActions>

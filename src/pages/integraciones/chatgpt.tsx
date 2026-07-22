@@ -165,7 +165,7 @@ const FAQ: FaqItem[] = [
 	},
 	{
 		q: "¿Tiene costo extra del lado de lawanalytics.app?",
-		a: "Es un add-on opcional sobre planes Standard y Premium de Law Analytics. Lo agregás desde la página de planes — Stripe prorratea automáticamente sobre tu ciclo de billing. Lo podés cancelar cuando quieras.",
+		a: "Es un add-on opcional sobre planes Estándar, Pro y Premium de Law Analytics. Lo agregás desde la página de planes — Stripe prorratea automáticamente sobre tu ciclo de billing. Lo podés cancelar cuando quieras.",
 	},
 	{
 		q: "Conecté pero ChatGPT no encuentra las herramientas",

@@ -104,7 +104,7 @@ const Plans = () => {
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: "Necesitás un plan Standard o Premium para agregar el conector MCP.",
+					message: "Necesitás un plan Estándar, Pro o Premium para agregar el conector MCP.",
 					variant: "alert",
 					alert: { color: "info" },
 					close: true,
@@ -343,7 +343,7 @@ const Plans = () => {
 
 												<Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1 }}>
 													{copy.description}
-													{!userHasAddon && " Aditivo a planes Standard y Premium."}
+													{!userHasAddon && " Aditivo a planes Estándar, Pro y Premium."}
 												</Typography>
 
 												{mcpPriceLabel && !userHasAddon && (

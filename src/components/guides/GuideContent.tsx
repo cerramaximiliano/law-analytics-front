@@ -23,8 +23,6 @@ import {
 	Profile2User,
 	Calendar,
 	TaskSquare,
-	Cloud,
-	Archive,
 } from "iconsax-react";
 
 // ==============================|| COMPONENTES PARA CONTENIDOS DE GUÍAS ||============================== //
@@ -1449,7 +1447,7 @@ export const AnalyticsContent = () => {
 					</Paper>
 					<Alert severity="warning">
 						<Typography>
-							Las analíticas avanzadas requieren un plan Standard o Premium. Con el plan gratuito verás una vista limitada.
+							Las analíticas avanzadas requieren un plan Estándar, Pro o Premium. Con el plan gratuito verás una vista limitada.
 						</Typography>
 					</Alert>
 				</Stack>
@@ -1567,7 +1565,7 @@ export const AnalyticsContent = () => {
 						</Typography>
 					</Paper>
 					<Alert severity="warning">
-						<Typography variant="body2">Esta función requiere plan Standard o Premium.</Typography>
+						<Typography variant="body2">Esta función requiere plan Estándar, Pro o Premium.</Typography>
 					</Alert>
 				</Stack>
 			),

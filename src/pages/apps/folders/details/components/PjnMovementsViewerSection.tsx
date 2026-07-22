@@ -363,8 +363,8 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId, quickAction 
 				{/* Banner de upgrade (plan free): preview limitado, sin filtros ni PDF */}
 				{requiresUpgrade && (
 					<Alert severity="info" sx={{ mb: 2 }}>
-						Estás viendo los últimos {movements.length} movimientos de {total}. Actualizá a un plan Standard o Premium para ver el
-						expediente completo y abrir los PDF desde la plataforma.
+						Estás viendo los últimos {movements.length} movimientos de {total}. Actualizá a un plan pago (Estándar, Pro o Premium) para
+						ver el expediente completo y abrir los PDF desde la plataforma.
 					</Alert>
 				)}
 

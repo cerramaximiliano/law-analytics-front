@@ -161,7 +161,7 @@ const FAQ: FaqItem[] = [
 	},
 	{
 		q: "¿Tiene costo extra?",
-		a: "Es un add-on opcional sobre planes Standard y Premium. Lo agregás desde la página de planes — Stripe prorratea automáticamente sobre tu ciclo de billing. Lo podés cancelar cuando quieras.",
+		a: "Es un add-on opcional sobre planes Estándar, Pro y Premium. Lo agregás desde la página de planes — Stripe prorratea automáticamente sobre tu ciclo de billing. Lo podés cancelar cuando quieras.",
 	},
 	{
 		q: "Conecté pero Claude.ai dice que no encuentra herramientas",

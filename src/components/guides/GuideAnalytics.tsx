@@ -75,7 +75,7 @@ const IntroductionContent = () => {
 			<Alert severity="warning">
 				<AlertTitle>Nota importante</AlertTitle>
 				<Typography>
-					Las analíticas avanzadas requieren un plan Standard o Premium. Con el plan gratuito, verás una vista limitada de las métricas.
+					Las analíticas avanzadas requieren un plan Estándar, Pro o Premium. Con el plan gratuito, verás una vista limitada de las métricas.
 				</Typography>
 			</Alert>
 		</Stack>
@@ -599,7 +599,7 @@ const ExportReportsContent = () => {
 			<Alert severity="warning" sx={{ mt: 2 }}>
 				<AlertTitle>Nota importante</AlertTitle>
 				<Typography>
-					La exportación de reportes requiere un plan Standard o Premium. Con el plan gratuito esta función no está disponible.
+					La exportación de reportes requiere un plan Estándar, Pro o Premium. Con el plan gratuito esta función no está disponible.
 				</Typography>
 			</Alert>
 		</Stack>
@@ -797,7 +797,7 @@ const TroubleshootingContent = () => {
 				</Box>
 				<Box sx={{ p: 2 }}>
 					<Stack spacing={1}>
-						<Typography variant="body2">1. Verifica tener plan Standard o Premium</Typography>
+						<Typography variant="body2">1. Verifica tener plan Estándar, Pro o Premium</Typography>
 						<Typography variant="body2">2. El botón debe estar habilitado (no gris)</Typography>
 						<Typography variant="body2">3. Permite ventanas emergentes en tu navegador</Typography>
 					</Stack>
