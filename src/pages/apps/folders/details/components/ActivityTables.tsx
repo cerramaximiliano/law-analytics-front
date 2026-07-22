@@ -20,9 +20,8 @@ import {
 	Fade,
 	useMediaQuery,
 	Drawer,
-	FormControlLabel,
-	Checkbox,
 	Badge,
+	MenuItem,
 } from "@mui/material";
 import dayjs from "utils/dayjs-config";
 import {
@@ -48,7 +47,8 @@ import { getNotificationsByFolderId } from "store/reducers/notifications";
 import { getEventsById } from "store/reducers/events";
 import { getCombinedActivities } from "store/reducers/activities";
 import MovementsTable from "./tables/MovementsTable";
-import PjnMovementsViewerSection from "./PjnMovementsViewerSection";
+import PjnMovementsViewerSection, { PDF_STATUS_OPTIONS } from "./PjnMovementsViewerSection";
+import type { PjnMovementPdfStatus } from "types/pjnMovement";
 import NotificationsTable from "./tables/NotificationsTable";
 import CalendarTable from "./tables/CalendarTable";
 import CombinedTablePaginated from "./tables/CombinedTablePaginated";
@@ -108,6 +108,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const { canCreate } = useTeam();
 	const [activeTab, setActiveTab] = useState<TabValue>("movements");
 	const [searchQuery, setSearchQuery] = useState("");
+	// Filtro por estado de PDF del expediente PJN (el select vive en el toolbar;
+	// la tabla es PjnMovementsViewerSection).
+	const [pjnPdfFilter, setPjnPdfFilter] = useState<PjnMovementPdfStatus | "all">("all");
 	const [showFilters, setShowFilters] = useState(false);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [filters, setFilters] = useState<any>({
@@ -1125,131 +1128,84 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 									/>
 								</Box>
 
-								{/* Controles para movimientos — mobile */}
-								{activeTab === "movements" && (
-									<Box
-										sx={{
-											mt: 1.5,
-											p: 1.5,
-											bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
-											borderRadius: 1,
-											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
-										}}
+								{/* Controles para movimientos — mobile. Rediseño 2026-07: controles
+								    compactos en vez de la caja "Opciones de visualización". PJN: solo el
+								    filtro de estado de PDF (los clásicos no operan sobre pjn-movements). */}
+								{activeTab === "movements" && scrapingSource === "pjn" && (
+									<TextField
+										select
+										size="small"
+										fullWidth
+										label="Estado del PDF"
+										value={pjnPdfFilter}
+										onChange={(e) => setPjnPdfFilter(e.target.value as PjnMovementPdfStatus | "all")}
+										sx={{ mt: 1.5 }}
 									>
-										<Stack spacing={1.25}>
-											<Stack direction="row" spacing={0.5} alignItems="center">
-												<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
-												<Typography
-													sx={{
-														fontSize: "0.6rem",
-														fontWeight: 600,
-														letterSpacing: "0.08em",
-														textTransform: "uppercase",
-														color: "text.secondary",
-													}}
-												>
-													Opciones de visualización
-												</Typography>
-											</Stack>
-
-											{/* Checkbox */}
-											<FormControlLabel
-												control={
-													<Checkbox
-														checked={filters.onlyWithDocuments}
-														onChange={(e) => setFilters({ ...filters, onlyWithDocuments: e.target.checked })}
-														size="small"
-														sx={{
-															color: alpha(BRAND_BLUE, 0.5),
-															"&.Mui-checked": { color: BRAND_BLUE },
-														}}
-													/>
-												}
-												label={
-													<Stack direction="row" alignItems="center" spacing={0.875}>
-														<DocumentText size={16} variant="Bulk" color={BRAND_BLUE} />
-														<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>
-															Solo movimientos con documento
-														</Typography>
-														{movementsData.totalWithLinks > 0 && (
-															<Box
-																sx={{
-																	display: "inline-flex",
-																	alignItems: "center",
-																	px: 0.625,
-																	py: 0.125,
-																	borderRadius: 0.5,
-																	bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
-																	border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.22)}`,
-																}}
-															>
-																<Typography
-																	sx={{ fontSize: "0.66rem", fontWeight: 700, color: BRAND_BLUE, fontVariantNumeric: "tabular-nums" }}
-																>
-																	{movementsData.totalWithLinks}
-																</Typography>
-															</Box>
-														)}
-													</Stack>
-												}
+										{PDF_STATUS_OPTIONS.map((opt) => (
+											<MenuItem key={opt.value} value={opt.value}>
+												{opt.label}
+											</MenuItem>
+										))}
+									</TextField>
+								)}
+								{activeTab === "movements" && scrapingSource !== "pjn" && (
+									<Stack spacing={1.25} sx={{ mt: 1.5 }}>
+										<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" rowGap={1}>
+											<Chip
+												size="small"
+												clickable
+												icon={<DocumentText size={14} variant="Bulk" />}
+												label={`Con documento${movementsData.totalWithLinks > 0 ? ` (${movementsData.totalWithLinks})` : ""}`}
+												onClick={() => setFilters({ ...filters, onlyWithDocuments: !filters.onlyWithDocuments })}
+												sx={{
+													fontWeight: 600,
+													letterSpacing: "-0.005em",
+													border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithDocuments ? 0.5 : isDark ? 0.22 : 0.14)}`,
+													bgcolor: filters.onlyWithDocuments ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+													color: filters.onlyWithDocuments ? BRAND_BLUE : "text.secondary",
+													"& .MuiChip-icon": { color: BRAND_BLUE },
+												}}
 											/>
-
 											{filters.onlyWithDocuments &&
 												(movementsData.pagination?.totalAvailable ?? 0) > (movementsData.pagination?.total ?? 0) && (
-													<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
-														{movementsData.pagination.total || 0} de {movementsData.pagination.totalAvailable} ·{" "}
-														<Box
-															component="span"
-															sx={{ color: BRAND_BLUE, cursor: "pointer", fontWeight: 600 }}
-															onClick={() => setFilters({ ...filters, onlyWithDocuments: false })}
-														>
-															Ver todos
-														</Box>
+													<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+														{movementsData.pagination.total || 0} de {movementsData.pagination.totalAvailable}
 													</Typography>
 												)}
-
-											{/* "Expediente digital" oculto en folders PJN (el viewer paginado ya lo cubre,
-											    con notas + tareas). Se mantiene para MEV/SCBA/EJE/manual. */}
-											{scrapingSource !== "pjn" && (
-												<>
-													<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1) }} />
-
-													<Button
-														variant="contained"
-														size="small"
-														fullWidth
-														startIcon={<Gallery size={16} variant="Bulk" />}
-														onClick={() => {
-															const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
-															if (movementsWithLinks.length > 0) {
-																setCurrentDocumentMovement(movementsWithLinks[0]);
-																setDocumentNavigationOpen(true);
-															}
-														}}
-														disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
-														sx={{
-															textTransform: "none",
-															fontWeight: 600,
-															letterSpacing: "-0.005em",
-															bgcolor: BRAND_BLUE,
-															color: "#fff",
-															borderRadius: 1,
-															py: 0.875,
-															boxShadow: "none",
-															"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
-															"&.Mui-disabled": {
-																bgcolor: alpha(theme.palette.text.disabled, 0.12),
-																color: theme.palette.text.disabled,
-															},
-														}}
-													>
-														Expediente digital
-														{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
-													</Button>
-												</>
-											)}
 										</Stack>
-									</Box>
+										<Button
+											variant="contained"
+											size="small"
+											fullWidth
+											startIcon={<Gallery size={16} variant="Bulk" />}
+											onClick={() => {
+												const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
+												if (movementsWithLinks.length > 0) {
+													setCurrentDocumentMovement(movementsWithLinks[0]);
+													setDocumentNavigationOpen(true);
+												}
+											}}
+											disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
+											sx={{
+												textTransform: "none",
+												fontWeight: 600,
+												letterSpacing: "-0.005em",
+												bgcolor: BRAND_BLUE,
+												color: "#fff",
+												borderRadius: 1,
+												py: 0.875,
+												boxShadow: "none",
+												"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+												"&.Mui-disabled": {
+													bgcolor: alpha(theme.palette.text.disabled, 0.12),
+													color: theme.palette.text.disabled,
+												},
+											}}
+										>
+											Expediente digital
+											{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
+										</Button>
+									</Stack>
 								)}
 
 								{/* Filtros — brand */}
@@ -1294,6 +1250,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												)}
 												{!scrapingProgress &&
 													!isScbaFirstSyncPending &&
+													scrapingSource !== "pjn" &&
 													(movementsData.pjnAccess || movementsData.scbaAccess || movementsData.ejeAccess) && (
 														<FolderSyncStatus source={scrapingSource} causaLastSyncDate={movementsData.causaLastSyncDate} />
 													)}
@@ -1319,7 +1276,14 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												) : scrapingSource === "pjn" && id ? (
 													// PJN: el viewer paginado (pjn-movements) REEMPLAZA la tabla clásica —
 													// una sola tabla. Otros fueros (EJE/SCBA/MEV/manual) usan MovementsTable.
-													<PjnMovementsViewerSection folderId={id} highlightMovementId={highlightMovementId} quickAction={quickAction} />
+													<PjnMovementsViewerSection
+														folderId={id}
+														highlightMovementId={highlightMovementId}
+														quickAction={quickAction}
+														searchQuery={searchQuery}
+														pdfFilter={pjnPdfFilter}
+														causaLastSyncDate={movementsData.causaLastSyncDate}
+													/>
 												) : (
 													<MovementsTable
 														movements={movementsData.movements}
@@ -1458,6 +1422,25 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												},
 											}}
 										/>
+
+										{/* PJN: filtro por estado de PDF en el toolbar (la tabla PJN no usa
+										    los filtros clásicos — rediseño 2026-07) */}
+										{activeTab === "movements" && scrapingSource === "pjn" && (
+											<TextField
+												select
+												size="small"
+												label="PDF"
+												value={pjnPdfFilter}
+												onChange={(e) => setPjnPdfFilter(e.target.value as PjnMovementPdfStatus | "all")}
+												sx={{ minWidth: 160 }}
+											>
+												{PDF_STATUS_OPTIONS.map((opt) => (
+													<MenuItem key={opt.value} value={opt.value}>
+														{opt.label}
+													</MenuItem>
+												))}
+											</TextField>
+										)}
 									</Stack>
 
 									{/* Action buttons — brand */}
@@ -1485,33 +1468,69 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 									</Stack>
 								</Stack>
 
-								{/* Controles para movimientos — desktop */}
-								{activeTab === "movements" ? (
-									<Box
-										sx={{
-											mt: 1.5,
-											p: 1.5,
-											bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
-											borderRadius: 1,
-											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
-										}}
-									>
+								{/* Controles para movimientos — desktop. Rediseño 2026-07: fila slim
+							    (chip toggle + botón + filtros) en vez de la caja "Opciones de
+							    visualización". PJN no la usa: su filtro de PDF vive en el toolbar
+							    y los filtros clásicos no operan sobre pjn-movements. */}
+								{activeTab === "movements" && scrapingSource !== "pjn" ? (
+									<Box sx={{ mt: 1.25 }}>
 										<Stack spacing={1.25}>
-											<Stack direction="row" justifyContent="space-between" alignItems="center">
-												<Stack direction="row" spacing={0.5} alignItems="center">
-													<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
-													<Typography
-														sx={{
-															fontSize: "0.6rem",
-															fontWeight: 600,
-															letterSpacing: "0.08em",
-															textTransform: "uppercase",
-															color: "text.secondary",
-														}}
-													>
-														Opciones de visualización
-													</Typography>
-												</Stack>
+											<Stack direction="row" spacing={1.25} alignItems="center" flexWrap="wrap" rowGap={1}>
+												<Chip
+													size="small"
+													clickable
+													icon={<DocumentText size={14} variant="Bulk" />}
+													label={`Con documento${movementsData.totalWithLinks > 0 ? ` (${movementsData.totalWithLinks})` : ""}`}
+													onClick={() => setFilters({ ...filters, onlyWithDocuments: !filters.onlyWithDocuments })}
+													sx={{
+														fontWeight: 600,
+														letterSpacing: "-0.005em",
+														border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithDocuments ? 0.5 : isDark ? 0.22 : 0.14)}`,
+														bgcolor: filters.onlyWithDocuments ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+														color: filters.onlyWithDocuments ? BRAND_BLUE : "text.secondary",
+														"& .MuiChip-icon": { color: BRAND_BLUE },
+														"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.07) },
+													}}
+												/>
+												{filters.onlyWithDocuments &&
+													(movementsData.pagination?.totalAvailable ?? 0) > (movementsData.pagination?.total ?? 0) && (
+														<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+															{movementsData.pagination.total || 0} de {movementsData.pagination.totalAvailable}
+														</Typography>
+													)}
+												<Box sx={{ flex: 1 }} />
+												<Button
+													variant="contained"
+													size="small"
+													startIcon={<Gallery size={16} variant="Bulk" />}
+													onClick={() => {
+														const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
+														if (movementsWithLinks.length > 0) {
+															setCurrentDocumentMovement(movementsWithLinks[0]);
+															setDocumentNavigationOpen(true);
+														}
+													}}
+													disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
+													sx={{
+														textTransform: "none",
+														fontWeight: 600,
+														letterSpacing: "-0.005em",
+														bgcolor: BRAND_BLUE,
+														color: "#fff",
+														borderRadius: 1,
+														px: 1.5,
+														py: 0.5,
+														boxShadow: "none",
+														"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+														"&.Mui-disabled": {
+															bgcolor: alpha(theme.palette.text.disabled, 0.12),
+															color: theme.palette.text.disabled,
+														},
+													}}
+												>
+													Expediente digital
+													{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
+												</Button>
 												<Tooltip title={showFilters ? "Ocultar filtros avanzados" : "Mostrar filtros avanzados"}>
 													<Badge
 														variant="dot"
@@ -1543,105 +1562,6 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												</Tooltip>
 											</Stack>
 
-											<Stack direction="row" spacing={2} alignItems="center">
-												<FormControlLabel
-													control={
-														<Checkbox
-															checked={filters.onlyWithDocuments}
-															onChange={(e) => setFilters({ ...filters, onlyWithDocuments: e.target.checked })}
-															size="small"
-															sx={{
-																color: alpha(BRAND_BLUE, 0.5),
-																"&.Mui-checked": { color: BRAND_BLUE },
-															}}
-														/>
-													}
-													label={
-														<Stack direction="row" alignItems="center" spacing={0.875}>
-															<DocumentText size={16} variant="Bulk" color={BRAND_BLUE} />
-															<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>
-																Solo con documento
-															</Typography>
-															{movementsData.totalWithLinks > 0 && (
-																<Box
-																	sx={{
-																		display: "inline-flex",
-																		alignItems: "center",
-																		px: 0.625,
-																		py: 0.125,
-																		borderRadius: 0.5,
-																		bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
-																		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.22)}`,
-																	}}
-																>
-																	<Typography
-																		sx={{ fontSize: "0.66rem", fontWeight: 700, color: BRAND_BLUE, fontVariantNumeric: "tabular-nums" }}
-																	>
-																		{movementsData.totalWithLinks}
-																	</Typography>
-																</Box>
-															)}
-														</Stack>
-													}
-												/>
-
-												{/* "Expediente digital" (visor clásico + DocumentExplorer) NO se muestra en
-												    folders PJN: ahí el viewer paginado (PjnMovementsViewerSection + PjnPdfViewer)
-												    ya es el expediente digital, con notas y tareas. Se mantiene para MEV/SCBA/EJE/manual. */}
-												{scrapingSource !== "pjn" && (
-													<>
-														<Box sx={{ width: 1, height: 20, bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.12) }} />
-
-														<Button
-															variant="contained"
-															size="small"
-															startIcon={<Gallery size={16} variant="Bulk" />}
-															onClick={() => {
-																const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
-																if (movementsWithLinks.length > 0) {
-																	setCurrentDocumentMovement(movementsWithLinks[0]);
-																	setDocumentNavigationOpen(true);
-																}
-															}}
-															disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
-															sx={{
-																textTransform: "none",
-																fontWeight: 600,
-																letterSpacing: "-0.005em",
-																bgcolor: BRAND_BLUE,
-																color: "#fff",
-																borderRadius: 1,
-																px: 1.5,
-																py: 0.75,
-																boxShadow: "none",
-																"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
-																"&.Mui-disabled": {
-																	bgcolor: alpha(theme.palette.text.disabled, 0.12),
-																	color: theme.palette.text.disabled,
-																},
-															}}
-														>
-															Expediente digital
-															{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
-														</Button>
-													</>
-												)}
-											</Stack>
-
-											{filters.onlyWithDocuments &&
-												(movementsData.pagination?.totalAvailable ?? 0) > (movementsData.pagination?.total ?? 0) && (
-													<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
-														{movementsData.pagination.total || 0} de {movementsData.pagination.totalAvailable} ·{" "}
-														<Box
-															component="span"
-															sx={{ color: BRAND_BLUE, cursor: "pointer", fontWeight: 600 }}
-															onClick={() => setFilters({ ...filters, onlyWithDocuments: false })}
-														>
-															Ver todos
-														</Box>
-													</Typography>
-												)}
-
 											<Collapse in={showFilters} timeout="auto" unmountOnExit>
 												<Box sx={{ pt: 1.25 }}>
 													<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1), mb: 1.25 }} />
@@ -1650,8 +1570,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 											</Collapse>
 										</Stack>
 									</Box>
-								) : (
-									/* Filtros para otras pestañas */
+								) : activeTab !== "movements" ? (
+									/* Filtros para otras pestañas (PJN en movimientos no muestra nada acá) */
 									<>
 										<Box sx={{ mt: 1.5, display: "flex", justifyContent: "flex-end" }}>
 											<Tooltip title={showFilters ? "Ocultar filtros" : "Mostrar filtros"}>
@@ -1700,7 +1620,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 											</Fade>
 										</Collapse>
 									</>
-								)}
+								) : null}
 							</Box>
 
 							{/* Table Content Area */}
@@ -1727,6 +1647,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												)}
 												{!scrapingProgress &&
 													!isScbaFirstSyncPending &&
+													scrapingSource !== "pjn" &&
 													(movementsData.pjnAccess || movementsData.scbaAccess || movementsData.ejeAccess) && (
 														<FolderSyncStatus source={scrapingSource} causaLastSyncDate={movementsData.causaLastSyncDate} />
 													)}
@@ -1752,7 +1673,14 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												) : scrapingSource === "pjn" && id ? (
 													// PJN: el viewer paginado (pjn-movements) REEMPLAZA la tabla clásica —
 													// una sola tabla. Otros fueros (EJE/SCBA/MEV/manual) usan MovementsTable.
-													<PjnMovementsViewerSection folderId={id} highlightMovementId={highlightMovementId} quickAction={quickAction} />
+													<PjnMovementsViewerSection
+														folderId={id}
+														highlightMovementId={highlightMovementId}
+														quickAction={quickAction}
+														searchQuery={searchQuery}
+														pdfFilter={pjnPdfFilter}
+														causaLastSyncDate={movementsData.causaLastSyncDate}
+													/>
 												) : (
 													<MovementsTable
 														movements={movementsData.movements}

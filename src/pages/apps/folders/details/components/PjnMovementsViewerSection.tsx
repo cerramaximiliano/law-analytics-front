@@ -5,18 +5,15 @@
 // nada existente. Si el folder no es PJN, no se renderiza.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
 	Box,
-	Card,
-	CardContent,
-	CardHeader,
+	Button,
 	Chip,
-	CircularProgress,
 	Dialog,
 	IconButton,
-	InputAdornment,
-	MenuItem,
 	Pagination,
+	Skeleton,
 	Stack,
 	Table,
 	TableBody,
@@ -24,13 +21,13 @@ import {
 	TableContainer,
 	TableHead,
 	TableRow,
-	TextField,
 	Tooltip,
 	Typography,
 	Alert,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { Calendar, DocumentText, ExportSquare, Note1, SearchNormal1, TaskSquare, TickCircle } from "iconsax-react";
+import { Calendar, DocumentText, ExportSquare, Note1, TaskSquare, TickCircle } from "iconsax-react";
+import dayjs from "utils/dayjs-config";
 import PjnPdfViewer from "components/PjnPdfViewer";
 import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
 import ModalTasks from "pages/apps/folders/details/modals/MoldalTasks";
@@ -58,6 +55,14 @@ interface Props {
 	// lateral en la sub-pestaña correspondiente. A diferencia del highlight puro
 	// (que NO auto-abre, decisión Fase 4), acá el usuario pidió explícitamente crear algo.
 	quickAction?: "vencimiento" | "nota" | "tarea" | null;
+	// Búsqueda del toolbar de ActivityTables (rediseño 2026-07: un solo buscador —
+	// esta sección ya NO renderiza el suyo). Se debounce-a acá adentro.
+	searchQuery?: string;
+	// Filtro por estado de PDF, cuyo select vive en el toolbar del padre.
+	pdfFilter?: PjnMovementPdfStatus | "all";
+	// Última sincronización de la causa — se muestra en la línea de info densa
+	// (reemplaza al banner FolderSyncStatus para PJN).
+	causaLastSyncDate?: string | null;
 }
 
 const QUICK_ACTION_TO_PANEL_TAB = {
@@ -66,13 +71,22 @@ const QUICK_ACTION_TO_PANEL_TAB = {
 	tarea: "tareas",
 } as const;
 
-const PDF_STATUS_OPTIONS: { value: PjnMovementPdfStatus | "all"; label: string }[] = [
+// Exportado: el select vive en el toolbar de ActivityTables (rediseño 2026-07).
+export const PDF_STATUS_OPTIONS: { value: PjnMovementPdfStatus | "all"; label: string }[] = [
 	{ value: "all", label: "Todos" },
 	{ value: "downloaded", label: "PDF disponible" },
 	{ value: "pending", label: "PDF pendiente" },
 	{ value: "expired", label: "PDF expirado" },
 	{ value: "not_applicable", label: "Sin PDF" },
 ];
+
+// CausasX → label humano para la línea de info densa.
+const CAUSA_TYPE_LABELS: Record<string, string> = {
+	CausasCivil: "Civil",
+	CausasTrabajo: "Trabajo",
+	CausasSegSocial: "Seguridad Social",
+	CausasComercial: "Comercial",
+};
 
 function formatDate(iso: string | null): string {
 	if (!iso) return "—";
@@ -101,12 +115,18 @@ function pdfStatusChip(status: PjnMovementPdfStatus) {
 	}
 }
 
-const PjnMovementsViewerSection = ({ folderId, highlightMovementId, quickAction }: Props) => {
+const PjnMovementsViewerSection = ({
+	folderId,
+	highlightMovementId,
+	quickAction,
+	searchQuery = "",
+	pdfFilter = "all",
+	causaLastSyncDate = null,
+}: Props) => {
+	const navigate = useNavigate();
 	const [page, setPage] = useState(1);
 	const [limit] = useState(20);
 	const [search, setSearch] = useState("");
-	const [searchInput, setSearchInput] = useState("");
-	const [pdfStatusFilter, setPdfStatusFilter] = useState<PjnMovementPdfStatus | "all">("all");
 
 	const [data, setData] = useState<PjnMovementsListResponse | null>(null);
 	const [loading, setLoading] = useState(false);
@@ -129,7 +149,7 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId, quickAction 
 				page,
 				limit,
 				search: search || undefined,
-				pdfStatus: pdfStatusFilter !== "all" ? pdfStatusFilter : undefined,
+				pdfStatus: pdfFilter !== "all" ? pdfFilter : undefined,
 			});
 			setData(res);
 		} catch (err: any) {
@@ -137,22 +157,27 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId, quickAction 
 		} finally {
 			setLoading(false);
 		}
-	}, [folderId, page, limit, search, pdfStatusFilter]);
+	}, [folderId, page, limit, search, pdfFilter]);
 
 	useEffect(() => {
 		fetchData();
 	}, [fetchData]);
 
-	// Debounce simple del search input (350ms)
+	// Debounce simple del search del toolbar (350ms)
 	useEffect(() => {
 		const t = setTimeout(() => {
-			if (searchInput !== search) {
+			if (searchQuery !== search) {
 				setPage(1);
-				setSearch(searchInput);
+				setSearch(searchQuery);
 			}
 		}, 350);
 		return () => clearTimeout(t);
-	}, [searchInput, search]);
+	}, [searchQuery, search]);
+
+	// Cambio de filtro de PDF (select del toolbar) → volver a página 1.
+	useEffect(() => {
+		setPage(1);
+	}, [pdfFilter]);
 
 	// Notas y tareas del folder (para mostrar en la tabla qué movimientos tienen).
 	// Se leen de redux y se cuentan por movementRef (= movement._id en PJN). Reactivo:
@@ -343,65 +368,77 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId, quickAction 
 	// Si el folder no tiene causa PJN, el endpoint devuelve count=0 con mensaje.
 	// Este guard va DESPUÉS de todos los hooks (rules-of-hooks): un return temprano
 	// antes de un useEffect cambia el número de hooks entre renders y crashea React.
-	if (data && total === 0 && !search && pdfStatusFilter === "all" && data.message?.includes("no tiene causa PJN")) {
+	if (data && total === 0 && !search && pdfFilter === "all" && data.message?.includes("no tiene causa PJN")) {
 		return null; // No renderizar nada — mejor UX para folders no-PJN
 	}
 
-	return (
-		<Card>
-			<CardHeader
-				title="Expediente PJN"
-				subheader={
-					data ? (
-						<Typography variant="caption" color="text.secondary">
-							{total} movimientos · {data.causa?.causaType}
-						</Typography>
-					) : null
-				}
-			/>
-			<CardContent>
-				{/* Banner de upgrade (plan free): preview limitado, sin filtros ni PDF */}
-				{requiresUpgrade && (
-					<Alert severity="info" sx={{ mb: 2 }}>
-						Estás viendo los últimos {movements.length} movimientos de {total}. Actualizá a un plan pago (Estándar, Pro o Premium) para
-						ver el expediente completo y abrir los PDF desde la plataforma.
-					</Alert>
-				)}
+	const causaTypeLabel = data?.causa?.causaType ? CAUSA_TYPE_LABELS[data.causa.causaType] || data.causa.causaType : null;
 
-				{/* Filtros — ocultos en preview free (no operan sobre el set limitado) */}
-				{!requiresUpgrade && (
-					<Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 2 }}>
-						<TextField
+	return (
+		<Box>
+			{/* Línea de info densa: reemplaza al CardHeader "Expediente PJN" + el banner
+			    FolderSyncStatus (rediseño 2026-07 — menos chrome, la tabla más arriba). */}
+			<Stack
+				direction="row"
+				alignItems="center"
+				flexWrap="wrap"
+				columnGap={1.25}
+				rowGap={0.5}
+				sx={(t) => ({ px: 2, py: 1, borderBottom: `1px solid ${t.palette.divider}` })}
+			>
+				<Typography
+					sx={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}
+				>
+					Expediente PJN
+				</Typography>
+				{data && (
+					<Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: "tabular-nums" }}>
+						{total.toLocaleString("es-AR")} movimientos
+						{causaTypeLabel ? ` · ${causaTypeLabel}` : ""}
+					</Typography>
+				)}
+				{causaLastSyncDate && (
+					<Tooltip title={dayjs(causaLastSyncDate).format("DD/MM/YYYY HH:mm")}>
+						<Stack direction="row" spacing={0.5} alignItems="center">
+							<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "success.main" }} />
+							<Typography variant="caption" color="text.secondary">
+								sincronizado {dayjs(causaLastSyncDate).fromNow()}
+							</Typography>
+						</Stack>
+					</Tooltip>
+				)}
+			</Stack>
+
+			<Box sx={{ p: 2, pt: 1.5 }}>
+				{/* Banner de upgrade (plan free): una sola línea densa + CTA */}
+				{requiresUpgrade && (
+					<Stack
+						direction={{ xs: "column", sm: "row" }}
+						spacing={1}
+						alignItems={{ xs: "flex-start", sm: "center" }}
+						justifyContent="space-between"
+						sx={(t) => ({
+							mb: 1.5,
+							px: 1.5,
+							py: 0.75,
+							borderRadius: 1,
+							border: `1px solid ${alpha(t.palette.info.main, 0.3)}`,
+							bgcolor: alpha(t.palette.info.main, 0.06),
+						})}
+					>
+						<Typography variant="caption" color="text.secondary">
+							Estás viendo los últimos {movements.length} de {total.toLocaleString("es-AR")} movimientos. Los planes pagos (Estándar,
+							Pro o Premium) desbloquean el expediente completo y los PDF.
+						</Typography>
+						<Button
 							size="small"
-							placeholder="Buscar en tipo o detalle..."
-							value={searchInput}
-							onChange={(e) => setSearchInput(e.target.value)}
-							InputProps={{
-								startAdornment: (
-									<InputAdornment position="start">
-										<SearchNormal1 size="18" />
-									</InputAdornment>
-								),
-							}}
-							sx={{ flex: 1, maxWidth: 360 }}
-						/>
-						<TextField
-							select
-							size="small"
-							label="Estado del PDF"
-							value={pdfStatusFilter}
-							onChange={(e) => {
-								setPage(1);
-								setPdfStatusFilter(e.target.value as PjnMovementPdfStatus | "all");
-							}}
-							sx={{ minWidth: 180 }}
+							variant="outlined"
+							color="info"
+							onClick={() => navigate("/suscripciones/tables")}
+							sx={{ textTransform: "none", fontWeight: 600, flexShrink: 0, py: 0.25 }}
 						>
-							{PDF_STATUS_OPTIONS.map((opt) => (
-								<MenuItem key={opt.value} value={opt.value}>
-									{opt.label}
-								</MenuItem>
-							))}
-						</TextField>
+							Ver planes
+						</Button>
 					</Stack>
 				)}
 
@@ -412,14 +449,16 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId, quickAction 
 				)}
 
 				{loading && (
-					<Stack alignItems="center" sx={{ py: 4 }}>
-						<CircularProgress size={28} />
+					<Stack spacing={0.75} sx={{ py: 1 }}>
+						{Array.from({ length: 6 }).map((_, i) => (
+							<Skeleton key={i} variant="rounded" height={44} />
+						))}
 					</Stack>
 				)}
 
 				{!loading && movements.length === 0 && !error && (
 					<Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
-						{search || pdfStatusFilter !== "all"
+						{search || pdfFilter !== "all"
 							? "No hay movimientos que coincidan con los filtros."
 							: "No hay movimientos para este expediente."}
 					</Typography>
@@ -427,8 +466,11 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId, quickAction 
 
 				{!loading && movements.length > 0 && (
 					<>
-						<TableContainer>
-							<Table size="small">
+						{/* maxHeight en desktop: la tabla scrollea adentro con el header sticky
+						    (1.100+ movimientos sin perder las columnas de vista). En mobile
+						    fluye con la página (scroll anidado en touch es incómodo). */}
+						<TableContainer sx={{ maxHeight: { md: "calc(100vh - 340px)" } }}>
+							<Table size="small" stickyHeader>
 								<TableHead>
 									<TableRow>
 										<TableCell sx={{ width: 110 }}>Fecha</TableCell>
@@ -459,7 +501,9 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId, quickAction 
 												})}
 												onClick={() => handleOpenViewer(idx)}
 											>
-												<TableCell>{formatDate(m.fecha)}</TableCell>
+												<TableCell sx={{ fontVariantNumeric: "tabular-nums", color: "text.secondary", whiteSpace: "nowrap" }}>
+													{formatDate(m.fecha)}
+												</TableCell>
 												<TableCell>
 													<Stack spacing={0.25}>
 														<Stack direction="row" alignItems="center" spacing={0.75}>
@@ -620,7 +664,7 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId, quickAction 
 						)}
 					</>
 				)}
-			</CardContent>
+			</Box>
 
 			<PjnPdfViewer
 				open={viewerOpen}
@@ -680,7 +724,7 @@ const PjnMovementsViewerSection = ({ folderId, highlightMovementId, quickAction 
 					/>
 				</Dialog>
 			)}
-		</Card>
+		</Box>
 	);
 };
 
