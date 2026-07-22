@@ -270,12 +270,34 @@ const MovementDocPublicPage = () => {
 						)}
 					</Stack>
 					{expediente?.caratula && (
-						<Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+						<Typography
+							variant="subtitle1"
+							sx={{
+								fontWeight: 600,
+								lineHeight: 1.3,
+								// Mobile: carátulas largas truncadas a 2 líneas para no empujar
+								// el documento fuera de pantalla. Desktop: completas.
+								display: { xs: "-webkit-box", md: "block" },
+								WebkitLineClamp: 2,
+								WebkitBoxOrient: "vertical",
+								overflow: { xs: "hidden", md: "visible" },
+							}}
+						>
 							{expediente.caratula}
 						</Typography>
 					)}
 					{movimiento?.tipo && (
-						<Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+						<Typography
+							variant="body2"
+							color="text.secondary"
+							sx={{
+								mt: 0.25,
+								display: { xs: "-webkit-box", md: "block" },
+								WebkitLineClamp: 2,
+								WebkitBoxOrient: "vertical",
+								overflow: { xs: "hidden", md: "visible" },
+							}}
+						>
 							<strong>{movimiento.tipo}</strong>
 							{movimiento.detalle ? ` — ${movimiento.detalle}` : ""}
 						</Typography>
