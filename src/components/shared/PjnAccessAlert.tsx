@@ -28,10 +28,10 @@ const PjnAccessAlert: React.FC<PjnAccessAlertProps> = ({ pjnAccess, onUpgrade })
 	const label =
 		pjnAccess.availableMovements && pjnAccess.availableMovements > 0 ? `+${pjnAccess.availableMovements} movimientos` : "Acceso limitado";
 
+	const planNames = (pjnAccess.requiredPlans || []).map((p) => (p === "standard" ? "Estándar" : p.charAt(0).toUpperCase() + p.slice(1)));
+	// "Estándar, Pro o Premium" (coma entre todos menos el último).
 	const planText =
-		pjnAccess.requiredPlans && pjnAccess.requiredPlans.length > 0
-			? pjnAccess.requiredPlans.map((p) => (p === "standard" ? "Estándar" : p.charAt(0).toUpperCase() + p.slice(1))).join(" o ")
-			: null;
+		planNames.length > 1 ? `${planNames.slice(0, -1).join(", ")} o ${planNames[planNames.length - 1]}` : planNames[0] || null;
 
 	return (
 		<Collapse in={open} timeout={300}>

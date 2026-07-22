@@ -301,8 +301,10 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 	return (
 		<Box>
 			<PjnAccessAlert pjnAccess={pjnAccess} />
-			<TableContainer>
-				<Table sx={{ minWidth: 750 }} size="medium">
+			{/* maxHeight en desktop + header sticky: misma economía que la tabla PJN
+			    del rediseño 2026-07 (scroll interno, columnas siempre a la vista). */}
+			<TableContainer sx={{ maxHeight: { md: "calc(100vh - 340px)" } }}>
+				<Table sx={{ minWidth: 750 }} size="small" stickyHeader>
 					<TableHead>
 						<TableRow key="header-row">
 							{headCells.map((headCell) => (
@@ -400,7 +402,9 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 							<>
 								{activities.map((activity: CombinedActivity) => (
 									<TableRow hover tabIndex={-1} key={activity._id}>
-										<TableCell>{formatDate(activity.date)}</TableCell>
+										<TableCell sx={{ fontVariantNumeric: "tabular-nums", color: "text.secondary", whiteSpace: "nowrap" }}>
+											{formatDate(activity.date)}
+										</TableCell>
 										<TableCell>
 											<Stack direction="row" spacing={1} alignItems="center">
 												<Avatar
