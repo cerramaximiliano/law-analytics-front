@@ -54,6 +54,10 @@ interface Props {
 	// lateral en la sub-pestaña correspondiente. A diferencia del highlight puro
 	// (que NO auto-abre, decisión Fase 4), acá el usuario pidió explícitamente crear algo.
 	quickAction?: "vencimiento" | "nota" | "tarea" | null;
+	// ?open=1 (calendario / chips "Ir al movimiento"): auto-abre el visor del
+	// movimiento resaltado, sin forzar sub-pestaña del panel. Los deep-links de
+	// email siguen highlight-only.
+	autoOpen?: boolean;
 	// Búsqueda del toolbar de ActivityTables (rediseño 2026-07: un solo buscador —
 	// esta sección ya NO renderiza el suyo). Se debounce-a acá adentro.
 	searchQuery?: string;
@@ -121,6 +125,7 @@ const PjnMovementsViewerSection = ({
 	folderId,
 	highlightMovementId,
 	quickAction,
+	autoOpen = false,
 	searchQuery = "",
 	pdfFilter = "all",
 	dateFrom = "",
@@ -249,16 +254,16 @@ const PjnMovementsViewerSection = ({
 	const hasAutoOpened = useRef(false);
 	useEffect(() => {
 		hasAutoOpened.current = false;
-	}, [highlightMovementId, quickAction]);
+	}, [highlightMovementId, quickAction, autoOpen]);
 	useEffect(() => {
-		if (!quickAction || !highlightMovementId || hasAutoOpened.current) return;
+		if ((!quickAction && !autoOpen) || !highlightMovementId || hasAutoOpened.current) return;
 		const idx = movements.findIndex((m) => m._id === highlightMovementId);
 		if (idx === -1) return;
 		hasAutoOpened.current = true;
-		setAutoPanelTab(QUICK_ACTION_TO_PANEL_TAB[quickAction]);
+		if (quickAction) setAutoPanelTab(QUICK_ACTION_TO_PANEL_TAB[quickAction]);
 		setSelectedIdx(idx);
 		setViewerOpen(true);
-	}, [quickAction, highlightMovementId, movements]);
+	}, [quickAction, autoOpen, highlightMovementId, movements]);
 
 	const handleOpenViewer = (idx: number) => {
 		setSelectedIdx(idx);

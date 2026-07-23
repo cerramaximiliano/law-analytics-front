@@ -26,7 +26,7 @@ const MovementLinkChip = ({ movementRef, folderId }: Props) => {
 	const handleClick = (e: React.MouseEvent) => {
 		if (!clickable) return;
 		e.stopPropagation();
-		navigate(`/apps/folders/details/${folderId}?movement=${encodeURIComponent(movementRef)}`);
+		navigate(`/apps/folders/details/${folderId}?movement=${encodeURIComponent(movementRef)}&open=1`);
 	};
 
 	return (

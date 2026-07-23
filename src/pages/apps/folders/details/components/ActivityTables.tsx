@@ -105,6 +105,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	// el panel de vencimientos/notas/tareas. Sanitizada a los 3 valores conocidos.
 	const rawAction = searchParams.get("action");
 	const quickAction = rawAction === "vencimiento" || rawAction === "nota" || rawAction === "tarea" ? rawAction : null;
+	// ?open=1 (calendario / chips "Ir al movimiento"): además de resaltar,
+	// auto-abre el visor del movimiento. Los deep-links de email no lo mandan.
+	const openMovement = searchParams.get("open") === "1";
 	const { canCreate } = useTeam();
 	const [activeTab, setActiveTab] = useState<TabValue>("movements");
 	const [searchQuery, setSearchQuery] = useState("");
@@ -1310,6 +1313,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														folderId={id}
 														highlightMovementId={highlightMovementId}
 														quickAction={quickAction}
+														autoOpen={openMovement}
 														searchQuery={searchQuery}
 														pdfFilter={pjnPdfFilter}
 														dateFrom={pjnDateFrom}
@@ -1333,6 +1337,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 															movementsData.pjnAccess ?? movementsData.mevAccess ?? movementsData.scbaAccess ?? movementsData.ejeAccess
 														}
 														folderName={folderName}
+														highlightMovementId={highlightMovementId}
+														autoOpenMovement={openMovement}
 													/>
 												))}
 											{activeTab === "notifications" && (
@@ -1736,6 +1742,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														folderId={id}
 														highlightMovementId={highlightMovementId}
 														quickAction={quickAction}
+														autoOpen={openMovement}
 														searchQuery={searchQuery}
 														pdfFilter={pjnPdfFilter}
 														dateFrom={pjnDateFrom}
@@ -1760,6 +1767,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 															movementsData.pjnAccess ?? movementsData.mevAccess ?? movementsData.scbaAccess ?? movementsData.ejeAccess
 														}
 														folderName={folderName}
+														highlightMovementId={highlightMovementId}
+														autoOpenMovement={openMovement}
 													/>
 												))}
 											{activeTab === "notifications" && (

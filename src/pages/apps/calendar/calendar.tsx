@@ -217,12 +217,14 @@ const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete, canUpdate 
 		navigate(`/apps/folders/details/${event.folderId}`);
 	};
 
-	// Navegar al movimiento puntual que originó este evento (deep-link de Fase 4:
-	// abre la pestaña Actividad + resalta la fila del movimiento).
+	// Navegar al movimiento puntual que originó este evento. `open=1` porque el
+	// click en "Ir al movimiento" es intención explícita de verlo: además de
+	// resaltar la fila, auto-abre el visor (los deep-links de email quedan
+	// highlight-only, sin open).
 	const handleGoToMovement = () => {
 		if (!event?.movementRef || !event?.folderId) return;
 		onClose();
-		navigate(`/apps/folders/details/${event.folderId}?movement=${encodeURIComponent(event.movementRef)}`);
+		navigate(`/apps/folders/details/${event.folderId}?movement=${encodeURIComponent(event.movementRef)}&open=1`);
 	};
 
 	// Mapeo de tipos a etiquetas en español
@@ -898,106 +900,106 @@ const Calendar = () => {
 
 				<Box sx={{ position: "relative" }}>
 					<CalendarStyled>
-					{/* Skeleton para barra superior integrada */}
-					<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-						{/* Skeleton para Google Calendar Sync - Solo para owner o modo personal */}
-						{(!isTeamMode || isOwner) && (
-							<Box sx={{ maxWidth: { xs: "200px", sm: "300px", md: "400px" } }}>
-								<Skeleton variant="rectangular" height={36} sx={{ borderRadius: 1 }} />
-							</Box>
-						)}
+						{/* Skeleton para barra superior integrada */}
+						<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+							{/* Skeleton para Google Calendar Sync - Solo para owner o modo personal */}
+							{(!isTeamMode || isOwner) && (
+								<Box sx={{ maxWidth: { xs: "200px", sm: "300px", md: "400px" } }}>
+									<Skeleton variant="rectangular" height={36} sx={{ borderRadius: 1 }} />
+								</Box>
+							)}
 
-						{/* Skeleton para controles del calendario */}
-						<Stack direction="row" alignItems="center" spacing={1}>
-							<Skeleton variant="circular" width={28} height={28} />
-							<Skeleton variant="circular" width={28} height={28} />
-							<Skeleton variant="circular" width={28} height={28} />
-							<Skeleton variant="text" width={150} height={28} sx={{ mx: 2 }} />
-						</Stack>
-
-						{/* Skeleton para botones de vista y acciones */}
-						<Stack direction="row" spacing={1} alignItems="center">
-							<Stack direction="row" spacing={0.5}>
+							{/* Skeleton para controles del calendario */}
+							<Stack direction="row" alignItems="center" spacing={1}>
 								<Skeleton variant="circular" width={28} height={28} />
 								<Skeleton variant="circular" width={28} height={28} />
 								<Skeleton variant="circular" width={28} height={28} />
+								<Skeleton variant="text" width={150} height={28} sx={{ mx: 2 }} />
 							</Stack>
-							<Skeleton variant="rectangular" width={1} height={24} sx={{ mx: 1 }} />
-							<Skeleton variant="circular" width={40} height={40} />
-							<Skeleton variant="circular" width={40} height={40} />
+
+							{/* Skeleton para botones de vista y acciones */}
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Stack direction="row" spacing={0.5}>
+									<Skeleton variant="circular" width={28} height={28} />
+									<Skeleton variant="circular" width={28} height={28} />
+									<Skeleton variant="circular" width={28} height={28} />
+								</Stack>
+								<Skeleton variant="rectangular" width={1} height={24} sx={{ mx: 1 }} />
+								<Skeleton variant="circular" width={40} height={40} />
+								<Skeleton variant="circular" width={40} height={40} />
+							</Stack>
 						</Stack>
-					</Stack>
 
-					{/* Skeleton para FullCalendar */}
-					<Card sx={{ overflow: "hidden" }}>
-						<Box sx={{ p: 2 }}>
-							{/* Encabezados de días de la semana */}
-							<Grid container sx={{ mb: 1, pb: 1, borderBottom: "1px solid", borderColor: "divider" }}>
-								{["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"].map((day) => (
-									<Grid item xs key={day} sx={{ textAlign: "center" }}>
-										<Typography variant="subtitle2" color="text.secondary">
-											{matchDownSM ? day.substring(0, 3) : day}
-										</Typography>
-									</Grid>
-								))}
-							</Grid>
+						{/* Skeleton para FullCalendar */}
+						<Card sx={{ overflow: "hidden" }}>
+							<Box sx={{ p: 2 }}>
+								{/* Encabezados de días de la semana */}
+								<Grid container sx={{ mb: 1, pb: 1, borderBottom: "1px solid", borderColor: "divider" }}>
+									{["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"].map((day) => (
+										<Grid item xs key={day} sx={{ textAlign: "center" }}>
+											<Typography variant="subtitle2" color="text.secondary">
+												{matchDownSM ? day.substring(0, 3) : day}
+											</Typography>
+										</Grid>
+									))}
+								</Grid>
 
-							{/* Grid del calendario - 5 semanas típicamente */}
-							<Grid container>
-								{Array.from({ length: 35 }, (_, i) => (
-									<Grid
-										item
-										xs={1.714}
-										key={i}
-										sx={{
-											border: "1px solid",
-											borderColor: "divider",
-											minHeight: matchDownSM ? 60 : 80,
-											p: 0.5,
-										}}
-									>
-										{/* Número del día */}
-										<Skeleton variant="text" width={25} height={20} sx={{ mb: 0.5 }} />
+								{/* Grid del calendario - 5 semanas típicamente */}
+								<Grid container>
+									{Array.from({ length: 35 }, (_, i) => (
+										<Grid
+											item
+											xs={1.714}
+											key={i}
+											sx={{
+												border: "1px solid",
+												borderColor: "divider",
+												minHeight: matchDownSM ? 60 : 80,
+												p: 0.5,
+											}}
+										>
+											{/* Número del día */}
+											<Skeleton variant="text" width={25} height={20} sx={{ mb: 0.5 }} />
 
-										{/* Eventos simulados */}
-										{i % 3 === 0 && (
-											<Skeleton
-												variant="rectangular"
-												height={18}
-												sx={{
-													mb: 0.5,
-													borderRadius: 0.5,
-													bgcolor: alpha(BRAND_BLUE, 0.16),
-												}}
-											/>
-										)}
-										{i % 7 === 0 && (
-											<Skeleton
-												variant="rectangular"
-												height={18}
-												sx={{
-													mb: 0.5,
-													borderRadius: 0.5,
-													bgcolor: alpha(STALE_AMBER, 0.16),
-												}}
-											/>
-										)}
-										{i % 5 === 0 && i % 3 !== 0 && (
-											<Skeleton
-												variant="rectangular"
-												height={18}
-												sx={{
-													borderRadius: 0.5,
-													bgcolor: alpha(LIVE_GREEN, 0.16),
-												}}
-											/>
-										)}
-									</Grid>
-								))}
-							</Grid>
-						</Box>
-					</Card>
-				</CalendarStyled>
+											{/* Eventos simulados */}
+											{i % 3 === 0 && (
+												<Skeleton
+													variant="rectangular"
+													height={18}
+													sx={{
+														mb: 0.5,
+														borderRadius: 0.5,
+														bgcolor: alpha(BRAND_BLUE, 0.16),
+													}}
+												/>
+											)}
+											{i % 7 === 0 && (
+												<Skeleton
+													variant="rectangular"
+													height={18}
+													sx={{
+														mb: 0.5,
+														borderRadius: 0.5,
+														bgcolor: alpha(STALE_AMBER, 0.16),
+													}}
+												/>
+											)}
+											{i % 5 === 0 && i % 3 !== 0 && (
+												<Skeleton
+													variant="rectangular"
+													height={18}
+													sx={{
+														borderRadius: 0.5,
+														bgcolor: alpha(LIVE_GREEN, 0.16),
+													}}
+												/>
+											)}
+										</Grid>
+									))}
+								</Grid>
+							</Box>
+						</Card>
+					</CalendarStyled>
 				</Box>
 			</Stack>
 		);
@@ -1305,300 +1307,300 @@ const Calendar = () => {
 			<Box sx={{ position: "relative" }}>
 				<CalendarStyled>
 					{/* Barra superior integrada con todas las funciones */}
-				<Stack
-					direction={{ xs: "column", md: "row" }}
-					justifyContent="space-between"
-					alignItems={{ xs: "stretch", md: "center" }}
-					spacing={2}
-					sx={{ mb: 2, flexWrap: { sm: "wrap", md: "nowrap" } }}
-				>
-					{/* Google Calendar Sync Component - Solo visible para owner o modo personal */}
-					{/* Los miembros del equipo no pueden gestionar la sincronización con Google Calendar */}
-					{(!isTeamMode || isOwner) && (
-						<Box
-							sx={{
-								width: { xs: "100%", sm: "auto" },
-								maxWidth: { xs: "100%", sm: "300px", md: "400px" },
-								order: { xs: 1, md: 1 },
-							}}
-						>
-							<GoogleCalendarSync localEvents={events} onEventsImported={handleEventsImported} />
-						</Box>
-					)}
-
-					{/* Controles del calendario y botones - Agrupados en móvil */}
 					<Stack
-						direction="row"
+						direction={{ xs: "column", md: "row" }}
 						justifyContent="space-between"
-						alignItems="center"
-						spacing={1}
-						sx={{
-							width: { xs: "100%", md: "auto" },
-							order: { xs: 2, md: 2 },
-							flexWrap: "wrap",
-							gap: { xs: 1, sm: 0 },
-						}}
+						alignItems={{ xs: "stretch", md: "center" }}
+						spacing={2}
+						sx={{ mb: 2, flexWrap: { sm: "wrap", md: "nowrap" } }}
 					>
-						{/* Navegación y fecha */}
-						<Stack direction="row" alignItems="center" spacing={0.5}>
-							<IconButton onClick={handleDatePrev} size="small" data-testid="calendar-prev-btn">
-								<ArrowLeft2 size={matchDownSM ? 16 : 18} />
-							</IconButton>
-							<IconButton onClick={handleDateNext} size="small" data-testid="calendar-next-btn">
-								<ArrowRight2 size={matchDownSM ? 16 : 18} />
-							</IconButton>
-							<Tooltip title="Ir a hoy">
-								<IconButton
-									onClick={handleDateToday}
-									size="small"
-									data-testid="calendar-today-btn"
-									sx={{
-										color: BRAND_BLUE,
-										transition: "background-color 0.15s ease",
-										"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.06) },
-									}}
-								>
-									<Calendar1 size={matchDownSM ? 16 : 18} variant="Bulk" />
-								</IconButton>
-							</Tooltip>
-							<Typography
-								variant={matchDownSM ? "body1" : "h6"}
-								color="textPrimary"
-								data-testid="calendar-month-title"
+						{/* Google Calendar Sync Component - Solo visible para owner o modo personal */}
+						{/* Los miembros del equipo no pueden gestionar la sincronización con Google Calendar */}
+						{(!isTeamMode || isOwner) && (
+							<Box
 								sx={{
-									fontWeight: 600,
-									ml: { xs: 1, sm: 2 },
-									minWidth: { xs: "auto", sm: "150px" },
-									whiteSpace: "nowrap",
+									width: { xs: "100%", sm: "auto" },
+									maxWidth: { xs: "100%", sm: "300px", md: "400px" },
+									order: { xs: 1, md: 1 },
 								}}
 							>
-								{dayjs(date).format(matchDownSM ? "MMM YYYY" : "MMMM YYYY")}
-							</Typography>
-						</Stack>
+								<GoogleCalendarSync localEvents={events} onEventsImported={handleEventsImported} />
+							</Box>
+						)}
 
-						{/* Botones de vista y acciones */}
-						<Stack direction="row" spacing={0.5} alignItems="center">
-							{/* Botones de vista - Ocultos en móvil muy pequeño */}
-							{!matchDownSM && (
-								<>
-									<Stack direction="row" spacing={0.5}>
-										{[
-											{ label: "Mes", value: "dayGridMonth", icon: Category },
-											{ label: "Semana", value: "timeGridWeek", icon: Grid6 },
-											{ label: "Día", value: "timeGridDay", icon: Calendar1 },
-										].map((viewOption) => {
-											const Icon = viewOption.icon;
-											const isActive = viewOption.value === calendarView;
-											return (
-												<Tooltip title={viewOption.label} key={viewOption.value}>
-													<IconButton
-														size="small"
-														onClick={() => handleViewChange(viewOption.value)}
-														data-testid={`calendar-view-${viewOption.value}`}
-														sx={{
-															color: isActive ? BRAND_BLUE : "text.secondary",
-															bgcolor: isActive ? alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) : "transparent",
-															borderRadius: 1,
-															transition: "background-color 0.15s ease, color 0.15s ease",
-															"&:hover": {
-																bgcolor: isActive ? alpha(BRAND_BLUE, isDark ? 0.2 : 0.12) : alpha(BRAND_BLUE, isDark ? 0.1 : 0.06),
-																color: BRAND_BLUE,
-															},
-														}}
-													>
-														<Icon size={18} variant={isActive ? "Bulk" : "Linear"} />
-													</IconButton>
-												</Tooltip>
-											);
-										})}
-									</Stack>
-									<Box sx={{ width: "1px", alignSelf: "stretch", mx: 0.75, my: 0.5, bgcolor: alpha(BRAND_BLUE, 0.22) }} />
-								</>
-							)}
-
-							{/* Botones de acción */}
-							{canCreate &&
-								(matchDownSM ? (
-									<Tooltip title="Agregar nuevo evento">
-										<IconButton
-											onClick={handleAddEventClick}
-											size="small"
-											data-testid="calendar-add-btn"
-											sx={{
-												bgcolor: BRAND_BLUE,
-												color: "#fff",
-												borderRadius: 1.25,
-												transition: "background-color 0.15s ease",
-												"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88) },
-											}}
-										>
-											<Add variant="Bulk" size={20} />
-										</IconButton>
-									</Tooltip>
-								) : (
-									<Button
-										variant="contained"
-										startIcon={<Add variant="Bulk" size={18} />}
-										onClick={handleAddEventClick}
-										size="small"
-										sx={brandPrimaryButtonSx}
-										data-testid="calendar-add-btn"
-									>
-										Nuevo evento
-									</Button>
-								))}
-							<Tooltip title="Ver Guía">
-								<IconButton
-									color="inherit"
-									onClick={() => setGuideOpen(true)}
-									size={matchDownSM ? "small" : "medium"}
-									data-testid="calendar-guide-btn"
-								>
-									<InfoCircle variant="Bulk" size={matchDownSM ? 20 : 24} />
+						{/* Controles del calendario y botones - Agrupados en móvil */}
+						<Stack
+							direction="row"
+							justifyContent="space-between"
+							alignItems="center"
+							spacing={1}
+							sx={{
+								width: { xs: "100%", md: "auto" },
+								order: { xs: 2, md: 2 },
+								flexWrap: "wrap",
+								gap: { xs: 1, sm: 0 },
+							}}
+						>
+							{/* Navegación y fecha */}
+							<Stack direction="row" alignItems="center" spacing={0.5}>
+								<IconButton onClick={handleDatePrev} size="small" data-testid="calendar-prev-btn">
+									<ArrowLeft2 size={matchDownSM ? 16 : 18} />
 								</IconButton>
-							</Tooltip>
-						</Stack>
-					</Stack>
-				</Stack>
-
-				<FullCalendar
-					weekends
-					editable={canUpdate}
-					droppable={canCreate}
-					selectable={canCreate}
-					events={formattedEvents as EventSourceInput}
-					ref={calendarRef}
-					rerenderDelay={10}
-					initialDate={date}
-					initialView={responsiveInitialView}
-					dayMaxEventRows={4}
-					eventDisplay="block"
-					headerToolbar={false}
-					allDayMaintainDuration
-					eventResizableFromStart={canUpdate}
-					select={canCreate ? handleRangeSelect : undefined}
-					eventDrop={canUpdate ? handleEventUpdate : undefined}
-					eventClick={handleEventSelect}
-					eventResize={canUpdate ? handleEventUpdate : undefined}
-					locale={esLocale}
-					// En desktop: altura constraineada al viewport — el calendario
-					// scrollea internamente sus celdas (vía dayMaxEvents) en vez de
-					// expandirse infinitamente y empujar el page hacia abajo.
-					// En mobile: auto para no romper el scroll vertical natural.
-					height={matchDownSM ? "auto" : "calc(100vh - 340px)"}
-					dayMaxEvents
-					fixedWeekCount={false}
-					showNonCurrentDates={false}
-					plugins={[listPlugin, dayGridPlugin, timelinePlugin, timeGridPlugin, interactionPlugin]}
-					eventContent={(eventArg) => {
-						const title = eventArg.event.title;
-						// timeText can be empty for all-day events; only render when present
-						const time = eventArg.timeText;
-						// Marcador para vencimientos vinculados a un movimiento judicial.
-						const hasMovement = Boolean(eventArg.event.extendedProps?.movementRef);
-						return (
-							<Tooltip title={hasMovement ? `${title} · vinculado a un movimiento` : title} placement="top" arrow>
-								<Box
+								<IconButton onClick={handleDateNext} size="small" data-testid="calendar-next-btn">
+									<ArrowRight2 size={matchDownSM ? 16 : 18} />
+								</IconButton>
+								<Tooltip title="Ir a hoy">
+									<IconButton
+										onClick={handleDateToday}
+										size="small"
+										data-testid="calendar-today-btn"
+										sx={{
+											color: BRAND_BLUE,
+											transition: "background-color 0.15s ease",
+											"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.06) },
+										}}
+									>
+										<Calendar1 size={matchDownSM ? 16 : 18} variant="Bulk" />
+									</IconButton>
+								</Tooltip>
+								<Typography
+									variant={matchDownSM ? "body1" : "h6"}
+									color="textPrimary"
+									data-testid="calendar-month-title"
 									sx={{
-										display: "flex",
-										alignItems: "center",
-										width: "100%",
-										overflow: "hidden",
-										px: 0.5,
+										fontWeight: 600,
+										ml: { xs: 1, sm: 2 },
+										minWidth: { xs: "auto", sm: "150px" },
+										whiteSpace: "nowrap",
 									}}
 								>
-									{hasMovement && (
-										<Box component="span" sx={{ flexShrink: 0, mr: 0.4, display: "inline-flex", alignItems: "center" }}>
-											<DocumentText size={11} variant="Bold" />
-										</Box>
-									)}
-									{time && (
+									{dayjs(date).format(matchDownSM ? "MMM YYYY" : "MMMM YYYY")}
+								</Typography>
+							</Stack>
+
+							{/* Botones de vista y acciones */}
+							<Stack direction="row" spacing={0.5} alignItems="center">
+								{/* Botones de vista - Ocultos en móvil muy pequeño */}
+								{!matchDownSM && (
+									<>
+										<Stack direction="row" spacing={0.5}>
+											{[
+												{ label: "Mes", value: "dayGridMonth", icon: Category },
+												{ label: "Semana", value: "timeGridWeek", icon: Grid6 },
+												{ label: "Día", value: "timeGridDay", icon: Calendar1 },
+											].map((viewOption) => {
+												const Icon = viewOption.icon;
+												const isActive = viewOption.value === calendarView;
+												return (
+													<Tooltip title={viewOption.label} key={viewOption.value}>
+														<IconButton
+															size="small"
+															onClick={() => handleViewChange(viewOption.value)}
+															data-testid={`calendar-view-${viewOption.value}`}
+															sx={{
+																color: isActive ? BRAND_BLUE : "text.secondary",
+																bgcolor: isActive ? alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) : "transparent",
+																borderRadius: 1,
+																transition: "background-color 0.15s ease, color 0.15s ease",
+																"&:hover": {
+																	bgcolor: isActive ? alpha(BRAND_BLUE, isDark ? 0.2 : 0.12) : alpha(BRAND_BLUE, isDark ? 0.1 : 0.06),
+																	color: BRAND_BLUE,
+																},
+															}}
+														>
+															<Icon size={18} variant={isActive ? "Bulk" : "Linear"} />
+														</IconButton>
+													</Tooltip>
+												);
+											})}
+										</Stack>
+										<Box sx={{ width: "1px", alignSelf: "stretch", mx: 0.75, my: 0.5, bgcolor: alpha(BRAND_BLUE, 0.22) }} />
+									</>
+								)}
+
+								{/* Botones de acción */}
+								{canCreate &&
+									(matchDownSM ? (
+										<Tooltip title="Agregar nuevo evento">
+											<IconButton
+												onClick={handleAddEventClick}
+												size="small"
+												data-testid="calendar-add-btn"
+												sx={{
+													bgcolor: BRAND_BLUE,
+													color: "#fff",
+													borderRadius: 1.25,
+													transition: "background-color 0.15s ease",
+													"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88) },
+												}}
+											>
+												<Add variant="Bulk" size={20} />
+											</IconButton>
+										</Tooltip>
+									) : (
+										<Button
+											variant="contained"
+											startIcon={<Add variant="Bulk" size={18} />}
+											onClick={handleAddEventClick}
+											size="small"
+											sx={brandPrimaryButtonSx}
+											data-testid="calendar-add-btn"
+										>
+											Nuevo evento
+										</Button>
+									))}
+								<Tooltip title="Ver Guía">
+									<IconButton
+										color="inherit"
+										onClick={() => setGuideOpen(true)}
+										size={matchDownSM ? "small" : "medium"}
+										data-testid="calendar-guide-btn"
+									>
+										<InfoCircle variant="Bulk" size={matchDownSM ? 20 : 24} />
+									</IconButton>
+								</Tooltip>
+							</Stack>
+						</Stack>
+					</Stack>
+
+					<FullCalendar
+						weekends
+						editable={canUpdate}
+						droppable={canCreate}
+						selectable={canCreate}
+						events={formattedEvents as EventSourceInput}
+						ref={calendarRef}
+						rerenderDelay={10}
+						initialDate={date}
+						initialView={responsiveInitialView}
+						dayMaxEventRows={4}
+						eventDisplay="block"
+						headerToolbar={false}
+						allDayMaintainDuration
+						eventResizableFromStart={canUpdate}
+						select={canCreate ? handleRangeSelect : undefined}
+						eventDrop={canUpdate ? handleEventUpdate : undefined}
+						eventClick={handleEventSelect}
+						eventResize={canUpdate ? handleEventUpdate : undefined}
+						locale={esLocale}
+						// En desktop: altura constraineada al viewport — el calendario
+						// scrollea internamente sus celdas (vía dayMaxEvents) en vez de
+						// expandirse infinitamente y empujar el page hacia abajo.
+						// En mobile: auto para no romper el scroll vertical natural.
+						height={matchDownSM ? "auto" : "calc(100vh - 340px)"}
+						dayMaxEvents
+						fixedWeekCount={false}
+						showNonCurrentDates={false}
+						plugins={[listPlugin, dayGridPlugin, timelinePlugin, timeGridPlugin, interactionPlugin]}
+						eventContent={(eventArg) => {
+							const title = eventArg.event.title;
+							// timeText can be empty for all-day events; only render when present
+							const time = eventArg.timeText;
+							// Marcador para vencimientos vinculados a un movimiento judicial.
+							const hasMovement = Boolean(eventArg.event.extendedProps?.movementRef);
+							return (
+								<Tooltip title={hasMovement ? `${title} · vinculado a un movimiento` : title} placement="top" arrow>
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											width: "100%",
+											overflow: "hidden",
+											px: 0.5,
+										}}
+									>
+										{hasMovement && (
+											<Box component="span" sx={{ flexShrink: 0, mr: 0.4, display: "inline-flex", alignItems: "center" }}>
+												<DocumentText size={11} variant="Bold" />
+											</Box>
+										)}
+										{time && (
+											<Typography
+												component="span"
+												variant="caption"
+												sx={{
+													flexShrink: 0,
+													mr: 0.5,
+													fontWeight: 600,
+												}}
+											>
+												{time}
+											</Typography>
+										)}
 										<Typography
 											component="span"
 											variant="caption"
 											sx={{
-												flexShrink: 0,
-												mr: 0.5,
-												fontWeight: 600,
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												whiteSpace: "nowrap",
+												display: "block",
 											}}
 										>
-											{time}
+											{title}
 										</Typography>
-									)}
-									<Typography
-										component="span"
-										variant="caption"
-										sx={{
-											overflow: "hidden",
-											textOverflow: "ellipsis",
-											whiteSpace: "nowrap",
-											display: "block",
-										}}
-									>
-										{title}
-									</Typography>
-								</Box>
-							</Tooltip>
-						);
-					}}
-					noEventsContent={
-						<Box
-							sx={{
-								display: "flex",
-								flexDirection: "column",
-								alignItems: "center",
-								justifyContent: "center",
-								height: "100%",
-								p: 3,
-							}}
-						>
-							<Typography variant="h5" color="textSecondary" sx={{ mb: 1 }}>
-								No hay eventos programados
-							</Typography>
-							<Typography variant="body2" color="textSecondary">
-								Haga clic en un día para agregar un nuevo evento o use el botón "+" para crear uno rápidamente.
-							</Typography>
-						</Box>
-					}
-				/>
-			</CalendarStyled>
-
-			{/* Dialog manejado localmente */}
-			<ResponsiveDialog
-				maxWidth="md"
-				TransitionComponent={PopupTransition}
-				fullWidth
-				onClose={handleModalClose}
-				open={localModalOpen}
-				sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: "background.paper" } }}
-			>
-				{isViewingEvent ? (
-					<EventDetailsView
-						event={selectedEvent}
-						onClose={handleModalClose}
-						onEdit={handleSwitchToEditMode}
-						onDelete={handleDeleteEvent}
-						onLink={handleLinkEvent}
-						canUpdate={canUpdate}
-						canDelete={canDelete}
+									</Box>
+								</Tooltip>
+							);
+						}}
+						noEventsContent={
+							<Box
+								sx={{
+									display: "flex",
+									flexDirection: "column",
+									alignItems: "center",
+									justifyContent: "center",
+									height: "100%",
+									p: 3,
+								}}
+							>
+								<Typography variant="h5" color="textSecondary" sx={{ mb: 1 }}>
+									No hay eventos programados
+								</Typography>
+								<Typography variant="body2" color="textSecondary">
+									Haga clic en un día para agregar un nuevo evento o use el botón "+" para crear uno rápidamente.
+								</Typography>
+							</Box>
+						}
 					/>
-				) : (
-					<AddEventForm event={isEditingEvent ? selectedEvent : null} range={selectedRange} onCancel={handleModalClose} userId={id} />
-				)}
-			</ResponsiveDialog>
+				</CalendarStyled>
 
-			{/* Guía del Calendario */}
-			<GuideCalendar open={guideOpen} onClose={() => setGuideOpen(false)} />
+				{/* Dialog manejado localmente */}
+				<ResponsiveDialog
+					maxWidth="md"
+					TransitionComponent={PopupTransition}
+					fullWidth
+					onClose={handleModalClose}
+					open={localModalOpen}
+					sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: "background.paper" } }}
+				>
+					{isViewingEvent ? (
+						<EventDetailsView
+							event={selectedEvent}
+							onClose={handleModalClose}
+							onEdit={handleSwitchToEditMode}
+							onDelete={handleDeleteEvent}
+							onLink={handleLinkEvent}
+							canUpdate={canUpdate}
+							canDelete={canDelete}
+						/>
+					) : (
+						<AddEventForm event={isEditingEvent ? selectedEvent : null} range={selectedRange} onCancel={handleModalClose} userId={id} />
+					)}
+				</ResponsiveDialog>
 
-			{/* Modal para vincular evento a carpetas */}
-			<LinkFoldersModal
-				open={linkFoldersOpen}
-				onClose={() => setLinkFoldersOpen(false)}
-				event={selectedEvent || null}
-				onLink={handleLinkFolders}
-				availableFolders={availableFolders}
-				loadingFolders={loadingFolders}
-			/>
+				{/* Guía del Calendario */}
+				<GuideCalendar open={guideOpen} onClose={() => setGuideOpen(false)} />
+
+				{/* Modal para vincular evento a carpetas */}
+				<LinkFoldersModal
+					open={linkFoldersOpen}
+					onClose={() => setLinkFoldersOpen(false)}
+					event={selectedEvent || null}
+					onLink={handleLinkFolders}
+					availableFolders={availableFolders}
+					loadingFolders={loadingFolders}
+				/>
 			</Box>
 		</Stack>
 	);

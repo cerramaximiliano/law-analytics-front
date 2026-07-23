@@ -76,6 +76,11 @@ interface MovementsTableProps {
 	documentsInThisPage?: number;
 	pjnAccess?: PjnAccess;
 	folderName?: string;
+	// Deep-link ?movement=<id>: resalta + scrollea la fila si está en la página
+	// cargada (best-effort, igual que la tabla PJN).
+	highlightMovementId?: string | null;
+	// ?open=1 (calendario / chips "Ir al movimiento"): además auto-abre el visor.
+	autoOpenMovement?: boolean;
 }
 
 type Order = "asc" | "desc";
@@ -126,6 +131,8 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	documentsInThisPage,
 	pjnAccess,
 	folderName,
+	highlightMovementId,
+	autoOpenMovement = false,
 }) => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
@@ -238,6 +245,32 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	const [quickNoteOpen, setQuickNoteOpen] = useState(false);
 	const [quickTaskOpen, setQuickTaskOpen] = useState(false);
 	const [quickEventOpen, setQuickEventOpen] = useState(false);
+
+	// Deep-link ?movement=: scroll one-shot a la fila resaltada y (con ?open=1)
+	// auto-apertura del visor. Best-effort: solo si el movimiento está en la
+	// página cargada (el sort default fecha desc deja los recientes en la 1ª).
+	const highlightRowRef = React.useRef<HTMLTableRowElement | null>(null);
+	const hasScrolledToHighlight = React.useRef(false);
+	const hasAutoOpenedMovement = React.useRef(false);
+	useEffect(() => {
+		hasScrolledToHighlight.current = false;
+		hasAutoOpenedMovement.current = false;
+	}, [highlightMovementId]);
+	useEffect(() => {
+		if (!highlightMovementId) return;
+		if (highlightRowRef.current && !hasScrolledToHighlight.current) {
+			hasScrolledToHighlight.current = true;
+			highlightRowRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+		}
+		if (autoOpenMovement && !hasAutoOpenedMovement.current) {
+			const target = movements.find((m) => String(m._id) === highlightMovementId);
+			if (target) {
+				hasAutoOpenedMovement.current = true;
+				openMovementDocument(target);
+			}
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [highlightMovementId, autoOpenMovement, movements]);
 
 	// Actualizar valores locales cuando cambien las props
 	useEffect(() => {
@@ -608,8 +641,21 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 							) : (
 								<>
 									{movements.map((movement) => {
+										const isHighlighted = Boolean(highlightMovementId && String(movement._id) === highlightMovementId);
 										return (
-											<TableRow hover tabIndex={-1} key={movement._id} sx={{ cursor: "pointer" }}>
+											<TableRow
+												hover
+												tabIndex={-1}
+												key={movement._id}
+												ref={isHighlighted ? highlightRowRef : undefined}
+												sx={{
+													cursor: "pointer",
+													...(isHighlighted && {
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+														"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) },
+													}),
+												}}
+											>
 												<TableCell>{formatDate(movement.time)}</TableCell>
 												<TableCell>
 													<Box sx={{ maxWidth: 400 }}>
