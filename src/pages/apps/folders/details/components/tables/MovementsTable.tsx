@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
 	Table,
 	TableBody,
@@ -21,13 +21,32 @@ import {
 	Link,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { Edit, Trash, Eye, Link2, Clock, TickCircle, DocumentDownload, Link1, TableDocument } from "iconsax-react";
+import {
+	Edit,
+	Trash,
+	Eye,
+	Link2,
+	Clock,
+	TickCircle,
+	DocumentDownload,
+	Link1,
+	TableDocument,
+	Note1,
+	TaskSquare,
+	Calendar,
+} from "iconsax-react";
 import { Movement, PaginationInfo, PjnAccess } from "types/movements";
 import dayjs from "utils/dayjs-config";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import { visuallyHidden } from "@mui/utils";
-import { dispatch } from "store";
+import { dispatch, useSelector } from "store";
 import { getMovementsByFolderId, toggleMovementComplete } from "store/reducers/movements";
+import { getNotesByFolderId } from "store/reducers/notes";
+import { getTasksByFolderId } from "store/reducers/tasks";
+import { getEventsById } from "store/reducers/events";
+import type { Note } from "types/note";
+import type { TaskType } from "types/task";
+import type { Event as CalendarEvent } from "types/events";
 import { useParams } from "react-router";
 import PDFViewer from "components/shared/PDFViewer";
 import MovementTextViewer from "components/shared/MovementTextViewer";
@@ -129,6 +148,42 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	// Estados para el popover de attachments
 	const [attachmentsAnchor, setAttachmentsAnchor] = useState<HTMLElement | null>(null);
 	const [selectedAttachments, setSelectedAttachments] = useState<Movement["attachments"]>([]);
+
+	// Notas / tareas / vencimientos del folder para los indicadores por fila
+	// (contados por movementRef = movement._id, mismo patrón que la tabla PJN).
+	// Reactivo: crear/borrar desde el visor actualiza los contadores solos.
+	useEffect(() => {
+		if (id) {
+			dispatch(getNotesByFolderId(id));
+			dispatch(getTasksByFolderId(id));
+			dispatch(getEventsById(id));
+		}
+	}, [id]);
+
+	const folderNotes = useSelector((s: any) => s.notesReducer?.selectedNotes ?? []);
+	const folderTasks = useSelector((s: any) => s.tasksReducer?.selectedTasks ?? []);
+	const folderEvents = useSelector((s: any) => s.events?.events ?? []);
+	const notesCountByMov = useMemo(() => {
+		const map: Record<string, number> = {};
+		(folderNotes as Note[]).forEach((n) => {
+			if (n.movementRef) map[n.movementRef] = (map[n.movementRef] || 0) + 1;
+		});
+		return map;
+	}, [folderNotes]);
+	const tasksCountByMov = useMemo(() => {
+		const map: Record<string, number> = {};
+		(folderTasks as TaskType[]).forEach((t) => {
+			if (t.movementRef) map[t.movementRef] = (map[t.movementRef] || 0) + 1;
+		});
+		return map;
+	}, [folderTasks]);
+	const eventsCountByMov = useMemo(() => {
+		const map: Record<string, number> = {};
+		(folderEvents as CalendarEvent[]).forEach((e) => {
+			if (e.movementRef) map[e.movementRef] = (map[e.movementRef] || 0) + 1;
+		});
+		return map;
+	}, [folderEvents]);
 
 	// Actualizar valores locales cuando cambien las props
 	useEffect(() => {
@@ -548,6 +603,18 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																	Sincronizado • SCBA
 																</Typography>
 															)}
+															{movement.source === "eje" && (
+																<Typography
+																	variant="caption"
+																	color="text.secondary"
+																	sx={{
+																		fontStyle: "italic",
+																		fontSize: "0.7rem",
+																	}}
+																>
+																	Sincronizado • EJE
+																</Typography>
+															)}
 															{movement.attachments && movement.attachments.length > 0 && (
 																<Tooltip title="Ver archivos adjuntos">
 																	<Chip
@@ -573,6 +640,38 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																	/>
 																</Tooltip>
 															)}
+															{movement._id && notesCountByMov[movement._id] ? (
+																<Tooltip title={`${notesCountByMov[movement._id]} nota${notesCountByMov[movement._id] > 1 ? "s" : ""}`}>
+																	<Stack direction="row" alignItems="center" spacing={0.25} sx={{ color: "primary.main" }}>
+																		<Note1 size="13" variant="Bulk" />
+																		<Typography variant="caption" sx={{ fontWeight: 600 }}>
+																			{notesCountByMov[movement._id]}
+																		</Typography>
+																	</Stack>
+																</Tooltip>
+															) : null}
+															{movement._id && tasksCountByMov[movement._id] ? (
+																<Tooltip title={`${tasksCountByMov[movement._id]} tarea${tasksCountByMov[movement._id] > 1 ? "s" : ""}`}>
+																	<Stack direction="row" alignItems="center" spacing={0.25} sx={{ color: "success.main" }}>
+																		<TaskSquare size="13" variant="Bulk" />
+																		<Typography variant="caption" sx={{ fontWeight: 600 }}>
+																			{tasksCountByMov[movement._id]}
+																		</Typography>
+																	</Stack>
+																</Tooltip>
+															) : null}
+															{movement._id && eventsCountByMov[movement._id] ? (
+																<Tooltip
+																	title={`${eventsCountByMov[movement._id]} vencimiento${eventsCountByMov[movement._id] > 1 ? "s" : ""}`}
+																>
+																	<Stack direction="row" alignItems="center" spacing={0.25} sx={{ color: "error.main" }}>
+																		<Calendar size="13" variant="Bulk" />
+																		<Typography variant="caption" sx={{ fontWeight: 600 }}>
+																			{eventsCountByMov[movement._id]}
+																		</Typography>
+																	</Stack>
+																</Tooltip>
+															) : null}
 														</Stack>
 													</Box>
 												</TableCell>
