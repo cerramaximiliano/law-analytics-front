@@ -20,6 +20,14 @@ export interface PublicMovementDocResponse {
 	// Presente solo en error (401/404/500): por qué falló.
 	reason?: "expired" | "invalid" | "not_found" | "error";
 	message?: string;
+	// "pdf" (PJN, documento desde S3) | "text" (SCBA/EJE/MEV, movimiento de
+	// texto — v2 multi-fuente). Ausente en respuestas del server viejo = pdf.
+	contentType?: "pdf" | "text";
+	// Texto completo del movimiento (solo contentType "text"; puede ser null si
+	// la fuente solo tiene el detalle corto).
+	movimientoTexto?: string | null;
+	// Adjuntos públicos del movimiento (SCBA/EJE): links directos al portal.
+	attachments?: { name: string; url: string }[] | null;
 	// URL pre-firmada de S3 (300s) o null si el PDF no está en nuestra plataforma.
 	pdfUrl: string | null;
 	expiresIn?: number;

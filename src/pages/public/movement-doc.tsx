@@ -144,8 +144,13 @@ const MovementDocPublicPage = () => {
 		? `/apps/folders/details/${folderId}${movimientoId ? `?movement=${encodeURIComponent(movimientoId)}` : ""}`
 		: "/apps/folders/list";
 	const fallbackUrl = data?.fallbackUrl || null;
-	const showPdf = Boolean(pdfUrl) && !iframeFailed;
+	// Movimiento de TEXTO (SCBA/EJE/MEV, v2 multi-fuente): vista de lectura en
+	// lugar del PDF. Server viejo sin contentType = pdf.
+	const isText = data?.success !== false && data?.contentType === "text";
+	const showPdf = Boolean(pdfUrl) && !iframeFailed && !isText;
 	const promo = data?.promo || null;
+	const attachments = data?.attachments || null;
+	const movimientoTexto = data?.movimientoTexto || null;
 
 	// CTA contextual: si resolvimos la causa del usuario, el botón dice qué hay
 	// del otro lado en vez del genérico "Iniciar sesión y gestionar".
@@ -468,6 +473,54 @@ const MovementDocPublicPage = () => {
 					</Stack>
 				)}
 
+				{/* Vista de LECTURA para movimientos de texto (SCBA/EJE/MEV): el
+				    contenido es el texto del movimiento, tipografiado, con los
+				    adjuntos del portal como botones. Sin presigned URLs ni refresh. */}
+				{!loading && isText && (
+					<Box sx={{ height: "100%", overflowY: "auto" }}>
+						<Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
+							<Paper variant="outlined" sx={{ p: { xs: 2.5, md: 4 }, maxWidth: 760, mx: "auto" }}>
+								{movimientoTexto ? (
+									<Typography sx={{ whiteSpace: "pre-wrap", fontSize: "0.97rem", lineHeight: 1.75, color: "text.primary" }}>
+										{movimientoTexto}
+									</Typography>
+								) : (
+									<Alert severity="info" sx={{ textAlign: "left" }}>
+										Este movimiento no tiene texto adicional — el detalle completo es el que figura arriba. Podés gestionarlo desde
+										tu causa en Law Analytics.
+									</Alert>
+								)}
+
+								{attachments && attachments.length > 0 && (
+									<>
+										<Box sx={{ height: 1, bgcolor: theme.palette.divider, my: 3 }} />
+										<Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+											Documentos adjuntos
+										</Typography>
+										<Stack spacing={1}>
+											{attachments.map((a, i) => (
+												<Button
+													key={i}
+													variant="outlined"
+													size="small"
+													startIcon={<DocumentDownload size="16" />}
+													href={a.url}
+													target="_blank"
+													rel="noopener noreferrer"
+													onClick={handleDownloadClick}
+													sx={{ justifyContent: "flex-start", textTransform: "none", textAlign: "left" }}
+												>
+													{a.name}
+												</Button>
+											))}
+										</Stack>
+									</>
+								)}
+							</Paper>
+						</Container>
+					</Box>
+				)}
+
 				{/* Mobile: los browsers (Chrome Android sobre todo) no renderizan PDFs en
 				    iframe — muestran "archivo.pdf" + botón Abrir. Ahí usamos el render
 				    por canvas (pdfjs). Desktop conserva el iframe nativo (toolbar/zoom). */}
@@ -483,7 +536,7 @@ const MovementDocPublicPage = () => {
 					/>
 				)}
 
-				{!loading && !showPdf && (
+				{!loading && !showPdf && !isText && (
 					<Container maxWidth="sm" sx={{ py: 6 }}>
 						<Paper variant="outlined" sx={{ p: 4, textAlign: "center" }}>
 							<Stack spacing={2} alignItems="center">
@@ -541,10 +594,10 @@ const MovementDocPublicPage = () => {
 				)}
 			</Box>
 
-			{/* Footer: acciones rápidas cuando hay PDF. En mobile pasa a dos filas
-			    (acciones / descarga) con botones de ancho parejo; en desktop queda
-			    la fila única con los grupos a izquierda y derecha. */}
-			{!loading && showPdf && (
+			{/* Footer: acciones rápidas cuando hay contenido (PDF o texto). En mobile
+			    pasa a dos filas (acciones / descarga) con botones de ancho parejo;
+			    en desktop queda la fila única con los grupos a izquierda y derecha. */}
+			{!loading && (showPdf || isText) && (
 				<Stack
 					direction={{ xs: "column", sm: "row" }}
 					spacing={1}
@@ -578,16 +631,18 @@ const MovementDocPublicPage = () => {
 						</Typography>
 					)}
 					<Stack direction="row" spacing={1} justifyContent={{ xs: "space-between", sm: "flex-end" }}>
-						<Button
-							size="small"
-							startIcon={<DocumentDownload size="18" />}
-							href={pdfUrl as string}
-							download={`${movimiento?.tipo || "documento"}.pdf`}
-							onClick={handleDownloadClick}
-							sx={{ flex: { xs: 1, sm: "0 0 auto" }, whiteSpace: "nowrap" }}
-						>
-							Descargar
-						</Button>
+						{Boolean(pdfUrl) && !isText && (
+							<Button
+								size="small"
+								startIcon={<DocumentDownload size="18" />}
+								href={pdfUrl as string}
+								download={`${movimiento?.tipo || "documento"}.pdf`}
+								onClick={handleDownloadClick}
+								sx={{ flex: { xs: 1, sm: "0 0 auto" }, whiteSpace: "nowrap" }}
+							>
+								Descargar
+							</Button>
+						)}
 						{fallbackUrl && (
 							<Button
 								size="small"
@@ -598,7 +653,7 @@ const MovementDocPublicPage = () => {
 								onClick={handleFallbackClick}
 								sx={{ flex: { xs: 1, sm: "0 0 auto" }, whiteSpace: "nowrap" }}
 							>
-								Original PJN
+								{isText ? "Ver en el portal" : "Original PJN"}
 							</Button>
 						)}
 					</Stack>
