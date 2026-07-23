@@ -191,6 +191,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		? "eje"
 		: "mev";
 
+	// Carpeta sincronizada (algún *Access presente) vs manual. En sincronizadas el
+	// visor de movimientos reemplaza al "Expediente digital" legacy (que mostraba
+	// los adjuntos como si fueran el expediente) — misma consolidación que PJN.
+	const isSyncedFolder = Boolean(movementsData.pjnAccess || movementsData.mevAccess || movementsData.scbaAccess || movementsData.ejeAccess);
+
 	// En EJE el parser resuelve adjuntos via API pública del portal, pero
 	// solo una minoría de movimientos tiene PDF asociado (en muchas causas
 	// directamente ninguno). Si totalWithLinks llega en 0 con el filtro
@@ -1196,38 +1201,40 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													</Typography>
 												)}
 										</Stack>
-										<Button
-											variant="contained"
-											size="small"
-											fullWidth
-											startIcon={<Gallery size={16} variant="Bulk" />}
-											onClick={() => {
-												const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
-												if (movementsWithLinks.length > 0) {
-													setCurrentDocumentMovement(movementsWithLinks[0]);
-													setDocumentNavigationOpen(true);
-												}
-											}}
-											disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
-											sx={{
-												textTransform: "none",
-												fontWeight: 600,
-												letterSpacing: "-0.005em",
-												bgcolor: BRAND_BLUE,
-												color: "#fff",
-												borderRadius: 1,
-												py: 0.875,
-												boxShadow: "none",
-												"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
-												"&.Mui-disabled": {
-													bgcolor: alpha(theme.palette.text.disabled, 0.12),
-													color: theme.palette.text.disabled,
-												},
-											}}
-										>
-											Expediente digital
-											{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
-										</Button>
+										{!isSyncedFolder && (
+											<Button
+												variant="contained"
+												size="small"
+												fullWidth
+												startIcon={<Gallery size={16} variant="Bulk" />}
+												onClick={() => {
+													const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
+													if (movementsWithLinks.length > 0) {
+														setCurrentDocumentMovement(movementsWithLinks[0]);
+														setDocumentNavigationOpen(true);
+													}
+												}}
+												disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
+												sx={{
+													textTransform: "none",
+													fontWeight: 600,
+													letterSpacing: "-0.005em",
+													bgcolor: BRAND_BLUE,
+													color: "#fff",
+													borderRadius: 1,
+													py: 0.875,
+													boxShadow: "none",
+													"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+													"&.Mui-disabled": {
+														bgcolor: alpha(theme.palette.text.disabled, 0.12),
+														color: theme.palette.text.disabled,
+													},
+												}}
+											>
+												Expediente digital
+												{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
+											</Button>
+										)}
 									</Stack>
 								)}
 
@@ -1549,38 +1556,40 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														</Typography>
 													)}
 												<Box sx={{ flex: 1 }} />
-												<Button
-													variant="contained"
-													size="small"
-													startIcon={<Gallery size={16} variant="Bulk" />}
-													onClick={() => {
-														const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
-														if (movementsWithLinks.length > 0) {
-															setCurrentDocumentMovement(movementsWithLinks[0]);
-															setDocumentNavigationOpen(true);
-														}
-													}}
-													disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
-													sx={{
-														textTransform: "none",
-														fontWeight: 600,
-														letterSpacing: "-0.005em",
-														bgcolor: BRAND_BLUE,
-														color: "#fff",
-														borderRadius: 1,
-														px: 1.5,
-														py: 0.5,
-														boxShadow: "none",
-														"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
-														"&.Mui-disabled": {
-															bgcolor: alpha(theme.palette.text.disabled, 0.12),
-															color: theme.palette.text.disabled,
-														},
-													}}
-												>
-													Expediente digital
-													{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
-												</Button>
+												{!isSyncedFolder && (
+													<Button
+														variant="contained"
+														size="small"
+														startIcon={<Gallery size={16} variant="Bulk" />}
+														onClick={() => {
+															const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
+															if (movementsWithLinks.length > 0) {
+																setCurrentDocumentMovement(movementsWithLinks[0]);
+																setDocumentNavigationOpen(true);
+															}
+														}}
+														disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
+														sx={{
+															textTransform: "none",
+															fontWeight: 600,
+															letterSpacing: "-0.005em",
+															bgcolor: BRAND_BLUE,
+															color: "#fff",
+															borderRadius: 1,
+															px: 1.5,
+															py: 0.5,
+															boxShadow: "none",
+															"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+															"&.Mui-disabled": {
+																bgcolor: alpha(theme.palette.text.disabled, 0.12),
+																color: theme.palette.text.disabled,
+															},
+														}}
+													>
+														Expediente digital
+														{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
+													</Button>
+												)}
 												<Tooltip title={showFilters ? "Ocultar filtros avanzados" : "Mostrar filtros avanzados"}>
 													<Badge
 														variant="dot"

@@ -132,10 +132,11 @@ const MovementTextViewer: React.FC<MovementTextViewerProps> = ({
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-	// El panel necesita un _id real como movementRef. Los movs SCBA sin _id de
-	// subdocumento usan un id sintético "scba-<folderId>-<idx>" (posicional,
+	// El panel necesita un _id real como movementRef. Los movs SCBA/EJE sin _id
+	// o actId usan un id sintético "scba-/eje-<folderId>-<idx>" (posicional,
 	// inestable entre páginas) — sobre esos no se pueden colgar notas.
-	const movementRef = movement?._id && !String(movement._id).startsWith("scba-") ? movement._id : null;
+	const movementRef =
+		movement?._id && !String(movement._id).startsWith("scba-") && !String(movement._id).startsWith("eje-") ? movement._id : null;
 	const panelAvailable = Boolean(folderId && movementRef);
 	const movementSource =
 		movement?.source === "mev" || movement?.source === "scba" || movement?.source === "eje" ? movement.source : "manual";
