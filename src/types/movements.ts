@@ -68,12 +68,28 @@ export interface ScbaAccess {
 	previewCount?: number;
 }
 
-// EJE no aplica feature-gating ni plan upgrades — solo hasAccess flag.
-// Los movimientos vienen del subdoc causas-eje.movimientos[] y nunca
-// tienen link/url/attachments (el parser EJE solo captura tieneAdjuntos
-// como boolean, no la URL).
+// Mismo shape que ScbaAccess — contrato idéntico para MEV.
+export interface MevAccess {
+	hasAccess: boolean;
+	message?: string | null;
+	requiresUpgrade?: boolean;
+	currentPlan?: string;
+	requiredPlans?: string[];
+	availableMovements?: number;
+	totalMovements?: number;
+	previewCount?: number;
+}
+
+// EJE gatea igual que SCBA/MEV (free = últimos 5 + upgrade info).
 export interface EjeAccess {
 	hasAccess: boolean;
+	message?: string | null;
+	requiresUpgrade?: boolean;
+	currentPlan?: string;
+	requiredPlans?: string[];
+	availableMovements?: number;
+	totalMovements?: number;
+	previewCount?: number;
 }
 
 export interface ScrapingProgress {
@@ -91,6 +107,7 @@ export interface PaginatedMovementsResponse {
 	documentsBeforeThisPage?: number;
 	documentsInThisPage?: number;
 	pjnAccess?: PjnAccess;
+	mevAccess?: MevAccess;
 	scbaAccess?: ScbaAccess;
 	ejeAccess?: EjeAccess;
 	scrapingProgress?: ScrapingProgress;
@@ -103,6 +120,7 @@ export interface MovementState {
 	documentsBeforeThisPage?: number;
 	documentsInThisPage?: number;
 	pjnAccess?: PjnAccess;
+	mevAccess?: MevAccess;
 	scbaAccess?: ScbaAccess;
 	ejeAccess?: EjeAccess;
 	scrapingProgress?: ScrapingProgress;

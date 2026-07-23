@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Dispatch } from "redux";
-import { Movement, MovementState, PaginationInfo, PjnAccess, ScbaAccess, EjeAccess, ScrapingProgress } from "types/movements";
+import { Movement, MovementState, PaginationInfo, PjnAccess, MevAccess, ScbaAccess, EjeAccess, ScrapingProgress } from "types/movements";
 import { UPDATE_ACTIVITY } from "./activities";
 
 export const GET_MOVEMENTS_BY_FOLDER = "movements/GET_MOVEMENTS_BY_FOLDER";
@@ -48,6 +48,7 @@ const movementReducer = (state = initialMovementState, action: any): MovementSta
 				documentsBeforeThisPage: action.payload.documentsBeforeThisPage || undefined,
 				documentsInThisPage: action.payload.documentsInThisPage || undefined,
 				pjnAccess: action.payload.pjnAccess || undefined,
+				mevAccess: action.payload.mevAccess || undefined,
 				scbaAccess: action.payload.scbaAccess || undefined,
 				ejeAccess: action.payload.ejeAccess || undefined,
 				scrapingProgress: action.payload.scrapingProgress || undefined,
@@ -275,6 +276,7 @@ interface PaginatedSuccessResponse {
 		documentsBeforeThisPage?: number;
 		documentsInThisPage?: number;
 		pjnAccess?: PjnAccess;
+		mevAccess?: MevAccess;
 		scbaAccess?: ScbaAccess;
 		ejeAccess?: EjeAccess;
 		scrapingProgress?: ScrapingProgress;
@@ -308,8 +310,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 		dispatch({ type: SET_LOADING });
 
 		// Campos optimizados para listas y vistas
-		const fields =
-			"_id,title,time,movement,description,dateExpiration,link,source,completed,attachments,documentType";
+		const fields = "_id,title,time,movement,description,dateExpiration,link,source,completed,attachments,documentType";
 		// Nota: attachments incluye s3Key/s3Bucket (subdoc completo se envía).
 
 		// Construir parámetros de consulta
@@ -351,6 +352,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 						documentsBeforeThisPage: paginatedData.data.documentsBeforeThisPage,
 						documentsInThisPage: paginatedData.data.documentsInThisPage,
 						pjnAccess: paginatedData.data.pjnAccess,
+						mevAccess: paginatedData.data.mevAccess,
 						scbaAccess: paginatedData.data.scbaAccess,
 						ejeAccess: paginatedData.data.ejeAccess,
 						scrapingProgress: paginatedData.data.scrapingProgress,
@@ -366,6 +368,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 					documentsBeforeThisPage: paginatedData.data.documentsBeforeThisPage,
 					documentsInThisPage: paginatedData.data.documentsInThisPage,
 					pjnAccess: paginatedData.data.pjnAccess,
+					mevAccess: paginatedData.data.mevAccess,
 					scbaAccess: paginatedData.data.scbaAccess,
 					ejeAccess: paginatedData.data.ejeAccess,
 					scrapingProgress: paginatedData.data.scrapingProgress,

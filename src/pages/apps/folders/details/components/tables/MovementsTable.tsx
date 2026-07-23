@@ -50,6 +50,11 @@ import type { Event as CalendarEvent } from "types/events";
 import { useParams } from "react-router";
 import PDFViewer from "components/shared/PDFViewer";
 import MovementTextViewer from "components/shared/MovementTextViewer";
+import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
+import ModalTasks from "pages/apps/folders/details/modals/MoldalTasks";
+import AddEventFrom from "sections/apps/calendar/AddEventForm";
+import { Dialog } from "@mui/material";
+import { getMovementsReadSet, setMovementReadStatus } from "services/movementReadStatusService";
 import PaginationWithJump from "components/shared/PaginationWithJump";
 import PjnAccessAlert from "components/shared/PjnAccessAlert";
 import ScrollX from "components/ScrollX";
@@ -184,6 +189,55 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 		});
 		return map;
 	}, [folderEvents]);
+
+	// === Acciones PJN-parity para movimientos sincronizados (MEV/SCBA/EJE) ===
+	// Ref real = _id de subdocumento (MEV/SCBA) o actId (EJE); los sintéticos
+	// posicionales "scba-*/eje-*" no admiten notas ni read-status.
+	const isSyncedRow = (m: Movement) => m.source === "mev" || m.source === "scba" || m.source === "eje";
+	const hasRealRef = (m: Movement) => Boolean(m._id && !String(m._id).startsWith("scba-") && !String(m._id).startsWith("eje-"));
+	const userId = useSelector((s: any) => s.auth?.user?._id);
+
+	// Read-status per-usuario (mismo modelo de presencia que PJN).
+	const [readSet, setReadSet] = useState<Set<string>>(new Set());
+	useEffect(() => {
+		const ids = movements.filter((m) => isSyncedRow(m) && hasRealRef(m)).map((m) => String(m._id));
+		if (!ids.length) {
+			setReadSet(new Set());
+			return;
+		}
+		let cancelled = false;
+		getMovementsReadSet(ids)
+			.then((set) => {
+				if (!cancelled) setReadSet(set);
+			})
+			.catch(() => {
+				/* silencioso: el read-status no es crítico */
+			});
+		return () => {
+			cancelled = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [movements]);
+
+	const markRead = (movementId: string, read: boolean) => {
+		setReadSet((prev) => {
+			const next = new Set(prev);
+			if (read) next.add(movementId);
+			else next.delete(movementId);
+			return next;
+		});
+		if (id) {
+			setMovementReadStatus(movementId, id, read).catch(() => {
+				/* silencioso */
+			});
+		}
+	};
+
+	// Modals de acciones rápidas (nota / tarea / vencimiento) prefijados con movementRef.
+	const [actionMovement, setActionMovement] = useState<Movement | null>(null);
+	const [quickNoteOpen, setQuickNoteOpen] = useState(false);
+	const [quickTaskOpen, setQuickTaskOpen] = useState(false);
+	const [quickEventOpen, setQuickEventOpen] = useState(false);
 
 	// Actualizar valores locales cuando cambien las props
 	useEffect(() => {
@@ -327,6 +381,10 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 			setTextViewerMovement(movement);
 			setSelectedMovementId(movement._id || "");
 			setTextViewerOpen(true);
+			// Auto-marcar leído al abrir (abrir el doc = leerlo, igual que PJN).
+			if (isSyncedRow(movement) && hasRealRef(movement) && !readSet.has(String(movement._id))) {
+				markRead(String(movement._id), true);
+			}
 		} else {
 			setSelectedPdfUrl(movement.link || "");
 			setSelectedPdfTitle(movement.title || "Documento");
@@ -339,6 +397,9 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	const handleTextNavigate = (movement: Movement) => {
 		setTextViewerMovement(movement);
 		setSelectedMovementId(movement._id || "");
+		if (isSyncedRow(movement) && hasRealRef(movement) && !readSet.has(String(movement._id))) {
+			markRead(String(movement._id), true);
+		}
 	};
 
 	// Cargar más movimientos para el PDF viewer (página siguiente)
@@ -552,20 +613,32 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 												<TableCell>{formatDate(movement.time)}</TableCell>
 												<TableCell>
 													<Box sx={{ maxWidth: 400 }}>
-														<Typography
-															variant="subtitle2"
-															sx={{
-																display: "-webkit-box",
-																WebkitLineClamp: 2,
-																WebkitBoxOrient: "vertical",
-																overflow: "hidden",
-																textOverflow: "ellipsis",
-																lineHeight: 1.4,
-																wordBreak: "break-word",
-															}}
-														>
-															{movement.title}
-														</Typography>
+														<Stack direction="row" alignItems="flex-start" spacing={0.75}>
+															{isSyncedRow(movement) && hasRealRef(movement) && !readSet.has(String(movement._id)) && (
+																<Tooltip title="No leído">
+																	<Box
+																		component="span"
+																		sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "primary.main", flexShrink: 0, mt: 0.75 }}
+																	/>
+																</Tooltip>
+															)}
+															<Typography
+																variant="subtitle2"
+																sx={{
+																	display: "-webkit-box",
+																	WebkitLineClamp: 2,
+																	WebkitBoxOrient: "vertical",
+																	overflow: "hidden",
+																	textOverflow: "ellipsis",
+																	lineHeight: 1.4,
+																	wordBreak: "break-word",
+																	fontWeight:
+																		isSyncedRow(movement) && hasRealRef(movement) && !readSet.has(String(movement._id)) ? 700 : undefined,
+																}}
+															>
+																{movement.title}
+															</Typography>
+														</Stack>
 														<Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
 															{movement.source === "pjn" && (
 																<Typography
@@ -800,7 +873,62 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																<Eye size={18} />
 															</IconButton>
 														</Tooltip>
-														{movement.source !== "pjn" && movement.source !== "mev" && movement.source !== "scba" && (
+														{isSyncedRow(movement) && hasRealRef(movement) && (
+															<>
+																<Tooltip title={readSet.has(String(movement._id)) ? "Leído — marcar como no leído" : "Marcar como leído"}>
+																	<IconButton
+																		size="small"
+																		color={readSet.has(String(movement._id)) ? "success" : "default"}
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			markRead(String(movement._id), !readSet.has(String(movement._id)));
+																		}}
+																	>
+																		<TickCircle size={18} variant={readSet.has(String(movement._id)) ? "Bold" : "Linear"} />
+																	</IconButton>
+																</Tooltip>
+																<Tooltip title="Agregar nota">
+																	<IconButton
+																		size="small"
+																		color="primary"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			setActionMovement(movement);
+																			setQuickNoteOpen(true);
+																		}}
+																	>
+																		<Note1 size={18} />
+																	</IconButton>
+																</Tooltip>
+																<Tooltip title="Agregar tarea">
+																	<IconButton
+																		size="small"
+																		sx={{ color: "success.main" }}
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			setActionMovement(movement);
+																			setQuickTaskOpen(true);
+																		}}
+																	>
+																		<TaskSquare size={18} />
+																	</IconButton>
+																</Tooltip>
+																<Tooltip title="Agregar vencimiento">
+																	<IconButton
+																		size="small"
+																		color="error"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			setActionMovement(movement);
+																			setQuickEventOpen(true);
+																		}}
+																	>
+																		<Calendar size={18} />
+																	</IconButton>
+																</Tooltip>
+															</>
+														)}
+														{movement.source !== "pjn" && !isSyncedRow(movement) && (
 															<>
 																{canUpdate && (
 																	<Tooltip title="Editar">
@@ -1024,6 +1152,50 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 				totalWithLinks={totalWithLinks}
 				documentsBeforeThisPage={documentsBeforeThisPage}
 			/>
+
+			{/* Acciones rápidas por fila (nota / tarea / vencimiento) con movementRef prefijado */}
+			{actionMovement && id && (
+				<ModalNotes
+					open={quickNoteOpen}
+					setOpen={setQuickNoteOpen}
+					folderId={id}
+					folderName={folderName}
+					note={null}
+					initialValues={{ movementRef: actionMovement._id, movementSource: (actionMovement.source as any) ?? "manual" }}
+				/>
+			)}
+			{actionMovement && id && (
+				<ModalTasks
+					open={quickTaskOpen}
+					setOpen={setQuickTaskOpen}
+					folderId={id}
+					folderName={folderName ?? ""}
+					editMode={false}
+					taskToEdit={null}
+					initialValues={{ movementRef: actionMovement._id, movementSource: (actionMovement.source as any) ?? "manual" }}
+				/>
+			)}
+			{actionMovement && id && (
+				<Dialog
+					open={quickEventOpen}
+					onClose={() => setQuickEventOpen(false)}
+					maxWidth="sm"
+					fullWidth
+					sx={{ "& .MuiDialog-paper": { p: 0 } }}
+				>
+					<AddEventFrom
+						event={null}
+						range={null}
+						onCancel={() => setQuickEventOpen(false)}
+						userId={userId}
+						folderId={id}
+						folderName={folderName}
+						movementRef={actionMovement._id}
+						movementSource={(actionMovement.source as any) ?? "manual"}
+						defaultType="vencimiento"
+					/>
+				</Dialog>
+			)}
 
 			{/* Popover para mostrar archivos adjuntos */}
 			<Popover

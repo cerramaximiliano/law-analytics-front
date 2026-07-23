@@ -417,9 +417,7 @@ const PjnMovementsViewerSection = ({
 			<Box sx={{ p: 2, pt: 1.5 }}>
 				{/* Banner de upgrade (plan free): componente UNIFICADO — mismo diseño y
 				    copy que la tabla clásica y la Vista combinada. */}
-				{requiresUpgrade && (
-					<MovementsUpgradeBanner previewCount={movements.length} totalMovements={total} unlockSuffix=" y los PDF" />
-				)}
+				{requiresUpgrade && <MovementsUpgradeBanner previewCount={movements.length} totalMovements={total} unlockSuffix=" y los PDF" />}
 
 				{error && (
 					<Alert severity="error" sx={{ mb: 2 }}>
@@ -456,7 +454,7 @@ const PjnMovementsViewerSection = ({
 										<TableCell sx={{ width: 200 }}>Tipo</TableCell>
 										<TableCell>Detalle</TableCell>
 										<TableCell sx={{ width: 100 }} align="center">
-											PDF
+											Documento
 										</TableCell>
 										<TableCell sx={{ width: 80 }} align="right">
 											Acciones
@@ -632,6 +630,61 @@ const PjnMovementsViewerSection = ({
 											</TableRow>
 										);
 									})}
+									{/* Filas blureadas para usuarios free (paridad con MovementsTable) */}
+									{requiresUpgrade && total > movements.length && (
+										<>
+											{[...Array(Math.min(3, total - movements.length))].map((_, index) => (
+												<TableRow
+													key={`blurred-row-${index}`}
+													sx={(t) => ({
+														position: "relative",
+														"&::after": {
+															content: '""',
+															position: "absolute",
+															top: 0,
+															left: 0,
+															right: 0,
+															bottom: 0,
+															backdropFilter: "blur(2px)",
+															backgroundColor: t.palette.mode === "dark" ? "rgba(0, 0, 0, 0.08)" : "rgba(255, 255, 255, 0.2)",
+															pointerEvents: "none",
+															zIndex: 1,
+														},
+													})}
+												>
+													<TableCell sx={{ color: "text.disabled", fontVariantNumeric: "tabular-nums" }}>
+														{["12/05/2024", "03/04/2024", "27/02/2024"][index % 3]}
+													</TableCell>
+													<TableCell>
+														<Typography variant="body2" sx={{ color: "text.disabled", fontWeight: 500 }}>
+															{["Despacho", "Cédula", "Escrito-Actor"][index % 3]}
+														</Typography>
+													</TableCell>
+													<TableCell>
+														<Typography variant="body2" sx={{ color: "text.disabled" }}>
+															{
+																[
+																	"Providencia simple - Téngase presente",
+																	"Notificación electrónica al demandado",
+																	"Vista al actor por el término de ley",
+																][index % 3]
+															}
+														</Typography>
+													</TableCell>
+													<TableCell align="center">
+														<Chip size="small" label="PDF" variant="outlined" sx={{ opacity: 0.5 }} />
+													</TableCell>
+													<TableCell align="right">
+														<Stack direction="row" spacing={0.5} justifyContent="flex-end" sx={{ opacity: 0.3 }}>
+															<IconButton size="small" disabled>
+																<DocumentText size={18} />
+															</IconButton>
+														</Stack>
+													</TableCell>
+												</TableRow>
+											))}
+										</>
+									)}
 								</TableBody>
 							</Table>
 						</TableContainer>
