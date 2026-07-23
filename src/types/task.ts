@@ -25,7 +25,7 @@ export interface TaskType {
 	userId?: string;
 	groupId?: string;
 	movementRef?: string;
-	movementSource?: "pjn" | "mev" | null;
+	movementSource?: "pjn" | "mev" | "scba" | "eje" | "manual" | null;
 	description?: string;
 	assignedTo?: string[];
 	reminders?: Array<{
@@ -95,5 +95,5 @@ export type TaskFormValues = {
 	folderId: string;
 	userId?: string;
 	movementRef?: string;
-	movementSource?: "pjn" | "mev" | null;
+	movementSource?: "pjn" | "mev" | "scba" | "eje" | "manual" | null;
 };

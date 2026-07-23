@@ -6,7 +6,7 @@ export interface Note {
 	groupId?: string;
 	folderId?: string;
 	movementRef?: string;
-	movementSource?: "pjn" | "mev" | null;
+	movementSource?: "pjn" | "mev" | "scba" | "eje" | "manual" | null;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -18,7 +18,7 @@ export interface NoteFormValues {
 	folderId?: string;
 	groupId?: string;
 	movementRef?: string;
-	movementSource?: "pjn" | "mev" | null;
+	movementSource?: "pjn" | "mev" | "scba" | "eje" | "manual" | null;
 }
 
 export interface NoteModalType {

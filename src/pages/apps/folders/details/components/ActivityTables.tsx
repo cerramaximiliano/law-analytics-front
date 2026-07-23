@@ -1322,7 +1322,10 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														totalWithLinks={movementsData.totalWithLinks}
 														documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
 														documentsInThisPage={movementsData.documentsInThisPage}
-														pjnAccess={movementsData.pjnAccess ?? movementsData.mevAccess ?? movementsData.scbaAccess ?? movementsData.ejeAccess}
+														pjnAccess={
+															movementsData.pjnAccess ?? movementsData.mevAccess ?? movementsData.scbaAccess ?? movementsData.ejeAccess
+														}
+														folderName={folderName}
 													/>
 												))}
 											{activeTab === "notifications" && (
@@ -1354,7 +1357,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													pagination={activitiesData.pagination}
 													isLoading={activitiesData.isLoading}
 													stats={activitiesData.stats}
-													pjnAccess={activitiesData.pjnAccess ?? activitiesData.mevAccess ?? activitiesData.scbaAccess ?? activitiesData.ejeAccess}
+													pjnAccess={
+														activitiesData.pjnAccess ?? activitiesData.mevAccess ?? activitiesData.scbaAccess ?? activitiesData.ejeAccess
+													}
 												/>
 											)}
 										</Paper>
@@ -1742,7 +1747,10 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														totalWithLinks={movementsData.totalWithLinks}
 														documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
 														documentsInThisPage={movementsData.documentsInThisPage}
-														pjnAccess={movementsData.pjnAccess ?? movementsData.mevAccess ?? movementsData.scbaAccess ?? movementsData.ejeAccess}
+														pjnAccess={
+															movementsData.pjnAccess ?? movementsData.mevAccess ?? movementsData.scbaAccess ?? movementsData.ejeAccess
+														}
+														folderName={folderName}
 													/>
 												))}
 											{activeTab === "notifications" && (
@@ -1774,7 +1782,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													pagination={activitiesData.pagination}
 													isLoading={activitiesData.isLoading}
 													stats={activitiesData.stats}
-													pjnAccess={activitiesData.pjnAccess ?? activitiesData.mevAccess ?? activitiesData.scbaAccess ?? activitiesData.ejeAccess}
+													pjnAccess={
+														activitiesData.pjnAccess ?? activitiesData.mevAccess ?? activitiesData.scbaAccess ?? activitiesData.ejeAccess
+													}
 												/>
 											)}
 										</Paper>

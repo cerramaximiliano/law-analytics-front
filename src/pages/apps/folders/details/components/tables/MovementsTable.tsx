@@ -51,6 +51,7 @@ interface MovementsTableProps {
 	documentsBeforeThisPage?: number;
 	documentsInThisPage?: number;
 	pjnAccess?: PjnAccess;
+	folderName?: string;
 }
 
 type Order = "asc" | "desc";
@@ -100,6 +101,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	documentsBeforeThisPage,
 	documentsInThisPage,
 	pjnAccess,
+	folderName,
 }) => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
@@ -261,10 +263,9 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	//   - documentType='pdf' o sin marcar pero con link: PDFViewer (PJN, MEV
 	//     con su endpoint /api/movements/mev/.../documento, links manuales).
 	//
-	// Importante: NO usamos source='mev' como trigger de TextViewer porque
-	// MEV legacy ya renderiza vía PDFViewer (link interno que sirve un HTML).
-	// Para que MEV use TextViewer hay que adaptar también el mapper MEV del
-	// backend para que pueble description + attachments con el shape esperado.
+	// MEV: el mapper del backend marca documentType='text' + description=texto
+	// cuando el movimiento tiene texto completo (Fase 5); los MEV con URL
+	// externa o sin texto siguen en el PDFViewer legacy.
 	const openMovementDocument = (movement: Movement) => {
 		const isTextDoc = movement.documentType === "text";
 		if (isTextDoc) {
@@ -473,7 +474,15 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 												<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.015em" }}>
 													Sin movimientos registrados
 												</Typography>
-												<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", maxWidth: 360, textAlign: "center" }}>
+												<Typography
+													sx={{
+														fontSize: "0.78rem",
+														color: "text.secondary",
+														letterSpacing: "-0.005em",
+														maxWidth: 360,
+														textAlign: "center",
+													}}
+												>
 													Los escritos y despachos judiciales aparecerán acá cuando se sincronicen o agreguen.
 												</Typography>
 											</Stack>
@@ -903,6 +912,8 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 				open={textViewerOpen}
 				onClose={() => setTextViewerOpen(false)}
 				movement={textViewerMovement}
+				folderId={id}
+				folderName={folderName}
 				movements={movements}
 				currentMovementId={selectedMovementId}
 				onNavigate={handleTextNavigate}
