@@ -298,10 +298,14 @@ export interface MovementQueryParams {
 	limit?: number;
 	search?: string;
 	sort?: string; // Agregado para ordenamiento
+	// Deep-link: id del movimiento a ubicar — el server salta a su página y
+	// devuelve locateStatus ('ok' | 'outside_plan' | 'not_found') + locatedPage.
+	locate?: string;
 	filter?: {
 		movement?: string; // Tipo de movimiento (incluye tanto tipos generales como tipos PJN)
 		dateRange?: string;
 		hasLink?: boolean; // Agregado para filtrar movimientos con documento
+		hasLinked?: boolean; // Solo movimientos con notas/tareas/vencimientos vinculados
 	};
 }
 
@@ -321,10 +325,12 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 			if (params.limit !== undefined) queryParams.limit = params.limit;
 			if (params.search) queryParams.search = params.search;
 			if (params.sort) queryParams.sort = params.sort;
+			if (params.locate) queryParams.locate = params.locate;
 			if (params.filter) {
 				if (params.filter.movement) queryParams["filter[movement]"] = params.filter.movement;
 				if (params.filter.dateRange) queryParams["filter[dateRange]"] = params.filter.dateRange;
 				if (params.filter.hasLink !== undefined) queryParams["filter[hasLink]"] = params.filter.hasLink;
+				if (params.filter.hasLinked !== undefined) queryParams["filter[hasLinked]"] = params.filter.hasLinked;
 			}
 		}
 
@@ -373,6 +379,8 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 					ejeAccess: paginatedData.data.ejeAccess,
 					scrapingProgress: paginatedData.data.scrapingProgress,
 					causaLastSyncDate: paginatedData.data.causaLastSyncDate,
+					locateStatus: (paginatedData.data as any).locateStatus,
+					locatedPage: (paginatedData.data as any).locatedPage,
 				};
 			} else {
 				// Manejar respuesta no paginada (retrocompatibilidad)

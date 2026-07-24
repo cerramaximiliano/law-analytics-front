@@ -29,6 +29,8 @@ function buildQueryString(params?: PjnMovementsListParams): string {
 	if (params.hasUrl !== undefined) sp.append("filter[hasUrl]", String(params.hasUrl));
 	if (params.dateFrom) sp.append("filter[dateFrom]", params.dateFrom);
 	if (params.dateTo) sp.append("filter[dateTo]", params.dateTo);
+	if (params.hasLinked) sp.append("filter[hasLinked]", "true");
+	if (params.locate) sp.append("locate", params.locate);
 	const s = sp.toString();
 	return s ? `?${s}` : "";
 }

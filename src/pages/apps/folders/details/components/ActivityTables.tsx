@@ -21,7 +21,6 @@ import {
 	useMediaQuery,
 	Drawer,
 	Badge,
-	MenuItem,
 } from "@mui/material";
 import dayjs from "utils/dayjs-config";
 import {
@@ -37,6 +36,7 @@ import {
 	TickCircle,
 	DocumentText,
 	Gallery,
+	Note1,
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useParams } from "react-router";
@@ -47,8 +47,8 @@ import { getNotificationsByFolderId } from "store/reducers/notifications";
 import { getEventsById } from "store/reducers/events";
 import { getCombinedActivities } from "store/reducers/activities";
 import MovementsTable from "./tables/MovementsTable";
-import PjnMovementsViewerSection, { PDF_STATUS_OPTIONS } from "./PjnMovementsViewerSection";
-import type { PjnMovementPdfStatus } from "types/pjnMovement";
+import PjnMovementsViewerSection from "./PjnMovementsViewerSection";
+
 import NotificationsTable from "./tables/NotificationsTable";
 import CalendarTable from "./tables/CalendarTable";
 import CombinedTablePaginated from "./tables/CombinedTablePaginated";
@@ -98,22 +98,48 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const isDark = theme.palette.mode === "dark";
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const { id } = useParams<{ id: string }>();
-	const [searchParams] = useSearchParams();
-	// Deep-link a un movimiento puntual (?movement=<id>, desde la vista pública /m/:token).
-	const highlightMovementId = searchParams.get("movement");
-	// Acción rápida del deep-link (?action=): auto-abre el visor del movimiento con
-	// el panel de vencimientos/notas/tareas. Sanitizada a los 3 valores conocidos.
-	const rawAction = searchParams.get("action");
-	const quickAction = rawAction === "vencimiento" || rawAction === "nota" || rawAction === "tarea" ? rawAction : null;
-	// ?open=1 (calendario / chips "Ir al movimiento"): además de resaltar,
-	// auto-abre el visor del movimiento. Los deep-links de email no lo mandan.
-	const openMovement = searchParams.get("open") === "1";
+	const [searchParams, setSearchParams] = useSearchParams();
+	// Deep-link a un movimiento (?movement=<id> [+ ?action= | ?open=1]).
+	// Es una instrucción de navegación de UN solo uso, no estado persistente:
+	// se captura acá y se CONSUME (se quita de la URL con replace). Sin esto,
+	// volver a la pestaña re-disparaba el resaltado y la auto-apertura del visor.
+	const [deepLink, setDeepLink] = useState<{
+		movementId: string;
+		quickAction: "vencimiento" | "nota" | "tarea" | null;
+		open: boolean;
+	} | null>(null);
+	useEffect(() => {
+		const movementId = searchParams.get("movement");
+		if (!movementId) return;
+		const rawAction = searchParams.get("action");
+		setDeepLink({
+			movementId,
+			quickAction: rawAction === "vencimiento" || rawAction === "nota" || rawAction === "tarea" ? rawAction : null,
+			open: searchParams.get("open") === "1",
+		});
+		const next = new URLSearchParams(searchParams);
+		next.delete("movement");
+		next.delete("action");
+		next.delete("open");
+		setSearchParams(next, { replace: true });
+	}, [searchParams, setSearchParams]);
+	const highlightMovementId = deepLink?.movementId ?? null;
+	const quickAction = deepLink?.quickAction ?? null;
+	const openMovement = deepLink?.open ?? false;
 	const { canCreate } = useTeam();
 	const [activeTab, setActiveTab] = useState<TabValue>("movements");
+
+	// Al salir del tab de movimientos el deep-link ya fue atendido — descartarlo
+	// para que volver al tab no re-dispare el visor (las tablas remontan al
+	// cambiar de tab y sus guards one-shot se resetean con el mount).
+	useEffect(() => {
+		if (activeTab !== "movements") {
+			setDeepLink((prev) => (prev ? null : prev));
+		}
+	}, [activeTab]);
 	const [searchQuery, setSearchQuery] = useState("");
 	// Filtros del expediente PJN (viven en el toolbar; la tabla es
 	// PjnMovementsViewerSection y el endpoint pjn-movements los soporta nativos).
-	const [pjnPdfFilter, setPjnPdfFilter] = useState<PjnMovementPdfStatus | "all">("all");
 	const [pjnDateFrom, setPjnDateFrom] = useState("");
 	const [pjnDateTo, setPjnDateTo] = useState("");
 	const [showFilters, setShowFilters] = useState(false);
@@ -128,6 +154,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		allDay: "",
 		source: "",
 		onlyWithDocuments: true, // Inicialmente activado para mostrar solo movimientos con documento
+		onlyWithLinked: false, // Solo movimientos con notas/tareas/vencimientos vinculados
 	});
 
 	// Modals states - Movements
@@ -244,7 +271,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			dispatch(getNotificationsByFolderId(id));
 			dispatch(getEventsById(id));
 		}
-	}, [id, activeTab, filters.onlyWithDocuments, filters.type]);
+	}, [id, activeTab, filters.onlyWithDocuments, filters.onlyWithLinked, filters.type, filters.startDate, filters.endDate]);
 
 	// Polling para scrapingProgress (MEV y PJN): 10s cuando está en progreso, 30s en otros estados activos
 	useEffect(() => {
@@ -266,7 +293,15 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		}, pollMs);
 
 		return () => clearInterval(pollInterval);
-	}, [id, scrapingProgress?.isComplete, scrapingProgress?.status, filters.onlyWithDocuments]);
+	}, [
+		id,
+		scrapingProgress?.isComplete,
+		scrapingProgress?.status,
+		filters.onlyWithDocuments,
+		filters.onlyWithLinked,
+		filters.startDate,
+		filters.endDate,
+	]);
 
 	// Resetear estado del banner cuando cambia scrapingProgress
 	useEffect(() => {
@@ -755,13 +790,21 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			filterObj.hasLink = true;
 		}
 
+		// Solo movimientos con notas/tareas/vencimientos vinculados (movementRef)
+		if (filters.onlyWithLinked) {
+			filterObj.hasLinked = true;
+		}
+
 		// Agregar filtro de tipo de movimiento si existe
 		if (filters.type) {
 			filterObj.movement = filters.type;
 		}
 
-		// Agregar otros filtros según estén disponibles
-		// (pueden agregarse más filtros en el futuro)
+		// Rango de fechas de los filtros avanzados (Desde/Hasta). Sin esto, los
+		// date pickers del box de filtros no operaban sobre los movimientos.
+		if (filters.startDate && filters.endDate) {
+			filterObj.dateRange = `${dayjs(filters.startDate).format("YYYY-MM-DD")},${dayjs(filters.endDate).format("YYYY-MM-DD")}`;
+		}
 
 		// Si no hay ningún filtro, retornar undefined en lugar de objeto vacío
 		return Object.keys(filterObj).length > 0 ? filterObj : undefined;
@@ -1142,41 +1185,59 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 								    compactos en vez de la caja "Opciones de visualización". PJN: solo el
 								    filtro de estado de PDF (los clásicos no operan sobre pjn-movements). */}
 								{activeTab === "movements" && scrapingSource === "pjn" && (
-									<Stack spacing={1.25} sx={{ mt: 1.5 }}>
+									<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" rowGap={1} sx={{ mt: 1.5 }}>
+										<Tooltip title="Mostrar solo los movimientos que tienen documento">
+											<Chip
+												size="small"
+												clickable
+												icon={<DocumentText size={14} variant="Bulk" />}
+												label="Con documento"
+												onClick={() => setFilters({ ...filters, onlyWithDocuments: !filters.onlyWithDocuments })}
+												sx={{
+													fontWeight: 600,
+													letterSpacing: "-0.005em",
+													border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithDocuments ? 0.5 : isDark ? 0.22 : 0.14)}`,
+													bgcolor: filters.onlyWithDocuments ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+													color: filters.onlyWithDocuments ? BRAND_BLUE : "text.secondary",
+													"& .MuiChip-icon": { color: BRAND_BLUE },
+												}}
+											/>
+										</Tooltip>
+										<Tooltip title="Mostrar solo los movimientos que tienen notas, tareas o vencimientos vinculados">
+											<Chip
+												size="small"
+												clickable
+												icon={<Note1 size={14} variant="Bulk" />}
+												label="Con vinculados"
+												onClick={() => setFilters({ ...filters, onlyWithLinked: !filters.onlyWithLinked })}
+												sx={{
+													fontWeight: 600,
+													letterSpacing: "-0.005em",
+													border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithLinked ? 0.5 : isDark ? 0.22 : 0.14)}`,
+													bgcolor: filters.onlyWithLinked ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+													color: filters.onlyWithLinked ? BRAND_BLUE : "text.secondary",
+													"& .MuiChip-icon": { color: BRAND_BLUE },
+												}}
+											/>
+										</Tooltip>
 										<TextField
-											select
 											size="small"
-											fullWidth
-											label="Estado del PDF"
-											value={pjnPdfFilter}
-											onChange={(e) => setPjnPdfFilter(e.target.value as PjnMovementPdfStatus | "all")}
-										>
-											{PDF_STATUS_OPTIONS.map((opt) => (
-												<MenuItem key={opt.value} value={opt.value}>
-													{opt.label}
-												</MenuItem>
-											))}
-										</TextField>
-										<Stack direction="row" spacing={1}>
-											<TextField
-												size="small"
-												type="date"
-												label="Desde"
-												value={pjnDateFrom}
-												onChange={(e) => setPjnDateFrom(e.target.value)}
-												InputLabelProps={{ shrink: true }}
-												sx={{ flex: 1 }}
-											/>
-											<TextField
-												size="small"
-												type="date"
-												label="Hasta"
-												value={pjnDateTo}
-												onChange={(e) => setPjnDateTo(e.target.value)}
-												InputLabelProps={{ shrink: true }}
-												sx={{ flex: 1 }}
-											/>
-										</Stack>
+											type="date"
+											label="Desde"
+											value={pjnDateFrom}
+											onChange={(e) => setPjnDateFrom(e.target.value)}
+											InputLabelProps={{ shrink: true }}
+											sx={{ flex: 1, minWidth: 130 }}
+										/>
+										<TextField
+											size="small"
+											type="date"
+											label="Hasta"
+											value={pjnDateTo}
+											onChange={(e) => setPjnDateTo(e.target.value)}
+											InputLabelProps={{ shrink: true }}
+											sx={{ flex: 1, minWidth: 130 }}
+										/>
 									</Stack>
 								)}
 								{activeTab === "movements" && scrapingSource !== "pjn" && (
@@ -1197,6 +1258,49 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													"& .MuiChip-icon": { color: BRAND_BLUE },
 												}}
 											/>
+											<Tooltip title="Mostrar solo los movimientos que tienen notas, tareas o vencimientos vinculados">
+												<Chip
+													size="small"
+													clickable
+													icon={<Note1 size={14} variant="Bulk" />}
+													label="Con vinculados"
+													onClick={() => setFilters({ ...filters, onlyWithLinked: !filters.onlyWithLinked })}
+													sx={{
+														fontWeight: 600,
+														letterSpacing: "-0.005em",
+														border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithLinked ? 0.5 : isDark ? 0.22 : 0.14)}`,
+														bgcolor: filters.onlyWithLinked ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+														color: filters.onlyWithLinked ? BRAND_BLUE : "text.secondary",
+														"& .MuiChip-icon": { color: BRAND_BLUE },
+													}}
+												/>
+											</Tooltip>
+											{isSyncedFolder && (
+												<>
+													<TextField
+														size="small"
+														type="date"
+														label="Desde"
+														value={filters.startDate ? dayjs(filters.startDate).format("YYYY-MM-DD") : ""}
+														onChange={(e) =>
+															setFilters({ ...filters, startDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
+														}
+														InputLabelProps={{ shrink: true }}
+														sx={{ width: 150 }}
+													/>
+													<TextField
+														size="small"
+														type="date"
+														label="Hasta"
+														value={filters.endDate ? dayjs(filters.endDate).format("YYYY-MM-DD") : ""}
+														onChange={(e) =>
+															setFilters({ ...filters, endDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
+														}
+														InputLabelProps={{ shrink: true }}
+														sx={{ width: 150 }}
+													/>
+												</>
+											)}
 											{filters.onlyWithDocuments &&
 												(movementsData.pagination?.totalAvailable ?? 0) > (movementsData.pagination?.total ?? 0) && (
 													<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
@@ -1242,21 +1346,23 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 								)}
 
 								{/* Filtros — brand */}
-								<Collapse in={showFilters} timeout="auto" unmountOnExit>
-									<Fade in={showFilters} timeout={350}>
-										<Box
-											sx={{
-												mt: 1.5,
-												p: 1.75,
-												bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
-												borderRadius: 1,
-												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
-											}}
-										>
-											<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
-										</Box>
-									</Fade>
-								</Collapse>
+								{!(activeTab === "movements" && isSyncedFolder) && (
+									<Collapse in={showFilters} timeout="auto" unmountOnExit>
+										<Fade in={showFilters} timeout={350}>
+											<Box
+												sx={{
+													mt: 1.5,
+													p: 1.75,
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+													borderRadius: 1,
+													border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+												}}
+											>
+												<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
+											</Box>
+										</Fade>
+									</Collapse>
+								)}
 							</Box>
 
 							{/* Table Content Area */}
@@ -1281,12 +1387,13 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														/>
 													</Box>
 												)}
-												{!scrapingProgress &&
-													!isScbaFirstSyncPending &&
-													scrapingSource !== "pjn" &&
-													(movementsData.pjnAccess || movementsData.scbaAccess || movementsData.ejeAccess) && (
-														<FolderSyncStatus source={scrapingSource} causaLastSyncDate={movementsData.causaLastSyncDate} />
-													)}
+												{!scrapingProgress && !isScbaFirstSyncPending && scrapingSource !== "pjn" && isSyncedFolder && (
+													<FolderSyncStatus
+														source={scrapingSource}
+														causaLastSyncDate={movementsData.causaLastSyncDate}
+														totalMovements={movementsData.pagination?.totalAvailable ?? movementsData.pagination?.total ?? null}
+													/>
+												)}
 											</>
 										)}
 
@@ -1314,8 +1421,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														highlightMovementId={highlightMovementId}
 														quickAction={quickAction}
 														autoOpen={openMovement}
+														linkedOnly={filters.onlyWithLinked}
 														searchQuery={searchQuery}
-														pdfFilter={pjnPdfFilter}
+														withDocuments={filters.onlyWithDocuments}
 														dateFrom={pjnDateFrom}
 														dateTo={pjnDateTo}
 														causaLastSyncDate={movementsData.causaLastSyncDate}
@@ -1470,20 +1578,40 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 										    rango de fechas — el endpoint pjn-movements los soporta) */}
 										{activeTab === "movements" && scrapingSource === "pjn" && (
 											<>
-												<TextField
-													select
-													size="small"
-													label="PDF"
-													value={pjnPdfFilter}
-													onChange={(e) => setPjnPdfFilter(e.target.value as PjnMovementPdfStatus | "all")}
-													sx={{ minWidth: 160 }}
-												>
-													{PDF_STATUS_OPTIONS.map((opt) => (
-														<MenuItem key={opt.value} value={opt.value}>
-															{opt.label}
-														</MenuItem>
-													))}
-												</TextField>
+												<Tooltip title="Mostrar solo los movimientos que tienen documento">
+													<Chip
+														size="small"
+														clickable
+														icon={<DocumentText size={14} variant="Bulk" />}
+														label="Con documento"
+														onClick={() => setFilters({ ...filters, onlyWithDocuments: !filters.onlyWithDocuments })}
+														sx={{
+															fontWeight: 600,
+															letterSpacing: "-0.005em",
+															border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithDocuments ? 0.5 : isDark ? 0.22 : 0.14)}`,
+															bgcolor: filters.onlyWithDocuments ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+															color: filters.onlyWithDocuments ? BRAND_BLUE : "text.secondary",
+															"& .MuiChip-icon": { color: BRAND_BLUE },
+														}}
+													/>
+												</Tooltip>
+												<Tooltip title="Mostrar solo los movimientos que tienen notas, tareas o vencimientos vinculados">
+													<Chip
+														size="small"
+														clickable
+														icon={<Note1 size={14} variant="Bulk" />}
+														label="Con vinculados"
+														onClick={() => setFilters({ ...filters, onlyWithLinked: !filters.onlyWithLinked })}
+														sx={{
+															fontWeight: 600,
+															letterSpacing: "-0.005em",
+															border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithLinked ? 0.5 : isDark ? 0.22 : 0.14)}`,
+															bgcolor: filters.onlyWithLinked ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+															color: filters.onlyWithLinked ? BRAND_BLUE : "text.secondary",
+															"& .MuiChip-icon": { color: BRAND_BLUE },
+														}}
+													/>
+												</Tooltip>
 												<TextField
 													size="small"
 													type="date"
@@ -1499,6 +1627,67 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													label="Hasta"
 													value={pjnDateTo}
 													onChange={(e) => setPjnDateTo(e.target.value)}
+													InputLabelProps={{ shrink: true }}
+													sx={{ width: 150 }}
+												/>
+											</>
+										)}
+										{/* Sincronizadas no-PJN: mismos filtros inline en la fila del buscador */}
+										{activeTab === "movements" && scrapingSource !== "pjn" && isSyncedFolder && (
+											<>
+												<Tooltip title="Mostrar solo los movimientos que tienen documento">
+													<Chip
+														size="small"
+														clickable
+														icon={<DocumentText size={14} variant="Bulk" />}
+														label={`Con documento${movementsData.totalWithLinks > 0 ? ` (${movementsData.totalWithLinks})` : ""}`}
+														onClick={() => setFilters({ ...filters, onlyWithDocuments: !filters.onlyWithDocuments })}
+														sx={{
+															fontWeight: 600,
+															letterSpacing: "-0.005em",
+															border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithDocuments ? 0.5 : isDark ? 0.22 : 0.14)}`,
+															bgcolor: filters.onlyWithDocuments ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+															color: filters.onlyWithDocuments ? BRAND_BLUE : "text.secondary",
+															"& .MuiChip-icon": { color: BRAND_BLUE },
+														}}
+													/>
+												</Tooltip>
+												<Tooltip title="Mostrar solo los movimientos que tienen notas, tareas o vencimientos vinculados">
+													<Chip
+														size="small"
+														clickable
+														icon={<Note1 size={14} variant="Bulk" />}
+														label="Con vinculados"
+														onClick={() => setFilters({ ...filters, onlyWithLinked: !filters.onlyWithLinked })}
+														sx={{
+															fontWeight: 600,
+															letterSpacing: "-0.005em",
+															border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithLinked ? 0.5 : isDark ? 0.22 : 0.14)}`,
+															bgcolor: filters.onlyWithLinked ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+															color: filters.onlyWithLinked ? BRAND_BLUE : "text.secondary",
+															"& .MuiChip-icon": { color: BRAND_BLUE },
+														}}
+													/>
+												</Tooltip>
+												<TextField
+													size="small"
+													type="date"
+													label="Desde"
+													value={filters.startDate ? dayjs(filters.startDate).format("YYYY-MM-DD") : ""}
+													onChange={(e) =>
+														setFilters({ ...filters, startDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
+													}
+													InputLabelProps={{ shrink: true }}
+													sx={{ width: 150 }}
+												/>
+												<TextField
+													size="small"
+													type="date"
+													label="Hasta"
+													value={filters.endDate ? dayjs(filters.endDate).format("YYYY-MM-DD") : ""}
+													onChange={(e) =>
+														setFilters({ ...filters, endDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
+													}
 													InputLabelProps={{ shrink: true }}
 													sx={{ width: 150 }}
 												/>
@@ -1535,7 +1724,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 							    (chip toggle + botón + filtros) en vez de la caja "Opciones de
 							    visualización". PJN no la usa: su filtro de PDF vive en el toolbar
 							    y los filtros clásicos no operan sobre pjn-movements. */}
-								{activeTab === "movements" && scrapingSource !== "pjn" ? (
+								{activeTab === "movements" && scrapingSource !== "pjn" && !isSyncedFolder ? (
 									<Box sx={{ mt: 1.25 }}>
 										<Stack spacing={1.25}>
 											<Stack direction="row" spacing={1.25} alignItems="center" flexWrap="wrap" rowGap={1}>
@@ -1555,6 +1744,49 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.07) },
 													}}
 												/>
+												<Tooltip title="Mostrar solo los movimientos que tienen notas, tareas o vencimientos vinculados">
+													<Chip
+														size="small"
+														clickable
+														icon={<Note1 size={14} variant="Bulk" />}
+														label="Con vinculados"
+														onClick={() => setFilters({ ...filters, onlyWithLinked: !filters.onlyWithLinked })}
+														sx={{
+															fontWeight: 600,
+															letterSpacing: "-0.005em",
+															border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithLinked ? 0.5 : isDark ? 0.22 : 0.14)}`,
+															bgcolor: filters.onlyWithLinked ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+															color: filters.onlyWithLinked ? BRAND_BLUE : "text.secondary",
+															"& .MuiChip-icon": { color: BRAND_BLUE },
+														}}
+													/>
+												</Tooltip>
+												{isSyncedFolder && (
+													<>
+														<TextField
+															size="small"
+															type="date"
+															label="Desde"
+															value={filters.startDate ? dayjs(filters.startDate).format("YYYY-MM-DD") : ""}
+															onChange={(e) =>
+																setFilters({ ...filters, startDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
+															}
+															InputLabelProps={{ shrink: true }}
+															sx={{ width: 150 }}
+														/>
+														<TextField
+															size="small"
+															type="date"
+															label="Hasta"
+															value={filters.endDate ? dayjs(filters.endDate).format("YYYY-MM-DD") : ""}
+															onChange={(e) =>
+																setFilters({ ...filters, endDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
+															}
+															InputLabelProps={{ shrink: true }}
+															sx={{ width: 150 }}
+														/>
+													</>
+												)}
 												{filters.onlyWithDocuments &&
 													(movementsData.pagination?.totalAvailable ?? 0) > (movementsData.pagination?.total ?? 0) && (
 														<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
@@ -1596,43 +1828,47 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
 													</Button>
 												)}
-												<Tooltip title={showFilters ? "Ocultar filtros avanzados" : "Mostrar filtros avanzados"}>
-													<Badge
-														variant="dot"
-														invisible={!hasActiveFilters()}
-														sx={{
-															"& .MuiBadge-dot": {
-																right: 2,
-																top: 2,
-																bgcolor: LIVE_GREEN,
-															},
-														}}
-													>
-														<IconButton
-															size="small"
-															onClick={() => setShowFilters(!showFilters)}
+												{!isSyncedFolder && (
+													<Tooltip title={showFilters ? "Ocultar filtros avanzados" : "Mostrar filtros avanzados"}>
+														<Badge
+															variant="dot"
+															invisible={!hasActiveFilters()}
 															sx={{
-																...brandIconButtonSx,
-																...(showFilters && {
-																	bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
-																	borderColor: alpha(BRAND_BLUE, isDark ? 0.38 : 0.28),
-																}),
-																transition: "all 200ms ease",
-																transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
+																"& .MuiBadge-dot": {
+																	right: 2,
+																	top: 2,
+																	bgcolor: LIVE_GREEN,
+																},
 															}}
 														>
-															<Filter size={14} variant="Bulk" />
-														</IconButton>
-													</Badge>
-												</Tooltip>
+															<IconButton
+																size="small"
+																onClick={() => setShowFilters(!showFilters)}
+																sx={{
+																	...brandIconButtonSx,
+																	...(showFilters && {
+																		bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+																		borderColor: alpha(BRAND_BLUE, isDark ? 0.38 : 0.28),
+																	}),
+																	transition: "all 200ms ease",
+																	transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
+																}}
+															>
+																<Filter size={14} variant="Bulk" />
+															</IconButton>
+														</Badge>
+													</Tooltip>
+												)}
 											</Stack>
 
-											<Collapse in={showFilters} timeout="auto" unmountOnExit>
-												<Box sx={{ pt: 1.25 }}>
-													<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1), mb: 1.25 }} />
-													<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
-												</Box>
-											</Collapse>
+											{!isSyncedFolder && (
+												<Collapse in={showFilters} timeout="auto" unmountOnExit>
+													<Box sx={{ pt: 1.25 }}>
+														<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1), mb: 1.25 }} />
+														<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
+													</Box>
+												</Collapse>
+											)}
 										</Stack>
 									</Box>
 								) : activeTab !== "movements" ? (
@@ -1710,12 +1946,13 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														/>
 													</Box>
 												)}
-												{!scrapingProgress &&
-													!isScbaFirstSyncPending &&
-													scrapingSource !== "pjn" &&
-													(movementsData.pjnAccess || movementsData.scbaAccess || movementsData.ejeAccess) && (
-														<FolderSyncStatus source={scrapingSource} causaLastSyncDate={movementsData.causaLastSyncDate} />
-													)}
+												{!scrapingProgress && !isScbaFirstSyncPending && scrapingSource !== "pjn" && isSyncedFolder && (
+													<FolderSyncStatus
+														source={scrapingSource}
+														causaLastSyncDate={movementsData.causaLastSyncDate}
+														totalMovements={movementsData.pagination?.totalAvailable ?? movementsData.pagination?.total ?? null}
+													/>
+												)}
 											</>
 										)}
 
@@ -1743,8 +1980,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														highlightMovementId={highlightMovementId}
 														quickAction={quickAction}
 														autoOpen={openMovement}
+														linkedOnly={filters.onlyWithLinked}
 														searchQuery={searchQuery}
-														pdfFilter={pjnPdfFilter}
+														withDocuments={filters.onlyWithDocuments}
 														dateFrom={pjnDateFrom}
 														dateTo={pjnDateTo}
 														causaLastSyncDate={movementsData.causaLastSyncDate}

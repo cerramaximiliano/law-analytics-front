@@ -25,12 +25,12 @@ import {
 	Edit,
 	Trash,
 	Eye,
-	Link2,
 	Clock,
 	TickCircle,
-	DocumentDownload,
 	Link1,
 	TableDocument,
+	DocumentText,
+	Paperclip2,
 	Note1,
 	TaskSquare,
 	Calendar,
@@ -55,6 +55,7 @@ import ModalTasks from "pages/apps/folders/details/modals/MoldalTasks";
 import AddEventFrom from "sections/apps/calendar/AddEventForm";
 import { Dialog } from "@mui/material";
 import { getMovementsReadSet, setMovementReadStatus } from "services/movementReadStatusService";
+import { openSnackbar } from "store/reducers/snackbar";
 import PaginationWithJump from "components/shared/PaginationWithJump";
 import PjnAccessAlert from "components/shared/PjnAccessAlert";
 import ScrollX from "components/ScrollX";
@@ -197,6 +198,59 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 		return map;
 	}, [folderEvents]);
 
+	// Fecha del vencimiento vinculado por movementRef, para la columna
+	// "Vencimiento" de movs sincronizados (que no tienen dateExpiration propio):
+	// el próximo por vencer; si todos pasaron, el más reciente.
+	const eventDueByMov = useMemo(() => {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const byMov: Record<string, Date[]> = {};
+		(folderEvents as CalendarEvent[]).forEach((e) => {
+			if (!e.movementRef || !e.start) return;
+			const d = new Date(e.start);
+			if (isNaN(d.getTime())) return;
+			(byMov[e.movementRef] = byMov[e.movementRef] || []).push(d);
+		});
+		const map: Record<string, Date> = {};
+		Object.entries(byMov).forEach(([ref, dates]) => {
+			const upcoming = dates.filter((d) => d >= today).sort((a, b) => a.getTime() - b.getTime());
+			map[ref] = upcoming[0] ?? dates.sort((a, b) => b.getTime() - a.getTime())[0];
+		});
+		return map;
+	}, [folderEvents]);
+
+	// Chip de fecha de vencimiento (rojo vencido / amarillo próximo), para los
+	// vencimientos vinculados por movementRef (Events, sin flag completed).
+	const renderLinkedDueChip = (d: Date) => {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const isExpired = d < today;
+		const days = Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+		const isNear = days >= 0 && days <= 7;
+		return (
+			<Stack direction="row" spacing={0.5} alignItems="center">
+				<Chip
+					label={d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })}
+					color={isExpired ? "error" : isNear ? "warning" : "success"}
+					size="small"
+					variant={isExpired ? "filled" : "outlined"}
+					icon={isExpired || isNear ? <Clock size={14} style={{ color: "inherit" }} /> : undefined}
+					sx={{ fontWeight: isExpired ? 600 : 500, "& .MuiChip-icon": { marginLeft: "4px", marginRight: "-2px" } }}
+				/>
+				{isExpired && (
+					<Typography variant="caption" color="error" fontWeight={600}>
+						Vencido
+					</Typography>
+				)}
+				{isNear && !isExpired && (
+					<Typography variant="caption" color="warning.main" fontWeight={500}>
+						{days === 0 ? "Hoy" : `${days}d`}
+					</Typography>
+				)}
+			</Stack>
+		);
+	};
+
 	// === Acciones PJN-parity para movimientos sincronizados (MEV/SCBA/EJE) ===
 	// Ref real = _id de subdocumento (MEV/SCBA) o actId (EJE); los sintéticos
 	// posicionales "scba-*/eje-*" no admiten notas ni read-status.
@@ -252,9 +306,11 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	const highlightRowRef = React.useRef<HTMLTableRowElement | null>(null);
 	const hasScrolledToHighlight = React.useRef(false);
 	const hasAutoOpenedMovement = React.useRef(false);
+	const hasTriedLocate = React.useRef(false);
 	useEffect(() => {
 		hasScrolledToHighlight.current = false;
 		hasAutoOpenedMovement.current = false;
+		hasTriedLocate.current = false;
 	}, [highlightMovementId]);
 	useEffect(() => {
 		if (!highlightMovementId) return;
@@ -268,6 +324,41 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 				hasAutoOpenedMovement.current = true;
 				openMovementDocument(target);
 			}
+		}
+		// Si el movimiento NO está en la página cargada, pedirle al server que lo
+		// ubique (?locate=): responde la página que lo contiene (saltamos a ella)
+		// o outside_plan / not_found (avisamos). Un solo intento por deep-link.
+		if (!hasTriedLocate.current && movements.length > 0 && !movements.some((m) => String(m._id) === highlightMovementId) && id) {
+			hasTriedLocate.current = true;
+			const sortParam = order === "desc" ? `-${orderBy}` : orderBy;
+			(dispatch(getMovementsByFolderId(id, { page: 1, limit: rowsPerPage, sort: sortParam, locate: highlightMovementId })) as any).then(
+				(res: any) => {
+					if (res?.locateStatus === "ok" && res?.locatedPage) {
+						setPage(res.locatedPage - 1);
+					} else if (res?.locateStatus === "outside_plan") {
+						dispatch(
+							openSnackbar({
+								open: true,
+								message:
+									"El movimiento vinculado no está entre los movimientos visibles de tu plan. Actualizá tu plan para ver el historial completo.",
+								variant: "alert",
+								alert: { color: "warning" },
+								close: true,
+							}),
+						);
+					} else if (res?.locateStatus === "not_found") {
+						dispatch(
+							openSnackbar({
+								open: true,
+								message: "El movimiento vinculado ya no está disponible en el expediente.",
+								variant: "alert",
+								alert: { color: "warning" },
+								close: true,
+							}),
+						);
+					}
+				},
+			);
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [highlightMovementId, autoOpenMovement, movements]);
@@ -305,6 +396,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
 								: undefined,
 						hasLink: localFilters.onlyWithDocuments ? true : undefined,
+						hasLinked: localFilters.onlyWithLinked ? true : undefined,
 					},
 				}),
 			);
@@ -329,6 +421,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
 								: undefined,
 						hasLink: localFilters.onlyWithDocuments ? true : undefined,
+						hasLinked: localFilters.onlyWithLinked ? true : undefined,
 					},
 				}),
 			);
@@ -360,6 +453,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
 								: undefined,
 						hasLink: localFilters.onlyWithDocuments ? true : undefined,
+						hasLinked: localFilters.onlyWithLinked ? true : undefined,
 					},
 				}),
 			);
@@ -454,6 +548,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
 								: undefined,
 						hasLink: localFilters.onlyWithDocuments ? true : undefined,
+						hasLinked: localFilters.onlyWithLinked ? true : undefined,
 					},
 				}),
 			);
@@ -493,6 +588,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
 								: undefined,
 						hasLink: localFilters.onlyWithDocuments ? true : undefined,
+						hasLinked: localFilters.onlyWithLinked ? true : undefined,
 					},
 				}),
 			);
@@ -621,7 +717,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 											</Box>
 											<Stack alignItems="center" spacing={0.375}>
 												<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.015em" }}>
-													Sin movimientos registrados
+													{localFilters.onlyWithLinked ? "Sin movimientos con vinculados" : "Sin movimientos registrados"}
 												</Typography>
 												<Typography
 													sx={{
@@ -632,7 +728,9 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 														textAlign: "center",
 													}}
 												>
-													Los escritos y despachos judiciales aparecerán acá cuando se sincronicen o agreguen.
+													{localFilters.onlyWithLinked
+														? "Ningún movimiento tiene notas, tareas o vencimientos vinculados. Podés crearlos desde las acciones de cada fila o desde el visor."
+														: "Los escritos y despachos judiciales aparecerán acá cuando se sincronicen o agreguen."}
 												</Typography>
 											</Stack>
 										</Stack>
@@ -642,6 +740,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 								<>
 									{movements.map((movement) => {
 										const isHighlighted = Boolean(highlightMovementId && String(movement._id) === highlightMovementId);
+										const isUnread = isSyncedRow(movement) && hasRealRef(movement) && !readSet.has(String(movement._id));
 										return (
 											<TableRow
 												hover
@@ -650,6 +749,11 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 												ref={isHighlighted ? highlightRowRef : undefined}
 												sx={{
 													cursor: "pointer",
+													// No leído: toda la fila en negrita (no solo el título)
+													...(isUnread && {
+														"& .MuiTableCell-root": { fontWeight: 700, color: "text.primary" },
+														"& .MuiTableCell-root .MuiTypography-root": { fontWeight: 700 },
+													}),
 													...(isHighlighted && {
 														bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
 														"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) },
@@ -686,79 +790,6 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 															</Typography>
 														</Stack>
 														<Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
-															{movement.source === "pjn" && (
-																<Typography
-																	variant="caption"
-																	color="text.secondary"
-																	sx={{
-																		fontStyle: "italic",
-																		fontSize: "0.7rem",
-																	}}
-																>
-																	Sincronizado • PJN
-																</Typography>
-															)}
-															{movement.source === "mev" && (
-																<Typography
-																	variant="caption"
-																	color="text.secondary"
-																	sx={{
-																		fontStyle: "italic",
-																		fontSize: "0.7rem",
-																	}}
-																>
-																	Sincronizado • MEV
-																</Typography>
-															)}
-															{movement.source === "scba" && (
-																<Typography
-																	variant="caption"
-																	color="text.secondary"
-																	sx={{
-																		fontStyle: "italic",
-																		fontSize: "0.7rem",
-																	}}
-																>
-																	Sincronizado • SCBA
-																</Typography>
-															)}
-															{movement.source === "eje" && (
-																<Typography
-																	variant="caption"
-																	color="text.secondary"
-																	sx={{
-																		fontStyle: "italic",
-																		fontSize: "0.7rem",
-																	}}
-																>
-																	Sincronizado • EJE
-																</Typography>
-															)}
-															{movement.attachments && movement.attachments.length > 0 && (
-																<Tooltip title="Ver archivos adjuntos">
-																	<Chip
-																		icon={<DocumentDownload size={14} />}
-																		label={movement.attachments.length}
-																		size="small"
-																		color="info"
-																		variant="outlined"
-																		onClick={(e) => handleAttachmentsClick(e, movement.attachments)}
-																		sx={{
-																			height: 20,
-																			fontSize: "0.7rem",
-																			cursor: "pointer",
-																			"& .MuiChip-icon": {
-																				marginLeft: "4px",
-																				marginRight: "-2px",
-																			},
-																			"&:hover": {
-																				backgroundColor: theme.palette.info.lighter,
-																				borderColor: theme.palette.info.main,
-																			},
-																		}}
-																	/>
-																</Tooltip>
-															)}
 															{movement._id && notesCountByMov[movement._id] ? (
 																<Tooltip title={`${notesCountByMov[movement._id]} nota${notesCountByMov[movement._id] > 1 ? "s" : ""}`}>
 																	<Stack direction="row" alignItems="center" spacing={0.25} sx={{ color: "primary.main" }}>
@@ -860,6 +891,8 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																	</Stack>
 																);
 														  })()
+														: movement._id && eventDueByMov[movement._id]
+														? renderLinkedDueChip(eventDueByMov[movement._id])
 														: "-"}
 												</TableCell>
 												<TableCell>
@@ -871,27 +904,71 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 														const hasContent = isText
 															? !!(movement.description?.trim() || (movement.attachments && movement.attachments.length > 0))
 															: !!movement.link;
-														return hasContent ? (
-															<Tooltip title="Ver documento">
-																<IconButton
-																	size="small"
-																	color="primary"
-																	onClick={(e) => {
-																		e.stopPropagation();
-																		openMovementDocument(movement);
-																	}}
-																>
-																	<Link2 size={18} />
-																</IconButton>
-															</Tooltip>
-														) : (
-															"-"
+														const attachmentsChip =
+															movement.attachments && movement.attachments.length > 0 ? (
+																<Tooltip title="Ver archivos adjuntos">
+																	<Chip
+																		icon={<Paperclip2 size={12} variant="Bulk" />}
+																		label={movement.attachments.length}
+																		size="small"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			handleAttachmentsClick(e, movement.attachments);
+																		}}
+																		sx={{
+																			height: 20,
+																			fontSize: "0.7rem",
+																			fontWeight: 600,
+																			cursor: "pointer",
+																			bgcolor: "transparent",
+																			border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+																			color: "text.secondary",
+																			"& .MuiChip-icon": { marginLeft: "4px", marginRight: "-2px", color: BRAND_BLUE },
+																			"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.07), borderColor: alpha(BRAND_BLUE, 0.4) },
+																		}}
+																	/>
+																</Tooltip>
+															) : null;
+														if (!hasContent && !attachmentsChip) return "-";
+														return (
+															<Stack direction="row" spacing={0.5} alignItems="center">
+																{hasContent && (
+																	<Tooltip title="Ver documento">
+																		<IconButton
+																			size="small"
+																			onClick={(e) => {
+																				e.stopPropagation();
+																				openMovementDocument(movement);
+																			}}
+																			sx={{ color: BRAND_BLUE }}
+																		>
+																			<DocumentText size={18} variant="Bulk" />
+																		</IconButton>
+																	</Tooltip>
+																)}
+																{attachmentsChip}
+															</Stack>
 														);
 													})()}
 												</TableCell>
 												<TableCell>
-													<Stack direction="row" spacing={0.5}>
-														{movement.dateExpiration && canUpdate && (
+													{/* Slots FIJOS: cada posición existe en todas las filas (placeholder
+													    invisible si la acción no aplica) — botones siempre alineados. */}
+													<Stack direction="row" spacing={0.5} alignItems="center">
+														{isSyncedRow(movement) && hasRealRef(movement) ? (
+															<Tooltip title={readSet.has(String(movement._id)) ? "Leído — marcar como no leído" : "Marcar como leído"}>
+																<IconButton
+																	size="small"
+																	color={readSet.has(String(movement._id)) ? "success" : "default"}
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		markRead(String(movement._id), !readSet.has(String(movement._id)));
+																	}}
+																>
+																	<TickCircle size={18} variant={readSet.has(String(movement._id)) ? "Bold" : "Linear"} />
+																</IconButton>
+															</Tooltip>
+														) : movement.dateExpiration && canUpdate ? (
 															<Tooltip title={movement.completed ? "Marcar como pendiente" : "Marcar como completado"}>
 																<IconButton
 																	size="small"
@@ -899,14 +976,14 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																	onClick={(e) => handleToggleComplete(movement._id!, e)}
 																	sx={{
 																		backgroundColor: movement.completed ? "success.lighter" : "transparent",
-																		"&:hover": {
-																			backgroundColor: movement.completed ? "success.light" : "action.hover",
-																		},
+																		"&:hover": { backgroundColor: movement.completed ? "success.light" : "action.hover" },
 																	}}
 																>
 																	{movement.completed ? <TickCircle size={18} variant="Bold" /> : <TickCircle size={18} />}
 																</IconButton>
 															</Tooltip>
+														) : (
+															<Box sx={{ width: 28, height: 28 }} />
 														)}
 														<Tooltip title="Ver detalles">
 															<IconButton
@@ -919,92 +996,82 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																<Eye size={18} />
 															</IconButton>
 														</Tooltip>
-														{isSyncedRow(movement) && hasRealRef(movement) && (
-															<>
-																<Tooltip title={readSet.has(String(movement._id)) ? "Leído — marcar como no leído" : "Marcar como leído"}>
-																	<IconButton
-																		size="small"
-																		color={readSet.has(String(movement._id)) ? "success" : "default"}
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			markRead(String(movement._id), !readSet.has(String(movement._id)));
-																		}}
-																	>
-																		<TickCircle size={18} variant={readSet.has(String(movement._id)) ? "Bold" : "Linear"} />
-																	</IconButton>
-																</Tooltip>
-																<Tooltip title="Agregar nota">
-																	<IconButton
-																		size="small"
-																		color="primary"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			setActionMovement(movement);
-																			setQuickNoteOpen(true);
-																		}}
-																	>
-																		<Note1 size={18} />
-																	</IconButton>
-																</Tooltip>
-																<Tooltip title="Agregar tarea">
-																	<IconButton
-																		size="small"
-																		sx={{ color: "success.main" }}
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			setActionMovement(movement);
-																			setQuickTaskOpen(true);
-																		}}
-																	>
-																		<TaskSquare size={18} />
-																	</IconButton>
-																</Tooltip>
-																<Tooltip title="Agregar vencimiento">
-																	<IconButton
-																		size="small"
-																		color="error"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			setActionMovement(movement);
-																			setQuickEventOpen(true);
-																		}}
-																	>
-																		<Calendar size={18} />
-																	</IconButton>
-																</Tooltip>
-															</>
+														{isSyncedRow(movement) && hasRealRef(movement) ? (
+															<Tooltip title="Agregar nota">
+																<IconButton
+																	size="small"
+																	color="primary"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		setActionMovement(movement);
+																		setQuickNoteOpen(true);
+																	}}
+																>
+																	<Note1 size={18} />
+																</IconButton>
+															</Tooltip>
+														) : movement.source !== "pjn" && !isSyncedRow(movement) && canUpdate ? (
+															<Tooltip title="Editar">
+																<IconButton
+																	size="small"
+																	color="primary"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		onEdit(movement);
+																	}}
+																>
+																	<Edit size={18} />
+																</IconButton>
+															</Tooltip>
+														) : (
+															<Box sx={{ width: 28, height: 28 }} />
 														)}
-														{movement.source !== "pjn" && !isSyncedRow(movement) && (
-															<>
-																{canUpdate && (
-																	<Tooltip title="Editar">
-																		<IconButton
-																			size="small"
-																			color="primary"
-																			onClick={(e) => {
-																				e.stopPropagation();
-																				onEdit(movement);
-																			}}
-																		>
-																			<Edit size={18} />
-																		</IconButton>
-																	</Tooltip>
-																)}
-																{canDelete && (
-																	<Tooltip title="Eliminar">
-																		<IconButton
-																			size="small"
-																			color="error"
-																			onClick={(e) => {
-																				e.stopPropagation();
-																				onDelete(movement._id!);
-																			}}
-																		>
-																			<Trash size={18} />
-																		</IconButton>
-																	</Tooltip>
-																)}
-															</>
+														{isSyncedRow(movement) && hasRealRef(movement) ? (
+															<Tooltip title="Agregar tarea">
+																<IconButton
+																	size="small"
+																	sx={{ color: "success.main" }}
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		setActionMovement(movement);
+																		setQuickTaskOpen(true);
+																	}}
+																>
+																	<TaskSquare size={18} />
+																</IconButton>
+															</Tooltip>
+														) : movement.source !== "pjn" && !isSyncedRow(movement) && canDelete ? (
+															<Tooltip title="Eliminar">
+																<IconButton
+																	size="small"
+																	color="error"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		onDelete(movement._id!);
+																	}}
+																>
+																	<Trash size={18} />
+																</IconButton>
+															</Tooltip>
+														) : (
+															<Box sx={{ width: 28, height: 28 }} />
+														)}
+														{isSyncedRow(movement) && hasRealRef(movement) ? (
+															<Tooltip title="Agregar vencimiento">
+																<IconButton
+																	size="small"
+																	color="error"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		setActionMovement(movement);
+																		setQuickEventOpen(true);
+																	}}
+																>
+																	<Calendar size={18} />
+																</IconButton>
+															</Tooltip>
+														) : (
+															<Box sx={{ width: 28, height: 28 }} />
 														)}
 													</Stack>
 												</TableCell>

@@ -55,7 +55,9 @@ const UpcomingMovementEventsWidget = () => {
 
 	const handleOpenMovement = (event: UpcomingMovementEvent) => {
 		if (event.folderId && event.movementRef) {
-			navigate(`/apps/folders/details/${event.folderId}?movement=${encodeURIComponent(event.movementRef)}`);
+			// open=1: intención explícita de ver el movimiento — resalta la fila y
+			// auto-abre el visor (con salto de página vía locate si hace falta).
+			navigate(`/apps/folders/details/${event.folderId}?movement=${encodeURIComponent(event.movementRef)}&open=1`);
 		} else if (event.folderId) {
 			navigate(`/apps/folders/details/${event.folderId}`);
 		}
@@ -161,7 +163,10 @@ const UpcomingMovementEventsWidget = () => {
 						>
 							<CalendarTick size={24} variant="Bulk" />
 						</Box>
-						<Typography variant="body2" sx={{ color: "text.secondary", letterSpacing: "-0.005em", textAlign: "center", textWrap: "balance" }}>
+						<Typography
+							variant="body2"
+							sx={{ color: "text.secondary", letterSpacing: "-0.005em", textAlign: "center", textWrap: "balance" }}
+						>
 							No tenés vencimientos ni audiencias próximos agendados.
 						</Typography>
 					</Box>
@@ -208,7 +213,13 @@ const UpcomingMovementEventsWidget = () => {
 											<Typography
 												variant="body2"
 												color="text.primary"
-												sx={{ fontWeight: 500, letterSpacing: "-0.005em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+												sx={{
+													fontWeight: 500,
+													letterSpacing: "-0.005em",
+													overflow: "hidden",
+													textOverflow: "ellipsis",
+													whiteSpace: "nowrap",
+												}}
 											>
 												{event.title}
 											</Typography>
@@ -226,7 +237,10 @@ const UpcomingMovementEventsWidget = () => {
 										</Stack>
 									}
 									secondary={
-										<Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.005em" }}>
+										<Typography
+											variant="caption"
+											sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.005em" }}
+										>
 											{dayjs(event.start).format("DD/MM/YYYY")} · {relativeLabel(event.start)}
 											{event.folderName ? ` · ${event.folderName}` : ""}
 										</Typography>

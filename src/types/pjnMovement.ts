@@ -42,6 +42,10 @@ export interface PjnMovementsListResponse {
 	currentPlan?: string | null;
 	requiredPlans?: string[];
 	previewCount?: number;
+	// Deep-link ?locate=: 'ok' (la respuesta ya es la página del movimiento),
+	// 'outside_plan' (existe pero fuera de la ventana free), 'not_found'.
+	locateStatus?: "ok" | "outside_plan" | "not_found";
+	locatedPage?: number | null;
 }
 
 export interface PjnMovementsListParams {
@@ -53,6 +57,10 @@ export interface PjnMovementsListParams {
 	hasUrl?: boolean;
 	dateFrom?: string; // YYYY-MM-DD
 	dateTo?: string; // YYYY-MM-DD
+	// Solo movimientos con notas/tareas/vencimientos vinculados.
+	hasLinked?: boolean;
+	// Deep-link: id del movimiento a ubicar — el server salta a su página.
+	locate?: string;
 }
 
 export interface PjnMovementPdfUrlResponse {

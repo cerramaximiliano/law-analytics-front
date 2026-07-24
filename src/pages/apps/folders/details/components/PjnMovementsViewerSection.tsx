@@ -24,7 +24,7 @@ import {
 	Alert,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { Calendar, DocumentText, ExportSquare, Note1, TaskSquare, TickCircle } from "iconsax-react";
+import { Calendar, Clock, DocumentText, ExportSquare, Note1, TableDocument, TaskSquare, TickCircle } from "iconsax-react";
 import dayjs from "utils/dayjs-config";
 import PjnPdfViewer from "components/PjnPdfViewer";
 import MovementsUpgradeBanner from "components/shared/MovementsUpgradeBanner";
@@ -36,6 +36,7 @@ import { getNotesByFolderId } from "store/reducers/notes";
 import { getTasksByFolderId } from "store/reducers/tasks";
 import { getEventsById } from "store/reducers/events";
 import { openSnackbar } from "store/reducers/snackbar";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 import { getPjnMovementsByFolder, setPjnMovementReadStatus } from "services/pjnMovementsService";
 import type { PjnMovementPdfStatus, PjnMovementsListResponse } from "types/pjnMovement";
 import type { Note } from "types/note";
@@ -61,11 +62,14 @@ interface Props {
 	// Búsqueda del toolbar de ActivityTables (rediseño 2026-07: un solo buscador —
 	// esta sección ya NO renderiza el suyo). Se debounce-a acá adentro.
 	searchQuery?: string;
-	// Filtro por estado de PDF, cuyo select vive en el toolbar del padre.
-	pdfFilter?: PjnMovementPdfStatus | "all";
+	// Chip "Con documento" del toolbar del padre (uniforme con MEV/SCBA/EJE):
+	// solo movimientos con documento (hasUrl).
+	withDocuments?: boolean;
 	// Rango de fechas (YYYY-MM-DD) — los date pickers viven en el toolbar del padre.
 	dateFrom?: string;
 	dateTo?: string;
+	// Solo movimientos con notas/tareas/vencimientos vinculados (chip del toolbar).
+	linkedOnly?: boolean;
 	// Última sincronización de la causa — se muestra en la línea de info densa
 	// (reemplaza al banner FolderSyncStatus para PJN).
 	causaLastSyncDate?: string | null;
@@ -76,15 +80,6 @@ const QUICK_ACTION_TO_PANEL_TAB = {
 	nota: "notas",
 	tarea: "tareas",
 } as const;
-
-// Exportado: el select vive en el toolbar de ActivityTables (rediseño 2026-07).
-export const PDF_STATUS_OPTIONS: { value: PjnMovementPdfStatus | "all"; label: string }[] = [
-	{ value: "all", label: "Todos" },
-	{ value: "downloaded", label: "PDF disponible" },
-	{ value: "pending", label: "PDF pendiente" },
-	{ value: "expired", label: "PDF expirado" },
-	{ value: "not_applicable", label: "Sin PDF" },
-];
 
 // CausasX → label humano para la línea de info densa.
 const CAUSA_TYPE_LABELS: Record<string, string> = {
@@ -106,19 +101,31 @@ function formatDate(iso: string | null): string {
 	}
 }
 
+// Ícono de documento con el estado en tooltip (rediseño: un solo acento de
+// marca en vez de chips multicolor — mismo lenguaje visual que la tabla
+// clásica MEV/SCBA/EJE, que usa DocumentText Bulk en azul).
 function pdfStatusChip(status: PjnMovementPdfStatus) {
-	switch (status) {
-		case "downloaded":
-			return <Chip size="small" label="PDF" color="success" variant="outlined" />;
-		case "pending":
-			return <Chip size="small" label="Pendiente" color="info" variant="outlined" />;
-		case "expired":
-			return <Chip size="small" label="Expirado" color="error" variant="outlined" />;
-		case "failed":
-			return <Chip size="small" label="Falló" color="warning" variant="outlined" />;
-		default:
-			return <Chip size="small" label="—" variant="outlined" />;
+	const meta: Partial<Record<PjnMovementPdfStatus, { label: string; active: boolean }>> = {
+		downloaded: { label: "PDF disponible — abrir en el visor", active: true },
+		pending: { label: "PDF pendiente de descarga", active: false },
+		expired: { label: "PDF expirado en el portal", active: false },
+		failed: { label: "La descarga del PDF falló", active: false },
+	};
+	const m = meta[status];
+	if (!m) {
+		return (
+			<Typography component="span" variant="body2" sx={{ color: "text.disabled" }}>
+				—
+			</Typography>
+		);
 	}
+	return (
+		<Tooltip title={m.label}>
+			<Box component="span" sx={{ display: "inline-flex", color: m.active ? BRAND_BLUE : "text.disabled" }}>
+				<DocumentText size={18} variant={m.active ? "Bulk" : "Linear"} />
+			</Box>
+		</Tooltip>
+	);
 }
 
 const PjnMovementsViewerSection = ({
@@ -127,9 +134,10 @@ const PjnMovementsViewerSection = ({
 	quickAction,
 	autoOpen = false,
 	searchQuery = "",
-	pdfFilter = "all",
+	withDocuments = false,
 	dateFrom = "",
 	dateTo = "",
+	linkedOnly = false,
 	causaLastSyncDate = null,
 }: Props) => {
 	const [page, setPage] = useState(1);
@@ -149,25 +157,64 @@ const PjnMovementsViewerSection = ({
 	const highlightRowRef = useRef<HTMLTableRowElement | null>(null);
 	const hasScrolledToHighlight = useRef(false);
 
+	// Deep-link ?locate=: se manda UNA vez (primer fetch con highlight); el server
+	// salta a la página del movimiento o responde outside_plan/not_found.
+	const locateConsumedRef = useRef(false);
+	useEffect(() => {
+		locateConsumedRef.current = false;
+	}, [highlightMovementId]);
+
 	const fetchData = useCallback(async () => {
 		setLoading(true);
 		setError(null);
+		const locate = highlightMovementId && !locateConsumedRef.current ? highlightMovementId : undefined;
 		try {
 			const res = await getPjnMovementsByFolder(folderId, {
 				page,
 				limit,
 				search: search || undefined,
-				pdfStatus: pdfFilter !== "all" ? pdfFilter : undefined,
+				hasUrl: withDocuments ? true : undefined,
 				dateFrom: dateFrom || undefined,
 				dateTo: dateTo || undefined,
+				hasLinked: linkedOnly || undefined,
+				locate,
 			});
+			if (locate) {
+				locateConsumedRef.current = true;
+				if (res.locateStatus === "ok" && res.locatedPage && res.locatedPage !== page) {
+					// La respuesta ya ES la página del movimiento — sincronizamos el
+					// estado local. El refetch que dispara es idempotente (misma página).
+					setPage(res.locatedPage);
+				} else if (res.locateStatus === "outside_plan") {
+					dispatch(
+						openSnackbar({
+							open: true,
+							message:
+								"El movimiento vinculado no está entre los movimientos visibles de tu plan. Actualizá tu plan para ver el historial completo.",
+							variant: "alert",
+							alert: { color: "warning" },
+							close: true,
+						}),
+					);
+				} else if (res.locateStatus === "not_found") {
+					dispatch(
+						openSnackbar({
+							open: true,
+							message: "El movimiento vinculado ya no está disponible en el expediente.",
+							variant: "alert",
+							alert: { color: "warning" },
+							close: true,
+						}),
+					);
+				}
+			}
 			setData(res);
 		} catch (err: any) {
 			setError(err?.response?.data?.message ?? err?.message ?? "Error al cargar movimientos");
 		} finally {
 			setLoading(false);
 		}
-	}, [folderId, page, limit, search, pdfFilter, dateFrom, dateTo]);
+	}, [folderId, page, limit, search, withDocuments, dateFrom, dateTo, linkedOnly, highlightMovementId]);
 
 	useEffect(() => {
 		fetchData();
@@ -184,10 +231,10 @@ const PjnMovementsViewerSection = ({
 		return () => clearTimeout(t);
 	}, [searchQuery, search]);
 
-	// Cambio de filtros del toolbar (PDF / rango de fechas) → volver a página 1.
+	// Cambio de filtros del toolbar (PDF / rango de fechas / vinculados) → volver a página 1.
 	useEffect(() => {
 		setPage(1);
-	}, [pdfFilter, dateFrom, dateTo]);
+	}, [withDocuments, dateFrom, dateTo, linkedOnly]);
 
 	// Notas y tareas del folder (para mostrar en la tabla qué movimientos tienen).
 	// Se leen de redux y se cuentan por movementRef (= movement._id en PJN). Reactivo:
@@ -224,6 +271,59 @@ const PjnMovementsViewerSection = ({
 		});
 		return map;
 	}, [folderEvents]);
+
+	// Fecha del vencimiento vinculado por movementRef, para la columna
+	// "Vencimiento" (paridad con MovementsTable): el próximo por vencer; si
+	// todos pasaron, el más reciente.
+	const eventDueByMov = useMemo(() => {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const byMov: Record<string, Date[]> = {};
+		(folderEvents as CalendarEvent[]).forEach((e) => {
+			if (!e.movementRef || !e.start) return;
+			const d = new Date(e.start);
+			if (isNaN(d.getTime())) return;
+			(byMov[e.movementRef] = byMov[e.movementRef] || []).push(d);
+		});
+		const map: Record<string, Date> = {};
+		Object.entries(byMov).forEach(([ref, dates]) => {
+			const upcoming = dates.filter((d) => d >= today).sort((a, b) => a.getTime() - b.getTime());
+			map[ref] = upcoming[0] ?? dates.sort((a, b) => b.getTime() - a.getTime())[0];
+		});
+		return map;
+	}, [folderEvents]);
+
+	// Chip de fecha de vencimiento (rojo vencido / amarillo próximo) — mismo
+	// render que la columna Vencimiento de MovementsTable.
+	const renderLinkedDueChip = (d: Date) => {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const isExpired = d < today;
+		const days = Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+		const isNear = days >= 0 && days <= 7;
+		return (
+			<Stack direction="row" spacing={0.5} alignItems="center">
+				<Chip
+					label={d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })}
+					color={isExpired ? "error" : isNear ? "warning" : "success"}
+					size="small"
+					variant={isExpired ? "filled" : "outlined"}
+					icon={isExpired || isNear ? <Clock size={14} style={{ color: "inherit" }} /> : undefined}
+					sx={{ fontWeight: isExpired ? 600 : 500, "& .MuiChip-icon": { marginLeft: "4px", marginRight: "-2px" } }}
+				/>
+				{isExpired && (
+					<Typography variant="caption" color="error" fontWeight={600}>
+						Vencido
+					</Typography>
+				)}
+				{isNear && !isExpired && (
+					<Typography variant="caption" color="warning.main" fontWeight={500}>
+						{days === 0 ? "Hoy" : `${days}d`}
+					</Typography>
+				)}
+			</Stack>
+		);
+	};
 
 	const movements = data?.data ?? [];
 	const total = data?.count ?? 0;
@@ -378,7 +478,7 @@ const PjnMovementsViewerSection = ({
 	// Si el folder no tiene causa PJN, el endpoint devuelve count=0 con mensaje.
 	// Este guard va DESPUÉS de todos los hooks (rules-of-hooks): un return temprano
 	// antes de un useEffect cambia el número de hooks entre renders y crashea React.
-	if (data && total === 0 && !search && pdfFilter === "all" && !dateFrom && !dateTo && data.message?.includes("no tiene causa PJN")) {
+	if (data && total === 0 && !search && !withDocuments && !dateFrom && !dateTo && data.message?.includes("no tiene causa PJN")) {
 		return null; // No renderizar nada — mejor UX para folders no-PJN
 	}
 
@@ -439,11 +539,42 @@ const PjnMovementsViewerSection = ({
 				)}
 
 				{!loading && movements.length === 0 && !error && (
-					<Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
-						{search || pdfFilter !== "all" || dateFrom || dateTo
-							? "No hay movimientos que coincidan con los filtros."
-							: "No hay movimientos para este expediente."}
-					</Typography>
+					// Empty state con ícono — mismo bloque visual que MovementsTable
+					<Stack alignItems="center" spacing={1.5} sx={{ py: 5 }}>
+						<Box
+							sx={(t) => ({
+								width: 56,
+								height: 56,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, t.palette.mode === "dark" ? 0.14 : 0.08),
+								border: `1px solid ${alpha(BRAND_BLUE, t.palette.mode === "dark" ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+							})}
+						>
+							<TableDocument size={28} variant="Bulk" />
+						</Box>
+						<Stack alignItems="center" spacing={0.375}>
+							<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.015em" }}>
+								{linkedOnly
+									? "Sin movimientos con vinculados"
+									: search || withDocuments || dateFrom || dateTo
+									? "Sin resultados"
+									: "Sin movimientos registrados"}
+							</Typography>
+							<Typography
+								sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", maxWidth: 360, textAlign: "center" }}
+							>
+								{linkedOnly
+									? "Ningún movimiento tiene notas, tareas o vencimientos vinculados. Podés crearlos desde las acciones de cada fila o desde el visor."
+									: search || withDocuments || dateFrom || dateTo
+									? "No hay movimientos que coincidan con los filtros."
+									: "Los movimientos del expediente aparecerán acá cuando se sincronicen."}
+							</Typography>
+						</Stack>
+					</Stack>
 				)}
 
 				{!loading && movements.length > 0 && (
@@ -458,6 +589,7 @@ const PjnMovementsViewerSection = ({
 										<TableCell sx={{ width: 110 }}>Fecha</TableCell>
 										<TableCell sx={{ width: 200 }}>Tipo</TableCell>
 										<TableCell>Detalle</TableCell>
+										<TableCell sx={{ width: 130 }}>Vencimiento</TableCell>
 										<TableCell sx={{ width: 100 }} align="center">
 											Documento
 										</TableCell>
@@ -476,6 +608,11 @@ const PjnMovementsViewerSection = ({
 												hover
 												sx={(theme) => ({
 													cursor: "pointer", // clickeable aun sin PDF: abre el panel de notas/tareas/vencimientos
+													// No leído: toda la fila en negrita (no solo el tipo)
+													...(!m.read && {
+														"& .MuiTableCell-root": { fontWeight: 700, color: "text.primary" },
+														"& .MuiTableCell-root .MuiTypography-root": { fontWeight: 700 },
+													}),
 													...(isHighlighted && {
 														bgcolor: alpha(theme.palette.primary.main, 0.12),
 														"&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.18) },
@@ -551,6 +688,7 @@ const PjnMovementsViewerSection = ({
 														{m.detalle || "—"}
 													</Typography>
 												</TableCell>
+												<TableCell>{eventDueByMov[m._id] ? renderLinkedDueChip(eventDueByMov[m._id]) : "—"}</TableCell>
 												<TableCell align="center">{pdfStatusChip(m.pdfStatus)}</TableCell>
 												<TableCell align="right">
 													<Stack direction="row" spacing={0.5} justifyContent="flex-end">
@@ -566,7 +704,9 @@ const PjnMovementsViewerSection = ({
 																<TickCircle size={18} variant={m.read ? "Bold" : "Linear"} />
 															</IconButton>
 														</Tooltip>
-														{m.hasPdf && (
+														{/* Slot documento SIEMPRE presente (placeholder si no hay nada que
+														    abrir) — mantiene los botones alineados entre filas. */}
+														{m.hasPdf ? (
 															<Tooltip title="Ver PDF">
 																<IconButton
 																	size="small"
@@ -579,8 +719,7 @@ const PjnMovementsViewerSection = ({
 																	<DocumentText size={18} />
 																</IconButton>
 															</Tooltip>
-														)}
-														{!m.hasPdf && m.url && (
+														) : m.url ? (
 															<Tooltip title="Abrir en PJN">
 																<IconButton
 																	size="small"
@@ -592,6 +731,8 @@ const PjnMovementsViewerSection = ({
 																	<ExportSquare size={18} />
 																</IconButton>
 															</Tooltip>
+														) : (
+															<Box sx={{ width: 28, height: 28 }} />
 														)}
 														{/* Acciones rápidas: agregar nota / tarea vinculada a este movimiento */}
 														<Tooltip title="Agregar nota">
@@ -676,8 +817,15 @@ const PjnMovementsViewerSection = ({
 															}
 														</Typography>
 													</TableCell>
+													<TableCell>
+														<Typography variant="body2" sx={{ color: "text.disabled" }}>
+															—
+														</Typography>
+													</TableCell>
 													<TableCell align="center">
-														<Chip size="small" label="PDF" variant="outlined" sx={{ opacity: 0.5 }} />
+														<Box component="span" sx={{ display: "inline-flex", color: "text.disabled", opacity: 0.5 }}>
+															<DocumentText size={18} />
+														</Box>
 													</TableCell>
 													<TableCell align="right">
 														<Stack direction="row" spacing={0.5} justifyContent="flex-end" sx={{ opacity: 0.3 }}>

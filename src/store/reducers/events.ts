@@ -3,6 +3,7 @@ import axios from "axios";
 import { Dispatch } from "redux";
 // Types for the actions and state
 import { Event, EventState, Action } from "types/events";
+import { invalidateUpcomingDeadlinesCache } from "hooks/useUpcomingDeadlines";
 
 // action types
 const ADD_EVENT = "ADD_EVENT";
@@ -105,6 +106,7 @@ export const addEvent = (eventData: Event, options?: { headers?: Record<string, 
 		});
 
 		if (response.data && response.data.event) {
+			invalidateUpcomingDeadlinesCache();
 			dispatch({
 				type: ADD_EVENT,
 				payload: response.data.event,
@@ -141,6 +143,7 @@ export const updateEvent = (eventId: string, updateData: Partial<Event>) => asyn
 		});
 
 		if (response.data && response.data.event) {
+			invalidateUpcomingDeadlinesCache();
 			dispatch({
 				type: UPDATE_EVENT,
 				payload: response.data.event,
@@ -259,6 +262,7 @@ export const deleteEvent = (eventId: string) => async (dispatch: Dispatch) => {
 	try {
 		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 		await axios.delete(`${baseUrl}/api/events/${eventId}`);
+		invalidateUpcomingDeadlinesCache();
 		dispatch({
 			type: DELETE_EVENT,
 			payload: eventId,
