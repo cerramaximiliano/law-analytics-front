@@ -117,6 +117,10 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			quickAction: rawAction === "vencimiento" || rawAction === "nota" || rawAction === "tarea" ? rawAction : null,
 			open: searchParams.get("open") === "1",
 		});
+		// La intención del deep-link es VER ese movimiento: apagar los chips de
+		// filtro para que el locate no lo descarte (un movimiento sin documento
+		// con "Con documento" activo daba not_found siendo que existe).
+		setFilters((prev: any) => ({ ...prev, onlyWithDocuments: false, onlyWithLinked: false }));
 		const next = new URLSearchParams(searchParams);
 		next.delete("movement");
 		next.delete("action");
@@ -153,7 +157,10 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		hasExpiration: "",
 		allDay: "",
 		source: "",
-		onlyWithDocuments: true, // Inicialmente activado para mostrar solo movimientos con documento
+		// OFF por defecto (decisión 2026-07-24): mostrar TODO es el default menos
+		// sorpresivo — los movimientos sin documento (pases, cambios de estado)
+		// también son señal. El chip queda como herramienta opt-in de foco.
+		onlyWithDocuments: false,
 		onlyWithLinked: false, // Solo movimientos con notas/tareas/vencimientos vinculados
 	});
 
