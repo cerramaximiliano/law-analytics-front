@@ -1,7 +1,7 @@
 // Detalle PÚBLICO de una sentencia (/jurisprudencia/:id).
 //
-// Muestra el resumen generado por IA (nunca los sumarios oficiales de SAIJ) y
-// el texto completo del fallo, con link a la fuente oficial.
+// Muestra el resumen generado por IA (nunca los sumarios oficiales de SAIJ), el
+// texto completo del fallo y la descarga del PDF servida por nuestro backend.
 
 import { useEffect, useState } from "react";
 import { Link as RouterLink, useParams } from "react-router-dom";
@@ -17,7 +17,6 @@ import {
 	Chip,
 	Container,
 	Divider,
-	Link,
 	Paper,
 	Skeleton,
 	Stack,
@@ -25,11 +24,11 @@ import {
 } from "@mui/material";
 
 // icons
-import { ArrowDown2, ArrowLeft, ArrowRight, DocumentText, ExportSquare, InfoCircle } from "iconsax-react";
+import { ArrowDown2, ArrowLeft, ArrowRight, DocumentDownload, DocumentText, InfoCircle } from "iconsax-react";
 
 // project-imports
 import SEO from "components/SEO/SEO";
-import { getPublicSentencia, fueroLabel } from "services/publicSentenciasService";
+import { getPublicSentencia, getPublicSentenciaPdfUrl, fueroLabel } from "services/publicSentenciasService";
 import type { PublicSentenciaDetail } from "types/publicSentencia";
 import SummaryContent, { summaryExcerpt } from "./SummaryContent";
 
@@ -139,9 +138,7 @@ const JurisprudenciaDetailPage = () => {
 								<AccordionSummary expandIcon={<ArrowDown2 size={18} />}>
 									<Stack direction="row" spacing={1} alignItems="center">
 										<DocumentText size={18} color={theme.palette.primary.main} />
-										<Typography variant="h6">
-											Texto completo del fallo{sentencia.paginas ? ` (${sentencia.paginas} páginas)` : ""}
-										</Typography>
+										<Typography variant="h6">Ver sentencia completa{sentencia.paginas ? ` (${sentencia.paginas} páginas)` : ""}</Typography>
 									</Stack>
 								</AccordionSummary>
 								<AccordionDetails>
@@ -156,34 +153,17 @@ const JurisprudenciaDetailPage = () => {
 							</Accordion>
 						)}
 
-						{/* Fuente */}
-						{(sentencia.saij?.saijUrl || sentencia.saij?.pdfUrl) && (
-							<Stack direction="row" spacing={2} sx={{ flexWrap: "wrap", rowGap: 1, mb: 5 }} alignItems="center">
-								<Typography variant="body2" color="text.secondary">
-									Fuente oficial:
-								</Typography>
-								{sentencia.saij?.saijUrl && (
-									<Link
-										href={sentencia.saij.saijUrl}
-										target="_blank"
-										rel="noopener noreferrer"
-										variant="body2"
-										sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
-									>
-										Ver en SAIJ <ExportSquare size={14} />
-									</Link>
-								)}
-								{sentencia.saij?.pdfUrl && (
-									<Link
-										href={sentencia.saij.pdfUrl}
-										target="_blank"
-										rel="noopener noreferrer"
-										variant="body2"
-										sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
-									>
-										Descargar PDF <ExportSquare size={14} />
-									</Link>
-								)}
+						{/* Descarga (PDF servido por nuestro backend) */}
+						{sentencia.pdfDisponible && (
+							<Stack direction="row" sx={{ mb: 5 }}>
+								<Button
+									variant="outlined"
+									startIcon={<DocumentDownload size={18} />}
+									href={getPublicSentenciaPdfUrl(sentencia.id)}
+									download
+								>
+									Descargar sentencia (PDF)
+								</Button>
 							</Stack>
 						)}
 

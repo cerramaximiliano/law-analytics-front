@@ -49,6 +49,11 @@ export async function getPublicSentencia(id: string): Promise<PublicSentenciaDet
 	}
 }
 
+// URL de descarga del PDF del fallo, servido proxeado desde nuestro backend.
+export function getPublicSentenciaPdfUrl(id: string): string {
+	return `${getBaseUrl()}/api/public/sentencias/${encodeURIComponent(id)}/pdf`;
+}
+
 // Etiquetas de fueros conocidos (códigos PJN/SAIJ). Los no mapeados muestran el código.
 export const FUERO_LABELS: Record<string, string> = {
 	CIV: "Civil",

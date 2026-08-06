@@ -10,8 +10,6 @@ export interface PublicSentenciaSaij {
 	actor: string | null;
 	demandado: string | null;
 	sobre: string | null;
-	saijUrl: string | null;
-	pdfUrl: string | null;
 	descriptores: string[];
 }
 
@@ -28,6 +26,7 @@ export interface PublicSentenciaDetail extends PublicSentenciaListItem {
 	resumenGeneradoAt: string | null;
 	texto: string;
 	paginas: number | null;
+	pdfDisponible: boolean;
 }
 
 export interface PublicSentenciasFueroCount {
