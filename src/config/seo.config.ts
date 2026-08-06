@@ -36,6 +36,22 @@ export const pageSEO: Record<string, SEOConfig> = {
 			"Optimiza tu práctica legal con herramientas inteligentes: gestión de causas, cálculos laborales, sincronización con Poder Judicial y más. Prueba gratis.",
 		keywords: [...defaultSEO.keywords, "software jurídico", "herramientas legales"],
 	},
+	"/jurisprudencia": {
+		title: "Jurisprudencia Argentina - Sentencias con Resumen IA | Law Analytics",
+		description:
+			"Sentencias recientes de la justicia argentina explicadas con resúmenes claros generados por inteligencia artificial. Fallos laborales, civiles, comerciales y más.",
+		keywords: [
+			"jurisprudencia argentina",
+			"sentencias judiciales",
+			"fallos recientes",
+			"jurisprudencia laboral",
+			"jurisprudencia civil",
+			"jurisprudencia comercial",
+			"resumen de fallos",
+			"novedades judiciales",
+			"SAIJ fallos",
+		],
+	},
 	"/calculator/labor": {
 		title: "Calculadora Laboral Online - Despidos e Indemnizaciones | Law Analytics",
 		description:

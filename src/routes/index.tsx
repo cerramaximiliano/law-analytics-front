@@ -13,6 +13,8 @@ const MaintenanceError = Loadable(lazy(() => import("pages/maintenance/error/404
 // render - landing and static pages
 const PagesLanding = Loadable(lazy(() => import("pages/landing")));
 const GuidesPage = Loadable(lazy(() => import("pages/guides")));
+const JurisprudenciaPage = Loadable(lazy(() => import("pages/jurisprudencia")));
+const JurisprudenciaDetailPage = Loadable(lazy(() => import("pages/jurisprudencia/detail")));
 const FaqPage = Loadable(lazy(() => import("pages/faq")));
 const PrivacyPolicy = Loadable(lazy(() => import("pages/privacy-policy")));
 const CookiesPolicy = Loadable(lazy(() => import("pages/cookies-policy")));
@@ -37,6 +39,14 @@ export default function ThemeRoutes() {
 				{
 					path: "guides",
 					element: <GuidesPage />,
+				},
+				{
+					path: "jurisprudencia",
+					element: <JurisprudenciaPage />,
+				},
+				{
+					path: "jurisprudencia/:id",
+					element: <JurisprudenciaDetailPage />,
 				},
 				{
 					path: "faq",
