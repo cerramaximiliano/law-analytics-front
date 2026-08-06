@@ -21,6 +21,7 @@ export interface PublicSentenciasListParams {
 	page?: number;
 	limit?: number;
 	fuero?: string;
+	jurisdiccion?: string;
 	search?: string;
 }
 
@@ -29,6 +30,7 @@ export async function getPublicSentencias(params: PublicSentenciasListParams = {
 	if (params.page) query.set("page", String(params.page));
 	if (params.limit) query.set("limit", String(params.limit));
 	if (params.fuero) query.set("fuero", params.fuero);
+	if (params.jurisdiccion) query.set("jurisdiccion", params.jurisdiccion);
 	if (params.search) query.set("search", params.search);
 	const qs = query.toString();
 	const url = `${getBaseUrl()}/api/public/sentencias${qs ? `?${qs}` : ""}`;

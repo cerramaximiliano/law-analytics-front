@@ -17,6 +17,7 @@ export interface PublicSentenciaListItem {
 	id: string;
 	caratula: string;
 	fuero: string | null;
+	jurisdiccion?: string;
 	fecha: string | null;
 	resumen: string;
 	saij: PublicSentenciaSaij | null;
@@ -34,6 +35,11 @@ export interface PublicSentenciasFueroCount {
 	total: number;
 }
 
+export interface PublicSentenciasJurisdiccionCount {
+	jurisdiccion: string;
+	total: number;
+}
+
 export interface PublicSentenciasListResponse {
 	success: boolean;
 	data: {
@@ -42,6 +48,7 @@ export interface PublicSentenciasListResponse {
 		page: number;
 		limit: number;
 		byFuero: PublicSentenciasFueroCount[];
+		byJurisdiccion: PublicSentenciasJurisdiccionCount[];
 	};
 }
 

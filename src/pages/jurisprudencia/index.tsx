@@ -41,7 +41,7 @@ import PageBackground from "components/PageBackground";
 import SEO from "components/SEO/SEO";
 import SectionEyebrow from "sections/landing/SectionEyebrow";
 import { getPublicSentencias, fueroLabel } from "services/publicSentenciasService";
-import type { PublicSentenciaListItem, PublicSentenciasFueroCount } from "types/publicSentencia";
+import type { PublicSentenciaListItem, PublicSentenciasFueroCount, PublicSentenciasJurisdiccionCount } from "types/publicSentencia";
 import { summaryExcerpt } from "./SummaryContent";
 
 // Mantener en sync con sections/landing/Planes.tsx
@@ -61,6 +61,7 @@ const JurisprudenciaPage = () => {
 
 	const [items, setItems] = useState<PublicSentenciaListItem[]>([]);
 	const [byFuero, setByFuero] = useState<PublicSentenciasFueroCount[]>([]);
+	const [byJurisdiccion, setByJurisdiccion] = useState<PublicSentenciasJurisdiccionCount[]>([]);
 	const [total, setTotal] = useState(0);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(false);
@@ -68,6 +69,7 @@ const JurisprudenciaPage = () => {
 
 	const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1);
 	const fuero = searchParams.get("fuero") || "";
+	const jurisdiccion = searchParams.get("jurisdiccion") || "";
 	const search = searchParams.get("q") || "";
 
 	const updateParams = useCallback(
@@ -86,11 +88,18 @@ const JurisprudenciaPage = () => {
 		let cancelled = false;
 		setLoading(true);
 		setError(false);
-		getPublicSentencias({ page, limit: PAGE_SIZE, fuero: fuero || undefined, search: search || undefined })
+		getPublicSentencias({
+			page,
+			limit: PAGE_SIZE,
+			fuero: fuero || undefined,
+			jurisdiccion: jurisdiccion || undefined,
+			search: search || undefined,
+		})
 			.then((response) => {
 				if (cancelled) return;
 				setItems(response.data.items);
 				setByFuero(response.data.byFuero);
+				setByJurisdiccion(response.data.byJurisdiccion || []);
 				setTotal(response.data.total);
 			})
 			.catch(() => {
@@ -102,7 +111,7 @@ const JurisprudenciaPage = () => {
 		return () => {
 			cancelled = true;
 		};
-	}, [page, fuero, search]);
+	}, [page, fuero, jurisdiccion, search]);
 
 	const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1);
 
@@ -205,7 +214,9 @@ const JurisprudenciaPage = () => {
 									fontVariantNumeric: "tabular-nums",
 								}}
 							>
-								{total.toLocaleString("es-AR")} sentencias · Jurisdicción Nacional · se actualiza todos los días
+								{/* Con una sola jurisdicción se explicita; con varias, el selector manda */}
+								{total.toLocaleString("es-AR")} sentencias
+								{byJurisdiccion.length === 1 ? ` · Jurisdicción ${byJurisdiccion[0].jurisdiccion}` : ""} · se actualiza todos los días
 							</Typography>
 						)}
 					</motion.div>
@@ -218,30 +229,59 @@ const JurisprudenciaPage = () => {
 					transition={{ type: "spring", stiffness: 150, damping: 30, delay: 0.2 }}
 				>
 					<Stack spacing={2} sx={{ mb: { xs: 4, md: 5 } }}>
-						<Box component="form" onSubmit={handleSearchSubmit} sx={{ maxWidth: 480, mx: "auto", width: "100%" }}>
+						<Stack
+							direction={{ xs: "column", sm: "row" }}
+							spacing={1.5}
+							sx={{ maxWidth: 680, mx: "auto", width: "100%", justifyContent: "center" }}
+						>
+							<Box component="form" onSubmit={handleSearchSubmit} sx={{ flex: 1, minWidth: 0 }}>
+								<TextField
+									fullWidth
+									size="small"
+									placeholder="Buscar por carátula (ej. despido, amparo...)"
+									value={searchInput}
+									onChange={(event) => setSearchInput(event.target.value)}
+									InputProps={{
+										startAdornment: (
+											<InputAdornment position="start">
+												<SearchNormal1 size={18} color={theme.palette.text.secondary} />
+											</InputAdornment>
+										),
+									}}
+									sx={{
+										"& .MuiOutlinedInput-root": {
+											borderRadius: 2.5,
+											bgcolor: alpha(theme.palette.background.paper, isDark ? 0.4 : 0.7),
+											transition: "box-shadow 0.25s ease",
+											"&.Mui-focused": { boxShadow: `0 6px 18px ${alpha(BRAND_BLUE, 0.12)}` },
+										},
+									}}
+								/>
+							</Box>
 							<TextField
-								fullWidth
+								select
 								size="small"
-								placeholder="Buscar por carátula (ej. despido, amparo...)"
-								value={searchInput}
-								onChange={(event) => setSearchInput(event.target.value)}
-								InputProps={{
-									startAdornment: (
-										<InputAdornment position="start">
-											<SearchNormal1 size={18} color={theme.palette.text.secondary} />
-										</InputAdornment>
-									),
-								}}
+								value={jurisdiccion}
+								onChange={(event) => updateParams({ jurisdiccion: event.target.value || null, page: null })}
+								SelectProps={{ native: true }}
+								inputProps={{ "aria-label": "Filtrar por jurisdicción" }}
 								sx={{
+									minWidth: { xs: "100%", sm: 200 },
 									"& .MuiOutlinedInput-root": {
 										borderRadius: 2.5,
 										bgcolor: alpha(theme.palette.background.paper, isDark ? 0.4 : 0.7),
-										transition: "box-shadow 0.25s ease",
-										"&.Mui-focused": { boxShadow: `0 6px 18px ${alpha(BRAND_BLUE, 0.12)}` },
 									},
+									"& select": { fontSize: "0.875rem" },
 								}}
-							/>
-						</Box>
+							>
+								<option value="">Todas las jurisdicciones</option>
+								{byJurisdiccion.map((j) => (
+									<option key={j.jurisdiccion} value={j.jurisdiccion}>
+										{j.jurisdiccion} ({j.total.toLocaleString("es-AR")})
+									</option>
+								))}
+							</TextField>
+						</Stack>
 						<Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", justifyContent: "center", rowGap: 1 }}>
 							{/* Solo los 8 fueros con más volumen (byFuero viene ordenado desc) —
 							    los residuales de 1-2 sentencias ensucian la fila. Si el filtro
