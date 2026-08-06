@@ -115,6 +115,17 @@ const JurisprudenciaPage = () => {
 
 	const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1);
 
+	// Copy del hero según jurisdicciones disponibles: mientras haya una sola se
+	// explicita ("Justicia Nacional"); con varias pasa al genérico y manda el
+	// selector. "Nacional" tiene forma propia; el resto usa "la justicia de X".
+	const jurisdiccionUnica = byJurisdiccion.length === 1 ? byJurisdiccion[0].jurisdiccion : null;
+	const justiciaLabel =
+		jurisdiccionUnica === "Nacional"
+			? "la Justicia Nacional"
+			: jurisdiccionUnica
+			? `la justicia de ${jurisdiccionUnica}`
+			: "la justicia argentina";
+
 	const handleSearchSubmit = (event: React.FormEvent) => {
 		event.preventDefault();
 		updateParams({ q: searchInput.trim() || null, page: null });
@@ -202,7 +213,7 @@ const JurisprudenciaPage = () => {
 								textWrap: "pretty",
 							}}
 						>
-							Sentencias recientes de la Justicia Nacional con un resumen claro generado con inteligencia artificial por Law Analytics.
+							Sentencias recientes de {justiciaLabel} con un resumen claro generado con inteligencia artificial por Law Analytics.
 						</Typography>
 						{total > 0 && (
 							<Typography
