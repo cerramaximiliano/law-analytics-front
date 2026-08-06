@@ -193,7 +193,7 @@ const JurisprudenciaPage = () => {
 								textWrap: "pretty",
 							}}
 						>
-							Sentencias recientes de la justicia argentina con un resumen claro generado con inteligencia artificial por Law Analytics.
+							Sentencias recientes de la Justicia Nacional con un resumen claro generado con inteligencia artificial por Law Analytics.
 						</Typography>
 						{total > 0 && (
 							<Typography
@@ -205,7 +205,7 @@ const JurisprudenciaPage = () => {
 									fontVariantNumeric: "tabular-nums",
 								}}
 							>
-								{total.toLocaleString("es-AR")} sentencias · se actualiza todos los días
+								{total.toLocaleString("es-AR")} sentencias · Jurisdicción Nacional · se actualiza todos los días
 							</Typography>
 						)}
 					</motion.div>
@@ -452,7 +452,11 @@ const JurisprudenciaPage = () => {
 							page={page}
 							color="primary"
 							shape="rounded"
-							onChange={(_event, value) => updateParams({ page: value > 1 ? String(value) : null })}
+							onChange={(_event, value) => {
+								updateParams({ page: value > 1 ? String(value) : null });
+								// Subir al inicio del listado mientras cargan los skeletons.
+								window.scrollTo({ top: 0, behavior: "smooth" });
+							}}
 						/>
 					</Stack>
 				)}

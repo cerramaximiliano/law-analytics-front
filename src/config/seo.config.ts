@@ -39,7 +39,7 @@ export const pageSEO: Record<string, SEOConfig> = {
 	"/jurisprudencia": {
 		title: "Jurisprudencia Argentina - Sentencias con Resumen IA | Law Analytics",
 		description:
-			"Sentencias recientes de la justicia argentina explicadas con resúmenes claros generados por inteligencia artificial. Fallos laborales, civiles, comerciales y más.",
+			"Sentencias recientes de la Justicia Nacional argentina explicadas con resúmenes claros generados por inteligencia artificial. Fallos laborales, civiles, comerciales y más.",
 		keywords: [
 			"jurisprudencia argentina",
 			"sentencias judiciales",
