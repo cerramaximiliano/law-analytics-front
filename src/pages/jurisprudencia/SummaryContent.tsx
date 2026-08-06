@@ -66,13 +66,15 @@ const SummaryContent = ({ content }: SummaryContentProps) => {
 			{sections.map((section, i) => (
 				<Box key={i}>
 					{section.title && (
-						<Typography variant="h5" sx={{ mb: 1 }}>
+						<Typography
+							sx={{ fontSize: { xs: "1.05rem", md: "1.15rem" }, fontWeight: 600, letterSpacing: "-0.01em", lineHeight: 1.3, mb: 1 }}
+						>
 							{section.title}
 						</Typography>
 					)}
 					<Stack spacing={1.25}>
 						{section.paragraphs.map((p, j) => (
-							<Typography key={j} variant="body1" color="text.secondary" sx={{ lineHeight: 1.7 }}>
+							<Typography key={j} color="text.secondary" sx={{ fontSize: "0.92rem", lineHeight: 1.65, textWrap: "pretty" }}>
 								{renderInline(p)}
 							</Typography>
 						))}
