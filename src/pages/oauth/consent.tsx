@@ -104,7 +104,9 @@ const OauthConsentPage = () => {
 			const reason = contextState.context.plan_check.reason || "unknown";
 			const plan = contextState.context.plan_check.plan || "";
 			navigate(
-				`/oauth/upgrade-required?reason=${encodeURIComponent(reason)}&plan=${encodeURIComponent(plan)}&consent_challenge=${encodeURIComponent(challenge || "")}`,
+				`/oauth/upgrade-required?reason=${encodeURIComponent(reason)}&plan=${encodeURIComponent(
+					plan,
+				)}&consent_challenge=${encodeURIComponent(challenge || "")}`,
 				{ replace: true },
 			);
 		}
@@ -205,7 +207,7 @@ const OauthConsentPage = () => {
 		<AuthWrapper>
 			<Grid container spacing={3}>
 				<Grid item xs={12} sx={{ textAlign: "center" }}>
-					<Logo />
+					<Logo animation="letters" />
 				</Grid>
 
 				<Grid item xs={12}>
@@ -251,13 +253,7 @@ const OauthConsentPage = () => {
 
 				<Grid item xs={12}>
 					<FormControlLabel
-						control={
-							<Checkbox
-								checked={remember}
-								onChange={(e) => setRemember(e.target.checked)}
-								disabled={isSubmitting}
-							/>
-						}
+						control={<Checkbox checked={remember} onChange={(e) => setRemember(e.target.checked)} disabled={isSubmitting} />}
 						label={
 							<Typography variant="body2">
 								Recordar esta autorización por 30 días (no te volveré a preguntar para esta aplicación)
@@ -278,22 +274,10 @@ const OauthConsentPage = () => {
 
 				<Grid item xs={12}>
 					<Stack direction={{ xs: "column-reverse", sm: "row" }} spacing={2} justifyContent="flex-end">
-						<Button
-							variant="outlined"
-							color="secondary"
-							onClick={handleReject}
-							disabled={isSubmitting}
-							size="large"
-						>
+						<Button variant="outlined" color="secondary" onClick={handleReject} disabled={isSubmitting} size="large">
 							Rechazar
 						</Button>
-						<Button
-							variant="contained"
-							color="primary"
-							onClick={handleAccept}
-							disabled={isSubmitting}
-							size="large"
-						>
+						<Button variant="contained" color="primary" onClick={handleAccept} disabled={isSubmitting} size="large">
 							{isSubmitting ? "Procesando..." : "Autorizar"}
 						</Button>
 					</Stack>

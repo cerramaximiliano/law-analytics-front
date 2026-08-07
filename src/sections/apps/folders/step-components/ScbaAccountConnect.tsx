@@ -34,6 +34,7 @@ import { Link1, Eye, EyeSlash, TickCircle, CloseCircle, Refresh2, InfoCircle, Do
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import { enqueueSnackbar } from "notistack";
 import { Zoom } from "@mui/material";
+import LogoLoader from "components/logo/LogoLoader";
 import { PopupTransition } from "components/@extended/Transitions";
 import scbaCredentialsService, { ScbaCredentialsData, ScbaUnlinkImpact } from "api/scbaCredentials";
 import { dispatch as storeDispatch } from "store";
@@ -650,8 +651,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 									<InfoCircle size={16} variant="Bulk" color={STALE_AMBER} />
 									<Stack spacing={0.125}>
 										<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
-											{unlinkImpact.folders.total}{" "}
-											{unlinkImpact.folders.total === 1 ? "carpeta afectada" : "carpetas afectadas"}
+											{unlinkImpact.folders.total} {unlinkImpact.folders.total === 1 ? "carpeta afectada" : "carpetas afectadas"}
 										</Typography>
 										<Typography
 											sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em", fontVariantNumeric: "tabular-nums" }}
@@ -772,7 +772,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		if (isLoadingStatus) {
 			return (
 				<Box display="flex" justifyContent="center" alignItems="center" minHeight={150}>
-					<CircularProgress size={32} />
+					<LogoLoader size={40} />
 				</Box>
 			);
 		}
@@ -791,12 +791,8 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		// aunque `isSyncing` local haya quedado stuck en true — el state de DB es
 		// la fuente de verdad y evita el caso de loading bar perpetuo cuando el
 		// WS de phase=completed no llega al componente.
-		const dbSyncTerminal =
-			credentialsStatus?.syncStatus === "completed" || credentialsStatus?.syncStatus === "error";
-		if (
-			!dbSyncTerminal &&
-			(isSyncing || credentialsStatus?.syncStatus === "in_progress" || credentialsStatus?.syncStatus === "pending")
-		) {
+		const dbSyncTerminal = credentialsStatus?.syncStatus === "completed" || credentialsStatus?.syncStatus === "error";
+		if (!dbSyncTerminal && (isSyncing || credentialsStatus?.syncStatus === "in_progress" || credentialsStatus?.syncStatus === "pending")) {
 			const isDark = theme.palette.mode === "dark";
 			return (
 				<Box
@@ -821,7 +817,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 									flexShrink: 0,
 								}}
 							>
-								<CircularProgress size={14} sx={{ color: BRAND_BLUE }} />
+								<LogoLoader size={16} color={BRAND_BLUE} />
 							</Box>
 							<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
 								Sincronizando causas
@@ -950,10 +946,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 				>
 					<Stack spacing={1.5}>
 						{isPortalDown && (
-							<ScbaMaintenanceAlert
-								compact
-								contextHint="Mientras el portal esté caído, la sincronización queda en pausa."
-							/>
+							<ScbaMaintenanceAlert compact contextHint="Mientras el portal esté caído, la sincronización queda en pausa." />
 						)}
 						<Stack direction="row" alignItems="center" justifyContent="space-between">
 							<Stack direction="row" alignItems="center" spacing={0.875}>
@@ -1006,16 +999,26 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 
 						{isComplete &&
 							renderInlineNotice(
-								`Tus causas de la Provincia de Buenos Aires están sincronizadas. Se encontraron ${credentialsStatus.stats?.totalCausasFound || 0} causas (${credentialsStatus.stats?.causasCreated || 0} nuevas, ${credentialsStatus.stats?.causasLinked || 0} vinculadas).`,
+								`Tus causas de la Provincia de Buenos Aires están sincronizadas. Se encontraron ${
+									credentialsStatus.stats?.totalCausasFound || 0
+								} causas (${credentialsStatus.stats?.causasCreated || 0} nuevas, ${
+									credentialsStatus.stats?.causasLinked || 0
+								} vinculadas).`,
 								LIVE_GREEN,
 							)}
 
 						{hasError && credentialsStatus.lastError && renderInlineNotice(credentialsStatus.lastError.message, theme.palette.error.main)}
 
-						{!isComplete && !hasError && credentialsStatus.syncStatus === "never_synced" &&
-							renderInlineNotice("Tu cuenta está vinculada pero aún no se sincronizó. Apretá el botón de re-sincronizar para iniciar.", BRAND_BLUE)}
+						{!isComplete &&
+							!hasError &&
+							credentialsStatus.syncStatus === "never_synced" &&
+							renderInlineNotice(
+								"Tu cuenta está vinculada pero aún no se sincronizó. Apretá el botón de re-sincronizar para iniciar.",
+								BRAND_BLUE,
+							)}
 
-						{credentialsStatus.isExpired && !hasError &&
+						{credentialsStatus.isExpired &&
+							!hasError &&
 							renderInlineNotice("Tus credenciales expiraron. Actualizá tu contraseña para reanudar la sincronización.", STALE_AMBER)}
 
 						{(hasError || credentialsStatus.isExpired) && !showUpdateForm && (
@@ -1067,15 +1070,9 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 													if (usernameError) validateUsername(e.target.value);
 											  }
 									}
-									onBlur={
-										(credentialsStatus as any).username
-											? undefined
-											: () => validateUsername(username)
-									}
+									onBlur={(credentialsStatus as any).username ? undefined : () => validateUsername(username)}
 									error={Boolean(usernameError)}
-									helperText={
-										usernameError || ((credentialsStatus as any).username ? "Esta es tu cuenta SCBA conectada" : undefined)
-									}
+									helperText={usernameError || ((credentialsStatus as any).username ? "Esta es tu cuenta SCBA conectada" : undefined)}
 									disabled={isSubmitting || Boolean((credentialsStatus as any).username)}
 									size="small"
 								/>
@@ -1200,12 +1197,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		const isDark = theme.palette.mode === "dark";
 		return (
 			<Stack spacing={1.5}>
-				{isPortalDown && (
-					<ScbaMaintenanceAlert
-						compact
-						contextHint="No se pueden conectar cuentas nuevas mientras el portal esté caído."
-					/>
-				)}
+				{isPortalDown && <ScbaMaintenanceAlert compact contextHint="No se pueden conectar cuentas nuevas mientras el portal esté caído." />}
 				<Box
 					sx={{
 						borderRadius: 1.5,
@@ -1214,109 +1206,113 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 						p: { xs: 1.5, sm: 1.75 },
 					}}
 				>
-				<Stack spacing={1.25}>
-					<Stack direction="row" alignItems="center" spacing={0.875}>
-						<Box
-							sx={{
-								width: 28,
-								height: 28,
-								borderRadius: 1,
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
-								color: BRAND_BLUE,
-								flexShrink: 0,
-							}}
-						>
-							<Link1 size={16} variant="Bulk" />
-						</Box>
-						<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
-							Conectar cuenta SCBA
-						</Typography>
-					</Stack>
-
-					<TextField
-						fullWidth
-						label="Domicilio electrónico"
-						placeholder="20XXXXXXXX7@notificaciones.scba.gov.ar"
-						value={username}
-						onChange={(e) => {
-							setUsername(e.target.value);
-							if (usernameError) validateUsername(e.target.value);
-						}}
-						onBlur={() => validateUsername(username)}
-						error={Boolean(usernameError)}
-						helperText={usernameError || undefined}
-						disabled={isSubmitting}
-						size="small"
-					/>
-
-					<TextField
-						fullWidth
-						label="Contraseña"
-						type={showPassword ? "text" : "password"}
-						value={password}
-						onChange={(e) => {
-							setPassword(e.target.value);
-							if (passwordError) validatePassword(e.target.value);
-						}}
-						onBlur={() => validatePassword(password)}
-						error={Boolean(passwordError)}
-						helperText={passwordError || undefined}
-						disabled={isSubmitting}
-						size="small"
-						InputProps={{
-							endAdornment: (
-								<InputAdornment position="end">
-									<Tooltip title="Tu contraseña se almacena encriptada (AES-256) y solo se usa para sincronizar tus causas." arrow placement="top">
-										<IconButton edge="end" size="small" sx={{ color: BRAND_BLUE, mr: 0.25 }}>
-											<ShieldTick size={14} variant="Bulk" />
-										</IconButton>
-									</Tooltip>
-									<IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
-										{showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
-									</IconButton>
-								</InputAdornment>
-							),
-						}}
-					/>
-
-					<Tooltip
-						title={isPortalDown ? "Portal SCBA caído — no se pueden conectar cuentas nuevas ahora" : ""}
-						placement="top"
-						arrow
-						disableHoverListener={!isPortalDown}
-					>
-						<span>
-							<Button
-								variant="contained"
-								fullWidth
-								size="small"
-								onClick={handleSubmit}
-								disabled={isSubmitting || !username || !password || isPortalDown}
-								startIcon={isSubmitting ? <CircularProgress size={14} color="inherit" /> : <Link1 size={14} />}
+					<Stack spacing={1.25}>
+						<Stack direction="row" alignItems="center" spacing={0.875}>
+							<Box
 								sx={{
-									textTransform: "none",
-									bgcolor: BRAND_BLUE,
-									color: "#fff",
-									fontWeight: 600,
-									letterSpacing: "-0.005em",
-									borderRadius: 1.25,
-									boxShadow: "none",
-									transition: "background-color 0.15s ease",
-									"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
-									"&.Mui-disabled": {
-										bgcolor: alpha(BRAND_BLUE, isDark ? 0.24 : 0.4),
-										color: alpha("#fff", 0.9),
-									},
+									width: 28,
+									height: 28,
+									borderRadius: 1,
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+									color: BRAND_BLUE,
+									flexShrink: 0,
 								}}
 							>
-								{isSubmitting ? "Conectando…" : "Conectar cuenta"}
-							</Button>
-						</span>
-					</Tooltip>
-				</Stack>
+								<Link1 size={16} variant="Bulk" />
+							</Box>
+							<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+								Conectar cuenta SCBA
+							</Typography>
+						</Stack>
+
+						<TextField
+							fullWidth
+							label="Domicilio electrónico"
+							placeholder="20XXXXXXXX7@notificaciones.scba.gov.ar"
+							value={username}
+							onChange={(e) => {
+								setUsername(e.target.value);
+								if (usernameError) validateUsername(e.target.value);
+							}}
+							onBlur={() => validateUsername(username)}
+							error={Boolean(usernameError)}
+							helperText={usernameError || undefined}
+							disabled={isSubmitting}
+							size="small"
+						/>
+
+						<TextField
+							fullWidth
+							label="Contraseña"
+							type={showPassword ? "text" : "password"}
+							value={password}
+							onChange={(e) => {
+								setPassword(e.target.value);
+								if (passwordError) validatePassword(e.target.value);
+							}}
+							onBlur={() => validatePassword(password)}
+							error={Boolean(passwordError)}
+							helperText={passwordError || undefined}
+							disabled={isSubmitting}
+							size="small"
+							InputProps={{
+								endAdornment: (
+									<InputAdornment position="end">
+										<Tooltip
+											title="Tu contraseña se almacena encriptada (AES-256) y solo se usa para sincronizar tus causas."
+											arrow
+											placement="top"
+										>
+											<IconButton edge="end" size="small" sx={{ color: BRAND_BLUE, mr: 0.25 }}>
+												<ShieldTick size={14} variant="Bulk" />
+											</IconButton>
+										</Tooltip>
+										<IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
+											{showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
+										</IconButton>
+									</InputAdornment>
+								),
+							}}
+						/>
+
+						<Tooltip
+							title={isPortalDown ? "Portal SCBA caído — no se pueden conectar cuentas nuevas ahora" : ""}
+							placement="top"
+							arrow
+							disableHoverListener={!isPortalDown}
+						>
+							<span>
+								<Button
+									variant="contained"
+									fullWidth
+									size="small"
+									onClick={handleSubmit}
+									disabled={isSubmitting || !username || !password || isPortalDown}
+									startIcon={isSubmitting ? <CircularProgress size={14} color="inherit" /> : <Link1 size={14} />}
+									sx={{
+										textTransform: "none",
+										bgcolor: BRAND_BLUE,
+										color: "#fff",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										borderRadius: 1.25,
+										boxShadow: "none",
+										transition: "background-color 0.15s ease",
+										"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+										"&.Mui-disabled": {
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.24 : 0.4),
+											color: alpha("#fff", 0.9),
+										},
+									}}
+								>
+									{isSubmitting ? "Conectando…" : "Conectar cuenta"}
+								</Button>
+							</span>
+						</Tooltip>
+					</Stack>
 				</Box>
 			</Stack>
 		);

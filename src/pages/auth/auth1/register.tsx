@@ -538,7 +538,7 @@ const Register = () => {
 									<Box sx={{ p: { xs: 3, sm: 3.5, md: 4 } }}>
 										<Stack spacing={2.5}>
 											<Box sx={{ textAlign: "center" }}>
-												<Logo to="/" />
+												<Logo to="/" animation="build" />
 											</Box>
 
 											<motion.div

@@ -146,7 +146,7 @@ const OauthUpgradeRequiredPage = () => {
 		<AuthWrapper>
 			<Grid container spacing={3}>
 				<Grid item xs={12} sx={{ textAlign: "center" }}>
-					<Logo />
+					<Logo animation="letters" />
 				</Grid>
 
 				<Grid item xs={12}>
@@ -172,13 +172,7 @@ const OauthUpgradeRequiredPage = () => {
 						<Button variant="outlined" color="secondary" onClick={handleCancel} disabled={isCancelling} size="large">
 							{isCancelling ? "Cancelando..." : "Cancelar"}
 						</Button>
-						<Button
-							variant="contained"
-							color="primary"
-							size="large"
-							href={copy.ctaHref}
-							startIcon={copy.ctaIcon}
-						>
+						<Button variant="contained" color="primary" size="large" href={copy.ctaHref} startIcon={copy.ctaIcon}>
 							{copy.ctaText}
 						</Button>
 					</Stack>

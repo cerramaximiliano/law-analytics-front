@@ -35,6 +35,7 @@ import { RootState } from "store";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { incrementUserStat, fetchUserStats } from "store/reducers/userStats";
 import { pjnSyncStarted, pjnSyncReset, pjnSyncCompleted, pjnSyncError, pjnCredentialsInvalidated } from "store/reducers/pjnSync";
+import LogoLoader from "components/logo/LogoLoader";
 import { PopupTransition } from "components/@extended/Transitions";
 import Avatar from "components/@extended/Avatar";
 import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
@@ -704,8 +705,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 									<InfoCircle size={16} variant="Bulk" color={STALE_AMBER} />
 									<Stack spacing={0.125}>
 										<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
-											{unlinkImpact.folders.total}{" "}
-											{unlinkImpact.folders.total === 1 ? "carpeta afectada" : "carpetas afectadas"}
+											{unlinkImpact.folders.total} {unlinkImpact.folders.total === 1 ? "carpeta afectada" : "carpetas afectadas"}
 										</Typography>
 										<Typography
 											sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em", fontVariantNumeric: "tabular-nums" }}
@@ -834,7 +834,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 		if (isLoadingStatus && !showCompletionSummary) {
 			return (
 				<Box display="flex" justifyContent="center" alignItems="center" minHeight={150}>
-					<CircularProgress size={32} />
+					<LogoLoader size={40} />
 				</Box>
 			);
 		}
@@ -854,8 +854,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 		// NO mostramos loading aunque `pjnSync.isActive` haya quedado stuck — el state de DB es
 		// la fuente de verdad y evita loading bar perpetuo cuando el WS de phase=completed no
 		// llega al componente.
-		const dbSyncTerminal =
-			credentialsStatus?.syncStatus === "completed" || credentialsStatus?.syncStatus === "error";
+		const dbSyncTerminal = credentialsStatus?.syncStatus === "completed" || credentialsStatus?.syncStatus === "error";
 		if (
 			!dbSyncTerminal &&
 			(pjnSync.isActive ||
@@ -912,7 +911,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 										<Typography sx={{ color: "white", fontSize: "0.65rem", fontWeight: 700, lineHeight: 1 }}>✓</Typography>
 									</Box>
 								) : (
-									<CircularProgress size={20} color={isRetrying ? "warning" : "primary"} />
+									<LogoLoader size={20} color={isRetrying ? theme.palette.warning.main : undefined} />
 								)}
 								<Typography variant="subtitle1" fontWeight={500} color={isCompleted ? "success.main" : "text.primary"}>
 									{isCompleted ? "Sincronización completada" : "Sincronizando causas..."}
@@ -1110,7 +1109,10 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 
 								{isComplete &&
 									renderInlineNotice(
-										<>Tus causas del PJN están sincronizadas. Se crearon <strong>{credentialsStatus.foldersCreatedCount || 0}</strong> carpetas.</>,
+										<>
+											Tus causas del PJN están sincronizadas. Se crearon <strong>{credentialsStatus.foldersCreatedCount || 0}</strong>{" "}
+											carpetas.
+										</>,
 										successAccent,
 									)}
 
@@ -1241,13 +1243,9 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 															if (cuilError) validateCuil(value);
 													  }
 											}
-											onBlur={
-												(credentialsStatus as any).cuil ? undefined : () => validateCuil(cuil)
-											}
+											onBlur={(credentialsStatus as any).cuil ? undefined : () => validateCuil(cuil)}
 											error={Boolean(cuilError)}
-											helperText={
-												cuilError || ((credentialsStatus as any).cuil ? "Esta es tu cuenta PJN conectada" : undefined)
-											}
+											helperText={cuilError || ((credentialsStatus as any).cuil ? "Esta es tu cuenta PJN conectada" : undefined)}
 											disabled={isSubmitting || Boolean((credentialsStatus as any).cuil)}
 											inputProps={{ maxLength: 13, inputMode: "numeric" }}
 											autoComplete="username"
@@ -1375,10 +1373,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 							</Typography>
 						</Stack>
 
-						<PjnMaintenanceAlert
-							compact
-							contextHint="No podés vincular ni sincronizar tu cuenta PJN mientras el portal esté caído."
-						/>
+						<PjnMaintenanceAlert compact contextHint="No podés vincular ni sincronizar tu cuenta PJN mientras el portal esté caído." />
 
 						<TextField
 							fullWidth
@@ -1416,7 +1411,11 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 							InputProps={{
 								endAdornment: (
 									<InputAdornment position="end">
-										<Tooltip title="Tu contraseña se almacena encriptada (AES-256) y solo se usa para sincronizar tus causas." arrow placement="top">
+										<Tooltip
+											title="Tu contraseña se almacena encriptada (AES-256) y solo se usa para sincronizar tus causas."
+											arrow
+											placement="top"
+										>
 											<IconButton edge="end" size="small" sx={{ color: BRAND_BLUE, mr: 0.25 }}>
 												<ShieldTick size={14} variant="Bulk" />
 											</IconButton>

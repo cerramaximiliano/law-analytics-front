@@ -69,8 +69,12 @@ const Header = ({ handleDrawerOpen, layout = "landing", ...others }: Props) => {
 	const [drawerToggle, setDrawerToggle] = useState<boolean>(false);
 	// Override solo en landing: el logo grande domina la pantalla en mobile y le quita
 	// jerarquía al título/CTA. En el resto de las páginas públicas se mantiene normal.
-	const isLandingRoute = useLocation().pathname === "/";
-	const landingMobileLogoSx = isLandingRoute ? { "& img": { height: 36 } } : undefined;
+	const { pathname } = useLocation();
+	const isLandingRoute = pathname === "/";
+	const landingMobileLogoSx = isLandingRoute ? { "& svg": { height: 36, width: "auto" } } : undefined;
+	// En jurisprudencia (vista pública, carta de presentación ante no-usuarios) el logo
+	// entra dibujándose; en la landing queda estático para no competir con el hero/CTA.
+	const logoAnimation = pathname.startsWith("/jurisprudencia") ? ("draw" as const) : undefined;
 
 	/** Method called on multiple components with different event types */
 	const drawerToggler = (open: boolean) => (event: any) => {
@@ -100,7 +104,7 @@ const Header = ({ handleDrawerOpen, layout = "landing", ...others }: Props) => {
 					<Toolbar sx={{ px: { xs: 1.5, sm: 4, md: 0, lg: 0 }, py: isLandingRoute ? { xs: 2.5, sm: 1.5, md: 1 } : 1 }}>
 						<Stack direction="row" sx={{ flexGrow: 1, display: { xs: "none", md: "block" } }} alignItems="center">
 							<Typography component="div" sx={{ textAlign: "left", display: "inline-block" }}>
-								<Logo reverse to="/" />
+								<Logo reverse to="/" animation={logoAnimation} />
 							</Typography>
 						</Stack>
 						<Stack
@@ -140,7 +144,7 @@ const Header = ({ handleDrawerOpen, layout = "landing", ...others }: Props) => {
 							}}
 						>
 							<Typography component="div" sx={{ textAlign: "left", display: "inline-block" }}>
-								<Logo reverse to="/" sx={landingMobileLogoSx} />
+								<Logo reverse to="/" sx={landingMobileLogoSx} animation={logoAnimation} />
 							</Typography>
 							<Stack direction="row" spacing={2}>
 								{layout === "component" && (

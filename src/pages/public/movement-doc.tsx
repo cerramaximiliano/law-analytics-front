@@ -34,7 +34,17 @@ import {
 	useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { ArrowRight, CalendarAdd, CloseCircle, DocumentDownload, ExportSquare, Flash, LoginCurve, NoteAdd, TaskSquare } from "iconsax-react";
+import {
+	ArrowRight,
+	CalendarAdd,
+	CloseCircle,
+	DocumentDownload,
+	ExportSquare,
+	Flash,
+	LoginCurve,
+	NoteAdd,
+	TaskSquare,
+} from "iconsax-react";
 
 import Logo from "components/logo";
 import PdfCanvasViewer from "components/PdfCanvasViewer";
@@ -161,9 +171,7 @@ const MovementDocPublicPage = () => {
 	const promoValidLabel = promo?.validUntil
 		? new Date(promo.validUntil).toLocaleDateString("es-AR", { day: "numeric", month: "long", timeZone: "UTC" })
 		: null;
-	const promoDurationLabel = promo?.durationInMonths
-		? `${promo.durationInMonths} ${promo.durationInMonths === 1 ? "mes" : "meses"}`
-		: null;
+	const promoDurationLabel = promo?.durationInMonths ? `${promo.durationInMonths} ${promo.durationInMonths === 1 ? "mes" : "meses"}` : null;
 
 	const handleCtaClick = () => {
 		trackNotificationMovementCtaClick(Boolean(folderId));
@@ -238,7 +246,7 @@ const MovementDocPublicPage = () => {
 			<AppBar position="static" color="inherit" elevation={0} sx={{ borderBottom: `1px solid ${theme.palette.divider}`, bgcolor: "#fff" }}>
 				<Toolbar sx={{ gap: 2 }}>
 					<Box sx={{ flexShrink: 0 }}>
-						<Logo />
+						<Logo animation="draw" />
 					</Box>
 					<Box sx={{ flex: 1 }} />
 					<Button
@@ -315,150 +323,150 @@ const MovementDocPublicPage = () => {
 			    clickeable. Acá va inline (no fixed) entre el header y el documento. */}
 			{!loading && promo && (
 				<Collapse in={!promoDismissed} unmountOnExit>
-				<Box
-					role="button"
-					tabIndex={0}
-					onClick={handlePromoClick}
-					onKeyDown={(e) => {
-						// Solo cuando el foco está en la strip misma — Enter sobre la X
-						// (hijo) burbujea hasta acá y no debe navegar.
-						if (e.target !== e.currentTarget) return;
-						if (e.key === "Enter" || e.key === " ") {
-							e.preventDefault();
-							handlePromoClick();
-						}
-					}}
-					sx={{
-						position: "relative",
-						cursor: "pointer",
-						background: BRAND_GRADIENT_BG,
-						backgroundSize: "300% 100%",
-						color: "#fff",
-						borderBottom: `1px solid ${alpha("#000", 0.18)}`,
-						animation: "discountShift 16s linear infinite",
-						"@keyframes discountShift": {
-							"0%": { backgroundPosition: "0% 50%" },
-							"100%": { backgroundPosition: "300% 50%" },
-						},
-						"&:hover .banner-arrow": { transform: "translateX(4px)" },
-						"&:focus-visible": { outline: `2px solid #fff`, outlineOffset: -2 },
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						flexWrap: { xs: "wrap", md: "nowrap" },
-						columnGap: { xs: 1.25, sm: 1.5, md: 2 },
-						rowGap: 0.25,
-						py: { xs: 0.75, md: 1 },
-						pl: { xs: 1.5, sm: 2, md: 3 },
-						pr: { xs: 5, md: 6 },
-						textAlign: "center",
-						lineHeight: 1.25,
-					}}
-				>
-					{/* Bloque 1 — chip de descuento */}
 					<Box
-						component="span"
-						sx={{
-							display: "inline-flex",
-							alignItems: "center",
-							gap: 0.5,
-							flexShrink: 0,
-							fontSize: { xs: "0.78rem", sm: "0.82rem", md: "0.86rem" },
-							fontWeight: 700,
-							letterSpacing: "0.02em",
-							textTransform: "uppercase",
-							whiteSpace: "nowrap",
+						role="button"
+						tabIndex={0}
+						onClick={handlePromoClick}
+						onKeyDown={(e) => {
+							// Solo cuando el foco está en la strip misma — Enter sobre la X
+							// (hijo) burbujea hasta acá y no debe navegar.
+							if (e.target !== e.currentTarget) return;
+							if (e.key === "Enter" || e.key === " ") {
+								e.preventDefault();
+								handlePromoClick();
+							}
 						}}
-					>
-						<Flash size={14} variant="Bold" color="#fff" />
-						<Box component="span">{promoLabel}</Box>
-					</Box>
-
-					{/* Separador vertical — solo desktop */}
-					<Box
-						aria-hidden
-						sx={{ display: { xs: "none", md: "inline-block" }, width: "1px", height: 14, bgcolor: alpha("#fff", 0.4), flexShrink: 0 }}
-					/>
-
-					{/* Bloque 2 — detalles del descuento */}
-					<Box
-						component="span"
 						sx={{
-							display: "inline-flex",
+							position: "relative",
+							cursor: "pointer",
+							background: BRAND_GRADIENT_BG,
+							backgroundSize: "300% 100%",
+							color: "#fff",
+							borderBottom: `1px solid ${alpha("#000", 0.18)}`,
+							animation: "discountShift 16s linear infinite",
+							"@keyframes discountShift": {
+								"0%": { backgroundPosition: "0% 50%" },
+								"100%": { backgroundPosition: "300% 50%" },
+							},
+							"&:hover .banner-arrow": { transform: "translateX(4px)" },
+							"&:focus-visible": { outline: `2px solid #fff`, outlineOffset: -2 },
+							display: "flex",
 							alignItems: "center",
-							flexWrap: "wrap",
 							justifyContent: "center",
-							columnGap: 0.5,
-							flexShrink: 0,
-							fontSize: { xs: "0.76rem", sm: "0.8rem", md: "0.84rem" },
-							fontWeight: 500,
-							color: alpha("#fff", 0.95),
-							letterSpacing: "0.005em",
+							flexWrap: { xs: "wrap", md: "nowrap" },
+							columnGap: { xs: 1.25, sm: 1.5, md: 2 },
+							rowGap: 0.25,
+							py: { xs: 0.75, md: 1 },
+							pl: { xs: 1.5, sm: 2, md: 3 },
+							pr: { xs: 5, md: 6 },
+							textAlign: "center",
+							lineHeight: 1.25,
 						}}
 					>
-						{promoDurationLabel && (
-							<>
-								<Box component="span">durante</Box>
-								<Box component="span" sx={{ fontWeight: 700, color: "#fff", whiteSpace: "nowrap" }}>
-									{promoDurationLabel}
+						{/* Bloque 1 — chip de descuento */}
+						<Box
+							component="span"
+							sx={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: 0.5,
+								flexShrink: 0,
+								fontSize: { xs: "0.78rem", sm: "0.82rem", md: "0.86rem" },
+								fontWeight: 700,
+								letterSpacing: "0.02em",
+								textTransform: "uppercase",
+								whiteSpace: "nowrap",
+							}}
+						>
+							<Flash size={14} variant="Bold" color="#fff" />
+							<Box component="span">{promoLabel}</Box>
+						</Box>
+
+						{/* Separador vertical — solo desktop */}
+						<Box
+							aria-hidden
+							sx={{ display: { xs: "none", md: "inline-block" }, width: "1px", height: 14, bgcolor: alpha("#fff", 0.4), flexShrink: 0 }}
+						/>
+
+						{/* Bloque 2 — detalles del descuento */}
+						<Box
+							component="span"
+							sx={{
+								display: "inline-flex",
+								alignItems: "center",
+								flexWrap: "wrap",
+								justifyContent: "center",
+								columnGap: 0.5,
+								flexShrink: 0,
+								fontSize: { xs: "0.76rem", sm: "0.8rem", md: "0.84rem" },
+								fontWeight: 500,
+								color: alpha("#fff", 0.95),
+								letterSpacing: "0.005em",
+							}}
+						>
+							{promoDurationLabel && (
+								<>
+									<Box component="span">durante</Box>
+									<Box component="span" sx={{ fontWeight: 700, color: "#fff", whiteSpace: "nowrap" }}>
+										{promoDurationLabel}
+									</Box>
+								</>
+							)}
+							{promoDurationLabel && promoValidLabel && (
+								<Box component="span" sx={{ opacity: 0.55, px: 0.25 }}>
+									·
 								</Box>
-							</>
-						)}
-						{promoDurationLabel && promoValidLabel && (
-							<Box component="span" sx={{ opacity: 0.55, px: 0.25 }}>
-								·
+							)}
+							{promoValidLabel && (
+								<>
+									<Box component="span">hasta el</Box>
+									<Box component="span" sx={{ fontWeight: 700, color: "#fff", whiteSpace: "nowrap" }}>
+										{promoValidLabel}
+									</Box>
+								</>
+							)}
+						</Box>
+
+						{/* Bloque 3 — CTA */}
+						<Box
+							component="span"
+							sx={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: 0.5,
+								flexShrink: 0,
+								fontSize: { xs: "0.78rem", sm: "0.82rem", md: "0.86rem" },
+								fontWeight: 700,
+								letterSpacing: "0.01em",
+								whiteSpace: "nowrap",
+								ml: { md: 0.5 },
+							}}
+						>
+							<Box component="span" sx={{ borderBottom: `1.5px solid ${alpha("#fff", 0.7)}`, pb: "1px" }}>
+								Aprovechar promo
 							</Box>
-						)}
-						{promoValidLabel && (
-							<>
-								<Box component="span">hasta el</Box>
-								<Box component="span" sx={{ fontWeight: 700, color: "#fff", whiteSpace: "nowrap" }}>
-									{promoValidLabel}
-								</Box>
-							</>
-						)}
-					</Box>
-
-					{/* Bloque 3 — CTA */}
-					<Box
-						component="span"
-						sx={{
-							display: "inline-flex",
-							alignItems: "center",
-							gap: 0.5,
-							flexShrink: 0,
-							fontSize: { xs: "0.78rem", sm: "0.82rem", md: "0.86rem" },
-							fontWeight: 700,
-							letterSpacing: "0.01em",
-							whiteSpace: "nowrap",
-							ml: { md: 0.5 },
-						}}
-					>
-						<Box component="span" sx={{ borderBottom: `1.5px solid ${alpha("#fff", 0.7)}`, pb: "1px" }}>
-							Aprovechar promo
+							<Box className="banner-arrow" component="span" sx={{ display: "inline-flex", transition: "transform 0.2s ease" }}>
+								<ArrowRight size={14} color="#fff" />
+							</Box>
 						</Box>
-						<Box className="banner-arrow" component="span" sx={{ display: "inline-flex", transition: "transform 0.2s ease" }}>
-							<ArrowRight size={14} color="#fff" />
-						</Box>
-					</Box>
 
-					{/* Cierre suave: colapsa la strip y se recuerda por sesión. */}
-					<IconButton
-						size="small"
-						aria-label="Cerrar promoción"
-						onClick={handlePromoDismiss}
-						sx={{
-							position: "absolute",
-							right: { xs: 4, md: 8 },
-							top: "50%",
-							transform: "translateY(-50%)",
-							color: alpha("#fff", 0.8),
-							"&:hover": { color: "#fff", bgcolor: alpha("#fff", 0.12) },
-						}}
-					>
-						<CloseCircle size={18} />
-					</IconButton>
-				</Box>
+						{/* Cierre suave: colapsa la strip y se recuerda por sesión. */}
+						<IconButton
+							size="small"
+							aria-label="Cerrar promoción"
+							onClick={handlePromoDismiss}
+							sx={{
+								position: "absolute",
+								right: { xs: 4, md: 8 },
+								top: "50%",
+								transform: "translateY(-50%)",
+								color: alpha("#fff", 0.8),
+								"&:hover": { color: "#fff", bgcolor: alpha("#fff", 0.12) },
+							}}
+						>
+							<CloseCircle size={18} />
+						</IconButton>
+					</Box>
 				</Collapse>
 			)}
 
@@ -486,8 +494,8 @@ const MovementDocPublicPage = () => {
 									</Typography>
 								) : (
 									<Alert severity="info" sx={{ textAlign: "left" }}>
-										Este movimiento no tiene texto adicional — el detalle completo es el que figura arriba. Podés gestionarlo desde
-										tu causa en Law Analytics.
+										Este movimiento no tiene texto adicional — el detalle completo es el que figura arriba. Podés gestionarlo desde tu causa
+										en Law Analytics.
 									</Alert>
 								)}
 

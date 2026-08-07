@@ -54,12 +54,7 @@ import Logo from "components/logo";
 import OauthClientBanner from "sections/oauth/OauthClientBanner";
 import axiosInstance from "utils/axios";
 import { useOauthLoginContext } from "hooks/useOauthLoginContext";
-import {
-	trackOauthLoginError,
-	trackOauthLoginSubmit,
-	trackOauthLoginSuccess,
-	trackOauthLoginView,
-} from "utils/gtm";
+import { trackOauthLoginError, trackOauthLoginSubmit, trackOauthLoginSuccess, trackOauthLoginView } from "utils/gtm";
 
 // assets
 import { Eye, EyeSlash } from "iconsax-react";
@@ -195,7 +190,7 @@ const OauthLoginPage = () => {
 
 				<Grid container spacing={3}>
 					<Grid item xs={12} sx={{ textAlign: "center" }}>
-						<Logo />
+						<Logo animation="letters" />
 					</Grid>
 
 					<Grid item xs={12}>
@@ -296,9 +291,7 @@ const OauthLoginPage = () => {
 														</InputAdornment>
 													}
 												/>
-												{touched.password && errors.password && (
-													<FormHelperText error>{errors.password}</FormHelperText>
-												)}
+												{touched.password && errors.password && <FormHelperText error>{errors.password}</FormHelperText>}
 											</Stack>
 										</Grid>
 
