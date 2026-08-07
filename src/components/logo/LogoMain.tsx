@@ -110,7 +110,7 @@ const LogoMain = ({ reverse, animation, ...others }: Props) => {
 
 	return (
 		<Stack>
-			<AnimatedSvg play={play} width={200} height={50} viewBox={FULL_VIEWBOX} role="img" aria-label="Law Analytics">
+			<AnimatedSvg play={play} width={172} height={50} viewBox={FULL_VIEWBOX} role="img" aria-label="Law Analytics">
 				<g fill={fill}>
 					<g transform={`scale(${ICON_SCALE})`}>
 						<mask id={maskId}>
@@ -129,7 +129,13 @@ const LogoMain = ({ reverse, animation, ...others }: Props) => {
 						)}
 					</g>
 					{WORD_PATHS.map((d, i) => (
-						<path key={i} className="la-lt" style={play ? { animationDelay: `${letterDelay(play, i).toFixed(3)}s` } : undefined} d={d} />
+						<path
+							key={i}
+							className="la-lt"
+							fillRule="evenodd"
+							style={play ? { animationDelay: `${letterDelay(play, i).toFixed(3)}s` } : undefined}
+							d={d}
+						/>
 					))}
 				</g>
 			</AnimatedSvg>
