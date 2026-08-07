@@ -3,10 +3,12 @@ import { Link } from "react-router-dom";
 import { useGoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { useState } from "react";
 // material-ui
-import { Grid, Stack, Alert, Typography, Box, LinearProgress, Button, CircularProgress } from "@mui/material";
+import { Grid, Stack, Alert, Typography, Box, Button, CircularProgress } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
 // project-imports
 import Logo from "components/logo";
+import LogoDrawLoader from "components/logo/LogoDrawLoader";
 import useAuth from "hooks/useAuth";
 import AuthDivider from "sections/auth/AuthDivider";
 import AuthWrapper from "sections/auth/AuthWrapper";
@@ -108,18 +110,21 @@ const Login = () => {
 	return (
 		<AuthWrapper>
 			<Box sx={{ position: "relative" }}>
-				{/* Barra de progreso global */}
+				{/* Overlay de carga: logo con efecto trazo en loop */}
 				{isAnyLoading && (
 					<Box
 						sx={{
 							position: "absolute",
-							top: 0,
-							left: 0,
-							right: 0,
+							inset: 0,
 							zIndex: 1000,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: (theme) => alpha(theme.palette.background.paper, 0.94),
+							backdropFilter: "blur(2px)",
 						}}
 					>
-						<LinearProgress />
+						<LogoDrawLoader caption="Iniciando sesión..." />
 					</Box>
 				)}
 
@@ -162,9 +167,7 @@ const Login = () => {
 						{reactivateCred ? (
 							<Alert severity="warning" sx={{ "& .MuiAlert-message": { width: "100%" } }}>
 								<Stack spacing={1.25}>
-									<Typography variant="body2">
-										Tu cuenta está desactivada. ¿Querés reactivarla y volver a ingresar?
-									</Typography>
+									<Typography variant="body2">Tu cuenta está desactivada. ¿Querés reactivarla y volver a ingresar?</Typography>
 									<Stack direction="row" spacing={1}>
 										<Button
 											variant="contained"
