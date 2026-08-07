@@ -43,9 +43,11 @@ import { Eye, EyeSlash, Sms, Lock } from "iconsax-react";
 interface AuthRegisterProps {
 	source?: string;
 	feature?: string;
+	/** Notifica al padre cuando el submit de email está en curso (para overlays de carga). */
+	onLoadingChange?: (loading: boolean) => void;
 }
 
-const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
+const AuthRegister = ({ source, feature, onLoadingChange }: AuthRegisterProps) => {
 	const { register } = useAuth();
 	const scriptedRef = useScriptRef();
 	// La navegación se hará con window.location.href
@@ -89,6 +91,7 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
 					trackRegisterFormSubmit("email", source, feature);
+					onLoadingChange?.(true);
 					try {
 						await register(values.email, values.password);
 						if (scriptedRef.current) {
@@ -123,6 +126,7 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 							}, 500);
 						}
 					} catch (err: any) {
+						onLoadingChange?.(false);
 						const apiMessage = err?.response?.data?.message;
 						const errorType = err?.response?.status ? `api_${err.response.status}` : "api_network";
 						trackRegisterFormError(errorType, apiMessage, source);

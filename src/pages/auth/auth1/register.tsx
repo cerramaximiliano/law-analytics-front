@@ -14,6 +14,7 @@ import { MagicStar, TickCircle } from "iconsax-react";
 
 // project-imports
 import Logo from "components/logo";
+import LogoDrawLoader from "components/logo/LogoDrawLoader";
 import useAuth from "hooks/useAuth";
 import AuthDivider from "sections/auth/AuthDivider";
 import AuthWrapper from "sections/auth/AuthWrapper";
@@ -239,12 +240,7 @@ const FeatureContextPanel: React.FC<FeatureContextPanelProps> = ({ content, curr
 								? "0 4px 14px rgba(35, 45, 79, 0.32), 0 2px 6px rgba(0, 0, 0, 0.12)"
 								: "0 4px 14px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06)";
 							return (
-								<Stack
-									key={integration.name}
-									alignItems="center"
-									spacing={0.875}
-									sx={{ width: 64 }}
-								>
+								<Stack key={integration.name} alignItems="center" spacing={0.875} sx={{ width: 64 }}>
 									<Box
 										sx={{
 											width: 52,
@@ -376,6 +372,8 @@ const Register = () => {
 	const { loginWithGoogle } = useAuth();
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [isEmailLoading, setIsEmailLoading] = useState<boolean>(false);
+	const isAnyLoading = isLoading || isEmailLoading;
 	const location = useLocation();
 
 	const isMaintenanceMode = env.MAINTENANCE_MODE === "true";
@@ -535,7 +533,24 @@ const Register = () => {
 									}}
 									content={false}
 								>
-									<Box sx={{ p: { xs: 3, sm: 3.5, md: 4 } }}>
+									<Box sx={{ p: { xs: 3, sm: 3.5, md: 4 }, position: "relative" }}>
+										{/* Overlay de carga: logo con efecto trazo en loop */}
+										{isAnyLoading && (
+											<Box
+												sx={{
+													position: "absolute",
+													inset: 0,
+													zIndex: 1000,
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													bgcolor: alpha(theme.palette.background.paper, 0.94),
+													backdropFilter: "blur(2px)",
+												}}
+											>
+												<LogoDrawLoader caption="Creando tu cuenta..." />
+											</Box>
+										)}
 										<Stack spacing={2.5}>
 											<Box sx={{ textAlign: "center" }}>
 												<Logo to="/" animation="draw" />
@@ -706,7 +721,7 @@ const Register = () => {
 												animate={{ opacity: 1, translateY: 0 }}
 												transition={{ ...SPRING, delay: 0.4 }}
 											>
-												<AuthRegister source={source} feature={feature} />
+												<AuthRegister source={source} feature={feature} onLoadingChange={setIsEmailLoading} />
 											</motion.div>
 										</Stack>
 									</Box>
