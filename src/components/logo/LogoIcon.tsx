@@ -3,7 +3,7 @@ import React, { useId } from "react";
 import { Stack } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
-import { COLUMN_OFFSETS, COLUMN_PATH, ICON_SIZE, ICON_VIEWBOX, LOGO_COLOR_DARK, LOGO_COLOR_LIGHT } from "./logoPaths";
+import { COLUMN_OFFSETS, COLUMN_PATH, ICON_PATH, ICON_SIZE, ICON_VIEWBOX, LOGO_COLOR_DARK, LOGO_COLOR_LIGHT } from "./logoPaths";
 import { ThemeMode } from "types/config";
 
 // ==============================|| LOGO ICON ||============================== //
@@ -30,6 +30,9 @@ const LogoIcon = () => {
 					mask={`url(#${maskId})`}
 					fill={isDark ? LOGO_COLOR_DARK : LOGO_COLOR_LIGHT}
 				/>
+				<g fill="none" stroke={theme.palette.primary.main} strokeWidth={18}>
+					<path className="la-hover-trace" pathLength={1} d={ICON_PATH} />
+				</g>
 			</svg>
 		</Stack>
 	);

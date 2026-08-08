@@ -122,6 +122,9 @@ const LogoMain = ({ reverse, animation, ...others }: Props) => {
 							))}
 						</mask>
 						<rect className="la-sq" width={ICON_SIZE.width} height={ICON_SIZE.height} rx={ICON_SIZE.radius} mask={`url(#${maskId})`} />
+						<g fill="none" stroke={theme.palette.primary.main} strokeWidth={18}>
+							<path className="la-hover-trace" pathLength={1} d={ICON_PATH} />
+						</g>
 						{play === "draw" && (
 							<g className="la-draw" fill="none" stroke={fill} strokeWidth={8}>
 								<path pathLength={1} d={ICON_PATH} />
