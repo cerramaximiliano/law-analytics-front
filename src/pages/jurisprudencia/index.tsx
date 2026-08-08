@@ -213,7 +213,7 @@ const JurisprudenciaPage = () => {
 								textWrap: "pretty",
 							}}
 						>
-							Sentencias recientes de {justiciaLabel} con un resumen claro generado con inteligencia artificial por Law Analytics.
+							Sentencias recientes de {justiciaLabel} con un resumen claro generado con inteligencia artificial por Law||Analytics.
 						</Typography>
 						{total > 0 && (
 							<Typography
@@ -538,7 +538,7 @@ const JurisprudenciaPage = () => {
 										¿Querés seguir tus propias causas así de fácil?
 									</Typography>
 									<Typography sx={{ fontSize: "0.9rem", color: theme.palette.text.secondary, lineHeight: 1.55, maxWidth: 520 }}>
-										Law Analytics sincroniza tus expedientes con el Poder Judicial y te avisa de cada movimiento, con resúmenes y
+										Law||Analytics sincroniza tus expedientes con el Poder Judicial y te avisa de cada movimiento, con resúmenes y
 										herramientas para tu estudio.
 									</Typography>
 								</Box>

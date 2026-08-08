@@ -129,7 +129,7 @@ const STEPS: Step[] = [
 	{
 		num: 4,
 		title: "Autorizá la conexión con tu cuenta",
-		body: "Claude.ai te va a redirigir a lawanalytics.app/oauth/login. Loguéate con tu cuenta habitual, revisá los permisos en la pantalla de consent, y aceptá. Listo: las 12 tools de Law Analytics quedan disponibles en cualquier chat de Claude.",
+		body: "Claude.ai te va a redirigir a lawanalytics.app/oauth/login. Loguéate con tu cuenta habitual, revisá los permisos en la pantalla de consent, y aceptá. Listo: las 12 tools de Law||Analytics quedan disponibles en cualquier chat de Claude.",
 	},
 ];
 
@@ -193,10 +193,10 @@ const ClaudeAiLandingPage = () => {
 
 	// Title dinámico: menciona los AI activos por nombre.
 	const heroTitle = bothAiEnabled
-		? "Conectá Claude.ai y ChatGPT a tu cuenta de Law Analytics"
+		? "Conectá Claude.ai y ChatGPT a tu cuenta de Law||Analytics"
 		: claudeAiEnabled
-			? "Conectá Claude.ai a tu cuenta de Law Analytics"
-			: "Conectá ChatGPT a tu cuenta de Law Analytics";
+			? "Conectá Claude.ai a tu cuenta de Law||Analytics"
+			: "Conectá ChatGPT a tu cuenta de Law||Analytics";
 
 	// CTA label: cuando ambos AI están enabled hablamos genérico.
 	const heroCtaLabel = anyBeta
@@ -453,7 +453,7 @@ const ClaudeAiLandingPage = () => {
 									Revocable al instante
 								</Typography>
 								<Typography variant="body2" color="text.secondary">
-									Cancelás desde Claude.ai o desde tu cuenta de Law Analytics.
+									Cancelás desde Claude.ai o desde tu cuenta de Law||Analytics.
 								</Typography>
 							</Stack>
 						</Grid>

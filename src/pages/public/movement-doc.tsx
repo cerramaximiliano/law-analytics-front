@@ -495,7 +495,7 @@ const MovementDocPublicPage = () => {
 								) : (
 									<Alert severity="info" sx={{ textAlign: "left" }}>
 										Este movimiento no tiene texto adicional — el detalle completo es el que figura arriba. Podés gestionarlo desde tu causa
-										en Law Analytics.
+										en Law||Analytics.
 									</Alert>
 								)}
 
@@ -635,7 +635,7 @@ const MovementDocPublicPage = () => {
 						</Stack>
 					) : (
 						<Typography variant="caption" color="text.secondary" sx={{ display: { xs: "none", sm: "block" } }}>
-							Documento del Poder Judicial · vista pública de Law Analytics
+							Documento del Poder Judicial · vista pública de Law||Analytics
 						</Typography>
 					)}
 					<Stack direction="row" spacing={1} justifyContent={{ xs: "space-between", sm: "flex-end" }}>

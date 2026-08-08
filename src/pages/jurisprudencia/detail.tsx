@@ -252,7 +252,7 @@ const JurisprudenciaDetailPage = () => {
 										<InfoCircle size={16} color={BRAND_BLUE} />
 									</Box>
 									<Typography sx={{ fontSize: "0.78rem", color: theme.palette.text.secondary, lineHeight: 1.5 }}>
-										Resumen generado con inteligencia artificial por Law Analytics sobre el texto del fallo. No reemplaza la lectura de la
+										Resumen generado con inteligencia artificial por Law||Analytics sobre el texto del fallo. No reemplaza la lectura de la
 										sentencia completa.
 									</Typography>
 								</Stack>

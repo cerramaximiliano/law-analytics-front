@@ -227,7 +227,7 @@ const FAQS: Faq[] = [
 	{
 		id: "int1",
 		category: "integraciones",
-		question: "¿Puedo conectar Law Analytics a Claude.ai o ChatGPT?",
+		question: "¿Puedo conectar Law||Analytics a Claude.ai o ChatGPT?",
 		answer:
 			"Sí. Tenemos un conector MCP (Model Context Protocol) que te permite pedirle a Claude.ai o ChatGPT que busquen tus expedientes, resuman movimientos, consulten jurisprudencia y más, directamente desde cualquier chat con tu cuenta. Pedí acceso en /integraciones/conectores-ai.",
 	},
@@ -243,7 +243,7 @@ const FAQS: Faq[] = [
 		category: "integraciones",
 		question: "¿Qué necesito para conectarlo?",
 		answer:
-			"(1) Una cuenta activa en Law Analytics con plan Estándar, Pro o Premium + addon MCP Access (durante la beta el acceso es manual sin addon). (2) Un plan Pro o Team de Claude.ai (los planes Free no soportan custom connectors). Después en Claude.ai → Settings → Connectors → Add custom connector, pegás https://mcp.lawanalytics.app y autorizás.",
+			"(1) Una cuenta activa en Law||Analytics con plan Estándar, Pro o Premium + addon MCP Access (durante la beta el acceso es manual sin addon). (2) Un plan Pro o Team de Claude.ai (los planes Free no soportan custom connectors). Después en Claude.ai → Settings → Connectors → Add custom connector, pegás https://mcp.lawanalytics.app y autorizás.",
 	},
 	{
 		id: "int4",
@@ -257,7 +257,7 @@ const FAQS: Faq[] = [
 		category: "integraciones",
 		question: "¿Cómo revoco el acceso si quiero desconectarlo?",
 		answer:
-			"Dos formas: (1) En Claude.ai → Settings → Connectors → Law Analytics → Disconnect. (2) En tu cuenta de Law Analytics → Configuración → Apps conectadas → Desconectar. Cualquiera de las dos revoca el token al instante.",
+			"Dos formas: (1) En Claude.ai → Settings → Connectors → Law Analytics → Disconnect. (2) En tu cuenta de Law||Analytics → Configuración → Apps conectadas → Desconectar. Cualquiera de las dos revoca el token al instante.",
 	},
 	{
 		id: "int6",

@@ -192,7 +192,7 @@ const ContactUsPage = () => {
 								textWrap: "pretty",
 							}}
 						>
-							Novedades sobre integraciones, cambios normativos y mejoras de LawAnalytics. Mensual. 0 spam.
+							Novedades sobre integraciones, cambios normativos y mejoras de Law||Analytics. Mensual. 0 spam.
 						</Typography>
 
 						{/* Form — input + botón overlay derecha. max-width 480 para que respire centrado. */}

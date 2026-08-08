@@ -129,7 +129,7 @@ const STEPS: Step[] = [
 	{
 		num: 4,
 		title: "Autorizá la conexión con tu cuenta",
-		body: "ChatGPT te va a redirigir a lawanalytics.app/oauth/login. Loguéate con tu cuenta habitual, revisá los permisos en la pantalla de consent, y aceptá. Listo: las 12 tools de Law Analytics quedan disponibles en cualquier chat de ChatGPT.",
+		body: "ChatGPT te va a redirigir a lawanalytics.app/oauth/login. Loguéate con tu cuenta habitual, revisá los permisos en la pantalla de consent, y aceptá. Listo: las 12 tools de Law||Analytics quedan disponibles en cualquier chat de ChatGPT.",
 	},
 ];
 
@@ -165,7 +165,7 @@ const FAQ: FaqItem[] = [
 	},
 	{
 		q: "¿Tiene costo extra del lado de lawanalytics.app?",
-		a: "Es un add-on opcional sobre planes Estándar, Pro y Premium de Law Analytics. Lo agregás desde la página de planes — Stripe prorratea automáticamente sobre tu ciclo de billing. Lo podés cancelar cuando quieras.",
+		a: "Es un add-on opcional sobre planes Estándar, Pro y Premium de Law||Analytics. Lo agregás desde la página de planes — Stripe prorratea automáticamente sobre tu ciclo de billing. Lo podés cancelar cuando quieras.",
 	},
 	{
 		q: "Conecté pero ChatGPT no encuentra las herramientas",
@@ -187,7 +187,7 @@ const ChatGptLandingPage = () => {
 	// Esta página es ChatGPT-only: si chatGpt está deshabilitado, mostramos
 	// "no disponible" (no derivamos hacia conectores-ai porque el user vino
 	// con interés específico en ChatGPT).
-	const heroTitle = "Conectá ChatGPT a tu cuenta de Law Analytics";
+	const heroTitle = "Conectá ChatGPT a tu cuenta de Law||Analytics";
 	const heroCtaLabel = isBeta ? "Solicitar acceso beta" : "Conectar ChatGPT";
 
 	const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -428,7 +428,7 @@ const ChatGptLandingPage = () => {
 									Revocable al instante
 								</Typography>
 								<Typography variant="body2" color="text.secondary">
-									Cancelás desde Claude.ai o desde tu cuenta de Law Analytics.
+									Cancelás desde Claude.ai o desde tu cuenta de Law||Analytics.
 								</Typography>
 							</Stack>
 						</Grid>

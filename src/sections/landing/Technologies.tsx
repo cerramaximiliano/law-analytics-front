@@ -730,7 +730,7 @@ const TechnologiesPage = () => {
 									color: isDark ? theme.palette.grey[100] : theme.palette.grey[900],
 								}}
 							>
-								Probá LawAnalytics gratis y dejá de trabajar a mano.
+								Probá Law||Analytics gratis y dejá de trabajar a mano.
 							</Typography>
 							<Button
 								component={RouterLink}
