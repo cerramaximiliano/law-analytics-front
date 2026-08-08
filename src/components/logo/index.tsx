@@ -22,25 +22,19 @@ interface Props {
 	animation?: LogoAnimation;
 }
 
-// Micro-interacción "mini-trazo": al hacer hover sobre el logo, el contorno del
-// isotipo se redibuja rápido por encima del relleno y se desvanece — la misma
-// identidad del efecto trazo de login y las vistas públicas, en dosis chica.
-// El overlay .la-hover-trace vive en LogoMain/LogoIcon (invisible por defecto).
-const hoverTrace = keyframes`
-	0% { stroke-dashoffset: 1; opacity: 1; }
-	70% { stroke-dashoffset: 0; opacity: 1; }
-	100% { stroke-dashoffset: 0; opacity: 0; }
+// Micro-interacción "destello": al hacer hover, una banda de luz diagonal barre el
+// isotipo una vez, como un reflejo. La banda (.la-shine) vive dentro de la máscara
+// del ícono en LogoMain/LogoIcon, así el brillo respeta el recorte de las columnas.
+const shineSweep = keyframes`
+	0% { transform: translateX(0); opacity: 1; }
+	100% { transform: translateX(700px); opacity: 1; }
 `;
 
 const hoverSx: SxProps = {
-	"& .la-hover-trace": {
-		strokeDasharray: 1,
-		strokeDashoffset: 1,
-		opacity: 0,
-	},
+	"& .la-shine": { opacity: 0 },
 	"@media (hover: hover) and (prefers-reduced-motion: no-preference)": {
-		"&:hover .la-hover-trace": {
-			animation: `${hoverTrace} 0.55s ease-out`,
+		"&:hover .la-shine": {
+			animation: `${shineSweep} 0.7s ease`,
 		},
 	},
 };

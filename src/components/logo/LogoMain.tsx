@@ -98,7 +98,10 @@ const LogoMain = ({ reverse, animation, ...others }: Props) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === ThemeMode.DARK;
 	const fill = isDark ? LOGO_COLOR_DARK : LOGO_COLOR_LIGHT;
-	const maskId = `la-logo-mask-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+	const shineColor = isDark ? LOGO_COLOR_LIGHT : "#FFFFFF";
+	const uid = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+	const maskId = `la-logo-mask-${uid}`;
+	const shineId = `la-logo-shine-${uid}`;
 
 	const [play] = useState<LogoAnimation | undefined>(() => {
 		if (!animation || typeof window === "undefined") return undefined;
@@ -113,6 +116,11 @@ const LogoMain = ({ reverse, animation, ...others }: Props) => {
 			<AnimatedSvg play={play} width={172} height={50} viewBox={FULL_VIEWBOX} role="img" aria-label="Law Analytics">
 				<g fill={fill}>
 					<g transform={`scale(${ICON_SCALE})`}>
+						<linearGradient id={shineId} x1="0" y1="0" x2="1" y2="0">
+							<stop offset="0" stopColor={shineColor} stopOpacity="0" />
+							<stop offset="0.5" stopColor={shineColor} stopOpacity={isDark ? 0.3 : 0.5} />
+							<stop offset="1" stopColor={shineColor} stopOpacity="0" />
+						</linearGradient>
 						<mask id={maskId}>
 							<rect width={ICON_SIZE.width} height={ICON_SIZE.height} fill="#fff" />
 							{COLUMN_OFFSETS.map((x, i) => (
@@ -121,9 +129,11 @@ const LogoMain = ({ reverse, animation, ...others }: Props) => {
 								</g>
 							))}
 						</mask>
-						<rect className="la-sq" width={ICON_SIZE.width} height={ICON_SIZE.height} rx={ICON_SIZE.radius} mask={`url(#${maskId})`} />
-						<g fill="none" stroke={theme.palette.primary.main} strokeWidth={18}>
-							<path className="la-hover-trace" pathLength={1} d={ICON_PATH} />
+						<g mask={`url(#${maskId})`}>
+							<rect className="la-sq" width={ICON_SIZE.width} height={ICON_SIZE.height} rx={ICON_SIZE.radius} />
+							<g transform="skewX(-18)">
+								<rect className="la-shine" x={-180} y={-60} width={150} height={600} fill={`url(#${shineId})`} />
+							</g>
 						</g>
 						{play === "draw" && (
 							<g className="la-draw" fill="none" stroke={fill} strokeWidth={8}>
