@@ -9,6 +9,7 @@ import {
 	Clock,
 	CloseCircle,
 	InfoCircle,
+	Lock1,
 	MessageQuestion,
 	Refresh,
 	SearchNormal1,
@@ -29,7 +30,7 @@ import AlertFolderDelete from "./AlertFolderDelete";
 import CausaSelector from "./CausaSelector";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 
-export type VerificationGate = "pending" | "pending_selection" | "failed" | "invalid";
+export type VerificationGate = "pending" | "pending_selection" | "failed" | "invalid" | "reserved" | "reserved_revoked";
 
 interface PendingVerificationViewProps {
 	folder: any;
@@ -83,6 +84,22 @@ const gateMeta: Record<
 		toneColor: "red",
 		icon: Warning2,
 	},
+	reserved: {
+		label: "Causa reservada",
+		title: "El tribunal reservó este expediente",
+		description:
+			"La consulta pública de esta causa está restringida por el tribunal. El expediente existe y sus movimientos se sincronizan, pero solo pueden verlos los usuarios que la tengan asignada en su credencial del Poder Judicial. Vinculá tu credencial PJN para acceder.",
+		toneColor: "blue",
+		icon: Lock1,
+	},
+	reserved_revoked: {
+		label: "Acceso restringido",
+		title: "Tu credencial ya no accede a este expediente",
+		description:
+			"El tribunal reservó esta causa y ya no figura entre las asignadas a tu credencial del Poder Judicial. Si creés que es un error, verificá el estado de tu credencial o consultá en el tribunal; el acceso se restablece solo si la causa vuelve a aparecer en tu listado de Mis Causas.",
+		toneColor: "amber",
+		icon: Lock1,
+	},
 };
 
 const SUPPORT_SUBJECT = "Problema técnico";
@@ -100,8 +117,7 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 	const [reverifyError, setReverifyError] = useState<{ code?: string; message?: string } | null>(null);
 
 	const meta = gateMeta[gate];
-	const toneHex =
-		meta.toneColor === "amber" ? STALE_AMBER : meta.toneColor === "red" ? theme.palette.error.main : BRAND_BLUE;
+	const toneHex = meta.toneColor === "amber" ? STALE_AMBER : meta.toneColor === "red" ? theme.palette.error.main : BRAND_BLUE;
 	const StatusIcon = meta.icon;
 
 	// Estado de reverificación derivado del folder ----------------------------
@@ -359,9 +375,7 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 								>
 									{meta.title}
 								</Typography>
-								<Typography sx={{ fontSize: "0.8rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
-									{titleProvisoria}
-								</Typography>
+								<Typography sx={{ fontSize: "0.8rem", color: "text.secondary", letterSpacing: "-0.005em" }}>{titleProvisoria}</Typography>
 							</Stack>
 						</Stack>
 					</Box>
@@ -497,7 +511,41 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 							)}
 
 							{/* CTA principal según gate */}
-							{gate === "pending_selection" ? (
+							{gate === "reserved" || gate === "reserved_revoked" ? (
+								<>
+									{gate === "reserved" && (
+										<ActionCard
+											toneHex={BRAND_BLUE}
+											icon={<Lock1 size={18} variant="Bulk" color={BRAND_BLUE} />}
+											title="Vincular credencial PJN"
+											description="Conectá tu credencial del Poder Judicial (CUIL y contraseña del portal). Si la causa está asignada a tu cuenta, el acceso se habilita automáticamente en la próxima sincronización."
+											ctaLabel="Vincular credencial"
+											ctaLoading={false}
+											onClick={() => navigate("/apps/profiles/account/pjn")}
+											isDark={isDark}
+										/>
+									)}
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "flex-start",
+											gap: 0.875,
+											px: 1.25,
+											py: 1.25,
+											borderRadius: 1.25,
+											border: `1px dashed ${alpha(theme.palette.text.primary, isDark ? 0.18 : 0.14)}`,
+											bgcolor: alpha(theme.palette.text.primary, isDark ? 0.03 : 0.02),
+										}}
+									>
+										<InfoCircle size={14} variant="Bulk" color={theme.palette.text.secondary} style={{ marginTop: 2, flexShrink: 0 }} />
+										<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>
+											{gate === "reserved"
+												? "La reserva la dispone el tribunal, no Law Analytics. Mientras esté vigente, el contenido solo es accesible mediante una credencial autorizada."
+												: "El sistema revisa a diario si la causa reaparece en el listado de tu credencial; si vuelve, el acceso se restablece automáticamente."}
+										</Typography>
+									</Box>
+								</>
+							) : gate === "pending_selection" ? (
 								<ActionCard
 									toneHex={BRAND_BLUE}
 									icon={<SearchNormal1 size={18} variant="Bulk" color={BRAND_BLUE} />}
@@ -539,7 +587,9 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 											<Clock size={18} variant="Bulk" color={STALE_AMBER} />
 										</Box>
 										<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
-											<Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em", lineHeight: 1.3 }}>
+											<Typography
+												sx={{ fontSize: "0.82rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em", lineHeight: 1.3 }}
+											>
 												Esperando al worker
 											</Typography>
 											<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", lineHeight: 1.45, textWrap: "pretty" }}>
@@ -777,9 +827,7 @@ const ActionCard = ({ toneHex, icon, title, description, ctaLabel, ctaLoading, o
 				<Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em", lineHeight: 1.3 }}>
 					{title}
 				</Typography>
-				<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", lineHeight: 1.45, textWrap: "pretty" }}>
-					{description}
-				</Typography>
+				<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", lineHeight: 1.45, textWrap: "pretty" }}>{description}</Typography>
 			</Stack>
 			<Tooltip title={ctaLoading ? "Procesando…" : ""}>
 				<span>

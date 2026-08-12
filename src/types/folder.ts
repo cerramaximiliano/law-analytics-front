@@ -123,6 +123,10 @@ export type FolderData = {
 	 * usan este flag — el frontend lo ignora cuando source==='pjn-login'.
 	 */
 	causaIsPrivate?: boolean;
+	// Visibilidad por credencial de causas reservadas (solo folders de causas
+	// isPrivate:true): true = el usuario tiene credencial vigente que la cubre;
+	// false = gate 'reserved'; ausente = causa pública.
+	causaCredentialCovered?: boolean;
 	causaPrivateDetectedAt?: string;
 };
 

@@ -355,11 +355,14 @@ const Details = () => {
 	const isListRemovedMev = isMevFromMisCausas && folder?.listRemoved === true && folder?.listRemovedSource === "mev";
 	const isListRemovedScba = isScbaFromMisCausas && folder?.listRemoved === true && folder?.listRemovedSource === "scba";
 
-	// Causa PJN reservada (privacy-checker): solo aplica a causas individuales
-	// (source !== 'pjn-login'). Las pjn-login mantienen su ruta de acceso vía
-	// Mis Causas autenticado y no se les muestra este aviso aunque la causa
-	// figure como privada en el modelo.
-	const isPjnPrivateRestricted = folder?.pjn === true && folder?.causaIsPrivate === true && folder?.source !== "pjn-login";
+	// Causa PJN reservada — visibilidad por credencial (Fase D).
+	// causaCredentialCovered lo denormaliza pjn-mis-causas: true = este usuario
+	// tiene credencial vigente que cubre la causa; false = no (el gate 'reserved'
+	// bloquea el detalle); ausente = causa pública o flag aún no calculado —
+	// en ese caso se mantiene la inferencia legacy por folder.source.
+	const isPjnPrivateCovered = folder?.pjn === true && folder?.causaIsPrivate === true && folder?.causaCredentialCovered === true;
+	const isPjnPrivateRestricted =
+		folder?.pjn === true && folder?.causaIsPrivate === true && !isPjnPrivateCovered && folder?.source !== "pjn-login";
 
 	const isDark = theme.palette.mode === "dark";
 
@@ -387,7 +390,13 @@ const Details = () => {
 		if (folder?.pjn) {
 			const accent = isPjnPrivateRestricted ? theme.palette.error.main : isListRemovedPjn ? STALE_AMBER : LIVE_GREEN;
 			state = {
-				label: isPjnPrivateRestricted ? "PJN — Causa reservada" : isListRemovedPjn ? "PJN — Ya no en la lista" : "Vinculado con PJN",
+				label: isPjnPrivateRestricted
+					? "PJN — Causa reservada"
+					: isPjnPrivateCovered
+					? "PJN — Reservada (con acceso)"
+					: isListRemovedPjn
+					? "PJN — Ya no en la lista"
+					: "Vinculado con PJN",
 				accent,
 				icon:
 					isPjnPrivateRestricted || isListRemovedPjn ? (
@@ -397,6 +406,8 @@ const Details = () => {
 					),
 				tooltip: isPjnPrivateRestricted
 					? "Esta causa fue marcada como reservada — el tribunal restringió la consulta web pública. El sistema sigue verificando si vuelve a estar accesible."
+					: isPjnPrivateCovered
+					? "Causa reservada por el tribunal — accedés a sus movimientos a través de tu credencial PJN vinculada."
 					: isListRemovedPjn
 					? "Esta causa ya no aparece en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal."
 					: undefined,
@@ -564,6 +575,7 @@ const Details = () => {
 		isListRemovedMev,
 		isListRemovedScba,
 		isPjnPrivateRestricted,
+		isPjnPrivateCovered,
 		folder?.causaVerified,
 		folder?.causaIsValid,
 		handleOpenLinkJudicial,
@@ -619,6 +631,13 @@ const Details = () => {
 		if (!isAutoFolder) return null;
 
 		if (folder.causaAssociationStatus === "pending_selection") return "pending_selection";
+		// Causa reservada (Fase D): el backend ya niega el contenido (403
+		// CAUSA_RESERVED); acá mostramos el gate correcto. Prevalece sobre
+		// failed/invalid — los flags viejos pueden decir "inválida" pero el
+		// motivo real es la reserva del tribunal.
+		if (folder.pjn === true && folder.causaCredentialCovered === false) {
+			return folder.source === "pjn-login" ? "reserved_revoked" : "reserved";
+		}
 		if (folder.causaAssociationStatus === "failed") return "failed";
 		if (folder.causaVerified === true && folder.causaIsValid === false) return "invalid";
 		if (folder.causaVerified !== true) return "pending";
