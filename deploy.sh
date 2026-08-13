@@ -14,6 +14,11 @@ NC='\033[0m'
 # Parámetros
 SKIP_CHECKS=false
 PREVIEW_MODE=false
+# El swap del build es atómico (se compila en build_new y recién ahí se
+# reemplaza), así que la ventana de mantenimiento es redundante para el
+# 99% de los deploys: solo agrega minutos de app caída. Queda opcional
+# para cambios que sí la ameriten (migraciones, cortes de compatibilidad).
+MAINTENANCE=false
 
 # Parsear argumentos
 for arg in "$@"; do
@@ -26,12 +31,18 @@ for arg in "$@"; do
             PREVIEW_MODE=true
             shift
             ;;
+        --maintenance)
+            MAINTENANCE=true
+            shift
+            ;;
         --help)
             echo "Uso: ./deploy.sh [opciones]"
             echo ""
             echo "Opciones:"
             echo "  --skip-checks    Saltar verificaciones previas (NO RECOMENDADO)"
             echo "  --preview        Solo build y preview local (sin deploy)"
+            echo "  --maintenance    Mostrar página de mantenimiento durante el build"
+            echo "                   (por defecto NO: el swap del build ya es atómico)"
             echo "  --help           Mostrar esta ayuda"
             exit 0
             ;;
@@ -149,7 +160,7 @@ echo "VITE_APP_VERSION=${VERSION}" > .env.production.local
 echo -e "${GREEN}✓ Versión configurada${NC}"
 
 # 4. Activar modo mantenimiento (solo en servidor)
-if [ "$IS_SERVER" = true ]; then
+if [ "$IS_SERVER" = true ] && [ "$MAINTENANCE" = true ]; then
     echo -e "${YELLOW}4. Activando modo mantenimiento...${NC}"
     # Copiar maintenance.html sobre index.html del build actual para que nginx lo sirva
     # vía try_files mientras se construye la nueva versión
@@ -166,6 +177,12 @@ if [ "$IS_SERVER" = true ]; then
         sudo nginx -t &> /dev/null && sudo systemctl reload nginx
     fi
     echo -e "${GREEN}✓ Modo mantenimiento activo — usuarios ven maintenance.html${NC}"
+elif [ "$IS_SERVER" = true ]; then
+    # Servidor sin mantenimiento: NO se toca build/, que sigue sirviendo la
+    # versión actual hasta el swap atómico del paso 10.
+    echo -e "${YELLOW}4. Limpiando caches (sin cortar el servicio)...${NC}"
+    rm -rf node_modules/.vite/ node_modules/.cache/
+    echo -e "${GREEN}✓ Caches limpiados — el sitio sigue online durante el build${NC}"
 else
     echo -e "${YELLOW}4. Limpiando builds anteriores...${NC}"
     rm -rf build/ node_modules/.vite/ node_modules/.cache/
