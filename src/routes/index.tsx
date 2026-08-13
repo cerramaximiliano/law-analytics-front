@@ -6,6 +6,7 @@ import { useRoutes } from "react-router-dom";
 import CommonLayout from "layout/CommonLayout";
 import PublicLayout from "layout/PublicLayout";
 import Loadable from "components/Loadable";
+import EmailVisitTracker from "contexts/EmailVisitTracker";
 import LoginRoutes from "./LoginRoutes";
 import MainRoutes from "./MainRoutes";
 const MaintenanceError = Loadable(lazy(() => import("pages/maintenance/error/404")));
@@ -27,7 +28,7 @@ const MovementDocPublicPage = Loadable(lazy(() => import("pages/public/movement-
 // ==============================|| ROUTES RENDER ||============================== //
 
 export default function ThemeRoutes() {
-	return useRoutes([
+	const routes = useRoutes([
 		{
 			path: "/",
 			element: <CommonLayout layout="landing" />,
@@ -95,4 +96,10 @@ export default function ThemeRoutes() {
 			element: <MaintenanceError />,
 		},
 	]);
+	return (
+		<>
+			<EmailVisitTracker />
+			{routes}
+		</>
+	);
 }
