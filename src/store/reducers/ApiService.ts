@@ -132,6 +132,10 @@ export interface NotificationPreferences {
 			enabled: boolean;
 			mode: "scheduled" | "immediate";
 		};
+		/** Seguimiento postal (Correo Argentino): avisos inmediatos */
+		postalTracking?: {
+			enabled: boolean;
+		};
 	};
 	system: {
 		enabled: boolean;

@@ -79,6 +79,7 @@ const TabSettings = () => {
 			inactivity: true,
 			inactivitySettings: { ...defaultInactivitySettings },
 			judicialMovements: { enabled: true, mode: "scheduled" },
+			postalTracking: { enabled: true },
 		},
 		system: { enabled: true, alerts: true, news: true, userActivity: true },
 	});
@@ -183,6 +184,9 @@ const TabSettings = () => {
 					enabled: notifications?.user?.judicialMovements?.enabled ?? true,
 					mode: notifications?.user?.judicialMovements?.mode === "immediate" ? "immediate" : "scheduled",
 				},
+				postalTracking: {
+					enabled: notifications?.user?.postalTracking?.enabled ?? true,
+				},
 			},
 			system: {
 				enabled: notifications?.system?.enabled ?? true,
@@ -244,6 +248,9 @@ const TabSettings = () => {
 					judicialMovements: {
 						enabled: preferences.user?.judicialMovements?.enabled ?? true,
 						mode: preferences.user?.judicialMovements?.mode ?? "scheduled",
+					},
+					postalTracking: {
+						enabled: preferences.user?.postalTracking?.enabled ?? true,
 					},
 				},
 				system: {
@@ -320,6 +327,16 @@ const TabSettings = () => {
 			}
 		}
 		setChecked(newChecked);
+	};
+
+	const handlePostalTrackingToggle = () => {
+		setPreferences((prev) => ({
+			...prev,
+			user: {
+				...(prev.user as NotificationPreferences["user"]),
+				postalTracking: { enabled: !(prev.user?.postalTracking?.enabled ?? true) },
+			},
+		}));
 	};
 
 	const handleJudicialMovementsToggle = () => {
@@ -823,6 +840,24 @@ const TabSettings = () => {
 									</Typography>
 								</Box>
 							</Collapse>
+							{/* Seguimiento postal */}
+							<ListItem sx={subRowSx}>
+								<Box sx={{ flex: 1 }}>
+									<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+										Seguimiento postal
+									</Typography>
+									<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+										Avisos inmediatos ante cada novedad de tus envíos del Correo Argentino
+									</Typography>
+								</Box>
+								<Switch
+									size="small"
+									onChange={handlePostalTrackingToggle}
+									checked={preferences.user?.postalTracking?.enabled ?? true}
+									disabled={!userOptionsEnabled || !canEditSettings}
+									sx={switchSx}
+								/>
+							</ListItem>
 							{/* Calendario */}
 							<ListItem sx={subRowSx}>
 								<Typography sx={{ flex: 1, fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>
