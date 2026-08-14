@@ -127,6 +127,11 @@ export interface NotificationPreferences {
 		taskExpirationSettings?: NotificationSettings;
 		inactivity: boolean;
 		inactivitySettings?: InactivitySettings;
+		/** Movimientos judiciales: switch general + modo de entrega */
+		judicialMovements?: {
+			enabled: boolean;
+			mode: "scheduled" | "immediate";
+		};
 	};
 	system: {
 		enabled: boolean;

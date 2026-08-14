@@ -14,6 +14,9 @@ import {
 	FormControlLabel,
 	List,
 	ListItem,
+	Radio,
+	RadioGroup,
+	Chip,
 	Stack,
 	Switch,
 	TextField,
@@ -75,6 +78,7 @@ const TabSettings = () => {
 			taskExpirationSettings: { ...defaultSettings },
 			inactivity: true,
 			inactivitySettings: { ...defaultInactivitySettings },
+			judicialMovements: { enabled: true, mode: "scheduled" },
 		},
 		system: { enabled: true, alerts: true, news: true, userActivity: true },
 	});
@@ -175,6 +179,10 @@ const TabSettings = () => {
 				taskExpirationSettings: normalizeSettings(notifications?.user?.taskExpirationSettings),
 				inactivity: notifications?.user?.inactivity ?? true,
 				inactivitySettings: normalizeInactivitySettings(notifications?.user?.inactivitySettings),
+				judicialMovements: {
+					enabled: notifications?.user?.judicialMovements?.enabled ?? true,
+					mode: notifications?.user?.judicialMovements?.mode === "immediate" ? "immediate" : "scheduled",
+				},
 			},
 			system: {
 				enabled: notifications?.system?.enabled ?? true,
@@ -233,6 +241,10 @@ const TabSettings = () => {
 					taskExpirationSettings: preferences.user?.taskExpirationSettings ?? defaultSettings,
 					inactivity: preferences.user?.inactivity ?? false,
 					inactivitySettings: preferences.user?.inactivitySettings ?? defaultInactivitySettings,
+					judicialMovements: {
+						enabled: preferences.user?.judicialMovements?.enabled ?? true,
+						mode: preferences.user?.judicialMovements?.mode ?? "scheduled",
+					},
 				},
 				system: {
 					enabled: checked.includes("usn"),
@@ -308,6 +320,32 @@ const TabSettings = () => {
 			}
 		}
 		setChecked(newChecked);
+	};
+
+	const handleJudicialMovementsToggle = () => {
+		setPreferences((prev) => ({
+			...prev,
+			user: {
+				...(prev.user as NotificationPreferences["user"]),
+				judicialMovements: {
+					enabled: !(prev.user?.judicialMovements?.enabled ?? true),
+					mode: prev.user?.judicialMovements?.mode ?? "scheduled",
+				},
+			},
+		}));
+	};
+
+	const handleJudicialMovementsMode = (_e: React.ChangeEvent<HTMLInputElement>, value: string) => {
+		setPreferences((prev) => ({
+			...prev,
+			user: {
+				...(prev.user as NotificationPreferences["user"]),
+				judicialMovements: {
+					enabled: prev.user?.judicialMovements?.enabled ?? true,
+					mode: value === "immediate" ? "immediate" : "scheduled",
+				},
+			},
+		}));
 	};
 
 	const handleUserOptionToggle = (option: keyof NotificationPreferences["user"]) => () => {
@@ -718,6 +756,73 @@ const TabSettings = () => {
 					</AccordionSummary>
 					<AccordionDetails sx={{ p: 0 }}>
 						<List component="div" disablePadding>
+							{/* Movimientos judiciales */}
+							<ListItem sx={subRowSx}>
+								<Box sx={{ flex: 1 }}>
+									<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+										Movimientos judiciales
+									</Typography>
+									<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+										Cómo querés recibir los avisos de movimientos nuevos en tus causas
+									</Typography>
+								</Box>
+								<Switch
+									size="small"
+									onChange={handleJudicialMovementsToggle}
+									checked={preferences.user?.judicialMovements?.enabled ?? true}
+									disabled={!userOptionsEnabled || !canEditSettings}
+									sx={switchSx}
+								/>
+							</ListItem>
+							<Collapse in={preferences.user?.judicialMovements?.enabled ?? true} timeout="auto" unmountOnExit>
+								<Box sx={settingsBoxSx}>
+									<RadioGroup
+										value={preferences.user?.judicialMovements?.mode ?? "scheduled"}
+										onChange={handleJudicialMovementsMode}
+									>
+										<FormControlLabel
+											value="scheduled"
+											control={<Radio size="small" />}
+											disabled={!userOptionsEnabled || !canEditSettings}
+											sx={{ alignItems: "flex-start", mb: 1, mr: 0 }}
+											label={
+												<Box sx={{ pt: 0.4 }}>
+													<Stack direction="row" spacing={0.75} alignItems="center">
+														<Typography sx={{ fontSize: "0.8rem", fontWeight: 600, color: "text.primary" }}>
+															Resumen al final del día
+														</Typography>
+														<Chip label="Recomendado" size="small" variant="outlined" color="primary" sx={{ height: 18, fontSize: "0.62rem" }} />
+													</Stack>
+													<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
+														Un único email consolidado con todos los movimientos del día, alrededor de las 19 h. Todo junto, sin ruido.
+													</Typography>
+												</Box>
+											}
+										/>
+										<FormControlLabel
+											value="immediate"
+											control={<Radio size="small" />}
+											disabled={!userOptionsEnabled || !canEditSettings}
+											sx={{ alignItems: "flex-start", mr: 0 }}
+											label={
+												<Box sx={{ pt: 0.4 }}>
+													<Typography sx={{ fontSize: "0.8rem", fontWeight: 600, color: "text.primary" }}>
+														Notificaciones inmediatas
+													</Typography>
+													<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
+														Te avisamos apenas detectamos cada movimiento (en general dentro de los 30 minutos). Si tus causas tienen
+														mucha actividad, podés recibir varios emails por día.
+													</Typography>
+												</Box>
+											}
+										/>
+									</RadioGroup>
+									<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", mt: 1, fontStyle: "italic" }}>
+										Las cédulas y notificaciones electrónicas se envían siempre (aunque desactives los movimientos) y siguen el modo
+										que elijas.
+									</Typography>
+								</Box>
+							</Collapse>
 							{/* Calendario */}
 							<ListItem sx={subRowSx}>
 								<Typography sx={{ flex: 1, fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>
