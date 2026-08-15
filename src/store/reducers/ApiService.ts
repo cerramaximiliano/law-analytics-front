@@ -143,6 +143,18 @@ export interface NotificationPreferences {
 		news: boolean;
 		userActivity: boolean;
 	};
+	/**
+	 * Comunicaciones por EMAIL, por tipo. Distinto de `system`, que son avisos
+	 * dentro de la app: acá el usuario elige qué correos quiere recibir.
+	 * Todo arranca activo (es opt-out) y darse de baja de un tipo no afecta al
+	 * resto ni a la baja global de la lista.
+	 */
+	emailComunicaciones?: {
+		jurisprudencia?: boolean;
+		producto?: boolean;
+		promociones?: boolean;
+		recursos?: boolean;
+	};
 	otherCommunications?: boolean;
 	loginAlerts?: boolean;
 }

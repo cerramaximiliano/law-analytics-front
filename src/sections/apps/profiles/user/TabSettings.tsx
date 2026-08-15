@@ -194,6 +194,12 @@ const TabSettings = () => {
 				news: notifications?.system?.news ?? true,
 				userActivity: notifications?.system?.userActivity ?? true,
 			},
+			emailComunicaciones: {
+				jurisprudencia: notifications?.emailComunicaciones?.jurisprudencia ?? true,
+				producto: notifications?.emailComunicaciones?.producto ?? true,
+				promociones: notifications?.emailComunicaciones?.promociones ?? true,
+				recursos: notifications?.emailComunicaciones?.recursos ?? true,
+			},
 			otherCommunications: notifications?.otherCommunications,
 			loginAlerts: notifications?.loginAlerts,
 		};
@@ -258,6 +264,12 @@ const TabSettings = () => {
 					alerts: preferences.system?.alerts ?? false,
 					news: preferences.system?.news ?? false,
 					userActivity: preferences.system?.userActivity ?? false,
+				},
+				emailComunicaciones: {
+					jurisprudencia: preferences.emailComunicaciones?.jurisprudencia ?? true,
+					producto: preferences.emailComunicaciones?.producto ?? true,
+					promociones: preferences.emailComunicaciones?.promociones ?? true,
+					recursos: preferences.emailComunicaciones?.recursos ?? true,
 				},
 				loginAlerts: checked.includes("lc"),
 			};
@@ -454,6 +466,14 @@ const TabSettings = () => {
 				if (checked.indexOf("usn") !== -1) setChecked((current) => current.filter((item) => item !== "usn"));
 			}
 			return { ...prev, system: updatedSystem };
+		});
+	};
+
+	// Comunicaciones por email: un flag por tipo, independientes entre sí.
+	const handleEmailComunicacionToggle = (tipo: keyof NonNullable<NotificationPreferences["emailComunicaciones"]>) => () => {
+		setPreferences((prev) => {
+			const actual = prev.emailComunicaciones ?? {};
+			return { ...prev, emailComunicaciones: { ...actual, [tipo]: !(actual[tipo] ?? true) } };
 		});
 	};
 
@@ -1141,6 +1161,45 @@ const TabSettings = () => {
 									sx={switchSx}
 								/>
 							</ListItem>
+						</List>
+					</AccordionDetails>
+				</Accordion>
+
+				{/* ── Comunicaciones por email ────────────────────────────────── */}
+				<Accordion disableGutters elevation={0} square sx={accordionSx}>
+					<AccordionSummary expandIcon={<ArrowDown2 size={16} />} sx={accordionSummarySx}>
+						<Stack sx={{ flex: 1 }}>
+							<Typography sx={{ fontSize: "0.9rem", fontWeight: 600, letterSpacing: "-0.01em" }}>Correos que recibo</Typography>
+							<Typography sx={{ fontSize: "0.75rem", color: "text.secondary" }}>
+								Elegí qué comunicaciones querés recibir por email. Podés desactivar las que no te interesen sin darte de baja de
+								todo.
+							</Typography>
+						</Stack>
+					</AccordionSummary>
+					<AccordionDetails sx={{ p: 0 }}>
+						<List component="div" disablePadding>
+							{(
+								[
+									{ tipo: "jurisprudencia", label: "Novedades jurisprudenciales", desc: "Fallos nuevos con resumen, días hábiles" },
+									{ tipo: "producto", label: "Novedades de la plataforma", desc: "Funciones nuevas y mejoras" },
+									{ tipo: "promociones", label: "Promociones y descuentos", desc: "Ofertas sobre planes y complementos" },
+									{ tipo: "recursos", label: "Guías y recursos", desc: "Material de trabajo y plantillas" },
+								] as const
+							).map((item) => (
+								<ListItem key={item.tipo} sx={subRowSx}>
+									<Stack sx={{ flex: 1 }}>
+										<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>{item.label}</Typography>
+										<Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }}>{item.desc}</Typography>
+									</Stack>
+									<Switch
+										size="small"
+										onChange={handleEmailComunicacionToggle(item.tipo)}
+										checked={preferences.emailComunicaciones?.[item.tipo] ?? true}
+										disabled={!canEditSettings}
+										sx={switchSx}
+									/>
+								</ListItem>
+							))}
 						</List>
 					</AccordionDetails>
 				</Accordion>
