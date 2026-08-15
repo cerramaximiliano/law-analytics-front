@@ -131,9 +131,13 @@ if [ "$SKIP_CHECKS" = false ]; then
     fi
     echo -e "${GREEN}✓ Types verificados${NC}"
 
-    # 2.3 Linting
+    # 2.3 Linting — SIN --fix.
+    # `npm run lint` es `eslint --fix`: reescribe los archivos y deja el árbol
+    # sucio. En el servidor eso rompía el `git pull` del deploy siguiente
+    # ("local changes would be overwritten"), con 109 archivos modificados por
+    # puro reformateo. Acá solo se verifica.
     echo -e "${YELLOW}2.3. Verificando código con ESLint...${NC}"
-    npm run lint > /dev/null 2>&1
+    npx eslint . --ext .js,.jsx,.ts,.tsx > /dev/null 2>&1
     if [ $? -ne 0 ]; then
         echo -e "${YELLOW}⚠ Warnings de ESLint encontrados (no crítico)${NC}"
         # No fallar por warnings de lint
