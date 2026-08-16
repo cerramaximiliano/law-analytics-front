@@ -70,6 +70,12 @@ const googleCalendarSlice = createSlice({
 		setGoogleEvents: (state, action: PayloadAction<EventInput[]>) => {
 			state.googleEvents = action.payload;
 		},
+		// Hidrata la última sincronización conocida desde el backend
+		// (user.googleCalendarLastSync). Sin esto el estado arranca en null en cada
+		// load y la auto-sincronización periódica nunca se dispara.
+		setLastSyncTime: (state, action: PayloadAction<string | null>) => {
+			state.lastSyncTime = action.payload;
+		},
 		setSyncStats: (
 			state,
 			action: PayloadAction<{ created: number; updated: number; deleted: number; imported: EventInput[] | number }>,
@@ -88,8 +94,17 @@ const googleCalendarSlice = createSlice({
 	},
 });
 
-export const { setLoading, setSyncing, setSyncProgress, setConnected, setUserProfile, setGoogleEvents, setSyncStats, resetState } =
-	googleCalendarSlice.actions;
+export const {
+	setLoading,
+	setSyncing,
+	setSyncProgress,
+	setConnected,
+	setUserProfile,
+	setGoogleEvents,
+	setLastSyncTime,
+	setSyncStats,
+	resetState,
+} = googleCalendarSlice.actions;
 
 export default googleCalendarSlice.reducer;
 
@@ -546,6 +561,25 @@ export const fetchGoogleEvents = () => async () => {
 	}
 };
 
+// Marca una sincronización como realizada, en Redux y en el backend.
+// La usa la sincronización automática, que es de solo lectura (importa de Google
+// pero NO empuja eventos locales) y por eso no pasa por setSyncStats.
+export const markGoogleCalendarSynced = () => async (dispatch: any, getState: any) => {
+	const now = new Date().toISOString();
+	dispatch(setLastSyncTime(now));
+
+	const userId = getState().auth?.user?._id;
+	if (!userId) return;
+
+	try {
+		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
+		await axios.put(`${baseUrl}/api/users/${userId}/google-calendar-connection`, { lastSync: now }, { withCredentials: true });
+	} catch (error) {
+		// No es crítico: el peor caso es que la auto-sincronización se repita en el próximo load.
+		console.error("No se pudo persistir lastSync de Google Calendar:", error);
+	}
+};
+
 export const syncWithGoogleCalendar = (localEvents: Event[]) => async () => {
 	dispatch(setSyncing(true));
 
@@ -684,6 +718,10 @@ export const checkGoogleCalendarConnection = () => async (dispatch: any, getStat
 					imageUrl: imageUrl || "",
 				}),
 			);
+
+			// Traer la última sincronización persistida: es lo que habilita la
+			// auto-sincronización periódica en sesiones nuevas.
+			dispatch(setLastSyncTime(lastSync ? new Date(lastSync).toISOString() : null));
 
 			// Intentar reconexión silenciosa
 			try {

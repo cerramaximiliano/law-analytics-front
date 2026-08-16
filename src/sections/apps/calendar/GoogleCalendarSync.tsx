@@ -21,6 +21,7 @@ import {
 	disconnectGoogleCalendar,
 	syncWithGoogleCalendar,
 	fetchGoogleEvents,
+	markGoogleCalendarSynced,
 } from "store/reducers/googleCalendar";
 import { openSnackbar } from "store/reducers/snackbar";
 import { Event } from "types/events";
@@ -95,13 +96,13 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 
 			// Si han pasado 15 días o más, sincronizar automáticamente
 			if (daysDiff >= 15) {
-				console.log(`Han pasado ${daysDiff} días desde la última sincronización. Sincronizando automáticamente...`);
+				console.log(`Han pasado ${daysDiff} días desde la última sincronización. Importando automáticamente...`);
 
 				// Mostrar notificación de sincronización automática
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: `Sincronizando automáticamente con Google Calendar (${daysDiff} días desde última sincronización)...`,
+						message: `Importando eventos de Google Calendar (${daysDiff} días desde última sincronización)...`,
 						variant: "alert",
 						alert: {
 							color: "info",
@@ -110,8 +111,11 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 					}),
 				);
 
-				// Ejecutar sincronización
-				handleSync();
+				// Importación automática: SOLO trae eventos de Google. No empuja los
+				// eventos locales, porque tras semanas sin sincronizar eso significaría
+				// crear en masa en el calendario del usuario sin que lo haya pedido.
+				// El push sigue disponible en el botón "Sincronizar".
+				await handleAutoImport();
 			} else {
 				console.log(
 					`Han pasado ${daysDiff} días desde la última sincronización. Se sincronizará automáticamente en ${15 - daysDiff} días.`,
@@ -174,6 +178,17 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 			}
 		} catch (error) {
 			console.error("Error al obtener eventos:", error);
+		}
+	};
+
+	// Importación automática (solo lectura) + sello de sincronización, para que no
+	// se repita en cada montaje del componente.
+	const handleAutoImport = async () => {
+		try {
+			await handleFetchEvents();
+			await dispatch(markGoogleCalendarSynced());
+		} catch (error) {
+			console.error("Error en la importación automática:", error);
 		}
 	};
 
