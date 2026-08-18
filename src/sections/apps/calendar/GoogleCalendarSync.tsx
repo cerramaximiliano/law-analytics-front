@@ -24,6 +24,7 @@ import {
 	markGoogleCalendarSynced,
 } from "store/reducers/googleCalendar";
 import { openSnackbar } from "store/reducers/snackbar";
+import { getAutoSyncStatus, getAutoSyncAuthUrl, AutoSyncStatus } from "services/googleCalendarAutoSync";
 import { Event } from "types/events";
 import { PopupTransition } from "components/@extended/Transitions";
 import Avatar2 from "components/@extended/Avatar";
@@ -38,6 +39,70 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 	const { isConnected, isLoading, isSyncing, userProfile, lastSyncTime } = useSelector((state: any) => state.googleCalendar);
 	const [openDisconnectDialog, setOpenDisconnectDialog] = useState(false);
 	const [imageError, setImageError] = useState(false);
+	const [autoSync, setAutoSync] = useState<AutoSyncStatus | null>(null);
+	const [activatingAutoSync, setActivatingAutoSync] = useState(false);
+
+	// Estado de la sincronización server-side (cron). Es independiente de la
+	// conexión del navegador: vive de un refresh token guardado en el servidor.
+	const refreshAutoSyncStatus = React.useCallback(async () => {
+		try {
+			setAutoSync(await getAutoSyncStatus());
+		} catch (error) {
+			console.error("No se pudo obtener el estado de la sincronización automática:", error);
+		}
+	}, []);
+
+	useEffect(() => {
+		refreshAutoSyncStatus();
+	}, [refreshAutoSyncStatus]);
+
+	// Vuelta del consentimiento de Google (?gcalSync=ok|error)
+	useEffect(() => {
+		const params = new URLSearchParams(window.location.search);
+		const result = params.get("gcalSync");
+		if (!result) return;
+
+		dispatch(
+			openSnackbar({
+				open: true,
+				message:
+					result === "ok"
+						? "Sincronización automática activada. Tus eventos de Google se actualizarán solos."
+						: "No se pudo activar la sincronización automática. Intentá de nuevo.",
+				variant: "alert",
+				alert: { color: result === "ok" ? "success" : "error" },
+				close: true,
+			}),
+		);
+
+		if (result === "ok") refreshAutoSyncStatus();
+
+		// Limpiar la query para que el mensaje no se repita al refrescar.
+		params.delete("gcalSync");
+		params.delete("reason");
+		const qs = params.toString();
+		window.history.replaceState({}, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
+	}, [dispatch, refreshAutoSyncStatus]);
+
+	const handleActivateAutoSync = async () => {
+		setActivatingAutoSync(true);
+		try {
+			const url = await getAutoSyncAuthUrl(window.location.pathname);
+			window.location.href = url;
+		} catch (error) {
+			console.error("Error iniciando la autorización de sincronización automática:", error);
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "No se pudo iniciar la autorización con Google",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+			setActivatingAutoSync(false);
+		}
+	};
 
 	// Calcular si la sincronización está pendiente
 	const isSyncPending = (() => {
@@ -330,6 +395,54 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 								</IconButton>
 							</Tooltip>
 						</Stack>
+					</Stack>
+				)}
+
+				{/* Sincronización automática (server-side). Sólo se ofrece si el
+				    usuario ya conectó Google: pedir el consentimiento offline
+				    antes de eso sería un salto de contexto. */}
+				{isConnected && !autoSync?.syncEnabled && (
+					<Stack
+						direction="row"
+						spacing={1}
+						alignItems="center"
+						justifyContent="space-between"
+						sx={{ mt: 0.75, pt: 0.75, borderTop: "1px dashed", borderColor: "divider" }}
+					>
+						<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem", minWidth: 0 }}>
+							Tus eventos se actualizan sólo cuando abrís el calendario.
+						</Typography>
+						<Button
+							size="small"
+							variant="text"
+							onClick={handleActivateAutoSync}
+							disabled={activatingAutoSync}
+							startIcon={activatingAutoSync ? <CircularProgress size={12} /> : undefined}
+							sx={{ fontSize: "0.7rem", py: 0.25, whiteSpace: "nowrap", flexShrink: 0 }}
+						>
+							Activar sincronización automática
+						</Button>
+					</Stack>
+				)}
+
+				{isConnected && autoSync?.syncEnabled && (
+					<Stack
+						direction="row"
+						spacing={0.5}
+						alignItems="center"
+						sx={{ mt: 0.75, pt: 0.75, borderTop: "1px dashed", borderColor: "divider" }}
+					>
+						<Typography variant="caption" color="success.dark" sx={{ fontSize: "0.7rem" }}>
+							Sincronización automática activa
+							{autoSync.lastSyncAt
+								? ` — última: ${new Date(autoSync.lastSyncAt).toLocaleString("es-AR", {
+										day: "2-digit",
+										month: "2-digit",
+										hour: "2-digit",
+										minute: "2-digit",
+								  })}`
+								: " — primera corrida pendiente"}
+						</Typography>
 					</Stack>
 				)}
 			</Box>
