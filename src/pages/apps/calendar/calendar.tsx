@@ -1120,17 +1120,23 @@ const Calendar = () => {
 		const result = await dispatch(addBatchEvents(eventsToCreate, handleProgress));
 
 		// Mostrar mensaje de resultado final
-		const { successCount = 0, errorCount = 0 } = result;
+		const { successCount = 0, errorCount = 0, duplicatesCount = 0, createdCount } = result;
+		// Los ya existentes no son errores: el índice único los rechaza al
+		// reimportar un calendario que ya se había traído.
+		const nuevos = createdCount ?? Math.max(0, successCount - duplicatesCount);
 
 		if (successCount > 0 || errorCount > 0) {
 			let message = "";
 			let color: "success" | "warning" | "error" = "success";
 
-			if (successCount > 0 && errorCount === 0) {
-				message = `✓ Importación completada: ${successCount} evento(s) importado(s) exitosamente`;
+			if (errorCount === 0 && nuevos === 0 && duplicatesCount > 0) {
+				message = `Ya estaba todo sincronizado: ${duplicatesCount} evento(s) sin cambios`;
+				color = "success";
+			} else if (successCount > 0 && errorCount === 0) {
+				message = `✓ Importación completada: ${nuevos} evento(s) nuevo(s)${duplicatesCount > 0 ? `, ${duplicatesCount} ya estaban` : ""}`;
 				color = "success";
 			} else if (successCount > 0 && errorCount > 0) {
-				message = `Importación parcial: ${successCount} exitoso(s), ${errorCount} error(es)`;
+				message = `Importación parcial: ${nuevos} nuevo(s), ${errorCount} error(es)`;
 				color = "warning";
 			} else {
 				message = `Error en la importación: No se pudieron importar ${errorCount} evento(s)`;

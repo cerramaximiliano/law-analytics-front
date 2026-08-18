@@ -310,6 +310,7 @@ export const addBatchEvents = (events: Event[], onProgress?: (processed: number,
 	const MAX_RETRIES = 3;
 	let totalSuccessCount = 0;
 	let totalErrorCount = 0;
+	let totalDuplicatesCount = 0;
 	const allCreatedEvents: Event[] = [];
 
 	try {
@@ -338,13 +339,18 @@ export const addBatchEvents = (events: Event[], onProgress?: (processed: number,
 
 					if (response.data) {
 						const createdEvents = response.data.events || [];
-						const successCount = response.data.successCount || createdEvents.length;
-						const errorCount = response.data.errorCount || batch.length - successCount;
 						const duplicatesCount = response.data.duplicatesCount || 0;
+						// Los duplicados cuentan como éxito: el evento ya está en la base, que es
+						// el resultado buscado. El índice único {userId, googleCalendarId} los
+						// rechaza al reimportar, y contarlos como fallo mostraba un snackbar de
+						// error en cada sincronización de un calendario ya importado.
+						const successCount = response.data.successCount ?? createdEvents.length + duplicatesCount;
+						const errorCount = response.data.errorCount ?? Math.max(0, batch.length - successCount);
 
 						allCreatedEvents.push(...createdEvents);
 						totalSuccessCount += successCount;
 						totalErrorCount += errorCount;
+						totalDuplicatesCount += duplicatesCount;
 						batchProcessed = true;
 
 						// Log si hay duplicados (no son errores reales)
@@ -432,6 +438,8 @@ export const addBatchEvents = (events: Event[], onProgress?: (processed: number,
 			events: allCreatedEvents,
 			successCount: totalSuccessCount,
 			errorCount: totalErrorCount,
+			duplicatesCount: totalDuplicatesCount,
+			createdCount: allCreatedEvents.length,
 		};
 	} catch (error: any) {
 		console.error("Error general al agregar eventos en lote:", error);
