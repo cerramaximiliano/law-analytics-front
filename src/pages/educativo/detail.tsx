@@ -19,7 +19,7 @@ import { Box, Button, Card, CardActionArea, Container, Skeleton, Stack, Typograp
 import { motion } from "framer-motion";
 
 // icons
-import { ArrowLeft, ArrowRight, Judge } from "iconsax-react";
+import { ArrowLeft, ArrowRight } from "iconsax-react";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -32,6 +32,10 @@ import ArticleContent, { articleExcerpt } from "./ArticleContent";
 
 // Mantener en sync con sections/landing/Planes.tsx
 const BRAND_BLUE = "#3A7BFF";
+// Firma "Apuntes" de la serie educativa (misma que los posts de IG y que
+// ArticleContent): resaltador amarillo con tinta oscura.
+const EDU_RESALTADOR = "#FDE047";
+const EDU_TINTA = "#16203A";
 
 function formatFecha(fecha: string | null): string {
 	if (!fecha) return "";
@@ -299,21 +303,47 @@ const EducativoDetailPage = () => {
 							transition={{ type: "spring", stiffness: 150, damping: 30, delay: 0.05 }}
 						>
 							<Stack spacing={1.5} sx={{ mb: { xs: 3, md: 4 } }}>
-								<Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", rowGap: 0.75 }}>
-									<MetaPill accent>Blog educativo</MetaPill>
+								<Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap", rowGap: 0.75 }}>
+									{/* Banda de la serie: "Apuntes" resaltado, como en los posts */}
+									<Box sx={{ display: "inline-flex", alignItems: "center", px: 1, py: 0.35, backgroundColor: EDU_RESALTADOR }}>
+										<Typography
+											sx={{
+												fontSize: "0.65rem",
+												fontWeight: 700,
+												letterSpacing: "0.16em",
+												textTransform: "uppercase",
+												lineHeight: 1.2,
+												color: EDU_TINTA,
+											}}
+										>
+											Apuntes
+										</Typography>
+									</Box>
+									<MetaPill accent>Serie educativa</MetaPill>
 									{articulo.publicadoEn && <MetaPill>{formatFecha(articulo.publicadoEn)}</MetaPill>}
 								</Stack>
 								<Typography
 									variant="h1"
 									sx={{
 										fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2.125rem" },
-										lineHeight: 1.15,
+										lineHeight: 1.35,
 										letterSpacing: "-0.025em",
 										textWrap: "balance",
-										color: isDark ? theme.palette.grey[50] : theme.palette.grey[900],
 									}}
 								>
-									{articulo.titulo}
+									{/* Título con el resaltador de la serie, como la portada del carrusel */}
+									<Box
+										component="span"
+										sx={{
+											backgroundColor: EDU_RESALTADOR,
+											color: EDU_TINTA,
+											boxDecorationBreak: "clone",
+											WebkitBoxDecorationBreak: "clone",
+											padding: "0.08em 0.3em",
+										}}
+									>
+										{articulo.titulo}
+									</Box>
 								</Typography>
 								{articulo.resumen && (
 									<Typography sx={{ fontSize: "1rem", color: theme.palette.text.secondary, lineHeight: 1.55, textWrap: "pretty" }}>
@@ -344,6 +374,8 @@ const EducativoDetailPage = () => {
 							>
 								<Box sx={{ mb: { xs: 5, md: 6 } }}>
 									<Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2.5 }}>
+										{/* La firma § de la serie de jurisprudencia: conecta esta
+										    sección con la identidad de los carruseles de fallos */}
 										<Box
 											sx={{
 												width: 36,
@@ -357,7 +389,7 @@ const EducativoDetailPage = () => {
 												flexShrink: 0,
 											}}
 										>
-											<Judge size={18} variant="Bulk" color="currentColor" />
+											<Typography sx={{ fontSize: "1.15rem", fontWeight: 700, lineHeight: 1 }}>§</Typography>
 										</Box>
 										<Typography variant="h3" sx={{ fontSize: { xs: "1.15rem", md: "1.3rem" }, letterSpacing: "-0.015em" }}>
 											Jurisprudencia sobre el tema

@@ -131,12 +131,12 @@ const EducativoPage = () => {
 						animate={{ opacity: 1, translateY: 0 }}
 						transition={{ type: "spring", stiffness: 150, damping: 30 }}
 					>
-						<SectionEyebrow label="Blog educativo" align="center" mb={2.5} />
+						<SectionEyebrow label="Apuntes · Serie educativa" align="center" mb={2.5} />
 						<Typography
 							variant="h1"
 							sx={{
 								fontSize: { xs: "2rem", sm: "2.5rem", md: "3rem" },
-								lineHeight: 1.08,
+								lineHeight: 1.2,
 								letterSpacing: "-0.025em",
 								textWrap: "balance",
 								mb: 2,
@@ -144,7 +144,17 @@ const EducativoPage = () => {
 							}}
 						>
 							Aprendé lo que se aplica{" "}
-							<Box component="span" sx={{ color: BRAND_BLUE }}>
+							{/* Resaltador de la serie Apuntes: la misma marca amarilla de los posts */}
+							<Box
+								component="span"
+								sx={{
+									backgroundColor: "#FDE047",
+									color: "#16203A",
+									boxDecorationBreak: "clone",
+									WebkitBoxDecorationBreak: "clone",
+									padding: "0.06em 0.25em",
+								}}
+							>
 								en tribunales
 							</Box>
 						</Typography>

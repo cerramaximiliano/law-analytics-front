@@ -3,12 +3,22 @@
 // Extiende el enfoque de jurisprudencia/SummaryContent.tsx: en vez de sumar una
 // dependencia de markdown, se parsea el formato acotado que genera el backend —
 // headings "## " y "### ", listas "- ", negritas "**...**" y párrafos.
+//
+// Identidad "Apuntes" (la misma de los posts de IG de la serie educativa, ver
+// educativo-carrusel en la-marketing-service): margen de cuaderno a la
+// izquierda, numeración de secciones en el margen y resaltador amarillo en los
+// títulos ## — tinta oscura sobre amarillo, sea cual sea el modo del theme.
 
 import React from "react";
 
 // material-ui
 import { useTheme, alpha } from "@mui/material/styles";
-import { Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
+
+// Firma de la serie: mismo amarillo y tinta que la plantilla de los posts.
+const EDU_RESALTADOR = "#FDE047";
+const EDU_TINTA = "#16203A";
+const BRAND_BLUE = "#3A7BFF";
 
 type ArticleBlock =
 	| { type: "heading"; level: 2 | 3; text: string }
@@ -79,23 +89,65 @@ interface ArticleContentProps {
 const ArticleContent = ({ content }: ArticleContentProps) => {
 	const theme = useTheme();
 	const blocks = parseArticleBlocks(content);
+	// Numeración de apuntes: solo los ## llevan número en el margen.
+	let apunte = 0;
 	return (
-		<Stack spacing={2}>
+		<Stack
+			spacing={2}
+			sx={{
+				// Margen de cuaderno: la línea vertical de la serie.
+				borderLeft: `2px solid ${alpha(BRAND_BLUE, 0.28)}`,
+				pl: { xs: 2.5, md: 3.5 },
+			}}
+		>
 			{blocks.map((block, i) => {
 				if (block.type === "heading") {
+					if (block.level === 2) apunte += 1;
 					return (
-						<Typography
-							key={i}
-							sx={{
-								fontSize: block.level === 2 ? { xs: "1.15rem", md: "1.3rem" } : { xs: "1rem", md: "1.1rem" },
-								fontWeight: 600,
-								letterSpacing: "-0.01em",
-								lineHeight: 1.3,
-								mt: i === 0 ? 0 : 1.5,
-							}}
-						>
-							{block.text}
-						</Typography>
+						<Box key={i} sx={{ position: "relative", mt: i === 0 ? 0 : 1.5 }}>
+							{block.level === 2 && (
+								// Número de apunte EN el margen, como una anotación.
+								<Typography
+									aria-hidden
+									sx={{
+										position: "absolute",
+										left: { xs: -34, md: -46 },
+										top: 4,
+										fontSize: "0.72rem",
+										fontWeight: 600,
+										letterSpacing: "0.04em",
+										color: BRAND_BLUE,
+										fontVariantNumeric: "tabular-nums",
+										fontFamily: "ui-monospace, 'SF Mono', Menlo, Consolas, monospace",
+										display: { xs: "none", sm: "block" },
+									}}
+								>
+									{String(apunte).padStart(2, "0")}
+								</Typography>
+							)}
+							<Typography
+								component={block.level === 2 ? "h2" : "h3"}
+								sx={{
+									fontSize: block.level === 2 ? { xs: "1.15rem", md: "1.3rem" } : { xs: "1rem", md: "1.1rem" },
+									fontWeight: 600,
+									letterSpacing: "-0.01em",
+									lineHeight: 1.4,
+									m: 0,
+									...(block.level === 2 && {
+										// El resaltador de la serie: fondo amarillo con tinta
+										// oscura, cortado por línea como una marca real.
+										display: "inline",
+										backgroundColor: EDU_RESALTADOR,
+										color: EDU_TINTA,
+										boxDecorationBreak: "clone",
+										WebkitBoxDecorationBreak: "clone",
+										padding: "0.08em 0.3em",
+									}),
+								}}
+							>
+								{block.text}
+							</Typography>
+						</Box>
 					);
 				}
 				if (block.type === "list") {
