@@ -536,7 +536,10 @@ export const disconnectGoogleCalendar = () => async (dispatch: any, getState: an
 	}
 };
 
-export const fetchGoogleEvents = () => async () => {
+// Devuelve los eventos, o null si la consulta a Google falló. La distinción
+// importa: [] es un calendario sin eventos (importación válida), null es un
+// fallo — y quien llama no debe sellar lastSync sobre un fallo.
+export const fetchGoogleEvents = () => async (): Promise<EventInput[] | null> => {
 	dispatch(setLoading(true));
 	try {
 		const events = await googleCalendarService.fetchEvents();
@@ -555,7 +558,7 @@ export const fetchGoogleEvents = () => async () => {
 				close: true,
 			}),
 		);
-		return [];
+		return null;
 	} finally {
 		dispatch(setLoading(false));
 	}

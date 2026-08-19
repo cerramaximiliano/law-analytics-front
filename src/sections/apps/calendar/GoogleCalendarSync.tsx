@@ -235,23 +235,29 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 		}
 	};
 
-	const handleFetchEvents = async () => {
+	// Devuelve si la consulta a Google funcionó. fetchGoogleEvents distingue
+	// [] (calendario vacío, éxito) de null (fallo de red o de la API).
+	const handleFetchEvents = async (): Promise<boolean> => {
 		try {
 			const events = await dispatch(fetchGoogleEvents());
-			if (events && events.length > 0 && onEventsImported) {
+			if (events === null) return false;
+			if (events.length > 0 && onEventsImported) {
 				await onEventsImported(events);
 			}
+			return true;
 		} catch (error) {
 			console.error("Error al obtener eventos:", error);
+			return false;
 		}
 	};
 
 	// Importación automática (solo lectura) + sello de sincronización, para que no
-	// se repita en cada montaje del componente.
+	// se repita en cada montaje del componente. El sello sólo se escribe si la
+	// consulta funcionó: sellar sobre un fallo pospondría el reintento 15 días.
 	const handleAutoImport = async () => {
 		try {
-			await handleFetchEvents();
-			await dispatch(markGoogleCalendarSynced());
+			const ok = await handleFetchEvents();
+			if (ok) await dispatch(markGoogleCalendarSynced());
 		} catch (error) {
 			console.error("Error en la importación automática:", error);
 		}
