@@ -5,6 +5,7 @@ import { CalculatorType, CalculatorState, FilterParams } from "types/calculator"
 import { incrementUserStat, updateUserStorage } from "./userStats";
 
 const SET_LOADING = "calculators/SET_LOADING";
+const SET_ARCHIVED_LOADING = "calculators/SET_ARCHIVED_LOADING";
 const SET_ERROR = "calculators/SET_ERROR";
 const ADD_CALCULATOR = "calculators/ADD_CALCULATOR";
 const SET_CALCULATORS = "calculators/SET_CALCULATORS";
@@ -29,6 +30,7 @@ const initialState: CalculatorState = {
 		totalPages: 0,
 	},
 	isLoader: false,
+	isArchivedLoader: false,
 	error: null,
 	isInitialized: false,
 	lastFetchedUserId: undefined,
@@ -38,8 +40,12 @@ const calculatorsReducer = (state = initialState, action: any) => {
 	switch (action.type) {
 		case SET_LOADING:
 			return { ...state, isLoader: true, error: null };
+		case SET_ARCHIVED_LOADING:
+			// Loader separado para el fetch de archivados: NO debe encender
+			// isLoader (usado por la tabla principal detrás del modal).
+			return { ...state, isArchivedLoader: true, error: null };
 		case SET_ERROR:
-			return { ...state, isLoader: false, error: action.payload };
+			return { ...state, isLoader: false, isArchivedLoader: false, error: action.payload };
 		case ADD_CALCULATOR:
 			return {
 				...state,
@@ -69,7 +75,7 @@ const calculatorsReducer = (state = initialState, action: any) => {
 				...state,
 				archivedCalculators: action.payload.calculators,
 				archivedPagination: action.payload.pagination || state.archivedPagination,
-				isLoader: false,
+				isArchivedLoader: false,
 			};
 		case UPDATE_CALCULATOR:
 			return {
@@ -574,10 +580,10 @@ export const unarchiveCalculators =
 	};
 
 export const getArchivedCalculatorsByUserId =
-	(userId: string, page: number = 1, limit?: number) =>
+	(userId: string, page: number = 1, limit?: number, search?: string) =>
 	async (dispatch: Dispatch) => {
 		try {
-			dispatch({ type: SET_LOADING });
+			dispatch({ type: SET_ARCHIVED_LOADING });
 			// Campos optimizados para listas
 			const fields =
 				"_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user,keepUpdated,originalData,lastUpdate";
@@ -589,6 +595,9 @@ export const getArchivedCalculatorsByUserId =
 			};
 			if (limit !== undefined) {
 				params.limit = limit;
+			}
+			if (search && search.trim()) {
+				params.search = search.trim();
 			}
 
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/user/${userId}`, {
@@ -615,10 +624,10 @@ export const getArchivedCalculatorsByUserId =
 	};
 
 export const getArchivedCalculatorsByGroupId =
-	(groupId: string, page: number = 1, limit?: number) =>
+	(groupId: string, page: number = 1, limit?: number, search?: string) =>
 	async (dispatch: Dispatch) => {
 		try {
-			dispatch({ type: SET_LOADING });
+			dispatch({ type: SET_ARCHIVED_LOADING });
 			// Campos optimizados para listas
 			const fields =
 				"_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user,keepUpdated,originalData,lastUpdate";
@@ -630,6 +639,9 @@ export const getArchivedCalculatorsByGroupId =
 			};
 			if (limit !== undefined) {
 				params.limit = limit;
+			}
+			if (search && search.trim()) {
+				params.search = search.trim();
 			}
 
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/group/${groupId}`, {

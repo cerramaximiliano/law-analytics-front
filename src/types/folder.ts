@@ -156,6 +156,7 @@ export type FolderState = {
 	selectedFolders: FolderData[];
 	folder: FolderData | null;
 	isLoader: boolean;
+	isArchivedLoader: boolean;
 	error?: string;
 	isInitialized: boolean;
 	lastFetchedUserId?: string;

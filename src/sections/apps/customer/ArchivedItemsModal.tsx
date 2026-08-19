@@ -1,5 +1,5 @@
 import React from "react";
-import { useEffect, useState, useMemo, SyntheticEvent } from "react";
+import { useEffect, useRef, useState, useMemo, SyntheticEvent } from "react";
 
 // material-ui
 import {
@@ -12,7 +12,9 @@ import {
 	DialogContent,
 	FormControl,
 	IconButton,
+	InputAdornment,
 	MenuItem,
+	OutlinedInput,
 	Pagination,
 	Select,
 	Stack,
@@ -29,7 +31,7 @@ import { alpha, useTheme } from "@mui/material/styles";
 // project-imports
 import { PopupTransition } from "components/@extended/Transitions";
 import EmptyResults from "./EmptyResults";
-import { Archive, CloseSquare, InfoCircle, Warning2 } from "iconsax-react";
+import { Archive, CloseSquare, InfoCircle, SearchNormal1, Warning2 } from "iconsax-react";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 interface PaginationInfo {
@@ -50,6 +52,10 @@ interface ArchivedItemsModalProps {
 	pagination?: PaginationInfo;
 	onPageChange?: (page: number) => void;
 	onPageSizeChange?: (pageSize: number) => void;
+	// Fetch en curso (cambio de página / búsqueda): muestra overlay sobre la tabla sin desarmarla
+	fetching?: boolean;
+	// Búsqueda server-side: el parent resetea a página 1 y refetchea con el término
+	onSearchChange?: (term: string) => void;
 }
 
 // ==============================|| ARCHIVED ITEMS MODAL ||============================== //
@@ -65,18 +71,32 @@ const ArchivedItemsModal = ({
 	pagination,
 	onPageChange,
 	onPageSizeChange,
+	fetching = false,
+	onSearchChange,
 }: ArchivedItemsModalProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const [selected, setSelected] = useState<string[]>([]);
 	const [error, setError] = useState<string | null>(null);
+	const [searchText, setSearchText] = useState("");
+	const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
 	useEffect(() => {
 		if (open) {
 			setSelected([]);
 			setError(null);
+			setSearchText("");
 		}
 	}, [open]);
+
+	useEffect(() => () => clearTimeout(searchDebounceRef.current), []);
+
+	const handleSearchChange = (value: string) => {
+		setSearchText(value);
+		if (!onSearchChange) return;
+		clearTimeout(searchDebounceRef.current);
+		searchDebounceRef.current = setTimeout(() => onSearchChange(value.trim()), 400);
+	};
 
 	const columns = useMemo(() => {
 		if (itemType === "contacts") {
@@ -178,9 +198,13 @@ const ArchivedItemsModal = ({
 			border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.4 : 0.28)}`,
 		},
 	};
+	// Tinte brand del header como capa sobre un fondo OPACO: las celdas son
+	// sticky y con bgcolor semi-transparente las filas se ven a través al scrollear.
+	const headTint = alpha(BRAND_BLUE, isDark ? 0.06 : 0.035);
 	const tableSx = {
 		"& .MuiTableHead-root .MuiTableCell-root": {
-			bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+			bgcolor: theme.palette.background.paper,
+			backgroundImage: `linear-gradient(${headTint}, ${headTint})`,
 			color: "text.secondary",
 			fontSize: "0.68rem",
 			fontWeight: 600,
@@ -217,7 +241,9 @@ const ArchivedItemsModal = ({
 				}}
 			>
 				<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: color }} />
-				<Typography sx={{ fontSize: "0.66rem", fontWeight: 600, color, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>
+				<Typography
+					sx={{ fontSize: "0.66rem", fontWeight: 600, color, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}
+				>
 					{value}
 				</Typography>
 			</Box>
@@ -361,17 +387,53 @@ const ArchivedItemsModal = ({
 					</Box>
 				)}
 
-				<Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+				{onSearchChange && (
+					<OutlinedInput
+						size="small"
+						fullWidth
+						value={searchText}
+						onChange={(e) => handleSearchChange(e.target.value)}
+						placeholder={itemType === "contacts" ? "Buscar por nombre, apellido o email…" : "Buscar por carátula o materia…"}
+						startAdornment={
+							<InputAdornment position="start">
+								<SearchNormal1 size={16} color={theme.palette.text.secondary} />
+							</InputAdornment>
+						}
+						sx={{ ...selectSx, mb: 2, flexShrink: 0 }}
+					/>
+				)}
+
+				<Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, position: "relative" }}>
+					{fetching && (
+						<Box
+							sx={{
+								position: "absolute",
+								inset: 0,
+								zIndex: 3,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(theme.palette.background.paper, 0.55),
+								borderRadius: 1.5,
+							}}
+						>
+							<CircularProgress size={26} sx={{ color: BRAND_BLUE }} />
+						</Box>
+					)}
 					{loading ? (
 						<Stack alignItems="center" justifyContent="center" sx={{ flex: 1 }} spacing={1.25}>
 							<CircularProgress size={28} sx={{ color: BRAND_BLUE }} />
-							<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
-								Cargando archivados…
-							</Typography>
+							<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>Cargando archivados…</Typography>
 						</Stack>
 					) : items.length === 0 ? (
 						<Stack alignItems="center" justifyContent="center" sx={{ flex: 1 }}>
-							<EmptyResults message={`No hay ${itemLabelPlural} archivad${itemType === "contacts" ? "os" : "as"}`} />
+							<EmptyResults
+								message={
+									searchText.trim()
+										? `No se encontraron ${itemLabelPlural} para "${searchText.trim()}"`
+										: `No hay ${itemLabelPlural} archivad${itemType === "contacts" ? "os" : "as"}`
+								}
+							/>
 						</Stack>
 					) : (
 						<Box
@@ -492,7 +554,7 @@ const ArchivedItemsModal = ({
 									<Select
 										value={pagination.limit}
 										onChange={(e) => onPageSizeChange(Number(e.target.value))}
-										disabled={loading}
+										disabled={loading || fetching}
 										sx={selectSx}
 									>
 										<MenuItem value={5}>5 por página</MenuItem>
@@ -508,7 +570,7 @@ const ArchivedItemsModal = ({
 								count={pagination.totalPages}
 								page={pagination.page}
 								onChange={(_event, page) => onPageChange(page)}
-								disabled={loading}
+								disabled={loading || fetching}
 								showFirstButton
 								showLastButton
 								size="small"

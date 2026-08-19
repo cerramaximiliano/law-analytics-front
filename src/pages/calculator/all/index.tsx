@@ -1194,9 +1194,8 @@ function ReactTable({
 const AllCalculators = () => {
 	const theme = useTheme();
 	const navigate = useNavigate();
-	const { calculators, archivedCalculators, archivedPagination, isLoader, isInitialized, lastFetchedUserId } = useSelector(
-		(state: any) => state.calculator,
-	);
+	const { calculators, archivedCalculators, archivedPagination, isLoader, isArchivedLoader, isInitialized, lastFetchedUserId } =
+		useSelector((state: any) => state.calculator);
 	const auth = useSelector((state: any) => state.auth);
 	const userId = auth.user?._id;
 	const [loading, setLoading] = useState(true);
@@ -1213,6 +1212,7 @@ const AllCalculators = () => {
 	const [selectedCalculatorIds, setSelectedCalculatorIds] = useState<string[]>([]);
 	const [archivedPage, setArchivedPage] = useState(1);
 	const [archivedPageSize, setArchivedPageSize] = useState(10);
+	const [archivedSearch, setArchivedSearch] = useState("");
 
 	// Crear una referencia para la sección de calculadoras disponibles
 	const calculatorsSectionRef = useRef<HTMLDivElement>(null);
@@ -1225,17 +1225,21 @@ const AllCalculators = () => {
 		calculatorsSectionRef.current?.scrollIntoView({ behavior: "smooth" });
 	};
 
-	// Función para actualizar calculadoras archivadas cuando se abre el modal o cambia la página
+	// Función para actualizar calculadoras archivadas cuando se abre el modal o cambia la página/búsqueda
 	useEffect(() => {
 		if (openArchivedModal) {
 			// En modo equipo, obtener archivados del grupo; si no, del usuario
 			if (isTeamMode && activeTeam?._id) {
-				dispatch(getArchivedCalculatorsByGroupId(activeTeam._id, archivedPage, archivedPageSize));
+				dispatch(getArchivedCalculatorsByGroupId(activeTeam._id, archivedPage, archivedPageSize, archivedSearch));
 			} else if (userId) {
-				dispatch(getArchivedCalculatorsByUserId(userId, archivedPage, archivedPageSize));
+				dispatch(getArchivedCalculatorsByUserId(userId, archivedPage, archivedPageSize, archivedSearch));
 			}
+		} else {
+			// Reset de página y búsqueda al cerrar
+			setArchivedPage(1);
+			setArchivedSearch("");
 		}
-	}, [openArchivedModal, userId, isTeamMode, activeTeam?._id, archivedPage, archivedPageSize]);
+	}, [openArchivedModal, userId, isTeamMode, activeTeam?._id, archivedPage, archivedPageSize, archivedSearch]);
 
 	// Handler para cambio de página en archivados
 	const handleArchivedPageChange = (page: number) => {
@@ -1245,6 +1249,12 @@ const AllCalculators = () => {
 	// Handler para cambio de tamaño de página en archivados
 	const handleArchivedPageSizeChange = (pageSize: number) => {
 		setArchivedPageSize(pageSize);
+		setArchivedPage(1); // Reset a primera página
+	};
+
+	// Handler para búsqueda en archivados (server-side, debounced en el modal)
+	const handleArchivedSearchChange = (term: string) => {
+		setArchivedSearch(term);
 		setArchivedPage(1); // Reset a primera página
 	};
 
@@ -2025,10 +2035,12 @@ const AllCalculators = () => {
 				}}
 				items={archivedCalculators || []}
 				onUnarchive={handleUnarchiveCalculators}
-				loading={isLoader || processingArchiveAction}
+				loading={processingArchiveAction}
+				fetching={isArchivedLoader}
 				pagination={archivedPagination}
 				onPageChange={handleArchivedPageChange}
 				onPageSizeChange={handleArchivedPageSizeChange}
+				onSearchChange={handleArchivedSearchChange}
 			/>
 
 			<AlertCalculatorDelete title={deleteTitle} open={openDeleteModal} handleClose={handleCloseDeleteModal} id={deleteId} />

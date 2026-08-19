@@ -87,6 +87,7 @@ export interface CalculatorState {
 	archivedCalculators: CalculatorType[];
 	archivedPagination: CalculatorPaginationInfo;
 	isLoader: boolean;
+	isArchivedLoader: boolean;
 	error: string | null;
 	isInitialized: boolean;
 	lastFetchedUserId?: string;

@@ -18,6 +18,7 @@ import {
 	Skeleton,
 	Snackbar,
 	Alert,
+	Portal,
 	Box,
 	Collapse,
 } from "@mui/material";
@@ -395,11 +396,7 @@ function ReactTable({
 					<Stack spacing={1.5}>
 						{/* Fila 1: Buscador (acción primaria de filtrado) */}
 						<Box sx={brandedInputSx}>
-							<GlobalFilter
-								preGlobalFilteredRows={preGlobalFilteredRows}
-								globalFilter={globalFilter}
-								setGlobalFilter={setGlobalFilter}
-							/>
+							<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
 						</Box>
 
 						{/* Fila 2: Agregar contacto + overflow */}
@@ -480,11 +477,7 @@ function ReactTable({
 						{/* Grupo 4: Búsqueda y utilidades — alineado a la derecha */}
 						<Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1, justifyContent: "flex-end" }}>
 							<Box sx={{ width: 220, ...brandedInputSx }}>
-								<GlobalFilter
-									preGlobalFilteredRows={preGlobalFilteredRows}
-									globalFilter={globalFilter}
-									setGlobalFilter={setGlobalFilter}
-								/>
+								<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
 							</Box>
 							<Tooltip title="Más opciones">
 								<IconButton size="small" onClick={handleOverflowOpen} aria-label="Más opciones" sx={iconBtnBrandSx}>
@@ -562,9 +555,7 @@ function ReactTable({
 											transition: "background-color 0.15s ease",
 											bgcolor: row.isSelected ? alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) : "inherit",
 											"&:hover": {
-												bgcolor: row.isSelected
-													? alpha(BRAND_BLUE, isDark ? 0.18 : 0.11)
-													: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+												bgcolor: row.isSelected ? alpha(BRAND_BLUE, isDark ? 0.18 : 0.11) : alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
 											},
 										}}
 									>
@@ -643,11 +634,7 @@ function ReactTable({
 						}}
 					/>
 
-					<Stack
-						spacing={2}
-						alignItems="center"
-						sx={{ position: "relative", zIndex: 1, maxWidth: 460, mx: "auto", textAlign: "center" }}
-					>
+					<Stack spacing={2} alignItems="center" sx={{ position: "relative", zIndex: 1, maxWidth: 460, mx: "auto", textAlign: "center" }}>
 						<Box
 							sx={{
 								display: "inline-flex",
@@ -744,6 +731,7 @@ const CustomerListPage = () => {
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 	const [archivedPage, setArchivedPage] = useState(1);
 	const [archivedPageSize, setArchivedPageSize] = useState(10);
+	const [archivedSearch, setArchivedSearch] = useState("");
 
 	// Estado para el modal de límite de recursos
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
@@ -757,7 +745,7 @@ const CustomerListPage = () => {
 	// Selectores
 	const user = useSelector((state) => state.auth.user);
 	const { subscription } = useSelector((state) => state.auth);
-	const { contacts, archivedContacts, archivedPagination, isLoader } = useSelector((state) => state.contacts);
+	const { contacts, archivedContacts, archivedPagination, isLoader, isArchivedLoader } = useSelector((state) => state.contacts);
 
 	// Team context - para cargar recursos del equipo si hay uno activo
 	const { activeTeam, isTeamMode, canCreate, canUpdate, canDelete, isInitialized: isTeamInitialized, getRequestHeaders } = useTeam();
@@ -926,16 +914,16 @@ const CustomerListPage = () => {
 
 	// Función para cargar contactos archivados con paginación
 	const loadArchivedContacts = useCallback(
-		async (page: number, pageSize: number) => {
+		async (page: number, pageSize: number, search?: string) => {
 			if (!user?._id || loadingRef.current) return;
 
 			try {
 				loadingRef.current = true;
 				// Usar la función correcta según el modo equipo
 				if (isTeamMode && activeTeam?._id) {
-					await dispatch(getArchivedContactsByGroupId(activeTeam._id, page, pageSize));
+					await dispatch(getArchivedContactsByGroupId(activeTeam._id, page, pageSize, search));
 				} else {
-					await dispatch(getArchivedContactsByUserId(user._id, page, pageSize));
+					await dispatch(getArchivedContactsByUserId(user._id, page, pageSize, search));
 				}
 			} catch (error) {
 				setSnackbarMessage("Error al obtener contactos archivados");
@@ -951,6 +939,7 @@ const CustomerListPage = () => {
 	// Manejadores para elementos archivados
 	const handleOpenArchivedModal = useCallback(async () => {
 		setArchivedPage(1); // Reset to first page
+		setArchivedSearch(""); // Reset búsqueda
 		await loadArchivedContacts(1, archivedPageSize);
 		setArchivedModalOpen(true);
 	}, [loadArchivedContacts, archivedPageSize]);
@@ -958,15 +947,16 @@ const CustomerListPage = () => {
 	const handleCloseArchivedModal = useCallback(() => {
 		setArchivedModalOpen(false);
 		setArchivedPage(1); // Reset page on close
+		setArchivedSearch(""); // Reset búsqueda al cerrar
 	}, []);
 
 	// Handler para cambio de página en archivados
 	const handleArchivedPageChange = useCallback(
 		(page: number) => {
 			setArchivedPage(page);
-			loadArchivedContacts(page, archivedPageSize);
+			loadArchivedContacts(page, archivedPageSize, archivedSearch);
 		},
-		[loadArchivedContacts, archivedPageSize],
+		[loadArchivedContacts, archivedPageSize, archivedSearch],
 	);
 
 	// Handler para cambio de tamaño de página en archivados
@@ -974,9 +964,33 @@ const CustomerListPage = () => {
 		(pageSize: number) => {
 			setArchivedPageSize(pageSize);
 			setArchivedPage(1);
-			loadArchivedContacts(1, pageSize);
+			loadArchivedContacts(1, pageSize, archivedSearch);
 		},
-		[loadArchivedContacts],
+		[loadArchivedContacts, archivedSearch],
+	);
+
+	// Handler para búsqueda en archivados (server-side, debounced en el modal)
+	const handleArchivedSearchChange = useCallback(
+		async (term: string) => {
+			if (!user?._id) return;
+
+			// Sin loadingRef: el debounce del modal ya espacia las llamadas y un
+			// guard acá descartaría términos de búsqueda legítimos.
+			setArchivedSearch(term);
+			setArchivedPage(1);
+			try {
+				if (isTeamMode && activeTeam?._id) {
+					await dispatch(getArchivedContactsByGroupId(activeTeam._id, 1, archivedPageSize, term));
+				} else {
+					await dispatch(getArchivedContactsByUserId(user._id, 1, archivedPageSize, term));
+				}
+			} catch (error) {
+				setSnackbarMessage("Error al buscar contactos archivados");
+				setSnackbarSeverity("error");
+				setSnackbarOpen(true);
+			}
+		},
+		[user?._id, archivedPageSize, isTeamMode, activeTeam?._id],
 	);
 
 	const handleOpenGuide = useCallback(() => {
@@ -1430,91 +1444,111 @@ const CustomerListPage = () => {
 			<MainCard content={false}>
 				<DowngradeGracePeriodAlert />
 				<ScrollX>
-				<ReactTable
-					columns={columns}
-					data={contacts}
-					handleAdd={canCreate ? handleAddContact : undefined}
-					handleArchiveSelected={canUpdate ? handleArchiveSelected : undefined}
-					handleOpenArchivedModal={handleOpenArchivedModal}
-					handleOpenGuide={handleOpenGuide}
-					renderRowSubComponent={renderRowSubComponent}
-					isLoading={isLoader}
-					expandedRowId={expandedRowId}
-				/>
-			</ScrollX>
-			<AlertCustomerDelete title={customerDeleteId} open={open} handleClose={handleClose} id={customerId} onDelete={handleRefreshData} />
-			{add && (
+					<ReactTable
+						columns={columns}
+						data={contacts}
+						handleAdd={canCreate ? handleAddContact : undefined}
+						handleArchiveSelected={canUpdate ? handleArchiveSelected : undefined}
+						handleOpenArchivedModal={handleOpenArchivedModal}
+						handleOpenGuide={handleOpenGuide}
+						renderRowSubComponent={renderRowSubComponent}
+						isLoading={isLoader}
+						expandedRowId={expandedRowId}
+					/>
+				</ScrollX>
+				<AlertCustomerDelete title={customerDeleteId} open={open} handleClose={handleClose} id={customerId} onDelete={handleRefreshData} />
+				{add && (
+					<Dialog
+						maxWidth="sm"
+						TransitionComponent={PopupTransition}
+						keepMounted
+						fullWidth
+						open={add}
+						sx={{
+							"& .MuiDialog-paper": {
+								p: 0,
+								display: "flex",
+								flexDirection: "column",
+								height: { xs: "90vh", sm: "85vh", md: "80vh" },
+								maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" },
+								overflow: "hidden",
+							},
+						}}
+					>
+						<AddCustomer
+							open={add}
+							customer={customer}
+							mode={addCustomerMode}
+							onCancel={handleCloseDialog}
+							onAddMember={handleRefreshData}
+						/>
+					</Dialog>
+				)}
+
+				{/* El componente AddCustomer manejará el LimitErrorModal independientemente */}
+
 				<Dialog
-					maxWidth="sm"
+					maxWidth="md"
 					TransitionComponent={PopupTransition}
 					keepMounted
 					fullWidth
-					open={add}
-					sx={{
-						"& .MuiDialog-paper": {
-							p: 0,
-							display: "flex",
-							flexDirection: "column",
-							height: { xs: "90vh", sm: "85vh", md: "80vh" },
-							maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" },
-							overflow: "hidden",
-						},
-					}}
+					open={link}
+					sx={{ "& .MuiDialog-paper": { p: 0 } }}
 				>
-					<AddCustomer open={add} customer={customer} mode={addCustomerMode} onCancel={handleCloseDialog} onAddMember={handleRefreshData} />
+					<LinkToCause openLink={link} onCancelLink={handleCloseLink} contactId={customerId} folderIds={folderIds} />
 				</Dialog>
-			)}
 
-			{/* El componente AddCustomer manejará el LimitErrorModal independientemente */}
+				{/* Modal para elementos archivados */}
+				<ArchivedItemsModal
+					open={archivedModalOpen}
+					onClose={handleCloseArchivedModal}
+					title="Contactos Archivados"
+					items={archivedContacts || []}
+					onUnarchive={handleUnarchiveSelected}
+					loading={loadingUnarchive}
+					fetching={isArchivedLoader}
+					itemType="contacts"
+					pagination={archivedPagination}
+					onPageChange={handleArchivedPageChange}
+					onPageSizeChange={handleArchivedPageSizeChange}
+					onSearchChange={handleArchivedSearchChange}
+				/>
 
-			<Dialog maxWidth="md" TransitionComponent={PopupTransition} keepMounted fullWidth open={link} sx={{ "& .MuiDialog-paper": { p: 0 } }}>
-				<LinkToCause openLink={link} onCancelLink={handleCloseLink} contactId={customerId} folderIds={folderIds} />
-			</Dialog>
+				{/* Guía de contactos */}
+				<GuideContacts open={guideOpen} onClose={() => setGuideOpen(false)} />
 
-			{/* Modal para elementos archivados */}
-			<ArchivedItemsModal
-				open={archivedModalOpen}
-				onClose={handleCloseArchivedModal}
-				title="Contactos Archivados"
-				items={archivedContacts || []}
-				onUnarchive={handleUnarchiveSelected}
-				loading={loadingUnarchive}
-				itemType="contacts"
-				pagination={archivedPagination}
-				onPageChange={handleArchivedPageChange}
-				onPageSizeChange={handleArchivedPageSizeChange}
-			/>
+				{/* Portal al body: sin esto el Snackbar queda atrapado en el stacking
+				    context de la página y se pinta por debajo de los Dialogs (z-index
+				    1400 vs 1300 solo aplica si comparten stacking context). */}
+				<Portal>
+					<Snackbar
+						open={snackbarOpen}
+						autoHideDuration={6000}
+						onClose={handleSnackbarClose}
+						anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+					>
+						<Alert
+							onClose={handleSnackbarClose}
+							severity={snackbarSeverity}
+							variant="filled"
+							sx={{
+								width: "100%",
+								fontWeight: 500,
+							}}
+						>
+							{snackbarMessage}
+						</Alert>
+					</Snackbar>
+				</Portal>
 
-			{/* Guía de contactos */}
-			<GuideContacts open={guideOpen} onClose={() => setGuideOpen(false)} />
-
-			<Snackbar
-				open={snackbarOpen}
-				autoHideDuration={6000}
-				onClose={handleSnackbarClose}
-				anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-			>
-				<Alert
-					onClose={handleSnackbarClose}
-					severity={snackbarSeverity}
-					variant="filled"
-					sx={{
-						width: "100%",
-						fontWeight: 500,
-					}}
-				>
-					{snackbarMessage}
-				</Alert>
-			</Snackbar>
-
-			{/* Modal de límite de recursos */}
-			<LimitErrorModal
-				open={limitErrorOpen}
-				onClose={handleCloseLimitErrorModal}
-				message={limitErrorMessage}
-				limitInfo={limitErrorInfo}
-				upgradeRequired={true}
-			/>
+				{/* Modal de límite de recursos */}
+				<LimitErrorModal
+					open={limitErrorOpen}
+					onClose={handleCloseLimitErrorModal}
+					message={limitErrorMessage}
+					limitInfo={limitErrorInfo}
+					upgradeRequired={true}
+				/>
 			</MainCard>
 		</Stack>
 	);

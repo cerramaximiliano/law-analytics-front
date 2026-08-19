@@ -14,6 +14,7 @@ const FILTER_CONTACTS_BY_FOLDER = "FILTER_CONTACTS_BY_FOLDER";
 const ARCHIVE_CONTACTS = "ARCHIVE_CONTACTS";
 const UNARCHIVE_CONTACTS = "UNARCHIVE_CONTACTS";
 const SET_CONTACT_LOADING = "SET_CONTACT_LOADING";
+const SET_ARCHIVED_CONTACT_LOADING = "SET_ARCHIVED_CONTACT_LOADING";
 const GET_ARCHIVED_CONTACTS = "GET_ARCHIVED_CONTACTS";
 const RESET_CONTACTS_STATE = "RESET_CONTACTS_STATE";
 
@@ -30,6 +31,7 @@ const initialContactState: ContactState = {
 	selectedContacts: [],
 	error: null,
 	isLoader: false,
+	isArchivedLoader: false,
 	isInitialized: false,
 	lastFetchedUserId: undefined,
 	archivedByFolderCount: 0,
@@ -45,6 +47,14 @@ const contacts = (state = initialContactState, action: Action): ContactState => 
 			return {
 				...state,
 				isLoader: true,
+				error: null,
+			};
+		case SET_ARCHIVED_CONTACT_LOADING:
+			// Loader separado para el fetch de archivados: NO debe encender
+			// isLoader (usado por la tabla principal detrás del modal).
+			return {
+				...state,
+				isArchivedLoader: true,
 				error: null,
 			};
 		case ADD_CONTACT:
@@ -72,7 +82,7 @@ const contacts = (state = initialContactState, action: Action): ContactState => 
 				...state,
 				archivedContacts: action.payload?.contacts || action.payload || [],
 				archivedPagination: action.payload?.pagination || state.archivedPagination,
-				isLoader: false,
+				isArchivedLoader: false,
 			};
 		case FILTER_CONTACTS_BY_FOLDER:
 			return {
@@ -137,6 +147,7 @@ const contacts = (state = initialContactState, action: Action): ContactState => 
 				...state,
 				error: action.payload,
 				isLoader: false,
+				isArchivedLoader: false,
 			};
 		case RESET_CONTACTS_STATE:
 			return initialContactState;
@@ -359,10 +370,12 @@ export const getContactsByUserId =
 	};
 // Obtener contactos por groupId
 export const getContactsByGroupId =
-	(groupId: string, archived: boolean = false, page: number = 1, limit?: number) =>
+	(groupId: string, archived: boolean = false, page: number = 1, limit?: number, search?: string) =>
 	async (dispatch: Dispatch) => {
 		try {
-			dispatch({ type: SET_CONTACT_LOADING });
+			// El fetch de archivados usa un loader separado para no encender
+			// el skeleton de la tabla principal detrás del modal.
+			dispatch({ type: archived ? SET_ARCHIVED_CONTACT_LOADING : SET_CONTACT_LOADING });
 
 			// Campos optimizados para listas y vistas resumidas
 			const fields =
@@ -377,6 +390,9 @@ export const getContactsByGroupId =
 			// Solo enviar limit si se especifica explícitamente
 			if (limit !== undefined) {
 				params.limit = limit;
+			}
+			if (search && search.trim()) {
+				params.search = search.trim();
 			}
 
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/contacts/group/${groupId}`, {
@@ -413,8 +429,8 @@ export const getContactsByGroupId =
 		}
 	};
 
-export const getArchivedContactsByGroupId = (groupId: string, page: number = 1, limit?: number) => {
-	return getContactsByGroupId(groupId, true, page, limit);
+export const getArchivedContactsByGroupId = (groupId: string, page: number = 1, limit?: number, search?: string) => {
+	return getContactsByGroupId(groupId, true, page, limit, search);
 };
 
 // Eliminar contacto por _id
@@ -638,10 +654,10 @@ export const archiveContacts =
 	};
 
 export const getArchivedContactsByUserId =
-	(userId: string, page: number = 1, limit?: number) =>
+	(userId: string, page: number = 1, limit?: number, search?: string) =>
 	async (dispatch: Dispatch) => {
 		try {
-			dispatch({ type: SET_CONTACT_LOADING });
+			dispatch({ type: SET_ARCHIVED_CONTACT_LOADING });
 			// Campos optimizados para listas y vistas resumidas
 			const fields =
 				"_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,importSource,intervinienteRef";
@@ -653,6 +669,9 @@ export const getArchivedContactsByUserId =
 			};
 			if (limit !== undefined) {
 				params.limit = limit;
+			}
+			if (search && search.trim()) {
+				params.search = search.trim();
 			}
 
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/contacts/user/${userId}`, {

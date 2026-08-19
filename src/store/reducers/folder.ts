@@ -7,6 +7,7 @@ import { incrementUserStat, updateUserStorage, isFolderLinkedToCausa } from "./u
 
 // Action types
 const SET_FOLDER_LOADING = "SET_FOLDER_LOADING";
+const SET_ARCHIVED_FOLDER_LOADING = "SET_ARCHIVED_FOLDER_LOADING";
 const ADD_FOLDER = "ADD_FOLDER";
 const GET_FOLDERS_BY_USER = "GET_FOLDERS_BY_USER";
 const GET_FOLDERS_BY_GROUP = "GET_FOLDERS_BY_GROUP";
@@ -37,6 +38,7 @@ const initialFolderState: FolderState = {
 	selectedFolders: [],
 	folder: null,
 	isLoader: false,
+	isArchivedLoader: false,
 	error: undefined,
 	isInitialized: false,
 	lastFetchedUserId: undefined,
@@ -50,6 +52,10 @@ const folder = (state = initialFolderState, action: any) => {
 	switch (action.type) {
 		case SET_FOLDER_LOADING:
 			return { ...state, isLoader: true, error: null };
+		case SET_ARCHIVED_FOLDER_LOADING:
+			// Loader separado para el fetch de archivados: NO debe encender
+			// isLoader (usado por la tabla principal detrás del modal).
+			return { ...state, isArchivedLoader: true, error: null };
 		case ADD_FOLDER:
 			return {
 				...state,
@@ -86,7 +92,7 @@ const folder = (state = initialFolderState, action: any) => {
 				...state,
 				archivedFolders: action.payload.folders,
 				archivedPagination: action.payload.pagination,
-				isLoader: false,
+				isArchivedLoader: false,
 			};
 		case GET_FOLDER_BY_ID:
 			return {
@@ -156,6 +162,7 @@ const folder = (state = initialFolderState, action: any) => {
 				...state,
 				error: action.payload,
 				isLoader: false,
+				isArchivedLoader: false,
 			};
 		case GET_FOLDERS_BY_IDS:
 			return {
@@ -539,10 +546,10 @@ export const archiveFolders =
 	};
 
 export const getArchivedFoldersByUserId =
-	(userId: string, page: number = 1, limit?: number) =>
+	(userId: string, page: number = 1, limit?: number, search?: string) =>
 	async (dispatch: Dispatch) => {
 		try {
-			dispatch({ type: SET_FOLDER_LOADING });
+			dispatch({ type: SET_ARCHIVED_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 			const fields =
 				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,judFolder,lastMovementDate";
@@ -554,6 +561,9 @@ export const getArchivedFoldersByUserId =
 			};
 			if (limit !== undefined) {
 				params.limit = limit;
+			}
+			if (search && search.trim()) {
+				params.search = search.trim();
 			}
 
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/user/${userId}`, {
@@ -584,10 +594,10 @@ export const getArchivedFoldersByUserId =
 	};
 
 export const getArchivedFoldersByGroupId =
-	(groupId: string, page: number = 1, limit?: number) =>
+	(groupId: string, page: number = 1, limit?: number, search?: string) =>
 	async (dispatch: Dispatch) => {
 		try {
-			dispatch({ type: SET_FOLDER_LOADING });
+			dispatch({ type: SET_ARCHIVED_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 			const fields =
 				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,judFolder,lastMovementDate";
@@ -599,6 +609,9 @@ export const getArchivedFoldersByGroupId =
 			};
 			if (limit !== undefined) {
 				params.limit = limit;
+			}
+			if (search && search.trim()) {
+				params.search = search.trim();
 			}
 
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}`, {

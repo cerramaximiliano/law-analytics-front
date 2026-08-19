@@ -25,6 +25,7 @@ import {
 	Skeleton,
 	Snackbar,
 	Alert,
+	Portal,
 	Typography,
 	Collapse,
 	Menu,
@@ -1848,6 +1849,7 @@ const FoldersLayout = () => {
 	const [guideOpen, setGuideOpen] = useState(false);
 	const [archivedPage, setArchivedPage] = useState(1);
 	const [archivedPageSize, setArchivedPageSize] = useState(10);
+	const [archivedSearch, setArchivedSearch] = useState("");
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [menuRowId, setMenuRowId] = useState<string | null>(null);
@@ -1896,7 +1898,7 @@ const FoldersLayout = () => {
 
 	// Selectores
 	const user = useSelector((state) => state.auth.user);
-	const { folders, archivedFolders, archivedPagination, isLoader } = useSelector((state) => state.folder);
+	const { folders, archivedFolders, archivedPagination, isLoader, isArchivedLoader } = useSelector((state) => state.folder);
 	const subscription = useSelector((state) => state.auth.subscription);
 
 	// Team context - para cargar recursos del equipo si hay uno activo
@@ -2401,6 +2403,7 @@ const FoldersLayout = () => {
 	const handleCloseArchivedModal = useCallback(() => {
 		setArchivedModalOpen(false);
 		setArchivedPage(1); // Resetear a página 1 al cerrar
+		setArchivedSearch(""); // Resetear búsqueda al cerrar
 	}, []);
 
 	const handleArchivedPageChange = useCallback(
@@ -2412,9 +2415,9 @@ const FoldersLayout = () => {
 				setArchivedPage(page);
 				// Usar la función correcta según el modo equipo
 				if (isTeamMode && activeTeam?._id) {
-					await dispatch(getArchivedFoldersByGroupId(activeTeam._id, page, archivedPageSize));
+					await dispatch(getArchivedFoldersByGroupId(activeTeam._id, page, archivedPageSize, archivedSearch));
 				} else {
-					await dispatch(getArchivedFoldersByUserId(user._id, page, archivedPageSize));
+					await dispatch(getArchivedFoldersByUserId(user._id, page, archivedPageSize, archivedSearch));
 				}
 			} catch (error) {
 				setSnackbarMessage("Error al cambiar de página");
@@ -2424,7 +2427,7 @@ const FoldersLayout = () => {
 				loadingRef.current = false;
 			}
 		},
-		[user?._id, archivedPageSize, isTeamMode, activeTeam?._id],
+		[user?._id, archivedPageSize, archivedSearch, isTeamMode, activeTeam?._id],
 	);
 
 	const handleArchivedPageSizeChange = useCallback(
@@ -2437,9 +2440,9 @@ const FoldersLayout = () => {
 				setArchivedPage(1); // Resetear a página 1 cuando cambia el tamaño
 				// Usar la función correcta según el modo equipo
 				if (isTeamMode && activeTeam?._id) {
-					await dispatch(getArchivedFoldersByGroupId(activeTeam._id, 1, pageSize));
+					await dispatch(getArchivedFoldersByGroupId(activeTeam._id, 1, pageSize, archivedSearch));
 				} else {
-					await dispatch(getArchivedFoldersByUserId(user._id, 1, pageSize));
+					await dispatch(getArchivedFoldersByUserId(user._id, 1, pageSize, archivedSearch));
 				}
 			} catch (error) {
 				setSnackbarMessage("Error al cambiar tamaño de página");
@@ -2449,7 +2452,30 @@ const FoldersLayout = () => {
 				loadingRef.current = false;
 			}
 		},
-		[user?._id, isTeamMode, activeTeam?._id],
+		[user?._id, archivedSearch, isTeamMode, activeTeam?._id],
+	);
+
+	const handleArchivedSearchChange = useCallback(
+		async (term: string) => {
+			if (!user?._id) return;
+
+			// Sin loadingRef: el debounce del modal ya espacia las llamadas y un
+			// guard acá descartaría términos de búsqueda legítimos.
+			setArchivedSearch(term);
+			setArchivedPage(1);
+			try {
+				if (isTeamMode && activeTeam?._id) {
+					await dispatch(getArchivedFoldersByGroupId(activeTeam._id, 1, archivedPageSize, term));
+				} else {
+					await dispatch(getArchivedFoldersByUserId(user._id, 1, archivedPageSize, term));
+				}
+			} catch (error) {
+				setSnackbarMessage("Error al buscar causas archivadas");
+				setSnackbarSeverity("error");
+				setSnackbarOpen(true);
+			}
+		},
+		[user?._id, archivedPageSize, isTeamMode, activeTeam?._id],
 	);
 
 	const handleOpenGuide = useCallback(() => {
@@ -2842,19 +2868,36 @@ const FoldersLayout = () => {
 					// MEV: problema con la credencial del usuario → warning (en vez del tilde/pendiente).
 					// La causa no se scrapea hasta que el usuario corrija/cargue su credencial.
 					if (folder.mev === true && ["missing", "invalid", "expired", "disabled"].includes(folder.mevCredentialStatus)) {
-						const credMsg = ({
-							missing: "Falta cargar tu credencial del portal MEV para consultar esta causa. Cargala en tu perfil → Integraciones → MEV.",
-							invalid: "No pudimos iniciar sesión en el portal MEV con tus credenciales. Revisalas y recargalas en tu perfil.",
-							expired: "Tu contraseña del portal MEV expiró. Actualizala y recargala en tu perfil.",
-							disabled: "Desactivamos tu credencial MEV por fallos repetidos. Verificala y recargala en tu perfil.",
-						} as Record<string, string>)[folder.mevCredentialStatus];
-						const credLabel = ({ missing: "Credencial requerida", invalid: "Credencial inválida", expired: "Contraseña expirada", disabled: "Credencial desactivada" } as Record<string, string>)[folder.mevCredentialStatus];
+						const credMsg = (
+							{
+								missing: "Falta cargar tu credencial del portal MEV para consultar esta causa. Cargala en tu perfil → Integraciones → MEV.",
+								invalid: "No pudimos iniciar sesión en el portal MEV con tus credenciales. Revisalas y recargalas en tu perfil.",
+								expired: "Tu contraseña del portal MEV expiró. Actualizala y recargala en tu perfil.",
+								disabled: "Desactivamos tu credencial MEV por fallos repetidos. Verificala y recargala en tu perfil.",
+							} as Record<string, string>
+						)[folder.mevCredentialStatus];
+						const credLabel = (
+							{
+								missing: "Credencial requerida",
+								invalid: "Credencial inválida",
+								expired: "Contraseña expirada",
+								disabled: "Credencial desactivada",
+							} as Record<string, string>
+						)[folder.mevCredentialStatus];
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 								<Box
-									onClick={(e) => { e.stopPropagation(); navigate("/apps/profiles/account/pjn?view=mev"); }}
+									onClick={(e) => {
+										e.stopPropagation();
+										navigate("/apps/profiles/account/pjn?view=mev");
+									}}
 									sx={{
-										display: "inline-flex", alignItems: "center", gap: 0.625, px: 0.875, py: 0.25, borderRadius: 0.75,
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 0.625,
+										px: 0.875,
+										py: 0.25,
+										borderRadius: 0.75,
 										bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
 										border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
 										cursor: "pointer",
@@ -2867,7 +2910,14 @@ const FoldersLayout = () => {
 									</Typography>
 								</Box>
 								<Tooltip title={credMsg}>
-									<IconButton size="small" onClick={(e) => { e.stopPropagation(); navigate("/apps/profiles/account/pjn?view=mev"); }} sx={{ padding: 0.5, "&:hover": { backgroundColor: "warning.lighter" } }}>
+									<IconButton
+										size="small"
+										onClick={(e) => {
+											e.stopPropagation();
+											navigate("/apps/profiles/account/pjn?view=mev");
+										}}
+										sx={{ padding: 0.5, "&:hover": { backgroundColor: "warning.lighter" } }}
+									>
 										<Warning2 size={16} variant="Bold" color="#F59E0B" />
 									</IconButton>
 								</Tooltip>
@@ -4021,10 +4071,12 @@ const FoldersLayout = () => {
 						items={archivedFolders || []}
 						onUnarchive={handleUnarchiveSelected}
 						loading={loadingUnarchive}
+						fetching={isArchivedLoader}
 						itemType="folders"
 						pagination={archivedPagination}
 						onPageChange={handleArchivedPageChange}
 						onPageSizeChange={handleArchivedPageSizeChange}
+						onSearchChange={handleArchivedSearchChange}
 					/>
 
 					{/* Guía de causas */}
@@ -4278,24 +4330,29 @@ const FoldersLayout = () => {
 						upgradeRequired={true}
 					/>
 
-					<Snackbar
-						open={snackbarOpen}
-						autoHideDuration={6000}
-						onClose={handleSnackbarClose}
-						anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-					>
-						<Alert
+					{/* Portal al body: sin esto el Snackbar queda atrapado en el stacking
+					    context de la página y se pinta por debajo de los Dialogs (z-index
+					    1400 vs 1300 solo aplica si comparten stacking context). */}
+					<Portal>
+						<Snackbar
+							open={snackbarOpen}
+							autoHideDuration={6000}
 							onClose={handleSnackbarClose}
-							severity={snackbarSeverity}
-							variant="filled"
-							sx={{
-								width: "100%",
-								fontWeight: 500,
-							}}
+							anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
 						>
-							{snackbarMessage}
-						</Alert>
-					</Snackbar>
+							<Alert
+								onClose={handleSnackbarClose}
+								severity={snackbarSeverity}
+								variant="filled"
+								sx={{
+									width: "100%",
+									fontWeight: 500,
+								}}
+							>
+								{snackbarMessage}
+							</Alert>
+						</Snackbar>
+					</Portal>
 
 					{/* Diálogo de confirmación de eliminación — brand sober destructive */}
 					<Dialog
