@@ -1,14 +1,15 @@
 // Service de la sección pública del blog educativo (/educativo).
 //
 // Wrappea los endpoints PÚBLICOS (sin auth) de law-analytics-server:
-//   GET /api/public/educativo?page=&limit=
+//   GET /api/public/educativo?page=&limit=&search=&categoria=
+//   GET /api/public/educativo/titulos
 //   GET /api/public/educativo/:slug
 //
 // Mismo patrón que publicSentenciasService: axios crudo sin withCredentials —
 // es contenido abierto, sin sesión.
 
 import axios from "axios";
-import type { PublicEducativoListResponse, PublicEducativoDetailResponse } from "types/publicEducativo";
+import type { PublicEducativoListResponse, PublicEducativoDetailResponse, PublicEducativoTitulosResponse } from "types/publicEducativo";
 
 function getBaseUrl(): string {
 	if (process.env.NODE_ENV === "production" && typeof window !== "undefined" && window.location.hostname === "lawanalytics.app") {
@@ -72,15 +73,27 @@ function withAttribution(query: URLSearchParams): URLSearchParams {
 export interface PublicEducativoListParams {
 	page?: number;
 	limit?: number;
+	search?: string;
+	categoria?: string;
 }
 
 export async function getPublicEducativoArticulos(params: PublicEducativoListParams = {}): Promise<PublicEducativoListResponse> {
 	const query = new URLSearchParams();
 	if (params.page) query.set("page", String(params.page));
 	if (params.limit) query.set("limit", String(params.limit));
+	if (params.search) query.set("search", params.search);
+	if (params.categoria) query.set("categoria", params.categoria);
 	const qs = withAttribution(query).toString();
 	const url = `${getBaseUrl()}/api/public/educativo${qs ? `?${qs}` : ""}`;
 	const response = await axios.get<PublicEducativoListResponse>(url);
+	return response.data;
+}
+
+// Glosario: todos los títulos publicados ordenados por categoría y título.
+export async function getPublicEducativoTitulos(): Promise<PublicEducativoTitulosResponse> {
+	const attrQs = withAttribution(new URLSearchParams()).toString();
+	const url = `${getBaseUrl()}/api/public/educativo/titulos${attrQs ? `?${attrQs}` : ""}`;
+	const response = await axios.get<PublicEducativoTitulosResponse>(url);
 	return response.data;
 }
 

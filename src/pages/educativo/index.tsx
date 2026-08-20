@@ -7,27 +7,43 @@
 // BRAND_BLUE, eyebrow, atmósfera con blob + dot grid, motion spring de entrada,
 // stagger de cards y sombras tintadas. Mantener en sync con jurisprudencia/index.tsx.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link as RouterLink, useSearchParams } from "react-router-dom";
 
 // material-ui
 import { useTheme, alpha } from "@mui/material/styles";
-import { Box, Button, Card, CardActionArea, Container, Grid, Pagination, Skeleton, Stack, Typography } from "@mui/material";
+import {
+	Box,
+	Button,
+	Card,
+	CardActionArea,
+	Chip,
+	Collapse,
+	Container,
+	Grid,
+	InputAdornment,
+	Link,
+	Pagination,
+	Skeleton,
+	Stack,
+	TextField,
+	Typography,
+} from "@mui/material";
 
 // third-party
 import { motion } from "framer-motion";
 
 // icons
-import { ArrowRight } from "iconsax-react";
+import { ArrowDown2, ArrowRight, ArrowUp2, SearchNormal1 } from "iconsax-react";
 
 // project-imports
 import MainCard from "components/MainCard";
 import PageBackground from "components/PageBackground";
 import SEO from "components/SEO/SEO";
 import SectionEyebrow from "sections/landing/SectionEyebrow";
-import { getPublicEducativoArticulos } from "services/publicEducativoService";
+import { getPublicEducativoArticulos, getPublicEducativoTitulos } from "services/publicEducativoService";
 import { fueroLabel } from "services/publicSentenciasService";
-import type { PublicEducativoListItem } from "types/publicEducativo";
+import type { PublicEducativoListItem, PublicEducativoCategoriaCount, PublicEducativoTituloItem } from "types/publicEducativo";
 
 // Mantener en sync con sections/landing/Planes.tsx
 const BRAND_BLUE = "#3A7BFF";
@@ -45,11 +61,19 @@ const EducativoPage = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const [items, setItems] = useState<PublicEducativoListItem[]>([]);
+	const [categorias, setCategorias] = useState<PublicEducativoCategoriaCount[]>([]);
 	const [totalPages, setTotalPages] = useState(1);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(false);
+	const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
+
+	// Glosario ("Ver todos los temas"): se carga una sola vez, colapsado por defecto.
+	const [titulos, setTitulos] = useState<PublicEducativoTituloItem[]>([]);
+	const [glosarioOpen, setGlosarioOpen] = useState(false);
 
 	const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1);
+	const search = searchParams.get("q") || "";
+	const categoria = searchParams.get("cat") || "";
 
 	const updateParams = useCallback(
 		(updates: Record<string, string | null>) => {
@@ -67,10 +91,11 @@ const EducativoPage = () => {
 		let cancelled = false;
 		setLoading(true);
 		setError(false);
-		getPublicEducativoArticulos({ page, limit: PAGE_SIZE })
+		getPublicEducativoArticulos({ page, limit: PAGE_SIZE, search: search || undefined, categoria: categoria || undefined })
 			.then((response) => {
 				if (cancelled) return;
 				setItems(response.data.items);
+				setCategorias(response.data.categorias || []);
 				setTotalPages(Math.max(response.data.pages, 1));
 			})
 			.catch(() => {
@@ -82,7 +107,39 @@ const EducativoPage = () => {
 		return () => {
 			cancelled = true;
 		};
-	}, [page]);
+	}, [page, search, categoria]);
+
+	// Títulos del glosario: una sola carga, best-effort (si falla no rompe la página).
+	useEffect(() => {
+		let cancelled = false;
+		getPublicEducativoTitulos()
+			.then((response) => {
+				if (!cancelled) setTitulos(response.data || []);
+			})
+			.catch(() => {
+				// El glosario es secundario: sin datos, simplemente no se muestra.
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	// Agrupar títulos por categoría preservando el orden del backend (categoría + título).
+	const titulosPorCategoria = useMemo(() => {
+		const grupos: Array<{ categoria: string; items: PublicEducativoTituloItem[] }> = [];
+		titulos.forEach((titulo) => {
+			const key = titulo.categoria || "Otros temas";
+			const grupo = grupos.find((g) => g.categoria === key);
+			if (grupo) grupo.items.push(titulo);
+			else grupos.push({ categoria: key, items: [titulo] });
+		});
+		return grupos;
+	}, [titulos]);
+
+	const handleSearchSubmit = (event: React.FormEvent) => {
+		event.preventDefault();
+		updateParams({ q: searchInput.trim() || null, page: null });
+	};
 
 	return (
 		<Box component="section" sx={{ pt: { xs: 10, md: 14 }, pb: { xs: 6, md: 10 }, position: "relative", overflow: "hidden" }}>
@@ -181,6 +238,71 @@ const EducativoPage = () => {
 					</motion.div>
 				</Box>
 
+				{/* Filtros: buscador + chips de categoría (patrón jurisprudencia/index.tsx) */}
+				<motion.div
+					initial={{ opacity: 0, translateY: 16 }}
+					animate={{ opacity: 1, translateY: 0 }}
+					transition={{ type: "spring", stiffness: 150, damping: 30, delay: 0.2 }}
+				>
+					<Stack spacing={2} sx={{ mb: { xs: 4, md: 5 } }}>
+						<Box component="form" onSubmit={handleSearchSubmit} sx={{ maxWidth: 560, mx: "auto", width: "100%" }}>
+							<TextField
+								fullWidth
+								size="small"
+								placeholder="Buscar por tema (ej. despido, prescripción...)"
+								value={searchInput}
+								onChange={(event) => setSearchInput(event.target.value)}
+								InputProps={{
+									startAdornment: (
+										<InputAdornment position="start">
+											<SearchNormal1 size={18} color={theme.palette.text.secondary} />
+										</InputAdornment>
+									),
+								}}
+								sx={{
+									"& .MuiOutlinedInput-root": {
+										borderRadius: 2.5,
+										bgcolor: alpha(theme.palette.background.paper, isDark ? 0.4 : 0.7),
+										transition: "box-shadow 0.25s ease",
+										"&.Mui-focused": { boxShadow: `0 6px 18px ${alpha(BRAND_BLUE, 0.12)}` },
+									},
+								}}
+							/>
+						</Box>
+						{categorias.length > 0 && (
+							<Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", justifyContent: "center", rowGap: 1 }}>
+								{[{ categoria: "", total: 0, label: "Todas" }, ...categorias.map((c) => ({ ...c, label: "" }))].map((c) => {
+									const selected = categoria === c.categoria;
+									return (
+										<Chip
+											key={c.categoria || "todas"}
+											label={c.label || `${c.categoria} (${c.total})`}
+											onClick={() => updateParams({ cat: c.categoria || null, page: null })}
+											sx={{
+												borderRadius: 1,
+												height: 30,
+												fontSize: "0.8125rem",
+												fontWeight: selected ? 600 : 500,
+												letterSpacing: "0.01em",
+												fontVariantNumeric: "tabular-nums",
+												transition: "all 0.25s ease",
+												color: selected ? BRAND_BLUE : theme.palette.text.secondary,
+												bgcolor: selected ? alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) : "transparent",
+												border: `1px solid ${selected ? alpha(BRAND_BLUE, isDark ? 0.28 : 0.18) : alpha(theme.palette.divider, 0.7)}`,
+												"&:hover": {
+													bgcolor: selected ? alpha(BRAND_BLUE, isDark ? 0.18 : 0.12) : alpha(BRAND_BLUE, isDark ? 0.08 : 0.05),
+													borderColor: alpha(BRAND_BLUE, 0.3),
+													color: selected ? BRAND_BLUE : theme.palette.text.primary,
+												},
+											}}
+										/>
+									);
+								})}
+							</Stack>
+						)}
+					</Stack>
+				</motion.div>
+
 				{/* Lista */}
 				{loading ? (
 					<Grid container spacing={3}>
@@ -200,14 +322,36 @@ const EducativoPage = () => {
 						</Typography>
 					</Box>
 				) : items.length === 0 ? (
-					<Box sx={{ textAlign: "center", py: 8 }}>
-						<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.01em", mb: 1 }}>
-							Todavía no hay artículos publicados
-						</Typography>
-						<Typography color="text.secondary" sx={{ fontSize: "0.9rem" }}>
-							Estamos preparando el primer contenido. Volvé a visitarnos pronto.
-						</Typography>
-					</Box>
+					search || categoria ? (
+						<Box sx={{ textAlign: "center", py: 8 }}>
+							<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.01em", mb: 1 }}>
+								No encontramos artículos para esa búsqueda
+							</Typography>
+							<Typography color="text.secondary" sx={{ fontSize: "0.9rem", mb: 2.5 }}>
+								Probá con otra palabra, o mirá todos los artículos.
+							</Typography>
+							<Button
+								variant="text"
+								color="primary"
+								onClick={() => {
+									setSearchInput("");
+									updateParams({ q: null, cat: null, page: null });
+								}}
+								sx={{ fontSize: "0.95rem", fontWeight: 600, textTransform: "none", "&:hover": { bgcolor: alpha(BRAND_BLUE, 0.06) } }}
+							>
+								Ver todos los artículos
+							</Button>
+						</Box>
+					) : (
+						<Box sx={{ textAlign: "center", py: 8 }}>
+							<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.01em", mb: 1 }}>
+								Todavía no hay artículos publicados
+							</Typography>
+							<Typography color="text.secondary" sx={{ fontSize: "0.9rem" }}>
+								Estamos preparando el primer contenido. Volvé a visitarnos pronto.
+							</Typography>
+						</Box>
+					)
 				) : (
 					<Grid container spacing={3} alignItems="stretch">
 						{items.map((item, idx) => (
@@ -244,6 +388,33 @@ const EducativoPage = () => {
 										>
 											<Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 1.25, height: "100%" }}>
 												<Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap", rowGap: 0.75, mb: 0.25 }}>
+													{/* Pill de categoría: variante neutra para distinguirla de los fueros */}
+													{item.categoria && (
+														<Box
+															sx={{
+																display: "inline-flex",
+																alignItems: "center",
+																px: 1,
+																py: 0.35,
+																borderRadius: 1,
+																bgcolor: alpha(theme.palette.text.primary, isDark ? 0.08 : 0.045),
+																border: `1px solid ${alpha(theme.palette.divider, 0.9)}`,
+															}}
+														>
+															<Typography
+																sx={{
+																	fontSize: "0.65rem",
+																	fontWeight: 600,
+																	letterSpacing: "0.12em",
+																	textTransform: "uppercase",
+																	color: theme.palette.text.secondary,
+																	lineHeight: 1.2,
+																}}
+															>
+																{item.categoria}
+															</Typography>
+														</Box>
+													)}
 													{item.fueros.map((fuero) => (
 														<Box
 															key={fuero}
@@ -334,6 +505,80 @@ const EducativoPage = () => {
 							}}
 						/>
 					</Stack>
+				)}
+
+				{/* Glosario: todos los temas publicados, agrupados por categoría. Colapsado
+				    por defecto para no competir con las cards; útil para SEO interno y para
+				    quien busca un tema puntual. Solo se muestra si hay artículos publicados. */}
+				{titulos.length > 0 && (
+					<Box sx={{ mt: { xs: 5, md: 7 } }}>
+						<Stack alignItems="center">
+							<Button
+								variant="text"
+								onClick={() => setGlosarioOpen((open) => !open)}
+								endIcon={glosarioOpen ? <ArrowUp2 size={16} /> : <ArrowDown2 size={16} />}
+								sx={{
+									fontSize: "0.9rem",
+									fontWeight: 600,
+									textTransform: "none",
+									color: theme.palette.text.secondary,
+									"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.06), color: BRAND_BLUE },
+								}}
+							>
+								Ver todos los temas ({titulos.length})
+							</Button>
+						</Stack>
+						<Collapse in={glosarioOpen} timeout="auto" unmountOnExit>
+							<Box
+								sx={{
+									mt: 2,
+									p: { xs: 2.5, md: 3.5 },
+									borderRadius: 2,
+									border: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
+									bgcolor: alpha(theme.palette.background.paper, isDark ? 0.3 : 0.55),
+								}}
+							>
+								<Grid container spacing={{ xs: 2.5, md: 3 }}>
+									{titulosPorCategoria.map((grupo) => (
+										<Grid item xs={12} sm={6} md={4} key={grupo.categoria}>
+											<Typography
+												sx={{
+													fontSize: "0.7rem",
+													fontWeight: 700,
+													letterSpacing: "0.12em",
+													textTransform: "uppercase",
+													color: BRAND_BLUE,
+													mb: 1,
+												}}
+											>
+												{grupo.categoria}
+											</Typography>
+											<Stack component="ul" spacing={0.5} sx={{ listStyle: "none", m: 0, p: 0 }}>
+												{grupo.items.map((titulo) => (
+													<Box component="li" key={titulo.slug}>
+														<Link
+															component={RouterLink}
+															to={`/educativo/${titulo.slug}`}
+															underline="hover"
+															sx={{
+																fontSize: "0.85rem",
+																lineHeight: 1.45,
+																color: theme.palette.text.secondary,
+																transition: "color 0.2s ease",
+																"&:hover": { color: BRAND_BLUE },
+															}}
+														>
+															{titulo.titulo}
+														</Link>
+													</Box>
+												))}
+											</Stack>
+										</Grid>
+									))}
+								</Grid>
+							</Box>
+						</Collapse>
+					</Box>
 				)}
 
 				{/* CTA final — panel tintado (patrón guides/Technologies) */}

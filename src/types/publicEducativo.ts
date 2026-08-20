@@ -7,6 +7,12 @@ export interface PublicEducativoListItem {
 	resumen: string;
 	publicadoEn: string | null;
 	fueros: string[];
+	categoria: string | null;
+}
+
+export interface PublicEducativoCategoriaCount {
+	categoria: string;
+	total: number;
 }
 
 export interface PublicEducativoJurisprudenciaItem {
@@ -43,7 +49,22 @@ export interface PublicEducativoListResponse {
 		total: number;
 		page: number;
 		pages: number;
+		// Facet de categorías: calculado sin el filtro de categoría (con la búsqueda aplicada)
+		categorias: PublicEducativoCategoriaCount[];
 	};
+}
+
+// GET /api/public/educativo/titulos — todos los títulos publicados (glosario),
+// ordenados por categoría y título.
+export interface PublicEducativoTituloItem {
+	slug: string;
+	titulo: string;
+	categoria: string | null;
+}
+
+export interface PublicEducativoTitulosResponse {
+	success: boolean;
+	data: PublicEducativoTituloItem[];
 }
 
 export interface PublicEducativoDetailResponse {
