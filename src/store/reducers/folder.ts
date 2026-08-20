@@ -94,17 +94,26 @@ const folder = (state = initialFolderState, action: any) => {
 				archivedPagination: action.payload.pagination,
 				isArchivedLoader: false,
 			};
-		case GET_FOLDER_BY_ID:
+		case GET_FOLDER_BY_ID: {
+			// Mergear en la lista en lugar de reemplazar: si el detalle no trae
+			// algún campo (p.ej. scba/eje por proyección distinta), preservamos
+			// lo que ya teníamos desde getFoldersByUserId. Evita que el tilde
+			// de "Causa vinculada" desaparezca al navegar entre vistas.
+			// Si el folder no está en la lista y NO está archivado, lo agregamos:
+			// es el caso del refetch post-desarchivo desde el gate del detalle —
+			// sin esto el listado muestra la fila sin datos hasta recargar.
+			const inList = state.folders.some((f: FolderData) => f._id === action.payload._id);
 			return {
 				...state,
 				folder: action.payload,
-				// Mergear en la lista en lugar de reemplazar: si el detalle no trae
-				// algún campo (p.ej. scba/eje por proyección distinta), preservamos
-				// lo que ya teníamos desde getFoldersByUserId. Evita que el tilde
-				// de "Causa vinculada" desaparezca al navegar entre vistas.
-				folders: state.folders.map((folder: FolderData) => (folder._id === action.payload._id ? { ...folder, ...action.payload } : folder)),
+				folders: inList
+					? state.folders.map((folder: FolderData) => (folder._id === action.payload._id ? { ...folder, ...action.payload } : folder))
+					: action.payload.archived === true
+					? state.folders
+					: [...state.folders, action.payload],
 				isLoader: false,
 			};
+		}
 		case DELETE_FOLDER:
 			return {
 				...state,
@@ -141,9 +150,17 @@ const folder = (state = initialFolderState, action: any) => {
 
 			return {
 				...state,
-				// Añadir las carpetas desarchivadas a la lista de carpetas activas
-				// Si encontramos la carpeta completa en archivedFolders, la usamos, sino usamos la versión parcial
-				folders: [...state.folders, ...(foldersToUnarchive.length > 0 ? foldersToUnarchive : action.payload)],
+				// Añadir las carpetas desarchivadas a la lista de carpetas activas.
+				// Si encontramos la carpeta completa en archivedFolders la usamos;
+				// si no, solo aceptamos objetos folder del payload — NUNCA strings:
+				// al desarchivar desde el gate del detalle archivedFolders está
+				// vacío y el payload son IDs crudos, que renderizaban una fila
+				// vacía en el listado. El folder completo llega igual a la lista
+				// vía el refetch GET_FOLDER_BY_ID posterior.
+				folders: [
+					...state.folders,
+					...(foldersToUnarchive.length > 0 ? foldersToUnarchive : action.payload.filter((f: any) => typeof f !== "string")),
+				],
 				// Remover las carpetas desarchivadas de la lista de archivados
 				archivedFolders: state.archivedFolders.filter((folder: FolderData) => !folderIdsToUnarchive.includes(folder._id)),
 				isLoader: false,
