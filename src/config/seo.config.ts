@@ -52,21 +52,6 @@ export const pageSEO: Record<string, SEOConfig> = {
 			"SAIJ fallos",
 		],
 	},
-	"/educativo": {
-		title: "Blog Educativo de Derecho Argentino - Artículos con Jurisprudencia | Law Analytics",
-		description:
-			"Artículos claros sobre derecho argentino respaldados con la jurisprudencia que se aplica en tribunales. Derecho laboral, civil, comercial y previsional explicado en simple.",
-		keywords: [
-			"blog derecho argentino",
-			"artículos jurídicos",
-			"derecho laboral explicado",
-			"derecho civil argentina",
-			"jurisprudencia aplicada",
-			"educación legal",
-			"doctrina y jurisprudencia",
-			"novedades del derecho",
-		],
-	},
 	"/calculator/labor": {
 		title: "Calculadora Laboral Online - Despidos e Indemnizaciones | Law Analytics",
 		description:

@@ -16,8 +16,6 @@ const PagesLanding = Loadable(lazy(() => import("pages/landing")));
 const GuidesPage = Loadable(lazy(() => import("pages/guides")));
 const JurisprudenciaPage = Loadable(lazy(() => import("pages/jurisprudencia")));
 const JurisprudenciaDetailPage = Loadable(lazy(() => import("pages/jurisprudencia/detail")));
-const EducativoPage = Loadable(lazy(() => import("pages/educativo")));
-const EducativoDetailPage = Loadable(lazy(() => import("pages/educativo/detail")));
 const FaqPage = Loadable(lazy(() => import("pages/faq")));
 const PrivacyPolicy = Loadable(lazy(() => import("pages/privacy-policy")));
 const CookiesPolicy = Loadable(lazy(() => import("pages/cookies-policy")));
@@ -50,14 +48,6 @@ export default function ThemeRoutes() {
 				{
 					path: "jurisprudencia/:id",
 					element: <JurisprudenciaDetailPage />,
-				},
-				{
-					path: "educativo",
-					element: <EducativoPage />,
-				},
-				{
-					path: "educativo/:slug",
-					element: <EducativoDetailPage />,
 				},
 				{
 					path: "faq",
