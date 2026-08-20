@@ -200,8 +200,7 @@ const EducativoPage = () => {
 								color: isDark ? theme.palette.grey[50] : theme.palette.grey[900],
 							}}
 						>
-							Aprendé lo que se aplica{" "}
-							{/* Resaltador de la serie Apuntes: la misma marca amarilla de los posts */}
+							Aprendé lo que se aplica {/* Resaltador de la serie Apuntes: la misma marca amarilla de los posts */}
 							<Box
 								component="span"
 								sx={{
@@ -615,13 +614,13 @@ const EducativoPage = () => {
 												padding: "0.06em 0.25em",
 											}}
 										>
-											80.000 fallos
+											más de 10.000 fallos
 										</Box>{" "}
 										a un buscador de distancia
 									</Typography>
 									<Typography sx={{ fontSize: "0.9rem", color: theme.palette.text.secondary, lineHeight: 1.55, maxWidth: 520 }}>
-										La jurisprudencia de estos artículos sale de nuestra base. Con tu cuenta gratis la buscás por situación procesal
-										— no solo por palabras — y además seguís tus expedientes con alertas de cada movimiento.
+										La jurisprudencia de estos artículos sale de nuestra base. Con tu cuenta gratis la buscás por situación procesal — no
+										solo por palabras — y además seguís tus expedientes con alertas de cada movimiento.
 									</Typography>
 								</Box>
 								<Box sx={{ textAlign: { xs: "left", sm: "center" }, flexShrink: 0 }}>

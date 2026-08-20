@@ -100,9 +100,7 @@ const FalloCard = ({ fallo }: { fallo: PublicEducativoJurisprudenciaItem }) => {
 				{fallo.caratula}
 			</Typography>
 			{fallo.tribunal && (
-				<Typography
-					sx={{ fontSize: "0.78rem", color: theme.palette.text.secondary, textTransform: "capitalize", letterSpacing: "0.01em" }}
-				>
+				<Typography sx={{ fontSize: "0.78rem", color: theme.palette.text.secondary, textTransform: "capitalize", letterSpacing: "0.01em" }}>
 					{fallo.tribunal.toLowerCase()}
 				</Typography>
 			)}
@@ -131,7 +129,7 @@ const FalloCard = ({ fallo }: { fallo: PublicEducativoJurisprudenciaItem }) => {
 				</Box>
 			) : (
 				<Typography sx={{ fontSize: "0.78rem", color: theme.palette.text.secondary, fontStyle: "italic" }}>
-					Buscá este fallo y 80.000 más desde tu cuenta
+					Buscá este fallo entre más de 10.000 desde tu cuenta
 				</Typography>
 			)}
 		</Box>
@@ -207,7 +205,9 @@ const EducativoDetailPage = () => {
 		<Box component="section" sx={{ pt: { xs: 10, md: 13 }, pb: { xs: 6, md: 10 }, position: "relative", overflow: "hidden" }}>
 			<SEO
 				path={`/educativo/${slug || ""}`}
-				title={articulo?.seo?.title || (articulo ? `${articulo.titulo} | Blog educativo | Law Analytics` : "Blog educativo | Law Analytics")}
+				title={
+					articulo?.seo?.title || (articulo ? `${articulo.titulo} | Blog educativo | Law Analytics` : "Blog educativo | Law Analytics")
+				}
 				description={
 					articulo?.seo?.description ||
 					(articulo
@@ -438,7 +438,7 @@ const EducativoDetailPage = () => {
 													padding: "0.06em 0.25em",
 												}}
 											>
-												80.000
+												más de 10.000 fallos
 											</Box>
 										</Typography>
 										<Typography sx={{ fontSize: "0.9rem", color: theme.palette.text.secondary, lineHeight: 1.55, maxWidth: 480 }}>
