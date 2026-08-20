@@ -11,7 +11,10 @@ import { refreshAccessToken } from "utils/refreshToken";
  *   la API principal.
  */
 const ragAxios = axios.create({
-	baseURL: import.meta.env.VITE_RAG_URL,
+	// Fallback defensivo: si VITE_RAG_URL falta en el env del build (pasó en
+	// prod 2026-08-20 — las requests salían relativas a lawanalytics.app y
+	// nginx devolvía 405), apuntar directo a la RAG API de producción.
+	baseURL: import.meta.env.VITE_RAG_URL || "https://ia.lawanalytics.app",
 	withCredentials: true,
 	headers: { "Content-Type": "application/json" },
 });
