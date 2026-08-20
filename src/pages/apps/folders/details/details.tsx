@@ -5,6 +5,8 @@ import { useSelector } from "react-redux";
 import {
 	Skeleton,
 	Box,
+	Button,
+	CircularProgress,
 	Tab,
 	Tabs,
 	Typography,
@@ -16,6 +18,7 @@ import {
 	useMediaQuery,
 } from "@mui/material";
 import {
+	Archive,
 	ExportSquare,
 	InfoCircle,
 	Activity,
@@ -55,7 +58,9 @@ import InfoTabsVertical from "./components/InfoTabsVertical";
 
 // Actions
 import { dispatch } from "store";
-import { getFolderById } from "store/reducers/folder";
+import { getFolderById, unarchiveFolders } from "store/reducers/folder";
+import { openSnackbar } from "store/reducers/snackbar";
+import { useTeam } from "contexts/TeamContext";
 import { filterContactsByFolder, getContactsByUserId } from "store/reducers/contacts";
 import GestionTabImproved from "./alternatives/GestionTabImproved";
 import FolderRecursosTab from "./components/FolderRecursosTab";
@@ -139,6 +144,51 @@ const Details = () => {
 	const isLoader = useSelector((state: StateType) => state.folder.isLoader);
 	const contacts = useSelector((state: StateType) => state.contacts.contacts);
 	const userId = useSelector((state: StateType) => state.auth.user?._id);
+
+	// Desarchivar desde el banner de carpeta archivada
+	const { getRequestHeaders } = useTeam();
+	const [unarchiving, setUnarchiving] = useState(false);
+	const handleUnarchiveFromBanner = useCallback(async () => {
+		if (!userId || !id || unarchiving) return;
+		try {
+			setUnarchiving(true);
+			const result = await dispatch(unarchiveFolders(userId, [id], { headers: getRequestHeaders() }));
+			if (result.success) {
+				await dispatch(getFolderById(id, true));
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "Carpeta desarchivada correctamente",
+						variant: "alert",
+						alert: { color: "success" },
+						close: true,
+					}),
+				);
+			} else {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: result.message || "Error al desarchivar la carpeta",
+						variant: "alert",
+						alert: { color: "error" },
+						close: true,
+					}),
+				);
+			}
+		} catch (error) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Error al desarchivar la carpeta",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+		} finally {
+			setUnarchiving(false);
+		}
+	}, [userId, id, unarchiving, getRequestHeaders]);
 
 	// Memoized data fetching function
 	const fetchData = useCallback(async () => {
@@ -806,6 +856,68 @@ const Details = () => {
 			)}
 
 			{/* Mobile Drawer for Navigation - Removed: Now using icon tabs */}
+
+			{/* Banner de carpeta archivada — prioridad visual sobre el estado de
+			    sincronización: el detalle es accesible por URL directa (deep links
+			    de notificaciones) y sin este banner nada indica el archivado. */}
+			{folder && folder._id === id && folder.archived === true && !isLoader && (
+				<Box
+					sx={{
+						mb: 2,
+						p: { xs: 1.75, sm: 2 },
+						borderRadius: 2,
+						bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.06),
+						border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.35 : 0.28)}`,
+						display: "flex",
+						flexDirection: { xs: "column", sm: "row" },
+						alignItems: { xs: "stretch", sm: "center" },
+						gap: { xs: 1.5, sm: 2 },
+					}}
+				>
+					<Box
+						sx={{
+							width: 40,
+							height: 40,
+							borderRadius: 1.5,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(STALE_AMBER, isDark ? 0.2 : 0.12),
+							border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.35 : 0.25)}`,
+							color: STALE_AMBER,
+							flexShrink: 0,
+						}}
+					>
+						<Archive size={20} variant="Bulk" />
+					</Box>
+					<Box sx={{ flex: 1, minWidth: 0 }}>
+						<Typography sx={{ fontSize: "0.9rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>
+							Carpeta archivada
+						</Typography>
+						<Typography sx={{ fontSize: "0.8rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+							Esta carpeta no aparece en tu listado de causas. Desarchivala para volver a operarla desde el listado.
+						</Typography>
+					</Box>
+					<Button
+						variant="outlined"
+						onClick={handleUnarchiveFromBanner}
+						disabled={unarchiving}
+						startIcon={unarchiving ? <CircularProgress size={14} color="inherit" /> : <Archive size={15} variant="Linear" />}
+						sx={{
+							textTransform: "none",
+							fontWeight: 600,
+							letterSpacing: "-0.005em",
+							borderRadius: 1.25,
+							flexShrink: 0,
+							color: STALE_AMBER,
+							borderColor: alpha(STALE_AMBER, 0.5),
+							"&:hover": { borderColor: STALE_AMBER, bgcolor: alpha(STALE_AMBER, isDark ? 0.12 : 0.08) },
+						}}
+					>
+						{unarchiving ? "Desarchivando…" : "Desarchivar"}
+					</Button>
+				</Box>
+			)}
 
 			<MainCard
 				content={false}

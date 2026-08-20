@@ -103,6 +103,8 @@ export type FolderData = {
 	causaAssociationStatus?: string; // Estado de asociación (success, pending, pending_selection, failed)
 	/** @deprecated usar listRemoved + listRemovedSource='pjn'. Se mantiene temporalmente por compat. */
 	pjnNotFound?: boolean;
+	/** Carpeta archivada: no aparece en el listado principal pero sigue accesible por URL directa. */
+	archived?: boolean;
 	/** La causa ya no aparece en el listado del portal origen. Generalizado para PJN/SCBA/MEV/EJE. */
 	listRemoved?: boolean;
 	listRemovedAt?: string;
