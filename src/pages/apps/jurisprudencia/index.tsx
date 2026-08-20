@@ -256,15 +256,49 @@ const JurisprudenciaSearchPage = () => {
 	const inBrowseMode = results === null && !searching;
 
 	return (
-		<Stack spacing={2.5}>
-			{/* Hero de búsqueda */}
-			<MainCard content={false} sx={{ borderRadius: 2, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`, overflow: "hidden" }}>
-				<Box sx={{ p: { xs: 2.25, sm: 3 }, bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025) }}>
-					<Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
+		<Stack spacing={2.5} sx={{ mt: 1 }}>
+			{/* Header brand atmosférico — mismo patrón que Plantillas/Modelos */}
+			<Box
+				sx={{
+					position: "relative",
+					overflow: "hidden",
+					borderRadius: 2,
+					p: { xs: 2, md: 2.5 },
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)}`,
+				}}
+			>
+				<Box
+					sx={{
+						position: "absolute",
+						top: -60,
+						right: -40,
+						width: 280,
+						height: 280,
+						borderRadius: "50%",
+						background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
+						pointerEvents: "none",
+					}}
+				/>
+				<Box
+					sx={{
+						position: "absolute",
+						inset: 0,
+						backgroundImage: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)} 1px, transparent 1px)`,
+						backgroundSize: "22px 22px",
+						maskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+						WebkitMaskImage: "radial-gradient(ellipse at top right, black 0%, transparent 60%)",
+						opacity: 0.6,
+						pointerEvents: "none",
+					}}
+				/>
+
+				<Box sx={{ position: "relative" }}>
+					<Stack direction="row" spacing={1.5} alignItems="center">
 						<Box
 							sx={{
-								width: 42,
-								height: 42,
+								width: 44,
+								height: 44,
 								borderRadius: 1.5,
 								display: "flex",
 								alignItems: "center",
@@ -272,15 +306,46 @@ const JurisprudenciaSearchPage = () => {
 								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
 								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
 								color: BRAND_BLUE,
+								flexShrink: 0,
 							}}
 						>
 							<Judge size={22} variant="Bulk" />
 						</Box>
-						<Stack spacing={0}>
-							<Typography sx={{ fontSize: "1.15rem", fontWeight: 600, letterSpacing: "-0.018em", color: "text.primary" }}>
-								Jurisprudencia
+						<Stack spacing={0.25} sx={{ minWidth: 0 }}>
+							<Stack direction="row" spacing={0.875} alignItems="center" sx={{ display: { xs: "none", md: "flex" } }}>
+								<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+								<Typography
+									sx={{
+										fontSize: "0.62rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+									}}
+								>
+									Jurisprudencia
+								</Typography>
+							</Stack>
+							<Typography
+								sx={{
+									fontSize: { xs: "1.05rem", md: "1.25rem" },
+									fontWeight: 600,
+									letterSpacing: "-0.015em",
+									color: "text.primary",
+									textWrap: "balance",
+								}}
+							>
+								Buscador de fallos
 							</Typography>
-							<Typography sx={{ fontSize: "0.8rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+							<Typography
+								sx={{
+									display: { xs: "none", md: "block" },
+									fontSize: "0.82rem",
+									color: "text.secondary",
+									letterSpacing: "-0.005em",
+									textWrap: "pretty",
+								}}
+							>
 								Búsqueda inteligente sobre más de 10.000 fallos nacionales con resumen propio — describí el caso con tus palabras.
 							</Typography>
 						</Stack>
@@ -383,7 +448,7 @@ const JurisprudenciaSearchPage = () => {
 						</Stack>
 					)}
 				</Box>
-			</MainCard>
+			</Box>
 
 			{/* Error */}
 			{errorMsg && (
