@@ -244,13 +244,28 @@ const JurisprudenciaSearchPage = () => {
 	// mismo contenido que la vista pública, con cache del server).
 	const handleVerTexto = useCallback(async (sentenciaId: string, caratula?: string) => {
 		setTextoDialog({ open: true, caratula: caratula || "Sentencia", texto: "", loading: true });
+		// Primero el endpoint público de detalle (cacheado, sin cuota — cubre el
+		// corpus SAIJ curado). Si el fallo no está ahí (p.ej. corpus configurado
+		// en "todo" con sentencias PJN), fallback al texto del rag-api.
+		let texto: string | null = null;
 		try {
 			const detail = await getPublicSentencia(sentenciaId);
-			const texto = detail?.data?.texto ? normalizeTexto(detail.data.texto) : "(sin texto disponible)";
-			setTextoDialog((prev) => ({ ...prev, texto, loading: false }));
+			if (detail?.data?.texto) texto = detail.data.texto;
 		} catch {
-			setTextoDialog((prev) => ({ ...prev, texto: "No se pudo cargar el texto de esta sentencia.", loading: false }));
+			// sigue al fallback
 		}
+		if (!texto) {
+			try {
+				texto = await jurisprudenciaService.getTexto(sentenciaId);
+			} catch {
+				// sin texto disponible en ninguna fuente
+			}
+		}
+		setTextoDialog((prev) => ({
+			...prev,
+			texto: texto ? normalizeTexto(texto) : "No se pudo cargar el texto de esta sentencia.",
+			loading: false,
+		}));
 	}, []);
 
 	const selectSx = {
