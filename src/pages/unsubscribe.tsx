@@ -16,6 +16,15 @@ import MainCard from "components/MainCard";
 
 const SUPPORT_EMAIL = "soporte@lawanalytics.app";
 
+// Tipos de baja granular: solo apagan un tipo de contenido, no todos los
+// correos. Debe coincidir con TIPOS_GRANULARES del backend (newsletterController).
+const TIPO_LABELS: Record<string, string> = {
+	jurisprudencia: "novedades jurisprudenciales",
+	producto: "novedades del producto",
+	promociones: "promociones y descuentos",
+	recursos: "guías y recursos",
+};
+
 // ==============================|| UNSUBSCRIBE PAGE ||============================== //
 
 const UnsubscribePage = () => {
@@ -30,6 +39,11 @@ const UnsubscribePage = () => {
 	const category = searchParams.get("category");
 	const template = searchParams.get("template");
 	const campaign = searchParams.get("campaign");
+	const tipoParam = searchParams.get("tipo");
+	// Solo se trata como baja granular si es un tipo conocido; cualquier otro
+	// valor cae en la baja global de siempre.
+	const tipo = tipoParam && TIPO_LABELS[tipoParam] ? tipoParam : null;
+	const tipoLabel = tipo ? TIPO_LABELS[tipo] : null;
 
 	const handleUnsubscribe = async () => {
 		if (!email) return;
@@ -40,6 +54,7 @@ const UnsubscribePage = () => {
 			if (template) params.append("template", template);
 			if (campaign) params.append("campaign", campaign);
 			if (category) params.append("category", category);
+			if (tipo) params.append("tipo", tipo);
 
 			const url = `${import.meta.env.VITE_BASE_URL}/api/newsletter/${encodeURIComponent(email)}${
 				params.toString() ? `?${params.toString()}` : ""
@@ -53,7 +68,7 @@ const UnsubscribePage = () => {
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: "Te has desuscrito exitosamente",
+						message: tipo ? `Listo: no vas a recibir más correos de ${tipoLabel}` : "Te desuscribiste exitosamente",
 						variant: "alert",
 						alert: {
 							color: "success",
@@ -159,13 +174,25 @@ const UnsubscribePage = () => {
 			<MainCard>
 				<Stack alignItems="center" spacing={3} sx={{ p: matchDownSM ? 2 : 3 }}>
 					<Typography variant="h2" align="center">
-						Cancelar Suscripción
+						{tipo ? "Dejar de recibir estos correos" : "Cancelar Suscripción"}
 					</Typography>
 
-					<Typography variant="body1" align="center">
-						Estás a punto de cancelar la suscripción de <strong>{email}</strong>
-						{category && ` a los correos de la categoría "${category}"`}.
-					</Typography>
+					{tipo ? (
+						<>
+							<Typography variant="body1" align="center">
+								Estás a punto de dar de baja los correos de <strong>{tipoLabel}</strong> para <strong>{email}</strong>.
+							</Typography>
+							<Typography variant="body2" align="center" color="text.secondary">
+								Solo dejás de recibir este tipo de contenido: el resto de los correos de tu cuenta no se ve afectado. Podés volver a
+								activarlos cuando quieras desde la configuración de notificaciones de tu cuenta.
+							</Typography>
+						</>
+					) : (
+						<Typography variant="body1" align="center">
+							Estás a punto de cancelar la suscripción de <strong>{email}</strong>
+							{category && ` a los correos de la categoría "${category}"`}.
+						</Typography>
+					)}
 
 					{success === null ? (
 						<Button
@@ -184,10 +211,12 @@ const UnsubscribePage = () => {
 								<TickCircle size={48} color={theme.palette.success.main} variant="Bold" />
 							</Box>
 							<Typography color="success.main" variant="h5" align="center" gutterBottom>
-								¡Desuscripción exitosa!
+								{tipo ? "¡Baja registrada!" : "¡Desuscripción exitosa!"}
 							</Typography>
 							<Typography align="center">
-								Tu correo {email} ha sido removido de nuestra lista{category ? ` para la categoría "${category}"` : ""}.
+								{tipo
+									? `${email} no va a recibir más correos de ${tipoLabel}. Podés reactivarlos desde la configuración de notificaciones de tu cuenta.`
+									: `Tu correo ${email} ha sido removido de nuestra lista${category ? ` para la categoría "${category}"` : ""}.`}
 							</Typography>
 						</Box>
 					) : (
