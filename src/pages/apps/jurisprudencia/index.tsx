@@ -104,17 +104,54 @@ const formatFecha = (iso?: string | null) => {
 	return isNaN(d.getTime()) ? iso : d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
 };
 
-// El texto viene de pdf-parse: cada línea arrastra la indentación del PDF
-// original (sangrías enormes que en pantalla se ven como un margen derecho
-// gigante). Normalizamos: sin indentación por línea, tabs a espacio, espacios
-// múltiples colapsados y máximo un renglón vacío entre párrafos.
-const normalizeTexto = (raw: string): string =>
-	raw
-		.split("\n")
-		.map((line) => line.replace(/\t/g, " ").replace(/ {2,}/g, " ").trim())
-		.join("\n")
-		.replace(/\n{3,}/g, "\n\n")
-		.trim();
+// El texto viene de pdf-parse: cada línea física del PDF termina en \n (una
+// cada ~80 caracteres), lo que en pantalla deja un borde derecho dentado con
+// mucho espacio vacío. Reflow: se unen las líneas en párrafos reales y solo
+// se corta en (a) líneas en blanco del original, (b) marcadores estructurales
+// típicos de un fallo (VISTOS/CONSIDERANDO/RESUELVE, numerales, incisos,
+// líneas todo-mayúsculas). Las palabras cortadas con guión al final de línea
+// se re-unen.
+const RE_ESTRUCTURAL =
+	/^(\d+[.)ºª°]|[IVXLCDM]+[.)]\s|[a-z]\)\s|[-•–]\s|Art\.|ART\.|AUTOS|VISTOS?\b|Y VISTOS|CONSIDERANDO|RESULTANDO|RESUELVO|RESUELVE|SE RESUELVE|FALLO:|POR ELLO)/;
+
+const esLineaEstructural = (line: string): boolean =>
+	RE_ESTRUCTURAL.test(line) || (line.length > 3 && line === line.toUpperCase() && /[A-ZÁÉÍÓÚÑ]{4,}/.test(line));
+
+const normalizeTexto = (raw: string): string => {
+	const lines = raw.split("\n").map((line) => line.replace(/\t/g, " ").replace(/ {2,}/g, " ").trim());
+	const parrafos: string[] = [];
+	let actual = "";
+
+	const flush = () => {
+		if (actual) parrafos.push(actual);
+		actual = "";
+	};
+
+	for (const line of lines) {
+		if (!line) {
+			flush();
+			continue;
+		}
+		if (!actual) {
+			actual = line;
+			continue;
+		}
+		if (esLineaEstructural(line)) {
+			flush();
+			actual = line;
+			continue;
+		}
+		// Palabra cortada con guión al final de la línea anterior
+		if (/[a-záéíóúñ]-$/.test(actual) && /^[a-záéíóúñ]/.test(line)) {
+			actual = actual.slice(0, -1) + line;
+		} else {
+			actual += " " + line;
+		}
+	}
+	flush();
+
+	return parrafos.join("\n\n").trim();
+};
 
 const JurisprudenciaSearchPage = () => {
 	const theme = useTheme();
@@ -926,7 +963,16 @@ const JurisprudenciaSearchPage = () => {
 							<CircularProgress size={26} sx={{ color: BRAND_BLUE }} />
 						</Stack>
 					) : (
-						<Typography sx={{ fontSize: "0.84rem", lineHeight: 1.65, whiteSpace: "pre-wrap", color: "text.primary" }}>
+						<Typography
+							sx={{
+								fontSize: "0.84rem",
+								lineHeight: 1.7,
+								whiteSpace: "pre-wrap",
+								textAlign: "justify",
+								hyphens: "auto",
+								color: "text.primary",
+							}}
+						>
 							{textoDialog.texto}
 						</Typography>
 					)}
