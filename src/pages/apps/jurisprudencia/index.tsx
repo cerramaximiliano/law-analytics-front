@@ -29,7 +29,7 @@ import { JurisprudenciaHit, JurisprudenciaQuotaError } from "types/jurisprudenci
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // icons
-import { ArrowLeft, Book, CloseSquare, DocumentText, Judge, SearchNormal1 } from "iconsax-react";
+import { ArrowLeft, Book, CloseSquare, DocumentText, ExportSquare, Judge, SearchNormal1 } from "iconsax-react";
 
 // ==============================|| JURISPRUDENCIA — BÚSQUEDA SEMÁNTICA ||============================== //
 //
@@ -38,26 +38,22 @@ import { ArrowLeft, Book, CloseSquare, DocumentText, Judge, SearchNormal1 } from
 // planner LLM: interpreta lenguaje natural y deriva filtros) con gating por
 // plan del lado del backend (free: cuota mensual; pagos: ilimitado).
 
+// Fueros con presencia real en el corpus SAIJ (mismos códigos y labels que la
+// vista pública /jurisprudencia).
 const FUEROS = [
 	{ value: "", label: "Todos los fueros" },
-	{ value: "CNT", label: "Laboral (CNT)" },
-	{ value: "CIV", label: "Civil (CIV)" },
-	{ value: "CSS", label: "Seguridad Social (CSS)" },
-	{ value: "COM", label: "Comercial (COM)" },
-];
-
-const TIPOS = [
-	{ value: "", label: "Todos los tipos" },
-	{ value: "definitiva", label: "Definitiva" },
-	{ value: "interlocutoria", label: "Interlocutoria" },
-	{ value: "camara", label: "Cámara" },
+	{ value: "COM", label: "Comercial" },
+	{ value: "CNT", label: "Trabajo" },
+	{ value: "CCC", label: "Criminal y Correccional" },
+	{ value: "CIV", label: "Civil" },
+	{ value: "CSS", label: "Seguridad Social" },
 ];
 
 const EJEMPLOS = [
 	"Despido discriminatorio por embarazo con indemnización agravada",
-	"Reajuste de haberes previsionales por movilidad",
+	"Concurso preventivo: verificación de créditos laborales",
 	"Daños y perjuicios por accidente de tránsito con incapacidad",
-	"Regulación de honorarios y base regulatoria en juicio laboral",
+	"Regulación de honorarios y base regulatoria",
 ];
 
 const SECTION_LABELS: Record<string, string> = {
@@ -69,10 +65,17 @@ const SECTION_LABELS: Record<string, string> = {
 };
 
 const FUERO_LABELS: Record<string, string> = {
-	CNT: "Laboral",
+	CNT: "Trabajo",
 	CIV: "Civil",
 	CSS: "Seg. Social",
 	COM: "Comercial",
+	CCC: "Crim. y Correccional",
+	CSJ: "Corte Suprema",
+	CNE: "Electoral",
+	CAF: "Cont. Adm. Federal",
+	CCF: "Civil y Com. Federal",
+	CPE: "Penal Económico",
+	CFP: "Crim. y Corr. Federal",
 };
 
 const formatFecha = (iso?: string) => {
@@ -87,7 +90,6 @@ const JurisprudenciaSearchPage = () => {
 
 	const [queryInput, setQueryInput] = useState("");
 	const [fuero, setFuero] = useState("");
-	const [tipo, setTipo] = useState("");
 	const [anio, setAnio] = useState("");
 	const [searching, setSearching] = useState(false);
 	const [results, setResults] = useState<JurisprudenciaHit[] | null>(null);
@@ -120,7 +122,6 @@ const JurisprudenciaSearchPage = () => {
 			try {
 				const filters: Record<string, unknown> = {};
 				if (fuero) filters.fuero = fuero;
-				if (tipo) filters.sentenciaTipo = tipo;
 				const anioNum = parseInt(anio, 10);
 				if (!isNaN(anioNum) && anioNum > 1990) filters.year = anioNum;
 
@@ -143,7 +144,7 @@ const JurisprudenciaSearchPage = () => {
 				if (seq === searchSeqRef.current) setSearching(false);
 			}
 		},
-		[fuero, tipo, anio, searching],
+		[fuero, anio, searching],
 	);
 
 	// Nota: la cuota restante viaja en headers de respuesta pero axios normaliza
@@ -226,7 +227,7 @@ const JurisprudenciaSearchPage = () => {
 								Jurisprudencia
 							</Typography>
 							<Typography sx={{ fontSize: "0.8rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
-								Búsqueda semántica sobre más de 300.000 fallos nacionales — describí el caso con tus palabras.
+								Búsqueda inteligente sobre más de 10.000 fallos nacionales con resumen propio — describí el caso con tus palabras.
 							</Typography>
 						</Stack>
 					</Stack>
@@ -276,16 +277,6 @@ const JurisprudenciaSearchPage = () => {
 								{FUEROS.map((f) => (
 									<MenuItem key={f.value} value={f.value} sx={{ fontSize: "0.85rem" }}>
 										{f.label}
-									</MenuItem>
-								))}
-							</Select>
-						</FormControl>
-						<FormControl size="small" sx={{ minWidth: 175 }}>
-							<InputLabel sx={{ fontSize: "0.82rem" }}>Tipo</InputLabel>
-							<Select value={tipo} label="Tipo" onChange={(e) => setTipo(e.target.value)} sx={selectSx}>
-								{TIPOS.map((t) => (
-									<MenuItem key={t.value} value={t.value} sx={{ fontSize: "0.85rem" }}>
-										{t.label}
 									</MenuItem>
 								))}
 							</Select>
@@ -423,7 +414,7 @@ const JurisprudenciaSearchPage = () => {
 												}}
 											/>
 										)}
-										{hit.sentencia.sentenciaTipo && (
+										{hit.sentencia.sentenciaTipo && hit.sentencia.sentenciaTipo !== "otro" && (
 											<Chip
 												size="small"
 												label={hit.sentencia.sentenciaTipo}
@@ -526,6 +517,18 @@ const JurisprudenciaSearchPage = () => {
 									sx={{ textTransform: "none", fontWeight: 600, fontSize: "0.76rem", color: "text.secondary" }}
 								>
 									Similares
+								</Button>
+								{/* Lectura completa en la página pública (resumen formateado + PDF) */}
+								<Button
+									size="small"
+									component="a"
+									href={`/jurisprudencia/${hit.sentencia._id}`}
+									target="_blank"
+									rel="noopener"
+									startIcon={<ExportSquare size={14} />}
+									sx={{ textTransform: "none", fontWeight: 600, fontSize: "0.76rem", color: "text.secondary" }}
+								>
+									Ver en Jurisprudencia
 								</Button>
 							</Stack>
 						</Box>

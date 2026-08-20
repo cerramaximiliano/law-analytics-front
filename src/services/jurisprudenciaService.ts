@@ -1,6 +1,11 @@
 // Búsqueda semántica de jurisprudencia — consume pjn-rag-api (ia.lawanalytics.app)
-// vía ragAxios (Bearer + refresh automático). Corpus: ~320k sentencias nacionales
-// embebidas (Qdrant, text-embedding-3-large).
+// vía ragAxios (Bearer + refresh automático).
+//
+// IMPORTANTE: la vista in-app busca SOLO el corpus SAIJ (source:'saij', mismo
+// universo curado que la vista pública /jurisprudencia, +10.000 fallos con
+// resumen IA propio). El corpus PJN (scraping de causas de usuarios) NO se
+// expone acá — el backend además aplica el gate editorial (resumen presente,
+// sin kill-switch).
 import ragAxios from "utils/ragAxios";
 import { JurisprudenciaFilters, JurisprudenciaSearchResponse } from "types/jurisprudencia";
 
@@ -9,12 +14,17 @@ interface SearchOptions {
 	filters?: JurisprudenciaFilters;
 }
 
+const SAIJ_SOURCE = { source: "saij" };
+
 const jurisprudenciaService = {
 	// Búsqueda en lenguaje natural con query planner LLM (deriva filtros del prompt).
 	// Los filtros explícitos del cliente pisan los del planner.
 	ask: async (prompt: string, options: SearchOptions = {}): Promise<JurisprudenciaSearchResponse> => {
-		const body: Record<string, unknown> = { prompt, options: { topK: options.topK ?? 10 } };
-		if (options.filters && Object.keys(options.filters).length > 0) body.filters = options.filters;
+		const body: Record<string, unknown> = {
+			prompt,
+			options: { topK: options.topK ?? 10 },
+			filters: { ...SAIJ_SOURCE, ...(options.filters || {}) },
+		};
 		const response = await ragAxios.post("/rag/sentencias/ask", body);
 		// Cuota mensual restante (solo plan free) — el backend la manda por header
 		const remainingHeader = response.headers?.["x-search-quota-remaining"];
@@ -22,9 +32,13 @@ const jurisprudenciaService = {
 		return { ...response.data, quotaRemaining: isNaN(quotaRemaining as number) ? null : quotaRemaining };
 	},
 
-	// Sentencias similares a una dada ("más como esta")
+	// Sentencias similares a una dada ("más como esta") — también acotado a SAIJ
 	similares: async (sentenciaId: string, topK: number = 5): Promise<JurisprudenciaSearchResponse> => {
-		const response = await ragAxios.post("/rag/sentencias/buscar/similar", { sentenciaId, options: { topK } });
+		const response = await ragAxios.post("/rag/sentencias/buscar/similar", {
+			sentenciaId,
+			filters: SAIJ_SOURCE,
+			options: { topK },
+		});
 		return response.data;
 	},
 
