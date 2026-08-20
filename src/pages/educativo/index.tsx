@@ -603,12 +603,25 @@ const EducativoPage = () => {
 								justifyContent="space-between"
 							>
 								<Box>
-									<Typography variant="h4" sx={{ letterSpacing: "-0.01em", mb: 0.75, textWrap: "balance" }}>
-										¿Querés aplicar esto en tus propias causas?
+									<Typography variant="h4" sx={{ letterSpacing: "-0.01em", mb: 0.75, textWrap: "balance", lineHeight: 1.4 }}>
+										{/* El número es el lead magnet: el corpus propio, con la firma de la serie */}
+										<Box
+											component="span"
+											sx={{
+												backgroundColor: "#FDE047",
+												color: "#16203A",
+												boxDecorationBreak: "clone",
+												WebkitBoxDecorationBreak: "clone",
+												padding: "0.06em 0.25em",
+											}}
+										>
+											80.000 fallos
+										</Box>{" "}
+										a un buscador de distancia
 									</Typography>
 									<Typography sx={{ fontSize: "0.9rem", color: theme.palette.text.secondary, lineHeight: 1.55, maxWidth: 520 }}>
-										Law||Analytics sincroniza tus expedientes con el Poder Judicial y te avisa de cada movimiento, con resúmenes y
-										herramientas para tu estudio.
+										La jurisprudencia de estos artículos sale de nuestra base. Con tu cuenta gratis la buscás por situación procesal
+										— no solo por palabras — y además seguís tus expedientes con alertas de cada movimiento.
 									</Typography>
 								</Box>
 								<Box sx={{ textAlign: { xs: "left", sm: "center" }, flexShrink: 0 }}>
@@ -631,10 +644,10 @@ const EducativoPage = () => {
 											"&:hover": { boxShadow: `0 12px 26px ${alpha(BRAND_BLUE, 0.35)}`, transform: "translateY(-2px)" },
 										}}
 									>
-										Probar gratis
+										Crear mi cuenta gratis
 									</Button>
 									<Typography sx={{ mt: 0.75, fontSize: "0.8125rem", color: "#6E6E6E", letterSpacing: "0.02em" }}>
-										Sin tarjeta · Registro en 1 minuto
+										Sin tarjeta · Lista en 1 minuto
 									</Typography>
 								</Box>
 							</Stack>

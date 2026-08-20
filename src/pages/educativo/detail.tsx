@@ -425,11 +425,25 @@ const EducativoDetailPage = () => {
 									justifyContent="space-between"
 								>
 									<Box>
-										<Typography variant="h4" sx={{ letterSpacing: "-0.01em", mb: 0.75, textWrap: "balance" }}>
-											Creá tu cuenta gratis para buscar jurisprudencia
+										<Typography variant="h4" sx={{ letterSpacing: "-0.01em", mb: 0.75, textWrap: "balance", lineHeight: 1.4 }}>
+											{/* Contexto máximo: el lector acaba de leer fallos de esta base */}
+											Estos fallos salen de una base de{" "}
+											<Box
+												component="span"
+												sx={{
+													backgroundColor: EDU_RESALTADOR,
+													color: EDU_TINTA,
+													boxDecorationBreak: "clone",
+													WebkitBoxDecorationBreak: "clone",
+													padding: "0.06em 0.25em",
+												}}
+											>
+												80.000
+											</Box>
 										</Typography>
 										<Typography sx={{ fontSize: "0.9rem", color: theme.palette.text.secondary, lineHeight: 1.55, maxWidth: 480 }}>
-											Accedé a más de 80.000 fallos con búsqueda semántica, además de seguir tus expedientes con el Poder Judicial.
+											Buscalos gratis por situación procesal — no solo por palabras — y seguí tus expedientes con alertas de cada
+											movimiento.
 										</Typography>
 									</Box>
 									<Box sx={{ textAlign: { xs: "left", sm: "center" }, flexShrink: 0 }}>
@@ -452,10 +466,10 @@ const EducativoDetailPage = () => {
 												"&:hover": { boxShadow: `0 12px 26px ${alpha(BRAND_BLUE, 0.35)}`, transform: "translateY(-2px)" },
 											}}
 										>
-											Probar gratis
+											Crear mi cuenta gratis
 										</Button>
 										<Typography sx={{ mt: 0.75, fontSize: "0.8125rem", color: "#6E6E6E", letterSpacing: "0.02em" }}>
-											Sin tarjeta · Registro en 1 minuto
+											Sin tarjeta · Lista en 1 minuto
 										</Typography>
 									</Box>
 								</Stack>
