@@ -70,7 +70,7 @@ const SECTION_LABELS: Record<string, string> = {
 	resolucion: "Resolución",
 };
 
-const BROWSE_PAGE_SIZE = 8;
+const BROWSE_PAGE_SIZE = 6;
 
 const formatFecha = (iso?: string | null) => {
 	if (!iso) return "—";
@@ -575,9 +575,9 @@ const JurisprudenciaSearchPage = () => {
 					</MainCard>
 				))}
 
-			{/* ── MODO EXPLORACIÓN: relleno discreto del estado inicial ──
-			    Deliberadamente liviano: eyebrow + filas de una línea (carátula /
-			    fuero / fecha), sin resúmenes ni contadores por chip. */}
+			{/* ── MODO EXPLORACIÓN: relleno del estado inicial ──
+			    Grilla de 6 cards grandes (3×2 en desktop): fuero + fecha, carátula
+			    y extracto del resumen. Poca cantidad, piezas legibles. */}
 			{inBrowseMode && (
 				<Box>
 					<Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1, px: 0.5 }}>
@@ -615,73 +615,115 @@ const JurisprudenciaSearchPage = () => {
 						</Stack>
 					</Stack>
 
-					<MainCard
-						content={false}
-						sx={{ borderRadius: 2, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`, overflow: "hidden" }}
-					>
-						{browseLoading || browseItems === null ? (
-							<Stack spacing={0.75} sx={{ p: 1.5 }}>
-								{Array.from({ length: 6 }, (_, i) => (
-									<Skeleton key={i} variant="rounded" height={30} sx={{ borderRadius: 1 }} />
-								))}
-							</Stack>
-						) : browseItems.length === 0 ? (
-							<Typography sx={{ p: 2, fontSize: "0.8rem", color: "text.secondary" }}>No hay fallos para el filtro seleccionado.</Typography>
-						) : (
-							<>
-								{browseItems.map((item, idx) => (
+					{browseLoading || browseItems === null ? (
+						<Box
+							sx={{
+								display: "grid",
+								gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" },
+								gap: 1.5,
+							}}
+						>
+							{Array.from({ length: 6 }, (_, i) => (
+								<Skeleton key={i} variant="rounded" height={150} sx={{ borderRadius: 2 }} />
+							))}
+						</Box>
+					) : browseItems.length === 0 ? (
+						<Typography sx={{ p: 2, fontSize: "0.8rem", color: "text.secondary" }}>No hay fallos para el filtro seleccionado.</Typography>
+					) : (
+						<>
+							<Box
+								sx={{
+									display: "grid",
+									gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" },
+									gap: 1.5,
+								}}
+							>
+								{browseItems.map((item) => (
 									<Box
 										key={item.id}
 										onClick={() => handleVerTexto(item.id, item.caratula)}
 										sx={{
-											px: { xs: 1.5, sm: 2 },
-											py: 0.875,
+											p: 2,
+											borderRadius: 2,
 											cursor: "pointer",
-											borderTop: idx > 0 ? `1px solid ${alpha(BRAND_BLUE, isDark ? 0.09 : 0.05)}` : undefined,
-											transition: "background-color 0.12s ease",
-											"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03) },
+											bgcolor: "background.paper",
+											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+											transition: "border-color 0.15s ease, transform 0.15s ease",
+											display: "flex",
+											flexDirection: "column",
+											gap: 1,
+											minHeight: 150,
+											"&:hover": {
+												borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.28),
+												transform: "translateY(-1px)",
+											},
 										}}
 									>
-										<Stack direction="row" spacing={1.25} alignItems="center" justifyContent="space-between">
+										<Stack direction="row" justifyContent="space-between" alignItems="center">
+											{item.fuero ? (
+												<Chip
+													size="small"
+													label={fueroLabel(item.fuero)}
+													sx={{
+														fontSize: "0.64rem",
+														fontWeight: 600,
+														height: 20,
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+														color: BRAND_BLUE,
+													}}
+												/>
+											) : (
+												<Box />
+											)}
+											<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+												{formatFecha(item.fecha)}
+											</Typography>
+										</Stack>
+										<Typography
+											sx={{
+												fontSize: "0.85rem",
+												fontWeight: 600,
+												letterSpacing: "-0.008em",
+												color: "text.primary",
+												lineHeight: 1.4,
+												display: "-webkit-box",
+												WebkitLineClamp: 2,
+												WebkitBoxOrient: "vertical",
+												overflow: "hidden",
+											}}
+										>
+											{item.caratula}
+										</Typography>
+										{item.resumen && (
 											<Typography
 												sx={{
-													fontSize: "0.8rem",
-													color: "text.primary",
+													fontSize: "0.76rem",
+													color: "text.secondary",
+													lineHeight: 1.5,
+													display: "-webkit-box",
+													WebkitLineClamp: 3,
+													WebkitBoxOrient: "vertical",
 													overflow: "hidden",
-													textOverflow: "ellipsis",
-													whiteSpace: "nowrap",
-													minWidth: 0,
-													flex: 1,
 												}}
 											>
-												{item.caratula}
+												{item.resumen.replace(/^#+\s.*$/gm, "").trim()}
 											</Typography>
-											<Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
-												{item.fuero && (
-													<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: alpha(BRAND_BLUE, 0.75) }}>
-														{fueroLabel(item.fuero)}
-													</Typography>
-												)}
-												<Typography sx={{ fontSize: "0.68rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
-													{formatFecha(item.fecha)}
-												</Typography>
-											</Stack>
-										</Stack>
+										)}
 									</Box>
 								))}
-								<Stack alignItems="center" sx={{ py: 1.25, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.09 : 0.05)}` }}>
-									<Pagination
-										size="small"
-										count={Math.min(Math.ceil(browseTotal / BROWSE_PAGE_SIZE), 500)}
-										page={browsePage}
-										onChange={(_e, page) => handleBrowsePage(page)}
-										disabled={browseLoading}
-										siblingCount={0}
-									/>
-								</Stack>
-							</>
-						)}
-					</MainCard>
+							</Box>
+							<Stack alignItems="center" sx={{ mt: 1.75 }}>
+								<Pagination
+									size="small"
+									count={Math.min(Math.ceil(browseTotal / BROWSE_PAGE_SIZE), 500)}
+									page={browsePage}
+									onChange={(_e, page) => handleBrowsePage(page)}
+									disabled={browseLoading}
+									siblingCount={0}
+								/>
+							</Stack>
+						</>
+					)}
 				</Box>
 			)}
 
