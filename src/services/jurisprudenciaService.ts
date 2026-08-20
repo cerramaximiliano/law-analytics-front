@@ -13,7 +13,19 @@ interface SearchOptions {
 	filters?: JurisprudenciaFilters;
 }
 
+export interface JurisprudenciaSearchConfig {
+	corpus: "saij" | "all";
+	quota: { plan: string; limit: number | null; used: number | null; remaining: number | null } | null;
+}
+
 const jurisprudenciaService = {
+	// Config efectiva para esta vista: corpus habilitado (adapta copy/filtros)
+	// + snapshot de la cuota del mes SIN consumirla (chip inicial).
+	getSearchConfig: async (): Promise<JurisprudenciaSearchConfig> => {
+		const response = await ragAxios.get("/rag/sentencias/search-config");
+		return { corpus: response.data?.corpus === "all" ? "all" : "saij", quota: response.data?.quota ?? null };
+	},
+
 	// Búsqueda en lenguaje natural con query planner LLM (deriva filtros del prompt).
 	// Los filtros explícitos del cliente pisan los del planner.
 	ask: async (prompt: string, options: SearchOptions = {}): Promise<JurisprudenciaSearchResponse> => {

@@ -44,9 +44,9 @@ import { ArrowLeft, Book, CloseSquare, DocumentText, Judge, SearchNormal1 } from
 //   - Búsqueda semántica: pjn-rag-api /rag/sentencias/ask (planner LLM), con
 //     gating por plan en el backend (free: cuota mensual; pagos: ilimitado).
 
-// Fueros con presencia real en el corpus SAIJ (mismos códigos y labels que la
-// vista pública /jurisprudencia).
-const FUEROS = [
+// Fueros por modo de corpus (config admin `searchCorpus.app`, leída del
+// backend al montar). SAIJ = corpus curado público; ALL = corpus completo.
+const FUEROS_SAIJ = [
 	{ value: "", label: "Todos los fueros" },
 	{ value: "COM", label: "Comercial" },
 	{ value: "CNT", label: "Trabajo" },
@@ -54,6 +54,29 @@ const FUEROS = [
 	{ value: "CIV", label: "Civil" },
 	{ value: "CSS", label: "Seguridad Social" },
 ];
+
+const FUEROS_ALL = [
+	{ value: "", label: "Todos los fueros" },
+	{ value: "CNT", label: "Trabajo" },
+	{ value: "CSS", label: "Seguridad Social" },
+	{ value: "COM", label: "Comercial" },
+	{ value: "CIV", label: "Civil" },
+	{ value: "CCC", label: "Criminal y Correccional" },
+];
+
+// Tipos de sentencia — solo tienen datos en el corpus completo (los SAIJ son
+// todos tipo "otro"), por eso el filtro aparece únicamente en modo "all".
+const TIPOS_ALL = [
+	{ value: "", label: "Todos los tipos" },
+	{ value: "definitiva", label: "Definitiva" },
+	{ value: "interlocutoria", label: "Interlocutoria" },
+	{ value: "camara", label: "Cámara" },
+];
+
+const SUBTITULO = {
+	saij: "Búsqueda inteligente sobre más de 10.000 fallos nacionales con resumen propio — describí el caso con tus palabras.",
+	all: "Búsqueda inteligente sobre más de 300.000 resoluciones judiciales nacionales — describí el caso con tus palabras.",
+};
 
 const EJEMPLOS = [
 	"Despido discriminatorio por embarazo con indemnización agravada",
@@ -97,9 +120,13 @@ const JurisprudenciaSearchPage = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 
+	// ── Config efectiva (corpus habilitado + cuota inicial) ─────────────────
+	const [corpusMode, setCorpusMode] = useState<"saij" | "all">("saij");
+
 	// ── Búsqueda semántica ──────────────────────────────────────────────────
 	const [queryInput, setQueryInput] = useState("");
 	const [fuero, setFuero] = useState("");
+	const [tipo, setTipo] = useState("");
 	const [anio, setAnio] = useState("");
 	const [searching, setSearching] = useState(false);
 	const [results, setResults] = useState<JurisprudenciaHit[] | null>(null);
@@ -153,6 +180,25 @@ const JurisprudenciaSearchPage = () => {
 		loadBrowse(1, "");
 	}, [loadBrowse]);
 
+	// Config efectiva al montar: corpus habilitado (copy/filtros) + cuota del
+	// mes sin consumirla (chip "restantes" visible antes de la 1ª búsqueda).
+	useEffect(() => {
+		let alive = true;
+		jurisprudenciaService
+			.getSearchConfig()
+			.then((cfg) => {
+				if (!alive) return;
+				setCorpusMode(cfg.corpus);
+				if (cfg.quota?.remaining !== null && cfg.quota?.remaining !== undefined) setQuotaRemaining(cfg.quota.remaining);
+			})
+			.catch(() => {
+				// sin config: se mantienen los defaults (saij)
+			});
+		return () => {
+			alive = false;
+		};
+	}, []);
+
 	const handleBrowsePage = (page: number) => {
 		setBrowsePage(page);
 		loadBrowse(page, browseFuero);
@@ -177,6 +223,7 @@ const JurisprudenciaSearchPage = () => {
 			try {
 				const filters: Record<string, unknown> = {};
 				if (fuero) filters.fuero = fuero;
+				if (tipo) filters.sentenciaTipo = tipo;
 				const anioNum = parseInt(anio, 10);
 				if (!isNaN(anioNum) && anioNum > 1990) filters.year = anioNum;
 
@@ -200,7 +247,7 @@ const JurisprudenciaSearchPage = () => {
 				if (seq === searchSeqRef.current) setSearching(false);
 			}
 		},
-		[fuero, anio, searching],
+		[fuero, tipo, anio, searching],
 	);
 
 	const clearSearch = () => {
@@ -369,7 +416,7 @@ const JurisprudenciaSearchPage = () => {
 									textWrap: "pretty",
 								}}
 							>
-								Búsqueda inteligente sobre más de 10.000 fallos nacionales con resumen propio — describí el caso con tus palabras.
+								{SUBTITULO[corpusMode]}
 							</Typography>
 						</Stack>
 					</Stack>
@@ -416,13 +463,25 @@ const JurisprudenciaSearchPage = () => {
 						<FormControl size="small" sx={{ minWidth: 190 }}>
 							<InputLabel sx={{ fontSize: "0.82rem" }}>Fuero</InputLabel>
 							<Select value={fuero} label="Fuero" onChange={(e) => setFuero(e.target.value)} sx={selectSx}>
-								{FUEROS.map((f) => (
+								{(corpusMode === "all" ? FUEROS_ALL : FUEROS_SAIJ).map((f) => (
 									<MenuItem key={f.value} value={f.value} sx={{ fontSize: "0.85rem" }}>
 										{f.label}
 									</MenuItem>
 								))}
 							</Select>
 						</FormControl>
+						{corpusMode === "all" && (
+							<FormControl size="small" sx={{ minWidth: 170 }}>
+								<InputLabel sx={{ fontSize: "0.82rem" }}>Tipo</InputLabel>
+								<Select value={tipo} label="Tipo" onChange={(e) => setTipo(e.target.value)} sx={selectSx}>
+									{TIPOS_ALL.map((t) => (
+										<MenuItem key={t.value} value={t.value} sx={{ fontSize: "0.85rem" }}>
+											{t.label}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+						)}
 						<OutlinedInput
 							size="small"
 							value={anio}

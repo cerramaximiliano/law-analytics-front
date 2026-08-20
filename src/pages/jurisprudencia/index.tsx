@@ -41,6 +41,7 @@ import PageBackground from "components/PageBackground";
 import SEO from "components/SEO/SEO";
 import SectionEyebrow from "sections/landing/SectionEyebrow";
 import { getPublicSentencias, fueroLabel } from "services/publicSentenciasService";
+import { useBanner, useFallosCount, parseBannerText, trackBannerEvent, type Banner } from "services/publicBannersService";
 import type { PublicSentenciaListItem, PublicSentenciasFueroCount, PublicSentenciasJurisdiccionCount } from "types/publicSentencia";
 import { summaryExcerpt } from "./SummaryContent";
 
@@ -54,9 +55,46 @@ function formatFecha(fecha: string | null): string {
 	return new Date(fecha).toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 }
 
+// Copy de respaldo del CTA: idéntico al doc seedeado en public-banners. El
+// slot se comparte con la vista pública de la-public-site; se edita desde la
+// UI admin (Banners) sin deploy.
+const BANNER_FALLBACK: Banner = {
+	titulo: "Buscá en este archivo con IA — con tus palabras",
+	cuerpo:
+		"Con tu cuenta describís el caso en tus palabras y la búsqueda con IA encuentra los fallos relevantes entre más de {fallos} sentencias. Además, seguí tus expedientes con aviso de cada movimiento.",
+	ctaLabel: "Probar gratis",
+	ctaHref: "/register?source=jurisprudencia",
+};
+
+const renderBannerSegs = (segs: ReturnType<typeof parseBannerText>) =>
+	segs.map((s, i) =>
+		s.resaltado ? (
+			<Box
+				key={i}
+				component="span"
+				sx={{
+					backgroundColor: "#FDE047",
+					color: "#16203A",
+					boxDecorationBreak: "clone",
+					WebkitBoxDecorationBreak: "clone",
+					padding: "0.06em 0.25em",
+				}}
+			>
+				{s.t}
+			</Box>
+		) : (
+			<span key={i}>{s.t}</span>
+		),
+	);
+
 const JurisprudenciaPage = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
+	const banner = useBanner("jurisprudencia-index", BANNER_FALLBACK);
+	const fallosLabel = useFallosCount();
+	useEffect(() => {
+		trackBannerEvent("jurisprudencia-index", "view");
+	}, []);
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const [items, setItems] = useState<PublicSentenciaListItem[]>([]);
@@ -535,17 +573,17 @@ const JurisprudenciaPage = () => {
 							>
 								<Box>
 									<Typography variant="h4" sx={{ letterSpacing: "-0.01em", mb: 0.75, textWrap: "balance" }}>
-										¿Querés seguir tus propias causas así de fácil?
+										{renderBannerSegs(parseBannerText(banner.titulo, fallosLabel))}
 									</Typography>
 									<Typography sx={{ fontSize: "0.9rem", color: theme.palette.text.secondary, lineHeight: 1.55, maxWidth: 520 }}>
-										Law||Analytics sincroniza tus expedientes con el Poder Judicial y te avisa de cada movimiento, con resúmenes y
-										herramientas para tu estudio.
+										{renderBannerSegs(parseBannerText(banner.cuerpo, fallosLabel))}
 									</Typography>
 								</Box>
 								<Box sx={{ textAlign: { xs: "left", sm: "center" }, flexShrink: 0 }}>
 									<Button
 										component={RouterLink}
-										to="/register?source=jurisprudencia"
+										to={banner.ctaHref}
+										onClick={() => trackBannerEvent("jurisprudencia-index", "click")}
 										variant="contained"
 										color="primary"
 										size="large"
