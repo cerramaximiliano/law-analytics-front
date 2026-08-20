@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // material-ui
 import {
@@ -12,6 +12,7 @@ import {
 	InputLabel,
 	MenuItem,
 	OutlinedInput,
+	Pagination,
 	Select,
 	Skeleton,
 	Stack,
@@ -25,18 +26,23 @@ import { alpha, useTheme } from "@mui/material/styles";
 import MainCard from "components/MainCard";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import jurisprudenciaService from "services/jurisprudenciaService";
+import { getPublicSentencias, getPublicSentencia, fueroLabel } from "services/publicSentenciasService";
+import { PublicSentenciaListItem, PublicSentenciasFueroCount } from "types/publicSentencia";
 import { JurisprudenciaHit, JurisprudenciaQuotaError } from "types/jurisprudencia";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // icons
-import { ArrowLeft, Book, CloseSquare, DocumentText, ExportSquare, Judge, SearchNormal1 } from "iconsax-react";
+import { ArrowLeft, Book, CloseSquare, DocumentText, Judge, SearchNormal1 } from "iconsax-react";
 
 // ==============================|| JURISPRUDENCIA — BÚSQUEDA SEMÁNTICA ||============================== //
 //
-// Vista in-app de búsqueda semántica sobre el corpus de sentencias nacionales
-// (~320k fallos embebidos). Consume pjn-rag-api /rag/sentencias/ask (query
-// planner LLM: interpreta lenguaje natural y deriva filtros) con gating por
-// plan del lado del backend (free: cuota mensual; pagos: ilimitado).
+// Vista in-app sobre el corpus SAIJ curado (+10.000 fallos nacionales con
+// resumen IA propio — mismo universo que la vista pública /jurisprudencia).
+// Dos modos:
+//   - Exploración (estado inicial): lista paginada del archivo completo vía el
+//     endpoint público (sin costo de cuota), con chips de fuero.
+//   - Búsqueda semántica: pjn-rag-api /rag/sentencias/ask (planner LLM), con
+//     gating por plan en el backend (free: cuota mensual; pagos: ilimitado).
 
 // Fueros con presencia real en el corpus SAIJ (mismos códigos y labels que la
 // vista pública /jurisprudencia).
@@ -64,30 +70,31 @@ const SECTION_LABELS: Record<string, string> = {
 	resolucion: "Resolución",
 };
 
-const FUERO_LABELS: Record<string, string> = {
-	CNT: "Trabajo",
-	CIV: "Civil",
-	CSS: "Seg. Social",
-	COM: "Comercial",
-	CCC: "Crim. y Correccional",
-	CSJ: "Corte Suprema",
-	CNE: "Electoral",
-	CAF: "Cont. Adm. Federal",
-	CCF: "Civil y Com. Federal",
-	CPE: "Penal Económico",
-	CFP: "Crim. y Corr. Federal",
-};
+const BROWSE_PAGE_SIZE = 10;
 
-const formatFecha = (iso?: string) => {
+const formatFecha = (iso?: string | null) => {
 	if (!iso) return "—";
 	const d = new Date(iso);
 	return isNaN(d.getTime()) ? iso : d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
 };
 
+// El texto viene de pdf-parse: cada línea arrastra la indentación del PDF
+// original (sangrías enormes que en pantalla se ven como un margen derecho
+// gigante). Normalizamos: sin indentación por línea, tabs a espacio, espacios
+// múltiples colapsados y máximo un renglón vacío entre párrafos.
+const normalizeTexto = (raw: string): string =>
+	raw
+		.split("\n")
+		.map((line) => line.replace(/\t/g, " ").replace(/ {2,}/g, " ").trim())
+		.join("\n")
+		.replace(/\n{3,}/g, "\n\n")
+		.trim();
+
 const JurisprudenciaSearchPage = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 
+	// ── Búsqueda semántica ──────────────────────────────────────────────────
 	const [queryInput, setQueryInput] = useState("");
 	const [fuero, setFuero] = useState("");
 	const [anio, setAnio] = useState("");
@@ -102,13 +109,56 @@ const JurisprudenciaSearchPage = () => {
 	});
 	// Modo "similares a": guarda la carátula de referencia para el banner
 	const [similaresDe, setSimilaresDe] = useState<string | null>(null);
+	const searchSeqRef = useRef(0);
+
+	// ── Exploración del archivo (estado sin búsqueda activa) ────────────────
+	const [browseItems, setBrowseItems] = useState<PublicSentenciaListItem[] | null>(null);
+	const [browseTotal, setBrowseTotal] = useState(0);
+	const [browsePage, setBrowsePage] = useState(1);
+	const [browseFuero, setBrowseFuero] = useState("");
+	const [browseByFuero, setBrowseByFuero] = useState<PublicSentenciasFueroCount[]>([]);
+	const [browseLoading, setBrowseLoading] = useState(false);
+	const browseSeqRef = useRef(0);
+
+	// ── Dialog de texto completo (compartido por ambos modos) ───────────────
 	const [textoDialog, setTextoDialog] = useState<{ open: boolean; caratula: string; texto: string; loading: boolean }>({
 		open: false,
 		caratula: "",
 		texto: "",
 		loading: false,
 	});
-	const searchSeqRef = useRef(0);
+
+	const loadBrowse = useCallback(async (page: number, fueroFilter: string) => {
+		const seq = ++browseSeqRef.current;
+		setBrowseLoading(true);
+		try {
+			const response = await getPublicSentencias({ page, limit: BROWSE_PAGE_SIZE, fuero: fueroFilter || undefined });
+			if (seq !== browseSeqRef.current) return;
+			setBrowseItems(response.data.items);
+			setBrowseTotal(response.data.total);
+			if (response.data.byFuero?.length) setBrowseByFuero(response.data.byFuero);
+		} catch {
+			if (seq === browseSeqRef.current) setBrowseItems([]);
+		} finally {
+			if (seq === browseSeqRef.current) setBrowseLoading(false);
+		}
+	}, []);
+
+	useEffect(() => {
+		loadBrowse(1, "");
+	}, [loadBrowse]);
+
+	const handleBrowsePage = (page: number) => {
+		setBrowsePage(page);
+		loadBrowse(page, browseFuero);
+	};
+
+	const handleBrowseFuero = (value: string) => {
+		const next = browseFuero === value ? "" : value;
+		setBrowseFuero(next);
+		setBrowsePage(1);
+		loadBrowse(1, next);
+	};
 
 	const runSearch = useCallback(
 		async (prompt: string) => {
@@ -147,26 +197,26 @@ const JurisprudenciaSearchPage = () => {
 		[fuero, anio, searching],
 	);
 
-	// Nota: la cuota restante viaja en headers de respuesta pero axios normaliza
-	// a lowercase — la actualizamos desde el interceptor simple de acá.
-	const askWithQuota = useCallback(
-		async (prompt: string) => {
-			await runSearch(prompt);
-		},
-		[runSearch],
-	);
+	const clearSearch = () => {
+		searchSeqRef.current++;
+		setResults(null);
+		setQueryInput("");
+		setSimilaresDe(null);
+		setErrorMsg(null);
+		setSearching(false);
+	};
 
 	const handleSimilares = useCallback(
-		async (hit: JurisprudenciaHit) => {
+		async (sentenciaId: string, caratula?: string) => {
 			if (searching) return;
 			const seq = ++searchSeqRef.current;
 			setSearching(true);
 			setErrorMsg(null);
 			try {
-				const response = await jurisprudenciaService.similares(hit.sentencia._id, 8);
+				const response = await jurisprudenciaService.similares(sentenciaId, 8);
 				if (seq !== searchSeqRef.current) return;
 				setResults(response.results || []);
-				setSimilaresDe(hit.sentencia.caratula || "la sentencia seleccionada");
+				setSimilaresDe(caratula || "la sentencia seleccionada");
 			} catch (error: any) {
 				if (seq !== searchSeqRef.current) return;
 				const data = error?.response?.data;
@@ -182,14 +232,16 @@ const JurisprudenciaSearchPage = () => {
 		[searching],
 	);
 
-	const handleVerTexto = useCallback(async (hit: JurisprudenciaHit) => {
-		setTextoDialog({ open: true, caratula: hit.sentencia.caratula || "Sentencia", texto: "", loading: true });
+	// Texto completo vía el endpoint público de detalle (sin auth ni cuota;
+	// mismo contenido que la vista pública, con cache del server).
+	const handleVerTexto = useCallback(async (sentenciaId: string, caratula?: string) => {
+		setTextoDialog({ open: true, caratula: caratula || "Sentencia", texto: "", loading: true });
 		try {
-			const texto = await jurisprudenciaService.getTexto(hit.sentencia._id);
-			setTextoDialog((prev) => ({ ...prev, texto: texto || "(sin texto disponible)", loading: false }));
-		} catch (error: any) {
-			const msg = error?.response?.data?.message || "No se pudo cargar el texto de esta sentencia.";
-			setTextoDialog((prev) => ({ ...prev, texto: msg, loading: false }));
+			const detail = await getPublicSentencia(sentenciaId);
+			const texto = detail?.data?.texto ? normalizeTexto(detail.data.texto) : "(sin texto disponible)";
+			setTextoDialog((prev) => ({ ...prev, texto, loading: false }));
+		} catch {
+			setTextoDialog((prev) => ({ ...prev, texto: "No se pudo cargar el texto de esta sentencia.", loading: false }));
 		}
 	}, []);
 
@@ -200,6 +252,8 @@ const JurisprudenciaSearchPage = () => {
 		"&:hover fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.28) },
 		"&.Mui-focused fieldset": { borderColor: BRAND_BLUE },
 	};
+
+	const inBrowseMode = results === null && !searching;
 
 	return (
 		<Stack spacing={2.5}>
@@ -242,7 +296,7 @@ const JurisprudenciaSearchPage = () => {
 							onKeyDown={(e) => {
 								if (e.key === "Enter" && !e.shiftKey) {
 									e.preventDefault();
-									askWithQuota(queryInput);
+									runSearch(queryInput);
 								}
 							}}
 							placeholder='Ej: "despido sin causa de trabajadora embarazada, indemnización del art. 182 LCT"'
@@ -250,7 +304,7 @@ const JurisprudenciaSearchPage = () => {
 						/>
 						<Button
 							variant="contained"
-							onClick={() => askWithQuota(queryInput)}
+							onClick={() => runSearch(queryInput)}
 							disabled={searching || queryInput.trim().length < 3}
 							startIcon={searching ? <CircularProgress size={15} color="inherit" /> : <SearchNormal1 size={16} />}
 							sx={{
@@ -305,8 +359,8 @@ const JurisprudenciaSearchPage = () => {
 						)}
 					</Stack>
 
-					{/* Ejemplos — solo antes de la primera búsqueda */}
-					{results === null && (
+					{/* Ejemplos — solo en modo exploración */}
+					{inBrowseMode && (
 						<Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap" sx={{ mt: 1.75 }}>
 							{EJEMPLOS.map((ej) => (
 								<Chip
@@ -315,7 +369,7 @@ const JurisprudenciaSearchPage = () => {
 									size="small"
 									onClick={() => {
 										setQueryInput(ej);
-										askWithQuota(ej);
+										runSearch(ej);
 									}}
 									sx={{
 										fontSize: "0.72rem",
@@ -345,25 +399,30 @@ const JurisprudenciaSearchPage = () => {
 				</Box>
 			)}
 
-			{/* Banner de modo similares */}
-			{similaresDe && (
-				<Stack direction="row" spacing={1} alignItems="center">
+			{/* Banner del modo búsqueda: similares o volver al archivo */}
+			{results !== null && !searching && (
+				<Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
 					<Button
 						size="small"
 						startIcon={<ArrowLeft size={14} />}
-						onClick={() => askWithQuota(lastQuery)}
-						disabled={!lastQuery || searching}
+						onClick={similaresDe && lastQuery ? () => runSearch(lastQuery) : clearSearch}
 						sx={{ textTransform: "none", fontWeight: 600, color: "text.secondary" }}
 					>
-						Volver a la búsqueda
+						{similaresDe && lastQuery ? "Volver a la búsqueda" : "Volver al archivo"}
 					</Button>
-					<Typography sx={{ fontSize: "0.8rem", color: "text.secondary" }}>
-						Sentencias similares a: <strong>{similaresDe.slice(0, 90)}</strong>
-					</Typography>
+					{similaresDe ? (
+						<Typography sx={{ fontSize: "0.8rem", color: "text.secondary" }}>
+							Sentencias similares a: <strong>{similaresDe.slice(0, 90)}</strong>
+						</Typography>
+					) : (
+						<Typography sx={{ fontSize: "0.8rem", color: "text.secondary" }}>
+							Resultados para: <strong>{lastQuery.slice(0, 90)}</strong>
+						</Typography>
+					)}
 				</Stack>
 			)}
 
-			{/* Skeletons durante la búsqueda */}
+			{/* Skeletons durante la búsqueda semántica */}
 			{searching && (
 				<Stack spacing={1.5}>
 					{[1, 2, 3].map((i) => (
@@ -372,7 +431,7 @@ const JurisprudenciaSearchPage = () => {
 				</Stack>
 			)}
 
-			{/* Resultados */}
+			{/* ── MODO BÚSQUEDA: resultados semánticos ── */}
 			{!searching && results !== null && results.length === 0 && (
 				<MainCard sx={{ borderRadius: 2, textAlign: "center", py: 4 }}>
 					<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, color: "text.primary" }}>Sin resultados relevantes</Typography>
@@ -404,7 +463,7 @@ const JurisprudenciaSearchPage = () => {
 										{hit.sentencia.fuero && (
 											<Chip
 												size="small"
-												label={FUERO_LABELS[hit.sentencia.fuero] || hit.sentencia.fuero}
+												label={fueroLabel(hit.sentencia.fuero)}
 												sx={{
 													fontSize: "0.66rem",
 													fontWeight: 600,
@@ -412,13 +471,6 @@ const JurisprudenciaSearchPage = () => {
 													bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.09),
 													color: BRAND_BLUE,
 												}}
-											/>
-										)}
-										{hit.sentencia.sentenciaTipo && hit.sentencia.sentenciaTipo !== "otro" && (
-											<Chip
-												size="small"
-												label={hit.sentencia.sentenciaTipo}
-												sx={{ fontSize: "0.66rem", height: 20, textTransform: "capitalize" }}
 											/>
 										)}
 										<Typography sx={{ fontSize: "0.74rem", color: "text.secondary" }}>
@@ -439,7 +491,7 @@ const JurisprudenciaSearchPage = () => {
 								</Tooltip>
 							</Stack>
 
-							{/* Resumen IA si está aprobado */}
+							{/* Resumen IA */}
 							{hit.sentencia.aiSummary?.content && (
 								<Typography
 									sx={{
@@ -505,7 +557,7 @@ const JurisprudenciaSearchPage = () => {
 								<Button
 									size="small"
 									startIcon={<DocumentText size={14} />}
-									onClick={() => handleVerTexto(hit)}
+									onClick={() => handleVerTexto(hit.sentencia._id, hit.sentencia.caratula)}
 									sx={{ textTransform: "none", fontWeight: 600, fontSize: "0.76rem", color: BRAND_BLUE }}
 								>
 									Texto completo
@@ -513,27 +565,149 @@ const JurisprudenciaSearchPage = () => {
 								<Button
 									size="small"
 									startIcon={<Book size={14} />}
-									onClick={() => handleSimilares(hit)}
+									onClick={() => handleSimilares(hit.sentencia._id, hit.sentencia.caratula)}
 									sx={{ textTransform: "none", fontWeight: 600, fontSize: "0.76rem", color: "text.secondary" }}
 								>
 									Similares
-								</Button>
-								{/* Lectura completa en la página pública (resumen formateado + PDF) */}
-								<Button
-									size="small"
-									component="a"
-									href={`/jurisprudencia/${hit.sentencia._id}`}
-									target="_blank"
-									rel="noopener"
-									startIcon={<ExportSquare size={14} />}
-									sx={{ textTransform: "none", fontWeight: 600, fontSize: "0.76rem", color: "text.secondary" }}
-								>
-									Ver en Jurisprudencia
 								</Button>
 							</Stack>
 						</Box>
 					</MainCard>
 				))}
+
+			{/* ── MODO EXPLORACIÓN: archivo completo paginado ── */}
+			{inBrowseMode && (
+				<MainCard
+					content={false}
+					sx={{ borderRadius: 2, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`, overflow: "hidden" }}
+				>
+					<Box sx={{ px: { xs: 1.75, sm: 2.25 }, pt: 2, pb: 1 }}>
+						<Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} spacing={1}>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Typography sx={{ fontSize: "0.9rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>
+									Últimos fallos publicados
+								</Typography>
+								{browseTotal > 0 && (
+									<Typography sx={{ fontSize: "0.74rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+										{browseTotal.toLocaleString("es-AR")} en el archivo
+									</Typography>
+								)}
+							</Stack>
+							{/* Chips por fuero (facet del endpoint público) */}
+							<Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap">
+								{browseByFuero.slice(0, 5).map((f) => (
+									<Chip
+										key={f.fuero}
+										size="small"
+										label={`${fueroLabel(f.fuero)} ${f.total.toLocaleString("es-AR")}`}
+										onClick={() => handleBrowseFuero(f.fuero)}
+										sx={{
+											fontSize: "0.68rem",
+											height: 22,
+											fontWeight: 600,
+											cursor: "pointer",
+											bgcolor: browseFuero === f.fuero ? alpha(BRAND_BLUE, isDark ? 0.24 : 0.14) : alpha(BRAND_BLUE, isDark ? 0.07 : 0.04),
+											color: browseFuero === f.fuero ? BRAND_BLUE : "text.secondary",
+											border: `1px solid ${alpha(BRAND_BLUE, browseFuero === f.fuero ? 0.4 : isDark ? 0.16 : 0.1)}`,
+											"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.09), color: BRAND_BLUE },
+										}}
+									/>
+								))}
+							</Stack>
+						</Stack>
+					</Box>
+
+					{browseLoading || browseItems === null ? (
+						<Stack spacing={0} sx={{ px: { xs: 1.75, sm: 2.25 }, pb: 2 }}>
+							{Array.from({ length: 6 }, (_, i) => (
+								<Skeleton key={i} variant="rounded" height={52} sx={{ borderRadius: 1.25, mt: 1 }} />
+							))}
+						</Stack>
+					) : browseItems.length === 0 ? (
+						<Typography sx={{ px: 2.25, pb: 2.5, fontSize: "0.82rem", color: "text.secondary" }}>
+							No hay fallos para el filtro seleccionado.
+						</Typography>
+					) : (
+						<>
+							{browseItems.map((item, idx) => (
+								<Box
+									key={item.id}
+									onClick={() => handleVerTexto(item.id, item.caratula)}
+									sx={{
+										px: { xs: 1.75, sm: 2.25 },
+										py: 1.375,
+										cursor: "pointer",
+										borderTop: idx === 0 ? `1px solid ${alpha(BRAND_BLUE, isDark ? 0.12 : 0.07)}` : undefined,
+										borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.12 : 0.07)}`,
+										transition: "background-color 0.12s ease",
+										"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03) },
+									}}
+								>
+									<Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+										<Stack spacing={0.25} sx={{ minWidth: 0, flex: 1 }}>
+											<Typography
+												sx={{
+													fontSize: "0.85rem",
+													fontWeight: 600,
+													letterSpacing: "-0.008em",
+													color: "text.primary",
+													overflow: "hidden",
+													textOverflow: "ellipsis",
+													whiteSpace: "nowrap",
+												}}
+											>
+												{item.caratula}
+											</Typography>
+											{item.resumen && (
+												<Typography
+													sx={{
+														fontSize: "0.75rem",
+														color: "text.secondary",
+														lineHeight: 1.45,
+														display: "-webkit-box",
+														WebkitLineClamp: 1,
+														WebkitBoxOrient: "vertical",
+														overflow: "hidden",
+													}}
+												>
+													{item.resumen.replace(/^#+\s.*$/gm, "").trim()}
+												</Typography>
+											)}
+										</Stack>
+										<Stack direction="row" spacing={0.75} alignItems="center" sx={{ flexShrink: 0 }}>
+											{item.fuero && (
+												<Chip
+													size="small"
+													label={fueroLabel(item.fuero)}
+													sx={{
+														fontSize: "0.64rem",
+														fontWeight: 600,
+														height: 20,
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+														color: BRAND_BLUE,
+													}}
+												/>
+											)}
+											<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+												{formatFecha(item.fecha)}
+											</Typography>
+										</Stack>
+									</Stack>
+								</Box>
+							))}
+							<Stack alignItems="center" sx={{ py: 1.75 }}>
+								<Pagination
+									size="small"
+									count={Math.min(Math.ceil(browseTotal / BROWSE_PAGE_SIZE), 500)}
+									page={browsePage}
+									onChange={(_e, page) => handleBrowsePage(page)}
+									disabled={browseLoading}
+								/>
+							</Stack>
+						</>
+					)}
+				</MainCard>
+			)}
 
 			{/* Dialog de texto completo */}
 			<Dialog
