@@ -71,6 +71,9 @@ const SECTION_LABELS: Record<string, string> = {
 };
 
 const BROWSE_PAGE_SIZE = 6;
+// La búsqueda trae hasta 10 resultados en una sola llamada (una unidad de
+// cuota); se paginan de a 5 del lado del cliente para no forzar scroll largo.
+const RESULTS_PAGE_SIZE = 5;
 
 const formatFecha = (iso?: string | null) => {
 	if (!iso) return "—";
@@ -109,7 +112,9 @@ const JurisprudenciaSearchPage = () => {
 	});
 	// Modo "similares a": guarda la carátula de referencia para el banner
 	const [similaresDe, setSimilaresDe] = useState<string | null>(null);
+	const [resultsPage, setResultsPage] = useState(1);
 	const searchSeqRef = useRef(0);
+	const resultsTopRef = useRef<HTMLDivElement | null>(null);
 
 	// ── Exploración del archivo (estado sin búsqueda activa) ────────────────
 	const [browseItems, setBrowseItems] = useState<PublicSentenciaListItem[] | null>(null);
@@ -178,6 +183,7 @@ const JurisprudenciaSearchPage = () => {
 				const response = await jurisprudenciaService.ask(trimmed, { topK: 10, filters });
 				if (seq !== searchSeqRef.current) return; // llegó tarde: hay una búsqueda más nueva
 				setResults(response.results || []);
+				setResultsPage(1);
 				setLastQuery(trimmed);
 				if (response.quotaRemaining !== undefined) setQuotaRemaining(response.quotaRemaining);
 			} catch (error: any) {
@@ -200,6 +206,7 @@ const JurisprudenciaSearchPage = () => {
 	const clearSearch = () => {
 		searchSeqRef.current++;
 		setResults(null);
+		setResultsPage(1);
 		setQueryInput("");
 		setSimilaresDe(null);
 		setErrorMsg(null);
@@ -216,6 +223,7 @@ const JurisprudenciaSearchPage = () => {
 				const response = await jurisprudenciaService.similares(sentenciaId, 8);
 				if (seq !== searchSeqRef.current) return;
 				setResults(response.results || []);
+				setResultsPage(1);
 				setSimilaresDe(caratula || "la sentencia seleccionada");
 			} catch (error: any) {
 				if (seq !== searchSeqRef.current) return;
@@ -464,6 +472,9 @@ const JurisprudenciaSearchPage = () => {
 				</Box>
 			)}
 
+			{/* Ancla para el scroll al cambiar de página de resultados */}
+			<Box ref={resultsTopRef} sx={{ height: 0, m: "0 !important" }} />
+
 			{/* Banner del modo búsqueda: similares o volver al archivo */}
 			{results !== null && !searching && (
 				<Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
@@ -507,7 +518,7 @@ const JurisprudenciaSearchPage = () => {
 			)}
 
 			{!searching &&
-				results?.map((hit) => (
+				results?.slice((resultsPage - 1) * RESULTS_PAGE_SIZE, resultsPage * RESULTS_PAGE_SIZE).map((hit) => (
 					<MainCard
 						key={hit.sentencia._id}
 						content={false}
@@ -639,6 +650,21 @@ const JurisprudenciaSearchPage = () => {
 						</Box>
 					</MainCard>
 				))}
+
+			{/* Paginación client-side de los resultados de búsqueda */}
+			{!searching && results !== null && results.length > RESULTS_PAGE_SIZE && (
+				<Stack alignItems="center">
+					<Pagination
+						size="small"
+						count={Math.ceil(results.length / RESULTS_PAGE_SIZE)}
+						page={resultsPage}
+						onChange={(_e, page) => {
+							setResultsPage(page);
+							resultsTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+						}}
+					/>
+				</Stack>
+			)}
 
 			{/* ── MODO EXPLORACIÓN: relleno del estado inicial ──
 			    Grilla de 6 cards grandes (3×2 en desktop): fuero + fecha, carátula
