@@ -695,7 +695,12 @@ const Details = () => {
 	// Gate de carpeta archivada — prioridad sobre el gate de verificación: es el
 	// estado dominante y bloquea el detalle completo (solo se muestra el aviso
 	// con la acción de desarchivar), igual que una carpeta no verificada.
-	if (folder && folder._id === id && folder.archived === true && !isLoader) {
+	// Sin condición sobre isLoader: unarchiveFolders enciende el loader global
+	// durante el request y desmontaría el gate, dejando ver el contenido hasta
+	// que el backend acepte o rechace (p. ej. por límite de plan). El guard
+	// folder._id === id ya evita mostrar el gate de un folder stale; el gate
+	// solo se va cuando el refetch post-desarchivo trae archived: false.
+	if (folder && folder._id === id && folder.archived === true) {
 		return <ArchivedFolderView folder={folder} unarchiving={unarchiving} onUnarchive={handleUnarchiveFromBanner} />;
 	}
 
