@@ -70,7 +70,7 @@ const SECTION_LABELS: Record<string, string> = {
 	resolucion: "Resolución",
 };
 
-const BROWSE_PAGE_SIZE = 10;
+const BROWSE_PAGE_SIZE = 8;
 
 const formatFecha = (iso?: string | null) => {
 	if (!iso) return "—";
@@ -575,138 +575,114 @@ const JurisprudenciaSearchPage = () => {
 					</MainCard>
 				))}
 
-			{/* ── MODO EXPLORACIÓN: archivo completo paginado ── */}
+			{/* ── MODO EXPLORACIÓN: relleno discreto del estado inicial ──
+			    Deliberadamente liviano: eyebrow + filas de una línea (carátula /
+			    fuero / fecha), sin resúmenes ni contadores por chip. */}
 			{inBrowseMode && (
-				<MainCard
-					content={false}
-					sx={{ borderRadius: 2, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`, overflow: "hidden" }}
-				>
-					<Box sx={{ px: { xs: 1.75, sm: 2.25 }, pt: 2, pb: 1 }}>
-						<Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} spacing={1}>
-							<Stack direction="row" spacing={1} alignItems="center">
-								<Typography sx={{ fontSize: "0.9rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>
-									Últimos fallos publicados
-								</Typography>
-								{browseTotal > 0 && (
-									<Typography sx={{ fontSize: "0.74rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
-										{browseTotal.toLocaleString("es-AR")} en el archivo
-									</Typography>
-								)}
-							</Stack>
-							{/* Chips por fuero (facet del endpoint público) */}
-							<Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap">
-								{browseByFuero.slice(0, 5).map((f) => (
+				<Box>
+					<Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1, px: 0.5 }}>
+						<Typography
+							sx={{
+								fontSize: "0.66rem",
+								fontWeight: 600,
+								letterSpacing: "0.08em",
+								textTransform: "uppercase",
+								color: "text.secondary",
+							}}
+						>
+							Últimos fallos{browseTotal > 0 ? ` · ${browseTotal.toLocaleString("es-AR")} en el archivo` : ""}
+						</Typography>
+						<Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap" justifyContent="flex-end">
+							{browseByFuero.slice(0, 5).map((f) => (
+								<Tooltip key={f.fuero} title={`${f.total.toLocaleString("es-AR")} fallos`}>
 									<Chip
-										key={f.fuero}
 										size="small"
-										label={`${fueroLabel(f.fuero)} ${f.total.toLocaleString("es-AR")}`}
+										label={fueroLabel(f.fuero)}
 										onClick={() => handleBrowseFuero(f.fuero)}
+										variant={browseFuero === f.fuero ? "filled" : "outlined"}
 										sx={{
-											fontSize: "0.68rem",
-											height: 22,
-											fontWeight: 600,
+											fontSize: "0.66rem",
+											height: 20,
 											cursor: "pointer",
-											bgcolor: browseFuero === f.fuero ? alpha(BRAND_BLUE, isDark ? 0.24 : 0.14) : alpha(BRAND_BLUE, isDark ? 0.07 : 0.04),
 											color: browseFuero === f.fuero ? BRAND_BLUE : "text.secondary",
-											border: `1px solid ${alpha(BRAND_BLUE, browseFuero === f.fuero ? 0.4 : isDark ? 0.16 : 0.1)}`,
-											"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.09), color: BRAND_BLUE },
+											bgcolor: browseFuero === f.fuero ? alpha(BRAND_BLUE, isDark ? 0.2 : 0.1) : "transparent",
+											borderColor: alpha(BRAND_BLUE, browseFuero === f.fuero ? 0.4 : isDark ? 0.14 : 0.1),
+											"&:hover": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.06) },
 										}}
 									/>
-								))}
-							</Stack>
-						</Stack>
-					</Box>
-
-					{browseLoading || browseItems === null ? (
-						<Stack spacing={0} sx={{ px: { xs: 1.75, sm: 2.25 }, pb: 2 }}>
-							{Array.from({ length: 6 }, (_, i) => (
-								<Skeleton key={i} variant="rounded" height={52} sx={{ borderRadius: 1.25, mt: 1 }} />
+								</Tooltip>
 							))}
 						</Stack>
-					) : browseItems.length === 0 ? (
-						<Typography sx={{ px: 2.25, pb: 2.5, fontSize: "0.82rem", color: "text.secondary" }}>
-							No hay fallos para el filtro seleccionado.
-						</Typography>
-					) : (
-						<>
-							{browseItems.map((item, idx) => (
-								<Box
-									key={item.id}
-									onClick={() => handleVerTexto(item.id, item.caratula)}
-									sx={{
-										px: { xs: 1.75, sm: 2.25 },
-										py: 1.375,
-										cursor: "pointer",
-										borderTop: idx === 0 ? `1px solid ${alpha(BRAND_BLUE, isDark ? 0.12 : 0.07)}` : undefined,
-										borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.12 : 0.07)}`,
-										transition: "background-color 0.12s ease",
-										"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03) },
-									}}
-								>
-									<Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-										<Stack spacing={0.25} sx={{ minWidth: 0, flex: 1 }}>
+					</Stack>
+
+					<MainCard
+						content={false}
+						sx={{ borderRadius: 2, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`, overflow: "hidden" }}
+					>
+						{browseLoading || browseItems === null ? (
+							<Stack spacing={0.75} sx={{ p: 1.5 }}>
+								{Array.from({ length: 6 }, (_, i) => (
+									<Skeleton key={i} variant="rounded" height={30} sx={{ borderRadius: 1 }} />
+								))}
+							</Stack>
+						) : browseItems.length === 0 ? (
+							<Typography sx={{ p: 2, fontSize: "0.8rem", color: "text.secondary" }}>No hay fallos para el filtro seleccionado.</Typography>
+						) : (
+							<>
+								{browseItems.map((item, idx) => (
+									<Box
+										key={item.id}
+										onClick={() => handleVerTexto(item.id, item.caratula)}
+										sx={{
+											px: { xs: 1.5, sm: 2 },
+											py: 0.875,
+											cursor: "pointer",
+											borderTop: idx > 0 ? `1px solid ${alpha(BRAND_BLUE, isDark ? 0.09 : 0.05)}` : undefined,
+											transition: "background-color 0.12s ease",
+											"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03) },
+										}}
+									>
+										<Stack direction="row" spacing={1.25} alignItems="center" justifyContent="space-between">
 											<Typography
 												sx={{
-													fontSize: "0.85rem",
-													fontWeight: 600,
-													letterSpacing: "-0.008em",
+													fontSize: "0.8rem",
 													color: "text.primary",
 													overflow: "hidden",
 													textOverflow: "ellipsis",
 													whiteSpace: "nowrap",
+													minWidth: 0,
+													flex: 1,
 												}}
 											>
 												{item.caratula}
 											</Typography>
-											{item.resumen && (
-												<Typography
-													sx={{
-														fontSize: "0.75rem",
-														color: "text.secondary",
-														lineHeight: 1.45,
-														display: "-webkit-box",
-														WebkitLineClamp: 1,
-														WebkitBoxOrient: "vertical",
-														overflow: "hidden",
-													}}
-												>
-													{item.resumen.replace(/^#+\s.*$/gm, "").trim()}
+											<Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
+												{item.fuero && (
+													<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: alpha(BRAND_BLUE, 0.75) }}>
+														{fueroLabel(item.fuero)}
+													</Typography>
+												)}
+												<Typography sx={{ fontSize: "0.68rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+													{formatFecha(item.fecha)}
 												</Typography>
-											)}
+											</Stack>
 										</Stack>
-										<Stack direction="row" spacing={0.75} alignItems="center" sx={{ flexShrink: 0 }}>
-											{item.fuero && (
-												<Chip
-													size="small"
-													label={fueroLabel(item.fuero)}
-													sx={{
-														fontSize: "0.64rem",
-														fontWeight: 600,
-														height: 20,
-														bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
-														color: BRAND_BLUE,
-													}}
-												/>
-											)}
-											<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
-												{formatFecha(item.fecha)}
-											</Typography>
-										</Stack>
-									</Stack>
-								</Box>
-							))}
-							<Stack alignItems="center" sx={{ py: 1.75 }}>
-								<Pagination
-									size="small"
-									count={Math.min(Math.ceil(browseTotal / BROWSE_PAGE_SIZE), 500)}
-									page={browsePage}
-									onChange={(_e, page) => handleBrowsePage(page)}
-									disabled={browseLoading}
-								/>
-							</Stack>
-						</>
-					)}
-				</MainCard>
+									</Box>
+								))}
+								<Stack alignItems="center" sx={{ py: 1.25, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.09 : 0.05)}` }}>
+									<Pagination
+										size="small"
+										count={Math.min(Math.ceil(browseTotal / BROWSE_PAGE_SIZE), 500)}
+										page={browsePage}
+										onChange={(_e, page) => handleBrowsePage(page)}
+										disabled={browseLoading}
+										siblingCount={0}
+									/>
+								</Stack>
+							</>
+						)}
+					</MainCard>
+				</Box>
 			)}
 
 			{/* Dialog de texto completo */}
