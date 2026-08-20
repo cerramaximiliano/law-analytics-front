@@ -96,6 +96,7 @@ const TasksPage = Loadable(lazyRetry(() => import("pages/tasks")));
 
 // render - herramientas
 const PostalTrackingPage = Loadable(lazyRetry(() => import("pages/herramientas/postal-tracking"), "PostalTrackingPage"));
+const JurisprudenciaSearchPage = Loadable(lazyRetry(() => import("pages/apps/jurisprudencia"), "JurisprudenciaSearchPage"));
 
 // render - documentos
 const ModelosPage = Loadable(lazyRetry(() => import("pages/herramientas/plantillas"), "ModelosPage"));
@@ -364,6 +365,12 @@ const MainRoutes = {
 						{
 							path: "seguimiento-postal",
 							element: <PostalTrackingPage />,
+						},
+						{
+							// La ruta top-level /jurisprudencia está capturada por nginx para
+							// el sitio público (la-public-site) — la vista in-app vive acá.
+							path: "jurisprudencia",
+							element: <JurisprudenciaSearchPage />,
 						},
 						{
 							/* legacy — kept for bookmarks */
