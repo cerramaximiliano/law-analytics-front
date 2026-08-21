@@ -191,6 +191,14 @@ const FooterBlock = ({ isFull }: showProps) => {
 									<Stack spacing={3}>
 										<Typography variant="h5">Recursos útiles</Typography>
 										<Stack spacing={{ xs: 1.5, md: 2.5 }}>
+											{/* Jurisprudencia y el blog viven FUERA de la SPA (mini-sitio
+											    servido por nginx): anchor con recarga completa, no RouterLink */}
+											<a href="/jurisprudencia" style={{ textDecoration: "none" }}>
+												<FooterButton sx={{ color: theme.palette.text.primary }}>Jurisprudencia</FooterButton>
+											</a>
+											<a href="/educativo" style={{ textDecoration: "none" }}>
+												<FooterButton sx={{ color: theme.palette.text.primary }}>Blog educativo</FooterButton>
+											</a>
 											<RouterLink to="/plans" style={{ textDecoration: "none" }}>
 												<FooterButton sx={{ color: theme.palette.text.primary }}>Planes y Precios</FooterButton>
 											</RouterLink>
