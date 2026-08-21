@@ -32,8 +32,16 @@ ragAxios.interceptors.response.use(
 		const status = error.response?.status;
 		const responseData = error.response?.data as any;
 
-		// Manejar 429 (límite mensual IA) y 403 (feature no disponible) con upgradeRequired
-		if ((status === 429 || status === 403) && (responseData?.upgradeRequired || responseData?.upgrade)) {
+		// Manejar 429 (límite mensual IA) y 403 (feature no disponible) con upgradeRequired.
+		// Los requests que manejan el límite por su cuenta (p.ej. la vista de
+		// jurisprudencia, que abre su propio LimitErrorModal con featureInfo)
+		// pasan `skipPlanLimitEvent: true` en el config para que no se abra
+		// TAMBIÉN el modal global de ServerContext (doble modal).
+		if (
+			(status === 429 || status === 403) &&
+			(responseData?.upgradeRequired || responseData?.upgrade) &&
+			!originalRequest?.skipPlanLimitEvent
+		) {
 			window.dispatchEvent(
 				new CustomEvent("ragPlanLimitReached", {
 					detail: {

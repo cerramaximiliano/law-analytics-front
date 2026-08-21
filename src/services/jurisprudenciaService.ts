@@ -34,7 +34,9 @@ const jurisprudenciaService = {
 			options: { topK: options.topK ?? 10 },
 			...(options.filters && Object.keys(options.filters).length > 0 ? { filters: options.filters } : {}),
 		};
-		const response = await ragAxios.post("/rag/sentencias/ask", body);
+		// skipPlanLimitEvent: el 403 de cuota lo maneja la vista con su propio
+		// LimitErrorModal — sin esto el interceptor global abre un segundo modal.
+		const response = await ragAxios.post("/rag/sentencias/ask", body, { skipPlanLimitEvent: true } as any);
 		// Cuota mensual restante (solo plan free) — el backend la manda por header
 		const remainingHeader = response.headers?.["x-search-quota-remaining"];
 		const quotaRemaining = remainingHeader !== undefined ? parseInt(remainingHeader, 10) : null;
@@ -43,10 +45,9 @@ const jurisprudenciaService = {
 
 	// Sentencias similares a una dada ("más como esta") — mismo corpus que ask
 	similares: async (sentenciaId: string, topK: number = 5): Promise<JurisprudenciaSearchResponse> => {
-		const response = await ragAxios.post("/rag/sentencias/buscar/similar", {
-			sentenciaId,
-			options: { topK },
-		});
+		const response = await ragAxios.post("/rag/sentencias/buscar/similar", { sentenciaId, options: { topK } }, {
+			skipPlanLimitEvent: true,
+		} as any);
 		return response.data;
 	},
 
