@@ -55,7 +55,7 @@ interface Plan {
 }
 
 /**
- * Schema del teaser — 4 filas con el mismo topic across los 3 planes.
+ * Schema del teaser — 5 filas con el mismo topic across todos los planes.
  * Esto mantiene visualmente alineada la comparación (qty progresivas + binarios
  * de diferenciación). El resto de features y límites quedan implícitos detrás
  * del link "Ver comparación completa".
@@ -68,11 +68,17 @@ const TEASER_ROWS: TeaserRowDef[] = [
 	{ kind: "resource", resourceName: "folders", format: (n) => `${n} causas activas` },
 	{ kind: "feature", featureName: "movements", label: "Sincronización con PJN, MEV y EJE" },
 	{ kind: "resource", resourceName: "aiQueriesPerMonth", format: (n) => `${n} consultas IA/mes` },
+	{
+		kind: "resource",
+		resourceName: "jurisprudenciaSearchPerMonth",
+		// -1 = ilimitado en planconfigs
+		format: (n) => (n < 0 ? "Búsqueda de jurisprudencia con IA ilimitada" : `${n} búsquedas de jurisprudencia/mes`),
+	},
 	{ kind: "feature", featureName: "booking", label: "Sistema de reservas online" },
 ];
 
 // Fallback estático para mostrar antes de que cargue el API (o si falla).
-// Cada plan tiene 4 rows que matchean el schema TEASER_ROWS — cuando el API
+// Cada plan tiene 5 rows que matchean el schema TEASER_ROWS — cuando el API
 // responde, estos rows se reemplazan con datos reales (mismo topic, mismos labels).
 // Los valores de estas filas son el fallback que se muestra mientras el API
 // responde, y si falla. Tienen que coincidir con `planconfigs` en la base: son
@@ -88,6 +94,7 @@ const PLAN_DEFAULTS: Plan[] = [
 			{ label: "5 causas activas", enabled: true },
 			{ label: "Sincronización con PJN, MEV y EJE", enabled: false },
 			{ label: "5 consultas IA/mes", enabled: true },
+			{ label: "10 búsquedas de jurisprudencia/mes", enabled: true },
 			{ label: "Sistema de reservas online", enabled: false },
 		],
 		cta: "Empezar gratis",
@@ -104,6 +111,7 @@ const PLAN_DEFAULTS: Plan[] = [
 			{ label: "50 causas activas", enabled: true },
 			{ label: "Sincronización con PJN, MEV y EJE", enabled: true },
 			{ label: "50 consultas IA/mes", enabled: true },
+			{ label: "Búsqueda de jurisprudencia con IA ilimitada", enabled: true },
 			{ label: "Sistema de reservas online", enabled: true },
 		],
 		cta: "Probar Estándar",
@@ -120,6 +128,7 @@ const PLAN_DEFAULTS: Plan[] = [
 			{ label: "200 causas activas", enabled: true },
 			{ label: "Sincronización con PJN, MEV y EJE", enabled: true },
 			{ label: "200 consultas IA/mes", enabled: true },
+			{ label: "Búsqueda de jurisprudencia con IA ilimitada", enabled: true },
 			{ label: "Sistema de reservas online", enabled: true },
 		],
 		cta: "Probar Pro",
@@ -136,6 +145,7 @@ const PLAN_DEFAULTS: Plan[] = [
 			{ label: "500 causas activas", enabled: true },
 			{ label: "Sincronización con PJN, MEV y EJE", enabled: true },
 			{ label: "500 consultas IA/mes", enabled: true },
+			{ label: "Búsqueda de jurisprudencia con IA ilimitada", enabled: true },
 			{ label: "Sistema de reservas online", enabled: true },
 		],
 		cta: "Probar Premium",
@@ -184,7 +194,7 @@ const isVisibleInCurrentEnv = (visibility: string | undefined, currentEnv: strin
 };
 
 /**
- * Computa las 4 filas del teaser tomando los valores del API plan.
+ * Computa las filas del teaser tomando los valores del API plan.
  * Para resources: usa el `limit` numérico. Para features: usa el flag `enabled`.
  * Si una fila no encuentra su resource/feature en el API → devuelve `null` para
  * que el caller pueda hacer fallback al hardcodeo.
@@ -198,7 +208,8 @@ const computeRowsFromApiPlan = (apiPlan: ApiPlan, currentEnv: string): PlanRow[]
 			if (!rl || !isVisibleInCurrentEnv(rl.visibility, currentEnv)) return null;
 			rows.push({
 				label: def.format(rl.limit),
-				enabled: rl.limit > 0,
+				// limit negativo = ilimitado (habilitado); 0 = no incluido
+				enabled: rl.limit !== 0,
 			});
 		} else {
 			const feat = apiPlan.features.find((f: PlanFeature) => f.name === def.featureName);
@@ -251,9 +262,8 @@ const Planes = () => {
 					// Sólo se muestran descuentos del primer item de activeDiscounts.
 					// El backend ya filtra por showOnLanding cuando no hay sesión, así que
 					// si llegó algo acá es seguro mostrarlo en la landing pública.
-					const firstDiscount = !isFree && apiPlan.activeDiscounts && apiPlan.activeDiscounts.length > 0
-						? apiPlan.activeDiscounts[0]
-						: undefined;
+					const firstDiscount =
+						!isFree && apiPlan.activeDiscounts && apiPlan.activeDiscounts.length > 0 ? apiPlan.activeDiscounts[0] : undefined;
 
 					return {
 						...def,
@@ -548,8 +558,7 @@ const Planes = () => {
 																		letterSpacing: "-0.005em",
 																	}}
 																>
-																	durante {plan.discount.durationInMonths}{" "}
-																	{plan.discount.durationInMonths === 1 ? "mes" : "meses"}
+																	durante {plan.discount.durationInMonths} {plan.discount.durationInMonths === 1 ? "mes" : "meses"}
 																</Typography>
 															)}
 														</Stack>

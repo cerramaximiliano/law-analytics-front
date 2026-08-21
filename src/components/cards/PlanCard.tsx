@@ -465,7 +465,8 @@ const PlanCard: React.FC<PlanCardProps> = ({
 										</Box>
 										<Typography sx={{ fontSize: compact ? "0.82rem" : "0.88rem", color: theme.palette.text.primary, lineHeight: 1.5 }}>
 											<Box component="span" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-												{resource.limit}
+												{/* Convención planconfigs: límite negativo = sin tope */}
+												{resource.limit < 0 ? "Ilimitadas" : resource.limit}
 											</Box>{" "}
 											{resource.displayName}
 										</Typography>
@@ -583,9 +584,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
 						}}
 					>
 						<Lock variant="Bulk" size={28} color={theme.palette.warning.main} style={{ marginBottom: 8 }} />
-						<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, color: theme.palette.warning.main, mb: 0.5 }}>
-							Próximamente
-						</Typography>
+						<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, color: theme.palette.warning.main, mb: 0.5 }}>Próximamente</Typography>
 						<Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
 							Este plan estará disponible pronto
 						</Typography>
