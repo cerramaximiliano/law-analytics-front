@@ -138,7 +138,7 @@ const OauthConsentPage = () => {
 			<AuthWrapper>
 				<Grid container spacing={3}>
 					<Grid item xs={12} sx={{ textAlign: "center" }}>
-						<Logo />
+						<Logo to="/" />
 					</Grid>
 					<Grid item xs={12}>
 						<Alert severity="error">
@@ -207,7 +207,7 @@ const OauthConsentPage = () => {
 		<AuthWrapper>
 			<Grid container spacing={3}>
 				<Grid item xs={12} sx={{ textAlign: "center" }}>
-					<Logo animation="letters" />
+					<Logo to="/" animation="letters" />
 				</Grid>
 
 				<Grid item xs={12}>

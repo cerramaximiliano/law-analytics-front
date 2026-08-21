@@ -90,7 +90,7 @@ const Login = () => {
 			<AuthWrapper>
 				<Grid container spacing={3}>
 					<Grid item xs={12} sx={{ textAlign: "center" }}>
-						<Logo />
+						<Logo to="/" />
 					</Grid>
 					<Grid item xs={12}>
 						<Alert severity="info" sx={{ mt: 3 }}>
@@ -130,7 +130,7 @@ const Login = () => {
 
 				<Grid container spacing={3}>
 					<Grid item xs={12} sx={{ textAlign: "center" }}>
-						<Logo animation="draw" />
+						<Logo to="/" animation="draw" />
 					</Grid>
 					<Grid item xs={12}>
 						<Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: { xs: -0.5, sm: 0.5 } }}>

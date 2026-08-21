@@ -146,7 +146,7 @@ const OauthUpgradeRequiredPage = () => {
 		<AuthWrapper>
 			<Grid container spacing={3}>
 				<Grid item xs={12} sx={{ textAlign: "center" }}>
-					<Logo animation="letters" />
+					<Logo to="/" animation="letters" />
 				</Grid>
 
 				<Grid item xs={12}>
