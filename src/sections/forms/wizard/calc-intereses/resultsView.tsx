@@ -231,6 +231,10 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 			tasaActivaCNAT2658: "Tasa Activa Banco Nación - Acta 2658",
 			tasaActivaCNAT2764: "Tasa Activa Banco Nación - Acta 2764",
 			tasaPasivaBCRA27802: "Tasa Pasiva BCRA Ley 27.802 art.55(a)",
+			tasaPasivaBP: "Tasa Pasiva Banco Provincia",
+			tasaActivaBP: "Tasa Activa Banco Provincia",
+			tasaActivaBPDolares: "Tasa Activa Banco Provincia (USD)",
+			tasaPasivaBPDolares: "Tasa Pasiva Banco Provincia (USD)",
 		};
 
 		return tasasMapping[tasaValue] || tasaValue;

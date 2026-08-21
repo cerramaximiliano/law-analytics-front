@@ -1330,6 +1330,11 @@ const SavedIntereses = () => {
 						tasaActivaCNAT2601: "Tasa Activa BNA - Acta 2601",
 						tasaActivaCNAT2658: "Tasa Activa BNA - Acta 2658",
 						tasaActivaCNAT2764: "Tasa Activa BNA - Acta 2764",
+						tasaPasivaBCRA27802: "Tasa Pasiva BCRA Ley 27.802",
+						tasaPasivaBP: "Tasa Pasiva Banco Provincia",
+						tasaActivaBP: "Tasa Activa Banco Provincia",
+						tasaActivaBPDolares: "Tasa Activa BP (USD)",
+						tasaPasivaBPDolares: "Tasa Pasiva BP (USD)",
 					};
 
 					// Función para obtener un nombre legible de la tasa (soporta múltiples tasas separadas por coma)
