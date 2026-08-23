@@ -114,6 +114,10 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 			: null,
 		juzgado: folder?.juzgado || null,
 		judFolder: {
+			// Spread PRIMERO: el submit manda judFolder completo y el hub hace $set
+			// del subdoc entero — sin esto, editar borra los campos que el form no
+			// maneja (cuij, currentLocation, salaNumber, vocaliaNumber).
+			...(folder?.judFolder || {}),
 			initialDateJudFolder: formatDate(folder?.judFolder?.initialDateJudFolder) || defaultJudFolder.initialDateJudFolder,
 			finalDateJudFolder: formatDate(folder?.judFolder?.finalDateJudFolder) || defaultJudFolder.finalDateJudFolder,
 			numberJudFolder: folder?.judFolder?.numberJudFolder || defaultJudFolder.numberJudFolder,
@@ -315,7 +319,9 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 													sx={customInputStyles}
 												/>
 											) : (
-												<Typography sx={{ fontSize: "0.85rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em", mt: 0.25 }}>
+												<Typography
+													sx={{ fontSize: "0.85rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em", mt: 0.25 }}
+												>
 													{values.judFolder.courtNumber || folder?.juzgado || "—"}
 												</Typography>
 											)}
@@ -344,7 +350,9 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 													sx={customInputStyles}
 												/>
 											) : (
-												<Typography sx={{ fontSize: "0.85rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em", mt: 0.25 }}>
+												<Typography
+													sx={{ fontSize: "0.85rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em", mt: 0.25 }}
+												>
 													{values.judFolder.secretaryNumber || folder?.secretaria || "—"}
 												</Typography>
 											)}
@@ -592,7 +600,15 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 																	>
 																		Sentencia
 																	</Typography>
-																	<Typography sx={{ fontSize: "0.85rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em", mt: 0.25 }}>
+																	<Typography
+																		sx={{
+																			fontSize: "0.85rem",
+																			fontWeight: 500,
+																			color: "text.primary",
+																			letterSpacing: "-0.005em",
+																			mt: 0.25,
+																		}}
+																	>
 																		{folder.sentencia}
 																	</Typography>
 																</Grid>
@@ -610,7 +626,15 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 																	>
 																		Apelación
 																	</Typography>
-																	<Typography sx={{ fontSize: "0.85rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em", mt: 0.25 }}>
+																	<Typography
+																		sx={{
+																			fontSize: "0.85rem",
+																			fontWeight: 500,
+																			color: "text.primary",
+																			letterSpacing: "-0.005em",
+																			mt: 0.25,
+																		}}
+																	>
 																		{folder.apelacion}
 																	</Typography>
 																</Grid>
@@ -628,7 +652,9 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 																	>
 																		Fecha de pago
 																	</Typography>
-																	<Typography sx={{ fontSize: "0.85rem", fontWeight: 500, color: LIVE_GREEN, letterSpacing: "-0.005em", mt: 0.25 }}>
+																	<Typography
+																		sx={{ fontSize: "0.85rem", fontWeight: 500, color: LIVE_GREEN, letterSpacing: "-0.005em", mt: 0.25 }}
+																	>
 																		{formatDate(folder.fechaPago)}
 																	</Typography>
 																</Grid>

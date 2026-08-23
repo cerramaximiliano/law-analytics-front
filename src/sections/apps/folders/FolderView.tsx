@@ -20,7 +20,7 @@ import dayjs from "utils/dayjs-config";
 // Whitelist de jurisdicciones que tienen worker de sincronización.
 // "Nacional" → PJN, "Buenos Aires" → SCBA/MEV, "CABA" → EJE.
 // Debe quedar alineada con la del detalle del folder (pages/apps/folders/details/details.tsx).
-const SYNCABLE_JURISDICCION_LABELS = ["Nacional", "Buenos Aires", "CABA"];
+const SYNCABLE_JURISDICCION_LABELS = ["Nacional", "Buenos Aires", "CABA", "Salta"];
 
 // ==============================|| FOLDER - VIEW ||============================== //
 
@@ -483,6 +483,28 @@ const FolderView = memo(({ data }: any) => {
 			return (
 				<BindingPill
 					label="Vinculado con SCBA"
+					accent={LIVE_GREEN}
+					verifyIcon={showVerify ? verifyIcon : undefined}
+					verifyTooltip={showVerify ? verifyTooltip : undefined}
+				/>
+			);
+		}
+
+		if (data.eje || data.pjsalta) {
+			const showVerify = data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined);
+			const verifyIcon =
+				data.causaVerified === false ? (
+					<InfoCircle size={14} variant="Bold" color={STALE_AMBER} />
+				) : data.causaIsValid ? (
+					<TickCircle size={14} variant="Bold" color={LIVE_GREEN} />
+				) : (
+					<CloseCircle size={14} variant="Bold" color={theme.palette.error.main} />
+				);
+			const verifyTooltip =
+				data.causaVerified === false ? "Pendiente de verificación" : data.causaIsValid ? "Causa válida" : "Causa inválida";
+			return (
+				<BindingPill
+					label={data.eje ? "Vinculado con EJE" : "Vinculado con PJ Salta"}
 					accent={LIVE_GREEN}
 					verifyIcon={showVerify ? verifyIcon : undefined}
 					verifyTooltip={showVerify ? verifyTooltip : undefined}

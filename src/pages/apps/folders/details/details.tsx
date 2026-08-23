@@ -104,7 +104,7 @@ function TabPanel(props: TabPanelProps) {
 // Estos labels matchean los que aparecen en folderJuris.label (data/folder.json
 // para folders manuales, y los que setean los controllers de link-causa cuando
 // se asocia con un worker automático).
-const SYNCABLE_JURISDICCION_LABELS = ["Nacional", "Buenos Aires", "CABA"];
+const SYNCABLE_JURISDICCION_LABELS = ["Nacional", "Buenos Aires", "CABA", "Salta"];
 
 function a11yProps(index: number) {
 	return {
@@ -501,6 +501,18 @@ const Details = () => {
 					icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
 				};
 			}
+		} else if (folder?.eje) {
+			state = {
+				label: "Vinculado con EJE",
+				accent: LIVE_GREEN,
+				icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
+			};
+		} else if (folder?.pjsalta) {
+			state = {
+				label: "Vinculado con PJ Salta",
+				accent: LIVE_GREEN,
+				icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
+			};
 		} else if (folder?.previousSyncSource) {
 			// Folder desvinculado via modo "keep" (PJN/SCBA). Bloqueamos la
 			// re-vinculación individual: el matching por fuero+numero+año
@@ -525,7 +537,7 @@ const Details = () => {
 				label: "Jurisdicción no cubierta",
 				accent: STALE_AMBER,
 				icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
-				tooltip: `Hoy solo sincronizamos causas de Nacional (PJN), Buenos Aires (SCBA/MEV) y CABA (EJE). Esta carpeta es de ${folder.folderJuris.label} — solo podés actualizarla manualmente.`,
+				tooltip: `Hoy solo sincronizamos causas de Nacional (PJN), Buenos Aires (SCBA/MEV), CABA (EJE) y Salta. Esta carpeta es de ${folder.folderJuris.label} — solo podés actualizarla manualmente.`,
 			};
 		} else {
 			state = {
@@ -537,7 +549,7 @@ const Details = () => {
 		}
 
 		const showVerify =
-			(folder?.pjn || folder?.mev || folder?.scba) &&
+			(folder?.pjn || folder?.mev || folder?.scba || folder?.eje || folder?.pjsalta) &&
 			(folder?.causaVerified === false || (folder?.causaVerified === true && folder?.causaIsValid !== undefined));
 		const verifyTooltip =
 			folder?.causaVerified === false ? "Pendiente de verificación" : folder?.causaIsValid ? "Causa válida" : "Causa inválida";
@@ -675,7 +687,12 @@ const Details = () => {
 	const verificationGate: VerificationGate | null = useMemo(() => {
 		if (!folder || folder._id !== id || isLoader) return null;
 		const isAutoFolder =
-			folder.source === "auto" || folder.pjn === true || folder.mev === true || folder.eje === true || folder.scba === true;
+			folder.source === "auto" ||
+			folder.pjn === true ||
+			folder.mev === true ||
+			folder.eje === true ||
+			folder.scba === true ||
+			folder.pjsalta === true;
 		if (!isAutoFolder) return null;
 
 		if (folder.causaAssociationStatus === "pending_selection") return "pending_selection";

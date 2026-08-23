@@ -144,9 +144,7 @@ const JudicialInfoCard: React.FC<JudicialInfoCardProps> = ({
 								{value || "—"}
 							</Typography>
 							{helper && hasValue && (
-								<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em", mt: 0.25 }}>
-									{helper}
-								</Typography>
+								<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em", mt: 0.25 }}>{helper}</Typography>
 							)}
 						</>
 					)}
@@ -187,6 +185,10 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 				: folder.folderJuris
 			: null,
 		judFolder: {
+			// Spread PRIMERO: el submit manda judFolder completo y el hub hace $set
+			// del subdoc entero — sin esto, editar borra los campos que el form no
+			// maneja (cuij, currentLocation, salaNumber, vocaliaNumber).
+			...(folder?.judFolder || {}),
 			initialDateJudFolder: formatDate(folder?.judFolder?.initialDateJudFolder) || defaultJudFolder.initialDateJudFolder,
 			finalDateJudFolder: formatDate(folder?.judFolder?.finalDateJudFolder) || defaultJudFolder.finalDateJudFolder,
 			numberJudFolder: folder?.judFolder?.numberJudFolder || defaultJudFolder.numberJudFolder,
@@ -732,6 +734,19 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 										}
 									/>
 								</Grid>
+								{folder?.judFolder?.cuij && (
+									<Grid item xs={12} md={4}>
+										{/* CUIJ: identificador del portal en los fueros IOL (EJE, PJ Salta).
+										    Lo escriben los workers — solo lectura. */}
+										<JudicialInfoCard
+											icon={<HashtagSquare />}
+											label="CUIJ"
+											value={folder.judFolder.cuij}
+											isLoading={isLoader}
+											isEditing={false}
+										/>
+									</Grid>
+								)}
 								<Grid item xs={12} md={4}>
 									<JudicialInfoCard
 										icon={<Calendar />}
@@ -971,9 +986,7 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 																>
 																	Fecha de pago
 																</Typography>
-																<Typography
-																	sx={{ fontSize: "0.92rem", fontWeight: 600, color: LIVE_GREEN, letterSpacing: "-0.005em" }}
-																>
+																<Typography sx={{ fontSize: "0.92rem", fontWeight: 600, color: LIVE_GREEN, letterSpacing: "-0.005em" }}>
 																	{formatDate(folder.fechaPago)}
 																</Typography>
 															</Stack>
