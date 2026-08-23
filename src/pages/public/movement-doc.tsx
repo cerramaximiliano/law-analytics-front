@@ -499,6 +499,28 @@ const MovementDocPublicPage = () => {
 									</Alert>
 								)}
 
+								{/* El documento de la actuación (el cuerpo del despacho o la
+								    resolución), servido desde nuestro S3 con el Content-Type
+								    correcto. Sólo EJE lo tiene hoy; el resto de las fuentes de
+								    texto no mandan pdfUrl y este bloque no se renderiza. */}
+								{pdfUrl && (
+									<>
+										<Box sx={{ height: 1, bgcolor: theme.palette.divider, my: 3 }} />
+										<Button
+											variant="contained"
+											size="small"
+											startIcon={<DocumentDownload size="16" />}
+											href={pdfUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+											onClick={handleDownloadClick}
+											sx={{ textTransform: "none" }}
+										>
+											Ver documento original
+										</Button>
+									</>
+								)}
+
 								{attachments && attachments.length > 0 && (
 									<>
 										<Box sx={{ height: 1, bgcolor: theme.palette.divider, my: 3 }} />
