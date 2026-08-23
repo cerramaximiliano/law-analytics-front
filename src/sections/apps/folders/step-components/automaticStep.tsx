@@ -26,7 +26,18 @@ import {
 	IconButton,
 	InputAdornment,
 } from "@mui/material";
-import { DocumentUpload, Link1, DocumentText1, InfoCircle, SearchNormal1, ArrowRight2, TickCircle, Eye, EyeSlash, ShieldTick } from "iconsax-react";
+import {
+	DocumentUpload,
+	Link1,
+	DocumentText1,
+	InfoCircle,
+	SearchNormal1,
+	ArrowRight2,
+	TickCircle,
+	Eye,
+	EyeSlash,
+	ShieldTick,
+} from "iconsax-react";
 import { alpha, useTheme } from "@mui/material/styles";
 import { BRAND_BLUE, LIVE_GREEN } from "themes/dashboardTokens";
 import { useFormikContext } from "formik";
@@ -35,6 +46,7 @@ import { useState, useEffect, useRef } from "react";
 import mevWorkersService, { NavigationCode } from "api/workersMev";
 import mevCredentialsService from "api/mevCredentials";
 import ejeWorkersService from "api/workersEje";
+import pjsaltaWorkersService from "api/workersPjSalta";
 import PjnAccountConnect, { PjnAccountConnectRef } from "./PjnAccountConnect";
 import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import { usePjnSiteStatus } from "hooks/usePjnSiteStatus";
@@ -190,14 +202,18 @@ interface FormValues {
 	pjn?: boolean;
 	mev?: boolean;
 	eje?: boolean;
+	pjsalta?: boolean;
 	initialDateFolder?: string;
-	judicialPower?: "nacional" | "buenosaires" | "caba";
+	judicialPower?: "nacional" | "buenosaires" | "caba" | "salta";
 	jurisdictionBA?: string;
 	organismoBA?: string;
 	navigationCode?: string;
 	// Campos específicos para EJE (CABA)
 	ejeSearchType?: "cuij" | "expediente";
 	ejeCuij?: string;
+	// Campos específicos para PJ Salta (portal IOL)
+	pjsaltaSearchType?: "cuij" | "expediente";
+	pjsaltaCuij?: string;
 	// Modo de importación del sub-toggle dentro del step. Persistido en el form
 	// para que callers externos (onboarding checklist) puedan pre-seleccionar
 	// "single" via `initialFormValues` y el `useState` local los recoja al mount.
@@ -407,6 +423,20 @@ const AutomaticStep = () => {
 		// Si el organismo es válido, aseguramos de limpiar errores
 		setOrganismoError("");
 		setFieldError("organismoBA", ""); // Limpiamos el error en Formik
+		return true;
+	};
+
+	// Validar CUIJ para PJ Salta. Formato estricto XX-XXXXXXXX-X, a diferencia
+	// del de EJE que acepta variantes.
+	const validateSaltaCuij = (cuij: string | undefined) => {
+		const validation = pjsaltaWorkersService.validateCuij(cuij || "");
+		if (!validation.valid) {
+			setCuijError(validation.error || "CUIJ inválido");
+			setFieldError("pjsaltaCuij", validation.error || "CUIJ inválido");
+			return false;
+		}
+		setCuijError("");
+		setFieldError("pjsaltaCuij", "");
 		return true;
 	};
 
@@ -708,6 +738,73 @@ const AutomaticStep = () => {
 				setSuccess(true);
 				setError("");
 			}
+		} else if (values.judicialPower === "salta") {
+			// PJ Salta: mismo esquema de dos modos que EJE (CUIJ o número/año).
+			let isValid = false;
+
+			if (values.pjsaltaSearchType === "cuij") {
+				if (touched.pjsaltaCuij || formSubmitAttempted.current) {
+					isValid = validateSaltaCuij(values.pjsaltaCuij);
+				} else if (values.pjsaltaCuij && values.pjsaltaCuij !== "") {
+					isValid = true;
+					setCuijError("");
+					setFieldError("pjsaltaCuij", "");
+				}
+			} else {
+				let numberValid = false;
+				let yearValid = false;
+
+				if (touched.expedientNumber || formSubmitAttempted.current) {
+					numberValid = validateExpedientNumber(values.expedientNumber);
+				} else if (values.expedientNumber && values.expedientNumber !== "") {
+					numberValid = true;
+					setNumberError("");
+					setFieldError("expedientNumber", "");
+				}
+
+				if (touched.expedientYear || formSubmitAttempted.current) {
+					yearValid = validateYear(values.expedientYear);
+				} else if (values.expedientYear && values.expedientYear !== "") {
+					yearValid = true;
+					setYearError("");
+					setFieldError("expedientYear", "");
+				}
+
+				isValid = numberValid && yearValid;
+			}
+
+			if (isValid) {
+				setFieldValue("source", "auto");
+				setFieldValue("pjsalta", true);
+				setFieldValue("initialDateFolder", new Date().toLocaleDateString("es-AR"));
+
+				if (!values.folderName || values.folderName === "") {
+					setFieldValue("folderName", "Pendiente");
+				}
+				if (!values.materia || values.materia === "") {
+					setFieldValue("materia", "No verificado");
+				}
+				if (!values.orderStatus || values.orderStatus === "") {
+					setFieldValue("orderStatus", "No verificado");
+				}
+				if (!values.status || values.status === "") {
+					setFieldValue("status", "Nueva");
+				}
+				// El fuero NO se setea acá: lo infiere el verifier del organismo que
+				// devuelve el portal (Civil / Laboral / Familia / Penal).
+
+				const saltaSearchInfo =
+					values.pjsaltaSearchType === "cuij"
+						? `CUIJ: ${values.pjsaltaCuij}`
+						: `Expediente: ${values.expedientNumber}/${values.expedientYear}`;
+
+				if (!values.description || values.description === "") {
+					setFieldValue("description", `Expediente importado desde el Poder Judicial de Salta (${saltaSearchInfo})`);
+				}
+
+				setSuccess(true);
+				setError("");
+			}
 		}
 
 		setAutomaticValues();
@@ -725,6 +822,9 @@ const AutomaticStep = () => {
 		touched.ejeCuij,
 		values.ejeSearchType,
 		values.ejeCuij,
+		touched.pjsaltaCuij,
+		values.pjsaltaSearchType,
+		values.pjsaltaCuij,
 		formSubmitAttempted.current,
 	]);
 
@@ -824,6 +924,14 @@ const AutomaticStep = () => {
 						validateExpedientNumber(values.expedientNumber);
 						validateYear(values.expedientYear);
 					}
+				} else if (values.judicialPower === "salta") {
+					// Validar campos de PJ Salta
+					if (values.pjsaltaSearchType === "cuij") {
+						validateSaltaCuij(values.pjsaltaCuij);
+					} else {
+						validateExpedientNumber(values.expedientNumber);
+						validateYear(values.expedientYear);
+					}
 				}
 
 				// Marcamos todos los campos como tocados para mostrar los errores
@@ -842,6 +950,18 @@ const AutomaticStep = () => {
 							? {
 									...touched,
 									ejeCuij: true,
+							  }
+							: {
+									...touched,
+									expedientNumber: true,
+									expedientYear: true,
+							  };
+				} else if (values.judicialPower === "salta") {
+					touchedFields =
+						values.pjsaltaSearchType === "cuij"
+							? {
+									...touched,
+									pjsaltaCuij: true,
 							  }
 							: {
 									...touched,
@@ -875,6 +995,8 @@ const AutomaticStep = () => {
 		values.judicialPower,
 		values.ejeSearchType,
 		values.ejeCuij,
+		values.pjsaltaSearchType,
+		values.pjsaltaCuij,
 		pjnImportMode,
 		baImportMode,
 	]);
@@ -971,10 +1093,7 @@ const AutomaticStep = () => {
 	};
 
 	// Brand-aware notice (reemplaza Alert MUI default).
-	const renderNotice = (
-		text: string,
-		variant: "info" | "warning" = "info",
-	) => {
+	const renderNotice = (text: string, variant: "info" | "warning" = "info") => {
 		const accent = variant === "info" ? BRAND_BLUE : theme.palette.warning.main;
 		return (
 			<Box
@@ -992,9 +1111,7 @@ const AutomaticStep = () => {
 				<Box sx={{ color: accent, display: "flex", mt: 0.125, flexShrink: 0 }}>
 					<InfoCircle size={14} variant="Bulk" />
 				</Box>
-				<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", lineHeight: 1.45, textWrap: "pretty" }}>
-					{text}
-				</Typography>
+				<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", lineHeight: 1.45, textWrap: "pretty" }}>{text}</Typography>
 			</Box>
 		);
 	};
@@ -1003,11 +1120,23 @@ const AutomaticStep = () => {
 	const powerMeta = (() => {
 		switch (values.judicialPower) {
 			case "nacional":
-				return { code: "PJN", title: "Importar causa del Poder Judicial de la Nación", subtitle: "Conectá tu cuenta o importá un expediente puntual." };
+				return {
+					code: "PJN",
+					title: "Importar causa del Poder Judicial de la Nación",
+					subtitle: "Conectá tu cuenta o importá un expediente puntual.",
+				};
 			case "buenosaires":
-				return { code: "BA", title: "Importar causa del Poder Judicial de Buenos Aires", subtitle: "Conectá tu cuenta SCBA o importá un expediente individual." };
+				return {
+					code: "BA",
+					title: "Importar causa del Poder Judicial de Buenos Aires",
+					subtitle: "Conectá tu cuenta SCBA o importá un expediente individual.",
+				};
 			case "caba":
-				return { code: "CABA", title: "Importar causa del Poder Judicial de CABA", subtitle: "Sistema EJE — buscá el expediente por número/año o por CUIJ." };
+				return {
+					code: "CABA",
+					title: "Importar causa del Poder Judicial de CABA",
+					subtitle: "Sistema EJE — buscá el expediente por número/año o por CUIJ.",
+				};
 			default:
 				return { code: "", title: "Importar causa", subtitle: "" };
 		}
@@ -1072,9 +1201,7 @@ const AutomaticStep = () => {
 						<Box sx={{ color: theme.palette.error.main, display: "flex", mt: 0.125, flexShrink: 0 }}>
 							<InfoCircle size={16} variant="Bulk" />
 						</Box>
-						<Typography sx={{ fontSize: "0.82rem", color: "text.primary", lineHeight: 1.5, fontWeight: 500 }}>
-							{error}
-						</Typography>
+						<Typography sx={{ fontSize: "0.82rem", color: "text.primary", lineHeight: 1.5, fontWeight: 500 }}>{error}</Typography>
 					</Box>
 				)}
 
@@ -1195,10 +1322,7 @@ const AutomaticStep = () => {
 														</Typography>
 													</Stack>
 
-													<PjnMaintenanceAlert
-														compact
-														contextHint="No vas a poder importar el expediente hasta que el portal vuelva."
-													/>
+													<PjnMaintenanceAlert compact contextHint="No vas a poder importar el expediente hasta que el portal vuelva." />
 
 													<Stack spacing={0.625}>
 														<InputLabel htmlFor="folderJuris" sx={labelSx}>
@@ -1560,9 +1684,7 @@ const AutomaticStep = () => {
 															}}
 															error={Boolean(cuijError && touched.ejeCuij)}
 															helperText={
-																touched.ejeCuij && cuijError
-																	? cuijError
-																	: "Formato: J-XX-XXXXXXXX-X/AAAA-X (ej: J-01-00053687-9/2020-0)"
+																touched.ejeCuij && cuijError ? cuijError : "Formato: J-XX-XXXXXXXX-X/AAAA-X (ej: J-01-00053687-9/2020-0)"
 															}
 															sx={fieldSx}
 														/>
@@ -1607,6 +1729,147 @@ const AutomaticStep = () => {
 												)}
 
 												{renderNotice("Los datos del expediente se importan desde el sistema EJE de la Ciudad de Buenos Aires.")}
+											</Stack>
+										</Box>
+									</Grid>
+								</>
+							) : values.judicialPower === "salta" ? (
+								<>
+									<Grid item xs={12}>
+										<Box
+											sx={{
+												borderRadius: 1.5,
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+												p: { xs: 1.5, sm: 1.75 },
+											}}
+										>
+											<Stack spacing={1.5}>
+												<Stack direction="row" alignItems="center" spacing={0.875}>
+													<Box
+														sx={{
+															width: 28,
+															height: 28,
+															borderRadius: 1,
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+															color: BRAND_BLUE,
+															flexShrink: 0,
+														}}
+													>
+														<SearchNormal1 size={16} variant="Bulk" />
+													</Box>
+													<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+														Buscar expediente en PJ Salta
+													</Typography>
+												</Stack>
+
+												{/* Selector tipo de búsqueda */}
+												<Stack spacing={0.625}>
+													<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1.5 }}>
+														¿Cómo querés buscar el expediente?
+													</Typography>
+													<RadioGroup
+														row
+														value={values.pjsaltaSearchType || "expediente"}
+														onChange={(e) => {
+															setFieldValue("pjsaltaSearchType", e.target.value);
+															setCuijError("");
+															setNumberError("");
+															setYearError("");
+														}}
+														sx={{
+															"& .MuiFormControlLabel-root": { mr: 2 },
+															"& .MuiRadio-root": {
+																color: alpha(BRAND_BLUE, isDark ? 0.4 : 0.3),
+																"&.Mui-checked": { color: BRAND_BLUE },
+															},
+														}}
+													>
+														<FormControlLabel
+															value="expediente"
+															control={<Radio size="small" />}
+															label={<Typography sx={{ fontSize: "0.82rem", fontWeight: 500 }}>Por número y año</Typography>}
+														/>
+														<FormControlLabel
+															value="cuij"
+															control={<Radio size="small" />}
+															label={<Typography sx={{ fontSize: "0.82rem", fontWeight: 500 }}>Por CUIJ</Typography>}
+														/>
+													</RadioGroup>
+												</Stack>
+
+												<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1) }} />
+
+												{values.pjsaltaSearchType === "cuij" ? (
+													<Stack spacing={0.625}>
+														<InputLabel htmlFor="pjsalta-cuij" sx={labelSx}>
+															CUIJ
+														</InputLabel>
+														<InputField
+															fullWidth
+															size="small"
+															id="pjsalta-cuij"
+															placeholder="17-00959839-0"
+															name="pjsaltaCuij"
+															onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+																setFieldValue("pjsaltaCuij", e.target.value);
+																setTouched({ ...touched, pjsaltaCuij: true });
+																if (e.target.value) {
+																	validateSaltaCuij(e.target.value);
+																}
+															}}
+															error={Boolean(cuijError && touched.pjsaltaCuij)}
+															helperText={
+																touched.pjsaltaCuij && cuijError
+																	? cuijError
+																	: "Formato: XX-XXXXXXXX-X (ej: 17-00959839-0). Si el CUIJ tiene incidentes, vas a poder elegir cuál seguir."
+															}
+															sx={fieldSx}
+														/>
+													</Stack>
+												) : (
+													<Stack direction="row" spacing={1.25}>
+														<Stack spacing={0.625} sx={{ flex: 1 }}>
+															<InputLabel htmlFor="pjsalta-expedient-number" sx={labelSx}>
+																Nº Expediente
+															</InputLabel>
+															<InputField
+																fullWidth
+																size="small"
+																id="pjsalta-expedient-number"
+																placeholder="Ej. 959839"
+																name="expedientNumber"
+																type="number"
+																onChange={handleNumberChange}
+																error={Boolean(numberError && touched.expedientNumber)}
+																helperText={touched.expedientNumber ? numberError : ""}
+																sx={fieldSx}
+															/>
+														</Stack>
+														<Stack spacing={0.625} sx={{ width: 120 }}>
+															<InputLabel htmlFor="pjsalta-expedient-year" sx={labelSx}>
+																Año
+															</InputLabel>
+															<InputField
+																fullWidth
+																size="small"
+																id="pjsalta-expedient-year"
+																placeholder="Ej. 2026"
+																name="expedientYear"
+																type="number"
+																onChange={handleYearChange}
+																error={Boolean(yearError && touched.expedientYear)}
+																helperText={touched.expedientYear ? yearError : ""}
+																sx={fieldSx}
+															/>
+														</Stack>
+													</Stack>
+												)}
+
+												{renderNotice("Los datos del expediente se importan desde el portal del Poder Judicial de Salta.")}
 											</Stack>
 										</Box>
 									</Grid>
@@ -1658,53 +1921,60 @@ const AutomaticStep = () => {
 
 									{!values.hasGlobalMevCred ? (
 										<>
-										{/* Credenciales del portal MEV del usuario (obligatorias): el scraping
+											{/* Credenciales del portal MEV del usuario (obligatorias): el scraping
 										    de esta causa usa la cuenta del usuario, sin fallback al sistema. */}
-										<Grid item xs={12}>
-											<Divider sx={{ my: 0.5 }}>
-												<Typography sx={{ ...labelSx, color: "text.secondary" }}>Credenciales del portal MEV</Typography>
-											</Divider>
-											{renderNotice(
-												"Con tu cuenta del portal MEV (mev.scba.gov.ar) consultamos esta y todas tus causas de Buenos Aires. La guardamos como la credencial de tu cuenta (una sola, para todas). Tu contraseña se almacena encriptada (AES-256).",
-												"info",
-											)}
-										</Grid>
-										<Grid item xs={12} sm={6}>
-											<Stack spacing={0.625}>
-												<InputLabel htmlFor="mevUsername" sx={labelSx}>
-													Usuario MEV
-												</InputLabel>
-												<InputField fullWidth sx={fieldSx} id="mev-username" name="mevUsername" placeholder="Tu usuario del portal MEV" autoComplete="off" />
-											</Stack>
-										</Grid>
-										<Grid item xs={12} sm={6}>
-											<Stack spacing={0.625}>
-												<InputLabel htmlFor="mevPassword" sx={labelSx}>
-													Contraseña MEV
-												</InputLabel>
-												<InputField
-													fullWidth
-													sx={fieldSx}
-													id="mev-password"
-													name="mevPassword"
-													type={showMevPassword ? "text" : "password"}
-													placeholder="Tu contraseña del portal MEV"
-													autoComplete="new-password"
-													InputProps={{
-														endAdornment: (
-															<InputAdornment position="end">
-																<Tooltip title="Se almacena encriptada (AES-256)">
-																	<ShieldTick size={16} variant="Bulk" color={BRAND_BLUE} />
-																</Tooltip>
-																<IconButton onClick={() => setShowMevPassword((s) => !s)} edge="end" size="small">
-																	{showMevPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
-																</IconButton>
-															</InputAdornment>
-														),
-													}}
-												/>
-											</Stack>
-										</Grid>
+											<Grid item xs={12}>
+												<Divider sx={{ my: 0.5 }}>
+													<Typography sx={{ ...labelSx, color: "text.secondary" }}>Credenciales del portal MEV</Typography>
+												</Divider>
+												{renderNotice(
+													"Con tu cuenta del portal MEV (mev.scba.gov.ar) consultamos esta y todas tus causas de Buenos Aires. La guardamos como la credencial de tu cuenta (una sola, para todas). Tu contraseña se almacena encriptada (AES-256).",
+													"info",
+												)}
+											</Grid>
+											<Grid item xs={12} sm={6}>
+												<Stack spacing={0.625}>
+													<InputLabel htmlFor="mevUsername" sx={labelSx}>
+														Usuario MEV
+													</InputLabel>
+													<InputField
+														fullWidth
+														sx={fieldSx}
+														id="mev-username"
+														name="mevUsername"
+														placeholder="Tu usuario del portal MEV"
+														autoComplete="off"
+													/>
+												</Stack>
+											</Grid>
+											<Grid item xs={12} sm={6}>
+												<Stack spacing={0.625}>
+													<InputLabel htmlFor="mevPassword" sx={labelSx}>
+														Contraseña MEV
+													</InputLabel>
+													<InputField
+														fullWidth
+														sx={fieldSx}
+														id="mev-password"
+														name="mevPassword"
+														type={showMevPassword ? "text" : "password"}
+														placeholder="Tu contraseña del portal MEV"
+														autoComplete="new-password"
+														InputProps={{
+															endAdornment: (
+																<InputAdornment position="end">
+																	<Tooltip title="Se almacena encriptada (AES-256)">
+																		<ShieldTick size={16} variant="Bulk" color={BRAND_BLUE} />
+																	</Tooltip>
+																	<IconButton onClick={() => setShowMevPassword((s) => !s)} edge="end" size="small">
+																		{showMevPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
+																	</IconButton>
+																</InputAdornment>
+															),
+														}}
+													/>
+												</Stack>
+											</Grid>
 										</>
 									) : (
 										<Grid item xs={12}>

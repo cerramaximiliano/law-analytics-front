@@ -1,6 +1,16 @@
 import axios from "axios";
 import { Dispatch } from "redux";
-import { Movement, MovementState, PaginationInfo, PjnAccess, MevAccess, ScbaAccess, EjeAccess, ScrapingProgress } from "types/movements";
+import {
+	Movement,
+	MovementState,
+	PaginationInfo,
+	PjnAccess,
+	MevAccess,
+	ScbaAccess,
+	EjeAccess,
+	PjSaltaAccess,
+	ScrapingProgress,
+} from "types/movements";
 import { UPDATE_ACTIVITY } from "./activities";
 
 export const GET_MOVEMENTS_BY_FOLDER = "movements/GET_MOVEMENTS_BY_FOLDER";
@@ -51,6 +61,7 @@ const movementReducer = (state = initialMovementState, action: any): MovementSta
 				mevAccess: action.payload.mevAccess || undefined,
 				scbaAccess: action.payload.scbaAccess || undefined,
 				ejeAccess: action.payload.ejeAccess || undefined,
+				pjsaltaAccess: action.payload.pjsaltaAccess || undefined,
 				scrapingProgress: action.payload.scrapingProgress || undefined,
 				causaLastSyncDate: action.payload.causaLastSyncDate !== undefined ? action.payload.causaLastSyncDate : undefined,
 				isLoading: false,
@@ -279,6 +290,7 @@ interface PaginatedSuccessResponse {
 		mevAccess?: MevAccess;
 		scbaAccess?: ScbaAccess;
 		ejeAccess?: EjeAccess;
+		pjsaltaAccess?: PjSaltaAccess;
 		scrapingProgress?: ScrapingProgress;
 		causaLastSyncDate?: string | null;
 	};
@@ -361,6 +373,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 						mevAccess: paginatedData.data.mevAccess,
 						scbaAccess: paginatedData.data.scbaAccess,
 						ejeAccess: paginatedData.data.ejeAccess,
+						pjsaltaAccess: paginatedData.data.pjsaltaAccess,
 						scrapingProgress: paginatedData.data.scrapingProgress,
 						causaLastSyncDate: paginatedData.data.causaLastSyncDate,
 					},
@@ -377,6 +390,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 					mevAccess: paginatedData.data.mevAccess,
 					scbaAccess: paginatedData.data.scbaAccess,
 					ejeAccess: paginatedData.data.ejeAccess,
+					pjsaltaAccess: paginatedData.data.pjsaltaAccess,
 					scrapingProgress: paginatedData.data.scrapingProgress,
 					causaLastSyncDate: paginatedData.data.causaLastSyncDate,
 					locateStatus: (paginatedData.data as any).locateStatus,

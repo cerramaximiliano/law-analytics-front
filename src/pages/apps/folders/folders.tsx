@@ -212,8 +212,8 @@ interface ReactTableProps extends Props {
 	/** If true, disables row selection: hides the checkbox column and removes the click-to-toggle on rows/cards. */
 	disableRowSelection?: boolean;
 	/** Filtros */
-	folderTypeFilter?: "all" | "manual" | "pjn" | "eje" | "mev";
-	onFolderTypeFilterChange?: (event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev">) => void;
+	folderTypeFilter?: "all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta";
+	onFolderTypeFilterChange?: (event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta">) => void;
 	statusFilter?: "all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada";
 	onStatusFilterChange?: (event: SelectChangeEvent<string>) => void;
 	parteFilter?: string;
@@ -1084,6 +1084,9 @@ function ReactTable({
 											<MenuItem value="mev">
 												<Typography variant="body2">MEV</Typography>
 											</MenuItem>
+											<MenuItem value="pjsalta">
+												<Typography variant="body2">PJ Salta</Typography>
+											</MenuItem>
 										</Select>
 									</FormControl>
 									{/* Filtro por Estado */}
@@ -1261,9 +1264,19 @@ function ReactTable({
 						// Chip de estado — replica el patrón brand-aware del desktop.
 						const statusChip = folder.status ? <StatusPill status={folder.status} /> : null;
 
-						// Badge de fuente (PJN / MEV / EJE / SCBA) — patrón monocromo brand
-						// con dot indicador. Replica el live-dot del landing (integraciones).
-						const sourceLabel = folder.pjn ? "PJN" : folder.mev ? "MEV" : folder.eje ? "EJE" : folder.scba ? "SCBA" : null;
+						// Badge de fuente (PJN / MEV / EJE / SCBA / PJ Salta) — patrón monocromo
+						// brand con dot indicador. Replica el live-dot del landing (integraciones).
+						const sourceLabel = folder.pjn
+							? "PJN"
+							: folder.mev
+							? "MEV"
+							: folder.eje
+							? "EJE"
+							: folder.scba
+							? "SCBA"
+							: folder.pjsalta
+							? "PJ SALTA"
+							: null;
 						const sourceBadge = sourceLabel ? (
 							<Box
 								sx={{
@@ -1877,7 +1890,7 @@ const FoldersLayout = () => {
 	const [verifyingFolderIds, setVerifyingFolderIds] = useState<Set<string>>(() => new Set());
 
 	// Estados para filtros de carpetas
-	const [folderTypeFilter, setFolderTypeFilter] = useState<"all" | "manual" | "pjn" | "eje" | "mev">("all");
+	const [folderTypeFilter, setFolderTypeFilter] = useState<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta">("all");
 	const [statusFilter, setStatusFilter] = useState<"all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada">("all");
 	const [parteFilter, setParteFilter] = useState<string>("all");
 	const [movimientosFilter, setMovimientosFilter] = useState<"all" | "today" | "week" | "month" | "none">("all");
@@ -1908,7 +1921,12 @@ const FoldersLayout = () => {
 	const { pendingOrInvalidFolders, verifiedFolders, pendingCount, invalidCount } = useMemo(() => {
 		// Helper para determinar si una carpeta es automática (PJN, MEV, EJE o SCBA)
 		const isAutoFolder = (folder: any) =>
-			folder.source === "auto" || folder.pjn === true || folder.mev === true || folder.eje === true || folder.scba === true;
+			folder.source === "auto" ||
+			folder.pjn === true ||
+			folder.mev === true ||
+			folder.eje === true ||
+			folder.scba === true ||
+			folder.pjsalta === true;
 
 		// Filtrar folders que necesitan verificación o son inválidos
 		// Para carpetas automáticas (source "auto", PJN, MEV o EJE)
@@ -1995,7 +2013,7 @@ const FoldersLayout = () => {
 			if (folderTypeFilter !== "all") {
 				switch (folderTypeFilter) {
 					case "manual":
-						if (!(folder.source === "manual" || (!folder.pjn && !folder.mev && !folder.eje))) return false;
+						if (!(folder.source === "manual" || (!folder.pjn && !folder.mev && !folder.eje && !folder.pjsalta))) return false;
 						break;
 					case "pjn":
 						if (folder.pjn !== true) return false;
@@ -2005,6 +2023,9 @@ const FoldersLayout = () => {
 						break;
 					case "eje":
 						if (folder.eje !== true) return false;
+						break;
+					case "pjsalta":
+						if (folder.pjsalta !== true) return false;
 						break;
 				}
 			}
@@ -2483,8 +2504,8 @@ const FoldersLayout = () => {
 	}, []);
 
 	// Handler para el filtro de tipo de carpeta
-	const handleFolderTypeFilterChange = useCallback((event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev">) => {
-		setFolderTypeFilter(event.target.value as "all" | "manual" | "pjn" | "eje" | "mev");
+	const handleFolderTypeFilterChange = useCallback((event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta">) => {
+		setFolderTypeFilter(event.target.value as "all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta");
 	}, []);
 
 	const handleStatusFilterChange = useCallback((event: SelectChangeEvent<string>) => {
@@ -2660,7 +2681,8 @@ const FoldersLayout = () => {
 					const value = folder.folderName;
 
 					// Solo mostrar indicadores visuales si es una causa sincronizada automáticamente
-					const showStatusIndicators = folder.pjn === true || folder.mev === true || folder.eje === true || folder.scba === true;
+					const showStatusIndicators =
+						folder.pjn === true || folder.mev === true || folder.eje === true || folder.scba === true || folder.pjsalta === true;
 					// Si no se deben mostrar indicadores, solo mostrar el nombre
 					if (!showStatusIndicators) {
 						return (
@@ -2928,7 +2950,7 @@ const FoldersLayout = () => {
 					// Si causaVerified es false o no está verificado (pendiente), mostrar chip de pendiente con botón de actualización
 					if (
 						folder.causaVerified === false ||
-						(folder.causaVerified !== true && (folder.pjn || folder.mev || folder.eje || folder.scba))
+						(folder.causaVerified !== true && (folder.pjn || folder.mev || folder.eje || folder.scba || folder.pjsalta))
 					) {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
@@ -3098,6 +3120,8 @@ const FoldersLayout = () => {
 											? "Causa vinculada a EJE"
 											: folder.scba === true
 											? "Causa vinculada a SCBA"
+											: folder.pjsalta === true
+											? "Causa vinculada a PJ Salta"
 											: "Causa vinculada"
 									}
 								>
@@ -3328,7 +3352,7 @@ const FoldersLayout = () => {
 				disableSortBy: true,
 				Cell: ({ row }: any) => {
 					const folder = row.original;
-					const isAutoFolder = folder.pjn || folder.mev || folder.eje || folder.scba;
+					const isAutoFolder = folder.pjn || folder.mev || folder.eje || folder.scba || folder.pjsalta;
 
 					// Folders con error: asociación fallida o causa inválida
 					const isErrorFolder =

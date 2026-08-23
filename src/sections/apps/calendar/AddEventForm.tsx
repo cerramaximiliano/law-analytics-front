@@ -90,7 +90,7 @@ export interface AddEventFormProps {
 	folderName?: string;
 	// Vincular el evento a un movimiento (vencimientos desde los viewers de movimientos).
 	movementRef?: string;
-	movementSource?: "pjn" | "mev" | "scba" | "eje" | "manual" | null;
+	movementSource?: "pjn" | "mev" | "scba" | "eje" | "pjsalta" | "manual" | null;
 	// Tipo preseleccionado al crear (ej. "vencimiento" desde el viewer).
 	defaultType?: string;
 }

@@ -1,28 +1,7 @@
 import React, { useEffect, useState } from "react";
-import {
-	Dialog,
-	DialogContent,
-	Button,
-	Stack,
-	Typography,
-	Box,
-	CircularProgress,
-	IconButton,
-	Tooltip,
-	alpha,
-} from "@mui/material";
+import { Dialog, DialogContent, Button, Stack, Typography, Box, CircularProgress, IconButton, Tooltip, alpha } from "@mui/material";
 import { PopupTransition } from "components/@extended/Transitions";
-import {
-	ArrowRight2,
-	Calendar,
-	CloseCircle,
-	DocumentText,
-	InfoCircle,
-	Lock1,
-	SearchNormal1,
-	TickCircle,
-	Warning2,
-} from "iconsax-react";
+import { ArrowRight2, Calendar, CloseCircle, DocumentText, InfoCircle, Lock1, SearchNormal1, TickCircle, Warning2 } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
@@ -167,6 +146,7 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({ open, onClose, folderId, 
 	const getPlatformName = () => {
 		if (causaType === "CausasEje") return "EJE - Poder Judicial de CABA";
 		if (causaType === "MEV") return "MEV - Poder Judicial de Buenos Aires";
+		if (causaType === "CausasPjSalta") return "PJ Salta - Poder Judicial de Salta";
 		return "Sistema Judicial";
 	};
 
@@ -422,8 +402,7 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({ open, onClose, folderId, 
 													color: cardTone,
 													letterSpacing: "0.005em",
 													fontVariantNumeric: "tabular-nums",
-													fontFamily:
-														"ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
+													fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
 												}}
 											>
 												{causa.cuij || `EXP ${causa.numero}/${causa.anio}`}
@@ -496,12 +475,7 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({ open, onClose, folderId, 
 										)}
 
 										{/* Bottom row: meta + CTA */}
-										<Stack
-											direction="row"
-											alignItems="center"
-											spacing={1.5}
-											sx={{ flexWrap: "wrap", rowGap: 0.5 }}
-										>
+										<Stack direction="row" alignItems="center" spacing={1.5} sx={{ flexWrap: "wrap", rowGap: 0.5 }}>
 											<Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexWrap: "wrap", rowGap: 0.5, flex: 1, minWidth: 0 }}>
 												<Typography
 													sx={{
@@ -511,7 +485,10 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({ open, onClose, folderId, 
 														fontVariantNumeric: "tabular-nums",
 													}}
 												>
-													Exp. <strong style={{ color: theme.palette.text.primary }}>{causa.numero}/{causa.anio}</strong>
+													Exp.{" "}
+													<strong style={{ color: theme.palette.text.primary }}>
+														{causa.numero}/{causa.anio}
+													</strong>
 												</Typography>
 												{causa.fechaInicio && (
 													<Stack direction="row" spacing={0.5} alignItems="center">

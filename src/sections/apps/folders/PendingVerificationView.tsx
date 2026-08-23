@@ -156,6 +156,8 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 			? "Expediente Judicial Electrónico (CABA)"
 			: folder?.scba
 			? "Suprema Corte de Buenos Aires"
+			: folder?.pjsalta
+			? "Poder Judicial de Salta"
 			: folder?.source === "auto"
 			? "Importación automática"
 			: "Manual";

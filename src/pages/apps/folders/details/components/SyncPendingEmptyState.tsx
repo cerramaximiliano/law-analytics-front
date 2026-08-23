@@ -35,6 +35,12 @@ const COPY: Record<FolderSyncSource, { source: string; window: string; portalLab
 		window: "El primer scrap puede tardar unos minutos",
 		portalLabel: "del Expediente Judicial Electrónico",
 	},
+	pjsalta: {
+		source: "PJ Salta",
+		// El verifier corre cada 2 minutos y el updater cada 5.
+		window: "El primer scrap puede tardar unos minutos",
+		portalLabel: "del portal del Poder Judicial de Salta",
+	},
 };
 
 const SyncPendingEmptyState: React.FC<SyncPendingEmptyStateProps> = ({ source, onRefresh, isRefreshing = false }) => {
@@ -148,9 +154,7 @@ const SyncPendingEmptyState: React.FC<SyncPendingEmptyStateProps> = ({ source, o
 					disabled={isRefreshing}
 					size="small"
 					variant="outlined"
-					startIcon={
-						isRefreshing ? <CircularProgress size={14} thickness={5} sx={{ color: STALE_AMBER }} /> : <Refresh size={16} />
-					}
+					startIcon={isRefreshing ? <CircularProgress size={14} thickness={5} sx={{ color: STALE_AMBER }} /> : <Refresh size={16} />}
 					sx={{
 						textTransform: "none",
 						fontWeight: 600,

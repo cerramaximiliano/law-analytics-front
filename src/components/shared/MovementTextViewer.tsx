@@ -108,6 +108,8 @@ function sourceChipLabel(movement?: Movement | null): string {
 			return "EJE";
 		case "mev":
 			return "MEV";
+		case "pjsalta":
+			return "PJ SALTA";
 		default:
 			return movement?.movement || "Documento";
 	}
@@ -132,14 +134,18 @@ const MovementTextViewer: React.FC<MovementTextViewerProps> = ({
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-	// El panel necesita un _id real como movementRef. Los movs SCBA/EJE sin _id
-	// o actId usan un id sintético "scba-/eje-<folderId>-<idx>" (posicional,
-	// inestable entre páginas) — sobre esos no se pueden colgar notas.
+	// El panel necesita un _id real como movementRef. Los movs SCBA/EJE/PJ Salta
+	// sin _id, actId o número de actuación usan un id sintético
+	// "scba-/eje-/pjsalta-<folderId>-<idx>" (posicional, inestable entre páginas)
+	// — sobre esos no se pueden colgar notas.
+	const SYNTHETIC_ID_PREFIXES = ["scba-", "eje-", "pjsalta-"];
 	const movementRef =
-		movement?._id && !String(movement._id).startsWith("scba-") && !String(movement._id).startsWith("eje-") ? movement._id : null;
+		movement?._id && !SYNTHETIC_ID_PREFIXES.some((prefix) => String(movement._id).startsWith(prefix)) ? movement._id : null;
 	const panelAvailable = Boolean(folderId && movementRef);
 	const movementSource =
-		movement?.source === "mev" || movement?.source === "scba" || movement?.source === "eje" ? movement.source : "manual";
+		movement?.source === "mev" || movement?.source === "scba" || movement?.source === "eje" || movement?.source === "pjsalta"
+			? movement.source
+			: "manual";
 
 	// Notas / tareas / vencimientos del movimiento (asociados por movementRef).
 	const allNotes = useSelector((s: any) => s.notesReducer?.selectedNotes ?? []);

@@ -7,11 +7,14 @@ import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 
 interface FormValues {
-	judicialPower?: "nacional" | "buenosaires" | "caba";
+	judicialPower?: "nacional" | "buenosaires" | "caba" | "salta";
 }
 
 const PJN_LOGO_URL = "https://res.cloudinary.com/dqyoeolib/image/upload/v1746884259/xndhymcmzv3kk0f62v0y.png";
 const CABA_LOGO_URL = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
+// Mismo asset que usa la landing (sections/landing/Header.tsx).
+const SALTA_LOGO_URL =
+	"https://res.cloudinary.com/dqyoeolib/image/upload/v1779137783/ChatGPT_Image_18_may_2026__05_52_35_p.m.-removebg-preview_bngpqd.png";
 
 interface PowerCardProps {
 	selected: boolean;
@@ -120,9 +123,7 @@ const PowerCard = ({ selected, logoSrc, logoAlt, logoBg, title, description, cod
 						</Typography>
 					</Box>
 				</Stack>
-				<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1.4, textWrap: "pretty" }}>
-					{description}
-				</Typography>
+				<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1.4, textWrap: "pretty" }}>{description}</Typography>
 			</Stack>
 
 			<Box sx={{ display: "flex", alignItems: "center", color: selected ? BRAND_BLUE : "text.secondary", flexShrink: 0 }}>
@@ -137,7 +138,7 @@ const JudicialPowerSelection = () => {
 	const isDark = theme.palette.mode === "dark";
 	const { setFieldValue, values } = useFormikContext<FormValues>();
 
-	const handleSelectJudicialPower = (power: "nacional" | "buenosaires" | "caba") => {
+	const handleSelectJudicialPower = (power: "nacional" | "buenosaires" | "caba" | "salta") => {
 		setFieldValue("judicialPower", power);
 	};
 
@@ -213,6 +214,18 @@ const JudicialPowerSelection = () => {
 						title="Poder Judicial de la Ciudad"
 						description="Fuero de CABA — EJE / Expediente judicial electrónico."
 						codeChip="CABA"
+					/>
+				</Grid>
+				<Grid item xs={12}>
+					<PowerCard
+						selected={values.judicialPower === "salta"}
+						onClick={() => handleSelectJudicialPower("salta")}
+						logoSrc={SALTA_LOGO_URL}
+						logoAlt="Poder Judicial de Salta"
+						logoBg="#ffffff"
+						title="Poder Judicial de Salta"
+						description="Fuero provincial — portal IOL de la Corte de Justicia."
+						codeChip="SALTA"
 					/>
 				</Grid>
 			</Grid>
