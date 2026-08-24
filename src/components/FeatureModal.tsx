@@ -364,7 +364,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 							{/* Benefits inline — sin container, TickCircle en colorKey */}
 							<Stack spacing={1} sx={{ mb: 2.5 }}>
 								{featureData.benefits.map((benefit, index) => {
-									const dynamicBenefit = withDynamicIntegrations(benefit, publicIntegrations.landing);
+									const dynamicBenefit = withDynamicIntegrations(benefit, publicIntegrations);
 									return (
 										<Box key={index} sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
 											<Box sx={{ flexShrink: 0, mt: "1px", lineHeight: 0 }}>

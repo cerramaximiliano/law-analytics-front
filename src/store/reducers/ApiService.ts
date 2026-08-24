@@ -49,6 +49,29 @@ export interface LandingIntegrationEntry {
  *  compat con la primera versión del endpoint. */
 export type LandingIntegrationsMap = Record<string, LandingIntegrationEntry | LandingIntegrationStatus>;
 
+/** Entry del catálogo dinámico de jurisdicciones — metadata completa +
+ *  capacidades, administrable desde /admin/integrations. Permite agregar
+ *  jurisdicciones sin deploy del front (logo por URL). */
+export interface LandingCatalogEntry {
+	key: string;
+	shortName: string;
+	name: string;
+	/** Nombre corto para listas de texto ("PJN, MEV, EJE y Salta"). */
+	listLabel: string;
+	/** Logo remoto — las jurisdicciones core usan el asset local si viene null. */
+	logoUrl: string | null;
+	bgColor: string;
+	hasBorder: boolean;
+	status: LandingIntegrationStatus;
+	order: number;
+	capabilities: {
+		/** Permite vincular credenciales y sincronizar automáticamente. */
+		credentialSync: boolean;
+		/** Permite agregar causas individualmente por N° de expediente. */
+		individualCauses: boolean;
+	};
+}
+
 export interface PublicIntegrations {
 	/** Toggle para mostrar el banner MCP de Claude.ai en landing/plans + página /integraciones/claude-ai. */
 	claudeAi: ServiceFlag;
@@ -57,6 +80,9 @@ export interface PublicIntegrations {
 	/** Strip "Integrado con" de la landing (por jurisdicción). Opcional para
 	 *  compat con respuestas de backends previos al feature. */
 	landing?: LandingIntegrationsMap;
+	/** Catálogo dinámico completo (ordenado por order asc). Opcional para
+	 *  compat con backends previos al feature. */
+	landingCatalog?: LandingCatalogEntry[];
 }
 
 /**

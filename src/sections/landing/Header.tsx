@@ -242,21 +242,45 @@ const HeaderPage = () => {
 	// Mergea el status del backend sobre la metadata visual local; fallback al
 	// status hardcodeado de INTEGRATIONS si el API no responde.
 	const { integrations: publicIntegrations } = usePublicIntegrations();
-	const landingIntegrations = INTEGRATIONS.map((integration, idx) => {
-		const remote = publicIntegrations.landing?.[integration.key];
-		// El endpoint envía { status, order }; el string suelto es compat con la
-		// primera versión del feature.
-		const remoteStatus = typeof remote === "string" ? remote : remote?.status;
-		const status =
-			remoteStatus === "available" || remoteStatus === "comingSoon" || remoteStatus === "hidden" ? remoteStatus : integration.status;
-		const order = typeof remote === "object" && typeof remote?.order === "number" ? remote.order : idx + 1;
-		return { ...integration, status, order };
-	})
-		.filter((integration) => integration.status !== "hidden")
-		.sort((a, b) => a.order - b.order);
+	// Fuente primaria: catálogo dinámico (permite jurisdicciones agregadas por
+	// admin con logo remoto). Las keys conocidas conservan su asset local y
+	// fullName con salto de línea; las nuevas usan logoUrl (sin logo → no se
+	// renderizan). Fallback sin catálogo: merge del mapa legacy sobre INTEGRATIONS.
+	const catalog = publicIntegrations.landingCatalog;
+	const landingIntegrations =
+		catalog && catalog.length > 0
+			? catalog
+					.map((entry) => {
+						const local = INTEGRATIONS.find((integration) => integration.key === entry.key);
+						return {
+							key: entry.key,
+							shortName: local?.shortName || entry.shortName,
+							fullName: local?.fullName || entry.name,
+							tooltipTitle: local?.tooltipTitle || entry.name,
+							logoSrc: local?.logoSrc || entry.logoUrl || "",
+							bgColor: local?.bgColor || entry.bgColor,
+							hasBorder: local ? local.hasBorder : entry.hasBorder,
+							status: entry.status,
+							order: entry.order,
+						};
+					})
+					.filter((integration) => integration.status !== "hidden" && integration.logoSrc)
+					.sort((a, b) => a.order - b.order)
+			: INTEGRATIONS.map((integration, idx) => {
+					const remote = publicIntegrations.landing?.[integration.key];
+					// El endpoint envía { status, order }; el string suelto es compat con
+					// la primera versión del feature.
+					const remoteStatus = typeof remote === "string" ? remote : remote?.status;
+					const status =
+						remoteStatus === "available" || remoteStatus === "comingSoon" || remoteStatus === "hidden" ? remoteStatus : integration.status;
+					const order = typeof remote === "object" && typeof remote?.order === "number" ? remote.order : idx + 1;
+					return { ...integration, status, order };
+			  })
+					.filter((integration) => integration.status !== "hidden")
+					.sort((a, b) => a.order - b.order);
 
 	// Lista para los textos del hero ("Centralizá expedientes de …")
-	const integracionesLista = formatAvailableIntegrations(publicIntegrations.landing);
+	const integracionesLista = formatAvailableIntegrations(publicIntegrations.landing, publicIntegrations.landingCatalog);
 
 	return (
 		<Box

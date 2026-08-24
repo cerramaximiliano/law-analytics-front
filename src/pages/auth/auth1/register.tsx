@@ -195,7 +195,7 @@ const FeatureContextPanel: React.FC<FeatureContextPanelProps> = ({ content, curr
 
 			<Stack spacing={1.25} sx={{ pt: 0.5 }}>
 				{content.benefits.map((benefit, i) => {
-					const dynamicBenefit = withDynamicIntegrations(benefit, publicIntegrations.landing);
+					const dynamicBenefit = withDynamicIntegrations(benefit, publicIntegrations);
 					return (
 						<Stack key={i} direction="row" spacing={1.25} alignItems="flex-start">
 							<Box sx={{ flexShrink: 0, mt: "2px", lineHeight: 0 }}>

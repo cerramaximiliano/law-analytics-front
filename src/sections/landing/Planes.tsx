@@ -614,7 +614,7 @@ const Planes = () => {
 																lineHeight: 1.5,
 															}}
 														>
-															{withDynamicIntegrations(row.label, publicIntegrations.landing)}
+															{withDynamicIntegrations(row.label, publicIntegrations)}
 														</Typography>
 													</Box>
 												))}

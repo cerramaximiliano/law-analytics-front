@@ -9,6 +9,8 @@ import { UserAdd, LinkSquare, Verify } from "iconsax-react";
 // project-imports
 import MainCard from "components/MainCard";
 import SectionEyebrow from "./SectionEyebrow";
+import { usePublicIntegrations } from "hooks/usePublicIntegrations";
+import { formatIndividualOnlyIntegrations, formatSyncIntegrations } from "utils/landingIntegrations";
 
 // ============================== TOKENS ============================== //
 const BRAND_BLUE = "#3A7BFF";
@@ -26,7 +28,11 @@ interface Step {
 	colorKey: ColorKey;
 }
 
-const STEPS: Step[] = [
+// El paso 02 se arma dinámicamente desde el catálogo de jurisdicciones
+// (integrations.landingCatalog, administrable en /admin/integrations):
+// las que permiten sync de credenciales van en el título; las que solo
+// permiten alta individual de causas se suman a la descripción.
+const buildSteps = (syncList: string, individualOnlyList: string): Step[] => [
 	{
 		number: "01",
 		iconComponent: UserAdd,
@@ -37,9 +43,10 @@ const STEPS: Step[] = [
 	{
 		number: "02",
 		iconComponent: LinkSquare,
-		title: "Conectá tus credenciales PJN/MEV",
-		description:
-			"Vinculá tus accesos para sincronizar automáticamente, o sumá causas por N° de expediente — la opción más liviana.",
+		title: `Conectá tus credenciales ${syncList}`,
+		description: individualOnlyList
+			? `Vinculá tus accesos para sincronizar automáticamente, o sumá causas por N° de expediente — también de ${individualOnlyList}, sin necesidad de credenciales.`
+			: "Vinculá tus accesos para sincronizar automáticamente, o sumá causas por N° de expediente — la opción más liviana.",
 		colorKey: "info",
 	},
 	{
@@ -56,6 +63,11 @@ const STEPS: Step[] = [
 const ComoFunciona = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
+	const { integrations: publicIntegrations } = usePublicIntegrations();
+	const STEPS = buildSteps(
+		formatSyncIntegrations(publicIntegrations.landingCatalog),
+		formatIndividualOnlyIntegrations(publicIntegrations.landingCatalog),
+	);
 	// Referencia explícita a LIVE_GREEN para mantener tokens compartidos con el resto.
 	void LIVE_GREEN;
 
@@ -140,13 +152,7 @@ const ComoFunciona = () => {
 						const isLast = idx === STEPS.length - 1;
 
 						return (
-							<Grid
-								item
-								xs={12}
-								md={4}
-								key={step.number}
-								sx={{ position: "relative" }}
-							>
+							<Grid item xs={12} md={4} key={step.number} sx={{ position: "relative" }}>
 								<motion.div
 									initial={{ opacity: 0, y: 30 }}
 									whileInView={{ opacity: 1, y: 0 }}
@@ -202,7 +208,7 @@ const ComoFunciona = () => {
 														width: 56,
 														height: 56,
 														borderRadius: 2,
-														bgcolor: alpha(color, isDark ? 0.18 : 0.10),
+														bgcolor: alpha(color, isDark ? 0.18 : 0.1),
 														display: "flex",
 														alignItems: "center",
 														justifyContent: "center",
@@ -261,7 +267,7 @@ const ComoFunciona = () => {
 												top: "50%",
 												height: 2,
 												transform: "translateY(-50%)",
-												bgcolor: alpha(BRAND_BLUE, isDark ? 0.30 : 0.22),
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.3 : 0.22),
 												borderRadius: 1,
 											},
 											"&::after": {
