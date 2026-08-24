@@ -24,6 +24,8 @@ import MockupFrame from "components/MockupFrame";
 import AuthRegister from "sections/auth/auth-forms/AuthRegister";
 import CustomGoogleButton from "components/auth/CustomGoogleButton";
 import { FeatureModalData } from "components/FeatureModal";
+import { usePublicIntegrations } from "hooks/usePublicIntegrations";
+import { withDynamicIntegrations } from "utils/landingIntegrations";
 import { trackRegisterView, trackSignUp, trackGoogleSignupClick } from "utils/gtm";
 import { resolveInternalSource } from "utils/attribution";
 import { env } from "utils/env";
@@ -118,6 +120,8 @@ interface FeatureContextPanelProps {
  * para single source of truth de copy.
  */
 const FeatureContextPanel: React.FC<FeatureContextPanelProps> = ({ content, currentFeatureKey, isDark, theme }) => {
+	// Lista dinámica de integraciones disponibles en los beneficios
+	const { integrations: publicIntegrations } = usePublicIntegrations();
 	const IconComponent = content.iconComponent;
 	const accent = theme.palette[content.colorKey].main;
 
@@ -190,22 +194,25 @@ const FeatureContextPanel: React.FC<FeatureContextPanelProps> = ({ content, curr
 			</Typography>
 
 			<Stack spacing={1.25} sx={{ pt: 0.5 }}>
-				{content.benefits.map((benefit, i) => (
-					<Stack key={i} direction="row" spacing={1.25} alignItems="flex-start">
-						<Box sx={{ flexShrink: 0, mt: "2px", lineHeight: 0 }}>
-							<TickCircle size={18} variant="Bulk" color={LIVE_GREEN} />
-						</Box>
-						<Typography
-							sx={{
-								fontSize: "0.92rem",
-								lineHeight: 1.5,
-								color: isDark ? theme.palette.grey[200] : theme.palette.grey[800],
-							}}
-						>
-							{benefit}
-						</Typography>
-					</Stack>
-				))}
+				{content.benefits.map((benefit, i) => {
+					const dynamicBenefit = withDynamicIntegrations(benefit, publicIntegrations.landing);
+					return (
+						<Stack key={i} direction="row" spacing={1.25} alignItems="flex-start">
+							<Box sx={{ flexShrink: 0, mt: "2px", lineHeight: 0 }}>
+								<TickCircle size={18} variant="Bulk" color={LIVE_GREEN} />
+							</Box>
+							<Typography
+								sx={{
+									fontSize: "0.92rem",
+									lineHeight: 1.5,
+									color: isDark ? theme.palette.grey[200] : theme.palette.grey[800],
+								}}
+							>
+								{dynamicBenefit}
+							</Typography>
+						</Stack>
+					);
+				})}
 			</Stack>
 
 			{integrations.length > 0 && (

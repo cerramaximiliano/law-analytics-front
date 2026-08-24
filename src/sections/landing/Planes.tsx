@@ -15,6 +15,8 @@ import SectionEyebrow from "./SectionEyebrow";
 import { pushGTMEvent } from "utils/gtm";
 import ApiService, { Plan as ApiPlan, PlanFeature } from "store/reducers/ApiService";
 import { getCurrentEnvironment, getPlanPricing } from "utils/planPricingUtils";
+import { usePublicIntegrations } from "hooks/usePublicIntegrations";
+import { withDynamicIntegrations } from "utils/landingIntegrations";
 import dayjs from "utils/dayjs-config";
 
 // ============================== TOKENS ============================== //
@@ -227,6 +229,8 @@ const computeRowsFromApiPlan = (apiPlan: ApiPlan, currentEnv: string): PlanRow[]
 // ============================== LANDING - PLANES ============================== //
 
 const Planes = () => {
+	// Lista dinámica de integraciones para los labels del teaser
+	const { integrations: publicIntegrations } = usePublicIntegrations();
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	void LIVE_GREEN;
@@ -610,7 +614,7 @@ const Planes = () => {
 																lineHeight: 1.5,
 															}}
 														>
-															{row.label}
+															{withDynamicIntegrations(row.label, publicIntegrations.landing)}
 														</Typography>
 													</Box>
 												))}

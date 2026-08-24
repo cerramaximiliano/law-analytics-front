@@ -24,6 +24,8 @@ import folderViewImg from "assets/images/folder_view.png";
 // tracking
 import { trackFeatureModalOpen, trackFeatureModalClose, trackFeatureModalCTAClick, trackFeatureModalScroll } from "utils/gtm";
 import { FeatureNames } from "utils/gtm";
+import { usePublicIntegrations } from "hooks/usePublicIntegrations";
+import { withDynamicIntegrations } from "utils/landingIntegrations";
 
 // Mismo BRAND_BLUE que Hero y Technologies — atmósfera coherente.
 const BRAND_BLUE = "#3A7BFF";
@@ -150,6 +152,9 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 	const isDark = theme.palette.mode === "dark";
 
 	const featureData = featureKey ? FeatureModalData[featureKey] : null;
+	// Lista dinámica de integraciones disponibles (config admin) en los textos
+	// que mencionan la lista histórica "PJN, MEV y EJE".
+	const { integrations: publicIntegrations } = usePublicIntegrations();
 
 	useEffect(() => {
 		if (open && featureKey) {
@@ -358,22 +363,25 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 
 							{/* Benefits inline — sin container, TickCircle en colorKey */}
 							<Stack spacing={1} sx={{ mb: 2.5 }}>
-								{featureData.benefits.map((benefit, index) => (
-									<Box key={index} sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
-										<Box sx={{ flexShrink: 0, mt: "1px", lineHeight: 0 }}>
-											<TickCircle size={16} variant="Bold" color={accent} />
+								{featureData.benefits.map((benefit, index) => {
+									const dynamicBenefit = withDynamicIntegrations(benefit, publicIntegrations.landing);
+									return (
+										<Box key={index} sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+											<Box sx={{ flexShrink: 0, mt: "1px", lineHeight: 0 }}>
+												<TickCircle size={16} variant="Bold" color={accent} />
+											</Box>
+											<Typography
+												sx={{
+													fontSize: "0.85rem",
+													color: theme.palette.text.primary,
+													lineHeight: 1.5,
+												}}
+											>
+												{dynamicBenefit}
+											</Typography>
 										</Box>
-										<Typography
-											sx={{
-												fontSize: "0.85rem",
-												color: theme.palette.text.primary,
-												lineHeight: 1.5,
-											}}
-										>
-											{benefit}
-										</Typography>
-									</Box>
-								))}
+									);
+								})}
 							</Stack>
 
 							{/* CTA — colorKey, compact, refined shadow */}

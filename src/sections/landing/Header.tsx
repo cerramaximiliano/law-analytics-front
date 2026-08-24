@@ -18,6 +18,7 @@ import PageBackground from "components/PageBackground";
 import MockupFrame from "components/MockupFrame";
 import { useLandingAnalytics } from "hooks/useLandingAnalytics";
 import { usePublicIntegrations } from "hooks/usePublicIntegrations";
+import { formatAvailableIntegrations } from "utils/landingIntegrations";
 
 // assets
 import logoPJNacion from "assets/images/logos/logo_pj_nacion.png";
@@ -253,6 +254,9 @@ const HeaderPage = () => {
 	})
 		.filter((integration) => integration.status !== "hidden")
 		.sort((a, b) => a.order - b.order);
+
+	// Lista para los textos del hero ("Centralizá expedientes de …")
+	const integracionesLista = formatAvailableIntegrations(publicIntegrations.landing);
 
 	return (
 		<Box
@@ -726,10 +730,11 @@ const HeaderPage = () => {
 										}}
 									>
 										<Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
-											Centralizá expedientes de PJN, MEV y EJE con novedades y movimientos actualizados.
+											Centralizá expedientes de {integracionesLista} con novedades y movimientos actualizados.
 										</Box>
 										<Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
-											Centralizá tus expedientes de PJN, MEV y EJE, con novedades y movimientos actualizados desde una sola plataforma.
+											Centralizá tus expedientes de {integracionesLista}, con novedades y movimientos actualizados desde una sola
+											plataforma.
 										</Box>
 									</Typography>
 									<Typography
