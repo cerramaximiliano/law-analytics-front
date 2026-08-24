@@ -4,10 +4,11 @@ import { alpha, useTheme } from "@mui/material/styles";
 import { useFormikContext } from "formik";
 import { ArrowRight2, InfoCircle } from "iconsax-react";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
+import logoPJCatamarca from "assets/images/logos/logo_pj_catamarca.png";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 
 interface FormValues {
-	judicialPower?: "nacional" | "buenosaires" | "caba" | "salta";
+	judicialPower?: "nacional" | "buenosaires" | "caba" | "salta" | "catamarca";
 }
 
 const PJN_LOGO_URL = "https://res.cloudinary.com/dqyoeolib/image/upload/v1746884259/xndhymcmzv3kk0f62v0y.png";
@@ -138,7 +139,7 @@ const JudicialPowerSelection = () => {
 	const isDark = theme.palette.mode === "dark";
 	const { setFieldValue, values } = useFormikContext<FormValues>();
 
-	const handleSelectJudicialPower = (power: "nacional" | "buenosaires" | "caba" | "salta") => {
+	const handleSelectJudicialPower = (power: "nacional" | "buenosaires" | "caba" | "salta" | "catamarca") => {
 		setFieldValue("judicialPower", power);
 	};
 
@@ -226,6 +227,18 @@ const JudicialPowerSelection = () => {
 						title="Poder Judicial de Salta"
 						description="Fuero provincial — portal IOL de la Corte de Justicia."
 						codeChip="SALTA"
+					/>
+				</Grid>
+				<Grid item xs={12}>
+					<PowerCard
+						selected={values.judicialPower === "catamarca"}
+						onClick={() => handleSelectJudicialPower("catamarca")}
+						logoSrc={logoPJCatamarca}
+						logoAlt="Poder Judicial de Catamarca"
+						logoBg="#ffffff"
+						title="Poder Judicial de Catamarca"
+						description="Fuero provincial — portal IOL del Poder Judicial."
+						codeChip="CATAMARCA"
 					/>
 				</Grid>
 			</Grid>

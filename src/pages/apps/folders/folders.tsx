@@ -212,8 +212,8 @@ interface ReactTableProps extends Props {
 	/** If true, disables row selection: hides the checkbox column and removes the click-to-toggle on rows/cards. */
 	disableRowSelection?: boolean;
 	/** Filtros */
-	folderTypeFilter?: "all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta";
-	onFolderTypeFilterChange?: (event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta">) => void;
+	folderTypeFilter?: "all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca";
+	onFolderTypeFilterChange?: (event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca">) => void;
 	statusFilter?: "all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada";
 	onStatusFilterChange?: (event: SelectChangeEvent<string>) => void;
 	parteFilter?: string;
@@ -1087,6 +1087,9 @@ function ReactTable({
 											<MenuItem value="pjsalta">
 												<Typography variant="body2">PJ Salta</Typography>
 											</MenuItem>
+											<MenuItem value="pjcatamarca">
+												<Typography variant="body2">PJ Catamarca</Typography>
+											</MenuItem>
 										</Select>
 									</FormControl>
 									{/* Filtro por Estado */}
@@ -1276,6 +1279,8 @@ function ReactTable({
 							? "SCBA"
 							: folder.pjsalta
 							? "PJ SALTA"
+							: folder.pjcatamarca
+							? "PJ CATAMARCA"
 							: null;
 						const sourceBadge = sourceLabel ? (
 							<Box
@@ -1890,7 +1895,7 @@ const FoldersLayout = () => {
 	const [verifyingFolderIds, setVerifyingFolderIds] = useState<Set<string>>(() => new Set());
 
 	// Estados para filtros de carpetas
-	const [folderTypeFilter, setFolderTypeFilter] = useState<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta">("all");
+	const [folderTypeFilter, setFolderTypeFilter] = useState<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca">("all");
 	const [statusFilter, setStatusFilter] = useState<"all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada">("all");
 	const [parteFilter, setParteFilter] = useState<string>("all");
 	const [movimientosFilter, setMovimientosFilter] = useState<"all" | "today" | "week" | "month" | "none">("all");
@@ -1926,7 +1931,8 @@ const FoldersLayout = () => {
 			folder.mev === true ||
 			folder.eje === true ||
 			folder.scba === true ||
-			folder.pjsalta === true;
+			folder.pjsalta === true ||
+			folder.pjcatamarca === true;
 
 		// Filtrar folders que necesitan verificación o son inválidos
 		// Para carpetas automáticas (source "auto", PJN, MEV o EJE)
@@ -2013,7 +2019,7 @@ const FoldersLayout = () => {
 			if (folderTypeFilter !== "all") {
 				switch (folderTypeFilter) {
 					case "manual":
-						if (!(folder.source === "manual" || (!folder.pjn && !folder.mev && !folder.eje && !folder.pjsalta))) return false;
+						if (!(folder.source === "manual" || (!folder.pjn && !folder.mev && !folder.eje && !folder.pjsalta && !folder.pjcatamarca))) return false;
 						break;
 					case "pjn":
 						if (folder.pjn !== true) return false;
@@ -2026,6 +2032,9 @@ const FoldersLayout = () => {
 						break;
 					case "pjsalta":
 						if (folder.pjsalta !== true) return false;
+						break;
+					case "pjcatamarca":
+						if (folder.pjcatamarca !== true) return false;
 						break;
 				}
 			}
@@ -2504,8 +2513,8 @@ const FoldersLayout = () => {
 	}, []);
 
 	// Handler para el filtro de tipo de carpeta
-	const handleFolderTypeFilterChange = useCallback((event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta">) => {
-		setFolderTypeFilter(event.target.value as "all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta");
+	const handleFolderTypeFilterChange = useCallback((event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca">) => {
+		setFolderTypeFilter(event.target.value as "all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca");
 	}, []);
 
 	const handleStatusFilterChange = useCallback((event: SelectChangeEvent<string>) => {
@@ -2682,7 +2691,7 @@ const FoldersLayout = () => {
 
 					// Solo mostrar indicadores visuales si es una causa sincronizada automáticamente
 					const showStatusIndicators =
-						folder.pjn === true || folder.mev === true || folder.eje === true || folder.scba === true || folder.pjsalta === true;
+						folder.pjn === true || folder.mev === true || folder.eje === true || folder.scba === true || folder.pjsalta === true || folder.pjcatamarca === true;
 					// Si no se deben mostrar indicadores, solo mostrar el nombre
 					if (!showStatusIndicators) {
 						return (
@@ -2950,7 +2959,7 @@ const FoldersLayout = () => {
 					// Si causaVerified es false o no está verificado (pendiente), mostrar chip de pendiente con botón de actualización
 					if (
 						folder.causaVerified === false ||
-						(folder.causaVerified !== true && (folder.pjn || folder.mev || folder.eje || folder.scba || folder.pjsalta))
+						(folder.causaVerified !== true && (folder.pjn || folder.mev || folder.eje || folder.scba || folder.pjsalta || folder.pjcatamarca))
 					) {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
@@ -3122,6 +3131,8 @@ const FoldersLayout = () => {
 											? "Causa vinculada a SCBA"
 											: folder.pjsalta === true
 											? "Causa vinculada a PJ Salta"
+											: folder.pjcatamarca === true
+											? "Causa vinculada a PJ Catamarca"
 											: "Causa vinculada"
 									}
 								>
@@ -3352,7 +3363,7 @@ const FoldersLayout = () => {
 				disableSortBy: true,
 				Cell: ({ row }: any) => {
 					const folder = row.original;
-					const isAutoFolder = folder.pjn || folder.mev || folder.eje || folder.scba || folder.pjsalta;
+					const isAutoFolder = folder.pjn || folder.mev || folder.eje || folder.scba || folder.pjsalta || folder.pjcatamarca;
 
 					// Folders con error: asociación fallida o causa inválida
 					const isErrorFolder =

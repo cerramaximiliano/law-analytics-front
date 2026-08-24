@@ -113,11 +113,12 @@ export type FolderData = {
 	lastMovementDate?: string; // Fecha del último movimiento
 	// Campos para selección múltiple de causas (EJE/MEV)
 	pendingCausaIds?: string[]; // IDs de causas pendientes de selección
-	pendingCausaType?: string; // Tipo de causas pendientes ('CausasEje' | 'MEV' | 'CausasPjSalta')
+	pendingCausaType?: string; // Tipo de causas pendientes ('CausasEje' | 'MEV' | 'CausasPjSalta' | 'CausasPjCatamarca')
 	searchTerm?: string; // Término de búsqueda original
 	eje?: boolean; // Indica si es una causa EJE (CABA)
 	scba?: boolean; // Indica si es una causa SCBA (Provincia de Buenos Aires)
 	pjsalta?: boolean; // Indica si es una causa del Poder Judicial de Salta (portal IOL)
+	pjcatamarca?: boolean; // Indica si es una causa del Poder Judicial de Catamarca (portal IOL)
 	/**
 	 * Para causas PJN agregadas individualmente (source !== 'pjn-login'):
 	 * la causa fue marcada como privada/reservada por el privacy-checker

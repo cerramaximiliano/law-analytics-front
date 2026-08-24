@@ -151,7 +151,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 
 	const judicialPowerSchema = Yup.object().shape({
 		judicialPower: Yup.string()
-			.oneOf(["nacional", "buenosaires", "caba"], "Seleccione un poder judicial")
+			.oneOf(["nacional", "buenosaires", "caba", "salta", "catamarca"], "Seleccione un poder judicial")
 			.required("Seleccione un poder judicial"),
 	});
 
@@ -199,6 +199,46 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 		}),
 		expedientYear: Yup.string().when("ejeSearchType", {
 			is: "expediente",
+			then: (schema) => schema.required("Ingrese el año del expediente"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
+	});
+
+	// Esquemas para portales IOL (Salta / Catamarca) — validación dinámica
+	// según tipo de búsqueda, mismo patrón que EJE.
+	const automaticEntrySaltaSchema = Yup.object().shape({
+		pjsaltaSearchType: Yup.string().oneOf(["cuij", "expediente"]),
+		pjsaltaCuij: Yup.string().when("pjsaltaSearchType", {
+			is: "cuij",
+			then: (schema) => schema.required("Ingrese el CUIJ del expediente"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
+		expedientNumber: Yup.string().when("pjsaltaSearchType", {
+			is: (v: string) => v !== "cuij",
+			then: (schema) => schema.required("Ingrese el número de expediente"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
+		expedientYear: Yup.string().when("pjsaltaSearchType", {
+			is: (v: string) => v !== "cuij",
+			then: (schema) => schema.required("Ingrese el año del expediente"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
+	});
+
+	const automaticEntryCatamarcaSchema = Yup.object().shape({
+		pjcatamarcaSearchType: Yup.string().oneOf(["cuij", "expediente"]),
+		pjcatamarcaCuij: Yup.string().when("pjcatamarcaSearchType", {
+			is: "cuij",
+			then: (schema) => schema.required("Ingrese el CUIJ del expediente"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
+		expedientNumber: Yup.string().when("pjcatamarcaSearchType", {
+			is: (v: string) => v !== "cuij",
+			then: (schema) => schema.required("Ingrese el número de expediente"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
+		expedientYear: Yup.string().when("pjcatamarcaSearchType", {
+			is: (v: string) => v !== "cuij",
 			then: (schema) => schema.required("Ingrese el año del expediente"),
 			otherwise: (schema) => schema.notRequired(),
 		}),
@@ -265,6 +305,10 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 						} else if (values.judicialPower === "caba") {
 							// Para CABA, usar esquema dinámico que valida según ejeSearchType
 							return automaticEntryEjeSchema;
+						} else if (values.judicialPower === "salta") {
+							return automaticEntrySaltaSchema;
+						} else if (values.judicialPower === "catamarca") {
+							return automaticEntryCatamarcaSchema;
 						} else {
 							return automaticEntryPJNSchema;
 						}

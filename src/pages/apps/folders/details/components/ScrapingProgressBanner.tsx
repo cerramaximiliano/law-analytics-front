@@ -5,7 +5,7 @@ import { ScrapingProgress } from "types/movements";
 
 interface ScrapingProgressBannerProps {
 	scrapingProgress?: ScrapingProgress;
-	source?: "mev" | "pjn" | "scba" | "eje" | "pjsalta";
+	source?: "mev" | "pjn" | "scba" | "eje" | "pjsalta" | "pjcatamarca";
 	onRefresh: () => void;
 	onClose?: () => void;
 }
@@ -37,6 +37,7 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 		if (source === "pjn") return "PJN";
 		if (source === "scba") return "SCBA";
 		if (source === "pjsalta") return "PJ Salta";
+		if (source === "pjcatamarca") return "PJ Catamarca";
 		return "MEV";
 	};
 

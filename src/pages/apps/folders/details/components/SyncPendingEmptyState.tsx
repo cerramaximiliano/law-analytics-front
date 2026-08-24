@@ -41,6 +41,11 @@ const COPY: Record<FolderSyncSource, { source: string; window: string; portalLab
 		window: "El primer scrap puede tardar unos minutos",
 		portalLabel: "del portal del Poder Judicial de Salta",
 	},
+	pjcatamarca: {
+		source: "PJ Catamarca",
+		window: "El primer scrap puede tardar unos minutos",
+		portalLabel: "del portal del Poder Judicial de Catamarca",
+	},
 };
 
 const SyncPendingEmptyState: React.FC<SyncPendingEmptyStateProps> = ({ source, onRefresh, isRefreshing = false }) => {

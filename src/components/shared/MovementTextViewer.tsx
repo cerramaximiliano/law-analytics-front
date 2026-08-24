@@ -110,6 +110,8 @@ function sourceChipLabel(movement?: Movement | null): string {
 			return "MEV";
 		case "pjsalta":
 			return "PJ SALTA";
+		case "pjcatamarca":
+			return "PJ CATAMARCA";
 		default:
 			return movement?.movement || "Documento";
 	}
@@ -138,12 +140,12 @@ const MovementTextViewer: React.FC<MovementTextViewerProps> = ({
 	// sin _id, actId o número de actuación usan un id sintético
 	// "scba-/eje-/pjsalta-<folderId>-<idx>" (posicional, inestable entre páginas)
 	// — sobre esos no se pueden colgar notas.
-	const SYNTHETIC_ID_PREFIXES = ["scba-", "eje-", "pjsalta-"];
+	const SYNTHETIC_ID_PREFIXES = ["scba-", "eje-", "pjsalta-", "pjcatamarca-"];
 	const movementRef =
 		movement?._id && !SYNTHETIC_ID_PREFIXES.some((prefix) => String(movement._id).startsWith(prefix)) ? movement._id : null;
 	const panelAvailable = Boolean(folderId && movementRef);
 	const movementSource =
-		movement?.source === "mev" || movement?.source === "scba" || movement?.source === "eje" || movement?.source === "pjsalta"
+		movement?.source === "mev" || movement?.source === "scba" || movement?.source === "eje" || movement?.source === "pjsalta" || movement?.source === "pjcatamarca"
 			? movement.source
 			: "manual";
 

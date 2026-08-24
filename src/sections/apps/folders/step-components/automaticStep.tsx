@@ -47,6 +47,7 @@ import mevWorkersService, { NavigationCode } from "api/workersMev";
 import mevCredentialsService from "api/mevCredentials";
 import ejeWorkersService from "api/workersEje";
 import pjsaltaWorkersService from "api/workersPjSalta";
+import pjcatamarcaWorkersService from "api/workersPjCatamarca";
 import PjnAccountConnect, { PjnAccountConnectRef } from "./PjnAccountConnect";
 import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import { usePjnSiteStatus } from "hooks/usePjnSiteStatus";
@@ -203,8 +204,9 @@ interface FormValues {
 	mev?: boolean;
 	eje?: boolean;
 	pjsalta?: boolean;
+	pjcatamarca?: boolean;
 	initialDateFolder?: string;
-	judicialPower?: "nacional" | "buenosaires" | "caba" | "salta";
+	judicialPower?: "nacional" | "buenosaires" | "caba" | "salta" | "catamarca";
 	jurisdictionBA?: string;
 	organismoBA?: string;
 	navigationCode?: string;
@@ -214,6 +216,8 @@ interface FormValues {
 	// Campos específicos para PJ Salta (portal IOL)
 	pjsaltaSearchType?: "cuij" | "expediente";
 	pjsaltaCuij?: string;
+	pjcatamarcaSearchType?: "cuij" | "expediente";
+	pjcatamarcaCuij?: string;
 	// Modo de importación del sub-toggle dentro del step. Persistido en el form
 	// para que callers externos (onboarding checklist) puedan pre-seleccionar
 	// "single" via `initialFormValues` y el `useState` local los recoja al mount.
@@ -437,6 +441,19 @@ const AutomaticStep = () => {
 		}
 		setCuijError("");
 		setFieldError("pjsaltaCuij", "");
+		return true;
+	};
+
+	// Validar CUIJ para PJ Catamarca. Formato J-03-XXXXXXXX-X[/AAAA-N].
+	const validateCatamarcaCuij = (cuij: string | undefined) => {
+		const validation = pjcatamarcaWorkersService.validateCuij(cuij || "");
+		if (!validation.valid) {
+			setCuijError(validation.error || "CUIJ inválido");
+			setFieldError("pjcatamarcaCuij", validation.error || "CUIJ inválido");
+			return false;
+		}
+		setCuijError("");
+		setFieldError("pjcatamarcaCuij", "");
 		return true;
 	};
 
@@ -805,6 +822,73 @@ const AutomaticStep = () => {
 				setSuccess(true);
 				setError("");
 			}
+		} else if (values.judicialPower === "catamarca") {
+			// PJ Catamarca: mismo esquema de dos modos que EJE (CUIJ o número/año).
+			let isValid = false;
+
+			if (values.pjcatamarcaSearchType === "cuij") {
+				if (touched.pjcatamarcaCuij || formSubmitAttempted.current) {
+					isValid = validateCatamarcaCuij(values.pjcatamarcaCuij);
+				} else if (values.pjcatamarcaCuij && values.pjcatamarcaCuij !== "") {
+					isValid = true;
+					setCuijError("");
+					setFieldError("pjcatamarcaCuij", "");
+				}
+			} else {
+				let numberValid = false;
+				let yearValid = false;
+
+				if (touched.expedientNumber || formSubmitAttempted.current) {
+					numberValid = validateExpedientNumber(values.expedientNumber);
+				} else if (values.expedientNumber && values.expedientNumber !== "") {
+					numberValid = true;
+					setNumberError("");
+					setFieldError("expedientNumber", "");
+				}
+
+				if (touched.expedientYear || formSubmitAttempted.current) {
+					yearValid = validateYear(values.expedientYear);
+				} else if (values.expedientYear && values.expedientYear !== "") {
+					yearValid = true;
+					setYearError("");
+					setFieldError("expedientYear", "");
+				}
+
+				isValid = numberValid && yearValid;
+			}
+
+			if (isValid) {
+				setFieldValue("source", "auto");
+				setFieldValue("pjcatamarca", true);
+				setFieldValue("initialDateFolder", new Date().toLocaleDateString("es-AR"));
+
+				if (!values.folderName || values.folderName === "") {
+					setFieldValue("folderName", "Pendiente");
+				}
+				if (!values.materia || values.materia === "") {
+					setFieldValue("materia", "No verificado");
+				}
+				if (!values.orderStatus || values.orderStatus === "") {
+					setFieldValue("orderStatus", "No verificado");
+				}
+				if (!values.status || values.status === "") {
+					setFieldValue("status", "Nueva");
+				}
+				// El fuero NO se setea acá: lo infiere el verifier del organismo que
+				// devuelve el portal (Civil / Laboral / Familia / Penal).
+
+				const catamarcaSearchInfo =
+					values.pjcatamarcaSearchType === "cuij"
+						? `CUIJ: ${values.pjcatamarcaCuij}`
+						: `Expediente: ${values.expedientNumber}/${values.expedientYear}`;
+
+				if (!values.description || values.description === "") {
+					setFieldValue("description", `Expediente importado desde el Poder Judicial de Catamarca (${catamarcaSearchInfo})`);
+				}
+
+				setSuccess(true);
+				setError("");
+			}
 		}
 
 		setAutomaticValues();
@@ -825,6 +909,9 @@ const AutomaticStep = () => {
 		touched.pjsaltaCuij,
 		values.pjsaltaSearchType,
 		values.pjsaltaCuij,
+		touched.pjcatamarcaCuij,
+		values.pjcatamarcaSearchType,
+		values.pjcatamarcaCuij,
 		formSubmitAttempted.current,
 	]);
 
@@ -932,6 +1019,14 @@ const AutomaticStep = () => {
 						validateExpedientNumber(values.expedientNumber);
 						validateYear(values.expedientYear);
 					}
+				} else if (values.judicialPower === "catamarca") {
+					// Validar campos de PJ Catamarca
+					if (values.pjcatamarcaSearchType === "cuij") {
+						validateCatamarcaCuij(values.pjcatamarcaCuij);
+					} else {
+						validateExpedientNumber(values.expedientNumber);
+						validateYear(values.expedientYear);
+					}
 				}
 
 				// Marcamos todos los campos como tocados para mostrar los errores
@@ -968,6 +1063,18 @@ const AutomaticStep = () => {
 									expedientNumber: true,
 									expedientYear: true,
 							  };
+				} else if (values.judicialPower === "catamarca") {
+					touchedFields =
+						values.pjcatamarcaSearchType === "cuij"
+							? {
+									...touched,
+									pjcatamarcaCuij: true,
+							  }
+							: {
+									...touched,
+									expedientNumber: true,
+									expedientYear: true,
+							  };
 				} else {
 					touchedFields = {
 						...touched,
@@ -997,6 +1104,8 @@ const AutomaticStep = () => {
 		values.ejeCuij,
 		values.pjsaltaSearchType,
 		values.pjsaltaCuij,
+		values.pjcatamarcaSearchType,
+		values.pjcatamarcaCuij,
 		pjnImportMode,
 		baImportMode,
 	]);
@@ -1136,6 +1245,18 @@ const AutomaticStep = () => {
 					code: "CABA",
 					title: "Importar causa del Poder Judicial de CABA",
 					subtitle: "Sistema EJE — buscá el expediente por número/año o por CUIJ.",
+				};
+			case "salta":
+				return {
+					code: "SALTA",
+					title: "Importar causa del Poder Judicial de Salta",
+					subtitle: "Portal IOL — buscá por número/año o por CUIJ.",
+				};
+			case "catamarca":
+				return {
+					code: "CATAMARCA",
+					title: "Importar causa del Poder Judicial de Catamarca",
+					subtitle: "Portal IOL — buscá por número/año o por CUIJ completo.",
 				};
 			default:
 				return { code: "", title: "Importar causa", subtitle: "" };
@@ -1870,6 +1991,147 @@ const AutomaticStep = () => {
 												)}
 
 												{renderNotice("Los datos del expediente se importan desde el portal del Poder Judicial de Salta.")}
+											</Stack>
+										</Box>
+									</Grid>
+								</>
+							) : values.judicialPower === "catamarca" ? (
+								<>
+									<Grid item xs={12}>
+										<Box
+											sx={{
+												borderRadius: 1.5,
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+												p: { xs: 1.5, sm: 1.75 },
+											}}
+										>
+											<Stack spacing={1.5}>
+												<Stack direction="row" alignItems="center" spacing={0.875}>
+													<Box
+														sx={{
+															width: 28,
+															height: 28,
+															borderRadius: 1,
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+															color: BRAND_BLUE,
+															flexShrink: 0,
+														}}
+													>
+														<SearchNormal1 size={16} variant="Bulk" />
+													</Box>
+													<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+														Buscar expediente en PJ Catamarca
+													</Typography>
+												</Stack>
+
+												{/* Selector tipo de búsqueda */}
+												<Stack spacing={0.625}>
+													<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1.5 }}>
+														¿Cómo querés buscar el expediente?
+													</Typography>
+													<RadioGroup
+														row
+														value={values.pjcatamarcaSearchType || "expediente"}
+														onChange={(e) => {
+															setFieldValue("pjcatamarcaSearchType", e.target.value);
+															setCuijError("");
+															setNumberError("");
+															setYearError("");
+														}}
+														sx={{
+															"& .MuiFormControlLabel-root": { mr: 2 },
+															"& .MuiRadio-root": {
+																color: alpha(BRAND_BLUE, isDark ? 0.4 : 0.3),
+																"&.Mui-checked": { color: BRAND_BLUE },
+															},
+														}}
+													>
+														<FormControlLabel
+															value="expediente"
+															control={<Radio size="small" />}
+															label={<Typography sx={{ fontSize: "0.82rem", fontWeight: 500 }}>Por número y año</Typography>}
+														/>
+														<FormControlLabel
+															value="cuij"
+															control={<Radio size="small" />}
+															label={<Typography sx={{ fontSize: "0.82rem", fontWeight: 500 }}>Por CUIJ</Typography>}
+														/>
+													</RadioGroup>
+												</Stack>
+
+												<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1) }} />
+
+												{values.pjcatamarcaSearchType === "cuij" ? (
+													<Stack spacing={0.625}>
+														<InputLabel htmlFor="pjcatamarca-cuij" sx={labelSx}>
+															CUIJ
+														</InputLabel>
+														<InputField
+															fullWidth
+															size="small"
+															id="pjcatamarca-cuij"
+															placeholder="J-03-00021075-6/2025-0"
+															name="pjcatamarcaCuij"
+															onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+																setFieldValue("pjcatamarcaCuij", e.target.value);
+																setTouched({ ...touched, pjcatamarcaCuij: true });
+																if (e.target.value) {
+																	validateCatamarcaCuij(e.target.value);
+																}
+															}}
+															error={Boolean(cuijError && touched.pjcatamarcaCuij)}
+															helperText={
+																touched.pjcatamarcaCuij && cuijError
+																	? cuijError
+																	: "Formato: J-03-XXXXXXXX-X/AAAA-N (como figura en el portal). También sirve el CUIJ base sin sufijo."
+															}
+															sx={fieldSx}
+														/>
+													</Stack>
+												) : (
+													<Stack direction="row" spacing={1.25}>
+														<Stack spacing={0.625} sx={{ flex: 1 }}>
+															<InputLabel htmlFor="pjcatamarca-expedient-number" sx={labelSx}>
+																Nº Expediente
+															</InputLabel>
+															<InputField
+																fullWidth
+																size="small"
+																id="pjcatamarca-expedient-number"
+																placeholder="Ej. 568"
+																name="expedientNumber"
+																type="number"
+																onChange={handleNumberChange}
+																error={Boolean(numberError && touched.expedientNumber)}
+																helperText={touched.expedientNumber ? numberError : ""}
+																sx={fieldSx}
+															/>
+														</Stack>
+														<Stack spacing={0.625} sx={{ width: 120 }}>
+															<InputLabel htmlFor="pjcatamarca-expedient-year" sx={labelSx}>
+																Año
+															</InputLabel>
+															<InputField
+																fullWidth
+																size="small"
+																id="pjcatamarca-expedient-year"
+																placeholder="Ej. 2026"
+																name="expedientYear"
+																type="number"
+																onChange={handleYearChange}
+																error={Boolean(yearError && touched.expedientYear)}
+																helperText={touched.expedientYear ? yearError : ""}
+																sx={fieldSx}
+															/>
+														</Stack>
+													</Stack>
+												)}
+
+												{renderNotice("Los datos del expediente se importan desde el portal del Poder Judicial de Catamarca.")}
 											</Stack>
 										</Box>
 									</Grid>

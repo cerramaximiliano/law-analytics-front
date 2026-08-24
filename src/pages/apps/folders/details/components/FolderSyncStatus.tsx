@@ -6,7 +6,7 @@ import React from "react";
 import { Typography, Box, Stack, Tooltip } from "@mui/material";
 import dayjs from "utils/dayjs-config";
 
-export type FolderSyncSource = "pjn" | "mev" | "scba" | "eje" | "pjsalta";
+export type FolderSyncSource = "pjn" | "mev" | "scba" | "eje" | "pjsalta" | "pjcatamarca";
 
 interface FolderSyncStatusProps {
 	source: FolderSyncSource;
@@ -21,6 +21,7 @@ const SOURCE_LABEL: Record<FolderSyncSource, string> = {
 	scba: "SCBA",
 	eje: "EJE",
 	pjsalta: "PJ SALTA",
+	pjcatamarca: "PJ CATAMARCA",
 };
 
 const FolderSyncStatus: React.FC<FolderSyncStatusProps> = ({ source, causaLastSyncDate, totalMovements }) => {

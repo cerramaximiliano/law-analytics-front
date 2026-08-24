@@ -158,6 +158,8 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 			? "Suprema Corte de Buenos Aires"
 			: folder?.pjsalta
 			? "Poder Judicial de Salta"
+			: folder?.pjcatamarca
+			? "Poder Judicial de Catamarca"
 			: folder?.source === "auto"
 			? "Importación automática"
 			: "Manual";
