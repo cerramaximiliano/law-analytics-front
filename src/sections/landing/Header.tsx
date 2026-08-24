@@ -311,7 +311,6 @@ const HeaderPage = () => {
 						gap: { xs: 0.5, sm: 1 },
 						width: { xs: 64, sm: 120 },
 						flex: "0 0 auto",
-						scrollSnapAlign: "center",
 						opacity: isAvailable ? 1 : 0.55,
 					}}
 				>
@@ -435,6 +434,8 @@ const HeaderPage = () => {
 	const collapsedTiles = landingIntegrations.length > MAX_DESKTOP_TILES ? comingSoonTiles.slice(comingSoonSlots) : [];
 	const collapsedKeys = new Set(collapsedTiles.map((i) => i.key));
 	const desktopTiles = landingIntegrations.filter((i) => !collapsedKeys.has(i.key));
+	// Mobile: velocidad constante de la marquesina (~3s por tile, mínimo 12s).
+	const marqueeSeconds = Math.max(12, landingIntegrations.length * 3);
 
 	return (
 		<Box
@@ -756,24 +757,39 @@ const HeaderPage = () => {
 									>
 										Integrado con
 									</Typography>
-									{/* Mobile: carrusel horizontal con scroll-snap y fade en los bordes — una sola
-									    fila de altura fija sin importar cuántas jurisdicciones haya. */}
+									{/* Mobile: marquesina automática infinita — la pista se duplica y se desplaza
+									    en continuo (pausa al tocar; sin animación con prefers-reduced-motion, donde
+									    queda como fila scrolleable). Altura del hero estable sin importar cuántas
+									    jurisdicciones haya. */}
 									<Box
 										sx={{
 											display: { xs: "block", sm: "none" },
-											overflowX: "auto",
-											scrollSnapType: "x mandatory",
-											WebkitOverflowScrolling: "touch",
-											scrollbarWidth: "none",
-											"&::-webkit-scrollbar": { display: "none" },
-											maskImage: "linear-gradient(to right, transparent, #000 20px, #000 calc(100% - 20px), transparent)",
-											WebkitMaskImage: "linear-gradient(to right, transparent, #000 20px, #000 calc(100% - 20px), transparent)",
+											overflow: "hidden",
+											maskImage: "linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent)",
+											WebkitMaskImage: "linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent)",
 											mx: -2,
-											px: 2,
+											"@media (prefers-reduced-motion: reduce)": { overflowX: "auto", scrollbarWidth: "none" },
 										}}
 									>
-										<Box sx={{ display: "inline-flex", gap: 1.5, width: "max-content", minWidth: "100%", justifyContent: "center", px: 2 }}>
-											{landingIntegrations.map(renderTile)}
+										<Box
+											sx={{
+												display: "flex",
+												width: "max-content",
+												animation: `la-marquee ${marqueeSeconds}s linear infinite`,
+												"&:hover, &:active": { animationPlayState: "paused" },
+												"@keyframes la-marquee": {
+													from: { transform: "translateX(0)" },
+													to: { transform: "translateX(-50%)" },
+												},
+												"@media (prefers-reduced-motion: reduce)": { animation: "none" },
+											}}
+										>
+											{/* Dos copias idénticas de la pista: cuando la primera termina de salir,
+											    la segunda está exactamente donde empezó la primera → loop sin salto. */}
+											<Box sx={{ display: "flex", gap: 1.5, px: 0.75 }}>{landingIntegrations.map(renderTile)}</Box>
+											<Box aria-hidden sx={{ display: "flex", gap: 1.5, px: 0.75 }}>
+												{landingIntegrations.map(renderTile)}
+											</Box>
 										</Box>
 									</Box>
 									{/* Desktop: fila de tiles compactos + chip "+N próximamente" si se supera el tope */}
