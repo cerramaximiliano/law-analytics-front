@@ -59,6 +59,9 @@ interface Integration {
 	hasBorder: boolean;
 }
 
+// Tope de tiles en la fila desktop antes de colapsar las "Próximamente" en un chip "+N".
+const MAX_DESKTOP_TILES = 8;
+
 const INTEGRATIONS: Integration[] = [
 	{
 		key: "pjn",
@@ -281,6 +284,157 @@ const HeaderPage = () => {
 
 	// Lista para los textos del hero ("Centralizá expedientes de …")
 	const integracionesLista = formatAvailableIntegrations(publicIntegrations.landing, publicIntegrations.landingCatalog);
+
+	// Tile de una jurisdicción — compartido entre el carrusel mobile y la fila desktop.
+	const renderTile = (integration: (typeof landingIntegrations)[number]) => {
+		const isAvailable = integration.status === "available";
+		const isDarkTile = !integration.hasBorder;
+		const baseShadow = isDarkTile
+			? "0 4px 14px rgba(35, 45, 79, 0.4), 0 2px 6px rgba(0, 0, 0, 0.15)"
+			: "0 4px 14px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08)";
+		const hoverShadow = isDarkTile
+			? "0 6px 20px rgba(35, 45, 79, 0.5), 0 4px 10px rgba(0, 0, 0, 0.2)"
+			: "0 6px 20px rgba(0, 0, 0, 0.18), 0 4px 10px rgba(0, 0, 0, 0.12)";
+		return (
+			<Tooltip
+				key={integration.key}
+				title={isAvailable ? integration.tooltipTitle : `${integration.tooltipTitle} - Próximamente`}
+				arrow
+				placement="top"
+				disableHoverListener={!isMobile}
+			>
+				<Box
+					sx={{
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+						gap: { xs: 0.5, sm: 1 },
+						width: { xs: 64, sm: 120 },
+						flex: "0 0 auto",
+						scrollSnapAlign: "center",
+						opacity: isAvailable ? 1 : 0.55,
+					}}
+				>
+					<Box
+						sx={{
+							position: "relative",
+							width: { xs: 40, sm: 64 },
+							height: { xs: 40, sm: 64 },
+							borderRadius: 2,
+							bgcolor: integration.bgColor,
+							border: integration.hasBorder ? "1px solid rgba(0, 0, 0, 0.1)" : "none",
+							boxShadow: baseShadow,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							p: 0.75,
+							filter: isAvailable ? "none" : "grayscale(40%)",
+							transition: "transform 0.2s ease, box-shadow 0.2s ease",
+							...(isAvailable && {
+								"&:hover": {
+									transform: "translateY(-2px)",
+									boxShadow: hoverShadow,
+								},
+							}),
+						}}
+					>
+						<Box
+							component="img"
+							src={integration.logoSrc}
+							alt={integration.tooltipTitle}
+							sx={{
+								width: "100%",
+								height: "100%",
+								objectFit: "contain",
+							}}
+						/>
+						{/* Live pulse dot — sólo disponibles */}
+						{isAvailable && (
+							<Box
+								aria-hidden
+								sx={{
+									position: "absolute",
+									top: { xs: -3, sm: -4 },
+									right: { xs: -3, sm: -4 },
+									width: { xs: 10, sm: 12 },
+									height: { xs: 10, sm: 12 },
+									borderRadius: "50%",
+									bgcolor: LIVE_GREEN,
+									border: `2px solid ${theme.palette.background.default}`,
+									zIndex: 3,
+									"&::after": {
+										content: '""',
+										position: "absolute",
+										inset: -1,
+										borderRadius: "50%",
+										bgcolor: LIVE_GREEN,
+										animation: "la-live-pulse 2.2s ease-out infinite",
+									},
+									"@keyframes la-live-pulse": {
+										"0%": { transform: "scale(0.9)", opacity: 0.55 },
+										"80%, 100%": { transform: "scale(2.4)", opacity: 0 },
+									},
+								}}
+							/>
+						)}
+					</Box>
+					{/* Sigla en mobile */}
+					<Typography
+						variant="caption"
+						sx={{
+							display: { xs: "block", sm: "none" },
+							color: theme.palette.text.primary,
+							fontWeight: isAvailable ? 700 : 500,
+							fontSize: "0.65rem",
+							textAlign: "center",
+							lineHeight: 1.3,
+							textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+						}}
+					>
+						{integration.shortName}
+					</Typography>
+					{/* Nombre completo en desktop */}
+					<Typography
+						variant="caption"
+						sx={{
+							display: { xs: "none", sm: "block" },
+							color: isAvailable ? theme.palette.text.primary : theme.palette.text.secondary,
+							fontWeight: isAvailable ? 700 : 500,
+							fontSize: "0.72rem",
+							textAlign: "center",
+							lineHeight: 1.3,
+							textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+							whiteSpace: "pre-line",
+						}}
+					>
+						{integration.fullName}
+					</Typography>
+					{!isAvailable && (
+						<Chip
+							label="Próximamente"
+							size="small"
+							sx={{
+								fontSize: { xs: "0.55rem", sm: "0.65rem" },
+								height: { xs: 16, sm: 20 },
+								bgcolor: theme.palette.primary.lighter,
+								color: theme.palette.primary.dark,
+								fontWeight: 600,
+							}}
+						/>
+					)}
+				</Box>
+			</Tooltip>
+		);
+	};
+
+	// Desktop: hasta MAX_DESKTOP_TILES tiles. Si se supera, las "Próximamente"
+	// se colapsan en un chip "+N próximamente" (las disponibles nunca se ocultan).
+	const availableTiles = landingIntegrations.filter((i) => i.status === "available");
+	const comingSoonTiles = landingIntegrations.filter((i) => i.status !== "available");
+	const comingSoonSlots = Math.max(0, MAX_DESKTOP_TILES - availableTiles.length);
+	const collapsedTiles = landingIntegrations.length > MAX_DESKTOP_TILES ? comingSoonTiles.slice(comingSoonSlots) : [];
+	const collapsedKeys = new Set(collapsedTiles.map((i) => i.key));
+	const desktopTiles = landingIntegrations.filter((i) => !collapsedKeys.has(i.key));
 
 	return (
 		<Box
@@ -602,147 +756,83 @@ const HeaderPage = () => {
 									>
 										Integrado con
 									</Typography>
-									<Grid container spacing={{ xs: 1, sm: 3 }} justifyContent="center" alignItems="flex-start">
-										{landingIntegrations.map((integration) => {
-											const isAvailable = integration.status === "available";
-											const isDarkTile = !integration.hasBorder;
-											const baseShadow = isDarkTile
-												? "0 4px 14px rgba(35, 45, 79, 0.4), 0 2px 6px rgba(0, 0, 0, 0.15)"
-												: "0 4px 14px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08)";
-											const hoverShadow = isDarkTile
-												? "0 6px 20px rgba(35, 45, 79, 0.5), 0 4px 10px rgba(0, 0, 0, 0.2)"
-												: "0 6px 20px rgba(0, 0, 0, 0.18), 0 4px 10px rgba(0, 0, 0, 0.12)";
-											return (
-												<Grid item xs={3} sm="auto" key={integration.key}>
-													<Tooltip
-														title={isAvailable ? integration.tooltipTitle : `${integration.tooltipTitle} - Próximamente`}
-														arrow
-														placement="top"
-														disableHoverListener={!isMobile}
+									{/* Mobile: carrusel horizontal con scroll-snap y fade en los bordes — una sola
+									    fila de altura fija sin importar cuántas jurisdicciones haya. */}
+									<Box
+										sx={{
+											display: { xs: "block", sm: "none" },
+											overflowX: "auto",
+											scrollSnapType: "x mandatory",
+											WebkitOverflowScrolling: "touch",
+											scrollbarWidth: "none",
+											"&::-webkit-scrollbar": { display: "none" },
+											maskImage: "linear-gradient(to right, transparent, #000 20px, #000 calc(100% - 20px), transparent)",
+											WebkitMaskImage: "linear-gradient(to right, transparent, #000 20px, #000 calc(100% - 20px), transparent)",
+											mx: -2,
+											px: 2,
+										}}
+									>
+										<Box sx={{ display: "inline-flex", gap: 1.5, width: "max-content", minWidth: "100%", justifyContent: "center", px: 2 }}>
+											{landingIntegrations.map(renderTile)}
+										</Box>
+									</Box>
+									{/* Desktop: fila de tiles compactos + chip "+N próximamente" si se supera el tope */}
+									<Box
+										sx={{
+											display: { xs: "none", sm: "flex" },
+											flexWrap: "wrap",
+											justifyContent: "center",
+											alignItems: "flex-start",
+											gap: 2,
+										}}
+									>
+										{desktopTiles.map(renderTile)}
+										{collapsedTiles.length > 0 && (
+											<Tooltip title={collapsedTiles.map((i) => i.tooltipTitle).join(" · ")} arrow placement="top">
+												<Box
+													sx={{
+														display: "flex",
+														flexDirection: "column",
+														alignItems: "center",
+														gap: 1,
+														width: 120,
+														opacity: 0.7,
+														cursor: "default",
+													}}
+												>
+													<Box
+														sx={{
+															width: 64,
+															height: 64,
+															borderRadius: 2,
+															border: `1.5px dashed ${alpha(theme.palette.text.secondary, 0.5)}`,
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															fontWeight: 700,
+															fontSize: "1.1rem",
+															color: theme.palette.text.secondary,
+														}}
 													>
-														<Box
-															sx={{
-																display: "flex",
-																flexDirection: "column",
-																alignItems: "center",
-																gap: { xs: 0.5, sm: 1 },
-																width: { xs: "auto", sm: 130 },
-																opacity: isAvailable ? 1 : 0.55,
-															}}
-														>
-															<Box
-																sx={{
-																	position: "relative",
-																	width: { xs: 40, sm: 64 },
-																	height: { xs: 40, sm: 64 },
-																	borderRadius: 2,
-																	bgcolor: integration.bgColor,
-																	border: integration.hasBorder ? "1px solid rgba(0, 0, 0, 0.1)" : "none",
-																	boxShadow: baseShadow,
-																	display: "flex",
-																	alignItems: "center",
-																	justifyContent: "center",
-																	p: 0.75,
-																	filter: isAvailable ? "none" : "grayscale(40%)",
-																	transition: "transform 0.2s ease, box-shadow 0.2s ease",
-																	...(isAvailable && {
-																		"&:hover": {
-																			transform: "translateY(-2px)",
-																			boxShadow: hoverShadow,
-																		},
-																	}),
-																}}
-															>
-																<Box
-																	component="img"
-																	src={integration.logoSrc}
-																	alt={integration.tooltipTitle}
-																	sx={{
-																		width: "100%",
-																		height: "100%",
-																		objectFit: "contain",
-																	}}
-																/>
-																{/* Live pulse dot — sólo disponibles */}
-																{isAvailable && (
-																	<Box
-																		aria-hidden
-																		sx={{
-																			position: "absolute",
-																			top: { xs: -3, sm: -4 },
-																			right: { xs: -3, sm: -4 },
-																			width: { xs: 10, sm: 12 },
-																			height: { xs: 10, sm: 12 },
-																			borderRadius: "50%",
-																			bgcolor: LIVE_GREEN,
-																			border: `2px solid ${theme.palette.background.default}`,
-																			zIndex: 3,
-																			"&::after": {
-																				content: '""',
-																				position: "absolute",
-																				inset: -1,
-																				borderRadius: "50%",
-																				bgcolor: LIVE_GREEN,
-																				animation: "la-live-pulse 2.2s ease-out infinite",
-																			},
-																			"@keyframes la-live-pulse": {
-																				"0%": { transform: "scale(0.9)", opacity: 0.55 },
-																				"80%, 100%": { transform: "scale(2.4)", opacity: 0 },
-																			},
-																		}}
-																	/>
-																)}
-															</Box>
-															{/* Sigla en mobile */}
-															<Typography
-																variant="caption"
-																sx={{
-																	display: { xs: "block", sm: "none" },
-																	color: theme.palette.text.primary,
-																	fontWeight: isAvailable ? 700 : 500,
-																	fontSize: "0.65rem",
-																	textAlign: "center",
-																	lineHeight: 1.3,
-																	textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
-																}}
-															>
-																{integration.shortName}
-															</Typography>
-															{/* Nombre completo en desktop */}
-															<Typography
-																variant="caption"
-																sx={{
-																	display: { xs: "none", sm: "block" },
-																	color: isAvailable ? theme.palette.text.primary : theme.palette.text.secondary,
-																	fontWeight: isAvailable ? 700 : 500,
-																	fontSize: "0.8rem",
-																	textAlign: "center",
-																	lineHeight: 1.3,
-																	textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
-																	whiteSpace: "pre-line",
-																}}
-															>
-																{integration.fullName}
-															</Typography>
-															{!isAvailable && (
-																<Chip
-																	label="Próximamente"
-																	size="small"
-																	sx={{
-																		fontSize: { xs: "0.55rem", sm: "0.65rem" },
-																		height: { xs: 16, sm: 20 },
-																		bgcolor: theme.palette.primary.lighter,
-																		color: theme.palette.primary.dark,
-																		fontWeight: 600,
-																	}}
-																/>
-															)}
-														</Box>
-													</Tooltip>
-												</Grid>
-											);
-										})}
-									</Grid>
+														+{collapsedTiles.length}
+													</Box>
+													<Typography
+														variant="caption"
+														sx={{
+															color: theme.palette.text.secondary,
+															fontWeight: 500,
+															fontSize: "0.72rem",
+															textAlign: "center",
+															lineHeight: 1.3,
+														}}
+													>
+														{collapsedTiles.length === 1 ? "jurisdicción" : "jurisdicciones"}
+														próximamente
+													</Typography>
+												</Box>
+											</Tooltip>
+										)}
+									</Box>
 									<Typography
 										variant="body2"
 										sx={{
