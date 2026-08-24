@@ -17,10 +17,12 @@ import AnimateButton from "components/@extended/AnimateButton";
 import PageBackground from "components/PageBackground";
 import MockupFrame from "components/MockupFrame";
 import { useLandingAnalytics } from "hooks/useLandingAnalytics";
+import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 
 // assets
 import logoPJNacion from "assets/images/logos/logo_pj_nacion.png";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
+import logoPJCatamarca from "assets/images/logos/logo_pj_catamarca.png";
 
 // Logos externos (Cloudinary)
 const logoPJCABA = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
@@ -36,6 +38,12 @@ const BRAND_GRADIENT_TEXT = "linear-gradient(90deg, #3A7BFF, #8A5CFF, #3A7BFF) 0
 const LIVE_GREEN = "#22C55E";
 
 // ============================== INTEGRACIONES ============================== //
+//
+// La metadata visual (logo, color, nombres) vive acá; el ESTADO de cada ícono
+// (available/comingSoon/hidden) se administra desde /admin/integrations
+// (IntegrationsConfig.landingIntegrations, servido por /plan-configs/public y
+// consumido vía usePublicIntegrations). El `status` de este array es solo el
+// fallback si el backend no responde.
 
 type IntegrationStatus = "available" | "comingSoon";
 
@@ -85,7 +93,7 @@ const INTEGRATIONS: Integration[] = [
 		key: "seclo",
 		shortName: "SECLO",
 		fullName: "SECLO",
-		tooltipTitle: "SECLO - Próximamente",
+		tooltipTitle: "SECLO",
 		status: "comingSoon",
 		logoSrc: logoSECLO,
 		bgColor: "#ffffff",
@@ -95,9 +103,19 @@ const INTEGRATIONS: Integration[] = [
 		key: "pjsalta",
 		shortName: "SALTA",
 		fullName: "Poder Judicial de la\nProv. de Salta",
-		tooltipTitle: "Poder Judicial de la Provincia de Salta - Próximamente",
+		tooltipTitle: "Poder Judicial de la Provincia de Salta",
 		status: "comingSoon",
 		logoSrc: logoPJSalta,
+		bgColor: "#ffffff",
+		hasBorder: true,
+	},
+	{
+		key: "pjcatamarca",
+		shortName: "CATAMARCA",
+		fullName: "Poder Judicial de la\nProv. de Catamarca",
+		tooltipTitle: "Poder Judicial de la Provincia de Catamarca",
+		status: "comingSoon",
+		logoSrc: logoPJCatamarca,
 		bgColor: "#ffffff",
 		hasBorder: true,
 	},
@@ -218,6 +236,16 @@ const HeaderPage = () => {
 	const [supportModalOpen, setSupportModalOpen] = useState(false);
 	const isMobile = useMediaQuery((t: Theme) => t.breakpoints.down("sm"));
 	const isDark = theme.palette.mode === "dark";
+
+	// Estado del strip "Integrado con" administrable desde /admin/integrations.
+	// Mergea el status del backend sobre la metadata visual local; fallback al
+	// status hardcodeado de INTEGRATIONS si el API no responde.
+	const { integrations: publicIntegrations } = usePublicIntegrations();
+	const landingIntegrations = INTEGRATIONS.map((integration) => {
+		const remote = publicIntegrations.landing?.[integration.key];
+		const status = remote === "available" || remote === "comingSoon" || remote === "hidden" ? remote : integration.status;
+		return { ...integration, status };
+	}).filter((integration) => integration.status !== "hidden");
 
 	return (
 		<Box
@@ -540,7 +568,7 @@ const HeaderPage = () => {
 										Integrado con
 									</Typography>
 									<Grid container spacing={{ xs: 1, sm: 3 }} justifyContent="center" alignItems="flex-start">
-										{INTEGRATIONS.map((integration) => {
+										{landingIntegrations.map((integration) => {
 											const isAvailable = integration.status === "available";
 											const isDarkTile = !integration.hasBorder;
 											const baseShadow = isDarkTile
@@ -551,7 +579,12 @@ const HeaderPage = () => {
 												: "0 6px 20px rgba(0, 0, 0, 0.18), 0 4px 10px rgba(0, 0, 0, 0.12)";
 											return (
 												<Grid item xs={3} sm="auto" key={integration.key}>
-													<Tooltip title={integration.tooltipTitle} arrow placement="top" disableHoverListener={!isMobile}>
+													<Tooltip
+														title={isAvailable ? integration.tooltipTitle : `${integration.tooltipTitle} - Próximamente`}
+														arrow
+														placement="top"
+														disableHoverListener={!isMobile}
+													>
 														<Box
 															sx={{
 																display: "flex",

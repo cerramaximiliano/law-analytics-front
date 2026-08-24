@@ -37,11 +37,19 @@ export interface ServiceFlag {
 	releaseStage: ReleaseStage;
 }
 
+/** Estado de cada ícono del strip "Integrado con" de la landing, administrable
+ *  desde /admin/integrations (la metadata visual vive en Header.tsx). */
+export type LandingIntegrationStatus = "available" | "comingSoon" | "hidden";
+export type LandingIntegrationsMap = Record<string, LandingIntegrationStatus>;
+
 export interface PublicIntegrations {
 	/** Toggle para mostrar el banner MCP de Claude.ai en landing/plans + página /integraciones/claude-ai. */
 	claudeAi: ServiceFlag;
 	/** Toggle equivalente para ChatGPT — UI futura (placeholder hasta que el MCP soporte ChatGPT). */
 	chatGpt: ServiceFlag;
+	/** Strip "Integrado con" de la landing (por jurisdicción). Opcional para
+	 *  compat con respuestas de backends previos al feature. */
+	landing?: LandingIntegrationsMap;
 }
 
 /**
@@ -53,6 +61,15 @@ export interface PublicIntegrations {
 export const DEFAULT_PUBLIC_INTEGRATIONS: PublicIntegrations = {
 	claudeAi: { enabled: false, maintenanceMessage: null, releaseStage: "beta" },
 	chatGpt: { enabled: false, maintenanceMessage: null, releaseStage: "beta" },
+	// Fail-safe del strip de la landing = comportamiento histórico hardcodeado.
+	landing: {
+		pjn: "available",
+		mev: "available",
+		eje: "available",
+		seclo: "comingSoon",
+		pjsalta: "comingSoon",
+		pjcatamarca: "comingSoon",
+	},
 };
 
 // ====================================
@@ -1020,11 +1037,7 @@ class ApiService {
 	 */
 	static async reportFailedCheckout(planId: string, reason?: string): Promise<void> {
 		try {
-			await axios.post(
-				`${API_BASE_URL}/api/subscriptions/payment-attempt-failed`,
-				{ planId, reason },
-				{ withCredentials: true },
-			);
+			await axios.post(`${API_BASE_URL}/api/subscriptions/payment-attempt-failed`, { planId, reason }, { withCredentials: true });
 		} catch (error) {
 			// Best-effort: no propagar — el registro de telemetría no debe romper el front
 			console.warn("No se pudo reportar el intento de checkout fallido", error);
