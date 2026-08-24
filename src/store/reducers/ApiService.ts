@@ -40,7 +40,14 @@ export interface ServiceFlag {
 /** Estado de cada ícono del strip "Integrado con" de la landing, administrable
  *  desde /admin/integrations (la metadata visual vive en Header.tsx). */
 export type LandingIntegrationStatus = "available" | "comingSoon" | "hidden";
-export type LandingIntegrationsMap = Record<string, LandingIntegrationStatus>;
+export interface LandingIntegrationEntry {
+	status: LandingIntegrationStatus;
+	/** Posición del ícono en el strip (menor = más a la izquierda). */
+	order?: number;
+}
+/** Entrada por jurisdicción — {status, order}. El string suelto se tolera por
+ *  compat con la primera versión del endpoint. */
+export type LandingIntegrationsMap = Record<string, LandingIntegrationEntry | LandingIntegrationStatus>;
 
 export interface PublicIntegrations {
 	/** Toggle para mostrar el banner MCP de Claude.ai en landing/plans + página /integraciones/claude-ai. */
@@ -63,12 +70,12 @@ export const DEFAULT_PUBLIC_INTEGRATIONS: PublicIntegrations = {
 	chatGpt: { enabled: false, maintenanceMessage: null, releaseStage: "beta" },
 	// Fail-safe del strip de la landing = comportamiento histórico hardcodeado.
 	landing: {
-		pjn: "available",
-		mev: "available",
-		eje: "available",
-		seclo: "comingSoon",
-		pjsalta: "comingSoon",
-		pjcatamarca: "comingSoon",
+		pjn: { status: "available", order: 1 },
+		mev: { status: "available", order: 2 },
+		eje: { status: "available", order: 3 },
+		seclo: { status: "comingSoon", order: 4 },
+		pjsalta: { status: "comingSoon", order: 5 },
+		pjcatamarca: { status: "comingSoon", order: 6 },
 	},
 };
 

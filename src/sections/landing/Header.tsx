@@ -241,11 +241,18 @@ const HeaderPage = () => {
 	// Mergea el status del backend sobre la metadata visual local; fallback al
 	// status hardcodeado de INTEGRATIONS si el API no responde.
 	const { integrations: publicIntegrations } = usePublicIntegrations();
-	const landingIntegrations = INTEGRATIONS.map((integration) => {
+	const landingIntegrations = INTEGRATIONS.map((integration, idx) => {
 		const remote = publicIntegrations.landing?.[integration.key];
-		const status = remote === "available" || remote === "comingSoon" || remote === "hidden" ? remote : integration.status;
-		return { ...integration, status };
-	}).filter((integration) => integration.status !== "hidden");
+		// El endpoint envía { status, order }; el string suelto es compat con la
+		// primera versión del feature.
+		const remoteStatus = typeof remote === "string" ? remote : remote?.status;
+		const status =
+			remoteStatus === "available" || remoteStatus === "comingSoon" || remoteStatus === "hidden" ? remoteStatus : integration.status;
+		const order = typeof remote === "object" && typeof remote?.order === "number" ? remote.order : idx + 1;
+		return { ...integration, status, order };
+	})
+		.filter((integration) => integration.status !== "hidden")
+		.sort((a, b) => a.order - b.order);
 
 	return (
 		<Box
