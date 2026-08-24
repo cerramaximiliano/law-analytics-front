@@ -220,7 +220,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 	// Detectar origen del scraping por la presencia del *Access correspondiente
 	// (el server solo devuelve scbaAccess/pjnAccess/ejeAccess cuando el folder es de ese tipo).
-	const scrapingSource: "mev" | "pjn" | "scba" | "eje" | "pjsalta" | "pjcatamarca" = movementsData.scbaAccess
+	const scrapingSource: "mev" | "pjn" | "scba" | "eje" | "pjsalta" | "pjcatamarca" | "pjmendoza" = movementsData.scbaAccess
 		? "scba"
 		: movementsData.pjnAccess
 		? "pjn"
@@ -230,6 +230,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		? "pjsalta"
 		: movementsData.pjcatamarcaAccess
 		? "pjcatamarca"
+		: movementsData.pjmendozaAccess
+		? "pjmendoza"
 		: "mev";
 
 	// Carpeta sincronizada (algún *Access presente) vs manual. En sincronizadas el

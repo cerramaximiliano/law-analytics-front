@@ -48,6 +48,7 @@ import mevCredentialsService from "api/mevCredentials";
 import ejeWorkersService from "api/workersEje";
 import pjsaltaWorkersService from "api/workersPjSalta";
 import pjcatamarcaWorkersService from "api/workersPjCatamarca";
+import pjmendozaWorkersService from "api/workersPjMendoza";
 import PjnAccountConnect, { PjnAccountConnectRef } from "./PjnAccountConnect";
 import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import { usePjnSiteStatus } from "hooks/usePjnSiteStatus";
@@ -205,8 +206,9 @@ interface FormValues {
 	eje?: boolean;
 	pjsalta?: boolean;
 	pjcatamarca?: boolean;
+	pjmendoza?: boolean;
 	initialDateFolder?: string;
-	judicialPower?: "nacional" | "buenosaires" | "caba" | "salta" | "catamarca";
+	judicialPower?: "nacional" | "buenosaires" | "caba" | "salta" | "catamarca" | "mendoza";
 	jurisdictionBA?: string;
 	organismoBA?: string;
 	navigationCode?: string;
@@ -218,6 +220,8 @@ interface FormValues {
 	pjsaltaCuij?: string;
 	pjcatamarcaSearchType?: "cuij" | "expediente";
 	pjcatamarcaCuij?: string;
+	pjmendozaSearchType?: "cuij" | "expediente";
+	pjmendozaCuij?: string;
 	// Modo de importación del sub-toggle dentro del step. Persistido en el form
 	// para que callers externos (onboarding checklist) puedan pre-seleccionar
 	// "single" via `initialFormValues` y el `useState` local los recoja al mount.
@@ -454,6 +458,19 @@ const AutomaticStep = () => {
 		}
 		setCuijError("");
 		setFieldError("pjcatamarcaCuij", "");
+		return true;
+	};
+
+	// Validar CUIJ para PJ Mendoza (13-XXXXXXXX-X).
+	const validateMendozaCuij = (cuij: string | undefined) => {
+		const validation = pjmendozaWorkersService.validateCuij(cuij || "");
+		if (!validation.valid) {
+			setCuijError(validation.error || "CUIJ inválido");
+			setFieldError("pjmendozaCuij", validation.error || "CUIJ inválido");
+			return false;
+		}
+		setCuijError("");
+		setFieldError("pjmendozaCuij", "");
 		return true;
 	};
 
@@ -889,6 +906,73 @@ const AutomaticStep = () => {
 				setSuccess(true);
 				setError("");
 			}
+		} else if (values.judicialPower === "mendoza") {
+			// PJ Mendoza: mismo esquema de dos modos que EJE (CUIJ o número/año).
+			let isValid = false;
+
+			if (values.pjmendozaSearchType === "cuij") {
+				if (touched.pjmendozaCuij || formSubmitAttempted.current) {
+					isValid = validateMendozaCuij(values.pjmendozaCuij);
+				} else if (values.pjmendozaCuij && values.pjmendozaCuij !== "") {
+					isValid = true;
+					setCuijError("");
+					setFieldError("pjmendozaCuij", "");
+				}
+			} else {
+				let numberValid = false;
+				let yearValid = false;
+
+				if (touched.expedientNumber || formSubmitAttempted.current) {
+					numberValid = validateExpedientNumber(values.expedientNumber);
+				} else if (values.expedientNumber && values.expedientNumber !== "") {
+					numberValid = true;
+					setNumberError("");
+					setFieldError("expedientNumber", "");
+				}
+
+				if (touched.expedientYear || formSubmitAttempted.current) {
+					yearValid = validateYear(values.expedientYear);
+				} else if (values.expedientYear && values.expedientYear !== "") {
+					yearValid = true;
+					setYearError("");
+					setFieldError("expedientYear", "");
+				}
+
+				isValid = numberValid && yearValid;
+			}
+
+			if (isValid) {
+				setFieldValue("source", "auto");
+				setFieldValue("pjmendoza", true);
+				setFieldValue("initialDateFolder", new Date().toLocaleDateString("es-AR"));
+
+				if (!values.folderName || values.folderName === "") {
+					setFieldValue("folderName", "Pendiente");
+				}
+				if (!values.materia || values.materia === "") {
+					setFieldValue("materia", "No verificado");
+				}
+				if (!values.orderStatus || values.orderStatus === "") {
+					setFieldValue("orderStatus", "No verificado");
+				}
+				if (!values.status || values.status === "") {
+					setFieldValue("status", "Nueva");
+				}
+				// El fuero NO se setea acá: lo infiere el verifier del organismo que
+				// devuelve el portal (Civil / Laboral / Familia / Penal).
+
+				const mendozaSearchInfo =
+					values.pjmendozaSearchType === "cuij"
+						? `CUIJ: ${values.pjmendozaCuij}`
+						: `Expediente: ${values.expedientNumber}/${values.expedientYear}`;
+
+				if (!values.description || values.description === "") {
+					setFieldValue("description", `Expediente importado desde el Poder Judicial de Mendoza (${mendozaSearchInfo})`);
+				}
+
+				setSuccess(true);
+				setError("");
+			}
 		}
 
 		setAutomaticValues();
@@ -912,6 +996,9 @@ const AutomaticStep = () => {
 		touched.pjcatamarcaCuij,
 		values.pjcatamarcaSearchType,
 		values.pjcatamarcaCuij,
+		touched.pjmendozaCuij,
+		values.pjmendozaSearchType,
+		values.pjmendozaCuij,
 		formSubmitAttempted.current,
 	]);
 
@@ -1028,6 +1115,14 @@ const AutomaticStep = () => {
 						validateYear(values.expedientYear);
 					}
 				}
+ else if (values.judicialPower === "mendoza") {
+					if (values.pjmendozaSearchType === "cuij") {
+						validateMendozaCuij(values.pjmendozaCuij);
+					} else {
+						validateExpedientNumber(values.expedientNumber);
+						validateYear(values.expedientYear);
+					}
+				}
 
 				// Marcamos todos los campos como tocados para mostrar los errores
 				let touchedFields;
@@ -1075,7 +1170,7 @@ const AutomaticStep = () => {
 									expedientNumber: true,
 									expedientYear: true,
 							  };
-				} else {
+								} else {
 					touchedFields = {
 						...touched,
 						folderJuris: true,
@@ -1106,6 +1201,8 @@ const AutomaticStep = () => {
 		values.pjsaltaCuij,
 		values.pjcatamarcaSearchType,
 		values.pjcatamarcaCuij,
+		values.pjmendozaSearchType,
+		values.pjmendozaCuij,
 		pjnImportMode,
 		baImportMode,
 	]);
@@ -1257,6 +1354,12 @@ const AutomaticStep = () => {
 					code: "CATAMARCA",
 					title: "Importar causa del Poder Judicial de Catamarca",
 					subtitle: "Portal IOL — buscá por número/año o por CUIJ completo.",
+				};
+			case "mendoza":
+				return {
+					code: "MENDOZA",
+					title: "Importar causa del Poder Judicial de Mendoza",
+					subtitle: "Portal IOL — buscá por número/año o por CUIJ.",
 				};
 			default:
 				return { code: "", title: "Importar causa", subtitle: "" };
@@ -2132,6 +2235,147 @@ const AutomaticStep = () => {
 												)}
 
 												{renderNotice("Los datos del expediente se importan desde el portal del Poder Judicial de Catamarca.")}
+											</Stack>
+										</Box>
+									</Grid>
+								</>
+							) : values.judicialPower === "mendoza" ? (
+								<>
+									<Grid item xs={12}>
+										<Box
+											sx={{
+												borderRadius: 1.5,
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+												p: { xs: 1.5, sm: 1.75 },
+											}}
+										>
+											<Stack spacing={1.5}>
+												<Stack direction="row" alignItems="center" spacing={0.875}>
+													<Box
+														sx={{
+															width: 28,
+															height: 28,
+															borderRadius: 1,
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+															color: BRAND_BLUE,
+															flexShrink: 0,
+														}}
+													>
+														<SearchNormal1 size={16} variant="Bulk" />
+													</Box>
+													<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+														Buscar expediente en PJ Mendoza
+													</Typography>
+												</Stack>
+
+												{/* Selector tipo de búsqueda */}
+												<Stack spacing={0.625}>
+													<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1.5 }}>
+														¿Cómo querés buscar el expediente?
+													</Typography>
+													<RadioGroup
+														row
+														value={values.pjmendozaSearchType || "expediente"}
+														onChange={(e) => {
+															setFieldValue("pjmendozaSearchType", e.target.value);
+															setCuijError("");
+															setNumberError("");
+															setYearError("");
+														}}
+														sx={{
+															"& .MuiFormControlLabel-root": { mr: 2 },
+															"& .MuiRadio-root": {
+																color: alpha(BRAND_BLUE, isDark ? 0.4 : 0.3),
+																"&.Mui-checked": { color: BRAND_BLUE },
+															},
+														}}
+													>
+														<FormControlLabel
+															value="expediente"
+															control={<Radio size="small" />}
+															label={<Typography sx={{ fontSize: "0.82rem", fontWeight: 500 }}>Por número y año</Typography>}
+														/>
+														<FormControlLabel
+															value="cuij"
+															control={<Radio size="small" />}
+															label={<Typography sx={{ fontSize: "0.82rem", fontWeight: 500 }}>Por CUIJ</Typography>}
+														/>
+													</RadioGroup>
+												</Stack>
+
+												<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1) }} />
+
+												{values.pjmendozaSearchType === "cuij" ? (
+													<Stack spacing={0.625}>
+														<InputLabel htmlFor="pjmendoza-cuij" sx={labelSx}>
+															CUIJ
+														</InputLabel>
+														<InputField
+															fullWidth
+															size="small"
+															id="pjmendoza-cuij"
+															placeholder="13-08172120-8"
+															name="pjmendozaCuij"
+															onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+																setFieldValue("pjmendozaCuij", e.target.value);
+																setTouched({ ...touched, pjmendozaCuij: true });
+																if (e.target.value) {
+																	validateMendozaCuij(e.target.value);
+																}
+															}}
+															error={Boolean(cuijError && touched.pjmendozaCuij)}
+															helperText={
+																touched.pjmendozaCuij && cuijError
+																	? cuijError
+																	: "Formato: 13-XXXXXXXX-X (el CUIJ como figura en el portal)."
+															}
+															sx={fieldSx}
+														/>
+													</Stack>
+												) : (
+													<Stack direction="row" spacing={1.25}>
+														<Stack spacing={0.625} sx={{ flex: 1 }}>
+															<InputLabel htmlFor="pjmendoza-expedient-number" sx={labelSx}>
+																Nº Expediente
+															</InputLabel>
+															<InputField
+																fullWidth
+																size="small"
+																id="pjmendoza-expedient-number"
+																placeholder="Ej. 10721"
+																name="expedientNumber"
+																type="number"
+																onChange={handleNumberChange}
+																error={Boolean(numberError && touched.expedientNumber)}
+																helperText={touched.expedientNumber ? numberError : ""}
+																sx={fieldSx}
+															/>
+														</Stack>
+														<Stack spacing={0.625} sx={{ width: 120 }}>
+															<InputLabel htmlFor="pjmendoza-expedient-year" sx={labelSx}>
+																Año
+															</InputLabel>
+															<InputField
+																fullWidth
+																size="small"
+																id="pjmendoza-expedient-year"
+																placeholder="Ej. 2026"
+																name="expedientYear"
+																type="number"
+																onChange={handleYearChange}
+																error={Boolean(yearError && touched.expedientYear)}
+																helperText={touched.expedientYear ? yearError : ""}
+																sx={fieldSx}
+															/>
+														</Stack>
+													</Stack>
+												)}
+
+												{renderNotice("Los datos del expediente se importan desde el portal del Poder Judicial de Mendoza.")}
 											</Stack>
 										</Box>
 									</Grid>

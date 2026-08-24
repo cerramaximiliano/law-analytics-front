@@ -12,7 +12,7 @@ export type Movement = {
 	description?: string;
 	link?: string;
 	texto?: string; // Contenido de texto del escrito (MEV únicamente)
-	source?: "pjn" | "mev" | "scba" | "eje" | "pjsalta" | "pjcatamarca"; // Origen del movimiento sincronizado
+	source?: "pjn" | "mev" | "scba" | "eje" | "pjsalta" | "pjcatamarca" | "pjmendoza"; // Origen del movimiento sincronizado
 	completed?: boolean; // Nueva propiedad para indicar si el movimiento está completado
 	attachments?: Array<{
 		// Arreglo de adjuntos del movimiento (MEV/SCBA: múltiples, PJN: típicamente 1).
@@ -95,6 +95,7 @@ export interface EjeAccess {
 // PJ Salta comparte el shape de gating de EJE/SCBA (feature "movements":
 // los planes free ven un preview de los últimos 5).
 export type PjCatamarcaAccess = EjeAccess;
+export type PjMendozaAccess = EjeAccess;
 
 export interface PjSaltaAccess extends EjeAccess {
 	/** Último scrapeo de la causa. Se muestra como "Última actualización". */
@@ -121,6 +122,7 @@ export interface PaginatedMovementsResponse {
 	ejeAccess?: EjeAccess;
 	pjsaltaAccess?: PjSaltaAccess;
 	pjcatamarcaAccess?: PjCatamarcaAccess;
+	pjmendozaAccess?: PjMendozaAccess;
 	scrapingProgress?: ScrapingProgress;
 }
 
@@ -136,6 +138,7 @@ export interface MovementState {
 	ejeAccess?: EjeAccess;
 	pjsaltaAccess?: PjSaltaAccess;
 	pjcatamarcaAccess?: PjCatamarcaAccess;
+	pjmendozaAccess?: PjMendozaAccess;
 	scrapingProgress?: ScrapingProgress;
 	causaLastSyncDate?: string | null;
 	isLoading: boolean;

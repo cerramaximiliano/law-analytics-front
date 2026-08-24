@@ -148,6 +148,7 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({ open, onClose, folderId, 
 		if (causaType === "MEV") return "MEV - Poder Judicial de Buenos Aires";
 		if (causaType === "CausasPjSalta") return "PJ Salta - Poder Judicial de Salta";
 		if (causaType === "CausasPjCatamarca") return "PJ Catamarca - Poder Judicial de Catamarca";
+		if (causaType === "CausasPjMendoza") return "PJ Mendoza - Poder Judicial de Mendoza";
 		return "Sistema Judicial";
 	};
 

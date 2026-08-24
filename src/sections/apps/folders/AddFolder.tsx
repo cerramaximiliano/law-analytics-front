@@ -151,7 +151,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 
 	const judicialPowerSchema = Yup.object().shape({
 		judicialPower: Yup.string()
-			.oneOf(["nacional", "buenosaires", "caba", "salta", "catamarca"], "Seleccione un poder judicial")
+			.oneOf(["nacional", "buenosaires", "caba", "salta", "catamarca", "mendoza"], "Seleccione un poder judicial")
 			.required("Seleccione un poder judicial"),
 	});
 
@@ -219,6 +219,25 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 			otherwise: (schema) => schema.notRequired(),
 		}),
 		expedientYear: Yup.string().when("pjsaltaSearchType", {
+			is: (v: string) => v !== "cuij",
+			then: (schema) => schema.required("Ingrese el año del expediente"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
+	});
+
+	const automaticEntryMendozaSchema = Yup.object().shape({
+		pjmendozaSearchType: Yup.string().oneOf(["cuij", "expediente"]),
+		pjmendozaCuij: Yup.string().when("pjmendozaSearchType", {
+			is: "cuij",
+			then: (schema) => schema.required("Ingrese el CUIJ del expediente"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
+		expedientNumber: Yup.string().when("pjmendozaSearchType", {
+			is: (v: string) => v !== "cuij",
+			then: (schema) => schema.required("Ingrese el número de expediente"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
+		expedientYear: Yup.string().when("pjmendozaSearchType", {
 			is: (v: string) => v !== "cuij",
 			then: (schema) => schema.required("Ingrese el año del expediente"),
 			otherwise: (schema) => schema.notRequired(),
@@ -309,6 +328,8 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 							return automaticEntrySaltaSchema;
 						} else if (values.judicialPower === "catamarca") {
 							return automaticEntryCatamarcaSchema;
+						} else if (values.judicialPower === "mendoza") {
+							return automaticEntryMendozaSchema;
 						} else {
 							return automaticEntryPJNSchema;
 						}

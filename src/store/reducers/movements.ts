@@ -10,6 +10,7 @@ import {
 	EjeAccess,
 	PjSaltaAccess,
 	PjCatamarcaAccess,
+	PjMendozaAccess,
 	ScrapingProgress,
 } from "types/movements";
 import { UPDATE_ACTIVITY } from "./activities";
@@ -64,6 +65,7 @@ const movementReducer = (state = initialMovementState, action: any): MovementSta
 				ejeAccess: action.payload.ejeAccess || undefined,
 				pjsaltaAccess: action.payload.pjsaltaAccess || undefined,
 				pjcatamarcaAccess: action.payload.pjcatamarcaAccess || undefined,
+				pjmendozaAccess: action.payload.pjmendozaAccess || undefined,
 				scrapingProgress: action.payload.scrapingProgress || undefined,
 				causaLastSyncDate: action.payload.causaLastSyncDate !== undefined ? action.payload.causaLastSyncDate : undefined,
 				isLoading: false,
@@ -294,6 +296,7 @@ interface PaginatedSuccessResponse {
 		ejeAccess?: EjeAccess;
 		pjsaltaAccess?: PjSaltaAccess;
 		pjcatamarcaAccess?: PjCatamarcaAccess;
+		pjmendozaAccess?: PjMendozaAccess;
 		scrapingProgress?: ScrapingProgress;
 		causaLastSyncDate?: string | null;
 	};
@@ -378,6 +381,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 						ejeAccess: paginatedData.data.ejeAccess,
 						pjsaltaAccess: paginatedData.data.pjsaltaAccess,
 						pjcatamarcaAccess: paginatedData.data.pjcatamarcaAccess,
+						pjmendozaAccess: paginatedData.data.pjmendozaAccess,
 						scrapingProgress: paginatedData.data.scrapingProgress,
 						causaLastSyncDate: paginatedData.data.causaLastSyncDate,
 					},
@@ -396,6 +400,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 					ejeAccess: paginatedData.data.ejeAccess,
 					pjsaltaAccess: paginatedData.data.pjsaltaAccess,
 						pjcatamarcaAccess: paginatedData.data.pjcatamarcaAccess,
+						pjmendozaAccess: paginatedData.data.pjmendozaAccess,
 					scrapingProgress: paginatedData.data.scrapingProgress,
 					causaLastSyncDate: paginatedData.data.causaLastSyncDate,
 					locateStatus: (paginatedData.data as any).locateStatus,

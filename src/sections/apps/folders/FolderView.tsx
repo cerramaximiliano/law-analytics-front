@@ -20,7 +20,7 @@ import dayjs from "utils/dayjs-config";
 // Whitelist de jurisdicciones que tienen worker de sincronización.
 // "Nacional" → PJN, "Buenos Aires" → SCBA/MEV, "CABA" → EJE.
 // Debe quedar alineada con la del detalle del folder (pages/apps/folders/details/details.tsx).
-const SYNCABLE_JURISDICCION_LABELS = ["Nacional", "Buenos Aires", "CABA", "Salta", "Catamarca"];
+const SYNCABLE_JURISDICCION_LABELS = ["Nacional", "Buenos Aires", "CABA", "Salta", "Catamarca", "Mendoza"];
 
 // ==============================|| FOLDER - VIEW ||============================== //
 
@@ -490,7 +490,7 @@ const FolderView = memo(({ data }: any) => {
 			);
 		}
 
-		if (data.eje || data.pjsalta || data.pjcatamarca) {
+		if (data.eje || data.pjsalta || data.pjcatamarca || data.pjmendoza) {
 			const showVerify = data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined);
 			const verifyIcon =
 				data.causaVerified === false ? (
@@ -504,7 +504,7 @@ const FolderView = memo(({ data }: any) => {
 				data.causaVerified === false ? "Pendiente de verificación" : data.causaIsValid ? "Causa válida" : "Causa inválida";
 			return (
 				<BindingPill
-					label={data.eje ? "Vinculado con EJE" : data.pjsalta ? "Vinculado con PJ Salta" : "Vinculado con PJ Catamarca"}
+					label={data.eje ? "Vinculado con EJE" : data.pjsalta ? "Vinculado con PJ Salta" : data.pjcatamarca ? "Vinculado con PJ Catamarca" : "Vinculado con PJ Mendoza"}
 					accent={LIVE_GREEN}
 					verifyIcon={showVerify ? verifyIcon : undefined}
 					verifyTooltip={showVerify ? verifyTooltip : undefined}
