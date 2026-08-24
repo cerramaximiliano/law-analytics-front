@@ -765,6 +765,10 @@ const HeaderPage = () => {
 										sx={{
 											display: { xs: "block", sm: "none" },
 											overflow: "hidden",
+											// Espacio arriba para que el punto verde (top:-3px) y su anillo de pulso
+											// (escala 2.4×) no se recorten contra el overflow hidden.
+											pt: 1.5,
+											pb: 0.5,
 											maskImage: "linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent)",
 											WebkitMaskImage: "linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent)",
 											mx: -2,
