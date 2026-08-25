@@ -213,7 +213,9 @@ interface ReactTableProps extends Props {
 	disableRowSelection?: boolean;
 	/** Filtros */
 	folderTypeFilter?: "all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "pjmendoza";
-	onFolderTypeFilterChange?: (event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "pjmendoza">) => void;
+	onFolderTypeFilterChange?: (
+		event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "pjmendoza">,
+	) => void;
 	statusFilter?: "all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada";
 	onStatusFilterChange?: (event: SelectChangeEvent<string>) => void;
 	parteFilter?: string;
@@ -440,6 +442,8 @@ function ReactTable({
 
 	const csvHeaders = [
 		{ label: "Nombre", key: "folderName" },
+		{ label: "CUIJ", key: "cuij" },
+		{ label: "Nº expediente", key: "numberJudFolder" },
 		{ label: "Materia", key: "materia" },
 		{ label: "Estado", key: "status" },
 		{ label: "Jurisdicción", key: "jurisdiccion" },
@@ -457,6 +461,8 @@ function ReactTable({
 		const sourceRows = selectedFlatRows.length > 0 ? selectedFlatRows.map((d: any) => d.original) : data;
 		return sourceRows.map((folder: Folder) => ({
 			folderName: folder.folderName || "",
+			cuij: folder.judFolder?.cuij || "",
+			numberJudFolder: folder.judFolder?.numberJudFolder || "",
 			materia: folder.materia || "",
 			status: folder.status || "",
 			jurisdiccion: folder.folderJuris?.label || "",
@@ -1900,7 +1906,9 @@ const FoldersLayout = () => {
 	const [verifyingFolderIds, setVerifyingFolderIds] = useState<Set<string>>(() => new Set());
 
 	// Estados para filtros de carpetas
-	const [folderTypeFilter, setFolderTypeFilter] = useState<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "pjmendoza">("all");
+	const [folderTypeFilter, setFolderTypeFilter] = useState<
+		"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "pjmendoza"
+	>("all");
 	const [statusFilter, setStatusFilter] = useState<"all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada">("all");
 	const [parteFilter, setParteFilter] = useState<string>("all");
 	const [movimientosFilter, setMovimientosFilter] = useState<"all" | "today" | "week" | "month" | "none">("all");
@@ -2025,7 +2033,13 @@ const FoldersLayout = () => {
 			if (folderTypeFilter !== "all") {
 				switch (folderTypeFilter) {
 					case "manual":
-						if (!(folder.source === "manual" || (!folder.pjn && !folder.mev && !folder.eje && !folder.pjsalta && !folder.pjcatamarca && !folder.pjmendoza))) return false;
+						if (
+							!(
+								folder.source === "manual" ||
+								(!folder.pjn && !folder.mev && !folder.eje && !folder.pjsalta && !folder.pjcatamarca && !folder.pjmendoza)
+							)
+						)
+							return false;
 						break;
 					case "pjn":
 						if (folder.pjn !== true) return false;
@@ -2522,9 +2536,14 @@ const FoldersLayout = () => {
 	}, []);
 
 	// Handler para el filtro de tipo de carpeta
-	const handleFolderTypeFilterChange = useCallback((event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "pjmendoza">) => {
-		setFolderTypeFilter(event.target.value as "all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "pjmendoza");
-	}, []);
+	const handleFolderTypeFilterChange = useCallback(
+		(event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "pjmendoza">) => {
+			setFolderTypeFilter(
+				event.target.value as "all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "pjmendoza",
+			);
+		},
+		[],
+	);
 
 	const handleStatusFilterChange = useCallback((event: SelectChangeEvent<string>) => {
 		setStatusFilter(event.target.value as "all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada");
@@ -2700,7 +2719,13 @@ const FoldersLayout = () => {
 
 					// Solo mostrar indicadores visuales si es una causa sincronizada automáticamente
 					const showStatusIndicators =
-						folder.pjn === true || folder.mev === true || folder.eje === true || folder.scba === true || folder.pjsalta === true || folder.pjcatamarca === true || folder.pjmendoza === true;
+						folder.pjn === true ||
+						folder.mev === true ||
+						folder.eje === true ||
+						folder.scba === true ||
+						folder.pjsalta === true ||
+						folder.pjcatamarca === true ||
+						folder.pjmendoza === true;
 					// Si no se deben mostrar indicadores, solo mostrar el nombre
 					if (!showStatusIndicators) {
 						return (
@@ -2785,7 +2810,9 @@ const FoldersLayout = () => {
 						const IOL_NAMES: Record<string, string> = { pjsalta: "PJ Salta", pjcatamarca: "PJ Catamarca", pjmendoza: "PJ Mendoza" };
 						const source = folder.listRemovedSource ? folder.listRemovedSource.toUpperCase() : "PJN";
 						const tooltipCopy = isIolListRemoved
-							? `El expediente dejó de aparecer en el portal del ${IOL_NAMES[folder.listRemovedSource || ""] || source} en las últimas actualizaciones. Puede haber sido archivado, reservado o movido de organismo.`
+							? `El expediente dejó de aparecer en el portal del ${
+									IOL_NAMES[folder.listRemovedSource || ""] || source
+							  } en las últimas actualizaciones. Puede haber sido archivado, reservado o movido de organismo.`
 							: `Esta causa ya no aparece en tu lista de Mis Causas del portal ${source}. Puede haber sido archivada o desvinculada por el tribunal.`;
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
@@ -2978,7 +3005,8 @@ const FoldersLayout = () => {
 					// Si causaVerified es false o no está verificado (pendiente), mostrar chip de pendiente con botón de actualización
 					if (
 						folder.causaVerified === false ||
-						(folder.causaVerified !== true && (folder.pjn || folder.mev || folder.eje || folder.scba || folder.pjsalta || folder.pjcatamarca || folder.pjmendoza))
+						(folder.causaVerified !== true &&
+							(folder.pjn || folder.mev || folder.eje || folder.scba || folder.pjsalta || folder.pjcatamarca || folder.pjmendoza))
 					) {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
@@ -3197,6 +3225,35 @@ const FoldersLayout = () => {
 				},
 			},
 			{
+				// Identificador del expediente: CUIJ (compartido por EJE/Salta/Catamarca/
+				// Mendoza — el número por organismo no siempre es unívoco) y, si difiere,
+				// el número propio del portal ("EXP 905878/25", "61009/2007").
+				Header: "Expediente",
+				accessor: "judFolder.numberJudFolder",
+				minWidth: 150,
+				Cell: ({ row }: { row: any }) => {
+					const jf = row.original?.judFolder || {};
+					const cuij: string | undefined = jf.cuij;
+					const nro: string | undefined = jf.numberJudFolder;
+					// Principal: CUIJ en IOL/EJE, número de expediente en PJN/MEV/SCBA/manual.
+					const principal = cuij || nro;
+					if (!principal) return null;
+					const secundario = cuij && nro && nro !== cuij ? nro : null;
+					return (
+						<Stack spacing={0}>
+							<Typography variant="body2" sx={{ fontFamily: "monospace", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+								{principal}
+							</Typography>
+							{secundario && (
+								<Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+									{secundario}
+								</Typography>
+							)}
+						</Stack>
+					);
+				},
+			},
+			{
 				Header: "Materia",
 				accessor: "materia",
 				Cell: ({ value }: { value: any }) => {
@@ -3384,7 +3441,8 @@ const FoldersLayout = () => {
 				disableSortBy: true,
 				Cell: ({ row }: any) => {
 					const folder = row.original;
-					const isAutoFolder = folder.pjn || folder.mev || folder.eje || folder.scba || folder.pjsalta || folder.pjcatamarca || folder.pjmendoza;
+					const isAutoFolder =
+						folder.pjn || folder.mev || folder.eje || folder.scba || folder.pjsalta || folder.pjcatamarca || folder.pjmendoza;
 
 					// Folders con error: asociación fallida o causa inválida
 					const isErrorFolder =

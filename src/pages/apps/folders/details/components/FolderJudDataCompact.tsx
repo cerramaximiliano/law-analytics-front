@@ -554,6 +554,13 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 												}
 											/>
 										</Grid>
+										{/* CUIJ: identificador compartido por los portales IOL/EJE. Solo lectura
+										    (lo escribe el worker); se muestra cuando difiere del número. */}
+										{!isEditing && folder?.judFolder?.cuij && folder.judFolder.cuij !== values.judFolder.numberJudFolder && (
+											<Grid item xs={6} md={3}>
+												<CompactField label="CUIJ" value={folder.judFolder.cuij} isLoading={isLoader} icon={<HashtagSquare size={12} />} />
+											</Grid>
+										)}
 										<Grid item xs={6} md={3}>
 											<CompactField
 												label="ESTADO"
