@@ -645,17 +645,17 @@
 	],
 	"fuero": [
 		"Civil",
+		"Comercial",
+		"Familia",
 		"Laboral",
-		"Seguridad Social",
-		"Comercial",
-		"Aduanero",
-		"Tributario",
-		"Comercial",
+		"Justicia de Paz",
 		"Penal",
 		"Administrativo",
+		"Seguridad Social",
+		"Tributario",
+		"Aduanero",
 		"Constitucional",
-		"Ambiental",
-		"Familia"
+		"Ambiental"
 	],
 	"parte": [
 		"Actor",
