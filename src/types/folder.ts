@@ -29,7 +29,7 @@ export type JudFolderData = {
 	numberJudFolder: string;
 	statusJudFolder: string;
 	amountJudFolder: string;
-	/* "En letra" | "En despacho"; */
+	/* Texto libre: vocabulario propio de cada portal ("En letra", "En despacho", "Inicio / demanda", "Remitido"…) — ver data/folder.json situacion */
 	descriptionJudFolder: string;
 	courtNumber?: string;
 	secretaryNumber?: string;

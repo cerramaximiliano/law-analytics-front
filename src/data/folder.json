@@ -677,7 +677,26 @@
 		"Heredero/os",
 		"Derecho Propio"
 	],
-	"situacion": ["En letra", "En despacho", "En trámite", "Paralizado", "Archivado"],
+	"situacion": [
+		"En letra",
+		"En despacho",
+		"A despacho",
+		"En trámite",
+		"Inicial",
+		"Inicio / demanda",
+		"Paralizado",
+		"Archivado",
+		"Prearchivo",
+		"Remitido",
+		"Remitido por incompetencia",
+		"En vista",
+		"En traslado",
+		"Pase",
+		"Cerrado",
+		"Acumulado",
+		"Para sentencia definitiva",
+		"Sin definir"
+	],
 	"estado": ["Nueva", "En Proceso", "Cerrada", "Pendiente"],
 	"jurisdicciones": [
 		{
