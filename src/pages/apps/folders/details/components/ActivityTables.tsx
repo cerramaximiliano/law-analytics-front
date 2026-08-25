@@ -242,7 +242,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			movementsData.mevAccess ||
 			movementsData.scbaAccess ||
 			movementsData.ejeAccess ||
-			movementsData.pjsaltaAccess || movementsData.pjcatamarcaAccess || movementsData.pjmendozaAccess,
+			movementsData.pjsaltaAccess ||
+			movementsData.pjcatamarcaAccess ||
+			movementsData.pjmendozaAccess,
 	);
 	const isIolFolder = Boolean(movementsData.pjsaltaAccess || movementsData.pjcatamarcaAccess || movementsData.pjmendozaAccess);
 
