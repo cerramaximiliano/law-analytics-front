@@ -2138,7 +2138,7 @@ const AutomaticStep = () => {
 													</Typography>
 													<RadioGroup
 														row
-														value={values.pjcatamarcaSearchType || "expediente"}
+														value={values.pjcatamarcaSearchType || "cuij"}
 														onChange={(e) => {
 															setFieldValue("pjcatamarcaSearchType", e.target.value);
 															setCuijError("");
@@ -2279,7 +2279,7 @@ const AutomaticStep = () => {
 													</Typography>
 													<RadioGroup
 														row
-														value={values.pjmendozaSearchType || "expediente"}
+														value={values.pjmendozaSearchType || "cuij"}
 														onChange={(e) => {
 															setFieldValue("pjmendozaSearchType", e.target.value);
 															setCuijError("");

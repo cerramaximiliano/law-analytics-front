@@ -141,6 +141,13 @@ const JudicialPowerSelection = () => {
 	const { setFieldValue, values } = useFormikContext<FormValues>();
 
 	const handleSelectJudicialPower = (power: "nacional" | "buenosaires" | "caba" | "salta" | "catamarca" | "mendoza") => {
+		if (power !== values.judicialPower) {
+			// Al cambiar de poder judicial se limpian las flags de plataforma: el submit
+			// hace spread de `values` y el hub rechaza (400 + borra la carpeta) si llegan
+			// dos plataformas a la vez (auditoría 2026-08-25, T10).
+			for (const flag of ["pjn", "mev", "eje", "scba", "pjsalta", "pjcatamarca", "pjmendoza"]) setFieldValue(flag, false);
+			for (const cuij of ["ejeCuij", "pjsaltaCuij", "pjcatamarcaCuij", "pjmendozaCuij", "mevCuij"]) setFieldValue(cuij, "");
+		}
 		setFieldValue("judicialPower", power);
 	};
 

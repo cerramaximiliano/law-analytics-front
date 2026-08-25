@@ -139,12 +139,17 @@ export type FolderData = {
 export interface PendingCausa {
 	_id: string;
 	cuij?: string;
+	/** Identificador real de la jurisdicción: Salta "EXP 959839/26", Catamarca CUIJ completo, Mendoza CUIJ. */
+	expedienteId?: string;
 	numero: number;
-	anio: number;
+	anio: number | null;
 	caratula?: string;
 	estado?: string;
 	isPrivate?: boolean;
 	fechaInicio?: string;
+	juzgado?: string;
+	ubicacionActual?: string;
+	tribunalPrimera?: string;
 }
 
 export type PaginationInfo = {

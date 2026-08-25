@@ -417,7 +417,7 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({ open, onClose, folderId, 
 													fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
 												}}
 											>
-												{causa.cuij || `EXP ${causa.numero}/${causa.anio}`}
+												{causa.expedienteId || causa.cuij || `EXP ${causa.numero}${causa.anio ? `/${causa.anio}` : ""}`}
 											</Typography>
 
 											{causa.isPrivate && (
@@ -499,9 +499,16 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({ open, onClose, folderId, 
 												>
 													Exp.{" "}
 													<strong style={{ color: theme.palette.text.primary }}>
-														{causa.numero}/{causa.anio}
+														{causa.numero}
+														{causa.anio ? `/${causa.anio}` : ""}
 													</strong>
+													{causa.expedienteId && causa.cuij && causa.expedienteId !== causa.cuij ? ` · CUIJ ${causa.cuij}` : ""}
 												</Typography>
+												{(causa.juzgado || causa.tribunalPrimera || causa.ubicacionActual) && (
+													<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+														{causa.juzgado || causa.tribunalPrimera || causa.ubicacionActual}
+													</Typography>
+												)}
 												{causa.fechaInicio && (
 													<Stack direction="row" spacing={0.5} alignItems="center">
 														<Calendar size={11} color={theme.palette.text.secondary} />
