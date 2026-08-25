@@ -544,8 +544,8 @@ const AutomaticStep = () => {
 
 				// Establecemos los valores requeridos
 				setFieldValue("folderName", "Pendiente"); // Valor requerido
-				setFieldValue("materia", "No verificado"); // Materia igual al valor de jurisdicción
-				setFieldValue("orderStatus", "No verificado"); // Valor requerido
+				setFieldValue("materia", "Sin definir"); // Materia igual al valor de jurisdicción
+				setFieldValue("orderStatus", "Sin definir"); // Valor requerido
 				setFieldValue("status", "Nueva"); // Valor requerido
 				setFieldValue("description", `Expediente importado desde ${nombreJurisdiccion} - Poder Judicial de la Nación`);
 				setFieldValue("folderFuero", fuero); // Establecemos el fuero según la jurisdicción seleccionada
@@ -677,10 +677,10 @@ const AutomaticStep = () => {
 							setFieldValue("folderName", "Pendiente");
 						}
 						if (!values.materia || values.materia === "") {
-							setFieldValue("materia", "No verificado");
+							setFieldValue("materia", "Sin definir");
 						}
 						if (!values.orderStatus || values.orderStatus === "") {
-							setFieldValue("orderStatus", "No verificado");
+							setFieldValue("orderStatus", "Sin definir");
 						}
 						if (!values.status || values.status === "") {
 							setFieldValue("status", "Nueva");
@@ -752,10 +752,10 @@ const AutomaticStep = () => {
 					setFieldValue("folderName", "Pendiente");
 				}
 				if (!values.materia || values.materia === "") {
-					setFieldValue("materia", "No verificado");
+					setFieldValue("materia", "Sin definir");
 				}
 				if (!values.orderStatus || values.orderStatus === "") {
-					setFieldValue("orderStatus", "No verificado");
+					setFieldValue("orderStatus", "Sin definir");
 				}
 				if (!values.status || values.status === "") {
 					setFieldValue("status", "Nueva");
@@ -816,10 +816,10 @@ const AutomaticStep = () => {
 					setFieldValue("folderName", "Pendiente");
 				}
 				if (!values.materia || values.materia === "") {
-					setFieldValue("materia", "No verificado");
+					setFieldValue("materia", "Sin definir");
 				}
 				if (!values.orderStatus || values.orderStatus === "") {
-					setFieldValue("orderStatus", "No verificado");
+					setFieldValue("orderStatus", "Sin definir");
 				}
 				if (!values.status || values.status === "") {
 					setFieldValue("status", "Nueva");
@@ -883,10 +883,10 @@ const AutomaticStep = () => {
 					setFieldValue("folderName", "Pendiente");
 				}
 				if (!values.materia || values.materia === "") {
-					setFieldValue("materia", "No verificado");
+					setFieldValue("materia", "Sin definir");
 				}
 				if (!values.orderStatus || values.orderStatus === "") {
-					setFieldValue("orderStatus", "No verificado");
+					setFieldValue("orderStatus", "Sin definir");
 				}
 				if (!values.status || values.status === "") {
 					setFieldValue("status", "Nueva");
@@ -950,10 +950,10 @@ const AutomaticStep = () => {
 					setFieldValue("folderName", "Pendiente");
 				}
 				if (!values.materia || values.materia === "") {
-					setFieldValue("materia", "No verificado");
+					setFieldValue("materia", "Sin definir");
 				}
 				if (!values.orderStatus || values.orderStatus === "") {
-					setFieldValue("orderStatus", "No verificado");
+					setFieldValue("orderStatus", "Sin definir");
 				}
 				if (!values.status || values.status === "") {
 					setFieldValue("status", "Nueva");
@@ -1114,8 +1114,7 @@ const AutomaticStep = () => {
 						validateExpedientNumber(values.expedientNumber);
 						validateYear(values.expedientYear);
 					}
-				}
- else if (values.judicialPower === "mendoza") {
+				} else if (values.judicialPower === "mendoza") {
 					if (values.pjmendozaSearchType === "cuij") {
 						validateMendozaCuij(values.pjmendozaCuij);
 					} else {
@@ -1170,7 +1169,7 @@ const AutomaticStep = () => {
 									expedientNumber: true,
 									expedientYear: true,
 							  };
-								} else {
+				} else {
 					touchedFields = {
 						...touched,
 						folderJuris: true,
