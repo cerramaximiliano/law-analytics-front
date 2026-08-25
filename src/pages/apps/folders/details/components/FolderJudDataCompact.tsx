@@ -357,6 +357,34 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 												</Typography>
 											)}
 										</Grid>
+										{/* Ubicación actual: dónde está hoy el expediente según el último
+										    traspaso / la Ficha del portal (la escriben los workers PJN e IOL;
+										    es distinta del juzgado de radicación). Solo lectura. */}
+										{!isEditing &&
+											folder?.judFolder?.currentLocation?.text &&
+											folder.judFolder.currentLocation.text !== (values.judFolder.courtNumber || folder?.juzgado) && (
+												<Grid item xs={12}>
+													<Stack direction="row" spacing={0.5} alignItems="center">
+														<JudgeIcon size={12} variant="Bulk" color={BRAND_BLUE} />
+														<Typography
+															sx={{
+																fontSize: "0.6rem",
+																fontWeight: 600,
+																letterSpacing: "0.08em",
+																textTransform: "uppercase",
+																color: "text.secondary",
+															}}
+														>
+															Ubicación actual
+														</Typography>
+													</Stack>
+													<Typography
+														sx={{ fontSize: "0.85rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em", mt: 0.25 }}
+													>
+														{folder.judFolder.currentLocation.text}
+													</Typography>
+												</Grid>
+											)}
 									</Grid>
 								</Box>
 							)}
