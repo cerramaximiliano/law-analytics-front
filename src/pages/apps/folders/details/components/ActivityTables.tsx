@@ -237,7 +237,14 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	// Carpeta sincronizada (algún *Access presente) vs manual. En sincronizadas el
 	// visor de movimientos reemplaza al "Expediente digital" legacy (que mostraba
 	// los adjuntos como si fueran el expediente) — misma consolidación que PJN.
-	const isSyncedFolder = Boolean(movementsData.pjnAccess || movementsData.mevAccess || movementsData.scbaAccess || movementsData.ejeAccess);
+	const isSyncedFolder = Boolean(
+		movementsData.pjnAccess ||
+			movementsData.mevAccess ||
+			movementsData.scbaAccess ||
+			movementsData.ejeAccess ||
+			movementsData.pjsaltaAccess || movementsData.pjcatamarcaAccess || movementsData.pjmendozaAccess,
+	);
+	const isIolFolder = Boolean(movementsData.pjsaltaAccess || movementsData.pjcatamarcaAccess || movementsData.pjmendozaAccess);
 
 	// En EJE el parser resuelve adjuntos via API pública del portal, pero
 	// solo una minoría de movimientos tiene PDF asociado (en muchas causas
@@ -249,7 +256,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	useEffect(() => {
 		if (
 			!ejeAutoDisabledRef.current &&
-			movementsData.ejeAccess &&
+			(movementsData.ejeAccess || isIolFolder) &&
 			filters.onlyWithDocuments &&
 			movementsData.totalWithLinks === 0 &&
 			!movementsData.isLoading
@@ -258,14 +265,17 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			setFilters((prev: any) => ({ ...prev, onlyWithDocuments: false }));
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [movementsData.ejeAccess, movementsData.totalWithLinks, movementsData.isLoading]);
+	}, [movementsData.ejeAccess, isIolFolder, movementsData.totalWithLinks, movementsData.isLoading]);
 
 	// SCBA recién vinculado pero todavía sin primer scrap: el worker SCBA corre
 	// cada ~5min y hasta que termine no hay movimientos ni causaLastSyncDate.
 	// En esa ventana mostramos un empty state contextual en lugar de tabla vacía.
 	// (Si scrapingProgress está en vuelo, ScrapingProgressBanner ya cubre el caso.)
 	const isScbaFirstSyncPending =
-		!!movementsData.scbaAccess && !movementsData.causaLastSyncDate && (movementsData.movements?.length ?? 0) === 0 && !scrapingProgress;
+		(!!movementsData.scbaAccess || isIolFolder) &&
+		!movementsData.causaLastSyncDate &&
+		(movementsData.movements?.length ?? 0) === 0 &&
+		!scrapingProgress;
 
 	// Load data on mount y cuando cambien los filtros
 	useEffect(() => {
@@ -1455,7 +1465,13 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
 														documentsInThisPage={movementsData.documentsInThisPage}
 														pjnAccess={
-															movementsData.pjnAccess ?? movementsData.mevAccess ?? movementsData.scbaAccess ?? movementsData.ejeAccess
+															movementsData.pjnAccess ??
+															movementsData.mevAccess ??
+															movementsData.scbaAccess ??
+															movementsData.ejeAccess ??
+															movementsData.pjsaltaAccess ??
+															movementsData.pjcatamarcaAccess ??
+															movementsData.pjmendozaAccess
 														}
 														folderName={folderName}
 														highlightMovementId={highlightMovementId}
@@ -2015,7 +2031,13 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
 														documentsInThisPage={movementsData.documentsInThisPage}
 														pjnAccess={
-															movementsData.pjnAccess ?? movementsData.mevAccess ?? movementsData.scbaAccess ?? movementsData.ejeAccess
+															movementsData.pjnAccess ??
+															movementsData.mevAccess ??
+															movementsData.scbaAccess ??
+															movementsData.ejeAccess ??
+															movementsData.pjsaltaAccess ??
+															movementsData.pjcatamarcaAccess ??
+															movementsData.pjmendozaAccess
 														}
 														folderName={folderName}
 														highlightMovementId={highlightMovementId}
