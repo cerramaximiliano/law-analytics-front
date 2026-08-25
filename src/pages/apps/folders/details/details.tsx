@@ -511,7 +511,10 @@ const Details = () => {
 			// IOL-7: el chip refleja el estado real de la vinculación.
 			const iolFailed = folder?.causaAssociationStatus === "failed" || (folder?.causaVerified === true && folder?.causaIsValid === false);
 			const iolPending = !iolFailed && (folder?.causaAssociationStatus === "pending" || folder?.causaVerified === false);
-			state = iolFailed
+			const iolRemoved = folder?.listRemoved === true && folder?.listRemovedSource === "pjsalta";
+			state = iolRemoved
+				? { label: "PJ Salta — Ya no en el portal", accent: STALE_AMBER, icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} /> }
+				: iolFailed
 				? { label: "Vinculación fallida · PJ Salta", accent: theme.palette.error.main, icon: <CloseCircle size={14} variant="Bold" color={theme.palette.error.main} /> }
 				: iolPending
 				? { label: "Pendiente de verificación · PJ Salta", accent: STALE_AMBER, icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} /> }
@@ -520,7 +523,10 @@ const Details = () => {
 			// IOL-7: el chip refleja el estado real de la vinculación.
 			const iolFailed = folder?.causaAssociationStatus === "failed" || (folder?.causaVerified === true && folder?.causaIsValid === false);
 			const iolPending = !iolFailed && (folder?.causaAssociationStatus === "pending" || folder?.causaVerified === false);
-			state = iolFailed
+			const iolRemoved = folder?.listRemoved === true && folder?.listRemovedSource === "pjcatamarca";
+			state = iolRemoved
+				? { label: "PJ Catamarca — Ya no en el portal", accent: STALE_AMBER, icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} /> }
+				: iolFailed
 				? { label: "Vinculación fallida · PJ Catamarca", accent: theme.palette.error.main, icon: <CloseCircle size={14} variant="Bold" color={theme.palette.error.main} /> }
 				: iolPending
 				? { label: "Pendiente de verificación · PJ Catamarca", accent: STALE_AMBER, icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} /> }
@@ -529,7 +535,10 @@ const Details = () => {
 			// IOL-7: el chip refleja el estado real de la vinculación.
 			const iolFailed = folder?.causaAssociationStatus === "failed" || (folder?.causaVerified === true && folder?.causaIsValid === false);
 			const iolPending = !iolFailed && (folder?.causaAssociationStatus === "pending" || folder?.causaVerified === false);
-			state = iolFailed
+			const iolRemoved = folder?.listRemoved === true && folder?.listRemovedSource === "pjmendoza";
+			state = iolRemoved
+				? { label: "PJ Mendoza — Ya no en el portal", accent: STALE_AMBER, icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} /> }
+				: iolFailed
 				? { label: "Vinculación fallida · PJ Mendoza", accent: theme.palette.error.main, icon: <CloseCircle size={14} variant="Bold" color={theme.palette.error.main} /> }
 				: iolPending
 				? { label: "Pendiente de verificación · PJ Mendoza", accent: STALE_AMBER, icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} /> }

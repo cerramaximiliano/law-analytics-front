@@ -492,6 +492,17 @@ const FolderView = memo(({ data }: any) => {
 
 		if (data.eje || data.pjsalta || data.pjcatamarca || data.pjmendoza) {
 			const iolLabel = data.eje ? "EJE" : data.pjsalta ? "PJ Salta" : data.pjcatamarca ? "PJ Catamarca" : "PJ Mendoza";
+			// IOL-8: el portal dejó de listar el expediente (updater, errores consecutivos).
+			if (data.listRemoved === true && ["pjsalta", "pjcatamarca", "pjmendoza"].includes(data.listRemovedSource || "")) {
+				return (
+					<BindingPill
+						label={`${iolLabel} — Ya no en el portal`}
+						accent={STALE_AMBER}
+						icon={<InfoCircle size={14} variant="Bold" color={STALE_AMBER} />}
+						verifyTooltip="El expediente dejó de aparecer en el portal en las últimas actualizaciones. Puede haber sido archivado, reservado o movido de organismo."
+					/>
+				);
+			}
 			// IOL-7: el pill refleja el estado real de la vinculación (antes siempre verde).
 			if (data.causaAssociationStatus === "failed" || (data.causaVerified === true && data.causaIsValid === false)) {
 				return (

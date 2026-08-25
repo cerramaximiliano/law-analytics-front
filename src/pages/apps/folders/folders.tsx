@@ -2732,7 +2732,14 @@ const FoldersLayout = () => {
 						(folder.pjn === true && folder.source === "pjn-login") ||
 						(folder.scba === true && folder.source === "scba-login") ||
 						(folder.mev === true && folder.source === "mev-login");
-					const isListRemoved = isFromMisCausas && (folder.listRemoved === true || (folder.pjn === true && folder.pjnNotFound === true));
+					// IOL-8: para PJ Salta/Catamarca/Mendoza no hay "Mis Causas" — el updater
+					// marca listRemoved cuando el portal repite "no encontrado".
+					const isIolListRemoved =
+						(folder.pjsalta === true || folder.pjcatamarca === true || folder.pjmendoza === true) &&
+						folder.listRemoved === true &&
+						["pjsalta", "pjcatamarca", "pjmendoza"].includes(folder.listRemovedSource || "");
+					const isListRemoved =
+						isIolListRemoved || (isFromMisCausas && (folder.listRemoved === true || (folder.pjn === true && folder.pjnNotFound === true)));
 					// Causa PJN reservada: solo aplica a causas individuales (no
 					// pjn-login). El privacy-checker la marcó tras N fallos consecutivos
 					// del scrape público. listRemoved e isPjnPrivateRestricted son
@@ -2775,8 +2782,11 @@ const FoldersLayout = () => {
 						);
 					}
 					if (isListRemoved) {
+						const IOL_NAMES: Record<string, string> = { pjsalta: "PJ Salta", pjcatamarca: "PJ Catamarca", pjmendoza: "PJ Mendoza" };
 						const source = folder.listRemovedSource ? folder.listRemovedSource.toUpperCase() : "PJN";
-						const tooltipCopy = `Esta causa ya no aparece en tu lista de Mis Causas del portal ${source}. Puede haber sido archivada o desvinculada por el tribunal.`;
+						const tooltipCopy = isIolListRemoved
+							? `El expediente dejó de aparecer en el portal del ${IOL_NAMES[folder.listRemovedSource || ""] || source} en las últimas actualizaciones. Puede haber sido archivado, reservado o movido de organismo.`
+							: `Esta causa ya no aparece en tu lista de Mis Causas del portal ${source}. Puede haber sido archivada o desvinculada por el tribunal.`;
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 								<Tooltip title={value || ""}>
