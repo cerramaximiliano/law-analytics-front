@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Dialog, DialogContent, Button, Stack, Typography, Box, CircularProgress, IconButton, Tooltip, alpha } from "@mui/material";
+import { Alert, Dialog, DialogContent, Button, Stack, Typography, Box, CircularProgress, IconButton, Tooltip, alpha } from "@mui/material";
 import { PopupTransition } from "components/@extended/Transitions";
 import { ArrowRight2, Calendar, CloseCircle, DocumentText, InfoCircle, Lock1, SearchNormal1, TickCircle, Warning2 } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
@@ -25,6 +25,8 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({ open, onClose, folderId, 
 	const [causas, setCausas] = useState<PendingCausa[]>([]);
 	const [searchTerm, setSearchTerm] = useState<string>("");
 	const [causaType, setCausaType] = useState<string | null>(null);
+	// IOL-1: el pivote truncó el sample (pendingCausaIds = 10 de searchTotalResults)
+	const [truncated, setTruncated] = useState<{ total: number | null } | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [selectedCausaId, setSelectedCausaId] = useState<string | null>(null);
 	const [showCloseWarning, setShowCloseWarning] = useState(false);
@@ -48,6 +50,7 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({ open, onClose, folderId, 
 				setCausas(result.causas);
 				setSearchTerm(result.searchTerm || "");
 				setCausaType(result.causaType);
+				setTruncated(result.tooManyResults ? { total: result.searchTotalResults ?? null } : null);
 			} else {
 				setError(result.error || "Error al cargar las causas");
 			}
@@ -227,6 +230,13 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({ open, onClose, folderId, 
 						<Typography sx={{ fontSize: "0.8rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
 							Elegí cuál de los expedientes corresponde a la carpeta {folderName ? <strong>"{folderName}"</strong> : "seleccionada"}.
 						</Typography>
+						{!loading && truncated && (
+							<Alert severity="warning" sx={{ mt: 1, fontSize: "0.8rem", textAlign: "left" }}>
+								La búsqueda es demasiado amplia: se muestran <strong>{causas.length}</strong> de{" "}
+								<strong>{truncated.total ?? "muchas"}</strong> coincidencias. Si tu expediente no está en la lista, cancelá y
+								volvé a vincular la carpeta con un término más preciso (número de expediente o CUIJ).
+							</Alert>
+						)}
 					</Stack>
 					<IconButton
 						onClick={() => !selecting && handleShowCloseWarning("close")}

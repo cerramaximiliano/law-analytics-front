@@ -508,23 +508,32 @@ const Details = () => {
 				icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
 			};
 		} else if (folder?.pjsalta) {
-			state = {
-				label: "Vinculado con PJ Salta",
-				accent: LIVE_GREEN,
-				icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
-			};
+			// IOL-7: el chip refleja el estado real de la vinculación.
+			const iolFailed = folder?.causaAssociationStatus === "failed" || (folder?.causaVerified === true && folder?.causaIsValid === false);
+			const iolPending = !iolFailed && (folder?.causaAssociationStatus === "pending" || folder?.causaVerified === false);
+			state = iolFailed
+				? { label: "Vinculación fallida · PJ Salta", accent: theme.palette.error.main, icon: <CloseCircle size={14} variant="Bold" color={theme.palette.error.main} /> }
+				: iolPending
+				? { label: "Pendiente de verificación · PJ Salta", accent: STALE_AMBER, icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} /> }
+				: { label: "Vinculado con PJ Salta", accent: LIVE_GREEN, icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} /> };
 		} else if (folder?.pjcatamarca) {
-			state = {
-				label: "Vinculado con PJ Catamarca",
-				accent: LIVE_GREEN,
-				icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
-			};
+			// IOL-7: el chip refleja el estado real de la vinculación.
+			const iolFailed = folder?.causaAssociationStatus === "failed" || (folder?.causaVerified === true && folder?.causaIsValid === false);
+			const iolPending = !iolFailed && (folder?.causaAssociationStatus === "pending" || folder?.causaVerified === false);
+			state = iolFailed
+				? { label: "Vinculación fallida · PJ Catamarca", accent: theme.palette.error.main, icon: <CloseCircle size={14} variant="Bold" color={theme.palette.error.main} /> }
+				: iolPending
+				? { label: "Pendiente de verificación · PJ Catamarca", accent: STALE_AMBER, icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} /> }
+				: { label: "Vinculado con PJ Catamarca", accent: LIVE_GREEN, icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} /> };
 		} else if (folder?.pjmendoza) {
-			state = {
-				label: "Vinculado con PJ Mendoza",
-				accent: LIVE_GREEN,
-				icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
-			};
+			// IOL-7: el chip refleja el estado real de la vinculación.
+			const iolFailed = folder?.causaAssociationStatus === "failed" || (folder?.causaVerified === true && folder?.causaIsValid === false);
+			const iolPending = !iolFailed && (folder?.causaAssociationStatus === "pending" || folder?.causaVerified === false);
+			state = iolFailed
+				? { label: "Vinculación fallida · PJ Mendoza", accent: theme.palette.error.main, icon: <CloseCircle size={14} variant="Bold" color={theme.palette.error.main} /> }
+				: iolPending
+				? { label: "Pendiente de verificación · PJ Mendoza", accent: STALE_AMBER, icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} /> }
+				: { label: "Vinculado con PJ Mendoza", accent: LIVE_GREEN, icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} /> };
 		} else if (folder?.previousSyncSource) {
 			// Folder desvinculado via modo "keep" (PJN/SCBA). Bloqueamos la
 			// re-vinculación individual: el matching por fuero+numero+año

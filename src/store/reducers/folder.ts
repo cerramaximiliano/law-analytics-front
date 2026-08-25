@@ -1065,6 +1065,8 @@ export interface PendingCausasResponse {
 	searchTerm: string | null;
 	count: number;
 	error?: string;
+	tooManyResults?: boolean;
+	searchTotalResults?: number | null;
 }
 
 export interface SelectCausaResponse {
@@ -1091,6 +1093,9 @@ export const getPendingCausas =
 					causaType: response.data.data.causaType,
 					searchTerm: response.data.data.searchTerm,
 					count: response.data.data.count,
+					// IOL-1: sample truncado por pivotMaxResults
+					tooManyResults: !!response.data.data.tooManyResults,
+					searchTotalResults: response.data.data.searchTotalResults ?? null,
 				};
 			}
 

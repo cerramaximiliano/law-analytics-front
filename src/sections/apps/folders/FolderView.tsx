@@ -491,6 +491,28 @@ const FolderView = memo(({ data }: any) => {
 		}
 
 		if (data.eje || data.pjsalta || data.pjcatamarca || data.pjmendoza) {
+			const iolLabel = data.eje ? "EJE" : data.pjsalta ? "PJ Salta" : data.pjcatamarca ? "PJ Catamarca" : "PJ Mendoza";
+			// IOL-7: el pill refleja el estado real de la vinculación (antes siempre verde).
+			if (data.causaAssociationStatus === "failed" || (data.causaVerified === true && data.causaIsValid === false)) {
+				return (
+					<BindingPill
+						label={`Vinculación fallida · ${iolLabel}`}
+						accent={theme.palette.error.main}
+						icon={<CloseCircle size={14} variant="Bold" color={theme.palette.error.main} />}
+						verifyTooltip={data.causaAssociationError || "El expediente no se encontró en el portal"}
+					/>
+				);
+			}
+			if (data.causaAssociationStatus === "pending" || data.causaVerified === false) {
+				return (
+					<BindingPill
+						label={`Pendiente de verificación · ${iolLabel}`}
+						accent={STALE_AMBER}
+						icon={<InfoCircle size={14} variant="Bold" color={STALE_AMBER} />}
+						verifyTooltip="El worker todavía no confirmó el expediente en el portal"
+					/>
+				);
+			}
 			const showVerify = data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined);
 			const verifyIcon =
 				data.causaVerified === false ? (
