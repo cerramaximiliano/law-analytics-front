@@ -3062,7 +3062,15 @@ const FoldersLayout = () => {
 										Asociación fallida
 									</Typography>
 								</Box>
-								<Tooltip title="No se pudo vincular la causa - Verifique los datos ingresados">
+								{/* El motivo real lo devuelve el portal y vive en `causaAssociationError`;
+								    hasta ahora el tooltip decía siempre lo mismo. */}
+								<Tooltip
+									title={
+										folder.causaAssociationError && folder.causaAssociationError !== "Error desconocido"
+											? `No se pudo vincular la causa — ${folder.causaAssociationError}`
+											: "No se pudo vincular la causa - Verifique los datos ingresados"
+									}
+								>
 									<Box
 										sx={{
 											display: "inline-flex",

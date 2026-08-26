@@ -64,7 +64,8 @@ const gateMeta: Record<
 		label: "Hay varias coincidencias",
 		title: "Encontramos más de un expediente",
 		description:
-			"El número y año coinciden con varios expedientes en el portal. Necesitamos que elijas cuál es el correcto para empezar a sincronizar.",
+			// No asumir "número y año": muchas búsquedas IOL son por CUIJ.
+			"Tu búsqueda coincide con varios expedientes en el portal. Necesitamos que elijas cuál es el correcto para empezar a sincronizar.",
 		toneColor: "blue",
 		icon: SearchNormal1,
 	},
@@ -147,6 +148,26 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 	}, [inFlight, folder?._id]);
 
 	// Datos legibles del intento ---------------------------------------------
+	// Motivo del fallo tal como lo dejó el worker / el hub (`causaAssociationError`).
+	// Se descarta el placeholder genérico, que no le dice nada al usuario.
+	const motivo = useMemo(() => {
+		const e = folder?.causaAssociationError;
+		if (!e || typeof e !== "string") return null;
+		const limpio = e.trim();
+		return limpio && limpio !== "Error desconocido" ? limpio : null;
+	}, [folder?.causaAssociationError]);
+
+	// El número que el usuario cargó puede estar en judFolder (alta normal), en el
+	// término de búsqueda, o —si nada de eso quedó— embebido en el nombre provisorio
+	// "Pendiente de verificación: <número>".
+	const numeroExpediente = useMemo(() => {
+		const delJud = folder?.judFolder?.numberJudFolder;
+		if (delJud && !/^(PENDING|PIVOT)-/.test(String(delJud))) return delJud;
+		if (folder?.searchTerm) return folder.searchTerm;
+		const m = String(folder?.folderName || "").match(/^Pendiente de verificaci[óo]n:\s*(.+)$/i);
+		return m ? m[1].trim() : null;
+	}, [folder?.judFolder?.numberJudFolder, folder?.searchTerm, folder?.folderName]);
+
 	const knownData = useMemo(() => {
 		const sourceLabel = folder?.pjn
 			? "Poder Judicial de la Nación"
@@ -179,12 +200,16 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 		return [
 			{ label: "Jurisdicción", value: folder?.folderJuris?.label || folder?.folderJuris || null },
 			{ label: "Fuero", value: folder?.folderFuero || null },
-			{ label: "N° de expediente", value: folder?.expedientNumber || null },
-			{ label: "Año", value: folder?.expedientYear || null },
+			// `expedientNumber`/`expedientYear` NO existen en el modelo Folder: estas dos
+			// filas salían siempre vacías y el bloque que se manda a soporte iba sin el
+			// dato más importante. Los valores reales viven en judFolder / searchTerm.
+			{ label: "N° de expediente", value: numeroExpediente },
+			{ label: "CUIJ", value: folder?.judFolder?.cuij || null },
+			{ label: "Lo que buscaste", value: folder?.searchTerm || null },
 			{ label: "Origen", value: sourceLabel },
 			{ label: "Fecha de alta", value: createdAt },
 		].filter((row) => row.value);
-	}, [folder]);
+	}, [folder, numeroExpediente]);
 
 	// Bloque enviado SIEMPRE a soporte. El usuario sólo puede agregar contexto
 	// adicional desde el textarea del modal.
@@ -196,11 +221,12 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 			`ID interno de la carpeta: ${folder?._id ?? "(desconocido)"}`,
 			`Reintentos automáticos usados: ${attempts} de ${MAX_ATTEMPTS}`,
 		];
+		if (motivo) lines.push(`Motivo informado: ${motivo}`);
 		knownData.forEach((row) => {
 			lines.push(`${row.label}: ${row.value}`);
 		});
 		return lines.join("\n");
-	}, [meta.label, folder?._id, knownData, attempts]);
+	}, [meta.label, folder?._id, knownData, attempts, motivo]);
 
 	const handleReverify = async () => {
 		if (!folder?._id || reverifying || inFlight || locked) return;
@@ -409,9 +435,22 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 							>
 								<Stack direction="row" spacing={1} alignItems="flex-start">
 									<InfoCircle size={14} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 3, flexShrink: 0 }} />
-									<Typography sx={{ fontSize: "0.8rem", color: "text.primary", lineHeight: 1.5, textWrap: "pretty" }}>
-										{meta.description}
-									</Typography>
+									<Stack spacing={0.75}>
+										<Typography sx={{ fontSize: "0.8rem", color: "text.primary", lineHeight: 1.5, textWrap: "pretty" }}>
+											{meta.description}
+										</Typography>
+										{/* Motivo real devuelto por el portal. Estaba guardado en la carpeta
+										    y no se mostraba en ninguna superficie: el usuario veía "fallida"
+										    sin saber por qué. */}
+										{motivo && (
+											<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1.5 }}>
+												<Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
+													Motivo informado:
+												</Box>{" "}
+												{motivo}
+											</Typography>
+										)}
+									</Stack>
 								</Stack>
 							</Box>
 
