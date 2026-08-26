@@ -3367,7 +3367,7 @@ const FoldersLayout = () => {
 				// el número propio del portal ("EXP 905878/25", "61009/2007").
 				Header: "Expediente",
 				accessor: "judFolder.numberJudFolder",
-				minWidth: 150,
+				minWidth: 120,
 				Cell: ({ row }: { row: any }) => {
 					const jf = row.original?.judFolder || {};
 					const cuij: string | undefined = jf.cuij;
@@ -3553,10 +3553,10 @@ const FoldersLayout = () => {
 					const dep = typeof juris === "string" ? "" : departamentoDe(juris?.item, label);
 					if (!label) return null;
 					return (
-						<Stack spacing={0}>
+						<Stack spacing={0} sx={{ maxWidth: 180 }}>
 							<Typography variant="body2">{label}</Typography>
 							{dep && (
-								<Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3, maxWidth: 170 }}>
+								<Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
 									{dep}
 								</Typography>
 							)}
