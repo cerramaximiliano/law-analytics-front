@@ -700,608 +700,612 @@
 	"estado": ["Nueva", "En Proceso", "Cerrada", "Pendiente"],
 	"jurisdicciones": [
 		{
-			"item": "Jujuy - San Pedro de Jujuy",
-			"label": "Jujuy"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - Avellaneda-Lanús"
 		},
 		{
-			"item": "Entre Ríos - Distrito Chajarí",
-			"label": "Entre Ríos"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - Azul"
 		},
 		{
-			"item": "Buenos Aires - Necochea",
-			"label": "Buenos Aires"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - Bahía Blanca"
 		},
 		{
-			"item": "Entre Ríos - Distrito San Salvador",
-			"label": "Entre Ríos"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - Dolores"
 		},
 		{
-			"item": "Buenos Aires - Quilmes",
-			"label": "Buenos Aires"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - Junín"
 		},
 		{
-			"item": "Justicia Nacional - Civil y Comercial Federal",
-			"label": "Nacional"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - La Matanza"
 		},
 		{
-			"item": "Tucumán - Centro Judicial Concepción",
-			"label": "Tucumán"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - La Plata"
 		},
 		{
-			"item": "Chaco - 5º Circunscripción - Gral. San Martín",
-			"label": "Chaco"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - Lomas de Zamora"
 		},
 		{
-			"item": "Chubut - Comodoro Rivadavia",
-			"label": "Chubut"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - Mar del Plata"
 		},
 		{
-			"item": "Córdoba - 7º Circunscripción",
-			"label": "Córdoba"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - Mercedes"
 		},
 		{
-			"item": "Jujuy - San Salvador de Jujuy",
-			"label": "Jujuy"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - Moreno-Gral.Rodríguez"
 		},
 		{
-			"item": "Chaco - 4º Circunscripción - Charata",
-			"label": "Chaco"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - Morón"
 		},
 		{
-			"item": "Entre Ríos - Distrito La Paz",
-			"label": "Entre Ríos"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - Necochea"
 		},
 		{
-			"item": "Chaco - 3º Circunscripción - Villa Angela",
-			"label": "Chaco"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - Pergamino"
 		},
 		{
-			"item": "Buenos Aires - Pergamino",
-			"label": "Buenos Aires"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - Quilmes"
 		},
 		{
-			"item": "Entre Ríos - Distrito Federal",
-			"label": "Entre Ríos"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - San Isidro"
 		},
 		{
-			"item": "Santiago del Estero - Jurisdicción Capital",
-			"label": "Santiago del Estero"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - San Martín"
 		},
 		{
-			"item": "La Pampa - 4º Circunscripción - Victorica",
-			"label": "La Pampa"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - San Nicolás"
 		},
 		{
-			"item": "Misiones - 1ª Circunscripción - Posadas",
-			"label": "Misiones"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - Trenquelauquen"
 		},
 		{
-			"item": "Río Negro - 1ª Circunscripción - Viedma",
-			"label": "Río Negro"
+			"label": "Buenos Aires",
+			"item": "Buenos Aires - Zarate-Campana"
 		},
 		{
-			"item": "Tucumán - Juzgados de Paz",
-			"label": "Tucumán"
+			"label": "CABA",
+			"item": "CABA - Contencioso Administrativo y Tributario"
 		},
 		{
-			"item": "Buenos Aires - La Plata",
-			"label": "Buenos Aires"
+			"label": "CABA",
+			"item": "CABA - Penal Contravencional y Faltas"
 		},
 		{
-			"item": "Neuquén - 5º Circunscripción - Chos Malal",
-			"label": "Neuquén"
+			"label": "CABA",
+			"item": "CABA - Tribunal Superior de Justicia"
 		},
 		{
-			"item": "Buenos Aires - La Matanza",
-			"label": "Buenos Aires"
+			"label": "Catamarca",
+			"item": "Catamarca - 1ª Circunscripción - Capital"
 		},
 		{
-			"item": "La Rioja - 2º Circunscripción - Chilecito",
-			"label": "La Rioja"
+			"label": "Catamarca",
+			"item": "Catamarca - 2ª Circunscripción - Andalgalá"
 		},
 		{
-			"item": "Formosa - 3º Circunscripción - Las Lomitas",
-			"label": "Formosa"
+			"label": "Catamarca",
+			"item": "Catamarca - 3ª Circunscripción - Belén"
 		},
 		{
-			"item": "Entre Ríos - Distrito Concordia",
-			"label": "Entre Ríos"
+			"label": "Catamarca",
+			"item": "Catamarca - 4ª Circunscripción - Santa María"
 		},
 		{
-			"item": "Salta - Distrito Orán",
-			"label": "Salta"
+			"label": "Catamarca",
+			"item": "Catamarca - 5ª Circunscripción - Tinogasta"
 		},
 		{
-			"item": "Corrientes - 3º Circunscripción - Curuzú Cuatiá",
-			"label": "Corrientes"
+			"label": "Catamarca",
+			"item": "Catamarca - 6ª Circunscripción - Recreo"
 		},
 		{
-			"item": "Justicia Nacional - Comercial",
-			"label": "Nacional"
+			"label": "Catamarca",
+			"item": "Catamarca - Juzgados de Paz"
 		},
 		{
-			"item": "Justicia Nacional - C.S.J.N",
-			"label": "Nacional"
+			"label": "Chaco",
+			"item": "Chaco - 1ª Circunscripción - Resistencia"
 		},
 		{
-			"item": "San Juan - 1ª Circunscripción - San Juan",
-			"label": "San Juan"
+			"label": "Chaco",
+			"item": "Chaco - 2º Circunscripción - Roque Sáenz Peña"
 		},
 		{
-			"item": "Buenos Aires - San Martín",
-			"label": "Buenos Aires"
+			"label": "Chaco",
+			"item": "Chaco - 3º Circunscripción - Villa Angela"
 		},
 		{
-			"item": "Buenos Aires - Trenquelauquen",
-			"label": "Buenos Aires"
+			"label": "Chaco",
+			"item": "Chaco - 4º Circunscripción - Charata"
 		},
 		{
-			"item": "La Rioja - 1ª Circunscripción - La Rioja",
-			"label": "La Rioja"
+			"label": "Chaco",
+			"item": "Chaco - 5º Circunscripción - Gral. San Martín"
 		},
 		{
-			"item": "Córdoba - 10º Circunscripción",
-			"label": "Córdoba"
+			"label": "Chaco",
+			"item": "Chaco - 6º Circunscripción - Juan José Castelli"
 		},
 		{
-			"item": "La Pampa - 1ª Circunscripción - Santa Rosa",
-			"label": "La Pampa"
+			"label": "Chubut",
+			"item": "Chubut - Comodoro Rivadavia"
 		},
 		{
-			"item": "Corrientes - 4º Circunscripción - Paso de los Libres",
-			"label": "Corrientes"
+			"label": "Chubut",
+			"item": "Chubut - Esquel"
 		},
 		{
-			"item": "Entre Ríos - Distrito Gualeguaychú",
-			"label": "Entre Ríos"
+			"label": "Chubut",
+			"item": "Chubut - Puerto Madryn"
 		},
 		{
-			"item": "Tucumán - Centro Judicial Capital",
-			"label": "Tucumán"
+			"label": "Chubut",
+			"item": "Chubut - Sarmiento"
 		},
 		{
-			"item": "CABA - Contencioso Administrativo y Tributario",
-			"label": "CABA"
+			"label": "Chubut",
+			"item": "Chubut - Trelew"
 		},
 		{
-			"item": "Justicia Nacional - Criminal y Correcional Federal",
-			"label": "Nacional"
+			"label": "Córdoba",
+			"item": "Córdoba - 10º Circunscripción"
 		},
 		{
-			"item": "Santiago del Estero - Jurisdicción La Banda",
-			"label": "Santiago del Estero"
+			"label": "Córdoba",
+			"item": "Córdoba - 1ª Circunscripción"
 		},
 		{
-			"item": "Catamarca - 4ª Circunscripción - Santa María",
-			"label": "Catamarca"
+			"label": "Córdoba",
+			"item": "Córdoba - 2º Circunscripción"
 		},
 		{
-			"item": "Córdoba - 5º Circunscripción",
-			"label": "Córdoba"
+			"label": "Córdoba",
+			"item": "Córdoba - 3º Circunscripción"
 		},
 		{
-			"item": "La Rioja - 5º Circunscripción - Chepes",
-			"label": "La Rioja"
+			"label": "Córdoba",
+			"item": "Córdoba - 4º Circunscripción"
 		},
 		{
-			"item": "Entre Ríos - Distrito Paraná",
-			"label": "Entre Ríos"
+			"label": "Córdoba",
+			"item": "Córdoba - 5º Circunscripción"
 		},
 		{
-			"item": "Santa Fe - 1ª Circunscripción - Santa Fe",
-			"label": "Santa Fe"
+			"label": "Córdoba",
+			"item": "Córdoba - 6º Circunscripción"
 		},
 		{
-			"item": "Chubut - Esquel",
-			"label": "Chubut"
+			"label": "Córdoba",
+			"item": "Córdoba - 7º Circunscripción"
 		},
 		{
-			"item": "Misiones - 4º Circunscripción - Puerto Rico",
-			"label": "Misiones"
+			"label": "Córdoba",
+			"item": "Córdoba - 8º Circunscripción"
 		},
 		{
-			"item": "Neuquén - 4º Circunscripción - S.M. de los Andes-Junín de los Andes-V. La Angostura",
-			"label": "Neuquén"
+			"label": "Córdoba",
+			"item": "Córdoba - 9º Circunscripción"
 		},
 		{
-			"item": "Justicia Nacional - Electoral",
-			"label": "Nacional"
+			"label": "Córdoba",
+			"item": "Córdoba - Capital"
 		},
 		{
-			"item": "Entre Ríos - Distrito Victoria",
-			"label": "Entre Ríos"
+			"label": "Córdoba",
+			"item": "Córdoba - Córdoba (Justicia Federal)"
 		},
 		{
-			"item": "Buenos Aires - Bahía Blanca",
-			"label": "Buenos Aires"
+			"label": "Corrientes",
+			"item": "Corrientes - 1ª Circunscripción - Corrientes"
 		},
 		{
-			"item": "Corrientes - 5º Circunscripción - Santo Tomé",
-			"label": "Corrientes"
+			"label": "Corrientes",
+			"item": "Corrientes - 2º Circunscripción - Goya"
 		},
 		{
-			"item": "Jujuy - Delegaciones Rurales",
-			"label": "Jujuy"
+			"label": "Corrientes",
+			"item": "Corrientes - 3º Circunscripción - Curuzú Cuatiá"
 		},
 		{
-			"item": "Córdoba - 1ª Circunscripción",
-			"label": "Córdoba"
+			"label": "Corrientes",
+			"item": "Corrientes - 4º Circunscripción - Paso de los Libres"
 		},
 		{
-			"item": "Justicia Nacional - Trabajo",
-			"label": "Nacional"
+			"label": "Corrientes",
+			"item": "Corrientes - 5º Circunscripción - Santo Tomé"
 		},
 		{
-			"item": "Río Negro - 3º Circunscripción - S.C. Bariloche",
-			"label": "Río Negro"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito Chajarí"
 		},
 		{
-			"item": "San Juan - Juzgados de Paz Departamentales",
-			"label": "San Juan"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito Colón"
 		},
 		{
-			"item": "Buenos Aires - Mar del Plata",
-			"label": "Buenos Aires"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito Concepción del Uruguay"
 		},
 		{
-			"item": "Corrientes - 2º Circunscripción - Goya",
-			"label": "Corrientes"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito Concordia"
 		},
 		{
-			"item": "Misiones - 3º Circunscripción - El Dorado",
-			"label": "Misiones"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito Federación"
 		},
 		{
-			"item": "Salta - Distrito Tartagal",
-			"label": "Salta"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito Federal"
 		},
 		{
-			"item": "CABA - Penal Contravencional y Faltas",
-			"label": "CABA"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito Feliciano"
 		},
 		{
-			"item": "Mendoza - 2º Circunscripción - San Rafael",
-			"label": "Mendoza"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito Gualeguay"
 		},
 		{
-			"item": "Tucumán - Centro Judicial Monteros",
-			"label": "Tucumán"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito Gualeguaychú"
 		},
 		{
-			"item": "Formosa - 2º Circunscripción - Clorinda",
-			"label": "Formosa"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito La Paz"
 		},
 		{
-			"item": "Justicia Nacional - Criminal y Correccional",
-			"label": "Nacional"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito Nogoyá"
 		},
 		{
-			"item": "Catamarca - 3ª Circunscripción - Belén",
-			"label": "Catamarca"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito Paraná"
 		},
 		{
-			"item": "Neuquén - 2º Circunscripción - Cutral Có",
-			"label": "Neuquén"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito Rosario del Tala"
 		},
 		{
-			"item": "Buenos Aires - Dolores",
-			"label": "Buenos Aires"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito San Salvador"
 		},
 		{
-			"item": "Entre Ríos - Distrito Feliciano",
-			"label": "Entre Ríos"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito Victoria"
 		},
 		{
-			"item": "Santa Cruz - Juzgados de Paz - Zona Norte",
-			"label": "Santa Cruz"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito Villa Paranacito"
 		},
 		{
-			"item": "Buenos Aires - San Nicolás",
-			"label": "Buenos Aires"
+			"label": "Entre Ríos",
+			"item": "Entre Ríos - Distrito Villaguay"
 		},
 		{
-			"item": "Chaco - 2º Circunscripción - Roque Sáenz Peña",
-			"label": "Chaco"
+			"label": "Formosa",
+			"item": "Formosa - 1ª Circunscripción - Formosa"
 		},
 		{
-			"item": "CABA - Tribunal Superior de Justicia",
-			"label": "CABA"
+			"label": "Formosa",
+			"item": "Formosa - 2º Circunscripción - Clorinda"
 		},
 		{
-			"item": "Catamarca - 1ª Circunscripción - Capital",
-			"label": "Catamarca"
+			"label": "Formosa",
+			"item": "Formosa - 3º Circunscripción - Las Lomitas"
 		},
 		{
-			"item": "La Pampa - 3º Circunscripción - General Acha",
-			"label": "La Pampa"
+			"label": "Jujuy",
+			"item": "Jujuy - Delegaciones Rurales"
 		},
 		{
-			"item": "Catamarca - 2ª Circunscripción - Andalgalá",
-			"label": "Catamarca"
+			"label": "Jujuy",
+			"item": "Jujuy - San Pedro de Jujuy"
 		},
 		{
-			"item": "Entre Ríos - Distrito Rosario del Tala",
-			"label": "Entre Ríos"
+			"label": "Jujuy",
+			"item": "Jujuy - San Salvador de Jujuy"
 		},
 		{
-			"item": "Buenos Aires - Azul",
-			"label": "Buenos Aires"
+			"label": "La Pampa",
+			"item": "La Pampa - 1ª Circunscripción - Santa Rosa"
 		},
 		{
-			"item": "Córdoba - Capital",
-			"label": "Córdoba"
+			"label": "La Pampa",
+			"item": "La Pampa - 2º Circunscripción - General Pico"
 		},
 		{
-			"item": "Córdoba - 9º Circunscripción",
-			"label": "Córdoba"
+			"label": "La Pampa",
+			"item": "La Pampa - 3º Circunscripción - General Acha"
 		},
 		{
-			"item": "Buenos Aires - Morón",
-			"label": "Buenos Aires"
+			"label": "La Pampa",
+			"item": "La Pampa - 4º Circunscripción - Victorica"
 		},
 		{
-			"item": "Justicia Nacional - Seguridad Social Federal",
-			"label": "Nacional"
+			"label": "La Rioja",
+			"item": "La Rioja - 1ª Circunscripción - La Rioja"
 		},
 		{
-			"item": "Corrientes - 1ª Circunscripción - Corrientes",
-			"label": "Corrientes"
+			"label": "La Rioja",
+			"item": "La Rioja - 2º Circunscripción - Chilecito"
 		},
 		{
-			"item": "La Rioja - 3º Circunscripción - Chamical",
-			"label": "La Rioja"
+			"label": "La Rioja",
+			"item": "La Rioja - 3º Circunscripción - Chamical"
 		},
 		{
-			"item": "San Luis - 2º Circunscripción",
-			"label": "San Luis"
+			"label": "La Rioja",
+			"item": "La Rioja - 4º Circunscripción - Aimogasta"
 		},
 		{
-			"item": "Córdoba - 6º Circunscripción",
-			"label": "Córdoba"
+			"label": "La Rioja",
+			"item": "La Rioja - 5º Circunscripción - Chepes"
 		},
 		{
-			"item": "Río Negro - Juzgados de Paz",
-			"label": "Río Negro"
+			"label": "Mendoza",
+			"item": "Mendoza - 1ª Circunscripción - Mendoza"
 		},
 		{
-			"item": "Buenos Aires - Zarate-Campana",
-			"label": "Buenos Aires"
+			"label": "Mendoza",
+			"item": "Mendoza - 2º Circunscripción - San Rafael"
 		},
 		{
-			"item": "Río Negro - 4º Circunscripción - Cipolletti",
-			"label": "Río Negro"
+			"label": "Mendoza",
+			"item": "Mendoza - 3º Circunscripción - San Martín"
 		},
 		{
-			"item": "Justicia Nacional - Contencioso Adm. Federal",
-			"label": "Nacional"
+			"label": "Mendoza",
+			"item": "Mendoza - 4º Circunscripción - Tunuyán"
 		},
 		{
-			"item": "Justicia Nacional - Casación Penal",
-			"label": "Nacional"
+			"label": "Misiones",
+			"item": "Misiones - 1ª Circunscripción - Posadas"
 		},
 		{
-			"item": "Tierra del Fuego - Distrito Judicial Sur",
-			"label": "Tierra del Fuego"
+			"label": "Misiones",
+			"item": "Misiones - 2º Circunscripción - Oberá"
 		},
 		{
-			"item": "Santiago del Estero - Jurisdicción Monte Quemado",
-			"label": "Santiago del Estero"
+			"label": "Misiones",
+			"item": "Misiones - 3º Circunscripción - El Dorado"
 		},
 		{
-			"item": "Córdoba - 2º Circunscripción",
-			"label": "Córdoba"
+			"label": "Misiones",
+			"item": "Misiones - 4º Circunscripción - Puerto Rico"
 		},
 		{
-			"item": "Córdoba - Córdoba (Justicia Federal)",
-			"label": "Córdoba"
+			"label": "Nacional",
+			"item": "Justicia Federal - Civil y Comercial Federal"
 		},
 		{
-			"item": "Chaco - 6º Circunscripción - Juan José Castelli",
-			"label": "Chaco"
+			"label": "Nacional",
+			"item": "Justicia Federal - Contencioso Adm. Federal"
 		},
 		{
-			"item": "Buenos Aires - Lomas de Zamora",
-			"label": "Buenos Aires"
+			"label": "Nacional",
+			"item": "Justicia Federal - Seguridad Social Federal"
 		},
 		{
-			"item": "Santa Cruz - Juzgados de Paz - Zona Sur",
-			"label": "Santa Cruz"
+			"label": "Nacional",
+			"item": "Justicia Nacional - C.S.J.N"
 		},
 		{
-			"item": "Río Negro - 2º Circunscripción - General Roca",
-			"label": "Río Negro"
+			"label": "Nacional",
+			"item": "Justicia Nacional - Casación Penal"
 		},
 		{
-			"item": "Entre Ríos - Distrito Nogoyá",
-			"label": "Entre Ríos"
+			"label": "Nacional",
+			"item": "Justicia Nacional - Civil"
 		},
 		{
-			"item": "Entre Ríos - Distrito Concepción del Uruguay",
-			"label": "Entre Ríos"
+			"label": "Nacional",
+			"item": "Justicia Nacional - Comercial"
 		},
 		{
-			"item": "Entre Ríos - Distrito Villaguay",
-			"label": "Entre Ríos"
+			"label": "Nacional",
+			"item": "Justicia Nacional - Criminal y Correccional"
 		},
 		{
-			"item": "Santiago del Estero - Jurisdicción Termas de Río Hondo",
-			"label": "Santiago del Estero"
+			"label": "Nacional",
+			"item": "Justicia Nacional - Criminal y Correcional Federal"
 		},
 		{
-			"item": "San Luis - 3º Circunscripción",
-			"label": "San Luis"
+			"label": "Nacional",
+			"item": "Justicia Nacional - Electoral"
 		},
 		{
-			"item": "Mendoza - 3º Circunscripción - San Martín",
-			"label": "Mendoza"
+			"label": "Nacional",
+			"item": "Justicia Nacional - Penal Económico"
 		},
 		{
-			"item": "Chubut - Trelew",
-			"label": "Chubut"
+			"label": "Nacional",
+			"item": "Justicia Nacional - Trabajo"
 		},
 		{
-			"item": "Santa Fe - 5º Circunscripción - Rafaela",
-			"label": "Santa Fe"
+			"label": "Nacional",
+			"item": "Justicia Nacional - Tribunal Fiscal de la Nación"
 		},
 		{
-			"item": "Entre Ríos - Distrito Federación",
-			"label": "Entre Ríos"
+			"label": "Neuquén",
+			"item": "Neuquén - 1ª Circunscripción - Neuquén"
 		},
 		{
-			"item": "Santa Cruz - 2º Circunscripción",
-			"label": "Santa Cruz"
+			"label": "Neuquén",
+			"item": "Neuquén - 2º Circunscripción - Cutral Có"
 		},
 		{
-			"item": "Formosa - 1ª Circunscripción - Formosa",
-			"label": "Formosa"
+			"label": "Neuquén",
+			"item": "Neuquén - 3º Circunscripción - Zapala"
 		},
 		{
-			"item": "Justicia Nacional - Civil",
-			"label": "Nacional"
+			"label": "Neuquén",
+			"item": "Neuquén - 4º Circunscripción - S.M. de los Andes-Junín de los Andes-V. La Angostura"
 		},
 		{
-			"item": "Córdoba - 3º Circunscripción",
-			"label": "Córdoba"
+			"label": "Neuquén",
+			"item": "Neuquén - 5º Circunscripción - Chos Malal"
 		},
 		{
-			"item": "Salta - Distrito Centro",
-			"label": "Salta"
+			"label": "Río Negro",
+			"item": "Río Negro - 1ª Circunscripción - Viedma"
 		},
 		{
-			"item": "La Rioja - 4º Circunscripción - Aimogasta",
-			"label": "La Rioja"
+			"label": "Río Negro",
+			"item": "Río Negro - 2º Circunscripción - General Roca"
 		},
 		{
-			"item": "Córdoba - 8º Circunscripción",
-			"label": "Córdoba"
+			"label": "Río Negro",
+			"item": "Río Negro - 3º Circunscripción - S.C. Bariloche"
 		},
 		{
-			"item": "Santiago del Estero - Jurisdicción Frías",
-			"label": "Santiago del Estero"
+			"label": "Río Negro",
+			"item": "Río Negro - 4º Circunscripción - Cipolletti"
 		},
 		{
-			"item": "Misiones - 2º Circunscripción - Oberá",
-			"label": "Misiones"
+			"label": "Río Negro",
+			"item": "Río Negro - Juzgados de Paz"
 		},
 		{
-			"item": "San Luis - 1ª Circunscripción",
-			"label": "San Luis"
+			"label": "Salta",
+			"item": "Salta - Distrito Centro"
 		},
 		{
-			"item": "Córdoba - 4º Circunscripción",
-			"label": "Córdoba"
+			"label": "Salta",
+			"item": "Salta - Distrito Orán"
 		},
 		{
-			"item": "Mendoza - 1ª Circunscripción - Mendoza",
-			"label": "Mendoza"
+			"label": "Salta",
+			"item": "Salta - Distrito Sur"
 		},
 		{
-			"item": "Santa Fe - 4º Circunscripción - Reconquista",
-			"label": "Santa Fe"
+			"label": "Salta",
+			"item": "Salta - Distrito Tartagal"
 		},
 		{
-			"item": "Buenos Aires - Junín",
-			"label": "Buenos Aires"
+			"label": "San Juan",
+			"item": "San Juan - 1ª Circunscripción - San Juan"
 		},
 		{
-			"item": "Buenos Aires - San Isidro",
-			"label": "Buenos Aires"
+			"label": "San Juan",
+			"item": "San Juan - 2º Circunscripción - Jáchal"
 		},
 		{
-			"item": "Salta - Distrito Sur",
-			"label": "Salta"
+			"label": "San Juan",
+			"item": "San Juan - Juzgados de Paz Departamentales"
 		},
 		{
-			"item": "Chubut - Sarmiento",
-			"label": "Chubut"
+			"label": "San Luis",
+			"item": "San Luis - 1ª Circunscripción"
 		},
 		{
-			"item": "Entre Ríos - Distrito Villa Paranacito",
-			"label": "Entre Ríos"
+			"label": "San Luis",
+			"item": "San Luis - 2º Circunscripción"
 		},
 		{
-			"item": "Entre Ríos - Distrito Colón",
-			"label": "Entre Ríos"
+			"label": "San Luis",
+			"item": "San Luis - 3º Circunscripción"
 		},
 		{
-			"item": "Entre Ríos - Distrito Gualeguay",
-			"label": "Entre Ríos"
+			"label": "Santa Cruz",
+			"item": "Santa Cruz - 1ª Circunscripción"
 		},
 		{
-			"item": "Chubut - Puerto Madryn",
-			"label": "Chubut"
+			"label": "Santa Cruz",
+			"item": "Santa Cruz - 2º Circunscripción"
 		},
 		{
-			"item": "La Pampa - 2º Circunscripción - General Pico",
-			"label": "La Pampa"
+			"label": "Santa Cruz",
+			"item": "Santa Cruz - Juzgados de Paz - Zona Norte"
 		},
 		{
-			"item": "Chaco - 1ª Circunscripción - Resistencia",
-			"label": "Chaco"
+			"label": "Santa Cruz",
+			"item": "Santa Cruz - Juzgados de Paz - Zona Sur"
 		},
 		{
-			"item": "Neuquén - 1ª Circunscripción - Neuquén",
-			"label": "Neuquén"
+			"label": "Santa Fe",
+			"item": "Santa Fe - 1ª Circunscripción - Santa Fe"
 		},
 		{
-			"item": "San Juan - 2º Circunscripción - Jáchal",
-			"label": "San Juan"
+			"label": "Santa Fe",
+			"item": "Santa Fe - 2º Circunscripción - Rosario"
 		},
 		{
-			"item": "Buenos Aires - Mercedes",
-			"label": "Buenos Aires"
+			"label": "Santa Fe",
+			"item": "Santa Fe - 3º Circunscripción - Venado Tuerto"
 		},
 		{
-			"item": "Justicia Nacional - Penal Económico",
-			"label": "Nacional"
+			"label": "Santa Fe",
+			"item": "Santa Fe - 4º Circunscripción - Reconquista"
 		},
 		{
-			"item": "Catamarca - Juzgados de Paz",
-			"label": "Catamarca"
+			"label": "Santa Fe",
+			"item": "Santa Fe - 5º Circunscripción - Rafaela"
 		},
 		{
-			"item": "Santa Cruz - 1ª Circunscripción",
-			"label": "Santa Cruz"
+			"label": "Santiago del Estero",
+			"item": "Santiago del Estero - Jurisdicción Añatuya"
 		},
 		{
-			"item": "Santiago del Estero - Jurisdicción Añatuya",
-			"label": "Santiago del Estero"
+			"label": "Santiago del Estero",
+			"item": "Santiago del Estero - Jurisdicción Capital"
 		},
 		{
-			"item": "Justicia Nacional - Tribunal Fiscal de la Nación",
-			"label": "Nacional"
+			"label": "Santiago del Estero",
+			"item": "Santiago del Estero - Jurisdicción Frías"
 		},
 		{
-			"item": "Mendoza - 4º Circunscripción - Tunuyán",
-			"label": "Mendoza"
+			"label": "Santiago del Estero",
+			"item": "Santiago del Estero - Jurisdicción La Banda"
 		},
 		{
-			"item": "Buenos Aires - Moreno-Gral.Rodríguez",
-			"label": "Buenos Aires"
+			"label": "Santiago del Estero",
+			"item": "Santiago del Estero - Jurisdicción Monte Quemado"
 		},
 		{
-			"item": "Tierra del Fuego - Distrito Judicial Norte",
-			"label": "Tierra del Fuego"
+			"label": "Santiago del Estero",
+			"item": "Santiago del Estero - Jurisdicción Termas de Río Hondo"
 		},
 		{
-			"item": "Catamarca - 5ª Circunscripción - Tinogasta",
-			"label": "Catamarca"
+			"label": "Tierra del Fuego",
+			"item": "Tierra del Fuego - Distrito Judicial Norte"
 		},
 		{
-			"item": "Catamarca - 6ª Circunscripción - Recreo",
-			"label": "Catamarca"
+			"label": "Tierra del Fuego",
+			"item": "Tierra del Fuego - Distrito Judicial Sur"
 		},
 		{
-			"item": "Santa Fe - 2º Circunscripción - Rosario",
-			"label": "Santa Fe"
+			"label": "Tucumán",
+			"item": "Tucumán - Centro Judicial Capital"
 		},
 		{
-			"item": "Santa Fe - 3º Circunscripción - Venado Tuerto",
-			"label": "Santa Fe"
+			"label": "Tucumán",
+			"item": "Tucumán - Centro Judicial Concepción"
 		},
 		{
-			"item": "Neuquén - 3º Circunscripción - Zapala",
-			"label": "Neuquén"
+			"label": "Tucumán",
+			"item": "Tucumán - Centro Judicial Monteros"
+		},
+		{
+			"label": "Tucumán",
+			"item": "Tucumán - Juzgados de Paz"
 		}
 	],
 	"condicionFiscal": ["Monotributo", "Responsable Inscripto", "Exento", "Empleado", "Jubilado", "Desocupado"],
