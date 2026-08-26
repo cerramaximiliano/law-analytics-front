@@ -2987,37 +2987,67 @@ const FoldersLayout = () => {
 
 					// Si hay selección pendiente de múltiples causas, mostrar chip de seleccionar
 					if (folder.causaAssociationStatus === "pending_selection") {
+						// La celda mostraba solo el chip: en la tabla de atención se perdía qué
+						// se había buscado y cuántos candidatos había, y había que entrar al
+						// detalle para enterarse. 2026-08-26.
+						const candidatos = Array.isArray(folder.pendingCausaIds) ? folder.pendingCausaIds.length : 0;
+						const buscado = folder.searchTerm || folder.judFolder?.numberJudFolder || folder.judFolder?.cuij;
 						return (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<Box
-									onClick={(e) => {
-										e.stopPropagation();
-										setCausaSelectorFolder({ id: folder._id, name: folder.folderName || folder.searchTerm || "" });
-										setCausaSelectorOpen(true);
-									}}
-									sx={{
-										display: "inline-flex",
-										alignItems: "center",
-										gap: 0.625,
-										px: 0.875,
-										py: 0.25,
-										borderRadius: 0.75,
-										bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
-										border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
-										cursor: "pointer",
-										transition: "background-color 0.15s ease, border-color 0.15s ease",
-										"&:hover": {
-											bgcolor: alpha(STALE_AMBER, isDark ? 0.22 : 0.14),
-											borderColor: alpha(STALE_AMBER, isDark ? 0.42 : 0.32),
-										},
-									}}
+							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={0.5}>
+								<Stack spacing={0.25} sx={{ minWidth: 0 }}>
+									<Box
+										onClick={(e) => {
+											e.stopPropagation();
+											setCausaSelectorFolder({ id: folder._id, name: folder.folderName || folder.searchTerm || "" });
+											setCausaSelectorOpen(true);
+										}}
+										sx={{
+											display: "inline-flex",
+											alignItems: "center",
+											gap: 0.625,
+											px: 0.875,
+											py: 0.25,
+											borderRadius: 0.75,
+											bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
+											border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+											cursor: "pointer",
+											transition: "background-color 0.15s ease, border-color 0.15s ease",
+											"&:hover": {
+												bgcolor: alpha(STALE_AMBER, isDark ? 0.22 : 0.14),
+												borderColor: alpha(STALE_AMBER, isDark ? 0.42 : 0.32),
+											},
+										}}
+									>
+										<Warning2 size={12} variant="Bulk" color={STALE_AMBER} />
+										<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
+											Seleccionar expediente
+										</Typography>
+									</Box>
+									{(buscado || candidatos > 0) && (
+										<Typography
+											noWrap
+											sx={{ fontSize: "0.66rem", color: "text.secondary", lineHeight: 1.3 }}
+											title={buscado ? `Buscaste ${buscado}` : undefined}
+										>
+											{buscado ? `Buscaste ${buscado}` : ""}
+											{buscado && candidatos > 0 ? " · " : ""}
+											{candidatos > 0
+												? folder.tooManyResults
+													? `${candidatos} de ${folder.searchTotalResults ?? "muchos"} coincidencias`
+													: `${candidatos} coincidencia${candidatos === 1 ? "" : "s"}`
+												: ""}
+										</Typography>
+									)}
+								</Stack>
+								<Tooltip
+									title={
+										folder.tooManyResults
+											? `La búsqueda devolvió ${
+													folder.searchTotalResults ?? "demasiados"
+											  } expedientes: se muestran los primeros ${candidatos}. Conviene refinar el número.`
+											: "Se encontraron múltiples expedientes - Haz clic para seleccionar"
+									}
 								>
-									<Warning2 size={12} variant="Bulk" color={STALE_AMBER} />
-									<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
-										Seleccionar expediente
-									</Typography>
-								</Box>
-								<Tooltip title="Se encontraron múltiples expedientes - Haz clic para seleccionar">
 									<IconButton
 										size="small"
 										onClick={(e) => {
@@ -3042,26 +3072,34 @@ const FoldersLayout = () => {
 					// Si la asociación falló, mostrar chip de error
 					if (folder.causaAssociationStatus === "failed") {
 						return (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<Box
-									sx={{
-										display: "inline-flex",
-										alignItems: "center",
-										gap: 0.625,
-										px: 0.875,
-										py: 0.25,
-										borderRadius: 0.75,
-										bgcolor: alpha(theme.palette.error.main, isDark ? 0.16 : 0.1),
-										border: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.32 : 0.22)}`,
-									}}
-								>
-									<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: theme.palette.error.main }} />
-									<Typography
-										sx={{ fontSize: "0.68rem", fontWeight: 600, color: theme.palette.error.main, letterSpacing: "0.01em", lineHeight: 1 }}
+							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={0.5}>
+								<Stack spacing={0.25} sx={{ minWidth: 0 }}>
+									<Box
+										sx={{
+											display: "inline-flex",
+											alignItems: "center",
+											gap: 0.625,
+											px: 0.875,
+											py: 0.25,
+											borderRadius: 0.75,
+											bgcolor: alpha(theme.palette.error.main, isDark ? 0.16 : 0.1),
+											border: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.32 : 0.22)}`,
+										}}
 									>
-										Asociación fallida
-									</Typography>
-								</Box>
+										<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: theme.palette.error.main }} />
+										<Typography
+											sx={{ fontSize: "0.68rem", fontWeight: 600, color: theme.palette.error.main, letterSpacing: "0.01em", lineHeight: 1 }}
+										>
+											Asociación fallida
+										</Typography>
+									</Box>
+									{/* Sin esto había que entrar al detalle para saber qué se había buscado. */}
+									{(folder.searchTerm || folder.judFolder?.numberJudFolder) && (
+										<Typography noWrap sx={{ fontSize: "0.66rem", color: "text.secondary", lineHeight: 1.3 }}>
+											Buscaste {folder.searchTerm || folder.judFolder?.numberJudFolder}
+										</Typography>
+									)}
+								</Stack>
 								{/* El motivo real lo devuelve el portal y vive en `causaAssociationError`;
 								    hasta ahora el tooltip decía siempre lo mismo. */}
 								<Tooltip

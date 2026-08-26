@@ -18,8 +18,6 @@ import {
 	Box,
 	Divider,
 	TextField,
-	Checkbox,
-	FormControlLabel,
 	CircularProgress,
 } from "@mui/material";
 import { PopupTransition } from "components/@extended/Transitions";
@@ -28,6 +26,7 @@ import { useTheme } from "@mui/material/styles";
 import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
 import { linkFolderToPJBA } from "store/reducers/folder";
+import OverwriteNotice from "./OverwriteNotice";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 import mevWorkersService, { NavigationCode } from "api/workersMev";
 
@@ -37,6 +36,8 @@ interface LinkToPJBuenosAiresProps {
 	onBack?: () => void;
 	folderId: string;
 	folderName: string;
+	/** Carpeta actual: se usa para avisar qué datos propios se van a reemplazar. */
+	folder?: any;
 }
 
 const customInputStyles = {
@@ -52,7 +53,7 @@ const customInputStyles = {
 	},
 };
 
-const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName }: LinkToPJBuenosAiresProps) => {
+const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, folder }: LinkToPJBuenosAiresProps) => {
 	const theme = useTheme();
 	const [expedientNumber, setExpedientNumber] = useState("");
 	const [expedientYear, setExpedientYear] = useState("");
@@ -692,15 +693,7 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName }: L
 							</Grid>
 
 							<Grid item xs={12}>
-								<FormControlLabel
-									control={<Checkbox checked={overwriteData} onChange={(e) => setOverwriteData(e.target.checked)} color="primary" />}
-									label={
-										<Typography variant="body2">
-											Sobrescribir datos actuales de la causa (carátula, juzgado y número de expediente) con los datos obtenidos del Poder
-											Judicial
-										</Typography>
-									}
-								/>
+								<OverwriteNotice checked={overwriteData} onChange={setOverwriteData} folder={folder} target="mev" />
 							</Grid>
 
 							<Grid item xs={12}>

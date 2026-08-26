@@ -48,6 +48,8 @@ import FolderJudDataImproved from "./components/FolderJudDataImproved";
 import ActivityTables from "./components/ActivityTables";
 import HistorialTab from "./components/HistorialTab";
 import LinkToJudicialPower from "sections/apps/folders/LinkToJudicialPower";
+import UnlinkFolderDialog from "sections/apps/folders/UnlinkFolderDialog";
+import LinkToPJIol, { PortalIol } from "sections/apps/folders/LinkToPJIol";
 import LinkToPJBuenosAires from "sections/apps/folders/LinkToPJBuenosAires";
 import LinkToPJCaba from "sections/apps/folders/LinkToPJCaba";
 import NavigationControls from "./components/NavigationControls";
@@ -113,6 +115,11 @@ function a11yProps(index: number) {
 	};
 }
 
+// Sistemas cuyo vínculo es por número de expediente (portal público): se pueden
+// re-vincular desde la propia carpeta. PJN, MEV y SCBA van por credenciales y se
+// gestionan desde Perfil → Cuentas Judiciales.
+const RELINKABLE_SOURCES = ["eje", "pjsalta", "pjcatamarca", "pjmendoza"];
+
 const Details = () => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
@@ -120,6 +127,8 @@ const Details = () => {
 	const [viewMode, setViewMode] = useState<"compact" | "detailed">("compact");
 	const isDetailedView = viewMode === "detailed";
 	const [openLinkJudicial, setOpenLinkJudicial] = useState(false);
+	const [openUnlink, setOpenUnlink] = useState(false);
+	const [iolPortal, setIolPortal] = useState<PortalIol | null>(null);
 	const [openLinkPJBA, setOpenLinkPJBA] = useState(false);
 	const [openLinkPJCaba, setOpenLinkPJCaba] = useState(false);
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
@@ -139,6 +148,16 @@ const Details = () => {
 
 	// Optimized selectors with specific state slices
 	const folder = useSelector((state: StateType) => state.folder.folder);
+	// Sistema del que se desvincula, para el copy del diálogo.
+	const origenVinculo = folder?.eje
+		? "EJE"
+		: folder?.pjsalta
+		? "PJ Salta"
+		: folder?.pjcatamarca
+		? "PJ Catamarca"
+		: folder?.pjmendoza
+		? "PJ Mendoza"
+		: "el portal judicial";
 	const isLoader = useSelector((state: StateType) => state.folder.isLoader);
 	const contacts = useSelector((state: StateType) => state.contacts.contacts);
 	const userId = useSelector((state: StateType) => state.auth.user?._id);
@@ -506,6 +525,9 @@ const Details = () => {
 				label: "Vinculado con EJE",
 				accent: LIVE_GREEN,
 				icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
+				// El pill es el control del ciclo de vida del vínculo: acá se desvincula.
+				onClick: () => setOpenUnlink(true),
+				tooltip: "Hacé clic para desvincular esta carpeta del expediente",
 			};
 		} else if (folder?.pjsalta) {
 			// IOL-7: el chip refleja el estado real de la vinculación.
@@ -515,34 +537,97 @@ const Details = () => {
 			state = iolRemoved
 				? { label: "PJ Salta — Ya no en el portal", accent: STALE_AMBER, icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} /> }
 				: iolFailed
-				? { label: "Vinculación fallida · PJ Salta", accent: theme.palette.error.main, icon: <CloseCircle size={14} variant="Bold" color={theme.palette.error.main} /> }
+				? {
+						label: "Vinculación fallida · PJ Salta",
+						accent: theme.palette.error.main,
+						icon: <CloseCircle size={14} variant="Bold" color={theme.palette.error.main} />,
+				  }
 				: iolPending
-				? { label: "Pendiente de verificación · PJ Salta", accent: STALE_AMBER, icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} /> }
-				: { label: "Vinculado con PJ Salta", accent: LIVE_GREEN, icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} /> };
+				? {
+						label: "Pendiente de verificación · PJ Salta",
+						accent: STALE_AMBER,
+						icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} />,
+				  }
+				: {
+						label: "Vinculado con PJ Salta",
+						accent: LIVE_GREEN,
+						icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
+						// El pill es el control del ciclo de vida del vínculo: acá se desvincula.
+						onClick: () => setOpenUnlink(true),
+						tooltip: "Hacé clic para desvincular esta carpeta del expediente",
+				  };
 		} else if (folder?.pjcatamarca) {
 			// IOL-7: el chip refleja el estado real de la vinculación.
 			const iolFailed = folder?.causaAssociationStatus === "failed" || (folder?.causaVerified === true && folder?.causaIsValid === false);
 			const iolPending = !iolFailed && (folder?.causaAssociationStatus === "pending" || folder?.causaVerified === false);
 			const iolRemoved = folder?.listRemoved === true && folder?.listRemovedSource === "pjcatamarca";
 			state = iolRemoved
-				? { label: "PJ Catamarca — Ya no en el portal", accent: STALE_AMBER, icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} /> }
+				? {
+						label: "PJ Catamarca — Ya no en el portal",
+						accent: STALE_AMBER,
+						icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} />,
+				  }
 				: iolFailed
-				? { label: "Vinculación fallida · PJ Catamarca", accent: theme.palette.error.main, icon: <CloseCircle size={14} variant="Bold" color={theme.palette.error.main} /> }
+				? {
+						label: "Vinculación fallida · PJ Catamarca",
+						accent: theme.palette.error.main,
+						icon: <CloseCircle size={14} variant="Bold" color={theme.palette.error.main} />,
+				  }
 				: iolPending
-				? { label: "Pendiente de verificación · PJ Catamarca", accent: STALE_AMBER, icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} /> }
-				: { label: "Vinculado con PJ Catamarca", accent: LIVE_GREEN, icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} /> };
+				? {
+						label: "Pendiente de verificación · PJ Catamarca",
+						accent: STALE_AMBER,
+						icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} />,
+				  }
+				: {
+						label: "Vinculado con PJ Catamarca",
+						accent: LIVE_GREEN,
+						icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
+						// El pill es el control del ciclo de vida del vínculo: acá se desvincula.
+						onClick: () => setOpenUnlink(true),
+						tooltip: "Hacé clic para desvincular esta carpeta del expediente",
+				  };
 		} else if (folder?.pjmendoza) {
 			// IOL-7: el chip refleja el estado real de la vinculación.
 			const iolFailed = folder?.causaAssociationStatus === "failed" || (folder?.causaVerified === true && folder?.causaIsValid === false);
 			const iolPending = !iolFailed && (folder?.causaAssociationStatus === "pending" || folder?.causaVerified === false);
 			const iolRemoved = folder?.listRemoved === true && folder?.listRemovedSource === "pjmendoza";
 			state = iolRemoved
-				? { label: "PJ Mendoza — Ya no en el portal", accent: STALE_AMBER, icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} /> }
+				? {
+						label: "PJ Mendoza — Ya no en el portal",
+						accent: STALE_AMBER,
+						icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} />,
+				  }
 				: iolFailed
-				? { label: "Vinculación fallida · PJ Mendoza", accent: theme.palette.error.main, icon: <CloseCircle size={14} variant="Bold" color={theme.palette.error.main} /> }
+				? {
+						label: "Vinculación fallida · PJ Mendoza",
+						accent: theme.palette.error.main,
+						icon: <CloseCircle size={14} variant="Bold" color={theme.palette.error.main} />,
+				  }
 				: iolPending
-				? { label: "Pendiente de verificación · PJ Mendoza", accent: STALE_AMBER, icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} /> }
-				: { label: "Vinculado con PJ Mendoza", accent: LIVE_GREEN, icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} /> };
+				? {
+						label: "Pendiente de verificación · PJ Mendoza",
+						accent: STALE_AMBER,
+						icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} />,
+				  }
+				: {
+						label: "Vinculado con PJ Mendoza",
+						accent: LIVE_GREEN,
+						icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
+						// El pill es el control del ciclo de vida del vínculo: acá se desvincula.
+						onClick: () => setOpenUnlink(true),
+						tooltip: "Hacé clic para desvincular esta carpeta del expediente",
+				  };
+		} else if (folder?.previousSyncSource && RELINKABLE_SOURCES.includes(folder.previousSyncSource)) {
+			// EJE y los portales IOL son públicos: se vinculan por número de
+			// expediente, así que re-vincular es seguro y no necesita credenciales.
+			state = {
+				label: "Desvinculada — volver a vincular",
+				accent: STALE_AMBER,
+				icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
+				tooltip: "Esta carpeta conserva todos sus datos pero ya no se sincroniza. Hacé clic para vincularla a un expediente.",
+				onClick: handleOpenLinkJudicial,
+			};
 		} else if (folder?.previousSyncSource) {
 			// Folder desvinculado via modo "keep" (PJN/SCBA). Bloqueamos la
 			// re-vinculación individual: el matching por fuero+numero+año
@@ -1155,9 +1240,35 @@ const Details = () => {
 					</TabPanel>
 				</Box>
 
+				{id && folder && (
+					<UnlinkFolderDialog
+						open={openUnlink}
+						onClose={() => setOpenUnlink(false)}
+						folderId={id}
+						folderName={folder.folderName}
+						origen={origenVinculo}
+					/>
+				)}
+
+				{id && folder && iolPortal && (
+					<LinkToPJIol
+						open={!!iolPortal}
+						onCancel={() => setIolPortal(null)}
+						onBack={() => {
+							setIolPortal(null);
+							handleOpenLinkJudicial();
+						}}
+						folderId={id}
+						folderName={folder.folderName}
+						folder={folder}
+						portal={iolPortal}
+					/>
+				)}
+
 				{/* LinkToJudicialPower Modal */}
 				{id && folder && (
 					<LinkToJudicialPower
+						onSelectIol={(portal) => setIolPortal(portal)}
 						openLink={openLinkJudicial}
 						onCancelLink={handleCloseLinkJudicial}
 						folderId={id}
@@ -1165,12 +1276,14 @@ const Details = () => {
 						onSelectBuenosAires={handleOpenLinkPJBA}
 						onSelectCaba={handleOpenLinkPJCaba}
 						folderJurisLabel={folder.folderJuris?.label}
+						folder={folder}
 					/>
 				)}
 
 				{/* LinkToPJBuenosAires Modal */}
 				{id && folder && (
 					<LinkToPJBuenosAires
+						folder={folder}
 						open={openLinkPJBA}
 						onCancel={handleCloseLinkPJBA}
 						onBack={() => {
@@ -1185,6 +1298,7 @@ const Details = () => {
 				{/* LinkToPJCaba Modal */}
 				{id && folder && (
 					<LinkToPJCaba
+						folder={folder}
 						open={openLinkPJCaba}
 						onCancel={handleCloseLinkPJCaba}
 						onBack={() => {

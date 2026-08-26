@@ -16,8 +16,6 @@ import {
 	SelectChangeEvent,
 	Box,
 	TextField,
-	Checkbox,
-	FormControlLabel,
 	CircularProgress,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
@@ -26,6 +24,9 @@ import { DocumentUpload, ArrowLeft2, ArrowRight2, ExportSquare, InfoCircle, Tick
 import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
 import { linkFolderToCausa } from "store/reducers/folder";
+import OverwriteNotice from "./OverwriteNotice";
+import logoPJCatamarca from "assets/images/logos/logo_pj_catamarca.png";
+import logoPJMendoza from "assets/images/logos/logo_pj_mendoza.png";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import PjnGuardedButton from "components/PjnGuardedButton";
@@ -45,7 +46,21 @@ interface LinkToJudicialPowerProps {
 	// undefined / vacía, se muestran las 3 opciones (folders legacy o sin
 	// jurisdicción declarada).
 	folderJurisLabel?: string;
+	/** Carpeta actual: se usa para avisar qué datos propios se van a reemplazar. */
+	folder?: any;
+	/** Abre el modal de vinculación de un portal IOL (Salta, Catamarca, Mendoza). */
+	onSelectIol?: (portal: "pjsalta" | "pjcatamarca" | "pjmendoza") => void;
 }
+
+// Mismos assets que el wizard de alta (judicialPowerSelection.tsx) y la landing.
+const LOGO_SALTA =
+	"https://res.cloudinary.com/dqyoeolib/image/upload/v1779137783/ChatGPT_Image_18_may_2026__05_52_35_p.m.-removebg-preview_bngpqd.png";
+
+const IOL_CARDS: { portal: "pjsalta" | "pjcatamarca" | "pjmendoza"; juris: string; title: string; logo: string }[] = [
+	{ portal: "pjsalta", juris: "Salta", title: "Poder Judicial de la Provincia de Salta", logo: LOGO_SALTA },
+	{ portal: "pjcatamarca", juris: "Catamarca", title: "Poder Judicial de la Provincia de Catamarca", logo: logoPJCatamarca },
+	{ portal: "pjmendoza", juris: "Mendoza", title: "Poder Judicial de la Provincia de Mendoza", logo: logoPJMendoza },
+];
 
 const LOGO_EJE = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
 const LOGO_PJN = "https://res.cloudinary.com/dqyoeolib/image/upload/v1746884259/xndhymcmzv3kk0f62v0y.png";
@@ -67,6 +82,8 @@ const LinkToJudicialPower = ({
 	onSelectBuenosAires,
 	onSelectCaba,
 	folderJurisLabel,
+	folder,
+	onSelectIol,
 }: LinkToJudicialPowerProps) => {
 	// Si el folder tiene jurisdicción declarada, solo mostrar la tarjeta
 	// correspondiente. Sin jurisdicción → mostrar las 3 (legacy).
@@ -537,6 +554,27 @@ const LinkToJudicialPower = ({
 									description="Sistema EJE — buscá por CUIJ o número/año"
 								/>
 							)}
+
+							{/* Portales IOL: públicos, se vinculan por número de expediente o CUIJ.
+							    Antes no estaban acá, así que una carpeta manual no podía engancharse
+							    a un expediente de Salta, Catamarca o Mendoza. */}
+							{IOL_CARDS.filter((c) => !folderJurisLabel || folderJurisLabel === c.juris).map((c) => (
+								<PowerCard
+									key={c.portal}
+									onClick={() => {
+										if (onSelectIol) {
+											onCancelLink();
+											onSelectIol(c.portal);
+										}
+									}}
+									logoBg="#FFFFFF"
+									logoSrc={c.logo}
+									logoAlt={c.title}
+									hasLogoBorder
+									title={c.title}
+									description="Portal público — buscá por número de expediente o CUIJ"
+								/>
+							))}
 						</Stack>
 					</DialogContent>
 
@@ -733,28 +771,7 @@ const LinkToJudicialPower = ({
 								</Grid>
 							</Grid>
 
-							{/* Checkbox sobrescribir */}
-							<FormControlLabel
-								sx={{ m: 0, alignItems: "flex-start" }}
-								control={
-									<Checkbox
-										checked={overwriteData}
-										onChange={(e) => setOverwriteData(e.target.checked)}
-										size="small"
-										sx={{
-											color: alpha(BRAND_BLUE, 0.5),
-											"&.Mui-checked": { color: BRAND_BLUE },
-											pt: 0,
-										}}
-									/>
-								}
-								label={
-									<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em", lineHeight: 1.5, ml: 0.5 }}>
-										Sobrescribir datos actuales de la causa (carátula, juzgado y número de expediente) con los datos obtenidos del Poder
-										Judicial.
-									</Typography>
-								}
-							/>
+							<OverwriteNotice checked={overwriteData} onChange={setOverwriteData} folder={folder} target="pjn" accent={BRAND_BLUE} />
 
 							<InlineBanner accent={BRAND_BLUE} icon={<InfoCircle size={16} variant="Bulk" />}>
 								Al vincular esta causa, se descargará y actualizará automáticamente la información desde el sistema del Poder Judicial de la

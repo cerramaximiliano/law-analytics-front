@@ -22,13 +22,32 @@ import { DocumentUpload, ArrowLeft2 } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
-import { linkFolderToEJE } from "store/reducers/folder";
+import { linkFolderToCausa } from "store/reducers/folder";
 import OverwriteNotice from "./OverwriteNotice";
+import logoPJCatamarca from "assets/images/logos/logo_pj_catamarca.png";
+import logoPJMendoza from "assets/images/logos/logo_pj_mendoza.png";
 import ejeWorkersService from "api/workersEje";
 
-const LOGO_EJE = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
+// Mismos assets que el wizard de alta (judicialPowerSelection.tsx) y la landing.
+const LOGO_SALTA =
+	"https://res.cloudinary.com/dqyoeolib/image/upload/v1779137783/ChatGPT_Image_18_may_2026__05_52_35_p.m.-removebg-preview_bngpqd.png";
 
-interface LinkToPJCabaProps {
+export type PortalIol = "pjsalta" | "pjcatamarca" | "pjmendoza";
+
+// Los tres portales IOL comparten formulario: número de expediente o CUIJ.
+const PORTALES: Record<PortalIol, { nombre: string; flag: PortalIol; logo: string; ejemploNumero: string; ejemploCuij: string }> = {
+	pjsalta: { nombre: "PJ Salta", flag: "pjsalta", logo: LOGO_SALTA, ejemploNumero: "959839", ejemploCuij: "17-00959839-0" },
+	pjcatamarca: {
+		nombre: "PJ Catamarca",
+		flag: "pjcatamarca",
+		logo: logoPJCatamarca,
+		ejemploNumero: "568",
+		ejemploCuij: "J-03-00021075-6/2025-0",
+	},
+	pjmendoza: { nombre: "PJ Mendoza", flag: "pjmendoza", logo: logoPJMendoza, ejemploNumero: "10721", ejemploCuij: "13-08171798-7" },
+};
+
+interface LinkToPJIolProps {
 	open: boolean;
 	onCancel: () => void;
 	onBack?: () => void;
@@ -36,6 +55,7 @@ interface LinkToPJCabaProps {
 	folderName: string;
 	/** Carpeta actual: se usa para avisar qué datos propios se van a reemplazar. */
 	folder?: any;
+	portal: PortalIol;
 }
 
 const customInputStyles = {
@@ -51,7 +71,8 @@ const customInputStyles = {
 	},
 };
 
-const LinkToPJCaba = ({ open, onCancel, onBack, folderId, folderName, folder }: LinkToPJCabaProps) => {
+const LinkToPJIol = ({ open, onCancel, onBack, folderId, folderName, folder, portal }: LinkToPJIolProps) => {
+	const cfg = PORTALES[portal];
 	const theme = useTheme();
 	const [searchType, setSearchType] = useState<"expediente" | "cuij">("expediente");
 	const [cuij, setCuij] = useState("");
@@ -161,20 +182,22 @@ const LinkToPJCaba = ({ open, onCancel, onBack, folderId, folderName, folder }: 
 		setError("");
 
 		try {
-			const linkData =
+			const linkData: any =
 				searchType === "cuij"
 					? { cuij, overwrite: overwriteData }
 					: { number: expedientNumber, year: expedientYear, overwrite: overwriteData };
+			// El hub distingue el portal por un flag booleano, igual que pjn/mev/eje.
+			linkData[cfg.flag] = true;
 
-			const result = await dispatch(linkFolderToEJE(folderId, linkData));
+			const result: any = await dispatch(linkFolderToCausa(folderId, linkData));
 
 			if (result.success) {
 				setLoading(false);
 				setSuccess(true);
 
-				let message = result.message || "Causa vinculada exitosamente con el Poder Judicial de CABA";
+				let message = result.message || `Causa vinculada con ${cfg.nombre}`;
 				if (result.causaInfo?.associationStatus === "pending") {
-					message = "Causa EJE vinculada. Pendiente de verificación en el sistema judicial.";
+					message = `Causa de ${cfg.nombre} vinculada. Pendiente de verificación en el portal.`;
 				}
 
 				enqueueSnackbar(message, {
@@ -283,7 +306,7 @@ const LinkToPJCaba = ({ open, onCancel, onBack, folderId, folderName, folder }: 
 					<Stack direction="row" alignItems="center" spacing={1}>
 						<DocumentUpload size={24} color={theme.palette.primary.main} />
 						<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
-							Vincular con Poder Judicial de CABA
+							Vincular con {cfg.nombre}
 						</Typography>
 					</Stack>
 					<Typography variant="body2" color="textSecondary">
@@ -309,8 +332,8 @@ const LinkToPJCaba = ({ open, onCancel, onBack, folderId, folderName, folder }: 
 							}}
 						>
 							<img
-								src={LOGO_EJE}
-								alt="EJE - Expediente Judicial Electrónico"
+								src={cfg.logo}
+								alt={cfg.nombre}
 								style={{
 									maxHeight: "100%",
 									maxWidth: "100%",
@@ -346,7 +369,7 @@ const LinkToPJCaba = ({ open, onCancel, onBack, folderId, folderName, folder }: 
 					)}
 
 					<Grid item xs={12}>
-						<Alert severity="info">La causa debe ser de acceso público en el sistema EJE.</Alert>
+						<Alert severity="info">La causa debe ser de acceso público en el {cfg.nombre}.</Alert>
 					</Grid>
 
 					<Grid item xs={12}>
@@ -436,13 +459,12 @@ const LinkToPJCaba = ({ open, onCancel, onBack, folderId, folderName, folder }: 
 					)}
 
 					<Grid item xs={12}>
-						<OverwriteNotice checked={overwriteData} onChange={setOverwriteData} folder={folder} target="eje" />
+						<OverwriteNotice checked={overwriteData} onChange={setOverwriteData} folder={folder} target="iol" />
 					</Grid>
 
 					<Grid item xs={12}>
 						<Alert severity="warning">
-							Al vincular esta causa, se descargará y actualizará automáticamente la información desde el sistema EJE de la Ciudad de Buenos
-							Aires.
+							Al vincular esta causa, se descargará y actualizará automáticamente la información desde el portal de {cfg.nombre}.
 						</Alert>
 					</Grid>
 				</Grid>
@@ -478,4 +500,4 @@ const LinkToPJCaba = ({ open, onCancel, onBack, folderId, folderName, folder }: 
 	);
 };
 
-export default LinkToPJCaba;
+export default LinkToPJIol;

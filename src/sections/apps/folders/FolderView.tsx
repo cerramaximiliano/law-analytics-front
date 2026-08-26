@@ -840,9 +840,11 @@ const FolderView = memo(({ data }: any) => {
 					onSelectBuenosAires={handleOpenLinkPJBA}
 					onSelectCaba={handleOpenLinkPJCaba}
 					folderJurisLabel={data.folderJuris?.label}
+					folder={data}
 				/>
 
 				<LinkToPJBuenosAires
+					folder={data}
 					open={openLinkPJBA}
 					onCancel={handleCancelLinkPJBA}
 					onBack={() => {
@@ -854,6 +856,7 @@ const FolderView = memo(({ data }: any) => {
 				/>
 
 				<LinkToPJCaba
+					folder={data}
 					open={openLinkPJCaba}
 					onCancel={handleCancelLinkPJCaba}
 					onBack={() => {

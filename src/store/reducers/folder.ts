@@ -912,8 +912,48 @@ export const resetFoldersState = () => ({
 });
 
 // Vincular carpeta con causa judicial
+/**
+ * Desvincula la carpeta de su causa CONSERVÁNDOLA con todo su contenido.
+ * Aplica a EJE y a los portales IOL, cuyo vínculo es por expediente; PJN, MEV y
+ * SCBA se desvinculan por credenciales desde el perfil.
+ */
+export const unlinkFolderFromCausa = (folderId: string) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_FOLDER_LOADING });
+		const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/folders/unlink-causa/${folderId}`);
+
+		if (response.data.success) {
+			dispatch({ type: UPDATE_FOLDER, payload: response.data.data });
+			return { success: true, message: response.data.message, folder: response.data.data };
+		}
+		return { success: false, message: response.data.message || "No se pudo desvincular la carpeta." };
+	} catch (error) {
+		const errorMessage = axios.isAxiosError(error)
+			? error.response?.data?.message || "Error al desvincular la carpeta."
+			: "Error desconocido al desvincular la carpeta.";
+		return { success: false, message: errorMessage };
+	}
+};
+
 export const linkFolderToCausa =
-	(folderId: string, linkData: { pjnCode: string; number: string; year: string; overwrite?: boolean; pjn?: boolean }) =>
+	(
+		folderId: string,
+		linkData: {
+			pjnCode?: string;
+			number?: string;
+			year?: string;
+			overwrite?: boolean;
+			pjn?: boolean;
+			mev?: boolean;
+			eje?: boolean;
+			cuij?: string;
+			navigationCode?: string;
+			// Portales IOL: se manda uno solo en true.
+			pjsalta?: boolean;
+			pjcatamarca?: boolean;
+			pjmendoza?: boolean;
+		},
+	) =>
 	async (dispatch: Dispatch) => {
 		try {
 			dispatch({ type: SET_FOLDER_LOADING });
