@@ -482,8 +482,11 @@ function ReactTable({
 		{ label: "Fecha cierre", key: "finalDateFolder" },
 		{ label: "Monto", key: "amount" },
 		{ label: "Descripción", key: "description" },
-		{ label: "Nro. Expediente", key: "expedientNumber" },
-		{ label: "Año Expediente", key: "expedientYear" },
+		// "Nro. Expediente"/"Año Expediente" salían de folder.expedientNumber y
+		// folder.expedientYear, que NO existen en el modelo: eran dos columnas
+		// siempre vacías, y además duplicaban a "Nº expediente" (numberJudFolder),
+		// que sí tiene dato. Mismo campo fantasma que había en la vista de
+		// verificación pendiente — 2026-08-26.
 		{ label: "Origen", key: "source" },
 	];
 
@@ -502,8 +505,6 @@ function ReactTable({
 			finalDateFolder: folder.finalDateFolder || "",
 			amount: folder.amount ?? "",
 			description: folder.description || "",
-			expedientNumber: folder.expedientNumber || "",
-			expedientYear: folder.expedientYear || "",
 			source: folder.source || (folder.pjn ? "PJN" : "manual"),
 		}));
 	}, [selectedFlatRows, data]);
