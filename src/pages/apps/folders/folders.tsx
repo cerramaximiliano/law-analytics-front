@@ -3554,11 +3554,9 @@ const FoldersLayout = () => {
 					if (!label) return null;
 					return (
 						<Stack spacing={0}>
-							<Typography variant="body2" sx={{ whiteSpace: "nowrap" }}>
-								{label}
-							</Typography>
+							<Typography variant="body2">{label}</Typography>
 							{dep && (
-								<Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+								<Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3, maxWidth: 170 }}>
 									{dep}
 								</Typography>
 							)}
