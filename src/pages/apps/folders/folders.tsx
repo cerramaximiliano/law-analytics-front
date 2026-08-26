@@ -226,6 +226,9 @@ interface ReactTableProps extends Props {
 	jurisdiccionFilter?: string;
 	onJurisdiccionFilterChange?: (event: SelectChangeEvent<string>) => void;
 	uniqueJurisdicciones?: string[];
+	fueroFilter?: string;
+	onFueroFilterChange?: (event: SelectChangeEvent<string>) => void;
+	uniqueFueros?: string[];
 	handleDeleteSelected?: (selectedRows: any[]) => void;
 	onBarWidthMeasured?: (width: number) => void;
 }
@@ -266,6 +269,9 @@ function ReactTable({
 	jurisdiccionFilter = "all",
 	onJurisdiccionFilterChange,
 	uniqueJurisdicciones = [],
+	fueroFilter = "all",
+	onFueroFilterChange,
+	uniqueFueros = [],
 	onBarWidthMeasured,
 	disableRowNavigation = false,
 	disableRowSelection = false,
@@ -361,8 +367,9 @@ function ReactTable({
 		if (parteFilter !== "all") count++;
 		if (movimientosFilter !== "all") count++;
 		if (jurisdiccionFilter !== "all") count++;
+		if (fueroFilter !== "all") count++;
 		return count;
-	}, [folderTypeFilter, statusFilter, parteFilter, movimientosFilter, jurisdiccionFilter]);
+	}, [folderTypeFilter, statusFilter, parteFilter, movimientosFilter, jurisdiccionFilter, fueroFilter]);
 
 	const filterTypes = useMemo(() => renderFilterTypes, []);
 	const sortBy = { id: "folderName", desc: false };
@@ -1187,6 +1194,21 @@ function ReactTable({
 											</Select>
 										</FormControl>
 									)}
+									{/* Filtro por Fuero (valores presentes en las carpetas del usuario) */}
+									{onFueroFilterChange && uniqueFueros.length > 0 && (
+										<FormControl size="small" sx={{ minWidth: 150 }}>
+											<Select id="fuero-filter" displayEmpty value={fueroFilter} onChange={onFueroFilterChange} sx={filterSelectSx}>
+												<MenuItem value="all">
+													<Typography variant="body2">Fuero: Todos</Typography>
+												</MenuItem>
+												{uniqueFueros.map((fuero) => (
+													<MenuItem key={fuero} value={fuero}>
+														<Typography variant="body2">{fuero}</Typography>
+													</MenuItem>
+												))}
+											</Select>
+										</FormControl>
+									)}
 								</Stack>
 							</Box>
 						</Collapse>
@@ -1913,6 +1935,7 @@ const FoldersLayout = () => {
 	const [parteFilter, setParteFilter] = useState<string>("all");
 	const [movimientosFilter, setMovimientosFilter] = useState<"all" | "today" | "week" | "month" | "none">("all");
 	const [jurisdiccionFilter, setJurisdiccionFilter] = useState<string>("all");
+	const [fueroFilter, setFueroFilter] = useState<string>("all");
 
 	// Estado para alinear la barra de carpetas con los botones de la toolbar
 	const [barWidth, setBarWidth] = useState<number | undefined>(undefined);
@@ -2026,6 +2049,14 @@ const FoldersLayout = () => {
 		return Array.from(jurisdicciones).sort();
 	}, [verifiedFolders]);
 
+	const uniqueFueros = useMemo(() => {
+		const fueros = new Set<string>();
+		verifiedFolders.forEach((folder: any) => {
+			if (folder.folderFuero) fueros.add(folder.folderFuero);
+		});
+		return Array.from(fueros).sort();
+	}, [verifiedFolders]);
+
 	// Filtrar carpetas verificadas por todos los filtros
 	const filteredVerifiedFolders = useMemo(() => {
 		return verifiedFolders.filter((folder: any) => {
@@ -2077,6 +2108,11 @@ const FoldersLayout = () => {
 				return false;
 			}
 
+			// Filtro por fuero
+			if (fueroFilter !== "all" && folder.folderFuero !== fueroFilter) {
+				return false;
+			}
+
 			// Filtro por movimientos recientes
 			if (movimientosFilter !== "all") {
 				const lastMovement = folder.lastMovementDate ? dayjs(folder.lastMovementDate) : null;
@@ -2100,7 +2136,7 @@ const FoldersLayout = () => {
 
 			return true;
 		});
-	}, [verifiedFolders, folderTypeFilter, statusFilter, parteFilter, jurisdiccionFilter, movimientosFilter]);
+	}, [verifiedFolders, folderTypeFilter, statusFilter, parteFilter, jurisdiccionFilter, fueroFilter, movimientosFilter]);
 
 	// Efecto para la carga inicial y cuando cambia el equipo activo
 	useEffect(() => {
@@ -2559,6 +2595,10 @@ const FoldersLayout = () => {
 
 	const handleJurisdiccionFilterChange = useCallback((event: SelectChangeEvent<string>) => {
 		setJurisdiccionFilter(event.target.value);
+	}, []);
+
+	const handleFueroFilterChange = useCallback((event: SelectChangeEvent<string>) => {
+		setFueroFilter(event.target.value);
 	}, []);
 
 	const handleUnarchiveSelected = useCallback(
@@ -3867,6 +3907,9 @@ const FoldersLayout = () => {
 								jurisdiccionFilter={jurisdiccionFilter}
 								onJurisdiccionFilterChange={handleJurisdiccionFilterChange}
 								uniqueJurisdicciones={uniqueJurisdicciones}
+								fueroFilter={fueroFilter}
+								onFueroFilterChange={handleFueroFilterChange}
+								uniqueFueros={uniqueFueros}
 								onBarWidthMeasured={setBarWidth}
 							/>
 						</ScrollX>

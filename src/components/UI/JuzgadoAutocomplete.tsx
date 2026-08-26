@@ -21,17 +21,25 @@ const JuzgadoAutocomplete = ({ options, loading, disabled, placeholder, name, si
 	const [field] = useField(name);
 	const helper = useField(name)[2];
 
+	// Permisivo: el juzgado que escribió el worker (PJN/IOL/EJE) puede no estar
+	// en la lista de juzgados de la jurisdicción (nombre distinto, organismo
+	// nuevo). Sin esto el campo aparecía vacío en edición y guardar lo borraba.
+	// Se agrega como opción sintética al principio para que se vea y se conserve.
+	const currentValue = typeof field.value === "string" ? field.value.trim() : "";
+	const currentInOptions = !!currentValue && options.some((opt) => opt.organismo === currentValue);
+	const effectiveOptions = currentValue && !currentInOptions ? [{ _id: "__current__", organismo: currentValue }, ...options] : options;
+
 	return (
 		<Autocomplete
 			fullWidth
 			size={size}
-			options={options}
+			options={effectiveOptions}
 			getOptionLabel={(option) => option.organismo || ""}
 			noOptionsText={loading ? "Cargando..." : "No hay juzgados disponibles"}
 			isOptionEqualToValue={(option, value) => option._id === value?._id}
 			loading={loading}
-			disabled={disabled || loading}
-			value={options.find((opt) => opt.organismo === field.value) || null}
+			disabled={(disabled && !currentValue) || loading}
+			value={effectiveOptions.find((opt) => opt.organismo === field.value) || null}
 			onChange={(_e, value) => helper.setValue(value?.organismo || "")}
 			sx={{
 				"& .MuiInputBase-input": {
