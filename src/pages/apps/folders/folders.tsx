@@ -86,6 +86,7 @@ import {
 	SearchStatus1,
 	Folder2,
 	Warning2,
+	Lock1,
 	Filter,
 	ArrowUp2,
 	ArrowDown2,
@@ -2805,45 +2806,67 @@ const FoldersLayout = () => {
 						["pjsalta", "pjcatamarca", "pjmendoza"].includes(folder.listRemovedSource || "");
 					const isListRemoved =
 						isIolListRemoved || (isFromMisCausas && (folder.listRemoved === true || (folder.pjn === true && folder.pjnNotFound === true)));
-					// Causa PJN reservada: solo aplica a causas individuales (no
-					// pjn-login). El privacy-checker la marcó tras N fallos consecutivos
-					// del scrape público. listRemoved e isPjnPrivateRestricted son
-					// mutuamente excluyentes por construcción (uno requiere pjn-login,
-					// el otro lo excluye), pero por las dudas evaluamos primero la
-					// privada por ser más severa.
-					const isPjnPrivateRestricted = folder.pjn === true && folder.causaIsPrivate === true && folder.source !== "pjn-login";
+					// Privacidad PJN (F2, 2026-08-25). Tres situaciones que antes la lista no
+					// distinguía (solo el detalle):
+					//  - revocada: carpeta de Mis Causas (pjn-login) cuya credencial ya no cubre
+					//    la causa reservada → el detalle bloquea (403 CAUSA_RESERVED).
+					//  - reservada con acceso: causa privada pero cubierta por la credencial
+					//    del usuario → ve todo; solo se le avisa que es reservada.
+					//  - reservada sin acceso: causa individual (no pjn-login) marcada privada
+					//    por el privacy-checker o sin cobertura → consulta pública restringida.
+					const isPjnReservedCovered = folder.pjn === true && folder.causaIsPrivate === true && folder.causaCredentialCovered === true;
+					const isPjnRevoked = folder.pjn === true && folder.source === "pjn-login" && folder.causaCredentialCovered === false;
+					const isPjnPrivateRestricted =
+						folder.pjn === true &&
+						folder.source !== "pjn-login" &&
+						!isPjnReservedCovered &&
+						(folder.causaIsPrivate === true || folder.causaCredentialCovered === false);
+					const renderPrivacyRow = (tooltip: string, icon: React.ReactNode, hoverBg: string) => (
+						<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
+							<Tooltip title={value || ""}>
+								<span
+									style={{
+										display: "-webkit-box",
+										WebkitLineClamp: 2,
+										WebkitBoxOrient: "vertical",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+										flex: 1,
+									}}
+								>
+									{formatFolderName(value, 50)}
+								</span>
+							</Tooltip>
+							<Tooltip title={tooltip}>
+								<IconButton
+									size="small"
+									onClick={(e) => e.stopPropagation()}
+									sx={{ padding: 0.5, "&:hover": { backgroundColor: hoverBg } }}
+								>
+									{icon}
+								</IconButton>
+							</Tooltip>
+						</Stack>
+					);
+					if (isPjnRevoked) {
+						return renderPrivacyRow(
+							"Acceso restringido — el tribunal reservó esta causa y ya no figura entre las asignadas a tu credencial PJN. El acceso se restablece solo si vuelve a aparecer en tu listado de Mis Causas.",
+							<Lock1 size={16} variant="Bold" color={STALE_AMBER} />,
+							"warning.lighter",
+						);
+					}
+					if (isPjnReservedCovered) {
+						return renderPrivacyRow(
+							"Causa reservada por el tribunal — accedés a sus movimientos a través de tu credencial PJN vinculada.",
+							<Lock1 size={16} variant="Bold" color={LIVE_GREEN} />,
+							"success.lighter",
+						);
+					}
 					if (isPjnPrivateRestricted) {
-						return (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<Tooltip title={value || ""}>
-									<span
-										style={{
-											display: "-webkit-box",
-											WebkitLineClamp: 2,
-											WebkitBoxOrient: "vertical",
-											overflow: "hidden",
-											textOverflow: "ellipsis",
-											flex: 1,
-										}}
-									>
-										{formatFolderName(value, 50)}
-									</span>
-								</Tooltip>
-								<Tooltip title="Causa reservada — el tribunal restringió la consulta web pública. El sistema sigue verificando si vuelve a estar accesible.">
-									<IconButton
-										size="small"
-										onClick={(e) => e.stopPropagation()}
-										sx={{
-											padding: 0.5,
-											"&:hover": {
-												backgroundColor: "error.lighter",
-											},
-										}}
-									>
-										<Warning2 size={16} variant="Bold" color="#EF4444" />
-									</IconButton>
-								</Tooltip>
-							</Stack>
+						return renderPrivacyRow(
+							"Causa reservada — el tribunal restringió la consulta web pública. El sistema sigue verificando si vuelve a estar accesible.",
+							<Warning2 size={16} variant="Bold" color="#EF4444" />,
+							"error.lighter",
 						);
 					}
 					if (isListRemoved) {

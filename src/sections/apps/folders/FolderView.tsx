@@ -13,7 +13,19 @@ import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 
 // assets
-import { Calendar, FolderOpen, Profile, Clock, NoteText, ExportSquare, TickCircle, CloseCircle, InfoCircle, Warning2 } from "iconsax-react";
+import {
+	Calendar,
+	FolderOpen,
+	Profile,
+	Clock,
+	NoteText,
+	ExportSquare,
+	TickCircle,
+	CloseCircle,
+	InfoCircle,
+	Warning2,
+	Lock1,
+} from "iconsax-react";
 import { memo, useState } from "react";
 import dayjs from "utils/dayjs-config";
 
@@ -45,9 +57,19 @@ const FolderView = memo(({ data }: any) => {
 	const listRemovedCopyPjn =
 		"Esta causa no fue encontrada en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal.";
 
-	const isPjnPrivateRestricted = data.pjn === true && data.causaIsPrivate === true && data.source !== "pjn-login";
+	// Privacidad PJN (F2): mismo criterio que la lista y el detalle.
+	const isPjnReservedCovered = data.pjn === true && data.causaIsPrivate === true && data.causaCredentialCovered === true;
+	const isPjnRevoked = data.pjn === true && data.source === "pjn-login" && data.causaCredentialCovered === false;
+	const isPjnPrivateRestricted =
+		data.pjn === true &&
+		data.source !== "pjn-login" &&
+		!isPjnReservedCovered &&
+		(data.causaIsPrivate === true || data.causaCredentialCovered === false);
 	const privateRestrictedCopyPjn =
 		"Causa reservada — el tribunal restringió la consulta web pública. El sistema sigue verificando si vuelve a estar accesible.";
+	const privateCoveredCopyPjn = "Causa reservada por el tribunal — accedés a sus movimientos a través de tu credencial PJN vinculada.";
+	const revokedCopyPjn =
+		"Acceso restringido — el tribunal reservó esta causa y ya no figura entre las asignadas a tu credencial PJN. El acceso se restablece solo si vuelve a aparecer en tu listado de Mis Causas.";
 
 	const { canVinculateFolders } = useSubscription();
 	const scbaCredError = useScbaCredentialError();
@@ -355,11 +377,21 @@ const FolderView = memo(({ data }: any) => {
 
 	const renderBinding = () => {
 		if (data.pjn) {
-			const accent = isPjnPrivateRestricted ? theme.palette.error.main : isListRemovedPjn ? STALE_AMBER : LIVE_GREEN;
-			const label = isPjnPrivateRestricted ? "PJN — Causa reservada" : isListRemovedPjn ? "PJN — Ya no en la lista" : "Vinculado con PJN";
+			const accent = isPjnPrivateRestricted ? theme.palette.error.main : isPjnRevoked || isListRemovedPjn ? STALE_AMBER : LIVE_GREEN;
+			const label = isPjnPrivateRestricted
+				? "PJN — Causa reservada"
+				: isPjnRevoked
+				? "PJN — Acceso restringido"
+				: isPjnReservedCovered
+				? "PJN — Reservada (con acceso)"
+				: isListRemovedPjn
+				? "PJN — Ya no en la lista"
+				: "Vinculado con PJN";
 
 			const showVerify =
 				isPjnPrivateRestricted ||
+				isPjnRevoked ||
+				isPjnReservedCovered ||
 				isListRemovedPjn ||
 				data.causaVerified === false ||
 				(data.causaVerified === true && data.causaIsValid !== undefined);
@@ -369,6 +401,12 @@ const FolderView = memo(({ data }: any) => {
 			if (isPjnPrivateRestricted) {
 				verifyIcon = <Warning2 size={14} variant="Bold" color={theme.palette.error.main} />;
 				verifyTooltip = privateRestrictedCopyPjn;
+			} else if (isPjnRevoked) {
+				verifyIcon = <Lock1 size={14} variant="Bold" color={STALE_AMBER} />;
+				verifyTooltip = revokedCopyPjn;
+			} else if (isPjnReservedCovered) {
+				verifyIcon = <Lock1 size={14} variant="Bold" color={LIVE_GREEN} />;
+				verifyTooltip = privateCoveredCopyPjn;
 			} else if (isListRemovedPjn) {
 				verifyIcon = <Warning2 size={14} variant="Bold" color={STALE_AMBER} />;
 				verifyTooltip = listRemovedCopyPjn;
@@ -537,7 +575,15 @@ const FolderView = memo(({ data }: any) => {
 				data.causaVerified === false ? "Pendiente de verificación" : data.causaIsValid ? "Causa válida" : "Causa inválida";
 			return (
 				<BindingPill
-					label={data.eje ? "Vinculado con EJE" : data.pjsalta ? "Vinculado con PJ Salta" : data.pjcatamarca ? "Vinculado con PJ Catamarca" : "Vinculado con PJ Mendoza"}
+					label={
+						data.eje
+							? "Vinculado con EJE"
+							: data.pjsalta
+							? "Vinculado con PJ Salta"
+							: data.pjcatamarca
+							? "Vinculado con PJ Catamarca"
+							: "Vinculado con PJ Mendoza"
+					}
 					accent={LIVE_GREEN}
 					verifyIcon={showVerify ? verifyIcon : undefined}
 					verifyTooltip={showVerify ? verifyTooltip : undefined}
