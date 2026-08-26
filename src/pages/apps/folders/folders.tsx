@@ -135,6 +135,20 @@ import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER, LIVE_PULSE_KEYFRAMES } from "theme
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 import { usePjnCredentialError } from "hooks/usePjnCredentialError";
 
+/**
+ * Segunda línea de la columna Jurisdicción / opción del filtro Departamento:
+ * `folderJuris.item` canónico ("Buenos Aires - Lomas de Zamora", "Mendoza - 1ª
+ * Circunscripción - Mendoza", "Justicia Nacional - Trabajo") sin el prefijo de
+ * provincia. Para Nacional el prefijo distingue Justicia Nacional de Federal, así
+ * que se conserva abreviado con "·".
+ */
+const departamentoDe = (item?: string | null, label?: string | null): string => {
+	if (!item) return "";
+	if (label && item.startsWith(`${label} - `)) return item.slice(label.length + 3);
+	if (/^Justicia (Nacional|Federal) - /.test(item)) return item.replace(/^Justicia (Nacional|Federal) - /, "Justicia $1 · ");
+	return item;
+};
+
 // ==============================|| STATUS PILL ||============================== //
 // Píldora de estado con dot + label — uniforme para Nueva / En Proceso /
 // Pendiente / Cerrada. Replica el patrón de JurisdictionPill: dot indicador
@@ -230,6 +244,9 @@ interface ReactTableProps extends Props {
 	fueroFilter?: string;
 	onFueroFilterChange?: (event: SelectChangeEvent<string>) => void;
 	uniqueFueros?: string[];
+	departamentoFilter?: string;
+	onDepartamentoFilterChange?: (event: SelectChangeEvent<string>) => void;
+	uniqueDepartamentos?: string[];
 	handleDeleteSelected?: (selectedRows: any[]) => void;
 	onBarWidthMeasured?: (width: number) => void;
 }
@@ -273,6 +290,9 @@ function ReactTable({
 	fueroFilter = "all",
 	onFueroFilterChange,
 	uniqueFueros = [],
+	departamentoFilter = "all",
+	onDepartamentoFilterChange,
+	uniqueDepartamentos = [],
 	onBarWidthMeasured,
 	disableRowNavigation = false,
 	disableRowSelection = false,
@@ -369,8 +389,9 @@ function ReactTable({
 		if (movimientosFilter !== "all") count++;
 		if (jurisdiccionFilter !== "all") count++;
 		if (fueroFilter !== "all") count++;
+		if (departamentoFilter !== "all") count++;
 		return count;
-	}, [folderTypeFilter, statusFilter, parteFilter, movimientosFilter, jurisdiccionFilter, fueroFilter]);
+	}, [folderTypeFilter, statusFilter, parteFilter, movimientosFilter, jurisdiccionFilter, fueroFilter, departamentoFilter]);
 
 	const filterTypes = useMemo(() => renderFilterTypes, []);
 	const sortBy = { id: "folderName", desc: false };
@@ -455,6 +476,7 @@ function ReactTable({
 		{ label: "Materia", key: "materia" },
 		{ label: "Estado", key: "status" },
 		{ label: "Jurisdicción", key: "jurisdiccion" },
+		{ label: "Departamento / Circunscripción", key: "departamento" },
 		{ label: "Fuero", key: "folderFuero" },
 		{ label: "Fecha inicio", key: "initialDateFolder" },
 		{ label: "Fecha cierre", key: "finalDateFolder" },
@@ -474,6 +496,7 @@ function ReactTable({
 			materia: folder.materia || "",
 			status: folder.status || "",
 			jurisdiccion: folder.folderJuris?.label || "",
+			departamento: departamentoDe(folder.folderJuris?.item, folder.folderJuris?.label),
 			folderFuero: folder.folderFuero || "",
 			initialDateFolder: folder.initialDateFolder || "",
 			finalDateFolder: folder.finalDateFolder || "",
@@ -1190,6 +1213,28 @@ function ReactTable({
 												{uniqueJurisdicciones.map((juris) => (
 													<MenuItem key={juris} value={juris}>
 														<Typography variant="body2">{juris}</Typography>
+													</MenuItem>
+												))}
+											</Select>
+										</FormControl>
+									)}
+									{/* Filtro por Departamento / circunscripción: solo cuando la provincia
+									    elegida tiene más de uno entre las carpetas del usuario */}
+									{onDepartamentoFilterChange && jurisdiccionFilter !== "all" && uniqueDepartamentos.length > 1 && (
+										<FormControl size="small" sx={{ minWidth: 170 }}>
+											<Select
+												id="departamento-filter"
+												displayEmpty
+												value={departamentoFilter}
+												onChange={onDepartamentoFilterChange}
+												sx={filterSelectSx}
+											>
+												<MenuItem value="all">
+													<Typography variant="body2">Departamento: Todos</Typography>
+												</MenuItem>
+												{uniqueDepartamentos.map((dep) => (
+													<MenuItem key={dep} value={dep}>
+														<Typography variant="body2">{departamentoDe(dep, jurisdiccionFilter)}</Typography>
 													</MenuItem>
 												))}
 											</Select>
@@ -1937,6 +1982,7 @@ const FoldersLayout = () => {
 	const [movimientosFilter, setMovimientosFilter] = useState<"all" | "today" | "week" | "month" | "none">("all");
 	const [jurisdiccionFilter, setJurisdiccionFilter] = useState<string>("all");
 	const [fueroFilter, setFueroFilter] = useState<string>("all");
+	const [departamentoFilter, setDepartamentoFilter] = useState<string>("all");
 
 	// Estado para alinear la barra de carpetas con los botones de la toolbar
 	const [barWidth, setBarWidth] = useState<number | undefined>(undefined);
@@ -2050,6 +2096,15 @@ const FoldersLayout = () => {
 		return Array.from(jurisdicciones).sort();
 	}, [verifiedFolders]);
 
+	const uniqueDepartamentos = useMemo(() => {
+		if (jurisdiccionFilter === "all") return [] as string[];
+		const deps = new Set<string>();
+		verifiedFolders.forEach((folder: any) => {
+			if (folder.folderJuris?.label === jurisdiccionFilter && folder.folderJuris?.item) deps.add(folder.folderJuris.item);
+		});
+		return Array.from(deps).sort();
+	}, [verifiedFolders, jurisdiccionFilter]);
+
 	const uniqueFueros = useMemo(() => {
 		const fueros = new Set<string>();
 		verifiedFolders.forEach((folder: any) => {
@@ -2109,6 +2164,11 @@ const FoldersLayout = () => {
 				return false;
 			}
 
+			// Filtro por departamento / circunscripción (dentro de la provincia elegida)
+			if (departamentoFilter !== "all" && folder.folderJuris?.item !== departamentoFilter) {
+				return false;
+			}
+
 			// Filtro por fuero
 			if (fueroFilter !== "all" && folder.folderFuero !== fueroFilter) {
 				return false;
@@ -2137,7 +2197,16 @@ const FoldersLayout = () => {
 
 			return true;
 		});
-	}, [verifiedFolders, folderTypeFilter, statusFilter, parteFilter, jurisdiccionFilter, fueroFilter, movimientosFilter]);
+	}, [
+		verifiedFolders,
+		folderTypeFilter,
+		statusFilter,
+		parteFilter,
+		jurisdiccionFilter,
+		departamentoFilter,
+		fueroFilter,
+		movimientosFilter,
+	]);
 
 	// Efecto para la carga inicial y cuando cambia el equipo activo
 	useEffect(() => {
@@ -2596,6 +2665,11 @@ const FoldersLayout = () => {
 
 	const handleJurisdiccionFilterChange = useCallback((event: SelectChangeEvent<string>) => {
 		setJurisdiccionFilter(event.target.value);
+		setDepartamentoFilter("all");
+	}, []);
+
+	const handleDepartamentoFilterChange = useCallback((event: SelectChangeEvent<string>) => {
+		setDepartamentoFilter(event.target.value);
 	}, []);
 
 	const handleFueroFilterChange = useCallback((event: SelectChangeEvent<string>) => {
@@ -3470,6 +3544,27 @@ const FoldersLayout = () => {
 			{
 				Header: "Jurisdicción",
 				accessor: "folderJuris.label" as any,
+				// Provincia en la línea principal y, debajo, el departamento judicial /
+				// circunscripción / fuero nacional (folderJuris.item canónico sin el
+				// prefijo de provincia). Sin item, la celda queda como antes.
+				Cell: ({ row }: { row: any }) => {
+					const juris = row.original?.folderJuris;
+					const label: string | undefined = typeof juris === "string" ? juris : juris?.label;
+					const dep = typeof juris === "string" ? "" : departamentoDe(juris?.item, label);
+					if (!label) return null;
+					return (
+						<Stack spacing={0}>
+							<Typography variant="body2" sx={{ whiteSpace: "nowrap" }}>
+								{label}
+							</Typography>
+							{dep && (
+								<Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+									{dep}
+								</Typography>
+							)}
+						</Stack>
+					);
+				},
 			},
 			{
 				Header: "Fuero",
@@ -3933,6 +4028,9 @@ const FoldersLayout = () => {
 								fueroFilter={fueroFilter}
 								onFueroFilterChange={handleFueroFilterChange}
 								uniqueFueros={uniqueFueros}
+								departamentoFilter={departamentoFilter}
+								onDepartamentoFilterChange={handleDepartamentoFilterChange}
+								uniqueDepartamentos={uniqueDepartamentos}
 								onBarWidthMeasured={setBarWidth}
 							/>
 						</ScrollX>
