@@ -1,5 +1,6 @@
 import React from "react";
 import { useState } from "react";
+import { fechaFolderAInput, inputAFechaFolder } from "utils/fechaFolder";
 import { dispatch } from "store";
 import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, useTheme, alpha, useMediaQuery } from "@mui/material";
 import dayjs from "utils/dayjs-config";
@@ -150,8 +151,8 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 
 	const initialValues = {
 		...folder,
-		initialDateFolder: folder?.initialDateFolder ? dayjs(folder.initialDateFolder).format("DD/MM/YYYY") : "",
-		finalDateFolder: folder?.finalDateFolder ? dayjs(folder.finalDateFolder).format("DD/MM/YYYY") : "",
+		initialDateFolder: folder?.initialDateFolder ? fechaFolderAInput(folder.initialDateFolder) : "",
+		finalDateFolder: folder?.finalDateFolder ? fechaFolderAInput(folder.finalDateFolder) : "",
 	};
 	const [isEditing, setIsEditing] = useState(false);
 
@@ -163,10 +164,10 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 				const formattedValues = {
 					...values,
 					initialDateFolder: values.initialDateFolder
-						? dayjs(values.initialDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+						? inputAFechaFolder(values.initialDateFolder)
 						: values.initialDateFolder,
 					finalDateFolder: values.finalDateFolder
-						? dayjs(values.finalDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+						? inputAFechaFolder(values.finalDateFolder)
 						: values.finalDateFolder,
 				};
 
@@ -532,7 +533,7 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 								<Grid item xs={12} sm={6} md={3}>
 									<FieldCard
 										label="Fecha Inicio"
-										value={folder?.initialDateFolder ? dayjs(folder.initialDateFolder).format("DD/MM/YYYY") : null}
+										value={folder?.initialDateFolder ? fechaFolderAInput(folder.initialDateFolder) : null}
 										isLoading={isLoader}
 										icon={<Calendar1 size={16} />}
 										isEditing={isEditing}
@@ -542,7 +543,7 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 								<Grid item xs={12} sm={6} md={3}>
 									<FieldCard
 										label="Fecha Fin"
-										value={folder?.finalDateFolder ? dayjs(folder.finalDateFolder).format("DD/MM/YYYY") : null}
+										value={folder?.finalDateFolder ? fechaFolderAInput(folder.finalDateFolder) : null}
 										isLoading={isLoader}
 										icon={<Calendar1 size={16} />}
 										isEditing={isEditing}
