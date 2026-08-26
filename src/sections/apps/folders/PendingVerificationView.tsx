@@ -208,7 +208,11 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 			{ label: "Lo que buscaste", value: folder?.searchTerm || null },
 			{ label: "Origen", value: sourceLabel },
 			{ label: "Fecha de alta", value: createdAt },
-		].filter((row) => row.value);
+		]
+			.filter((row) => row.value)
+			// En una búsqueda por CUIJ, número/CUIJ/término son el mismo string:
+			// repetirlo tres veces es ruido. Se conserva la primera aparición.
+			.filter((row, idx, arr) => arr.findIndex((r) => String(r.value).trim() === String(row.value).trim()) === idx);
 	}, [folder, numeroExpediente]);
 
 	// Bloque enviado SIEMPRE a soporte. El usuario sólo puede agregar contexto
