@@ -132,10 +132,13 @@ const InfoTabsVertical = ({ folderData, basicDataComponent, mediationDataCompone
 			description: "Proceso de mediación",
 			hasData: hasMediationData(),
 			status: (() => {
+				// Una carpeta sin ningún dato de mediación no tiene una mediación
+				// "Terminada": simplemente no la hubo (o no se cargó). Antes toda
+				// carpeta judicial decía "Terminada" sin haber mediado nunca.
+				if (!hasMediationData()) return "Sin registrar";
 				if (folderData?.status === "Cerrada") return "Terminada";
 				if (folderData?.judFolder?.numberJudFolder) return "Terminada";
-				if (folderData?.preFolder?.memberPreFolder) return "En curso";
-				return "Sin iniciar";
+				return "En curso";
 			})(),
 		},
 		{
