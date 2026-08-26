@@ -665,7 +665,10 @@ const Details = () => {
 
 		const showVerify =
 			(folder?.pjn || folder?.mev || folder?.scba || folder?.eje || folder?.pjsalta || folder?.pjcatamarca || folder?.pjmendoza) &&
-			(folder?.causaVerified === false || (folder?.causaVerified === true && folder?.causaIsValid !== undefined));
+			// T21: `causaIsValid: null` es "verificada, validez sin determinar" — sin
+			// ese chequeo el icono caía en la rama del else y mostraba cruz roja.
+			(folder?.causaVerified === false ||
+				(folder?.causaVerified === true && folder?.causaIsValid !== undefined && folder?.causaIsValid !== null));
 		const verifyTooltip =
 			folder?.causaVerified === false ? "Pendiente de verificación" : folder?.causaIsValid ? "Causa válida" : "Causa inválida";
 		const verifyIcon =

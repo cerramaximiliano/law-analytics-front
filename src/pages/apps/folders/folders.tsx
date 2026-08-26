@@ -2059,10 +2059,14 @@ const FoldersLayout = () => {
 			(folder: any) =>
 				// Carpetas que NO son automáticas (siempre van a la tabla principal)
 				!isAutoFolder(folder) ||
-				// O carpetas automáticas que están verificadas y válidas (y no tienen selección pendiente)
+				// O carpetas automáticas verificadas y no inválidas (sin selección pendiente).
+				// T21: antes se exigía `causaIsValid === true`. Con `null` —que es un
+				// valor legítimo: "verificada, validez todavía sin determinar"— la
+				// carpeta no entraba acá NI en `pending` (que pide `=== false`), así
+				// que desaparecía de las dos tablas y era invisible en la lista.
 				(isAutoFolder(folder) &&
 					folder.causaVerified === true &&
-					folder.causaIsValid === true &&
+					folder.causaIsValid !== false &&
 					folder.causaAssociationStatus !== "failed" &&
 					folder.causaAssociationStatus !== "pending_selection"),
 		);
@@ -2944,7 +2948,13 @@ const FoldersLayout = () => {
 							"error.lighter",
 						);
 					}
-					if (isListRemoved) {
+					// T20: `pending_selection` se evalúa ANTES que `listRemoved`, igual
+					// que en la fila expandida (FolderView.tsx). Antes el orden era el
+					// inverso acá, así que la misma carpeta mostraba un estado en la
+					// lista y otro al expandirla. Gana el estado accionable: si el
+					// usuario puede elegir expediente, eso es lo que tiene que ver;
+					// un `listRemoved` sobre un pivote es información vieja.
+					if (isListRemoved && folder.causaAssociationStatus !== "pending_selection") {
 						const IOL_NAMES: Record<string, string> = { pjsalta: "PJ Salta", pjcatamarca: "PJ Catamarca", pjmendoza: "PJ Mendoza" };
 						const source = folder.listRemovedSource ? folder.listRemovedSource.toUpperCase() : "PJN";
 						const tooltipCopy = isIolListRemoved

@@ -36,6 +36,12 @@ const SYNCABLE_JURISDICCION_LABELS = ["Nacional", "Buenos Aires", "CABA", "Salta
 
 // ==============================|| FOLDER - VIEW ||============================== //
 
+// T21: `causaIsValid: null` significa "verificada, validez todavía sin
+// determinar" — es un valor legítimo que escriben los flujos IOL. Tratarlo como
+// falsy hacía que el icono cayera en la rama del else y mostrara cruz roja, como
+// si la causa fuera inválida. Sin dato no se muestra icono.
+const validezConocida = (f: any) => f?.causaIsValid !== undefined && f?.causaIsValid !== null;
+
 const FolderView = memo(({ data }: any) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
@@ -432,7 +438,7 @@ const FolderView = memo(({ data }: any) => {
 		}
 
 		if (data.eje && data.causaAssociationStatus === "success") {
-			const showVerify = data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined);
+			const showVerify = data.causaVerified === false || (data.causaVerified === true && validezConocida(data));
 			const verifyIcon =
 				data.causaVerified === false ? (
 					<InfoCircle size={14} variant="Bold" color={STALE_AMBER} />
@@ -465,7 +471,7 @@ const FolderView = memo(({ data }: any) => {
 		}
 
 		if (data.mev) {
-			const showVerify = data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined);
+			const showVerify = data.causaVerified === false || (data.causaVerified === true && validezConocida(data));
 			const verifyIcon =
 				data.causaVerified === false ? (
 					<InfoCircle size={14} variant="Bold" color={STALE_AMBER} />
@@ -507,7 +513,7 @@ const FolderView = memo(({ data }: any) => {
 					/>
 				);
 			}
-			const showVerify = data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined);
+			const showVerify = data.causaVerified === false || (data.causaVerified === true && validezConocida(data));
 			const verifyIcon =
 				data.causaVerified === false ? (
 					<InfoCircle size={14} variant="Bold" color={STALE_AMBER} />
@@ -562,7 +568,7 @@ const FolderView = memo(({ data }: any) => {
 					/>
 				);
 			}
-			const showVerify = data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined);
+			const showVerify = data.causaVerified === false || (data.causaVerified === true && validezConocida(data));
 			const verifyIcon =
 				data.causaVerified === false ? (
 					<InfoCircle size={14} variant="Bold" color={STALE_AMBER} />
