@@ -64,26 +64,48 @@ const InfoTabsVertical = ({ folderData, basicDataComponent, mediationDataCompone
 		}
 	};
 
-	// Check data presence per section
+	// Presencia de datos por sección. Antes se chequeaban campos que no existen en
+	// el modelo (`number`, `radicacion`, `mediador`, `dateStart`, `sentencia`…), así
+	// que Mediación y Judicial NUNCA daban true y el progreso quedaba clavado en
+	// 1/3 para toda carpeta. Ahora se miran los campos reales — 2026-08-26.
 	const hasBasicData = () => {
 		if (!folderData) return false;
-		return !!(folderData.folderName || folderData.number || folderData.type || folderData.juzgado || folderData.radicacion || folderData.subType);
+		return !!(
+			folderData.materia ||
+			folderData.folderFuero ||
+			folderData.orderStatus ||
+			folderData.situationFolder ||
+			folderData.amount ||
+			folderData.initialDateFolder ||
+			folderData.description
+		);
 	};
 
 	const hasMediationData = () => {
-		if (!folderData) return false;
-		return !!(folderData.mediador || folderData.dateMediationStart || folderData.dateMediationEnd || folderData.acuerdo);
+		const pre = folderData?.preFolder;
+		if (!pre) return false;
+		return !!(
+			pre.memberPreFolder ||
+			pre.numberPreFolder ||
+			pre.initialDatePreFolder ||
+			pre.finalDatePreFolder ||
+			pre.amountPreFolder ||
+			pre.descriptionPreFolder
+		);
 	};
 
 	const hasJudicialData = () => {
-		if (!folderData) return false;
+		const jud = folderData?.judFolder;
+		if (!jud) return false;
 		return !!(
-			folderData.secretaria ||
-			folderData.dateStart ||
-			folderData.dateEnd ||
-			folderData.sentencia ||
-			folderData.apelacion ||
-			folderData.fechaPago
+			jud.numberJudFolder ||
+			jud.cuij ||
+			jud.courtNumber ||
+			jud.secretaryNumber ||
+			jud.salaNumber ||
+			jud.judge ||
+			jud.initialDateJudFolder ||
+			jud.currentLocation?.text
 		);
 	};
 

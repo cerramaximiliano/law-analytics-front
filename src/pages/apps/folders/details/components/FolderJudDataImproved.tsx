@@ -171,7 +171,10 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 		finalDateJudFolder: "",
 		numberJudFolder: "",
 		amountJudFolder: "",
-		statusJudFolder: "Inicio Demanda",
+		// Sin default: "Inicio Demanda" hacía que TODA carpeta mostrara ese estado
+		// aunque nadie lo hubiera cargado. Para mostrar cae a `situationFolder`,
+		// que es lo que escriben los workers — 2026-08-26.
+		statusJudFolder: "",
 		descriptionJudFolder: "",
 		courtNumber: "",
 		secretaryNumber: "",
@@ -747,6 +750,23 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 										/>
 									</Grid>
 								)}
+								{folder?.judFolder?.judge && (
+									<Grid item xs={12} md={4}>
+										{/* Juez a cargo — solo lo publican los portales IOL. Lo escriben los workers. */}
+										<JudicialInfoCard icon={<Judge />} label="JUEZ" value={folder.judFolder.judge} isLoading={isLoader} isEditing={false} />
+									</Grid>
+								)}
+								{folder?.judFolder?.salaNumber && (
+									<Grid item xs={12} md={4}>
+										<JudicialInfoCard
+											icon={<Building />}
+											label="SALA / CÁMARA"
+											value={folder.judFolder.salaNumber}
+											isLoading={isLoader}
+											isEditing={false}
+										/>
+									</Grid>
+								)}
 								<Grid item xs={12} md={4}>
 									<JudicialInfoCard
 										icon={<Calendar />}
@@ -765,7 +785,7 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 								<Grid item xs={12} md={4}>
 									<JudicialInfoCard
 										icon={<DollarCircle />}
-										label="MONTO DE SENTENCIA"
+										label="MONTO"
 										value={
 											values.judFolder.amountJudFolder ? `$ ${Number(values.judFolder.amountJudFolder).toLocaleString("es-AR")}` : null
 										}
@@ -824,7 +844,7 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 												/>
 											) : (
 												<Box>
-													<StatusPill label={values.judFolder.statusJudFolder} />
+													<StatusPill label={values.judFolder.statusJudFolder || folder?.situationFolder} />
 												</Box>
 											)}
 										</Stack>
@@ -893,106 +913,6 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 														</>
 													)}
 												</Box>
-											</Stack>
-										</Box>
-									</Grid>
-								)}
-
-								{/* Additional info — Sentencia / Apelación / Fecha pago */}
-								{(folder?.sentencia || folder?.apelacion || folder?.fechaPago) && (
-									<Grid item xs={12}>
-										<Box
-											sx={{
-												p: 2,
-												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
-												borderRadius: 1.5,
-												bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
-											}}
-										>
-											<Stack spacing={1.5}>
-												<Stack direction="row" spacing={0.5} alignItems="center">
-													<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
-													<Typography
-														sx={{
-															fontSize: "0.6rem",
-															fontWeight: 600,
-															letterSpacing: "0.08em",
-															textTransform: "uppercase",
-															color: "text.secondary",
-														}}
-													>
-														Información adicional
-													</Typography>
-												</Stack>
-												<Grid container spacing={2.5}>
-													{folder?.sentencia && (
-														<Grid item xs={12} md={4}>
-															<Stack spacing={0.5}>
-																<Typography
-																	sx={{
-																		fontSize: "0.6rem",
-																		fontWeight: 600,
-																		letterSpacing: "0.08em",
-																		textTransform: "uppercase",
-																		color: "text.secondary",
-																	}}
-																>
-																	Sentencia
-																</Typography>
-																<Typography sx={{ fontSize: "0.92rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
-																	{folder.sentencia}
-																</Typography>
-															</Stack>
-														</Grid>
-													)}
-													{folder?.apelacion && (
-														<Grid item xs={12} md={4}>
-															<Stack spacing={0.5}>
-																<Typography
-																	sx={{
-																		fontSize: "0.6rem",
-																		fontWeight: 600,
-																		letterSpacing: "0.08em",
-																		textTransform: "uppercase",
-																		color: "text.secondary",
-																	}}
-																>
-																	Apelación
-																</Typography>
-																<Typography
-																	sx={{
-																		fontSize: "0.92rem",
-																		fontWeight: 600,
-																		color: theme.palette.error.main,
-																		letterSpacing: "-0.005em",
-																	}}
-																>
-																	{folder.apelacion}
-																</Typography>
-															</Stack>
-														</Grid>
-													)}
-													{folder?.fechaPago && (
-														<Grid item xs={12} md={4}>
-															<Stack spacing={0.5}>
-																<Typography
-																	sx={{
-																		fontSize: "0.6rem",
-																		fontWeight: 600,
-																		letterSpacing: "0.08em",
-																		textTransform: "uppercase",
-																		color: "text.secondary",
-																	}}
-																>
-																	Fecha de pago
-																</Typography>
-																<Typography sx={{ fontSize: "0.92rem", fontWeight: 600, color: LIVE_GREEN, letterSpacing: "-0.005em" }}>
-																	{formatDate(folder.fechaPago)}
-																</Typography>
-															</Stack>
-														</Grid>
-													)}
-												</Grid>
 											</Stack>
 										</Box>
 									</Grid>

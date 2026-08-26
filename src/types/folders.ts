@@ -15,6 +15,7 @@ interface PreFolder {
 interface JudFolder {
 	/** CUIJ del expediente (EJE/Salta/Catamarca/Mendoza) — lo escribe el worker */
 	cuij?: string;
+	judge?: string;
 	initialDateJudFolder?: string; // Fecha inicial del juicio
 	finalDateJudFolder?: string; // Fecha final del juicio
 	numberJudFolder?: string; // Número del juicio

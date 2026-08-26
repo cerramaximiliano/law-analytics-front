@@ -99,7 +99,10 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 		finalDateJudFolder: "",
 		numberJudFolder: "",
 		amountJudFolder: "",
-		statusJudFolder: "Inicio Demanda",
+		// Sin default: "Inicio Demanda" hacía que TODA carpeta mostrara ese estado
+		// aunque nadie lo hubiera cargado. Para mostrar cae a `situationFolder`,
+		// que es lo que escriben los workers — 2026-08-26.
+		statusJudFolder: "",
 		descriptionJudFolder: "",
 		courtNumber: "",
 		secretaryNumber: "",
@@ -561,10 +564,21 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 												<CompactField label="CUIJ" value={folder.judFolder.cuij} isLoading={isLoader} icon={<HashtagSquare size={12} />} />
 											</Grid>
 										)}
+										{folder?.judFolder?.judge && (
+											<Grid item xs={6} md={3}>
+												{/* Juez a cargo — solo lo publican los portales IOL. Lo escriben los workers. */}
+												<CompactField label="JUEZ" value={folder.judFolder.judge} isLoading={isLoader} />
+											</Grid>
+										)}
+										{folder?.judFolder?.salaNumber && (
+											<Grid item xs={6} md={3}>
+												<CompactField label="SALA / CÁMARA" value={folder.judFolder.salaNumber} isLoading={isLoader} />
+											</Grid>
+										)}
 										<Grid item xs={6} md={3}>
 											<CompactField
 												label="ESTADO"
-												value={values.judFolder.statusJudFolder}
+												value={values.judFolder.statusJudFolder || folder?.situationFolder}
 												isLoading={isLoader}
 												isEditing={isEditing}
 												editComponent={
@@ -590,8 +604,12 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 										</Grid>
 										<Grid item xs={6} md={3}>
 											<CompactField
-												label="MONTO DE RECLAMO"
-												value={values.judFolder.amountJudFolder ? `$ ${values.judFolder.amountJudFolder}` : null}
+												label="MONTO"
+												value={
+													values.judFolder.amountJudFolder
+														? `$ ${Number(values.judFolder.amountJudFolder).toLocaleString("es-AR")}`
+														: null
+												}
 												isLoading={isLoader}
 												icon={<DollarCircle size={12} />}
 												isEditing={isEditing}
@@ -609,96 +627,6 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 												}
 											/>
 										</Grid>
-
-										{/* Additional info in single row */}
-										{(folder?.sentencia || folder?.apelacion || folder?.fechaPago) && (
-											<>
-												<Grid item xs={12}>
-													<Box
-														sx={{
-															borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
-															pt: 1.5,
-															mt: 1,
-														}}
-													>
-														<Grid container spacing={2}>
-															{folder?.sentencia && (
-																<Grid item xs={4}>
-																	<Typography
-																		sx={{
-																			fontSize: "0.6rem",
-																			fontWeight: 600,
-																			letterSpacing: "0.08em",
-																			textTransform: "uppercase",
-																			color: "text.secondary",
-																		}}
-																	>
-																		Sentencia
-																	</Typography>
-																	<Typography
-																		sx={{
-																			fontSize: "0.85rem",
-																			fontWeight: 500,
-																			color: "text.primary",
-																			letterSpacing: "-0.005em",
-																			mt: 0.25,
-																		}}
-																	>
-																		{folder.sentencia}
-																	</Typography>
-																</Grid>
-															)}
-															{folder?.apelacion && (
-																<Grid item xs={4}>
-																	<Typography
-																		sx={{
-																			fontSize: "0.6rem",
-																			fontWeight: 600,
-																			letterSpacing: "0.08em",
-																			textTransform: "uppercase",
-																			color: "text.secondary",
-																		}}
-																	>
-																		Apelación
-																	</Typography>
-																	<Typography
-																		sx={{
-																			fontSize: "0.85rem",
-																			fontWeight: 500,
-																			color: "text.primary",
-																			letterSpacing: "-0.005em",
-																			mt: 0.25,
-																		}}
-																	>
-																		{folder.apelacion}
-																	</Typography>
-																</Grid>
-															)}
-															{folder?.fechaPago && (
-																<Grid item xs={4}>
-																	<Typography
-																		sx={{
-																			fontSize: "0.6rem",
-																			fontWeight: 600,
-																			letterSpacing: "0.08em",
-																			textTransform: "uppercase",
-																			color: "text.secondary",
-																		}}
-																	>
-																		Fecha de pago
-																	</Typography>
-																	<Typography
-																		sx={{ fontSize: "0.85rem", fontWeight: 500, color: LIVE_GREEN, letterSpacing: "-0.005em", mt: 0.25 }}
-																	>
-																		{formatDate(folder.fechaPago)}
-																	</Typography>
-																</Grid>
-															)}
-														</Grid>
-													</Box>
-												</Grid>
-											</>
-										)}
 
 										{/* Observaciones - Solo si existe */}
 										{(values.judFolder.descriptionJudFolder || isEditing) && (
