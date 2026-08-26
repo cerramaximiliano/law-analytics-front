@@ -960,17 +960,21 @@ export const linkFolderToCausa =
 			const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/folders/link-causa/${folderId}`, linkData);
 
 			if (response.data.success) {
-				// Actualizar el folder en el store con los nuevos datos
-				dispatch({
-					type: UPDATE_FOLDER,
-					payload: response.data.folder,
-				});
+				// Las ramas del endpoint no son homogéneas: unas devuelven `folder` y
+				// otras `data`. Sin este fallback, despachar `undefined` rompía el
+				// reducer y el modal mostraba "Error desconocido" pese al 200 OK.
+				const actualizado = response.data.folder ?? response.data.data;
+
+				if (actualizado) {
+					dispatch({ type: UPDATE_FOLDER, payload: actualizado });
+				}
 
 				return {
 					success: true,
 					message: response.data.message,
-					folder: response.data.folder,
+					folder: actualizado,
 					causaInfo: response.data.causaInfo,
+					isPivot: response.data.isPivot,
 				};
 			} else {
 				return {
