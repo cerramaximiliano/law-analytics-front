@@ -644,18 +644,26 @@
 		"Violencia de Género (Penal)"
 	],
 	"fuero": [
-		"Civil",
-		"Comercial",
-		"Familia",
-		"Laboral",
-		"Justicia de Paz",
-		"Penal",
 		"Administrativo",
-		"Seguridad Social",
-		"Tributario",
 		"Aduanero",
+		"Ambiental",
+		"Civil",
+		"Civil y Comercial",
+		"Civil y Comercial Federal",
+		"Comercial",
 		"Constitucional",
-		"Ambiental"
+		"Contencioso Administrativo",
+		"Contencioso Administrativo Federal",
+		"Criminal y Correccional",
+		"Criminal y Correccional Federal",
+		"Electoral",
+		"Familia",
+		"Justicia de Paz",
+		"Laboral",
+		"Penal",
+		"Penal Económico",
+		"Seguridad Social",
+		"Tributario"
 	],
 	"parte": [
 		"Actor",
@@ -697,7 +705,12 @@
 		"Para sentencia definitiva",
 		"Sin definir"
 	],
-	"estado": ["Nueva", "En Proceso", "Cerrada", "Pendiente"],
+	"estado": [
+		"Nueva",
+		"En Proceso",
+		"Cerrada",
+		"Pendiente"
+	],
 	"jurisdicciones": [
 		{
 			"label": "Buenos Aires",
@@ -1308,7 +1321,14 @@
 			"item": "Tucumán - Juzgados de Paz"
 		}
 	],
-	"condicionFiscal": ["Monotributo", "Responsable Inscripto", "Exento", "Empleado", "Jubilado", "Desocupado"],
+	"condicionFiscal": [
+		"Monotributo",
+		"Responsable Inscripto",
+		"Exento",
+		"Empleado",
+		"Jubilado",
+		"Desocupado"
+	],
 	"provincias": [
 		"Buenos Aires",
 		"CABA",
@@ -1358,8 +1378,17 @@
 		"Síndico",
 		"Testigo"
 	],
-	"tipos": ["Humana", "Jurídica"],
-	"estadoCivil": ["Soltero", "Casado", "Viudo", "Conviviente", "Divorciado"],
+	"tipos": [
+		"Humana",
+		"Jurídica"
+	],
+	"estadoCivil": [
+		"Soltero",
+		"Casado",
+		"Viudo",
+		"Conviviente",
+		"Divorciado"
+	],
 	"idCodeSeguimiento": [
 		{
 			"label": "Correo Argentino",
@@ -1576,5 +1605,9 @@
 		"Recurso ante Cámara",
 		"Sentencia Corte"
 	],
-	"statusMediacion": ["Nueva", "En Proceso", "Finalizada"]
+	"statusMediacion": [
+		"Nueva",
+		"En Proceso",
+		"Finalizada"
+	]
 }
