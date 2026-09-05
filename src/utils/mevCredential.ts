@@ -30,6 +30,9 @@ export const MEV_CRED_MESSAGE: Record<MevCredentialIssue, string> = {
 	disabled: "Desactivamos tu credencial MEV por fallos repetidos. Verificala y recargala en tu perfil.",
 };
 
+/** Nombre placeholder que escribe el hub/worker cuando la causa resultó inválida (folderController INVALID_FOLDER_NAME). */
+export const INVALID_FOLDER_NAME = "Causa inválida o no accesible";
+
 /** Ruta del perfil donde el usuario gestiona su credencial MEV. */
 export const MEV_PROFILE_PATH = "/apps/profiles/account/pjn?view=mev";
 

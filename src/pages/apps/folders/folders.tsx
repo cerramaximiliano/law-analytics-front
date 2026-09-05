@@ -50,7 +50,7 @@ import { PopupTransition } from "components/@extended/Transitions";
 import { IndeterminateCheckbox, HeaderSort, SortingSelect, TablePagination } from "components/third-party/ReactTable";
 import { CSVLink } from "react-csv";
 import { formatFolderName } from "utils/formatFolderName";
-import { MEV_CRED_LABEL, MEV_CRED_MESSAGE, MEV_PROFILE_PATH, isMevCredLoginFailure, mevCredIssue } from "utils/mevCredential";
+import { INVALID_FOLDER_NAME, MEV_CRED_LABEL, MEV_CRED_MESSAGE, MEV_PROFILE_PATH, isMevCredLoginFailure, mevCredIssue } from "utils/mevCredential";
 import SEO from "components/SEO/SEO";
 
 import AddFolder from "sections/apps/folders/AddFolder";
@@ -3214,31 +3214,58 @@ const FoldersLayout = () => {
 					if (credIssue) {
 						const credMsg = MEV_CRED_MESSAGE[credIssue];
 						const credLabel = MEV_CRED_LABEL[credIssue];
+						// M11: el chip no reemplaza la carátula — el usuario tiene que saber qué carpeta es
+						// sin expandir. Si el worker dejó el nombre placeholder ("Causa inválida o no
+						// accesible") mostramos lo que se buscó, como en la rama de asociación fallida.
+						const caratula = value && value !== INVALID_FOLDER_NAME ? value : null;
+						const searched = folder.searchTerm || folder.judFolder?.numberJudFolder;
 						return (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<Box
-									onClick={(e) => {
-										e.stopPropagation();
-										navigate(MEV_PROFILE_PATH);
-									}}
-									sx={{
-										display: "inline-flex",
-										alignItems: "center",
-										gap: 0.625,
-										px: 0.875,
-										py: 0.25,
-										borderRadius: 0.75,
-										bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
-										border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
-										cursor: "pointer",
-										"&:hover": { bgcolor: alpha(STALE_AMBER, isDark ? 0.22 : 0.14) },
-									}}
-								>
-									<Warning2 size={12} variant="Bulk" color={STALE_AMBER} />
-									<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
-										{credLabel}
-									</Typography>
-								</Box>
+							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={0.5}>
+								<Stack spacing={0.375} sx={{ minWidth: 0 }}>
+									{caratula ? (
+										<Tooltip title={caratula}>
+											<span
+												style={{
+													display: "-webkit-box",
+													WebkitLineClamp: 2,
+													WebkitBoxOrient: "vertical",
+													overflow: "hidden",
+													textOverflow: "ellipsis",
+												}}
+											>
+												{formatFolderName(caratula, 50)}
+											</span>
+										</Tooltip>
+									) : searched ? (
+										<Typography noWrap sx={{ fontSize: "0.66rem", color: "text.secondary", lineHeight: 1.3 }}>
+											Buscaste {searched}
+										</Typography>
+									) : null}
+									<Box
+										onClick={(e) => {
+											e.stopPropagation();
+											navigate(MEV_PROFILE_PATH);
+										}}
+										sx={{
+											alignSelf: "flex-start",
+											display: "inline-flex",
+											alignItems: "center",
+											gap: 0.625,
+											px: 0.875,
+											py: 0.25,
+											borderRadius: 0.75,
+											bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
+											border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+											cursor: "pointer",
+											"&:hover": { bgcolor: alpha(STALE_AMBER, isDark ? 0.22 : 0.14) },
+										}}
+									>
+										<Warning2 size={12} variant="Bulk" color={STALE_AMBER} />
+										<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
+											{credLabel}
+										</Typography>
+									</Box>
+								</Stack>
 								<Tooltip title={credMsg}>
 									<IconButton
 										size="small"
