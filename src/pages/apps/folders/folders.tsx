@@ -2846,6 +2846,64 @@ const FoldersLayout = () => {
 						folder.pjsalta === true ||
 						folder.pjcatamarca === true ||
 						folder.pjmendoza === true;
+
+					// Carpeta desvinculada (conserva `previousSyncSource`, ningún flag de
+					// fuente activo). Va ANTES del early-return de abajo: la desvinculación
+					// apaga todos los flags, así que si se evaluara después nunca se
+					// alcanzaría y la fila sería indistinguible de una carpeta manual (el
+					// detalle y la fila expandida sí la muestran). Mismo patrón que la cred
+					// SCBA/PJN rechazada: carátula + ícono ámbar con tooltip. La acción va
+					// a donde se resuelve: la carpeta (MEV/EJE/IOL, se re-vincula por
+					// número) o Perfil → Cuentas Judiciales (PJN/SCBA).
+					const isUnlinked = !!folder.previousSyncSource && !showStatusIndicators;
+					if (isUnlinked) {
+						const src = folder.previousSyncSource as string;
+						const SOURCE_NAMES: Record<string, string> = {
+							pjn: "PJN",
+							scba: "SCBA",
+							mev: "MEV",
+							eje: "EJE",
+							pjsalta: "PJ Salta",
+							pjcatamarca: "PJ Catamarca",
+							pjmendoza: "PJ Mendoza",
+						};
+						const sourceName = SOURCE_NAMES[src] || src.toUpperCase();
+						const relinkable = ["eje", "mev", "pjsalta", "pjcatamarca", "pjmendoza"].includes(src);
+						const tooltip = relinkable
+							? `Desvinculada de ${sourceName} — conserva todos sus datos pero ya no se sincroniza. Hacé clic para volver a vincularla desde la carpeta.`
+							: `Sincronización pausada (era ${sourceName}) — conserva el histórico pero no recibe actualizaciones. Para reanudar, vinculá tu cuenta desde Perfil → Cuentas Judiciales.`;
+						return (
+							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
+								<Tooltip title={value || ""}>
+									<span
+										style={{
+											display: "-webkit-box",
+											WebkitLineClamp: 2,
+											WebkitBoxOrient: "vertical",
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											flex: 1,
+										}}
+									>
+										{formatFolderName(value, 50)}
+									</span>
+								</Tooltip>
+								<Tooltip title={tooltip}>
+									<IconButton
+										size="small"
+										onClick={(e) => {
+											e.stopPropagation();
+											navigate(relinkable ? `/apps/folders/details/${folder._id}` : "/apps/profiles/account/pjn");
+										}}
+										sx={{ padding: 0.5, "&:hover": { backgroundColor: "warning.lighter" } }}
+									>
+										<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
+									</IconButton>
+								</Tooltip>
+							</Stack>
+						);
+					}
+
 					// Si no se deben mostrar indicadores, solo mostrar el nombre
 					if (!showStatusIndicators) {
 						return (
@@ -3395,69 +3453,6 @@ const FoldersLayout = () => {
 											<TickCircle size={16} variant="Bold" color={BRAND_BLUE} />
 										)}
 									</Box>
-								</Tooltip>
-							</Stack>
-						);
-					}
-
-					// Carpeta desvinculada (conserva `previousSyncSource`, ningún flag de
-					// fuente activo). Antes caía en el fallback y era indistinguible de una
-					// carpeta manual; el detalle y la fila expandida sí lo mostraban. Mismo
-					// patrón que la cred SCBA/PJN rechazada: carátula + ícono ámbar con
-					// tooltip. La acción va a donde se resuelve: la carpeta (MEV/EJE/IOL,
-					// se re-vincula por número) o Perfil → Cuentas Judiciales (PJN/SCBA).
-					const isUnlinked =
-						!!folder.previousSyncSource &&
-						!folder.pjn &&
-						!folder.mev &&
-						!folder.eje &&
-						!folder.scba &&
-						!folder.pjsalta &&
-						!folder.pjcatamarca &&
-						!folder.pjmendoza;
-					if (isUnlinked) {
-						const src = folder.previousSyncSource as string;
-						const SOURCE_NAMES: Record<string, string> = {
-							pjn: "PJN",
-							scba: "SCBA",
-							mev: "MEV",
-							eje: "EJE",
-							pjsalta: "PJ Salta",
-							pjcatamarca: "PJ Catamarca",
-							pjmendoza: "PJ Mendoza",
-						};
-						const sourceName = SOURCE_NAMES[src] || src.toUpperCase();
-						const relinkable = ["eje", "mev", "pjsalta", "pjcatamarca", "pjmendoza"].includes(src);
-						const tooltip = relinkable
-							? `Desvinculada de ${sourceName} — conserva todos sus datos pero ya no se sincroniza. Hacé clic para volver a vincularla desde la carpeta.`
-							: `Sincronización pausada (era ${sourceName}) — conserva el histórico pero no recibe actualizaciones. Para reanudar, vinculá tu cuenta desde Perfil → Cuentas Judiciales.`;
-						return (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<Tooltip title={value || ""}>
-									<span
-										style={{
-											display: "-webkit-box",
-											WebkitLineClamp: 2,
-											WebkitBoxOrient: "vertical",
-											overflow: "hidden",
-											textOverflow: "ellipsis",
-											flex: 1,
-										}}
-									>
-										{formatFolderName(value, 50)}
-									</span>
-								</Tooltip>
-								<Tooltip title={tooltip}>
-									<IconButton
-										size="small"
-										onClick={(e) => {
-											e.stopPropagation();
-											navigate(relinkable ? `/apps/folders/details/${folder._id}` : "/apps/profiles/account/pjn");
-										}}
-										sx={{ padding: 0.5, "&:hover": { backgroundColor: "warning.lighter" } }}
-									>
-										<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
-									</IconButton>
 								</Tooltip>
 							</Stack>
 						);
