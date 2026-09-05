@@ -118,7 +118,11 @@ function a11yProps(index: number) {
 // Sistemas cuyo vínculo es por número de expediente (portal público): se pueden
 // re-vincular desde la propia carpeta. PJN, MEV y SCBA van por credenciales y se
 // gestionan desde Perfil → Cuentas Judiciales.
-const RELINKABLE_SOURCES = ["eje", "pjsalta", "pjcatamarca", "pjmendoza"];
+// Sistemas cuyo vínculo es POR CARPETA (número de expediente): desvincular y volver
+// a vincular es seguro desde la carpeta. MEV entra desde 2026-09-05 (la credencial
+// de cuenta cubre todas las causas; el modal la pide si falta). PJN/SCBA no: se
+// administran por credencial desde Perfil.
+const RELINKABLE_SOURCES = ["eje", "mev", "pjsalta", "pjcatamarca", "pjmendoza"];
 
 const Details = () => {
 	const { id } = useParams<{ id: string }>();
@@ -624,8 +628,8 @@ const Details = () => {
 						tooltip: "Hacé clic para desvincular esta carpeta del expediente",
 				  };
 		} else if (folder?.previousSyncSource && RELINKABLE_SOURCES.includes(folder.previousSyncSource)) {
-			// EJE y los portales IOL son públicos: se vinculan por número de
-			// expediente, así que re-vincular es seguro y no necesita credenciales.
+			// EJE, MEV y los portales IOL se vinculan por número de expediente, así
+			// que re-vincular es seguro (MEV pide la credencial de cuenta si falta).
 			state = {
 				label: "Desvinculada — volver a vincular",
 				accent: STALE_AMBER,
