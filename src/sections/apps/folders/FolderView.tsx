@@ -33,6 +33,10 @@ import dayjs from "utils/dayjs-config";
 // "Nacional" → PJN, "Buenos Aires" → SCBA/MEV, "CABA" → EJE.
 // Debe quedar alineada con la del detalle del folder (pages/apps/folders/details/details.tsx).
 const SYNCABLE_JURISDICCION_LABELS = ["Nacional", "Buenos Aires", "CABA", "Salta", "Catamarca", "Mendoza"];
+// Fuentes que se vinculan por número de expediente: re-vincular una carpeta
+// desvinculada es seguro (MEV pide la credencial de cuenta si falta). Espejo de
+// `RELINKABLE_SOURCES` en details.tsx.
+const RELINKABLE_SOURCES = ["eje", "mev", "pjsalta", "pjcatamarca", "pjmendoza"];
 
 // ==============================|| FOLDER - VIEW ||============================== //
 
@@ -593,6 +597,19 @@ const FolderView = memo(({ data }: any) => {
 					accent={LIVE_GREEN}
 					verifyIcon={showVerify ? verifyIcon : undefined}
 					verifyTooltip={showVerify ? verifyTooltip : undefined}
+				/>
+			);
+		}
+
+		if (data.previousSyncSource && RELINKABLE_SOURCES.includes(data.previousSyncSource)) {
+			// Desvinculada desde la carpeta (MEV/EJE/IOL): se re-vincula por número de
+			// expediente, así que el pill es la acción — mismo estado que en el detalle.
+			return (
+				<BindingPill
+					label="Desvinculada — volver a vincular"
+					accent={STALE_AMBER}
+					icon={<Warning2 size={14} variant="Bulk" color={STALE_AMBER} />}
+					onClick={handleOpenLinkJudicial}
 				/>
 			);
 		}
