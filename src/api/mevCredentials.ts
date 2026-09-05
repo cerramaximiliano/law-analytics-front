@@ -13,6 +13,8 @@ const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 export interface MevCredentialData {
 	id: string;
+	// Usuario del portal (solo la credencial de la cuenta lo expone; la contraseña nunca viaja).
+	username?: string | null;
 	causaId?: string | null;
 	/** Label legible de la causa (nombre de carpeta / nº de expediente). Solo en per-causa. */
 	causaLabel?: string | null;

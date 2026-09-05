@@ -116,8 +116,11 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 		fetchStatus();
 	}, [fetchStatus]);
 
+	// Pre-cargamos el usuario guardado (patrón SCBA/PJN): el user solo repone la
+	// contraseña. Si el backend no lo devuelve, el campo queda editable.
+	const savedUsername = (global?.username || "").trim();
 	const startEdit = () => {
-		setUsername("");
+		setUsername(savedUsername);
 		setPassword("");
 		setShowPassword(false);
 		setEditing(true);
@@ -203,8 +206,8 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 	const renderForm = () => (
 		<Stack spacing={1.5}>
 			<Typography sx={{ fontSize: "0.82rem", color: "text.secondary" }}>
-				Cargá tu usuario y contraseña del portal MEV (mev.scba.gov.ar). Con esta credencial consultamos automáticamente
-				todas tus causas de Buenos Aires. Tu contraseña se guarda encriptada (AES-256).
+				Cargá tu usuario y contraseña del portal MEV (mev.scba.gov.ar). Con esta credencial consultamos automáticamente todas tus causas de
+				Buenos Aires. Tu contraseña se guarda encriptada (AES-256).
 			</Typography>
 			<TextField
 				fullWidth
@@ -214,6 +217,8 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 				value={username}
 				onChange={(e) => setUsername(e.target.value)}
 				autoComplete="off"
+				disabled={editing && !!savedUsername}
+				helperText={editing && savedUsername ? "Usuario de tu credencial guardada. Ingresá la contraseña nueva." : undefined}
 				inputProps={{ autoCapitalize: "none", autoCorrect: "off", spellCheck: false }}
 			/>
 			<TextField
@@ -280,7 +285,17 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 						<Chip size="small" label={meta.label} color={meta.color} sx={{ ml: "auto" }} />
 					</Stack>
 					<Typography sx={{ fontSize: "0.76rem", color: "text.secondary" }}>
-						Con esta credencial consultamos todas tus causas de Buenos Aires.
+						{g.username ? (
+							<>
+								Usuario{" "}
+								<Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
+									{g.username}
+								</Box>{" "}
+								· con esta credencial consultamos todas tus causas de Buenos Aires.
+							</>
+						) : (
+							"Con esta credencial consultamos todas tus causas de Buenos Aires."
+						)}
 					</Typography>
 					{g.lastError && status !== "valid" && (
 						<Typography sx={{ fontSize: "0.76rem", color: "text.secondary", mt: 0.5 }}>{g.lastError.message}</Typography>
@@ -363,8 +378,8 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 											</Typography>
 										</Stack>
 										<Typography sx={{ fontSize: "0.76rem", color: "text.secondary" }}>
-											No vamos a consultar movimientos nuevos de tus causas del MEV hasta que vincules una credencial de
-											nuevo. Las carpetas no se borran.
+											No vamos a consultar movimientos nuevos de tus causas del MEV hasta que vincules una credencial de nuevo. Las carpetas
+											no se borran.
 										</Typography>
 										{unlinkImpact!.folders.names.length > 0 && (
 											<Box sx={{ maxHeight: 120, overflowY: "auto", mt: 0.5 }}>
@@ -379,9 +394,7 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 								) : (
 									<Stack direction="row" alignItems="center" spacing={0.75}>
 										<TickCircle size={16} variant="Bulk" color={theme.palette.success.main} />
-										<Typography sx={{ fontSize: "0.78rem", color: "text.secondary" }}>
-											Ninguna causa quedará sin seguimiento.
-										</Typography>
+										<Typography sx={{ fontSize: "0.78rem", color: "text.secondary" }}>Ninguna causa quedará sin seguimiento.</Typography>
 									</Stack>
 								)}
 							</Box>
