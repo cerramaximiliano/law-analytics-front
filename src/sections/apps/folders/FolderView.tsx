@@ -28,6 +28,8 @@ import {
 } from "iconsax-react";
 import { memo, useState } from "react";
 import dayjs from "utils/dayjs-config";
+import { MEV_CRED_LABEL, MEV_CRED_MESSAGE, MEV_PROFILE_PATH, mevCredIssue } from "utils/mevCredential";
+import { useNavigate } from "react-router-dom";
 
 // Whitelist de jurisdicciones que tienen worker de sincronización.
 // "Nacional" → PJN, "Buenos Aires" → SCBA/MEV, "CABA" → EJE.
@@ -48,6 +50,7 @@ const validezConocida = (f: any) => f?.causaIsValid !== undefined && f?.causaIsV
 
 const FolderView = memo(({ data }: any) => {
 	const theme = useTheme();
+	const navigate = useNavigate();
 	const isDark = theme.palette.mode === "dark";
 	const notAvailableMsg = "No disponible";
 	const [openLinkJudicial, setOpenLinkJudicial] = useState(false);
@@ -475,6 +478,24 @@ const FolderView = memo(({ data }: any) => {
 		}
 
 		if (data.mev) {
+			// Credencial MEV con problema (missing/invalid/expired/disabled): el pill lo dice en
+			// ámbar y lleva al perfil, igual que "SCBA — Sincronización pausada". No se muestra el
+			// badge de verificación: el "inválida" que dejó el login fallido no habla de la causa.
+			const credIssue = mevCredIssue(data);
+			if (credIssue) {
+				return (
+					<Tooltip title={MEV_CRED_MESSAGE[credIssue]}>
+						<Box sx={{ display: "inline-flex" }}>
+							<BindingPill
+								label={`MEV — ${MEV_CRED_LABEL[credIssue]}`}
+								accent={STALE_AMBER}
+								icon={<Warning2 size={14} variant="Bulk" color={STALE_AMBER} />}
+								onClick={() => navigate(MEV_PROFILE_PATH)}
+							/>
+						</Box>
+					</Tooltip>
+				);
+			}
 			const showVerify = data.causaVerified === false || (data.causaVerified === true && validezConocida(data));
 			const verifyIcon =
 				data.causaVerified === false ? (

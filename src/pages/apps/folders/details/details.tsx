@@ -36,6 +36,7 @@ import useSubscription from "hooks/useSubscription";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { formatFolderName } from "utils/formatFolderName";
+import { MEV_CRED_LABEL, MEV_CRED_MESSAGE, MEV_PROFILE_PATH, isMevCredLoginFailure, mevCredIssue } from "utils/mevCredential";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // Components
@@ -485,6 +486,18 @@ const Details = () => {
 					? "Esta causa ya no aparece en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal."
 					: undefined,
 			};
+		} else if (folder?.mev && mevCredIssue(folder)) {
+			// Credencial MEV con problema: el chip lo dice y lleva al perfil (patrón "SCBA —
+			// Sincronización pausada"). Prevalece sobre "Ya no en la lista": sin credencial
+			// válida el worker ni siquiera pudo mirar la lista.
+			const credIssue = mevCredIssue(folder)!;
+			state = {
+				label: `MEV — ${MEV_CRED_LABEL[credIssue]}`,
+				accent: STALE_AMBER,
+				icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
+				onClick: () => navigate(MEV_PROFILE_PATH),
+				tooltip: `${MEV_CRED_MESSAGE[credIssue]} Hacé clic para ir a tu perfil.`,
+			};
 		} else if (folder?.mev) {
 			const accent = isListRemovedMev ? STALE_AMBER : LIVE_GREEN;
 			state = {
@@ -755,6 +768,7 @@ const Details = () => {
 	}, [
 		folder?.pjn,
 		folder?.mev,
+		folder?.mevCredentialStatus,
 		folder?.scba,
 		folder?.previousSyncSource,
 		folder?.folderJuris?.label,
@@ -770,6 +784,7 @@ const Details = () => {
 		theme,
 		isDark,
 		scbaCredError.hasError,
+		navigate,
 	]);
 
 	// Memoized components - switch between compact and improved based on isDetailedView
@@ -832,6 +847,10 @@ const Details = () => {
 		if (folder.pjn === true && folder.causaCredentialCovered === false) {
 			return folder.source === "pjn-login" ? "reserved_revoked" : "reserved";
 		}
+		// MEV con login fallido (invalid/expired/disabled): el worker dejó failed /
+		// causaIsValid=false, pero el problema es la credencial. No bloqueamos el detalle:
+		// los datos ya sincronizados siguen visibles y el chip ámbar avisa qué corregir.
+		if (isMevCredLoginFailure(folder)) return folder.causaVerified !== true ? "pending" : null;
 		if (folder.causaAssociationStatus === "failed") return "failed";
 		if (folder.causaVerified === true && folder.causaIsValid === false) return "invalid";
 		if (folder.causaVerified !== true) return "pending";

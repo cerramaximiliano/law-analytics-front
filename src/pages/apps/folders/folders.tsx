@@ -50,6 +50,7 @@ import { PopupTransition } from "components/@extended/Transitions";
 import { IndeterminateCheckbox, HeaderSort, SortingSelect, TablePagination } from "components/third-party/ReactTable";
 import { CSVLink } from "react-csv";
 import { formatFolderName } from "utils/formatFolderName";
+import { MEV_CRED_LABEL, MEV_CRED_MESSAGE, MEV_PROFILE_PATH, isMevCredLoginFailure, mevCredIssue } from "utils/mevCredential";
 import SEO from "components/SEO/SEO";
 
 import AddFolder from "sections/apps/folders/AddFolder";
@@ -2019,11 +2020,18 @@ const FoldersLayout = () => {
 			folder.pjcatamarca === true ||
 			folder.pjmendoza === true;
 
+		// MEV con login fallido (invalid/expired/disabled): el worker marcó la carpeta como
+		// failed / causaIsValid=false, pero el problema es la credencial, no la causa. Se
+		// queda en la tabla principal con el chip ámbar de credencial (mismo criterio que
+		// PJN/SCBA con cred en error), sin contar como inválida.
+		const isCredFailure = (folder: any) => isMevCredLoginFailure(folder);
+
 		// Filtrar folders que necesitan verificación o son inválidos
 		// Para carpetas automáticas (source "auto", PJN, MEV o EJE)
 		const pending = folders.filter(
 			(folder: any) =>
 				isAutoFolder(folder) &&
+				!isCredFailure(folder) &&
 				// Pendientes de verificación
 				(folder.causaVerified === false ||
 					// Inválidos (verificados pero no válidos)
@@ -2051,6 +2059,7 @@ const FoldersLayout = () => {
 		const invalid = folders.filter(
 			(folder: any) =>
 				isAutoFolder(folder) &&
+				!isCredFailure(folder) &&
 				((folder.causaVerified === true && folder.causaIsValid === false) || folder.causaAssociationStatus === "failed"),
 		).length;
 
@@ -2059,6 +2068,8 @@ const FoldersLayout = () => {
 			(folder: any) =>
 				// Carpetas que NO son automáticas (siempre van a la tabla principal)
 				!isAutoFolder(folder) ||
+				// MEV con credencial en error: el estado failed/inválida lo escribió el login fallido
+				isCredFailure(folder) ||
 				// O carpetas automáticas verificadas y no inválidas (sin selección pendiente).
 				// T21: antes se exigía `causaIsValid === true`. Con `null` —que es un
 				// valor legítimo: "verificada, validez todavía sin determinar"— la
@@ -3138,8 +3149,11 @@ const FoldersLayout = () => {
 						);
 					}
 
-					// Si la asociación falló, mostrar chip de error
-					if (folder.causaAssociationStatus === "failed") {
+					// Si la asociación falló, mostrar chip de error.
+					// Excepción MEV: si la credencial falló el login (invalid/expired/disabled) el
+					// worker deja la carpeta en failed, pero la causa de fondo es la credencial → el
+					// chip ámbar de credencial (más abajo) gana sobre "Asociación fallida".
+					if (folder.causaAssociationStatus === "failed" && !isMevCredLoginFailure(folder)) {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={0.5}>
 								<Stack spacing={0.25} sx={{ minWidth: 0 }}>
@@ -3196,29 +3210,16 @@ const FoldersLayout = () => {
 
 					// MEV: problema con la credencial del usuario → warning (en vez del tilde/pendiente).
 					// La causa no se scrapea hasta que el usuario corrija/cargue su credencial.
-					if (folder.mev === true && ["missing", "invalid", "expired", "disabled"].includes(folder.mevCredentialStatus)) {
-						const credMsg = (
-							{
-								missing: "Falta cargar tu credencial del portal MEV para consultar esta causa. Cargala en tu perfil → Integraciones → MEV.",
-								invalid: "No pudimos iniciar sesión en el portal MEV con tus credenciales. Revisalas y recargalas en tu perfil.",
-								expired: "Tu contraseña del portal MEV expiró. Actualizala y recargala en tu perfil.",
-								disabled: "Desactivamos tu credencial MEV por fallos repetidos. Verificala y recargala en tu perfil.",
-							} as Record<string, string>
-						)[folder.mevCredentialStatus];
-						const credLabel = (
-							{
-								missing: "Credencial requerida",
-								invalid: "Credencial inválida",
-								expired: "Contraseña expirada",
-								disabled: "Credencial desactivada",
-							} as Record<string, string>
-						)[folder.mevCredentialStatus];
+					const credIssue = mevCredIssue(folder);
+					if (credIssue) {
+						const credMsg = MEV_CRED_MESSAGE[credIssue];
+						const credLabel = MEV_CRED_LABEL[credIssue];
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 								<Box
 									onClick={(e) => {
 										e.stopPropagation();
-										navigate("/apps/profiles/account/pjn?view=mev");
+										navigate(MEV_PROFILE_PATH);
 									}}
 									sx={{
 										display: "inline-flex",
@@ -3243,7 +3244,7 @@ const FoldersLayout = () => {
 										size="small"
 										onClick={(e) => {
 											e.stopPropagation();
-											navigate("/apps/profiles/account/pjn?view=mev");
+											navigate(MEV_PROFILE_PATH);
 										}}
 										sx={{ padding: 0.5, "&:hover": { backgroundColor: "warning.lighter" } }}
 									>
@@ -3715,9 +3716,12 @@ const FoldersLayout = () => {
 					const isAutoFolder =
 						folder.pjn || folder.mev || folder.eje || folder.scba || folder.pjsalta || folder.pjcatamarca || folder.pjmendoza;
 
-					// Folders con error: asociación fallida o causa inválida
+					// Folders con error: asociación fallida o causa inválida.
+					// MEV con login fallido no cuenta como error de causa: el detalle sigue accesible
+					// con los datos ya sincronizados y el aviso es sobre la credencial.
 					const isErrorFolder =
 						isAutoFolder &&
+						!isMevCredLoginFailure(folder) &&
 						(folder.causaAssociationStatus === "failed" || (folder.causaVerified === true && folder.causaIsValid === false));
 
 					// Folders pendientes de verificación (sin error, esperando al worker)
