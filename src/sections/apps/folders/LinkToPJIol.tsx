@@ -24,6 +24,7 @@ import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
 import { linkFolderToCausa } from "store/reducers/folder";
 import OverwriteNotice from "./OverwriteNotice";
+import LinkChangesNotice from "./LinkChangesNotice";
 import logoPJCatamarca from "assets/images/logos/logo_pj_catamarca.png";
 import logoPJMendoza from "assets/images/logos/logo_pj_mendoza.png";
 import ejeWorkersService from "api/workersEje";
@@ -463,9 +464,7 @@ const LinkToPJIol = ({ open, onCancel, onBack, folderId, folderName, folder, por
 					</Grid>
 
 					<Grid item xs={12}>
-						<Alert severity="warning">
-							Al vincular esta causa, se descargará y actualizará automáticamente la información desde el portal de {cfg.nombre}.
-						</Alert>
+						<LinkChangesNotice target="iol" overwrite={overwriteData} origenNombre={`el portal de ${cfg.nombre}`} />
 					</Grid>
 				</Grid>
 			</DialogContent>

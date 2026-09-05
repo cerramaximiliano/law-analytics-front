@@ -1030,19 +1030,22 @@ export const linkFolderToPJBA =
 				return {
 					success: false,
 					message: response.data.message || "No se pudo vincular la causa.",
+					code: response.data.code,
 				};
 			}
 		} catch (error) {
 			const errorMessage = axios.isAxiosError(error)
 				? error.response?.data?.message || "Error al vincular la causa."
 				: "Error desconocido al vincular la causa.";
+			// p.ej. MEV_CREDENTIAL_REQUIRED: el modal muestra los campos de credencial.
+			const code = axios.isAxiosError(error) ? error.response?.data?.code : undefined;
 
 			dispatch({
 				type: SET_FOLDER_ERROR,
 				payload: errorMessage,
 			});
 
-			return { success: false, message: errorMessage };
+			return { success: false, message: errorMessage, code };
 		}
 	};
 

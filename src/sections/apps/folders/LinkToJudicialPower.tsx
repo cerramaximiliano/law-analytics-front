@@ -20,11 +20,12 @@ import {
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import { PopupTransition } from "components/@extended/Transitions";
-import { DocumentUpload, ArrowLeft2, ArrowRight2, ExportSquare, InfoCircle, TickCircle, CloseCircle, Warning2 } from "iconsax-react";
+import { DocumentUpload, ArrowLeft2, ArrowRight2, ExportSquare, TickCircle, CloseCircle, Warning2 } from "iconsax-react";
 import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
 import { linkFolderToCausa } from "store/reducers/folder";
 import OverwriteNotice from "./OverwriteNotice";
+import LinkChangesNotice from "./LinkChangesNotice";
 import logoPJCatamarca from "assets/images/logos/logo_pj_catamarca.png";
 import logoPJMendoza from "assets/images/logos/logo_pj_mendoza.png";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
@@ -773,10 +774,7 @@ const LinkToJudicialPower = ({
 
 							<OverwriteNotice checked={overwriteData} onChange={setOverwriteData} folder={folder} target="pjn" accent={BRAND_BLUE} />
 
-							<InlineBanner accent={BRAND_BLUE} icon={<InfoCircle size={16} variant="Bulk" />}>
-								Al vincular esta causa, se descargará y actualizará automáticamente la información desde el sistema del Poder Judicial de la
-								Nación.
-							</InlineBanner>
+							<LinkChangesNotice target="pjn" overwrite={overwriteData} accent={BRAND_BLUE} />
 						</Stack>
 					</DialogContent>
 

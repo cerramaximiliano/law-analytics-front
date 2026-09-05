@@ -19,16 +19,21 @@ import {
 	Divider,
 	TextField,
 	CircularProgress,
+	InputAdornment,
+	IconButton,
+	Tooltip,
 } from "@mui/material";
 import { PopupTransition } from "components/@extended/Transitions";
-import { DocumentUpload, ArrowLeft2 } from "iconsax-react";
+import { DocumentUpload, ArrowLeft2, Eye, EyeSlash, ShieldTick } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
 import { linkFolderToPJBA } from "store/reducers/folder";
 import OverwriteNotice from "./OverwriteNotice";
+import LinkChangesNotice from "./LinkChangesNotice";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 import mevWorkersService, { NavigationCode } from "api/workersMev";
+import mevCredentialsService from "api/mevCredentials";
 
 interface LinkToPJBuenosAiresProps {
 	open: boolean;
@@ -69,6 +74,17 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 	const [organismoError, setOrganismoError] = useState("");
 	const [error, setError] = useState("");
 	const [overwriteData, setOverwriteData] = useState(true);
+	// Credencial de cuenta MEV (causaId=null). Es OBLIGATORIA para vincular: el
+	// scraping de la causa usa la cuenta del usuario, sin fallback al sistema.
+	// "missing" → no hay; "disabled" → existe pero el portal la rechazó (pedimos
+	// la contraseña actualizada); "ok" → no pedimos nada.
+	const [credState, setCredState] = useState<"loading" | "ok" | "missing" | "disabled">("loading");
+	const [credUsername, setCredUsername] = useState("");
+	const [mevUsername, setMevUsername] = useState("");
+	const [mevPassword, setMevPassword] = useState("");
+	const [showMevPassword, setShowMevPassword] = useState(false);
+	const [credError, setCredError] = useState("");
+	const needsCred = credState === "missing" || credState === "disabled";
 	const [touched, setTouched] = useState({
 		jurisdiction: false,
 		organismo: false,
@@ -121,10 +137,39 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 				expedientNumber: false,
 				expedientYear: false,
 			});
+			setMevUsername("");
+			setMevPassword("");
+			setShowMevPassword(false);
+			setCredError("");
 			// Cargar los códigos de navegación
 			loadNavigationCodes();
+			loadCredentialStatus();
 		}
 	}, [open]);
+
+	const loadCredentialStatus = async () => {
+		setCredState("loading");
+		try {
+			const res = await mevCredentialsService.getCredentialsStatus();
+			const global = res.success && res.data ? res.data.global : null;
+			if (global && global.enabled) {
+				setCredState("ok");
+			} else if (global) {
+				// Existe pero está deshabilitada (rechazada por el portal / expirada).
+				// El endpoint hoy no devuelve el username: si en el futuro lo hace, el
+				// campo queda pre-cargado y bloqueado (mismo patrón que SCBA/PJN).
+				const knownUsername = (global as { username?: string }).username || "";
+				setCredState("disabled");
+				setCredUsername(knownUsername);
+				setMevUsername(knownUsername);
+			} else {
+				setCredState("missing");
+			}
+		} catch {
+			// Si no pudimos saberlo, el backend igual valida (MEV_CREDENTIAL_REQUIRED).
+			setCredState("ok");
+		}
+	};
 
 	const loadNavigationCodes = async () => {
 		setLoadingCodes(true);
@@ -281,7 +326,17 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 	const handleSubmit = async () => {
 		formSubmitAttempted.current = true;
 
-		if (!validateAllFields()) {
+		const fieldsOk = validateAllFields();
+		let credOk = true;
+		if (needsCred) {
+			if (!mevUsername.trim() || !mevPassword) {
+				setCredError("Ingresá tu usuario y contraseña del portal MEV para poder vincular la causa.");
+				credOk = false;
+			} else {
+				setCredError("");
+			}
+		}
+		if (!fieldsOk || !credOk) {
 			return;
 		}
 
@@ -296,6 +351,19 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 				setError("Error: No se encontró el organismo seleccionado");
 				setLoading(false);
 				return;
+			}
+
+			// Mismo patrón que el alta (AddFolder): la credencial se guarda como la de la
+			// CUENTA del usuario (una sola, cubre todas sus causas) ANTES de vincular,
+			// porque el backend rechaza la vinculación sin credencial de cuenta.
+			if (needsCred) {
+				const credRes = await mevCredentialsService.saveCredentials(mevUsername.trim(), mevPassword, null);
+				if (!credRes.success) {
+					setCredError(credRes.error || "No se pudo guardar tu credencial MEV.");
+					setLoading(false);
+					return;
+				}
+				setCredState("ok");
 			}
 
 			// Llamar a la acción del store para vincular la causa
@@ -337,7 +405,13 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 					onCancel();
 				}, 1500);
 			} else {
-				setError(result.message || "Error al vincular la causa. Por favor intente nuevamente.");
+				if (result.code === "MEV_CREDENTIAL_REQUIRED") {
+					// El backend no encontró credencial de cuenta habilitada: mostrar los campos.
+					setCredState("missing");
+					setCredError(result.message || "Para vincular con MEV necesitás cargar tu cuenta del portal.");
+				} else {
+					setError(result.message || "Error al vincular la causa. Por favor intente nuevamente.");
+				}
 				setLoading(false);
 			}
 		} catch (err) {
@@ -563,6 +637,85 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 								<Alert severity="info">La causa debe ser de acceso público en el sistema del Poder Judicial.</Alert>
 							</Grid>
 
+							{needsCred && (
+								<>
+									<Grid item xs={12}>
+										<Divider sx={{ my: 0.5 }}>
+											<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>Credenciales del portal MEV</Typography>
+										</Divider>
+									</Grid>
+									<Grid item xs={12}>
+										<Alert severity={credState === "disabled" ? "warning" : "info"} sx={{ "& .MuiAlert-message": { fontSize: "0.78rem" } }}>
+											{credState === "disabled"
+												? `El portal MEV rechazó la contraseña de tu cuenta${
+														credUsername ? ` (${credUsername})` : ""
+												  }. Ingresá la contraseña actualizada para poder vincular la causa.`
+												: "Con tu cuenta del portal MEV (mev.scba.gov.ar) consultamos esta y todas tus causas de Buenos Aires. La guardamos como la credencial de tu cuenta (una sola, para todas). Tu contraseña se almacena encriptada (AES-256)."}
+										</Alert>
+									</Grid>
+									{credError && (
+										<Grid item xs={12}>
+											<Alert severity="error" onClose={() => setCredError("")}>
+												{credError}
+											</Alert>
+										</Grid>
+									)}
+									<Grid item xs={12} sm={6}>
+										<Stack spacing={1.25}>
+											<InputLabel htmlFor="mev-username">Usuario MEV</InputLabel>
+											<TextField
+												fullWidth
+												sx={customInputStyles}
+												id="mev-username"
+												name="mevUsername"
+												placeholder="Tu usuario del portal MEV"
+												value={mevUsername}
+												onChange={(e) => setMevUsername(e.target.value)}
+												disabled={loading || (credState === "disabled" && Boolean(credUsername))}
+												autoComplete="off"
+												inputProps={{ autoCapitalize: "none", autoCorrect: "off", spellCheck: false }}
+												size="small"
+											/>
+										</Stack>
+									</Grid>
+									<Grid item xs={12} sm={6}>
+										<Stack spacing={1.25}>
+											<InputLabel htmlFor="mev-password">Contraseña MEV</InputLabel>
+											<TextField
+												fullWidth
+												sx={customInputStyles}
+												id="mev-password"
+												name="mevPassword"
+												type={showMevPassword ? "text" : "password"}
+												placeholder="Tu contraseña del portal MEV"
+												value={mevPassword}
+												onChange={(e) => setMevPassword(e.target.value)}
+												disabled={loading}
+												autoComplete="new-password"
+												size="small"
+												InputProps={{
+													endAdornment: (
+														<InputAdornment position="end">
+															<Tooltip title="Se almacena encriptada (AES-256)">
+																<ShieldTick size={16} variant="Bulk" color={theme.palette.primary.main} />
+															</Tooltip>
+															<IconButton onClick={() => setShowMevPassword((v) => !v)} edge="end" size="small">
+																{showMevPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
+															</IconButton>
+														</InputAdornment>
+													),
+												}}
+											/>
+										</Stack>
+									</Grid>
+									<Grid item xs={12}>
+										<Divider sx={{ my: 0.5 }}>
+											<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>Expediente</Typography>
+										</Divider>
+									</Grid>
+								</>
+							)}
+
 							{/* Jurisdicción */}
 							<Grid item xs={12}>
 								<Stack spacing={1.25}>
@@ -697,10 +850,7 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 							</Grid>
 
 							<Grid item xs={12}>
-								<Alert severity="warning">
-									Al vincular esta causa, se descargará y actualizará automáticamente la información desde el sistema del Poder Judicial de
-									Buenos Aires.
-								</Alert>
+								<LinkChangesNotice target="mev" overwrite={overwriteData} />
 							</Grid>
 						</>
 					)}
@@ -729,7 +879,7 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 							<Button
 								variant="contained"
 								onClick={handleSubmit}
-								disabled={loading || loadingCodes || navigationCodes.length === 0}
+								disabled={loading || loadingCodes || credState === "loading" || navigationCodes.length === 0}
 								sx={{ minWidth: 100 }}
 							>
 								{loading ? "Vinculando..." : "Vincular"}

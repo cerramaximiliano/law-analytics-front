@@ -24,6 +24,7 @@ import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
 import { linkFolderToEJE } from "store/reducers/folder";
 import OverwriteNotice from "./OverwriteNotice";
+import LinkChangesNotice from "./LinkChangesNotice";
 import ejeWorkersService from "api/workersEje";
 
 const LOGO_EJE = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
@@ -440,10 +441,7 @@ const LinkToPJCaba = ({ open, onCancel, onBack, folderId, folderName, folder }: 
 					</Grid>
 
 					<Grid item xs={12}>
-						<Alert severity="warning">
-							Al vincular esta causa, se descargará y actualizará automáticamente la información desde el sistema EJE de la Ciudad de Buenos
-							Aires.
-						</Alert>
+						<LinkChangesNotice target="eje" overwrite={overwriteData} />
 					</Grid>
 				</Grid>
 			</DialogContent>

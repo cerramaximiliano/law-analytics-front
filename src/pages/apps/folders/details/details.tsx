@@ -151,6 +151,8 @@ const Details = () => {
 	// Sistema del que se desvincula, para el copy del diálogo.
 	const origenVinculo = folder?.eje
 		? "EJE"
+		: folder?.mev
+		? "MEV"
 		: folder?.pjsalta
 		? "PJ Salta"
 		: folder?.pjcatamarca
@@ -489,9 +491,12 @@ const Details = () => {
 				) : (
 					<ExportSquare size={14} variant="Bulk" color={accent} />
 				),
+				// MEV se vincula por carpeta (no por credencial): el pill es el control del
+				// ciclo de vida del vínculo, igual que EJE/IOL. La credencial de cuenta no se toca.
+				onClick: () => setOpenUnlink(true),
 				tooltip: isListRemovedMev
-					? "Esta causa ya no aparece en tu lista de Mis Causas del portal MEV. Puede haber sido archivada o desvinculada por el tribunal."
-					: undefined,
+					? "Esta causa ya no aparece en tu lista de Mis Causas del portal MEV. Puede haber sido archivada o desvinculada por el tribunal. Hacé clic para desvincular la carpeta."
+					: "Hacé clic para desvincular esta carpeta del expediente",
 			};
 		} else if (folder?.scba) {
 			// Prioridad de estados: removida del listado > credenciales en error > OK.
