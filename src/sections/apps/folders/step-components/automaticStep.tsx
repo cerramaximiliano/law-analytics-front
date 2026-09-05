@@ -2449,6 +2449,7 @@ const AutomaticStep = () => {
 														name="mevUsername"
 														placeholder="Tu usuario del portal MEV"
 														autoComplete="off"
+														inputProps={{ autoCapitalize: "none", autoCorrect: "off", spellCheck: false }}
 													/>
 												</Stack>
 											</Grid>

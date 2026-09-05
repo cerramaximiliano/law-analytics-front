@@ -214,6 +214,7 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 				value={username}
 				onChange={(e) => setUsername(e.target.value)}
 				autoComplete="off"
+				inputProps={{ autoCapitalize: "none", autoCorrect: "off", spellCheck: false }}
 			/>
 			<TextField
 				fullWidth
