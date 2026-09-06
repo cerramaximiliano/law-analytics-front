@@ -9,7 +9,7 @@ import { ADD_MULTIPLE_ALERTS, ADD_ALERT } from "store/reducers/alerts";
 import { pjnSyncStarted, pjnSyncProgress, pjnSyncCompleted, pjnSyncError } from "store/reducers/pjnSync";
 import { pjnSiteStatusUpdated, fetchPjnSiteStatus } from "store/reducers/pjnSiteStatus";
 import { scbaSiteStatusUpdated, fetchScbaSiteStatus } from "store/reducers/scbaSiteStatus";
-import { scbaSyncStarted, scbaSyncProgress, scbaSyncCompleted, scbaSyncError } from "store/reducers/scbaSync";
+import { scbaSyncStarted, scbaSyncProgress, scbaSyncCompleted, scbaSyncError, scbaSyncDeferred } from "store/reducers/scbaSync";
 import { movementsSyncStarted, movementsSyncCompleted } from "store/reducers/movementsSync";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { Alert } from "types/alert";
@@ -117,6 +117,11 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 					} else if (p?.phase === "error") {
 						dispatch(scbaSyncError({ message: p.message ?? "Error en sincronización SCBA" }));
 						showNotification(`Error en sincronización ${label}: ${p.message ?? "Error desconocido"}`, "error");
+					} else if (p?.phase === "deferred") {
+						// Intento sin resultado definitivo (rechazo pendiente de confirmación
+						// o fallo transitorio): salir de "sincronizando" sin toast rojo.
+						// El snackbar lo emite GlobalSyncErrorListener.
+						dispatch(scbaSyncDeferred({ message: p.message ?? "La sincronización SCBA se reintentará automáticamente" }));
 					} else if (p?.phase) {
 						dispatch(
 							scbaSyncProgress({

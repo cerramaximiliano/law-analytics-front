@@ -104,6 +104,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		const dispatch = useDispatch();
 		const scbaSync = useSelector((state: any) => state.scbaSync as ScbaSyncState);
 		const lastWsCompletedAtRef = useRef<string | null>(null);
+		const lastWsDeferredAtRef = useRef<string | null>(null);
 
 		// Estado del portal SCBA — usado para deshabilitar submit y mostrar banner.
 		const { isDown: isPortalDown } = useScbaSiteStatus();
@@ -182,6 +183,19 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 				loadCredentialsStatus();
 				if (onSyncComplete) onSyncComplete();
 			}
+			// Intento diferido (rechazo pendiente de confirmación / fallo transitorio):
+			// la cred vuelve a `pending` en DB; cortar el polling (que sólo termina
+			// en completed/error) y refrescar la card. El aviso lo da el listener global.
+			if (scbaSync.phase === "deferred" && scbaSync.deferredAt && scbaSync.deferredAt !== lastWsDeferredAtRef.current) {
+				lastWsDeferredAtRef.current = scbaSync.deferredAt;
+				setIsSyncing(false);
+				setSyncMessage("");
+				if (stopPolling) {
+					stopPolling();
+					setStopPolling(null);
+				}
+				loadCredentialsStatus();
+			}
 			if (scbaSync.hasError && scbaSync.errorMessage) {
 				setIsSyncing(false);
 				setSyncMessage("");
@@ -208,6 +222,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 			scbaSync.message,
 			scbaSync.phase,
 			scbaSync.completedAt,
+			scbaSync.deferredAt,
 			scbaSync.hasError,
 			scbaSync.errorMessage,
 		]);
@@ -909,6 +924,9 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		if (hasCredentials && credentialsStatus) {
 			const isComplete = credentialsStatus.syncStatus === "completed";
 			const hasError = credentialsStatus.syncStatus === "error";
+			// Rechazo del portal todavía no confirmado: la cred sigue habilitada y el
+			// worker reintenta; se avisa en ámbar y se ofrece actualizar la contraseña.
+			const rejectionPending = !hasError && !isComplete && credentialsStatus.lastError?.code === "CREDENTIAL_REJECTED";
 			const isDark = theme.palette.mode === "dark";
 
 			// Color accent según estado: brand-blue para neutral, green para completed, error/amber.
@@ -1021,7 +1039,14 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 							!hasError &&
 							renderInlineNotice("Tus credenciales expiraron. Actualizá tu contraseña para reanudar la sincronización.", STALE_AMBER)}
 
-						{(hasError || credentialsStatus.isExpired) && !showUpdateForm && (
+						{rejectionPending &&
+							!credentialsStatus.isExpired &&
+							renderInlineNotice(
+								"El Portal SCBA rechazó el último intento de acceso. Vamos a reintentar automáticamente; si cambiaste tu contraseña, actualizala acá.",
+								STALE_AMBER,
+							)}
+
+						{(hasError || credentialsStatus.isExpired || rejectionPending) && !showUpdateForm && (
 							<Button
 								variant="outlined"
 								size="small"
@@ -1051,7 +1076,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 							</Button>
 						)}
 
-						{(hasError || credentialsStatus.isExpired) && showUpdateForm && (
+						{(hasError || credentialsStatus.isExpired || rejectionPending) && showUpdateForm && (
 							<Stack spacing={1.25} sx={{ pt: 0.5 }}>
 								<TextField
 									fullWidth

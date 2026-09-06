@@ -24,6 +24,8 @@ import { invalidatePjnCredentialErrorCache } from "hooks/usePjnCredentialError";
 const GlobalSyncErrorListener = () => {
 	const scbaHasError = useSelector((state: any) => state.scbaSync.hasError);
 	const scbaErrorMessage = useSelector((state: any) => state.scbaSync.errorMessage);
+	const scbaDeferredAt = useSelector((state: any) => state.scbaSync.deferredAt);
+	const scbaDeferredMessage = useSelector((state: any) => state.scbaSync.deferredMessage);
 	const pjnHasError = useSelector((state: any) => state.pjnSync.hasError);
 	const pjnErrorMessage = useSelector((state: any) => state.pjnSync.errorMessage);
 	const { enqueueSnackbar } = useSnackbar();
@@ -41,6 +43,20 @@ const GlobalSyncErrorListener = () => {
 		invalidateScbaCredentialErrorCache();
 		dispatch(scbaSyncReset());
 	}, [scbaHasError, scbaErrorMessage, enqueueSnackbar]);
+
+	// Fase `deferred` SCBA: el worker no pudo entrar al portal pero la credencial
+	// sigue habilitada y va a reintentar sola. Aviso amarillo, sin invalidar el
+	// cache de error de los chips (no hay "Sincronización pausada").
+	useEffect(() => {
+		if (!scbaDeferredAt || !scbaDeferredMessage) return;
+		enqueueSnackbar(`SCBA: ${scbaDeferredMessage}`, {
+			variant: "warning",
+			anchorOrigin: { vertical: "bottom", horizontal: "right" },
+			TransitionComponent: Zoom,
+			autoHideDuration: 8000,
+		});
+		dispatch(scbaSyncReset());
+	}, [scbaDeferredAt, scbaDeferredMessage, enqueueSnackbar]);
 
 	useEffect(() => {
 		if (!pjnHasError || !pjnErrorMessage) return;

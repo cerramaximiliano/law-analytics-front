@@ -14,6 +14,11 @@ export interface ScbaSyncState {
 	newCausas: number;
 	hasError: boolean;
 	errorMessage: string | null;
+	// Fin de intento sin resultado definitivo (fase WS `deferred`): el portal
+	// rechazó el login pero la credencial sigue habilitada, o hubo un fallo
+	// transitorio. El worker reintenta solo; no es error para el usuario.
+	deferredAt: string | null;
+	deferredMessage: string | null;
 	// Timestamp bump cada vez que el front muta la credencial (link/unlink/toggle/password).
 	// Los consumidores que dependen del estado real (no del sync) hacen refetch cuando cambia.
 	credentialsChangedAt: string | null;
@@ -28,6 +33,7 @@ export const SCBA_SYNC_STARTED = "scbaSync/STARTED";
 export const SCBA_SYNC_PROGRESS = "scbaSync/PROGRESS";
 export const SCBA_SYNC_COMPLETED = "scbaSync/COMPLETED";
 export const SCBA_SYNC_ERROR = "scbaSync/ERROR";
+export const SCBA_SYNC_DEFERRED = "scbaSync/DEFERRED";
 export const SCBA_SYNC_RESET = "scbaSync/RESET";
 export const SCBA_CREDENTIALS_INVALIDATED = "scbaSync/CREDENTIALS_INVALIDATED";
 
@@ -42,6 +48,8 @@ const initialState: ScbaSyncState = {
 	newCausas: 0,
 	hasError: false,
 	errorMessage: null,
+	deferredAt: null,
+	deferredMessage: null,
 	credentialsChangedAt: null,
 };
 
@@ -71,6 +79,11 @@ export const scbaSyncCompleted = (payload: { foldersCreated: number; newCausas: 
 
 export const scbaSyncError = (payload: { message: string }) => ({
 	type: SCBA_SYNC_ERROR as typeof SCBA_SYNC_ERROR,
+	payload,
+});
+
+export const scbaSyncDeferred = (payload: { message: string }) => ({
+	type: SCBA_SYNC_DEFERRED as typeof SCBA_SYNC_DEFERRED,
 	payload,
 });
 
@@ -167,6 +180,16 @@ const scbaSyncReducer = (state = initialState, action: any): ScbaSyncState => {
 				phase: "error",
 				hasError: true,
 				errorMessage: action.payload.message,
+			};
+
+		case SCBA_SYNC_DEFERRED:
+			return {
+				...state,
+				isActive: false,
+				phase: "deferred",
+				message: action.payload.message,
+				deferredAt: new Date().toISOString(),
+				deferredMessage: action.payload.message,
 			};
 
 		case SCBA_SYNC_RESET:
