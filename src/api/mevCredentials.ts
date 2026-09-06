@@ -63,7 +63,11 @@ export interface GenericMevCredResponse {
 	success: boolean;
 	message?: string;
 	error?: string;
+	/** La request no obtuvo respuesta HTTP (red/conexión): el servidor puede haberla procesado igual. */
+	network?: boolean;
 }
+
+const NETWORK_ERROR = "No se pudo conectar con el servidor. Verificá tu conexión e intentá de nuevo.";
 
 export interface MevUnlinkImpact {
 	/** true si la credencial a desvincular es la global. */
@@ -142,7 +146,11 @@ class MevCredentialsService {
 			return response.data;
 		} catch (error) {
 			const e = error as AxiosError<any>;
-			return { success: false, error: e.response?.data?.error || "Error al eliminar las credenciales MEV" };
+			// Sin `response` la request no llegó a completarse (visto en prod: el
+			// DELETE ni siquiera figuró en nginx). No es un error del servidor: el
+			// caller debe re-consultar el estado antes de acusar el fallo.
+			if (!e.response) return { success: false, network: true, error: NETWORK_ERROR };
+			return { success: false, error: e.response.data?.error || "Error al eliminar las credenciales MEV" };
 		}
 	}
 

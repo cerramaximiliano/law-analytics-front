@@ -179,7 +179,14 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 		if (!global) return;
 		try {
 			setUnlinking(true);
-			const res = await mevCredentialsService.deleteCredentials(global.id);
+			let res = await mevCredentialsService.deleteCredentials(global.id);
+			if (!res.success && res.network) {
+				// La request no obtuvo respuesta: antes de mostrar error, verificar
+				// contra el servidor si la credencial ya no existe (el borrado pudo
+				// haberse aplicado igual).
+				const status = await mevCredentialsService.getCredentialsStatus();
+				if (status.success && !status.data?.global) res = { success: true };
+			}
 			if (res.success) {
 				enqueueSnackbar("Credencial MEV desvinculada", { variant: "success" });
 				setUnlinkOpen(false);
