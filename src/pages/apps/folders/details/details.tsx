@@ -29,6 +29,7 @@ import {
 	CloseCircle,
 	Clock,
 	Warning2,
+	Lock1,
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
@@ -38,6 +39,7 @@ import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { formatFolderName } from "utils/formatFolderName";
 import { MEV_CRED_LABEL, MEV_CRED_MESSAGE, MEV_PROFILE_PATH, isMevCredLoginFailure, mevCredIssue } from "utils/mevCredential";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
+import { getPjnBindingState, PJN_BINDING_LABEL, PJN_BINDING_COPY, pjnFailedCopy } from "utils/pjnBindingState";
 
 // Components
 import FolderDataCompact from "./components/FolderDataCompact";
@@ -421,22 +423,12 @@ const Details = () => {
 	// de login (source = *-login). Las causas individuales (agregadas vía
 	// pjn-workers / mev-workers / manual) no participan del listado y no deben
 	// mostrar este aviso aunque el flag esté seteado por error.
-	const isPjnFromMisCausas = folder?.pjn === true && folder?.source === "pjn-login";
 	const isMevFromMisCausas = folder?.mev === true && folder?.source === "mev-login";
 	const isScbaFromMisCausas = folder?.scba === true && folder?.source === "scba-login";
-	const isListRemovedPjn =
-		isPjnFromMisCausas && ((folder?.listRemoved === true && folder?.listRemovedSource === "pjn") || folder?.pjnNotFound === true);
+	// Estado PJN: predicados y copy compartidos con la lista y la fila expandida (F10).
+	const pjnState = getPjnBindingState(folder);
 	const isListRemovedMev = isMevFromMisCausas && folder?.listRemoved === true && folder?.listRemovedSource === "mev";
 	const isListRemovedScba = isScbaFromMisCausas && folder?.listRemoved === true && folder?.listRemovedSource === "scba";
-
-	// Causa PJN reservada — visibilidad por credencial (Fase D).
-	// causaCredentialCovered lo denormaliza pjn-mis-causas: true = este usuario
-	// tiene credencial vigente que cubre la causa; false = no (el gate 'reserved'
-	// bloquea el detalle); ausente = causa pública o flag aún no calculado —
-	// en ese caso se mantiene la inferencia legacy por folder.source.
-	const isPjnPrivateCovered = folder?.pjn === true && folder?.causaIsPrivate === true && folder?.causaCredentialCovered === true;
-	const isPjnPrivateRestricted =
-		folder?.pjn === true && folder?.causaIsPrivate === true && !isPjnPrivateCovered && folder?.source !== "pjn-login";
 
 	const isDark = theme.palette.mode === "dark";
 
@@ -461,30 +453,31 @@ const Details = () => {
 
 		let state: BindingState;
 
-		if (folder?.pjn) {
-			const accent = isPjnPrivateRestricted ? theme.palette.error.main : isListRemovedPjn ? STALE_AMBER : LIVE_GREEN;
+		if (folder?.pjn && pjnState) {
+			// Causa PJN reservada — visibilidad por credencial (Fase D). causaCredentialCovered
+			// lo denormaliza pjn-mis-causas: true = cubierto; false = gate 'reserved'/'reserved_revoked'.
+			const errorRed = theme.palette.error.main;
+			const accent =
+				pjnState === "reserved" || pjnState === "failed"
+					? errorRed
+					: pjnState === "revoked" || pjnState === "list_removed" || pjnState === "pending" || pjnState === "pending_selection"
+					? STALE_AMBER
+					: LIVE_GREEN;
+			const icon =
+				pjnState === "revoked" || pjnState === "reserved_covered" ? (
+					<Lock1 size={14} variant="Bulk" color={accent} />
+				) : pjnState === "ok" ? (
+					<ExportSquare size={14} variant="Bulk" color={accent} />
+				) : pjnState === "failed" ? (
+					<CloseCircle size={14} variant="Bulk" color={accent} />
+				) : (
+					<Warning2 size={14} variant="Bulk" color={accent} />
+				);
 			state = {
-				label: isPjnPrivateRestricted
-					? "PJN — Causa reservada"
-					: isPjnPrivateCovered
-					? "PJN — Reservada (con acceso)"
-					: isListRemovedPjn
-					? "PJN — Ya no en la lista"
-					: "Vinculado con PJN",
+				label: PJN_BINDING_LABEL[pjnState],
 				accent,
-				icon:
-					isPjnPrivateRestricted || isListRemovedPjn ? (
-						<Warning2 size={14} variant="Bulk" color={accent} />
-					) : (
-						<ExportSquare size={14} variant="Bulk" color={accent} />
-					),
-				tooltip: isPjnPrivateRestricted
-					? "Esta causa fue marcada como reservada — el tribunal restringió la consulta web pública. El sistema sigue verificando si vuelve a estar accesible."
-					: isPjnPrivateCovered
-					? "Causa reservada por el tribunal — accedés a sus movimientos a través de tu credencial PJN vinculada."
-					: isListRemovedPjn
-					? "Esta causa ya no aparece en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal."
-					: undefined,
+				icon,
+				tooltip: pjnState === "ok" ? undefined : pjnState === "failed" ? pjnFailedCopy(folder) : PJN_BINDING_COPY[pjnState],
 			};
 		} else if (folder?.mev && mevCredIssue(folder)) {
 			// Credencial MEV con problema: el chip lo dice y lleva al perfil (patrón "SCBA —
@@ -772,11 +765,9 @@ const Details = () => {
 		folder?.scba,
 		folder?.previousSyncSource,
 		folder?.folderJuris?.label,
-		isListRemovedPjn,
+		pjnState,
 		isListRemovedMev,
 		isListRemovedScba,
-		isPjnPrivateRestricted,
-		isPjnPrivateCovered,
 		folder?.causaVerified,
 		folder?.causaIsValid,
 		handleOpenLinkJudicial,
@@ -851,8 +842,9 @@ const Details = () => {
 		// causaIsValid=false, pero el problema es la credencial. No bloqueamos el detalle:
 		// los datos ya sincronizados siguen visibles y el chip ámbar avisa qué corregir.
 		if (isMevCredLoginFailure(folder)) return folder.causaVerified !== true ? "pending" : null;
-		if (folder.causaAssociationStatus === "failed") return "failed";
-		if (folder.causaVerified === true && folder.causaIsValid === false) return "invalid";
+		// verified+inválida es el mismo estado que failed (F7 lo escribe así desde el
+		// hub; F10: la lista y la fila expandida dicen "Asociación fallida" en ambos casos).
+		if (folder.causaAssociationStatus === "failed" || (folder.causaVerified === true && folder.causaIsValid === false)) return "failed";
 		if (folder.causaVerified !== true) return "pending";
 		return null;
 	}, [folder, id, isLoader]);

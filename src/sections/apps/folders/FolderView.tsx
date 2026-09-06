@@ -10,6 +10,7 @@ import CausaSelector from "./CausaSelector";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import useSubscription from "hooks/useSubscription";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
+import { getPjnBindingState, PJN_BINDING_LABEL, PJN_BINDING_COPY, pjnFailedCopy } from "utils/pjnBindingState";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 
 // assets
@@ -62,27 +63,10 @@ const FolderView = memo(({ data }: any) => {
 
 	const hasPendingSelection = data.causaAssociationStatus === "pending_selection";
 
-	const isPjnFromMisCausas = data.pjn === true && data.source === "pjn-login";
 	const isScbaFromMisCausas = data.scba === true && data.source === "scba-login";
-	const isListRemovedPjn =
-		isPjnFromMisCausas && ((data.listRemoved === true && data.listRemovedSource === "pjn") || data.pjnNotFound === true);
+	// Estado PJN: predicados y copy compartidos con la lista y el detalle (F10).
+	const pjnState = getPjnBindingState(data);
 	const isListRemovedScba = isScbaFromMisCausas && data.listRemoved === true && data.listRemovedSource === "scba";
-	const listRemovedCopyPjn =
-		"Esta causa no fue encontrada en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal.";
-
-	// Privacidad PJN (F2): mismo criterio que la lista y el detalle.
-	const isPjnReservedCovered = data.pjn === true && data.causaIsPrivate === true && data.causaCredentialCovered === true;
-	const isPjnRevoked = data.pjn === true && data.source === "pjn-login" && data.causaCredentialCovered === false;
-	const isPjnPrivateRestricted =
-		data.pjn === true &&
-		data.source !== "pjn-login" &&
-		!isPjnReservedCovered &&
-		(data.causaIsPrivate === true || data.causaCredentialCovered === false);
-	const privateRestrictedCopyPjn =
-		"Causa reservada — el tribunal restringió la consulta web pública. El sistema sigue verificando si vuelve a estar accesible.";
-	const privateCoveredCopyPjn = "Causa reservada por el tribunal — accedés a sus movimientos a través de tu credencial PJN vinculada.";
-	const revokedCopyPjn =
-		"Acceso restringido — el tribunal reservó esta causa y ya no figura entre las asignadas a tu credencial PJN. El acceso se restablece solo si vuelve a aparecer en tu listado de Mis Causas.";
 
 	const { canVinculateFolders } = useSubscription();
 	const scbaCredError = useScbaCredentialError();
@@ -389,49 +373,51 @@ const FolderView = memo(({ data }: any) => {
 	);
 
 	const renderBinding = () => {
-		if (data.pjn) {
-			const accent = isPjnPrivateRestricted ? theme.palette.error.main : isPjnRevoked || isListRemovedPjn ? STALE_AMBER : LIVE_GREEN;
-			const label = isPjnPrivateRestricted
-				? "PJN — Causa reservada"
-				: isPjnRevoked
-				? "PJN — Acceso restringido"
-				: isPjnReservedCovered
-				? "PJN — Reservada (con acceso)"
-				: isListRemovedPjn
-				? "PJN — Ya no en la lista"
-				: "Vinculado con PJN";
-
-			const showVerify =
-				isPjnPrivateRestricted ||
-				isPjnRevoked ||
-				isPjnReservedCovered ||
-				isListRemovedPjn ||
-				data.causaVerified === false ||
-				(data.causaVerified === true && data.causaIsValid !== undefined);
+		if (data.pjn && pjnState) {
+			const errorRed = theme.palette.error.main;
+			const accent =
+				pjnState === "reserved" || pjnState === "failed"
+					? errorRed
+					: pjnState === "revoked" || pjnState === "list_removed" || pjnState === "pending" || pjnState === "pending_selection"
+					? STALE_AMBER
+					: LIVE_GREEN;
+			const label = PJN_BINDING_LABEL[pjnState];
+			const showVerify = pjnState !== "ok" || (data.causaVerified === true && data.causaIsValid !== undefined);
 
 			let verifyIcon: React.ReactNode = null;
 			let verifyTooltip = "";
-			if (isPjnPrivateRestricted) {
-				verifyIcon = <Warning2 size={14} variant="Bold" color={theme.palette.error.main} />;
-				verifyTooltip = privateRestrictedCopyPjn;
-			} else if (isPjnRevoked) {
-				verifyIcon = <Lock1 size={14} variant="Bold" color={STALE_AMBER} />;
-				verifyTooltip = revokedCopyPjn;
-			} else if (isPjnReservedCovered) {
-				verifyIcon = <Lock1 size={14} variant="Bold" color={LIVE_GREEN} />;
-				verifyTooltip = privateCoveredCopyPjn;
-			} else if (isListRemovedPjn) {
-				verifyIcon = <Warning2 size={14} variant="Bold" color={STALE_AMBER} />;
-				verifyTooltip = listRemovedCopyPjn;
-			} else if (data.causaVerified === false) {
-				verifyIcon = <InfoCircle size={14} variant="Bold" color={STALE_AMBER} />;
-				verifyTooltip = "Pendiente de verificación";
-			} else if (data.causaIsValid) {
-				verifyIcon = <TickCircle size={14} variant="Bold" color={LIVE_GREEN} />;
-				verifyTooltip = "Causa válida";
-			} else {
-				verifyIcon = <CloseCircle size={14} variant="Bold" color={theme.palette.error.main} />;
-				verifyTooltip = "Causa inválida";
+			switch (pjnState) {
+				case "reserved":
+					verifyIcon = <Warning2 size={14} variant="Bold" color={errorRed} />;
+					verifyTooltip = PJN_BINDING_COPY.reserved;
+					break;
+				case "revoked":
+					verifyIcon = <Lock1 size={14} variant="Bold" color={STALE_AMBER} />;
+					verifyTooltip = PJN_BINDING_COPY.revoked;
+					break;
+				case "reserved_covered":
+					verifyIcon = <Lock1 size={14} variant="Bold" color={LIVE_GREEN} />;
+					verifyTooltip = PJN_BINDING_COPY.reserved_covered;
+					break;
+				case "list_removed":
+					verifyIcon = <Warning2 size={14} variant="Bold" color={STALE_AMBER} />;
+					verifyTooltip = PJN_BINDING_COPY.list_removed;
+					break;
+				case "pending_selection":
+					verifyIcon = <Warning2 size={14} variant="Bold" color={STALE_AMBER} />;
+					verifyTooltip = PJN_BINDING_COPY.pending_selection;
+					break;
+				case "failed":
+					verifyIcon = <CloseCircle size={14} variant="Bold" color={errorRed} />;
+					verifyTooltip = pjnFailedCopy(data);
+					break;
+				case "pending":
+					verifyIcon = <InfoCircle size={14} variant="Bold" color={STALE_AMBER} />;
+					verifyTooltip = PJN_BINDING_COPY.pending;
+					break;
+				default:
+					verifyIcon = <TickCircle size={14} variant="Bold" color={LIVE_GREEN} />;
+					verifyTooltip = PJN_BINDING_COPY.ok;
 			}
 
 			return (

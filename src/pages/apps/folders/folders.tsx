@@ -50,7 +50,14 @@ import { PopupTransition } from "components/@extended/Transitions";
 import { IndeterminateCheckbox, HeaderSort, SortingSelect, TablePagination } from "components/third-party/ReactTable";
 import { CSVLink } from "react-csv";
 import { formatFolderName } from "utils/formatFolderName";
-import { INVALID_FOLDER_NAME, MEV_CRED_LABEL, MEV_CRED_MESSAGE, MEV_PROFILE_PATH, isMevCredLoginFailure, mevCredIssue } from "utils/mevCredential";
+import {
+	INVALID_FOLDER_NAME,
+	MEV_CRED_LABEL,
+	MEV_CRED_MESSAGE,
+	MEV_PROFILE_PATH,
+	isMevCredLoginFailure,
+	mevCredIssue,
+} from "utils/mevCredential";
 import SEO from "components/SEO/SEO";
 
 import AddFolder from "sections/apps/folders/AddFolder";
@@ -133,6 +140,7 @@ import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
 import { ResourceUsageBar } from "sections/widget/chart/ResourceUsageWidget";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER, LIVE_PULSE_KEYFRAMES } from "themes/dashboardTokens";
+import { getPjnBindingState, PJN_BINDING_COPY, pjnFailedCopy } from "utils/pjnBindingState";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 import { usePjnCredentialError } from "hooks/usePjnCredentialError";
 
@@ -2962,13 +2970,11 @@ const FoldersLayout = () => {
 					//    del usuario → ve todo; solo se le avisa que es reservada.
 					//  - reservada sin acceso: causa individual (no pjn-login) marcada privada
 					//    por el privacy-checker o sin cobertura → consulta pública restringida.
-					const isPjnReservedCovered = folder.pjn === true && folder.causaIsPrivate === true && folder.causaCredentialCovered === true;
-					const isPjnRevoked = folder.pjn === true && folder.source === "pjn-login" && folder.causaCredentialCovered === false;
-					const isPjnPrivateRestricted =
-						folder.pjn === true &&
-						folder.source !== "pjn-login" &&
-						!isPjnReservedCovered &&
-						(folder.causaIsPrivate === true || folder.causaCredentialCovered === false);
+					// Predicados y copy compartidos con la fila expandida y el detalle (F10).
+					const pjnState = getPjnBindingState(folder);
+					const isPjnRevoked = pjnState === "revoked";
+					const isPjnReservedCovered = pjnState === "reserved_covered";
+					const isPjnPrivateRestricted = pjnState === "reserved";
 					const renderPrivacyRow = (tooltip: string, icon: React.ReactNode, hoverBg: string) => (
 						<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 							<Tooltip title={value || ""}>
@@ -2997,25 +3003,17 @@ const FoldersLayout = () => {
 						</Stack>
 					);
 					if (isPjnRevoked) {
-						return renderPrivacyRow(
-							"Acceso restringido — el tribunal reservó esta causa y ya no figura entre las asignadas a tu credencial PJN. El acceso se restablece solo si vuelve a aparecer en tu listado de Mis Causas.",
-							<Lock1 size={16} variant="Bold" color={STALE_AMBER} />,
-							"warning.lighter",
-						);
+						return renderPrivacyRow(PJN_BINDING_COPY.revoked, <Lock1 size={16} variant="Bold" color={STALE_AMBER} />, "warning.lighter");
 					}
 					if (isPjnReservedCovered) {
 						return renderPrivacyRow(
-							"Causa reservada por el tribunal — accedés a sus movimientos a través de tu credencial PJN vinculada.",
+							PJN_BINDING_COPY.reserved_covered,
 							<Lock1 size={16} variant="Bold" color={LIVE_GREEN} />,
 							"success.lighter",
 						);
 					}
 					if (isPjnPrivateRestricted) {
-						return renderPrivacyRow(
-							"Causa reservada — el tribunal restringió la consulta web pública. El sistema sigue verificando si vuelve a estar accesible.",
-							<Warning2 size={16} variant="Bold" color="#EF4444" />,
-							"error.lighter",
-						);
+						return renderPrivacyRow(PJN_BINDING_COPY.reserved, <Warning2 size={16} variant="Bold" color="#EF4444" />, "error.lighter");
 					}
 					// T20: `pending_selection` se evalúa ANTES que `listRemoved`, igual
 					// que en la fila expandida (FolderView.tsx). Antes el orden era el
@@ -3030,6 +3028,8 @@ const FoldersLayout = () => {
 							? `El expediente dejó de aparecer en el portal del ${
 									IOL_NAMES[folder.listRemovedSource || ""] || source
 							  } en las últimas actualizaciones. Puede haber sido archivado, reservado o movido de organismo.`
+							: source === "PJN"
+							? PJN_BINDING_COPY.list_removed
 							: `Esta causa ya no aparece en tu lista de Mis Causas del portal ${source}. Puede haber sido archivada o desvinculada por el tribunal.`;
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
@@ -3149,11 +3149,15 @@ const FoldersLayout = () => {
 						);
 					}
 
-					// Si la asociación falló, mostrar chip de error.
+					// Si la asociación falló, mostrar chip de error. verified+inválida es el mismo
+					// estado (F7/F10: antes mostraba "Causa inválida" con otro copy más abajo).
 					// Excepción MEV: si la credencial falló el login (invalid/expired/disabled) el
 					// worker deja la carpeta en failed, pero la causa de fondo es la credencial → el
 					// chip ámbar de credencial (más abajo) gana sobre "Asociación fallida".
-					if (folder.causaAssociationStatus === "failed" && !isMevCredLoginFailure(folder)) {
+					if (
+						(folder.causaAssociationStatus === "failed" || (folder.causaVerified === true && folder.causaIsValid === false)) &&
+						!isMevCredLoginFailure(folder)
+					) {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={0.5}>
 								<Stack spacing={0.25} sx={{ minWidth: 0 }}>
@@ -3185,13 +3189,7 @@ const FoldersLayout = () => {
 								</Stack>
 								{/* El motivo real lo devuelve el portal y vive en `causaAssociationError`;
 								    hasta ahora el tooltip decía siempre lo mismo. */}
-								<Tooltip
-									title={
-										folder.causaAssociationError && folder.causaAssociationError !== "Error desconocido"
-											? `No se pudo vincular la causa — ${folder.causaAssociationError}`
-											: "No se pudo vincular la causa - Verifique los datos ingresados"
-									}
-								>
+								<Tooltip title={pjnFailedCopy(folder)}>
 									<Box
 										sx={{
 											display: "inline-flex",
@@ -3330,46 +3328,6 @@ const FoldersLayout = () => {
 											)}
 										</IconButton>
 									</span>
-								</Tooltip>
-							</Stack>
-						);
-					}
-
-					// Si causaVerified es true pero causaIsValid es false, mostrar chip de causa inválida
-					if (folder.causaVerified === true && folder.causaIsValid === false) {
-						return (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<Box
-									sx={{
-										display: "inline-flex",
-										alignItems: "center",
-										gap: 0.625,
-										px: 0.875,
-										py: 0.25,
-										borderRadius: 0.75,
-										bgcolor: alpha(theme.palette.error.main, isDark ? 0.16 : 0.1),
-										border: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.32 : 0.22)}`,
-									}}
-								>
-									<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: theme.palette.error.main }} />
-									<Typography
-										sx={{ fontSize: "0.68rem", fontWeight: 600, color: theme.palette.error.main, letterSpacing: "0.01em", lineHeight: 1 }}
-									>
-										Causa inválida
-									</Typography>
-								</Box>
-								<Tooltip title="Causa inválida - No se pudo verificar en el Poder Judicial">
-									<Box
-										sx={{
-											display: "inline-flex",
-											alignItems: "center",
-											justifyContent: "center",
-											width: 18,
-											height: 18,
-										}}
-									>
-										<CloseCircle size={16} variant="Bold" color="#EF4444" />
-									</Box>
 								</Tooltip>
 							</Stack>
 						);
