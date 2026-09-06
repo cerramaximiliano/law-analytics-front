@@ -10,8 +10,9 @@ import CausaSelector from "./CausaSelector";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import useSubscription from "hooks/useSubscription";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
-import { getPjnBindingState, PJN_BINDING_LABEL, PJN_BINDING_COPY, pjnFailedCopy } from "utils/pjnBindingState";
+import { getPjnBindingState, PJN_BINDING_LABEL, PJN_BINDING_COPY, PJN_PROFILE_PATH, pjnFailedCopy } from "utils/pjnBindingState";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
+import { usePjnCredentialError } from "hooks/usePjnCredentialError";
 
 // assets
 import {
@@ -64,12 +65,14 @@ const FolderView = memo(({ data }: any) => {
 	const hasPendingSelection = data.causaAssociationStatus === "pending_selection";
 
 	const isScbaFromMisCausas = data.scba === true && data.source === "scba-login";
-	// Estado PJN: predicados y copy compartidos con la lista y el detalle (F10).
-	const pjnState = getPjnBindingState(data);
 	const isListRemovedScba = isScbaFromMisCausas && data.listRemoved === true && data.listRemovedSource === "scba";
 
 	const { canVinculateFolders } = useSubscription();
 	const scbaCredError = useScbaCredentialError();
+	// Cred PJN del user en error: misma señal que usa la lista (F14). Es por user, no por folder.
+	const pjnCredError = usePjnCredentialError();
+	// Estado PJN: predicados y copy compartidos con la lista y el detalle (F10).
+	const pjnState = getPjnBindingState(data, { credError: pjnCredError.hasError });
 
 	// Map status → brand-aligned accent
 	const getStatusAccent = (status: string) => {
@@ -378,11 +381,32 @@ const FolderView = memo(({ data }: any) => {
 			const accent =
 				pjnState === "reserved" || pjnState === "failed"
 					? errorRed
-					: pjnState === "revoked" || pjnState === "list_removed" || pjnState === "pending" || pjnState === "pending_selection"
+					: pjnState === "revoked" ||
+					  pjnState === "list_removed" ||
+					  pjnState === "pending" ||
+					  pjnState === "pending_selection" ||
+					  pjnState === "cred_error"
 					? STALE_AMBER
 					: LIVE_GREEN;
 			const label = PJN_BINDING_LABEL[pjnState];
 			const showVerify = pjnState !== "ok" || (data.causaVerified === true && data.causaIsValid !== undefined);
+
+			if (pjnState === "cred_error") {
+				// Igual que "MEV — Credencial…": el pill lo dice en ámbar y lleva al perfil. No se
+				// muestra el badge de verificación: la causa en sí es válida, lo pausado es Mis Causas.
+				return (
+					<Tooltip title={PJN_BINDING_COPY.cred_error}>
+						<Box sx={{ display: "inline-flex" }}>
+							<BindingPill
+								label={label}
+								accent={STALE_AMBER}
+								icon={<Warning2 size={14} variant="Bulk" color={STALE_AMBER} />}
+								onClick={() => navigate(PJN_PROFILE_PATH)}
+							/>
+						</Box>
+					</Tooltip>
+				);
+			}
 
 			let verifyIcon: React.ReactNode = null;
 			let verifyTooltip = "";

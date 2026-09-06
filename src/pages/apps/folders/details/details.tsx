@@ -35,11 +35,12 @@ import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
 import useSubscription from "hooks/useSubscription";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
+import { usePjnCredentialError } from "hooks/usePjnCredentialError";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { formatFolderName } from "utils/formatFolderName";
 import { MEV_CRED_LABEL, MEV_CRED_MESSAGE, MEV_PROFILE_PATH, isMevCredLoginFailure, mevCredIssue } from "utils/mevCredential";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
-import { getPjnBindingState, PJN_BINDING_LABEL, PJN_BINDING_COPY, pjnFailedCopy } from "utils/pjnBindingState";
+import { getPjnBindingState, PJN_BINDING_LABEL, PJN_BINDING_COPY, PJN_PROFILE_PATH, pjnFailedCopy } from "utils/pjnBindingState";
 
 // Components
 import FolderDataCompact from "./components/FolderDataCompact";
@@ -425,8 +426,10 @@ const Details = () => {
 	// mostrar este aviso aunque el flag esté seteado por error.
 	const isMevFromMisCausas = folder?.mev === true && folder?.source === "mev-login";
 	const isScbaFromMisCausas = folder?.scba === true && folder?.source === "scba-login";
+	// Cred PJN del user en error: misma señal que usa la lista (F14). Es por user, no por folder.
+	const pjnCredError = usePjnCredentialError();
 	// Estado PJN: predicados y copy compartidos con la lista y la fila expandida (F10).
-	const pjnState = getPjnBindingState(folder);
+	const pjnState = getPjnBindingState(folder, { credError: pjnCredError.hasError });
 	const isListRemovedMev = isMevFromMisCausas && folder?.listRemoved === true && folder?.listRemovedSource === "mev";
 	const isListRemovedScba = isScbaFromMisCausas && folder?.listRemoved === true && folder?.listRemovedSource === "scba";
 
@@ -460,7 +463,11 @@ const Details = () => {
 			const accent =
 				pjnState === "reserved" || pjnState === "failed"
 					? errorRed
-					: pjnState === "revoked" || pjnState === "list_removed" || pjnState === "pending" || pjnState === "pending_selection"
+					: pjnState === "revoked" ||
+					  pjnState === "list_removed" ||
+					  pjnState === "pending" ||
+					  pjnState === "pending_selection" ||
+					  pjnState === "cred_error"
 					? STALE_AMBER
 					: LIVE_GREEN;
 			const icon =
@@ -478,6 +485,8 @@ const Details = () => {
 				accent,
 				icon,
 				tooltip: pjnState === "ok" ? undefined : pjnState === "failed" ? pjnFailedCopy(folder) : PJN_BINDING_COPY[pjnState],
+				// Cred rechazada: el pill lleva al perfil, como el de MEV (F14).
+				onClick: pjnState === "cred_error" ? () => navigate(PJN_PROFILE_PATH) : undefined,
 			};
 		} else if (folder?.mev && mevCredIssue(folder)) {
 			// Credencial MEV con problema: el chip lo dice y lleva al perfil (patrón "SCBA —

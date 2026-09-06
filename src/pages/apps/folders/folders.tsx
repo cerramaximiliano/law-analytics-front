@@ -3404,8 +3404,8 @@ const FoldersLayout = () => {
 									title={
 										folder.scba === true && scbaCredError.hasError
 											? "SCBA — Sincronización pausada: tus credenciales fueron rechazadas. Actualizalas desde Perfil → Cuentas Judiciales."
-											: folder.pjn === true && folder.source === "pjn-login" && pjnCredError.hasError
-											? "PJN — Sincronización pausada: tus credenciales fueron rechazadas. Actualizalas desde Perfil → Cuentas Judiciales."
+											: getPjnBindingState(folder, { credError: pjnCredError.hasError }) === "cred_error"
+											? PJN_BINDING_COPY.cred_error
 											: folder.pjn === true
 											? "Causa vinculada a PJN"
 											: folder.mev === true

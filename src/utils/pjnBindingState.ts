@@ -7,8 +7,14 @@
  * "reservada" en rojo en la lista y "con acceso" en verde en el detalle.
  *
  * Prioridad (de más a menos dominante): revoked > reserved_covered > reserved >
- * list_removed > pending_selection > failed > pending > ok. El gate del detalle
- * usa el mismo orden.
+ * pending_selection > list_removed > failed > pending > cred_error > ok. El gate
+ * del detalle usa el mismo orden.
+ *
+ * `cred_error` (F14, 2026-09-06) no sale de la carpeta sino de la credencial PJN
+ * del usuario (`usePjnCredentialError`): la lista ya lo mostraba y la fila/detalle
+ * decían "Vinculado con PJN" en verde. Solo aplica a carpetas de Mis Causas
+ * (source pjn-login) cuando ningún estado propio de la carpeta manda — la causa
+ * pública sigue actualizándose por scraping, lo que se pausa es Mis Causas.
  */
 
 export type PjnBindingState =
@@ -19,6 +25,7 @@ export type PjnBindingState =
 	| "pending_selection"
 	| "failed"
 	| "pending"
+	| "cred_error"
 	| "ok";
 
 export interface PjnFolderLike {
@@ -65,7 +72,14 @@ export const isPjnFailed = (f: PjnFolderLike): boolean =>
 export const isPjnPending = (f: PjnFolderLike): boolean =>
 	!isPjnFailed(f) && (f.causaAssociationStatus === "pending" || f.causaVerified !== true);
 
-export function getPjnBindingState(f: PjnFolderLike | null | undefined): PjnBindingState | null {
+export interface PjnBindingOpts {
+	/** Credencial PJN del usuario en error (CREDENTIAL_INVALID / REQUIRED_ACTION). */
+	credError?: boolean;
+}
+
+export const PJN_PROFILE_PATH = "/apps/profiles/account/pjn";
+
+export function getPjnBindingState(f: PjnFolderLike | null | undefined, opts: PjnBindingOpts = {}): PjnBindingState | null {
 	if (!f || f.pjn !== true) return null;
 	if (isPjnRevoked(f)) return "revoked";
 	if (isPjnReservedCovered(f)) return "reserved_covered";
@@ -74,6 +88,7 @@ export function getPjnBindingState(f: PjnFolderLike | null | undefined): PjnBind
 	if (isPjnListRemoved(f)) return "list_removed";
 	if (isPjnFailed(f)) return "failed";
 	if (isPjnPending(f)) return "pending";
+	if (opts.credError && isPjnFromMisCausas(f)) return "cred_error";
 	return "ok";
 }
 
@@ -86,6 +101,7 @@ export const PJN_BINDING_LABEL: Record<PjnBindingState, string> = {
 	pending_selection: "PJN — Seleccionar expediente",
 	failed: "PJN — Asociación fallida",
 	pending: "PJN — Pendiente de verificación",
+	cred_error: "PJN — Sincronización pausada",
 	ok: "Vinculado con PJN",
 };
 
@@ -100,6 +116,7 @@ export const PJN_BINDING_COPY: Record<PjnBindingState, string> = {
 	pending_selection: "Se encontraron múltiples expedientes — hacé clic para seleccionar.",
 	failed: "No se pudo vincular la causa — verificá los datos ingresados.",
 	pending: "Pendiente de verificación — el sistema todavía no confirmó la causa en el Poder Judicial.",
+	cred_error: "PJN — Sincronización pausada: tus credenciales fueron rechazadas. Actualizalas desde Perfil → Cuentas Judiciales.",
 	ok: "Causa válida",
 };
 
