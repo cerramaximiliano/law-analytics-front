@@ -6,6 +6,7 @@
  */
 
 import axios, { AxiosError } from "axios";
+import type { ScbaStatusReason } from "utils/scbaBindingState";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
@@ -46,7 +47,17 @@ export interface ScbaCredentialsData {
 	lastUsed: string | null;
 	isExpired: boolean;
 	consecutiveErrors: number;
-	lastError: { message: string; date: string; code: string } | null;
+	/** Sin `screenshotKey` (evidencia interna; sólo el admin la ve). */
+	lastError: { message: string | null; date: string | null; code: string | null } | null;
+	/** Motivo derivado por el hub (S10). Ausente en servers viejos → `getScbaStatusReason` lo aproxima. */
+	statusReason?: ScbaStatusReason | null;
+	/** `{ count, required }` mientras un rechazo del portal está pendiente de confirmación. */
+	rejectionProgress?: { count: number; required: number } | null;
+	explicitRejections?: number;
+	lastExplicitRejectionAt?: string | null;
+	transientErrors?: number;
+	lastTransientErrorAt?: string | null;
+	disabledReason?: "user_inactive" | null;
 	syncStatus: "never_synced" | "pending" | "in_progress" | "completed" | "error";
 	lastSync: string | null;
 	lastSyncAttempt: string | null;

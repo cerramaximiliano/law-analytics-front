@@ -41,6 +41,7 @@ import { formatFolderName } from "utils/formatFolderName";
 import { MEV_CRED_LABEL, MEV_CRED_MESSAGE, MEV_PROFILE_PATH, isMevCredLoginFailure, mevCredIssue } from "utils/mevCredential";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import { getPjnBindingState, PJN_BINDING_LABEL, PJN_BINDING_COPY, PJN_PROFILE_PATH, pjnFailedCopy } from "utils/pjnBindingState";
+import { getScbaBindingState, SCBA_BINDING_LABEL, SCBA_BINDING_COPY, SCBA_PROFILE_PATH } from "utils/scbaBindingState";
 
 // Components
 import FolderDataCompact from "./components/FolderDataCompact";
@@ -121,7 +122,7 @@ function a11yProps(index: number) {
 
 // Sistemas cuyo vínculo es por número de expediente (portal público): se pueden
 // re-vincular desde la propia carpeta. PJN, MEV y SCBA van por credenciales y se
-// gestionan desde Perfil → Cuentas Judiciales.
+// gestionan desde Integraciones.
 // Sistemas cuyo vínculo es POR CARPETA (número de expediente): desvincular y volver
 // a vincular es seguro desde la carpeta. MEV entra desde 2026-09-05 (la credencial
 // de cuenta cubre todas las causas; el modal la pide si falta). PJN/SCBA no: se
@@ -425,19 +426,19 @@ const Details = () => {
 	// pjn-workers / mev-workers / manual) no participan del listado y no deben
 	// mostrar este aviso aunque el flag esté seteado por error.
 	const isMevFromMisCausas = folder?.mev === true && folder?.source === "mev-login";
-	const isScbaFromMisCausas = folder?.scba === true && folder?.source === "scba-login";
 	// Cred PJN del user en error: misma señal que usa la lista (F14). Es por user, no por folder.
 	const pjnCredError = usePjnCredentialError();
 	// Estado PJN: predicados y copy compartidos con la lista y la fila expandida (F10).
 	const pjnState = getPjnBindingState(folder, { credError: pjnCredError.hasError });
 	const isListRemovedMev = isMevFromMisCausas && folder?.listRemoved === true && folder?.listRemovedSource === "mev";
-	const isListRemovedScba = isScbaFromMisCausas && folder?.listRemoved === true && folder?.listRemovedSource === "scba";
 
 	const isDark = theme.palette.mode === "dark";
 
-	// Estado de la cred SCBA del user: si está en error, los folders SCBA del user
-	// quedan sin sync hasta que actualice. Se muestra en la pill como warning.
+	// Estado de la cred SCBA del user: si está en error o expirada, los folders
+	// SCBA del user quedan sin sync hasta que actualice. Se muestra en la pill
+	// como warning. Predicados y copy compartidos con la lista y la fila (S15).
 	const scbaCredError = useScbaCredentialError();
+	const scbaState = getScbaBindingState(folder, { credError: scbaCredError.hasError });
 
 	// Unified binding pill — replaces rainbow PJN/MEV/SCBA boxes with brand pattern.
 	// Includes optional verification dot indicator at bottom-right (válida/inválida/pendiente).
@@ -518,28 +519,28 @@ const Details = () => {
 					: "Hacé clic para desvincular esta carpeta del expediente",
 			};
 		} else if (folder?.scba) {
-			// Prioridad de estados: removida del listado > credenciales en error > OK.
-			// "Cred en error" es por user (afecta a todos sus folders SCBA), no por
-			// folder. La señal viene de `useScbaCredentialError` que lee el estado
-			// global de la cred SCBA del user.
-			if (isListRemovedScba) {
+			// Prioridad de estados: removida del listado > credenciales en error > OK
+			// (getScbaBindingState). "Cred en error" es por user (afecta a todos sus
+			// folders SCBA), no por folder.
+			if (scbaState === "list_removed") {
 				state = {
-					label: "SCBA — Ya no en la lista",
+					label: SCBA_BINDING_LABEL.list_removed,
 					accent: STALE_AMBER,
 					icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
-					tooltip: 'Esta causa ya no aparece en "Mis Causas" del portal SCBA. Puede haber sido archivada o desvinculada por el tribunal.',
+					tooltip: SCBA_BINDING_COPY.list_removed,
 				};
-			} else if (scbaCredError.hasError) {
+			} else if (scbaState === "cred_error") {
+				// Clickeable: lleva a Integraciones → SCBA, donde se actualiza la contraseña.
 				state = {
-					label: "SCBA — Sincronización pausada",
+					label: SCBA_BINDING_LABEL.cred_error,
 					accent: STALE_AMBER,
 					icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
-					tooltip:
-						"Tus credenciales SCBA fueron rechazadas por el portal. Actualizalas desde Perfil → Cuentas Judiciales para reanudar la sincronización.",
+					tooltip: SCBA_BINDING_COPY.cred_error,
+					onClick: () => navigate(SCBA_PROFILE_PATH),
 				};
 			} else {
 				state = {
-					label: "Vinculado con SCBA",
+					label: SCBA_BINDING_LABEL.ok,
 					accent: LIVE_GREEN,
 					icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
 				};
@@ -659,12 +660,23 @@ const Details = () => {
 			// en PJN colapsado) y los workers de PJN-login/SCBA-login
 			// requieren credenciales que se gestionan desde Perfil.
 			const sourceLabel = folder.previousSyncSource.toUpperCase();
-			state = {
-				label: `Sincronización pausada (era ${sourceLabel})`,
-				accent: STALE_AMBER,
-				icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
-				tooltip: `Esta carpeta fue desvinculada de ${sourceLabel}. Conserva el histórico de movimientos pero no recibe actualizaciones. Para reanudar la sincronización, vinculá tu cuenta desde Perfil → Cuentas Judiciales.`,
-			};
+			state =
+				scbaState === "unlinked"
+					? {
+							// SCBA: copy compartido y click a Integraciones → SCBA (S15).
+							label: SCBA_BINDING_LABEL.unlinked,
+							accent: STALE_AMBER,
+							icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
+							tooltip: SCBA_BINDING_COPY.unlinked,
+							onClick: () => navigate(SCBA_PROFILE_PATH),
+					  }
+					: {
+							label: `Sincronización pausada (era ${sourceLabel})`,
+							accent: STALE_AMBER,
+							icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
+							tooltip: `Esta carpeta fue desvinculada de ${sourceLabel}. Conserva el histórico de movimientos pero no recibe actualizaciones. Para reanudar la sincronización, vinculá tu cuenta desde Integraciones.`,
+							onClick: () => navigate(PJN_PROFILE_PATH),
+					  };
 		} else if (folder?.folderJuris?.label && !SYNCABLE_JURISDICCION_LABELS.includes(folder.folderJuris.label)) {
 			// Folder manual con jurisdicción fuera de las cubiertas por scrapers.
 			// Hoy sincronizamos solo PJN (Nacional), SCBA/MEV (Buenos Aires) y
@@ -776,7 +788,7 @@ const Details = () => {
 		folder?.folderJuris?.label,
 		pjnState,
 		isListRemovedMev,
-		isListRemovedScba,
+		scbaState,
 		folder?.causaVerified,
 		folder?.causaIsValid,
 		handleOpenLinkJudicial,

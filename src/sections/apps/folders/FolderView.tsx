@@ -11,6 +11,7 @@ import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import useSubscription from "hooks/useSubscription";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import { getPjnBindingState, PJN_BINDING_LABEL, PJN_BINDING_COPY, PJN_PROFILE_PATH, pjnFailedCopy } from "utils/pjnBindingState";
+import { getScbaBindingState, SCBA_BINDING_LABEL, SCBA_BINDING_COPY, SCBA_PROFILE_PATH } from "utils/scbaBindingState";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 import { usePjnCredentialError } from "hooks/usePjnCredentialError";
 
@@ -64,11 +65,11 @@ const FolderView = memo(({ data }: any) => {
 
 	const hasPendingSelection = data.causaAssociationStatus === "pending_selection";
 
-	const isScbaFromMisCausas = data.scba === true && data.source === "scba-login";
-	const isListRemovedScba = isScbaFromMisCausas && data.listRemoved === true && data.listRemovedSource === "scba";
-
 	const { canVinculateFolders } = useSubscription();
 	const scbaCredError = useScbaCredentialError();
+	// Estado SCBA: predicados y copy compartidos con la lista y el detalle (S15).
+	// `cred_error` es por user (afecta a todos sus folders SCBA), no por folder.
+	const scbaState = getScbaBindingState(data, { credError: scbaCredError.hasError });
 	// Cred PJN del user en error: misma señal que usa la lista (F14). Es por user, no por folder.
 	const pjnCredError = usePjnCredentialError();
 	// Estado PJN: predicados y copy compartidos con la lista y el detalle (F10).
@@ -528,24 +529,34 @@ const FolderView = memo(({ data }: any) => {
 		}
 
 		if (data.scba) {
-			// Prioridad: removida del listado > credenciales en error > OK.
-			// "Cred en error" es por user (afecta a todos sus folders SCBA), no por folder.
-			if (isListRemovedScba) {
+			// Prioridad: removida del listado > credenciales en error > OK (getScbaBindingState).
+			if (scbaState === "list_removed") {
 				return (
-					<BindingPill
-						label="SCBA — Ya no en la lista"
-						accent={STALE_AMBER}
-						icon={<Warning2 size={14} variant="Bulk" color={STALE_AMBER} />}
-					/>
+					<Tooltip title={SCBA_BINDING_COPY.list_removed}>
+						<Box sx={{ display: "inline-flex" }}>
+							<BindingPill
+								label={SCBA_BINDING_LABEL.list_removed}
+								accent={STALE_AMBER}
+								icon={<Warning2 size={14} variant="Bulk" color={STALE_AMBER} />}
+							/>
+						</Box>
+					</Tooltip>
 				);
 			}
-			if (scbaCredError.hasError) {
+			if (scbaState === "cred_error") {
+				// Igual que "PJN — Sincronización pausada": el pill lo dice en ámbar y
+				// lleva a Integraciones → SCBA, donde se actualiza la contraseña.
 				return (
-					<BindingPill
-						label="SCBA — Sincronización pausada"
-						accent={STALE_AMBER}
-						icon={<Warning2 size={14} variant="Bulk" color={STALE_AMBER} />}
-					/>
+					<Tooltip title={SCBA_BINDING_COPY.cred_error}>
+						<Box sx={{ display: "inline-flex" }}>
+							<BindingPill
+								label={SCBA_BINDING_LABEL.cred_error}
+								accent={STALE_AMBER}
+								icon={<Warning2 size={14} variant="Bulk" color={STALE_AMBER} />}
+								onClick={() => navigate(SCBA_PROFILE_PATH)}
+							/>
+						</Box>
+					</Tooltip>
 				);
 			}
 			const showVerify = data.causaVerified === false || (data.causaVerified === true && validezConocida(data));
@@ -561,7 +572,7 @@ const FolderView = memo(({ data }: any) => {
 				data.causaVerified === false ? "Pendiente de verificación" : data.causaIsValid ? "Causa válida" : "Causa inválida";
 			return (
 				<BindingPill
-					label="Vinculado con SCBA"
+					label={SCBA_BINDING_LABEL.ok}
 					accent={LIVE_GREEN}
 					verifyIcon={showVerify ? verifyIcon : undefined}
 					verifyTooltip={showVerify ? verifyTooltip : undefined}

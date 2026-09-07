@@ -12,6 +12,7 @@ import pjnCredentialsService from "api/pjnCredentials";
 import scbaCredentialsService from "api/scbaCredentials";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 import { BRAND_BLUE } from "themes/dashboardTokens";
+import { isScbaConnected } from "utils/scbaBindingState";
 
 // ==============================|| CONSTANTS ||============================== //
 
@@ -154,9 +155,7 @@ const JurisdictionPill = ({ logoSrc, alt, logoBg, label, tooltip, state, onClick
 					px: 1.125,
 					borderRadius: 1.25,
 					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.24 : 0.16)}`,
-					bgcolor: isConnected
-						? alpha(BRAND_BLUE, isDark ? 0.14 : 0.06)
-						: theme.palette.background.paper,
+					bgcolor: isConnected ? alpha(BRAND_BLUE, isDark ? 0.14 : 0.06) : theme.palette.background.paper,
 					cursor: isInteractive ? "pointer" : "default",
 					transition: "background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease",
 					flexShrink: 0,
@@ -253,13 +252,7 @@ export const FoldersSyncBadges = ({
 				// → caen al branch "no conectada", correcto.
 				const d = response.data;
 				setPjnSynced(
-					!!(
-						response.success &&
-						response.hasCredentials &&
-						d?.enabled === true &&
-						d?.verified === true &&
-						d?.credentialInvalid !== true
-					),
+					!!(response.success && response.hasCredentials && d?.enabled === true && d?.verified === true && d?.credentialInvalid !== true),
 				);
 			})
 			.catch(() => {
@@ -271,18 +264,9 @@ export const FoldersSyncBadges = ({
 		scbaCredentialsService
 			.getCredentialsStatus()
 			.then((response) => {
-				const data = response.data;
-				setScbaSynced(
-					!!(
-						response.success &&
-						response.hasCredentials &&
-						data &&
-						data.enabled === true &&
-						data.isExpired === false &&
-						data.verified === true &&
-						data.syncStatus === "completed"
-					),
-				);
+				// Criterio único de "conectada" (S15): habilitada, no expirada, sin error.
+				// Una cuenta sincronizando ya cuenta como conectada.
+				setScbaSynced(!!(response.success && response.hasCredentials && isScbaConnected(response.data)));
 			})
 			.catch(() => {
 				setScbaSynced(false);
@@ -329,8 +313,7 @@ export const FoldersSyncBadges = ({
 	// `TabPjnIntegration` lee el query param `view` para mostrar el tab correcto.
 	// Diseñado para extender a nuevas integraciones (mev, eje, ...): basta agregar
 	// el valor al ToggleButtonGroup y pasarlo acá.
-	const buildIntegrationsPath = (provider: "pjn" | "scba") =>
-		`/apps/profiles/account/pjn?view=${provider}`;
+	const buildIntegrationsPath = (provider: "pjn" | "scba") => `/apps/profiles/account/pjn?view=${provider}`;
 
 	// Click handler PJN:
 	//   - Conectada → ir a integraciones tab=pjn (para administrar).
@@ -380,11 +363,7 @@ export const FoldersSyncBadges = ({
 				alt="PJ CABA"
 				logoBg="#f8f8f8"
 				label="CABA"
-				tooltip={
-					onCabaClick
-						? "CABA · Ciudad de Buenos Aires — Click para agregar una causa individual"
-						: "CABA · Ciudad de Buenos Aires"
-				}
+				tooltip={onCabaClick ? "CABA · Ciudad de Buenos Aires — Click para agregar una causa individual" : "CABA · Ciudad de Buenos Aires"}
 				state="shortcut"
 				onClick={onCabaClick}
 			/>

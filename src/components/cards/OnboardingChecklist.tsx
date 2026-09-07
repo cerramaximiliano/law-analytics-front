@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 // services — para detectar estado de cred en background
 import pjnCredentialsService from "api/pjnCredentials";
 import scbaCredentialsService from "api/scbaCredentials";
+import { isScbaConnected } from "utils/scbaBindingState";
 import ApiService from "store/reducers/ApiService";
 
 // tracking
@@ -1029,8 +1030,8 @@ export function useJudicialConnectionState(skip = false): JudicialConnectionStat
 				if (cancelled) return;
 
 				const pjnOk = pjnResult.status === "fulfilled" && !!pjnResult.value?.hasCredentials && !!pjnResult.value?.data?.enabled;
-				const scbaOk =
-					scbaResult.status === "fulfilled" && !!scbaResult.value?.hasCredentials && !!(scbaResult.value as any)?.data?.enabled;
+				// Criterio único de "conectada" (S15), compartido con el widget y el perfil.
+				const scbaOk = scbaResult.status === "fulfilled" && !!scbaResult.value?.hasCredentials && isScbaConnected(scbaResult.value?.data);
 
 				setState({ loading: false, hasPjnCredentials: pjnOk, hasScbaCredentials: scbaOk });
 			},

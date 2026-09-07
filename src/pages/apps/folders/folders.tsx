@@ -141,6 +141,7 @@ import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
 import { ResourceUsageBar } from "sections/widget/chart/ResourceUsageWidget";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER, LIVE_PULSE_KEYFRAMES } from "themes/dashboardTokens";
 import { getPjnBindingState, PJN_BINDING_COPY, pjnFailedCopy } from "utils/pjnBindingState";
+import { getScbaBindingState, SCBA_BINDING_COPY, SCBA_PROFILE_PATH } from "utils/scbaBindingState";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 import { usePjnCredentialError } from "hooks/usePjnCredentialError";
 
@@ -2873,7 +2874,7 @@ const FoldersLayout = () => {
 					// detalle y la fila expandida sí la muestran). Mismo patrón que la cred
 					// SCBA/PJN rechazada: carátula + ícono ámbar con tooltip. La acción va
 					// a donde se resuelve: la carpeta (MEV/EJE/IOL, se re-vincula por
-					// número) o Perfil → Cuentas Judiciales (PJN/SCBA).
+					// número) o Integraciones (PJN/SCBA).
 					const isUnlinked = !!folder.previousSyncSource && !showStatusIndicators;
 					if (isUnlinked) {
 						const src = folder.previousSyncSource as string;
@@ -2888,9 +2889,18 @@ const FoldersLayout = () => {
 						};
 						const sourceName = SOURCE_NAMES[src] || src.toUpperCase();
 						const relinkable = ["eje", "mev", "pjsalta", "pjcatamarca", "pjmendoza"].includes(src);
+						// SCBA: copy y destino compartidos (S15). PJN/otros: la cuenta se
+						// administra en Integraciones (el tab ya no se llama "Cuentas Judiciales").
 						const tooltip = relinkable
 							? `Desvinculada de ${sourceName} — conserva todos sus datos pero ya no se sincroniza. Hacé clic para volver a vincularla desde la carpeta.`
-							: `Sincronización pausada (era ${sourceName}) — conserva el histórico pero no recibe actualizaciones. Para reanudar, vinculá tu cuenta desde Perfil → Cuentas Judiciales.`;
+							: src === "scba"
+							? SCBA_BINDING_COPY.unlinked
+							: `Sincronización pausada (era ${sourceName}) — conserva el histórico pero no recibe actualizaciones. Para reanudar, vinculá tu cuenta desde Integraciones.`;
+						const unlinkedTarget = relinkable
+							? `/apps/folders/details/${folder._id}`
+							: src === "scba"
+							? SCBA_PROFILE_PATH
+							: "/apps/profiles/account/pjn";
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 								<Tooltip title={value || ""}>
@@ -2912,7 +2922,7 @@ const FoldersLayout = () => {
 										size="small"
 										onClick={(e) => {
 											e.stopPropagation();
-											navigate(relinkable ? `/apps/folders/details/${folder._id}` : "/apps/profiles/account/pjn");
+											navigate(unlinkedTarget);
 										}}
 										sx={{ padding: 0.5, "&:hover": { backgroundColor: "warning.lighter" } }}
 									>
@@ -3030,6 +3040,8 @@ const FoldersLayout = () => {
 							  } en las últimas actualizaciones. Puede haber sido archivado, reservado o movido de organismo.`
 							: source === "PJN"
 							? PJN_BINDING_COPY.list_removed
+							: source === "SCBA"
+							? SCBA_BINDING_COPY.list_removed
 							: `Esta causa ya no aparece en tu lista de Mis Causas del portal ${source}. Puede haber sido archivada o desvinculada por el tribunal.`;
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
@@ -3402,8 +3414,8 @@ const FoldersLayout = () => {
 								</Tooltip>
 								<Tooltip
 									title={
-										folder.scba === true && scbaCredError.hasError
-											? "SCBA — Sincronización pausada: tus credenciales fueron rechazadas. Actualizalas desde Perfil → Cuentas Judiciales."
+										getScbaBindingState(folder, { credError: scbaCredError.hasError }) === "cred_error"
+											? SCBA_BINDING_COPY.cred_error
 											: getPjnBindingState(folder, { credError: pjnCredError.hasError }) === "cred_error"
 											? PJN_BINDING_COPY.cred_error
 											: folder.pjn === true
@@ -3413,7 +3425,7 @@ const FoldersLayout = () => {
 											: folder.eje === true
 											? "Causa vinculada a EJE"
 											: folder.scba === true
-											? "Causa vinculada a SCBA"
+											? SCBA_BINDING_COPY.ok
 											: folder.pjsalta === true
 											? "Causa vinculada a PJ Salta"
 											: folder.pjcatamarca === true
@@ -3432,8 +3444,20 @@ const FoldersLayout = () => {
 											height: 18,
 										}}
 									>
-										{(folder.scba === true && scbaCredError.hasError) ||
-										(folder.pjn === true && folder.source === "pjn-login" && pjnCredError.hasError) ? (
+										{getScbaBindingState(folder, { credError: scbaCredError.hasError }) === "cred_error" ? (
+											// Cred SCBA rechazada/expirada: el ícono lleva a donde se resuelve
+											// (Integraciones → SCBA), igual que el pill de la fila expandida (S15).
+											<IconButton
+												size="small"
+												onClick={(e) => {
+													e.stopPropagation();
+													navigate(SCBA_PROFILE_PATH);
+												}}
+												sx={{ padding: 0, "&:hover": { backgroundColor: "warning.lighter" } }}
+											>
+												<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
+											</IconButton>
+										) : getPjnBindingState(folder, { credError: pjnCredError.hasError }) === "cred_error" ? (
 											<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
 										) : (
 											<TickCircle size={16} variant="Bold" color={BRAND_BLUE} />

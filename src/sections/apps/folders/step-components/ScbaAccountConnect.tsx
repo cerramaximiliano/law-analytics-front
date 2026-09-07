@@ -55,6 +55,7 @@ import { fetchUserStats, incrementUserStat } from "store/reducers/userStats";
 import { useScbaSiteStatus } from "hooks/useScbaSiteStatus";
 import { scbaSiteStatusUpdated } from "store/reducers/scbaSiteStatus";
 import ScbaMaintenanceAlert from "components/ScbaMaintenanceAlert";
+import { getScbaStatusReason, isScbaConnected, scbaStatusNotice } from "utils/scbaBindingState";
 
 interface ScbaAccountConnectProps {
 	onConnectionSuccess?: () => void;
@@ -138,19 +139,19 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		}, []);
 
 		// Notificar al padre cuando el estado de conexión cambia (después de cargar).
-		// Distingue "error" (cred existe pero con syncStatus=error, requiere acción
-		// del user) de "connected" (todo OK). El padre puede mostrar un pill amber
-		// en lugar de "Conectado" verde.
+		// Distingue "error" (cred existe pero en error o expirada, requiere acción
+		// del user) de "connected" (todo OK) con el criterio único `isScbaConnected`
+		// (S15). El padre puede mostrar un pill amber en lugar de "Conectado" verde.
 		useEffect(() => {
 			if (isLoadingStatus) return;
 			if (!hasCredentials) {
 				onConnectionStatusChange?.("disconnected");
-			} else if (credentialsStatus?.syncStatus === "error") {
+			} else if (!isScbaConnected(credentialsStatus)) {
 				onConnectionStatusChange?.("error");
 			} else {
 				onConnectionStatusChange?.("connected");
 			}
-		}, [hasCredentials, isLoadingStatus, credentialsStatus?.syncStatus]);
+		}, [hasCredentials, isLoadingStatus, credentialsStatus?.syncStatus, credentialsStatus?.isExpired, credentialsStatus?.enabled]);
 
 		const loadCredentialsStatus = async () => {
 			setIsLoadingStatus(true);
@@ -1017,9 +1018,15 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		if (hasCredentials && credentialsStatus) {
 			const isComplete = credentialsStatus.syncStatus === "completed";
 			const hasError = credentialsStatus.syncStatus === "error";
+			// Motivo derivado por el hub (S10) → copy para el usuario (S15). Reemplaza
+			// el `lastError.message` crudo del worker.
+			const statusReason = getScbaStatusReason(credentialsStatus);
+			const statusNotice = scbaStatusNotice(credentialsStatus);
 			// Rechazo del portal todavía no confirmado: la cred sigue habilitada y el
 			// worker reintenta; se avisa en ámbar y se ofrece actualizar la contraseña.
-			const rejectionPending = !hasError && !isComplete && credentialsStatus.lastError?.code === "CREDENTIAL_REJECTED";
+			const rejectionPending = !hasError && statusReason === "rejection_pending";
+			// Fallo transitorio (portal caído / otra sesión): informativo, sin acción.
+			const transientNotice = !hasError && (statusReason === "portal_unstable" || statusReason === "session_conflict");
 			const isDark = theme.palette.mode === "dark";
 
 			// Color accent según estado: brand-blue para neutral, green para completed, error/amber.
@@ -1118,7 +1125,11 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 								LIVE_GREEN,
 							)}
 
-						{hasError && credentialsStatus.lastError && renderInlineNotice(credentialsStatus.lastError.message, theme.palette.error.main)}
+						{hasError &&
+							renderInlineNotice(
+								statusNotice || credentialsStatus.lastError?.message || "La sincronización falló. Actualizá tu contraseña para reintentar.",
+								theme.palette.error.main,
+							)}
 
 						{!isComplete &&
 							!hasError &&
@@ -1130,14 +1141,14 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 
 						{credentialsStatus.isExpired &&
 							!hasError &&
-							renderInlineNotice("Tus credenciales expiraron. Actualizá tu contraseña para reanudar la sincronización.", STALE_AMBER)}
-
-						{rejectionPending &&
-							!credentialsStatus.isExpired &&
 							renderInlineNotice(
-								"El Portal SCBA rechazó el último intento de acceso. Vamos a reintentar automáticamente; si cambiaste tu contraseña, actualizala acá.",
+								statusNotice || "Tus credenciales expiraron. Actualizá tu contraseña para reanudar la sincronización.",
 								STALE_AMBER,
 							)}
+
+						{rejectionPending && !credentialsStatus.isExpired && statusNotice && renderInlineNotice(statusNotice, STALE_AMBER)}
+
+						{transientNotice && statusNotice && renderInlineNotice(statusNotice, BRAND_BLUE)}
 
 						{(hasError || credentialsStatus.isExpired || rejectionPending) && !showUpdateForm && (
 							<Button
