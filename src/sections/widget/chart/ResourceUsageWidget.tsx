@@ -3,7 +3,7 @@ import { Box, Stack, Typography, LinearProgress, Chip, Skeleton, Tooltip } from 
 import { alpha, useTheme } from "@mui/material/styles";
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
-import { FolderOpen, Profile2User, Calculator, StatusUp, TickCircle, Add, ArrowRight2 } from "iconsax-react";
+import { FolderOpen, Profile2User, Calculator, StatusUp, TickCircle, Add, Warning2 } from "iconsax-react";
 import { useSelector, dispatch } from "store";
 import { fetchUserStats } from "store/reducers/userStats";
 import { cleanPlanDisplayName } from "utils/planPricingUtils";
@@ -12,7 +12,7 @@ import pjnCredentialsService from "api/pjnCredentials";
 import scbaCredentialsService from "api/scbaCredentials";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 import { BRAND_BLUE } from "themes/dashboardTokens";
-import { isScbaConnected } from "utils/scbaBindingState";
+import { isScbaConnected, isScbaCredentialBroken, SCBA_PROFILE_PATH } from "utils/scbaBindingState";
 
 // ==============================|| CONSTANTS ||============================== //
 
@@ -44,7 +44,9 @@ interface ResourceUsageWidgetProps {
 //   "shortcut"     → no hay concepto de cuenta para esta jurisdicción (EJE/CABA);
 //                    la pill es un atajo para cargar una causa individual. Ícono "+".
 //   "loading"      → estado de carga inicial de credenciales.
-type JurisdictionState = "connected" | "disconnected" | "shortcut" | "loading";
+// `attention`: la cuenta está vinculada pero la credencial fue rechazada /
+// expiró — el click va a Integraciones a actualizar la contraseña (S15).
+type JurisdictionState = "connected" | "attention" | "disconnected" | "shortcut" | "loading";
 
 interface JurisdictionPillProps {
 	logoSrc: string;
@@ -84,12 +86,16 @@ const JurisdictionPill = ({ logoSrc, alt, logoBg, label, tooltip, state, onClick
 
 	// Indicador a la derecha — distingue funcionalmente las pills:
 	//   connected: tilde verde (cuenta sincronizada)
+	//   attention: warning ámbar (credencial rechazada/expirada, requiere acción)
 	//   disconnected: dot ámbar (cuenta conectable, falta login)
 	//   shortcut: ícono "+" brand (no es cuenta, es atajo para agregar causa)
 	//   loading: dot neutro animado
 	const indicator = (() => {
 		if (state === "connected") {
 			return <TickCircle size={14} variant="Bold" color={theme.palette.success.main} />;
+		}
+		if (state === "attention") {
+			return <Warning2 size={14} variant="Bold" color={theme.palette.warning.main} />;
 		}
 		if (state === "disconnected") {
 			return (
@@ -155,7 +161,11 @@ const JurisdictionPill = ({ logoSrc, alt, logoBg, label, tooltip, state, onClick
 					px: 1.125,
 					borderRadius: 1.25,
 					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.24 : 0.16)}`,
-					bgcolor: isConnected ? alpha(BRAND_BLUE, isDark ? 0.14 : 0.06) : theme.palette.background.paper,
+					bgcolor: isConnected
+						? alpha(BRAND_BLUE, isDark ? 0.14 : 0.06)
+						: state === "attention"
+						? alpha(theme.palette.warning.main, isDark ? 0.16 : 0.08)
+						: theme.palette.background.paper,
 					cursor: isInteractive ? "pointer" : "default",
 					transition: "background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease",
 					flexShrink: 0,
@@ -222,8 +232,11 @@ export const FoldersSyncBadges = ({
 	onPjnClick,
 }: { onCabaClick?: () => void; onBaClick?: () => void; onPjnClick?: () => void } = {}) => {
 	const navigate = useNavigate();
-	const [pjnSynced, setPjnSynced] = useState<boolean | null>(null);
-	const [scbaSynced, setScbaSynced] = useState<boolean | null>(null);
+	// null = cargando. "attention" = cred vinculada pero rechazada/expirada:
+	// el badge avisa y el click lleva a Integraciones a actualizarla.
+	type AccountState = "connected" | "attention" | "disconnected";
+	const [pjnSynced, setPjnSynced] = useState<AccountState | null>(null);
+	const [scbaSynced, setScbaSynced] = useState<AccountState | null>(null);
 
 	// Reactivity: cuando la sync termina o falla, el endpoint quedó stale respecto
 	// del estado real. Leemos pjnSync/scbaSync del store para actualizar el chip
@@ -251,12 +264,16 @@ export const FoldersSyncBadges = ({
 				// CREDENTIAL_INVALID y REQUIRED_ACTION sí marcan credentialInvalid=true
 				// → caen al branch "no conectada", correcto.
 				const d = response.data;
-				setPjnSynced(
-					!!(response.success && response.hasCredentials && d?.enabled === true && d?.verified === true && d?.credentialInvalid !== true),
-				);
+				if (!response.success || !response.hasCredentials || !d) {
+					setPjnSynced("disconnected");
+				} else if (d.credentialInvalid === true) {
+					setPjnSynced("attention");
+				} else {
+					setPjnSynced(d.enabled === true && d.verified === true ? "connected" : "disconnected");
+				}
 			})
 			.catch(() => {
-				setPjnSynced(false);
+				setPjnSynced("disconnected");
 			});
 	}, [pjnSync?.credentialsChangedAt]);
 
@@ -266,33 +283,43 @@ export const FoldersSyncBadges = ({
 			.then((response) => {
 				// Criterio único de "conectada" (S15): habilitada, no expirada, sin error.
 				// Una cuenta sincronizando ya cuenta como conectada.
-				setScbaSynced(!!(response.success && response.hasCredentials && isScbaConnected(response.data)));
+				const d = response.data;
+				if (!response.success || !response.hasCredentials || !d) {
+					setScbaSynced("disconnected");
+				} else if (isScbaCredentialBroken(d)) {
+					setScbaSynced("attention");
+				} else {
+					setScbaSynced(isScbaConnected(d) ? "connected" : "disconnected");
+				}
 			})
 			.catch(() => {
-				setScbaSynced(false);
+				setScbaSynced("disconnected");
 			});
 	}, [scbaSync?.credentialsChangedAt]);
 
 	// Reactividad post-sync: aplicar el resultado directamente desde Redux sin HTTP.
-	// completedAt cambia → connected. hasError cambia → disconnected.
+	// completedAt cambia → connected. hasError cambia → attention (la cred sigue
+	// vinculada, pero falló: hay que actualizarla desde Integraciones).
 	useEffect(() => {
-		if (pjnSync?.completedAt) setPjnSynced(true);
+		if (pjnSync?.completedAt) setPjnSynced("connected");
 	}, [pjnSync?.completedAt]);
 	useEffect(() => {
-		if (pjnSync?.hasError) setPjnSynced(false);
+		if (pjnSync?.hasError) setPjnSynced("attention");
 	}, [pjnSync?.hasError]);
 	useEffect(() => {
-		if (scbaSync?.completedAt) setScbaSynced(true);
+		if (scbaSync?.completedAt) setScbaSynced("connected");
 	}, [scbaSync?.completedAt]);
 	useEffect(() => {
-		if (scbaSync?.hasError) setScbaSynced(false);
+		if (scbaSync?.hasError) setScbaSynced("attention");
 	}, [scbaSync?.hasError]);
 
 	const pjnTooltip =
 		pjnSynced === null
 			? "PJN · Poder Judicial de la Nación — Cargando estado…"
-			: pjnSynced
+			: pjnSynced === "connected"
 			? "PJN · Cuenta conectada — Click para administrar"
+			: pjnSynced === "attention"
+			? "PJN · Requiere atención — Tus credenciales fueron rechazadas. Click para actualizarlas"
 			: onPjnClick
 			? "PJN · Cuenta no conectada — Click para agregar una causa del Poder Judicial de la Nación"
 			: "PJN · Cuenta no conectada — Click para conectar y sincronizar tus causas";
@@ -300,14 +327,16 @@ export const FoldersSyncBadges = ({
 	const scbaTooltip =
 		scbaSynced === null
 			? "BA · Buenos Aires — Cargando estado…"
-			: scbaSynced
+			: scbaSynced === "connected"
 			? "BA · Cuenta conectada — Click para administrar"
+			: scbaSynced === "attention"
+			? "BA · Requiere atención — El portal rechazó tus credenciales. Click para actualizarlas"
 			: onBaClick
 			? "BA · Cuenta no conectada — Click para agregar una causa del Poder Judicial de la Provincia"
 			: "BA · Buenos Aires — No conectada";
 
-	const pjnState: JurisdictionState = pjnSynced === null ? "loading" : pjnSynced ? "connected" : "disconnected";
-	const scbaState: JurisdictionState = scbaSynced === null ? "loading" : scbaSynced ? "connected" : "disconnected";
+	const pjnState: JurisdictionState = pjnSynced === null ? "loading" : pjnSynced;
+	const scbaState: JurisdictionState = scbaSynced === null ? "loading" : scbaSynced;
 
 	// Ruta de la vista de Integraciones donde se administra cada cuenta vinculada.
 	// `TabPjnIntegration` lee el query param `view` para mostrar el tab correcto.
@@ -316,11 +345,12 @@ export const FoldersSyncBadges = ({
 	const buildIntegrationsPath = (provider: "pjn" | "scba") => `/apps/profiles/account/pjn?view=${provider}`;
 
 	// Click handler PJN:
-	//   - Conectada → ir a integraciones tab=pjn (para administrar).
+	//   - Conectada o con credencial rechazada → ir a integraciones tab=pjn
+	//     (administrar / actualizar contraseña).
 	//   - No conectada → usar callback del padre (típicamente abre modal "agregar
 	//     causa"); si no hay callback, fallback a integraciones tab=pjn.
 	const handlePjnClick = () => {
-		if (pjnSynced === true) {
+		if (pjnSynced === "connected" || pjnSynced === "attention") {
 			navigate(buildIntegrationsPath("pjn"));
 		} else if (onPjnClick) {
 			onPjnClick();
@@ -331,8 +361,8 @@ export const FoldersSyncBadges = ({
 
 	// Click handler SCBA: mismo patrón, pero apunta al tab SCBA cuando va a integraciones.
 	const handleScbaClick = () => {
-		if (scbaSynced === true) {
-			navigate(buildIntegrationsPath("scba"));
+		if (scbaSynced === "connected" || scbaSynced === "attention") {
+			navigate(SCBA_PROFILE_PATH);
 		} else if (onBaClick) {
 			onBaClick();
 		}
@@ -356,7 +386,7 @@ export const FoldersSyncBadges = ({
 				label="BA"
 				tooltip={scbaTooltip}
 				state={scbaState}
-				onClick={scbaSynced === true || onBaClick ? handleScbaClick : undefined}
+				onClick={scbaSynced === "connected" || scbaSynced === "attention" || onBaClick ? handleScbaClick : undefined}
 			/>
 			<JurisdictionPill
 				logoSrc={CABA_LOGO_URL}
