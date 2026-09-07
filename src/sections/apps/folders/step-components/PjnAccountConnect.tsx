@@ -1185,7 +1185,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 											// Pre-popular el CUIL con el actual de la cred. El
 											// handleSubmit envía `cuil` state al endpoint; sin
 											// esto, mandaría vacío.
-											setCuil((credentialsStatus as any).cuil || "");
+											setCuil(credentialsStatus.cuil || "");
 											setShowUpdateForm(true);
 										}}
 										startIcon={<Refresh2 size={14} />}
@@ -1235,7 +1235,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 											// nuevo — dejamos editable como fallback.
 											value={formatCuil(cuil)}
 											onChange={
-												(credentialsStatus as any).cuil
+												credentialsStatus.cuil
 													? undefined
 													: (e) => {
 															const value = e.target.value.replace(/\D/g, "");
@@ -1243,10 +1243,10 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 															if (cuilError) validateCuil(value);
 													  }
 											}
-											onBlur={(credentialsStatus as any).cuil ? undefined : () => validateCuil(cuil)}
+											onBlur={credentialsStatus.cuil ? undefined : () => validateCuil(cuil)}
 											error={Boolean(cuilError)}
-											helperText={cuilError || ((credentialsStatus as any).cuil ? "Esta es tu cuenta PJN conectada" : undefined)}
-											disabled={isSubmitting || Boolean((credentialsStatus as any).cuil)}
+											helperText={cuilError || (credentialsStatus.cuil ? "Esta es tu cuenta PJN conectada" : undefined)}
+											disabled={isSubmitting || Boolean(credentialsStatus.cuil)}
 											inputProps={{ maxLength: 13, inputMode: "numeric" }}
 											autoComplete="username"
 											size="small"

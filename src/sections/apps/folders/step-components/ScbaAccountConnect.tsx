@@ -1170,7 +1170,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 									// Pre-popular el username con el actual de la cred. El
 									// handleSubmit envía `username` state al endpoint; sin
 									// esto, mandaría vacío.
-									setUsername((credentialsStatus as any).username || "");
+									setUsername(credentialsStatus.username || "");
 									setShowUpdateForm(true);
 								}}
 								startIcon={<Refresh2 size={14} />}
@@ -1204,17 +1204,17 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 									// para que el user pueda completarlo manualmente.
 									value={username}
 									onChange={
-										(credentialsStatus as any).username
+										credentialsStatus.username
 											? undefined
 											: (e) => {
 													setUsername(e.target.value);
 													if (usernameError) validateUsername(e.target.value);
 											  }
 									}
-									onBlur={(credentialsStatus as any).username ? undefined : () => validateUsername(username)}
+									onBlur={credentialsStatus.username ? undefined : () => validateUsername(username)}
 									error={Boolean(usernameError)}
-									helperText={usernameError || ((credentialsStatus as any).username ? "Esta es tu cuenta SCBA conectada" : undefined)}
-									disabled={isSubmitting || Boolean((credentialsStatus as any).username)}
+									helperText={usernameError || (credentialsStatus.username ? "Esta es tu cuenta SCBA conectada" : undefined)}
+									disabled={isSubmitting || Boolean(credentialsStatus.username)}
 									size="small"
 								/>
 								<TextField

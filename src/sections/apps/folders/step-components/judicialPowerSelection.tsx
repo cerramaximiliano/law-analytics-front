@@ -209,7 +209,7 @@ const JudicialPowerSelection = () => {
 						logoAlt="Poder Judicial de Buenos Aires"
 						logoBg="#f8f8f8"
 						title="Poder Judicial de Buenos Aires"
-						description="Fuero provincial — MEV / Mesa de entradas virtual."
+						description="Fuero provincial — conectá tu cuenta SCBA (Mis Causas) o importá un expediente de la MEV."
 						codeChip="BA"
 					/>
 				</Grid>

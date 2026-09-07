@@ -41,6 +41,8 @@ export interface ScbaSyncHistoryEntry {
 
 export interface ScbaCredentialsData {
 	id: string;
+	/** CUIL/CUIT de la cuenta SCBA (desencriptado por el hub) para pre-popular el form de re-link. */
+	username?: string;
 	enabled: boolean;
 	verified: boolean;
 	verifiedAt: string | null;
@@ -132,7 +134,8 @@ export interface ScbaUnlinkImpact {
 		archived: number;
 		names: string[];
 	};
-	causas: {
+	/** Lo manda el hub pero ninguna vista lo lee (el diálogo muestra solo `folders`). */
+	causas?: {
 		totalToDelete: number;
 		totalToUnlink: number;
 	};
@@ -187,6 +190,17 @@ class ScbaCredentialsService {
 			return response.data;
 		} catch (error) {
 			const axiosError = error as AxiosError<any>;
+			// Sesión vencida (S16): antes caía en el mensaje genérico y el hook
+			// global useScbaCredentialError degradaba en silencio a "sin error".
+			if (axiosError.response?.status === 401) {
+				return {
+					success: false,
+					hasCredentials: false,
+					serviceAvailable: true,
+					error: "Sesión expirada. Por favor, inicie sesión nuevamente.",
+					data: null,
+				};
+			}
 			return {
 				success: false,
 				hasCredentials: false,
@@ -295,19 +309,6 @@ class ScbaCredentialsService {
 	}
 
 	/**
-	 * Habilita o deshabilita las credenciales
-	 */
-	async toggleCredentials(id: string): Promise<GenericScbaResponse> {
-		try {
-			const response = await axios.patch(`${BASE_URL}/api/scba-credentials/${id}/toggle`, {}, { withCredentials: true });
-			return response.data;
-		} catch (error) {
-			const axiosError = error as AxiosError<any>;
-			return { success: false, error: axiosError.response?.data?.error || "Error al cambiar estado de credenciales SCBA" };
-		}
-	}
-
-	/**
 	 * Polling del estado de sincronización
 	 * @returns Función para detener el polling
 	 */
@@ -324,6 +325,9 @@ class ScbaCredentialsService {
 
 			try {
 				const response = await this.getCredentialsStatus();
+				// Si stop() llegó mientras la request estaba en vuelo (el WS ya
+				// manejó el completed), descartar: evita el doble snackbar (S16).
+				if (!isPolling) return;
 
 				if (!response.success) {
 					onError(response.error || "Error obteniendo estado");

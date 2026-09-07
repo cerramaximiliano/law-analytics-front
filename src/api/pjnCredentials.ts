@@ -192,6 +192,15 @@ class PjnCredentialsService {
 				};
 			}
 
+			if (axiosError.response?.status === 401) {
+				return {
+					success: false,
+					hasCredentials: false,
+					serviceAvailable: true,
+					error: "Sesión expirada. Por favor, inicie sesión nuevamente.",
+				};
+			}
+
 			return {
 				success: false,
 				hasCredentials: false,
@@ -265,7 +274,7 @@ class PjnCredentialsService {
 			const response = await axios.patch(
 				`${BASE_URL}/api/pjn-credentials/bandeja-notifications`,
 				{ bandejaNotificationsEnabled },
-				{ withCredentials: true }
+				{ withCredentials: true },
 			);
 			return response.data;
 		} catch (error) {
