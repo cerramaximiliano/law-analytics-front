@@ -123,6 +123,18 @@ export const getScbaStatusReason = (d: ScbaCredentialStatusLike | null | undefin
 export const isScbaConnected = (d: ScbaCredentialStatusLike | null | undefined): boolean =>
 	!!d && d.enabled !== false && d.isExpired !== true && d.syncStatus !== "error";
 
+/**
+ * La cred quedó en `pending` sin sync en curso: el worker difirió el reintento
+ * (rechazo pendiente de confirmación, sesión ajena o portal caído — fase WS
+ * `deferred`, S7). La card no debe mostrar "Sincronizando" ni pollear cada 3 s
+ * durante horas: muestra el aviso del motivo y espera al próximo ciclo.
+ */
+export const isScbaRetryDeferred = (d: ScbaCredentialStatusLike | null | undefined): boolean => {
+	if (!d || d.syncStatus !== "pending") return false;
+	const reason = getScbaStatusReason(d);
+	return reason === "rejection_pending" || reason === "session_conflict" || reason === "portal_unstable";
+};
+
 /** La credencial necesita acción del usuario (actualizar contraseña). */
 export const isScbaCredentialBroken = (d: ScbaCredentialStatusLike | null | undefined): boolean =>
 	!!d && (d.syncStatus === "error" || d.isExpired === true);

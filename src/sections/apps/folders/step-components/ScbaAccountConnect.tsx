@@ -55,7 +55,7 @@ import { fetchUserStats, incrementUserStat } from "store/reducers/userStats";
 import { useScbaSiteStatus } from "hooks/useScbaSiteStatus";
 import { scbaSiteStatusUpdated } from "store/reducers/scbaSiteStatus";
 import ScbaMaintenanceAlert from "components/ScbaMaintenanceAlert";
-import { getScbaStatusReason, isScbaConnected, scbaStatusNotice } from "utils/scbaBindingState";
+import { getScbaStatusReason, isScbaConnected, isScbaRetryDeferred, scbaStatusNotice } from "utils/scbaBindingState";
 
 interface ScbaAccountConnectProps {
 	onConnectionSuccess?: () => void;
@@ -165,8 +165,13 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 					setCredentialsStatus(response.data);
 					setHasCredentials(true);
 
-					// Si está en progreso o pendiente, iniciar polling
-					if (response.data.syncStatus === "in_progress" || response.data.syncStatus === "pending") {
+					// Si está en progreso o pendiente, iniciar polling. Un `pending`
+					// diferido (rechazo pendiente / portal caído) no es un sync en
+					// curso: el worker reintenta en su próximo ciclo, no hay qué pollear.
+					if (
+						response.data.syncStatus === "in_progress" ||
+						(response.data.syncStatus === "pending" && !isScbaRetryDeferred(response.data))
+					) {
 						startPolling();
 					}
 				} else {
@@ -900,8 +905,15 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		// aunque `isSyncing` local haya quedado stuck en true — el state de DB es
 		// la fuente de verdad y evita el caso de loading bar perpetuo cuando el
 		// WS de phase=completed no llega al componente.
+		// Un `pending` diferido (rechazo pendiente / portal caído, S7) tampoco es
+		// "sincronizando": cae al estado de cuenta con el aviso del motivo (S15).
 		const dbSyncTerminal = credentialsStatus?.syncStatus === "completed" || credentialsStatus?.syncStatus === "error";
-		if (!dbSyncTerminal && (isSyncing || credentialsStatus?.syncStatus === "in_progress" || credentialsStatus?.syncStatus === "pending")) {
+		const retryDeferred = isScbaRetryDeferred(credentialsStatus);
+		if (
+			!dbSyncTerminal &&
+			!retryDeferred &&
+			(isSyncing || credentialsStatus?.syncStatus === "in_progress" || credentialsStatus?.syncStatus === "pending")
+		) {
 			const isDark = theme.palette.mode === "dark";
 			return (
 				<Box
