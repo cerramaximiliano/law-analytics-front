@@ -91,6 +91,8 @@ export type ScbaStatusReason =
 
 export interface ScbaCredentialStatusLike {
 	enabled?: boolean;
+	/** `false` hasta que el worker logra el primer login con la contraseña actual (se resetea al actualizarla). */
+	verified?: boolean;
 	isExpired?: boolean;
 	syncStatus?: string;
 	statusReason?: ScbaStatusReason | null;
@@ -156,6 +158,12 @@ export function scbaStatusNotice(d: ScbaCredentialStatusLike | null | undefined)
 		case "rejection_pending": {
 			const p = d?.rejectionProgress;
 			const progress = p && p.required > 1 ? ` (${p.count} de ${p.required} rechazos antes de pausar)` : "";
+			// Credencial recién cargada (S8): el rechazo puede ser un error de tipeo,
+			// pero también la sesión del propio usuario abierta en el portal o su
+			// rate-limit — no se pausa hasta confirmar, y el copy apunta a ambas causas.
+			if (d?.verified === false) {
+				return `El Portal SCBA rechazó el acceso con la contraseña que cargaste${progress}. Si la escribiste mal, corregila acá; si es correcta, cerrá la sesión que tengas abierta en el portal: reintentamos automáticamente en unos minutos.`;
+			}
 			return `El Portal SCBA rechazó el último intento de acceso${progress}. Vamos a reintentar automáticamente; si cambiaste tu contraseña, actualizala acá.`;
 		}
 		case "session_conflict":
