@@ -30,13 +30,25 @@ import {
 	Avatar,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { Link1, Eye, EyeSlash, TickCircle, CloseCircle, Refresh2, InfoCircle, DocumentText, ShieldTick } from "iconsax-react";
+import {
+	Link1,
+	Eye,
+	EyeSlash,
+	TickCircle,
+	CloseCircle,
+	Refresh2,
+	InfoCircle,
+	DocumentText,
+	ShieldTick,
+	FolderMinus,
+	ArrowRotateLeft,
+} from "iconsax-react";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import { enqueueSnackbar } from "notistack";
 import { Zoom } from "@mui/material";
 import LogoLoader from "components/logo/LogoLoader";
 import { PopupTransition } from "components/@extended/Transitions";
-import scbaCredentialsService, { ScbaCredentialsData, ScbaUnlinkImpact } from "api/scbaCredentials";
+import scbaCredentialsService, { ScbaCredentialsData, ScbaUnlinkImpact, ScbaExcludedCausa } from "api/scbaCredentials";
 import { dispatch as storeDispatch } from "store";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { fetchUserStats, incrementUserStat } from "store/reducers/userStats";
@@ -93,6 +105,13 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		const [unlinkImpact, setUnlinkImpact] = useState<ScbaUnlinkImpact | null>(null);
 		const [isLoadingImpact, setIsLoadingImpact] = useState(false);
 		const [isUnlinking, setIsUnlinking] = useState(false);
+
+		// Causas excluidas del sync: carpetas SCBA que el usuario eliminó (S4).
+		// La lista se pide bajo demanda (el estado sólo trae el conteo).
+		const [excludedOpen, setExcludedOpen] = useState(false);
+		const [excludedCausas, setExcludedCausas] = useState<ScbaExcludedCausa[] | null>(null);
+		const [isLoadingExcluded, setIsLoadingExcluded] = useState(false);
+		const [restoringKey, setRestoringKey] = useState<string | null>(null);
 
 		// Folders state para hacer optimistic cleanup tras delete mode
 		const folders = useSelector((state: any) => state.folder?.folders || []);
@@ -426,6 +445,80 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		}));
 
 		// Re-sincronizar
+		const excludedKey = (c: { scbaIdCausa: string; scbaIdOrganismo: string }) => `${c.scbaIdCausa}|${c.scbaIdOrganismo}`;
+
+		const toggleExcluded = async () => {
+			const next = !excludedOpen;
+			setExcludedOpen(next);
+			if (!next || excludedCausas !== null) return;
+			setIsLoadingExcluded(true);
+			try {
+				const response = await scbaCredentialsService.getExcludedCausas();
+				setExcludedCausas(response.success && response.data ? response.data : []);
+				if (!response.success) {
+					enqueueSnackbar(response.error || "No se pudieron cargar las causas excluidas", {
+						variant: "warning",
+						anchorOrigin: { vertical: "bottom", horizontal: "right" },
+						TransitionComponent: Zoom,
+						autoHideDuration: 4000,
+					});
+				}
+			} finally {
+				setIsLoadingExcluded(false);
+			}
+		};
+
+		const handleRestoreExcluded = async (causa: ScbaExcludedCausa) => {
+			const key = excludedKey(causa);
+			setRestoringKey(key);
+			try {
+				const response = await scbaCredentialsService.restoreExcludedCausa({
+					scbaIdCausa: causa.scbaIdCausa,
+					scbaIdOrganismo: causa.scbaIdOrganismo,
+				});
+				if (!response.success && response.code === "SCBA_MAINTENANCE") {
+					if (response.scbaSiteStatus) dispatch(scbaSiteStatusUpdated(response.scbaSiteStatus));
+					enqueueSnackbar(response.error || "El portal de la SCBA no está respondiendo. Reintentá más tarde.", {
+						variant: "warning",
+						anchorOrigin: { vertical: "bottom", horizontal: "right" },
+						TransitionComponent: Zoom,
+						autoHideDuration: 5000,
+					});
+					return;
+				}
+				if (!response.success) {
+					enqueueSnackbar(response.error || "No se pudo restaurar la causa", {
+						variant: "error",
+						anchorOrigin: { vertical: "bottom", horizontal: "right" },
+						TransitionComponent: Zoom,
+						autoHideDuration: 4000,
+					});
+					return;
+				}
+
+				setExcludedCausas((prev) => (prev ? prev.filter((c) => excludedKey(c) !== key) : prev));
+				setCredentialsStatus((prev) => (prev ? { ...prev, excludedCausasCount: Math.max(0, (prev.excludedCausasCount || 0) - 1) } : prev));
+				enqueueSnackbar(response.message || "Causa restaurada. La carpeta volverá a aparecer en la próxima sincronización.", {
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 6000,
+				});
+				// El backend ya dejó la cred en pending: seguimos el progreso y al
+				// completar se refrescan folders/stats (la carpeta nueva aparece sola).
+				if (response.data?.syncRequested && !isSyncing) startPolling();
+			} catch {
+				enqueueSnackbar("Error al restaurar la causa", {
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 4000,
+				});
+			} finally {
+				setRestoringKey(null);
+			}
+		};
+
 		const handleResync = async () => {
 			try {
 				const response = await scbaCredentialsService.requestSync();
@@ -1190,6 +1283,117 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 									}}
 								/>
 							</Stack>
+						)}
+
+						{(credentialsStatus.excludedCausasCount || 0) > 0 && (
+							<Box
+								sx={{
+									borderRadius: 1.5,
+									border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+									bgcolor: alpha(STALE_AMBER, isDark ? 0.08 : 0.05),
+									px: 1.25,
+									py: 1,
+								}}
+							>
+								<Stack direction="row" alignItems="center" spacing={1}>
+									<FolderMinus size={16} variant="Bulk" color={STALE_AMBER} />
+									<Typography variant="body2" sx={{ fontSize: "0.78rem", fontWeight: 600, flex: 1 }}>
+										{credentialsStatus.excludedCausasCount === 1
+											? "1 carpeta eliminada, excluida de la sincronización"
+											: `${credentialsStatus.excludedCausasCount} carpetas eliminadas, excluidas de la sincronización`}
+									</Typography>
+									<Button
+										size="small"
+										onClick={toggleExcluded}
+										sx={{ textTransform: "none", fontSize: "0.74rem", fontWeight: 500, minWidth: 0, px: 1 }}
+									>
+										{excludedOpen ? "Ocultar" : "Ver"}
+									</Button>
+								</Stack>
+
+								{excludedOpen && (
+									<Stack spacing={1} sx={{ mt: 1 }}>
+										<Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.45 }}>
+											Cuando eliminás una carpeta SCBA, la causa deja de sincronizarse para que no vuelva a crearse sola. Al restaurarla, la
+											carpeta reaparece en la próxima sincronización (unos minutos); los movimientos anteriores no generan notificaciones.
+										</Typography>
+
+										{isLoadingExcluded && (
+											<Stack direction="row" alignItems="center" spacing={1}>
+												<CircularProgress size={14} />
+												<Typography variant="caption" color="text.secondary">
+													Cargando…
+												</Typography>
+											</Stack>
+										)}
+
+										{!isLoadingExcluded && excludedCausas && excludedCausas.length === 0 && (
+											<Typography variant="caption" color="text.secondary">
+												No quedan causas excluidas.
+											</Typography>
+										)}
+
+										{!isLoadingExcluded &&
+											excludedCausas?.map((c) => {
+												const key = excludedKey(c);
+												const isRestoring = restoringKey === key;
+												const secondary = [c.scbaNumber, c.organismoNombre].filter(Boolean).join(" · ");
+												return (
+													<Stack
+														key={key}
+														direction="row"
+														alignItems="center"
+														spacing={1}
+														sx={{
+															pt: 0.75,
+															borderTop: `1px solid ${alpha(STALE_AMBER, isDark ? 0.2 : 0.14)}`,
+														}}
+													>
+														<Box sx={{ flex: 1, minWidth: 0 }}>
+															<Typography
+																variant="body2"
+																sx={{
+																	fontSize: "0.76rem",
+																	fontWeight: 500,
+																	overflow: "hidden",
+																	textOverflow: "ellipsis",
+																	whiteSpace: "nowrap",
+																}}
+																title={c.caratula || undefined}
+															>
+																{c.caratula || (c.causaExists ? "Causa sin carátula" : `Causa ${c.scbaIdCausa} (datos no disponibles)`)}
+															</Typography>
+															<Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.68rem" }}>
+																{secondary || "Se completará al sincronizar"}
+																{c.excludedAt ? ` · eliminada el ${new Date(c.excludedAt).toLocaleDateString("es-AR")}` : ""}
+															</Typography>
+														</Box>
+														<Button
+															size="small"
+															variant="outlined"
+															disabled={isRestoring || restoringKey !== null || isPortalDown}
+															onClick={() => handleRestoreExcluded(c)}
+															startIcon={isRestoring ? <CircularProgress size={12} color="inherit" /> : <ArrowRotateLeft size={14} />}
+															sx={{
+																textTransform: "none",
+																fontSize: "0.72rem",
+																fontWeight: 600,
+																py: 0.25,
+																px: 1,
+																whiteSpace: "nowrap",
+																borderColor: alpha(BRAND_BLUE, 0.4),
+																color: BRAND_BLUE,
+																"&:hover": { borderColor: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, 0.06) },
+															}}
+														>
+															{isRestoring ? "Restaurando…" : "Restaurar"}
+														</Button>
+													</Stack>
+												);
+											})}
+									</Stack>
+								)}
+							</Box>
 						)}
 
 						<Box sx={{ height: 1, bgcolor: alpha(accent, isDark ? 0.16 : 0.1) }} />

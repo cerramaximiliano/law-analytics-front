@@ -54,8 +54,21 @@ export interface ScbaCredentialsData {
 	stats: ScbaCredentialStats;
 	syncHistory: ScbaSyncHistoryEntry[];
 	description: string;
+	/** Carpetas SCBA que el usuario eliminó y quedaron excluidas del sync (S4). */
+	excludedCausasCount?: number;
 	createdAt: string;
 	updatedAt: string;
+}
+
+export interface ScbaExcludedCausa {
+	scbaIdCausa: string;
+	scbaIdOrganismo: string;
+	excludedAt: string | null;
+	causaId: string | null;
+	causaExists: boolean;
+	scbaNumber: string | null;
+	caratula: string | null;
+	organismoNombre: string | null;
 }
 
 export interface GetScbaCredentialsStatusResponse {
@@ -200,6 +213,41 @@ class ScbaCredentialsService {
 			}
 
 			return { success: false, error: axiosError.response?.data?.error || "Error al solicitar sincronización" };
+		}
+	}
+
+	/**
+	 * Causas excluidas del sync: carpetas SCBA que el usuario eliminó.
+	 */
+	async getExcludedCausas(): Promise<{ success: boolean; data?: ScbaExcludedCausa[]; error?: string }> {
+		try {
+			const response = await axios.get(`${BASE_URL}/api/scba-credentials/excluded-causas`, { withCredentials: true });
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "Error al obtener las causas excluidas" };
+		}
+	}
+
+	/**
+	 * Restaura una causa excluida: la carpeta la vuelve a crear la próxima
+	 * sincronización (el backend la pide automáticamente si la cuenta está activa).
+	 */
+	async restoreExcludedCausa(key: { scbaIdCausa: string; scbaIdOrganismo: string }): Promise<GenericScbaResponse> {
+		try {
+			const response = await axios.post(`${BASE_URL}/api/scba-credentials/excluded-causas/restore`, key, { withCredentials: true });
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			if (axiosError.response?.status === 503 && axiosError.response.data?.code === "SCBA_MAINTENANCE") {
+				return {
+					success: false,
+					error: axiosError.response.data?.message || "El portal de la SCBA no está respondiendo.",
+					code: "SCBA_MAINTENANCE",
+					scbaSiteStatus: axiosError.response.data?.scbaSiteStatus,
+				};
+			}
+			return { success: false, error: axiosError.response?.data?.error || "Error al restaurar la causa" };
 		}
 	}
 
