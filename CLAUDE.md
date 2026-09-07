@@ -85,9 +85,9 @@ El listener llama a `invalidateScbaCredentialErrorCache()` para que el hook re-f
 Cuando la cred del user está en error, **todos** los folders SCBA del user muestran un indicador amber en lugar del check azul:
 - **Listado** (`folders.tsx`): `Warning2` amber + tooltip `SCBA_BINDING_COPY.cred_error` ("…Actualizá tu contraseña desde Integraciones → SCBA…"), clickeable a `SCBA_PROFILE_PATH`.
 - **Badge BA** (`FoldersSyncBadges`): estado `attention` ámbar "BA · Requiere atención — El portal rechazó tus credenciales".
+- **Detalle** (`details.tsx`): binding pill amber "SCBA — Sincronización pausada".
 
 El hub manda `statusReason` (`credential_invalid | sync_error | user_inactive | unlinked | rejection_pending | session_conflict | portal_unstable | syncing | ok | never_synced`) y `rejectionProgress {count, required}`; la card traduce con `scbaStatusNotice`. Con `syncStatus='pending'` + `rejection_pending | session_conflict | portal_unstable` (`isScbaRetryDeferred`) NO mostrar "Sincronizando" ni arrancar el polling: el worker difirió el reintento.
-- **Detalle** (`details.tsx`): binding pill amber "SCBA — Sincronización pausada".
 
 El hook `useScbaCredentialError` hace un **único fetch global** (cache singleton con TTL 30s + queue de Promise en-flight) para que N cards/pills no spammeen el backend. Reactivo al slice `scbaSync` — cuando llega un WS de error, el listener global invalida el cache → el hook revalida → todos los suscriptores re-renderizan con el indicador correcto.
 
