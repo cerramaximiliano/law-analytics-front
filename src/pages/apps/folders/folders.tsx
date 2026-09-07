@@ -3415,7 +3415,7 @@ const FoldersLayout = () => {
 								<Tooltip
 									title={
 										getScbaBindingState(folder, { credError: scbaCredError.hasError }) === "cred_error"
-											? SCBA_BINDING_COPY.cred_error
+											? scbaCredError.errorMessage || SCBA_BINDING_COPY.cred_error
 											: getPjnBindingState(folder, { credError: pjnCredError.hasError }) === "cred_error"
 											? PJN_BINDING_COPY.cred_error
 											: folder.pjn === true

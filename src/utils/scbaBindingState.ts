@@ -81,6 +81,7 @@ export type ScbaStatusReason =
 	| "credential_invalid"
 	| "sync_error"
 	| "user_inactive"
+	| "disabled_by_admin"
 	| "unlinked"
 	| "rejection_pending"
 	| "session_conflict"
@@ -96,6 +97,8 @@ export interface ScbaCredentialStatusLike {
 	isExpired?: boolean;
 	syncStatus?: string;
 	statusReason?: ScbaStatusReason | null;
+	/** 'admin' = pausada por el administrador (S23): el usuario no puede revertirla. */
+	disabledReason?: string | null;
 	lastError?: { code?: string | null; message?: string | null } | null;
 	rejectionProgress?: { count: number; required: number } | null;
 }
@@ -103,6 +106,7 @@ export interface ScbaCredentialStatusLike {
 /** Aproximación local de `statusReason` para respuestas sin el campo. */
 export function deriveStatusReasonFallback(d: ScbaCredentialStatusLike): ScbaStatusReason {
 	const code = d.lastError?.code || null;
+	if (d.disabledReason === "admin") return "disabled_by_admin";
 	if (d.isExpired === true || code === "CREDENTIAL_INVALID") return "credential_invalid";
 	if (d.syncStatus === "error") return d.enabled === false && !code ? "credential_invalid" : "sync_error";
 	if (d.enabled === false) return "unlinked";
@@ -137,9 +141,16 @@ export const isScbaRetryDeferred = (d: ScbaCredentialStatusLike | null | undefin
 	return reason === "rejection_pending" || reason === "session_conflict" || reason === "portal_unstable";
 };
 
-/** La credencial necesita acción del usuario (actualizar contraseña). */
+/**
+ * La credencial no va a sincronizar hasta que alguien actúe: el usuario
+ * (actualizar contraseña) o, si la pausó el administrador (S23), soporte.
+ */
 export const isScbaCredentialBroken = (d: ScbaCredentialStatusLike | null | undefined): boolean =>
-	!!d && (d.syncStatus === "error" || d.isExpired === true);
+	!!d && (d.syncStatus === "error" || d.isExpired === true || getScbaStatusReason(d) === "disabled_by_admin");
+
+/** Pausada por el administrador: sin form de contraseña ni re-sync; el usuario contacta a soporte. */
+export const isScbaDisabledByAdmin = (d: ScbaCredentialStatusLike | null | undefined): boolean =>
+	getScbaStatusReason(d) === "disabled_by_admin";
 
 /**
  * Copy para el usuario según el motivo. Reemplaza el `lastError.message` crudo
@@ -155,6 +166,8 @@ export function scbaStatusNotice(d: ScbaCredentialStatusLike | null | undefined)
 			return "Pudimos ingresar al Portal SCBA pero falló la lectura de tus causas. Vamos a reintentar; si persiste, re-sincronizá o actualizá tu contraseña.";
 		case "user_inactive":
 			return "La sincronización está pausada porque tu cuenta figura inactiva. Se reanuda sola al reactivarla.";
+		case "disabled_by_admin":
+			return "La sincronización con el Portal SCBA de tu cuenta fue pausada por el administrador de Law Analytics. Contactá a soporte para reactivarla.";
 		case "rejection_pending": {
 			const p = d?.rejectionProgress;
 			const progress = p && p.required > 1 ? ` (${p.count} de ${p.required} rechazos antes de pausar)` : "";

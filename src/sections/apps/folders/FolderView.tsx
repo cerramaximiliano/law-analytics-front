@@ -547,7 +547,7 @@ const FolderView = memo(({ data }: any) => {
 				// Igual que "PJN — Sincronización pausada": el pill lo dice en ámbar y
 				// lleva a Integraciones → SCBA, donde se actualiza la contraseña.
 				return (
-					<Tooltip title={SCBA_BINDING_COPY.cred_error}>
+					<Tooltip title={scbaCredError.errorMessage || SCBA_BINDING_COPY.cred_error}>
 						<Box sx={{ display: "inline-flex" }}>
 							<BindingPill
 								label={SCBA_BINDING_LABEL.cred_error}

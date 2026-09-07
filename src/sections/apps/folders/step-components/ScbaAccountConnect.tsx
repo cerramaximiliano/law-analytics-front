@@ -55,7 +55,7 @@ import { fetchUserStats, incrementUserStat } from "store/reducers/userStats";
 import { useScbaSiteStatus } from "hooks/useScbaSiteStatus";
 import { scbaSiteStatusUpdated } from "store/reducers/scbaSiteStatus";
 import ScbaMaintenanceAlert from "components/ScbaMaintenanceAlert";
-import { getScbaStatusReason, isScbaConnected, isScbaRetryDeferred, scbaStatusNotice } from "utils/scbaBindingState";
+import { getScbaStatusReason, isScbaConnected, isScbaDisabledByAdmin, isScbaRetryDeferred, scbaStatusNotice } from "utils/scbaBindingState";
 
 interface ScbaAccountConnectProps {
 	onConnectionSuccess?: () => void;
@@ -1037,12 +1037,16 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 			// Rechazo del portal todavía no confirmado: la cred sigue habilitada y el
 			// worker reintenta; se avisa en ámbar y se ofrece actualizar la contraseña.
 			const rejectionPending = !hasError && statusReason === "rejection_pending";
+			// S23: pausada por el administrador — aviso propio, sin "Actualizar
+			// contraseña" ni re-sync (el hub los rechaza con DISABLED_BY_ADMIN);
+			// el usuario contacta a soporte.
+			const adminPaused = isScbaDisabledByAdmin(credentialsStatus);
 			// Fallo transitorio (portal caído / otra sesión): informativo, sin acción.
 			const transientNotice = !hasError && (statusReason === "portal_unstable" || statusReason === "session_conflict");
 			const isDark = theme.palette.mode === "dark";
 
 			// Color accent según estado: brand-blue para neutral, green para completed, error/amber.
-			const accent = isComplete ? LIVE_GREEN : hasError ? theme.palette.error.main : BRAND_BLUE;
+			const accent = adminPaused ? STALE_AMBER : isComplete ? LIVE_GREEN : hasError ? theme.palette.error.main : BRAND_BLUE;
 
 			// Notice helper brand-aware (mismo lenguaje que automaticStep)
 			const renderInlineNotice = (text: string, color: string) => (
@@ -1093,7 +1097,9 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 										flexShrink: 0,
 									}}
 								>
-									{isComplete ? (
+									{adminPaused ? (
+										<CloseCircle size={16} variant="Bulk" />
+									) : isComplete ? (
 										<TickCircle size={16} variant="Bulk" />
 									) : hasError ? (
 										<CloseCircle size={16} variant="Bulk" />
@@ -1102,7 +1108,13 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 									)}
 								</Box>
 								<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
-									{isComplete ? "Cuenta conectada" : hasError ? "Error de sincronización" : "Cuenta vinculada"}
+									{adminPaused
+										? "Sincronización pausada"
+										: isComplete
+										? "Cuenta conectada"
+										: hasError
+										? "Error de sincronización"
+										: "Cuenta vinculada"}
 								</Typography>
 							</Stack>
 
@@ -1111,7 +1123,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 									<IconButton
 										size="small"
 										onClick={handleResync}
-										disabled={!credentialsStatus.enabled || isPortalDown}
+										disabled={!credentialsStatus.enabled || isPortalDown || adminPaused}
 										sx={{
 											color: "text.secondary",
 											transition: "background-color 0.15s ease, color 0.15s ease",
@@ -1137,7 +1149,9 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 								LIVE_GREEN,
 							)}
 
+						{adminPaused && statusNotice && renderInlineNotice(statusNotice, STALE_AMBER)}
 						{hasError &&
+							!adminPaused &&
 							renderInlineNotice(
 								statusNotice || credentialsStatus.lastError?.message || "La sincronización falló. Actualizá tu contraseña para reintentar.",
 								theme.palette.error.main,
@@ -1153,6 +1167,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 
 						{credentialsStatus.isExpired &&
 							!hasError &&
+							!adminPaused &&
 							renderInlineNotice(
 								statusNotice || "Tus credenciales expiraron. Actualizá tu contraseña para reanudar la sincronización.",
 								STALE_AMBER,
@@ -1162,7 +1177,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 
 						{transientNotice && statusNotice && renderInlineNotice(statusNotice, BRAND_BLUE)}
 
-						{(hasError || credentialsStatus.isExpired || rejectionPending) && !showUpdateForm && (
+						{(hasError || credentialsStatus.isExpired || rejectionPending) && !adminPaused && !showUpdateForm && (
 							<Button
 								variant="outlined"
 								size="small"
@@ -1192,7 +1207,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 							</Button>
 						)}
 
-						{(hasError || credentialsStatus.isExpired || rejectionPending) && showUpdateForm && (
+						{(hasError || credentialsStatus.isExpired || rejectionPending) && !adminPaused && showUpdateForm && (
 							<Stack spacing={1.25} sx={{ pt: 0.5 }}>
 								<TextField
 									fullWidth

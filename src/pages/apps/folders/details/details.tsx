@@ -535,7 +535,7 @@ const Details = () => {
 					label: SCBA_BINDING_LABEL.cred_error,
 					accent: STALE_AMBER,
 					icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
-					tooltip: SCBA_BINDING_COPY.cred_error,
+					tooltip: scbaCredError.errorMessage || SCBA_BINDING_COPY.cred_error,
 					onClick: () => navigate(SCBA_PROFILE_PATH),
 				};
 			} else {

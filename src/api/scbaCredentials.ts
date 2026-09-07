@@ -59,7 +59,8 @@ export interface ScbaCredentialsData {
 	lastExplicitRejectionAt?: string | null;
 	transientErrors?: number;
 	lastTransientErrorAt?: string | null;
-	disabledReason?: "user_inactive" | null;
+	/** 'user_inactive' = reconciler del manager; 'admin' = pausada por el administrador (S23). */
+	disabledReason?: "user_inactive" | "admin" | null;
 	syncStatus: "never_synced" | "pending" | "in_progress" | "completed" | "error";
 	lastSync: string | null;
 	lastSyncAttempt: string | null;
