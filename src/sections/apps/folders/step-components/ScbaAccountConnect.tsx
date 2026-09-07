@@ -1140,6 +1140,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 						</Stack>
 
 						{isComplete &&
+							!adminPaused &&
 							renderInlineNotice(
 								`Tus causas de la Provincia de Buenos Aires están sincronizadas. Se encontraron ${
 									credentialsStatus.stats?.totalCausasFound || 0
@@ -1436,24 +1437,27 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 
 						<Box sx={{ height: 1, bgcolor: alpha(accent, isDark ? 0.16 : 0.1) }} />
 
-						<Button
-							size="small"
-							onClick={handleUnlinkClick}
-							startIcon={<CloseCircle size={14} />}
-							sx={{
-								alignSelf: "flex-start",
-								textTransform: "none",
-								color: "text.secondary",
-								fontWeight: 500,
-								fontSize: "0.78rem",
-								"&:hover": {
-									bgcolor: alpha(theme.palette.error.main, isDark ? 0.16 : 0.08),
-									color: theme.palette.error.main,
-								},
-							}}
-						>
-							Desvincular cuenta
-						</Button>
+						{/* S23: pausada por el admin → sin desvincular (unlink-impact la excluye; lo resuelve soporte) */}
+						{!adminPaused && (
+							<Button
+								size="small"
+								onClick={handleUnlinkClick}
+								startIcon={<CloseCircle size={14} />}
+								sx={{
+									alignSelf: "flex-start",
+									textTransform: "none",
+									color: "text.secondary",
+									fontWeight: 500,
+									fontSize: "0.78rem",
+									"&:hover": {
+										bgcolor: alpha(theme.palette.error.main, isDark ? 0.16 : 0.08),
+										color: theme.palette.error.main,
+									},
+								}}
+							>
+								Desvincular cuenta
+							</Button>
+						)}
 					</Stack>
 					{unlinkDialog}
 				</Box>
