@@ -569,7 +569,7 @@ export const getArchivedFoldersByUserId =
 			dispatch({ type: SET_ARCHIVED_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate,archivedAt,archivedBy,archivedReason,unarchivedAt";
 
 			const params: Record<string, any> = {
 				archived: true,
@@ -617,7 +617,7 @@ export const getArchivedFoldersByGroupId =
 			dispatch({ type: SET_ARCHIVED_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate,archivedAt,archivedBy,archivedReason,unarchivedAt";
 
 			const params: Record<string, any> = {
 				archived: true,

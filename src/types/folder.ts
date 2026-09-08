@@ -105,6 +105,11 @@ export type FolderData = {
 	pjnNotFound?: boolean;
 	/** Carpeta archivada: no aparece en el listado principal pero sigue accesible por URL directa. */
 	archived?: boolean;
+	/** Contexto del último archivado: 'user' (a mano), 'plan_limit' (creada archivada por tope del plan), 'plan_downgrade' (automático al bajar de plan). */
+	archivedReason?: "user" | "plan_limit" | "plan_downgrade" | string | null;
+	archivedAt?: string | null;
+	archivedBy?: string | null;
+	unarchivedAt?: string | null;
 	/** La causa ya no aparece en el listado del portal origen. Generalizado para PJN/SCBA/MEV/EJE. */
 	listRemoved?: boolean;
 	listRemovedAt?: string;

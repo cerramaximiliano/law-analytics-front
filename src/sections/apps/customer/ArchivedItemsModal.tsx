@@ -34,6 +34,27 @@ import EmptyResults from "./EmptyResults";
 import { Archive, CloseSquare, InfoCircle, SearchNormal1, Warning2 } from "iconsax-react";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
+/**
+ * Contexto del último archivado (hub models/Folder.js archivedReason):
+ * 'user' = a mano, 'plan_limit' = creada archivada por tope del plan,
+ * 'plan_downgrade' = automático al bajar de plan. Carpetas anteriores al
+ * 2026-09-08 pueden no tener motivo.
+ */
+const ARCHIVED_REASON_LABEL: Record<string, string> = {
+	user: "Por vos",
+	plan_limit: "Límite del plan",
+	plan_downgrade: "Cambio de plan",
+	"Plan downgrade - automatic archiving": "Cambio de plan",
+};
+
+function archivedContextLabel(item: any): string {
+	const reason = item?.archivedReason ? ARCHIVED_REASON_LABEL[item.archivedReason] || "Automático" : null;
+	const date = item?.archivedAt ? new Date(item.archivedAt) : null;
+	const dateStr = date && !isNaN(date.getTime()) ? date.toLocaleDateString("es-AR") : null;
+	if (reason && dateStr) return `${reason} · ${dateStr}`;
+	return reason || dateStr || "—";
+}
+
 interface PaginationInfo {
 	total: number;
 	page: number;
@@ -110,6 +131,7 @@ const ArchivedItemsModal = ({
 			{ id: "folderName", label: "Carátula", minWidth: 170 },
 			{ id: "materia", label: "Materia", minWidth: 100 },
 			{ id: "status", label: "Estado", minWidth: 100 },
+			{ id: "archivedContext", label: "Archivada", minWidth: 150 },
 		];
 	}, [itemType]);
 
@@ -520,6 +542,11 @@ const ArchivedItemsModal = ({
 															</TableCell>
 															<TableCell>
 																<StatusPill value={item.status} />
+															</TableCell>
+															<TableCell>
+																<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+																	{archivedContextLabel(item)}
+																</Typography>
 															</TableCell>
 														</>
 													)}
