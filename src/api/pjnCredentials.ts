@@ -6,6 +6,7 @@
  */
 
 import axios, { AxiosError } from "axios";
+import { pjnStatusNotice, PjnStatusReason } from "utils/pjnBindingState";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
@@ -52,6 +53,12 @@ export interface PjnCredentialsStatus {
 	// transitorios (NETWORK_ERROR mid-sync), pero credentialInvalid solo se
 	// pone true cuando el portal rechaza la cred o pide acción del user.
 	credentialInvalid?: boolean;
+	credentialInvalidAt?: string | null;
+	/** Rechazos explícitos acumulados hacia la confirmación (pjn-mis-causas). */
+	explicitRejections?: number;
+	/** Motivo derivado por el hub (pjnCredentialStatusService); el front lo traduce con pjnStatusNotice. */
+	statusReason?: PjnStatusReason | null;
+	rejectionProgress?: { count: number; required: number } | null;
 	syncStatus: "pending" | "in_progress" | "completed" | "error" | "never_synced";
 	lastSync: string | null;
 	lastSyncAttempt: string | null;
@@ -384,7 +391,7 @@ class PjnCredentialsService {
 				}
 
 				if (status.syncStatus === "error") {
-					onError(status.lastError?.message || "Error en sincronización");
+					onError(pjnStatusNotice(status) || status.lastError?.message || "Error en sincronización");
 					isPolling = false;
 					return;
 				}

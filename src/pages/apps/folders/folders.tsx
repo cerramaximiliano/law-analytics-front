@@ -140,7 +140,7 @@ import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
 import { ResourceUsageBar } from "sections/widget/chart/ResourceUsageWidget";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER, LIVE_PULSE_KEYFRAMES } from "themes/dashboardTokens";
-import { getPjnBindingState, PJN_BINDING_COPY, pjnFailedCopy } from "utils/pjnBindingState";
+import { getPjnBindingState, PJN_BINDING_COPY, pjnFailedCopy, PJN_PROFILE_PATH } from "utils/pjnBindingState";
 import { getScbaBindingState, SCBA_BINDING_COPY, SCBA_PROFILE_PATH } from "utils/scbaBindingState";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 import { usePjnCredentialError } from "hooks/usePjnCredentialError";
@@ -3417,7 +3417,7 @@ const FoldersLayout = () => {
 										getScbaBindingState(folder, { credError: scbaCredError.hasError }) === "cred_error"
 											? scbaCredError.errorMessage || SCBA_BINDING_COPY.cred_error
 											: getPjnBindingState(folder, { credError: pjnCredError.hasError }) === "cred_error"
-											? PJN_BINDING_COPY.cred_error
+											? pjnCredError.errorMessage || PJN_BINDING_COPY.cred_error
 											: folder.pjn === true
 											? "Causa vinculada a PJN"
 											: folder.mev === true
@@ -3458,7 +3458,16 @@ const FoldersLayout = () => {
 												<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
 											</IconButton>
 										) : getPjnBindingState(folder, { credError: pjnCredError.hasError }) === "cred_error" ? (
-											<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
+											<IconButton
+												size="small"
+												onClick={(e) => {
+													e.stopPropagation();
+													navigate(PJN_PROFILE_PATH);
+												}}
+												sx={{ padding: 0, "&:hover": { backgroundColor: "warning.lighter" } }}
+											>
+												<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
+											</IconButton>
 										) : (
 											<TickCircle size={16} variant="Bold" color={BRAND_BLUE} />
 										)}

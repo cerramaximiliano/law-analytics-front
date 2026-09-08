@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { getMevStatusReason, mevStatusNotice } from "utils/mevCredential";
 import {
 	Box,
 	Stack,
@@ -32,12 +33,22 @@ interface Props {
 
 type CredStatus = "valid" | "pending" | "invalid" | "expired" | "disabled";
 
+// Estado de la card derivado del mismo motivo que usa el resto del front
+// (utils/mevCredential getMevStatusReason, 2026-09-08): un error transitorio
+// del portal (PORTAL_ERROR) ya no pinta la credencial como "Inválida".
 function deriveStatus(c: MevCredentialData): CredStatus {
-	if (!c.enabled) return "disabled";
-	if (c.isExpired) return "expired";
-	if (c.verified) return "valid";
-	if (c.lastError) return "invalid";
-	return "pending";
+	switch (getMevStatusReason(c)) {
+		case "disabled_by_failures":
+			return "disabled";
+		case "password_expired":
+			return "expired";
+		case "credential_invalid":
+			return "invalid";
+		case "ok":
+			return "valid";
+		default:
+			return "pending";
+	}
 }
 
 const STATUS_META: Record<CredStatus, { label: string; color: "success" | "warning" | "error" | "default" }> = {
@@ -304,13 +315,8 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 							"Con esta credencial consultamos todas tus causas de Buenos Aires."
 						)}
 					</Typography>
-					{g.lastError && status !== "valid" && (
-						<Typography sx={{ fontSize: "0.76rem", color: "text.secondary", mt: 0.5 }}>{g.lastError.message}</Typography>
-					)}
-					{status === "pending" && (
-						<Typography sx={{ fontSize: "0.76rem", color: "text.secondary", mt: 0.5 }}>
-							La validaremos automáticamente cuando consultemos tus causas.
-						</Typography>
+					{status !== "valid" && mevStatusNotice(g) && (
+						<Typography sx={{ fontSize: "0.76rem", color: "text.secondary", mt: 0.5 }}>{mevStatusNotice(g)}</Typography>
 					)}
 				</Box>
 				<Stack direction="row" spacing={1}>

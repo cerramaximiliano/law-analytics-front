@@ -396,7 +396,7 @@ const FolderView = memo(({ data }: any) => {
 				// Igual que "MEV — Credencial…": el pill lo dice en ámbar y lleva al perfil. No se
 				// muestra el badge de verificación: la causa en sí es válida, lo pausado es Mis Causas.
 				return (
-					<Tooltip title={PJN_BINDING_COPY.cred_error}>
+					<Tooltip title={pjnCredError.errorMessage || PJN_BINDING_COPY.cred_error}>
 						<Box sx={{ display: "inline-flex" }}>
 							<BindingPill
 								label={label}

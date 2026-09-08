@@ -485,7 +485,14 @@ const Details = () => {
 				label: PJN_BINDING_LABEL[pjnState],
 				accent,
 				icon,
-				tooltip: pjnState === "ok" ? undefined : pjnState === "failed" ? pjnFailedCopy(folder) : PJN_BINDING_COPY[pjnState],
+				tooltip:
+					pjnState === "ok"
+						? undefined
+						: pjnState === "failed"
+						? pjnFailedCopy(folder)
+						: pjnState === "cred_error"
+						? pjnCredError.errorMessage || PJN_BINDING_COPY.cred_error
+						: PJN_BINDING_COPY[pjnState],
 				// Cred rechazada: el pill lleva al perfil, como el de MEV (F14).
 				onClick: pjnState === "cred_error" ? () => navigate(PJN_PROFILE_PATH) : undefined,
 			};

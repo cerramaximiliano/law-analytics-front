@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { isPjnConnected, isPjnCredentialBroken } from "utils/pjnBindingState";
 import { Box, Stack, Typography, LinearProgress, Chip, Skeleton, Tooltip } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import MainCard from "components/MainCard";
@@ -266,10 +267,10 @@ export const FoldersSyncBadges = ({
 				const d = response.data;
 				if (!response.success || !response.hasCredentials || !d) {
 					setPjnSynced("disconnected");
-				} else if (d.credentialInvalid === true) {
+				} else if (isPjnCredentialBroken(d)) {
 					setPjnSynced("attention");
 				} else {
-					setPjnSynced(d.enabled === true && d.verified === true ? "connected" : "disconnected");
+					setPjnSynced(isPjnConnected(d) && d.verified === true ? "connected" : "disconnected");
 				}
 			})
 			.catch(() => {

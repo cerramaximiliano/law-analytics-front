@@ -116,7 +116,8 @@ export const PJN_BINDING_COPY: Record<PjnBindingState, string> = {
 	pending_selection: "Se encontraron múltiples expedientes — hacé clic para seleccionar.",
 	failed: "No se pudo vincular la causa — verificá los datos ingresados.",
 	pending: "Pendiente de verificación — el sistema todavía no confirmó la causa en el Poder Judicial.",
-	cred_error: "PJN — Sincronización pausada: tus credenciales fueron rechazadas. Actualizalas desde Perfil → Cuentas Judiciales.",
+	cred_error:
+		"PJN — Sincronización pausada: el portal rechazó tus credenciales. Actualizá tu contraseña desde Integraciones → PJN para reanudar la sincronización.",
 	ok: "Causa válida",
 };
 
@@ -125,3 +126,101 @@ export const pjnFailedCopy = (f: PjnFolderLike): string =>
 	f.causaAssociationError && f.causaAssociationError !== "Error desconocido"
 		? `No se pudo vincular la causa — ${f.causaAssociationError}`
 		: PJN_BINDING_COPY.failed;
+
+// ==============================|| CREDENCIAL ||============================== //
+
+/**
+ * Motivo derivado por el hub (`statusReason` de GET /api/pjn-credentials,
+ * services/pjnCredentialStatusService.js, 2026-09-08). Un server viejo no lo
+ * manda: `derivePjnStatusReasonFallback` lo aproxima con los campos crudos.
+ * Espejo de `scbaBindingState.ts`.
+ */
+export type PjnStatusReason =
+	| "credential_invalid"
+	| "required_action"
+	| "rejection_pending"
+	| "unlinked"
+	| "portal_maintenance"
+	| "portal_unstable"
+	| "sync_error"
+	| "syncing"
+	| "never_synced"
+	| "ok";
+
+export interface PjnCredentialStatusLike {
+	enabled?: boolean;
+	verified?: boolean;
+	isValid?: boolean;
+	credentialInvalid?: boolean;
+	explicitRejections?: number;
+	syncStatus?: string;
+	statusReason?: PjnStatusReason | null;
+	lastError?: { code?: string | null; message?: string | null } | null;
+	rejectionProgress?: { count: number; required: number } | null;
+}
+
+const PJN_PORTAL_CODES = ["PORTAL_TIMEOUT", "NETWORK_ERROR", "PORTAL_ERROR", "BROWSER_ERROR", "LOGIN_SERVICE_ERROR"];
+
+export function derivePjnStatusReasonFallback(d: PjnCredentialStatusLike): PjnStatusReason {
+	const code = d.lastError?.code || null;
+	const enabled = d.enabled !== false;
+	if (d.credentialInvalid === true) return "credential_invalid";
+	if (code === "REQUIRED_ACTION") return "required_action";
+	if (code === "CREDENTIAL_INVALID") return (d.explicitRejections || 0) > 0 ? "rejection_pending" : "credential_invalid";
+	if (!enabled && d.syncStatus !== "error") return "unlinked";
+	if (code === "PJN_MAINTENANCE") return "portal_maintenance";
+	if (code && PJN_PORTAL_CODES.includes(code)) return "portal_unstable";
+	if (d.syncStatus === "error") return enabled ? "sync_error" : "credential_invalid";
+	if (d.syncStatus === "pending" || d.syncStatus === "in_progress") return "syncing";
+	if (d.syncStatus === "never_synced" || !d.syncStatus) return "never_synced";
+	return "ok";
+}
+
+export const getPjnStatusReason = (d: PjnCredentialStatusLike | null | undefined): PjnStatusReason | null =>
+	d ? d.statusReason || derivePjnStatusReasonFallback(d) : null;
+
+/** La credencial necesita acción del usuario (contraseña o acción en el portal). */
+export const isPjnCredentialBroken = (d: PjnCredentialStatusLike | null | undefined): boolean => {
+	const r = getPjnStatusReason(d);
+	return r === "credential_invalid" || r === "required_action";
+};
+
+/**
+ * Único criterio de "cuenta PJN conectada": vinculada, habilitada y sin acción
+ * pendiente del usuario. Un error transitorio del portal o un rechazo aún no
+ * confirmado NO la desconecta (el worker reintenta solo).
+ */
+export const isPjnConnected = (d: PjnCredentialStatusLike | null | undefined): boolean =>
+	!!d && d.enabled !== false && !isPjnCredentialBroken(d);
+
+/**
+ * Copy para el usuario según el motivo. Reemplaza el `lastError.message` crudo
+ * del worker (que habla del portal, no del usuario). Null cuando no hay nada
+ * que avisar.
+ */
+export function pjnStatusNotice(d: PjnCredentialStatusLike | null | undefined): string | null {
+	const reason = getPjnStatusReason(d);
+	switch (reason) {
+		case "credential_invalid":
+			return d?.enabled === false
+				? "El portal del PJN rechazó tu contraseña varias veces y la sincronización de Mis Causas quedó pausada. Actualizá tu contraseña acá para reanudarla."
+				: "Contraseña del PJN incorrecta. Si la cambiaste en el portal, actualizala acá para reanudar la sincronización.";
+		case "required_action":
+			return "El portal del PJN te pide completar una acción en tu cuenta (cambio de contraseña obligatorio, 2FA o verificación de email). Resolvela ingresando al portal y volvé a intentar la sincronización.";
+		case "rejection_pending": {
+			const p = d?.rejectionProgress;
+			const progress = p && p.required > 1 ? ` (${p.count} de ${p.required} rechazos antes de pausar)` : "";
+			return `El portal del PJN rechazó el último acceso${progress}. Vamos a reintentar automáticamente; si cambiaste tu contraseña, actualizala acá.`;
+		}
+		case "portal_maintenance":
+			return "El portal del PJN está en mantenimiento. Retomamos la sincronización automáticamente cuando vuelva.";
+		case "portal_unstable":
+			return "El portal del PJN no respondió en el último intento. Tu cuenta sigue vinculada; se reintenta automáticamente.";
+		case "sync_error":
+			return "Pudimos ingresar al portal del PJN pero falló la lectura de tus causas. Vamos a reintentar; si persiste, re-sincronizá.";
+		case "unlinked":
+			return "Desvinculaste tu cuenta del PJN. Volvé a vincularla para reanudar la sincronización.";
+		default:
+			return null;
+	}
+}

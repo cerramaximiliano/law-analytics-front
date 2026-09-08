@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
+import { isPjnCredentialBroken, pjnStatusNotice } from "utils/pjnBindingState";
 import {
 	Box,
 	Stack,
@@ -251,7 +252,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 						// El snackbar lo dispara `GlobalSyncErrorListener` (App.tsx)
 						// para que se vea desde cualquier ruta — no solo cuando este
 						// componente está montado. Solo dispatcheamos el slice.
-						dispatch(pjnSyncError({ message: lastError?.message || "Error en sincronización" }));
+						dispatch(pjnSyncError({ message: pjnStatusNotice(response.data) || lastError?.message || "Error en sincronización" }));
 					} else {
 						const foldersCreated = response.data.foldersCreatedCount ?? 0;
 						dispatch(pjnSyncCompleted({ foldersCreated, newCausas: 0 }));
@@ -295,7 +296,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 			if (isLoadingStatus) return;
 			if (!hasCredentials) {
 				onConnectionStatusChange?.("disconnected");
-			} else if (credentialsStatus?.syncStatus === "error") {
+			} else if (credentialsStatus?.syncStatus === "error" || isPjnCredentialBroken(credentialsStatus)) {
 				onConnectionStatusChange?.("error");
 			} else {
 				onConnectionStatusChange?.("connected");
@@ -1118,13 +1119,16 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 
 								{hasError &&
 									renderInlineNotice(
-										isInvalidPassword
-											? !credentialsStatus.enabled
-												? "Cuenta desactivada: la contraseña del PJN falló en múltiples intentos. Actualizá tu contraseña y volvé a intentar."
-												: "Contraseña del PJN incorrecta. Si la cambiaste en el portal, actualizala acá para reanudar la sincronización."
-											: isRequiredAction
-											? "El portal del PJN requiere una acción tuya (cambio de contraseña obligatorio, 2FA o captcha). Resolvelo ingresando al portal y volvé a intentar la sincronización."
-											: "Error durante la sincronización. Tus credenciales son válidas — podés reintentar o verificar el estado.",
+										// Copy único por motivo (utils/pjnBindingState pjnStatusNotice, 2026-09-08);
+										// el ternario queda como fallback para un server sin statusReason.
+										pjnStatusNotice(credentialsStatus) ||
+											(isInvalidPassword
+												? !credentialsStatus.enabled
+													? "Cuenta desactivada: la contraseña del PJN falló en múltiples intentos. Actualizá tu contraseña y volvé a intentar."
+													: "Contraseña del PJN incorrecta. Si la cambiaste en el portal, actualizala acá para reanudar la sincronización."
+												: isRequiredAction
+												? "El portal del PJN requiere una acción tuya (cambio de contraseña obligatorio, 2FA o captcha). Resolvelo ingresando al portal y volvé a intentar la sincronización."
+												: "Error durante la sincronización. Tus credenciales son válidas — podés reintentar o verificar el estado."),
 										errorAccent,
 										<>
 											{isInvalidPassword && credentialsStatus.consecutiveErrors > 1 && credentialsStatus.enabled && (
