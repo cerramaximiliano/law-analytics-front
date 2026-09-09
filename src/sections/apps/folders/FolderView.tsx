@@ -455,7 +455,11 @@ const FolderView = memo(({ data }: any) => {
 			);
 		}
 
-		if (data.eje && data.causaAssociationStatus === "success") {
+		// E5 (2026-09-09): la rama verde de EJE sólo para carpetas verificadas y
+		// válidas; una EJE 'success' con causaVerified=false (p. ej. recién elegida
+		// de un pivote) cae en la rama IOL de abajo, que ya pinta "Pendiente de
+		// verificación · EJE" / "Vinculación fallida · EJE".
+		if (data.eje && data.causaAssociationStatus === "success" && data.causaVerified === true && data.causaIsValid !== false) {
 			const showVerify = data.causaVerified === false || (data.causaVerified === true && validezConocida(data));
 			const verifyIcon =
 				data.causaVerified === false ? (
