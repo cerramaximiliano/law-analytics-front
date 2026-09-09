@@ -21,6 +21,7 @@ import {
 import { Eye, EyeSlash } from "iconsax-react";
 import * as Yup from "yup";
 import { Formik, FormikHelpers } from "formik";
+import { safeFormikBlur } from "utils/formikSafeBlur";
 import IconButton from "components/@extended/IconButton";
 import useAuth from "hooks/useAuth";
 import { dispatch as reduxDispatch } from "store";
@@ -202,7 +203,7 @@ export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ 
 												type="email"
 												value={values.email}
 												name="email"
-												onBlur={handleBlur}
+												onBlur={safeFormikBlur(handleBlur)}
 												onChange={handleChange}
 												placeholder="Ingresa tu email"
 												fullWidth
@@ -223,7 +224,7 @@ export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ 
 												type={showPassword ? "text" : "password"}
 												value={values.password}
 												name="password"
-												onBlur={handleBlur}
+												onBlur={safeFormikBlur(handleBlur)}
 												onChange={handleChange}
 												disabled={isSubmitting}
 												endAdornment={

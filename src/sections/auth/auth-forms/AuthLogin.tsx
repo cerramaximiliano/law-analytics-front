@@ -22,6 +22,7 @@ import {
 // third-party
 import * as Yup from "yup";
 import { Formik } from "formik";
+import { safeFormikBlur } from "utils/formikSafeBlur";
 
 // project-imports
 import useAuth from "hooks/useAuth";
@@ -269,7 +270,7 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 											type="email"
 											value={values.email}
 											name="email"
-											onBlur={handleBlur}
+											onBlur={safeFormikBlur(handleBlur)}
 											onChange={handleChange}
 											placeholder="Ingrese su dirección de correo electrónico"
 											fullWidth
@@ -294,7 +295,7 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 											type={showPassword ? "text" : "password"}
 											value={values.password}
 											name="password"
-											onBlur={handleBlur}
+											onBlur={safeFormikBlur(handleBlur)}
 											onChange={handleChange}
 											disabled={isAnyFormLoading}
 											autoComplete="current-password"

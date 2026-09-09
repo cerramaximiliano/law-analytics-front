@@ -45,6 +45,7 @@ import {
 // third-party
 import * as Yup from "yup";
 import { Formik } from "formik";
+import { safeFormikBlur } from "utils/formikSafeBlur";
 
 // project-imports
 import AuthDivider from "sections/auth/AuthDivider";
@@ -252,7 +253,7 @@ const OauthLoginPage = () => {
 													type="email"
 													value={values.email}
 													name="email"
-													onBlur={handleBlur}
+													onBlur={safeFormikBlur(handleBlur)}
 													onChange={handleChange}
 													placeholder="tu@email.com"
 													fullWidth
@@ -271,7 +272,7 @@ const OauthLoginPage = () => {
 													type={showPassword ? "text" : "password"}
 													value={values.password}
 													name="password"
-													onBlur={handleBlur}
+													onBlur={safeFormikBlur(handleBlur)}
 													onChange={handleChange}
 													placeholder="Tu contraseña"
 													fullWidth

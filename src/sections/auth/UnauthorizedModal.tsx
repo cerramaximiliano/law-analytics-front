@@ -20,6 +20,7 @@ import { alpha } from "@mui/material/styles";
 import { Eye, EyeSlash, ShieldCross, InfoCircle } from "iconsax-react";
 import * as Yup from "yup";
 import { Formik, FormikHelpers } from "formik";
+import { safeFormikBlur } from "utils/formikSafeBlur";
 import IconButton from "components/@extended/IconButton";
 import { useGoogleLogin, CredentialResponse } from "@react-oauth/google";
 import CustomGoogleButton from "components/auth/CustomGoogleButton";
@@ -441,7 +442,7 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 												type="email"
 												value={values.email}
 												name="email"
-												onBlur={handleBlur}
+												onBlur={safeFormikBlur(handleBlur)}
 												onChange={handleChange}
 												placeholder="Ingresá tu email"
 												fullWidth
@@ -479,7 +480,7 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 												type={showPassword ? "text" : "password"}
 												value={values.password}
 												name="password"
-												onBlur={handleBlur}
+												onBlur={safeFormikBlur(handleBlur)}
 												onChange={handleChange}
 												disabled={isSubmitting}
 												endAdornment={
