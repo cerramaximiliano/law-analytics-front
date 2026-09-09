@@ -118,6 +118,9 @@ export type FolderData = {
 	lastMovementDate?: string; // Fecha del último movimiento
 	// Campos para selección múltiple de causas (EJE/MEV)
 	pendingCausaIds?: string[]; // IDs de causas pendientes de selección
+	/** IOL-1: la búsqueda superó el tope de resultados; pendingCausaIds es un sample de searchTotalResults. */
+	tooManyResults?: boolean;
+	searchTotalResults?: number | null;
 	pendingCausaType?: string; // Tipo de causas pendientes ('CausasEje' | 'MEV' | 'CausasPjSalta' | 'CausasPjCatamarca' | 'CausasPjMendoza')
 	searchTerm?: string; // Término de búsqueda original
 	eje?: boolean; // Indica si es una causa EJE (CABA)

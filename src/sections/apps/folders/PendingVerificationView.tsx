@@ -197,22 +197,24 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 			  })
 			: null;
 
-		return [
-			{ label: "Jurisdicción", value: folder?.folderJuris?.label || folder?.folderJuris || null },
-			{ label: "Fuero", value: folder?.folderFuero || null },
-			// `expedientNumber`/`expedientYear` NO existen en el modelo Folder: estas dos
-			// filas salían siempre vacías y el bloque que se manda a soporte iba sin el
-			// dato más importante. Los valores reales viven en judFolder / searchTerm.
-			{ label: "N° de expediente", value: numeroExpediente },
-			{ label: "CUIJ", value: folder?.judFolder?.cuij || null },
-			{ label: "Lo que buscaste", value: folder?.searchTerm || null },
-			{ label: "Origen", value: sourceLabel },
-			{ label: "Fecha de alta", value: createdAt },
-		]
-			.filter((row) => row.value)
-			// En una búsqueda por CUIJ, número/CUIJ/término son el mismo string:
-			// repetirlo tres veces es ruido. Se conserva la primera aparición.
-			.filter((row, idx, arr) => arr.findIndex((r) => String(r.value).trim() === String(row.value).trim()) === idx);
+		return (
+			[
+				{ label: "Jurisdicción", value: folder?.folderJuris?.label || folder?.folderJuris || null },
+				{ label: "Fuero", value: folder?.folderFuero || null },
+				// `expedientNumber`/`expedientYear` NO existen en el modelo Folder: estas dos
+				// filas salían siempre vacías y el bloque que se manda a soporte iba sin el
+				// dato más importante. Los valores reales viven en judFolder / searchTerm.
+				{ label: "N° de expediente", value: numeroExpediente },
+				{ label: "CUIJ", value: folder?.judFolder?.cuij || null },
+				{ label: "Lo que buscaste", value: folder?.searchTerm || null },
+				{ label: "Origen", value: sourceLabel },
+				{ label: "Fecha de alta", value: createdAt },
+			]
+				.filter((row) => row.value)
+				// En una búsqueda por CUIJ, número/CUIJ/término son el mismo string:
+				// repetirlo tres veces es ruido. Se conserva la primera aparición.
+				.filter((row, idx, arr) => arr.findIndex((r) => String(r.value).trim() === String(row.value).trim()) === idx)
+		);
 	}, [folder, numeroExpediente]);
 
 	// Bloque enviado SIEMPRE a soporte. El usuario sólo puede agregar contexto
@@ -599,7 +601,13 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 									toneHex={BRAND_BLUE}
 									icon={<SearchNormal1 size={18} variant="Bulk" color={BRAND_BLUE} />}
 									title="Elegir el expediente correcto"
-									description="Abrí el selector y marcá cuál de los expedientes corresponde a esta carpeta. Una vez que elijas, vamos a sincronizar sus movimientos."
+									description={
+										folder?.tooManyResults
+											? `La búsqueda fue amplia: el selector muestra hasta ${(folder?.pendingCausaIds || []).length || 10} de ${
+													folder?.searchTotalResults ?? "muchas"
+											  } coincidencias. Si tu expediente no está, cancelá y volvé a vincular con un término más preciso (número de expediente o CUIJ).`
+											: "Abrí el selector y marcá cuál de los expedientes corresponde a esta carpeta. Una vez que elijas, vamos a sincronizar sus movimientos."
+									}
 									ctaLabel="Elegir expediente"
 									ctaLoading={false}
 									onClick={onSelectCausa ?? (() => setSelectorOpen(true))}
