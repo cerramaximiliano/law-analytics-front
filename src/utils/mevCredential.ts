@@ -48,6 +48,18 @@ export function mevCredIssue(folder: MevFolderLike): MevCredentialIssue | null {
 	return status && MEV_CRED_ISSUE_STATUSES.includes(status) ? status : null;
 }
 
+/**
+ * Carpeta con causa fallida cuyo usuario no tiene credencial MEV cargada (MV17, 2026-09-10):
+ * el diagnóstico de la causa es real, pero sin credencial no se puede volver a verificar.
+ * La lista y el detalle muestran la relación además de "Asociación fallida".
+ */
+export const MEV_CRED_MISSING_ON_FAILED =
+	"Sin credencial MEV cargada: cargala desde Integraciones → MEV para volver a verificar esta causa.";
+
+export function isMevCredMissing(folder: MevFolderLike): boolean {
+	return mevCredIssue(folder) === "missing";
+}
+
 /** true cuando el estado de la carpeta (failed / causaIsValid=false) es consecuencia de un login fallido. */
 export function isMevCredLoginFailure(folder: MevFolderLike): boolean {
 	const issue = mevCredIssue(folder);

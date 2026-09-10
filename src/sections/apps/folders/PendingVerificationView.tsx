@@ -24,6 +24,7 @@ import { BRAND_BLUE, LIVE_PULSE_KEYFRAMES, STALE_AMBER } from "themes/dashboardT
 import { dispatch } from "store";
 import { getFolderById, reverifyFolderById, ReverifyResult } from "store/reducers/folder";
 import { formatFolderName } from "utils/formatFolderName";
+import { MEV_CRED_MISSING_ON_FAILED, MEV_PROFILE_PATH, isMevCredMissing } from "utils/mevCredential";
 
 // components reutilizados
 import AlertFolderDelete from "./AlertFolderDelete";
@@ -445,6 +446,15 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 										<Typography sx={{ fontSize: "0.8rem", color: "text.primary", lineHeight: 1.5, textWrap: "pretty" }}>
 											{meta.description}
 										</Typography>
+										{/* MV17: causa fallida + sin credencial MEV → la relación y el camino para re-verificar. */}
+										{gate === "failed" && isMevCredMissing(folder) && (
+											<Typography
+												onClick={() => navigate(MEV_PROFILE_PATH)}
+												sx={{ fontSize: "0.78rem", color: STALE_AMBER, lineHeight: 1.5, cursor: "pointer", fontWeight: 600 }}
+											>
+												{MEV_CRED_MISSING_ON_FAILED}
+											</Typography>
+										)}
 										{/* Motivo real devuelto por el portal. Estaba guardado en la carpeta
 										    y no se mostraba en ninguna superficie: el usuario veía "fallida"
 										    sin saber por qué. */}

@@ -55,7 +55,9 @@ import {
 	MEV_CRED_LABEL,
 	MEV_CRED_MESSAGE,
 	MEV_PROFILE_PATH,
+	MEV_CRED_MISSING_ON_FAILED,
 	isMevCredLoginFailure,
+	isMevCredMissing,
 	mevCredIssue,
 } from "utils/mevCredential";
 import SEO from "components/SEO/SEO";
@@ -3198,10 +3200,23 @@ const FoldersLayout = () => {
 											Buscaste {folder.searchTerm || folder.judFolder?.numberJudFolder}
 										</Typography>
 									)}
+									{/* MV17: causa fallida + sin credencial MEV → mostrar la relación (sin credencial no se re-verifica). */}
+									{isMevCredMissing(folder) && (
+										<Typography
+											noWrap
+											onClick={(e) => {
+												e.stopPropagation();
+												navigate(MEV_PROFILE_PATH);
+											}}
+											sx={{ fontSize: "0.66rem", color: STALE_AMBER, lineHeight: 1.3, cursor: "pointer", fontWeight: 600 }}
+										>
+											Sin credencial MEV — cargala para volver a verificar
+										</Typography>
+									)}
 								</Stack>
 								{/* El motivo real lo devuelve el portal y vive en `causaAssociationError`;
 								    hasta ahora el tooltip decía siempre lo mismo. */}
-								<Tooltip title={pjnFailedCopy(folder)}>
+								<Tooltip title={isMevCredMissing(folder) ? `${pjnFailedCopy(folder)} ${MEV_CRED_MISSING_ON_FAILED}` : pjnFailedCopy(folder)}>
 									<Box
 										sx={{
 											display: "inline-flex",
