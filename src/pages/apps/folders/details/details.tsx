@@ -496,6 +496,14 @@ const Details = () => {
 				// Cred rechazada: el pill lleva al perfil, como el de MEV (F14).
 				onClick: pjnState === "cred_error" ? () => navigate(PJN_PROFILE_PATH) : undefined,
 			};
+		} else if (folder?.mev && folder.causaAssociationStatus === "pending_selection") {
+			// MV11: pivote MEV — el gate 'pending_selection' muestra el selector de candidatas.
+			state = {
+				label: "MEV — Elegir expediente",
+				accent: STALE_AMBER,
+				icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
+				tooltip: "La búsqueda devolvió varios expedientes con ese número en el organismo. Elegí el correcto.",
+			};
 		} else if (folder?.mev && mevCredIssue(folder)) {
 			// Credencial MEV con problema: el chip lo dice y lleva al perfil (patrón "SCBA —
 			// Sincronización pausada"). Prevalece sobre "Ya no en la lista": sin credencial

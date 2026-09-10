@@ -493,6 +493,16 @@ const FolderView = memo(({ data }: any) => {
 		}
 
 		if (data.mev) {
+			// MV11: varias coincidencias en el organismo → el usuario elige (mismo estado que EJE/IOL).
+			if (data.causaAssociationStatus === "pending_selection") {
+				return (
+					<Tooltip title="La búsqueda devolvió varios expedientes con ese número en el organismo. Elegí el correcto desde el detalle de la carpeta.">
+						<Box sx={{ display: "inline-flex" }}>
+							<BindingPill label="MEV — Elegir expediente" accent={STALE_AMBER} icon={<Warning2 size={14} variant="Bulk" color={STALE_AMBER} />} />
+						</Box>
+					</Tooltip>
+				);
+			}
 			// Credencial MEV con problema (missing/invalid/expired/disabled): el pill lo dice en
 			// ámbar y lleva al perfil, igual que "SCBA — Sincronización pausada". No se muestra el
 			// badge de verificación: el "inválida" que dejó el login fallido no habla de la causa.
