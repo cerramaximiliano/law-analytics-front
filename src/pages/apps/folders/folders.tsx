@@ -239,9 +239,9 @@ interface ReactTableProps extends Props {
 	/** If true, disables row selection: hides the checkbox column and removes the click-to-toggle on rows/cards. */
 	disableRowSelection?: boolean;
 	/** Filtros */
-	folderTypeFilter?: "all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "pjmendoza";
+	folderTypeFilter?: "all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "scba";
 	onFolderTypeFilterChange?: (
-		event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "pjmendoza">,
+		event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "scba">,
 	) => void;
 	statusFilter?: "all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada";
 	onStatusFilterChange?: (event: SelectChangeEvent<string>) => void;
@@ -1128,6 +1128,9 @@ function ReactTable({
 											<MenuItem value="pjn">
 												<Typography variant="body2">PJN</Typography>
 											</MenuItem>
+											<MenuItem value="scba">
+												<Typography variant="body2">SCBA</Typography>
+											</MenuItem>
 											<MenuItem value="eje">
 												<Typography variant="body2">EJE</Typography>
 											</MenuItem>
@@ -1988,7 +1991,7 @@ const FoldersLayout = () => {
 
 	// Estados para filtros de carpetas
 	const [folderTypeFilter, setFolderTypeFilter] = useState<
-		"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "pjmendoza"
+		"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "scba"
 	>("all");
 	const [statusFilter, setStatusFilter] = useState<"all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada">("all");
 	const [parteFilter, setParteFilter] = useState<string>("all");
@@ -2150,13 +2153,16 @@ const FoldersLayout = () => {
 						if (
 							!(
 								folder.source === "manual" ||
-								(!folder.pjn && !folder.mev && !folder.eje && !folder.pjsalta && !folder.pjcatamarca && !folder.pjmendoza)
+								(!folder.pjn && !folder.scba && !folder.mev && !folder.eje && !folder.pjsalta && !folder.pjcatamarca && !folder.pjmendoza)
 							)
 						)
 							return false;
 						break;
 					case "pjn":
 						if (folder.pjn !== true) return false;
+						break;
+					case "scba":
+						if (folder.scba !== true) return false;
 						break;
 					case "mev":
 						if (folder.mev !== true) return false;
@@ -2670,9 +2676,9 @@ const FoldersLayout = () => {
 
 	// Handler para el filtro de tipo de carpeta
 	const handleFolderTypeFilterChange = useCallback(
-		(event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "pjmendoza">) => {
+		(event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "scba">) => {
 			setFolderTypeFilter(
-				event.target.value as "all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "pjmendoza",
+				event.target.value as "all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "scba",
 			);
 		},
 		[],

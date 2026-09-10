@@ -68,6 +68,9 @@ const isErrorStatus = (s: CredStatus) => s === "invalid" || s === "expired" || s
  * exponen; al guardar la credencial de la cuenta, la API elimina cualquier per-causa
  * remanente (ver saveCredentials en el server).
  */
+// Patrón de la app: snackbars abajo a la derecha (notistack por defecto los pone abajo a la izquierda).
+const SNACK_ANCHOR = { vertical: "bottom", horizontal: "right" } as const;
+
 const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
@@ -144,7 +147,7 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 
 	const handleSave = async () => {
 		if (!username.trim() || !password.trim()) {
-			enqueueSnackbar("Ingresá usuario y contraseña del portal MEV", { variant: "warning" });
+			enqueueSnackbar("Ingresá usuario y contraseña del portal MEV", { variant: "warning", anchorOrigin: SNACK_ANCHOR });
 			return;
 		}
 		try {
@@ -152,12 +155,19 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 			// causaId null → credencial de la cuenta (una por usuario).
 			const res = await mevCredentialsService.saveCredentials(username.trim(), password, null);
 			if (res.success) {
-				enqueueSnackbar("Credencial MEV guardada. La validaremos al consultar tus causas.", { variant: "success" });
+				// MV20: el hub prueba el login contra el portal al guardar; si la sonda concluyó,
+				// la credencial ya está validada (y el email de validación ya salió).
+				enqueueSnackbar(
+					res.data?.verified
+						? "Credencial MEV validada. Ya sincronizamos tus causas."
+						: "Credencial MEV guardada. La validaremos al consultar tus causas.",
+					{ variant: "success", anchorOrigin: SNACK_ANCHOR },
+				);
 				cancelEdit();
 				await fetchStatus();
 				refreshFolders();
 			} else {
-				enqueueSnackbar(res.error || "No se pudo guardar la credencial", { variant: "error" });
+				enqueueSnackbar(res.error || "No se pudo guardar la credencial", { variant: "error", anchorOrigin: SNACK_ANCHOR });
 			}
 		} finally {
 			setSubmitting(false);
@@ -199,13 +209,13 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 				if (status.success && !status.data?.global) res = { success: true };
 			}
 			if (res.success) {
-				enqueueSnackbar("Credencial MEV desvinculada", { variant: "success" });
+				enqueueSnackbar("Credencial MEV desvinculada", { variant: "success", anchorOrigin: SNACK_ANCHOR });
 				setUnlinkOpen(false);
 				setUnlinkImpact(null);
 				await fetchStatus();
 				refreshFolders();
 			} else {
-				enqueueSnackbar(res.error || "No se pudo desvincular la credencial", { variant: "error" });
+				enqueueSnackbar(res.error || "No se pudo desvincular la credencial", { variant: "error", anchorOrigin: SNACK_ANCHOR });
 			}
 		} finally {
 			setUnlinking(false);
