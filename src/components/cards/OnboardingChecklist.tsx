@@ -17,7 +17,9 @@ import { useNavigate } from "react-router-dom";
 // services — para detectar estado de cred en background
 import pjnCredentialsService from "api/pjnCredentials";
 import scbaCredentialsService from "api/scbaCredentials";
+import mevCredentialsService from "api/mevCredentials";
 import { isScbaConnected } from "utils/scbaBindingState";
+import { isMevCredentialBroken } from "utils/mevCredential";
 import ApiService from "store/reducers/ApiService";
 
 // tracking
@@ -67,21 +69,27 @@ interface Step {
 
 // ── Props ───────────────────────────────────────────────────────────────────
 interface OnboardingChecklistProps {
+	userId?: string; // para persistir el estado previo de los steps (tracking)
 	userName?: string;
 	hasFolders: boolean; // dashboardData.folders.total > 0
 	hasPjnCredentials: boolean; // PJN cred enabled
 	hasScbaCredentials: boolean; // SCBA cred enabled
-	hasContacts?: boolean; // futuro — backend wire-up pendiente
-	hasDeadlines?: boolean; // futuro — backend wire-up pendiente
+	hasMevCredentials?: boolean; // MEV cred de la cuenta conectada y sana
+	hasLinkedFolders?: boolean; // signals.linkedFolders > 0 (alta individual PJN/MEV/EJE/IOL)
+	hasContacts?: boolean; // signals.contacts > 0
+	hasDeadlines?: boolean; // signals.deadlines > 0 (vencimiento o audiencia)
 	onDismiss: () => void;
 }
 
 // ── Componente principal ────────────────────────────────────────────────────
 const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
+	userId,
 	userName,
 	hasFolders,
 	hasPjnCredentials,
 	hasScbaCredentials,
+	hasMevCredentials = false,
+	hasLinkedFolders = false,
 	hasContacts = false,
 	hasDeadlines = false,
 	onDismiss,
@@ -93,10 +101,11 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 	const navigate = useNavigate();
 
 	// Build de los 4 steps con su status calculado.
-	// judicial_connection: done si cred PJN o SCBA. in_progress si tiene
-	// carpetas (asume que vinculó individual o creó manual y por eso ya
-	// "tocó" el sistema). pending si nada.
-	const judicialStatus: StepStatus = hasPjnCredentials || hasScbaCredentials ? "done" : hasFolders ? "in_progress" : "pending";
+	// judicial_connection: done si hay una credencial conectada (PJN, SCBA o
+	// MEV) o al menos una carpeta vinculada a una causa de un portal (Opción B
+	// del panel). in_progress si sólo tiene carpetas manuales. pending si nada.
+	const hasJudicialLink = hasPjnCredentials || hasScbaCredentials || hasMevCredentials || hasLinkedFolders;
+	const judicialStatus: StepStatus = hasJudicialLink ? "done" : hasFolders ? "in_progress" : "pending";
 
 	const steps: Step[] = useMemo(
 		() => [
@@ -158,7 +167,10 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 	}, [completedCount, totalSteps]);
 
 	// onboarding_step_completed: dispara cuando el status de un step
-	// transiciona a "done". Usa ref para evitar dispatches al primer render.
+	// transiciona a "done". El estado previo se persiste por usuario en
+	// localStorage: el step casi siempre se completa en otra página (crear
+	// carpeta, contacto o vencimiento) y al volver el componente se monta de
+	// nuevo, así que con una ref sola la transición nunca se veía.
 	const prevStatusesRef = useRef<Record<StepId, StepStatus> | null>(null);
 	useEffect(() => {
 		const current: Record<StepId, StepStatus> = steps.reduce((acc, s) => {
@@ -166,9 +178,20 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 			return acc;
 		}, {} as Record<StepId, StepStatus>);
 
-		if (prevStatusesRef.current) {
+		const storageKey = userId ? `onboarding_step_statuses_${userId}` : null;
+		let previous = prevStatusesRef.current;
+		if (!previous && storageKey) {
+			try {
+				const raw = localStorage.getItem(storageKey);
+				previous = raw ? (JSON.parse(raw) as Record<StepId, StepStatus>) : null;
+			} catch {
+				previous = null;
+			}
+		}
+
+		if (previous) {
 			for (const step of steps) {
-				const prev = prevStatusesRef.current[step.id];
+				const prev = previous[step.id];
 				if (prev && prev !== "done" && step.status === "done") {
 					trackOnboardingStepCompleted(step.id);
 					ApiService.trackOnboardingEvent("onboarding_step_completed", { step_id: step.id });
@@ -176,7 +199,14 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 			}
 		}
 		prevStatusesRef.current = current;
-	}, [steps]);
+		if (storageKey) {
+			try {
+				localStorage.setItem(storageKey, JSON.stringify(current));
+			} catch {
+				// sin storage disponible: el tracking de transiciones queda por montaje
+			}
+		}
+	}, [steps, userId]);
 
 	// onboarding_completed: 4/4. Dispara GTM + backend (el endpoint del back
 	// `trackOnboardingEvent` con event="onboarding_completed" persiste
@@ -1009,33 +1039,43 @@ export interface JudicialConnectionState {
 	loading: boolean;
 	hasPjnCredentials: boolean;
 	hasScbaCredentials: boolean;
+	hasMevCredentials: boolean;
 }
+
+const NO_JUDICIAL_CONNECTION = { hasPjnCredentials: false, hasScbaCredentials: false, hasMevCredentials: false };
 
 export function useJudicialConnectionState(skip = false): JudicialConnectionState {
 	const [state, setState] = useState<JudicialConnectionState>({
 		loading: !skip,
-		hasPjnCredentials: false,
-		hasScbaCredentials: false,
+		...NO_JUDICIAL_CONNECTION,
 	});
 
 	useEffect(() => {
 		if (skip) {
-			setState({ loading: false, hasPjnCredentials: false, hasScbaCredentials: false });
+			setState({ loading: false, ...NO_JUDICIAL_CONNECTION });
 			return;
 		}
 
 		let cancelled = false;
-		Promise.allSettled([pjnCredentialsService.getCredentialsStatus(), scbaCredentialsService.getCredentialsStatus()]).then(
-			([pjnResult, scbaResult]) => {
-				if (cancelled) return;
+		// loading=true mientras se consulta: el dashboard no monta el checklist
+		// hasta tener el estado real (evita un "pendiente" falso y su tracking).
+		setState((prev) => ({ ...prev, loading: true }));
+		Promise.allSettled([
+			pjnCredentialsService.getCredentialsStatus(),
+			scbaCredentialsService.getCredentialsStatus(),
+			mevCredentialsService.getCredentialsStatus(),
+		]).then(([pjnResult, scbaResult, mevResult]) => {
+			if (cancelled) return;
 
-				const pjnOk = pjnResult.status === "fulfilled" && !!pjnResult.value?.hasCredentials && !!pjnResult.value?.data?.enabled;
-				// Criterio único de "conectada" (S15), compartido con el widget y el perfil.
-				const scbaOk = scbaResult.status === "fulfilled" && !!scbaResult.value?.hasCredentials && isScbaConnected(scbaResult.value?.data);
+			const pjnOk = pjnResult.status === "fulfilled" && !!pjnResult.value?.hasCredentials && !!pjnResult.value?.data?.enabled;
+			// Criterio único de "conectada" (S15), compartido con el widget y el perfil.
+			const scbaOk = scbaResult.status === "fulfilled" && !!scbaResult.value?.hasCredentials && isScbaConnected(scbaResult.value?.data);
+			// MEV: credencial de la cuenta habilitada y sin fallo que requiera acción.
+			const mevGlobal = mevResult.status === "fulfilled" && mevResult.value?.success ? mevResult.value.data?.global : null;
+			const mevOk = !!mevGlobal && mevGlobal.enabled !== false && !isMevCredentialBroken(mevGlobal);
 
-				setState({ loading: false, hasPjnCredentials: pjnOk, hasScbaCredentials: scbaOk });
-			},
-		);
+			setState({ loading: false, hasPjnCredentials: pjnOk, hasScbaCredentials: scbaOk, hasMevCredentials: mevOk });
+		});
 
 		return () => {
 			cancelled = true;

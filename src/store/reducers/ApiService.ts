@@ -1370,16 +1370,19 @@ class ApiService {
 	// ================================
 
 	/**
-	 * Obtiene el estado de onboarding del usuario
+	 * Obtiene el estado de onboarding del usuario.
+	 * @param options.peek - true: refresca estado y señales sin contar una sesión de onboarding.
 	 */
-	static async getOnboardingStatus(): Promise<ApiResponse<{ onboarding: OnboardingStatus; activeFoldersCount: number }>> {
+	static async getOnboardingStatus(
+		options: { peek?: boolean } = {},
+	): Promise<ApiResponse<{ onboarding: OnboardingStatus; activeFoldersCount: number; signals?: OnboardingSignals }>> {
 		try {
-			const response = await axios.get<ApiResponse<{ onboarding: OnboardingStatus; activeFoldersCount: number }>>(
-				`${API_BASE_URL}/api/auth/onboarding`,
-				{
-					withCredentials: true,
-				},
-			);
+			const response = await axios.get<
+				ApiResponse<{ onboarding: OnboardingStatus; activeFoldersCount: number; signals?: OnboardingSignals }>
+			>(`${API_BASE_URL}/api/auth/onboarding`, {
+				withCredentials: true,
+				params: options.peek ? { peek: "true" } : undefined,
+			});
 			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);
@@ -1443,6 +1446,13 @@ class ApiService {
 			console.warn("trackOnboardingEvent failed", event, error);
 		}
 	}
+}
+
+// Señales del backend para los steps del OnboardingChecklist (conteos en vivo)
+export interface OnboardingSignals {
+	contacts: number; // contactos no archivados
+	deadlines: number; // eventos de tipo vencimiento o audiencia
+	linkedFolders: number; // carpetas vinculadas a una causa de un portal
 }
 
 // Interfaz para el estado de onboarding

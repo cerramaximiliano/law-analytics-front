@@ -26,7 +26,7 @@ import { useSelector, dispatch } from "store";
 import { getUnifiedStats } from "store/reducers/unifiedStats";
 import { fetchUserStats } from "store/reducers/userStats";
 import { DashboardStats } from "types/unified-stats";
-import ApiService, { OnboardingStatus } from "store/reducers/ApiService";
+import ApiService, { OnboardingSignals, OnboardingStatus } from "store/reducers/ApiService";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 
 // hooks
@@ -67,6 +67,7 @@ const DashboardDefault = () => {
 
 	// Estado de onboarding obtenido del backend
 	const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus | null>(null);
+	const [onboardingSignals, setOnboardingSignals] = useState<OnboardingSignals | null>(null);
 	const [onboardingLoading, setOnboardingLoading] = useState(true);
 	const [isDismissing, setIsDismissing] = useState(false);
 
@@ -113,8 +114,12 @@ const DashboardDefault = () => {
 	const { data: unifiedData, isLoading, error, lastUpdated, isInitialized } = useSelector((state) => state.unifiedStats);
 	const dashboardData = unifiedData?.dashboard || null;
 
-	// Cargar estado de onboarding del backend (solo 1 vez por sesion del navegador)
-	// Onboarding es una feature personal, usa personalUserId
+	// Cargar estado de onboarding del backend. Onboarding es una feature
+	// personal, usa personalUserId. La primera llamada de la sesión del navegador
+	// cuenta como sesión de onboarding (incrementa el contador); al volver al
+	// dashboard dentro de la misma sesión (después de crear un contacto, vincular
+	// una causa, etc.) se usa `peek` para refrescar estado y señales sin contarla.
+	// Antes se servía el cache de sessionStorage y los steps quedaban viejos.
 	useEffect(() => {
 		const fetchOnboarding = async () => {
 			if (!personalUserId || onboardingFetched.current) return;
@@ -122,32 +127,24 @@ const DashboardDefault = () => {
 			// Marcar como fetched para evitar dobles llamadas
 			onboardingFetched.current = true;
 
+			const sessionKey = `${ONBOARDING_SESSION_KEY}_${personalUserId}`;
+			const dataKey = `onboarding_data_${personalUserId}`;
+			const sessionChecked = !!sessionStorage.getItem(sessionKey);
+
 			try {
 				setOnboardingLoading(true);
-
-				// Verificar si ya se llamo en esta sesion del navegador
-				const sessionChecked = sessionStorage.getItem(`${ONBOARDING_SESSION_KEY}_${personalUserId}`);
-
-				if (sessionChecked) {
-					// Ya se llamo en esta sesion, usar datos cacheados
-					const cachedData = sessionStorage.getItem(`onboarding_data_${personalUserId}`);
-					if (cachedData) {
-						setOnboardingStatus(JSON.parse(cachedData));
-						setOnboardingLoading(false);
-						return;
-					}
-				}
-
-				// Primera vez en esta sesion, llamar al backend (esto incrementa el contador)
-				const response = (await ApiService.getOnboardingStatus()) as any;
+				const response = (await ApiService.getOnboardingStatus({ peek: sessionChecked })) as any;
 				if (response.success && response.onboarding) {
 					setOnboardingStatus(response.onboarding);
-					// Guardar en sessionStorage para evitar multiples llamadas
-					sessionStorage.setItem(`${ONBOARDING_SESSION_KEY}_${personalUserId}`, "true");
-					sessionStorage.setItem(`onboarding_data_${personalUserId}`, JSON.stringify(response.onboarding));
+					setOnboardingSignals(response.signals || null);
+					sessionStorage.setItem(sessionKey, "true");
+					sessionStorage.setItem(dataKey, JSON.stringify(response.onboarding));
 				}
 			} catch (err) {
 				console.error("Error al obtener estado de onboarding:", err);
+				// Sin backend: usar el último estado conocido de la sesión (sin señales)
+				const cachedData = sessionStorage.getItem(dataKey);
+				if (cachedData) setOnboardingStatus(JSON.parse(cachedData));
 			} finally {
 				setOnboardingLoading(false);
 			}
@@ -185,11 +182,11 @@ const DashboardDefault = () => {
 	// Estado combinado de carga (ambos deben estar listos)
 	const isFullyLoading = isLoading || onboardingLoading;
 
-	// Estado de cred judicial (PJN/SCBA). Skip si el onboarding no se va a
-	// mostrar — evita 2 requests inútiles en cada carga del dashboard del user
-	// que ya completó/dismissó el flow. Tiene que evaluarse después de
-	// showOnboarding y antes del render.
-	const skipJudicialFetch = !!onboardingStatus?.onboardingComplete || !!onboardingStatus?.dismissed || onboardingLoading;
+	// Estado de cred judicial (PJN/SCBA/MEV). Skip si el onboarding no se va a
+	// mostrar — evita requests inútiles en cada carga del dashboard del user
+	// que ya completó/dismissó el flow. Se basa en showOnboarding (y no en
+	// complete/dismissed) para que la vista forzada de admin también lo consulte.
+	const skipJudicialFetch = !showOnboarding || onboardingLoading;
 	const judicialState = useJudicialConnectionState(skipJudicialFetch);
 
 	// Nombre del usuario para el banner
@@ -471,17 +468,22 @@ const DashboardDefault = () => {
 				    Si el user ya creó carpeta (step 1 done), el checklist sigue
 				    visible empujando al step #2 — conectar cuenta judicial — que
 				    es el cuello de botella real (0% activación a 90 días). */}
-				{!isFullyLoading && !error && dashboardData && showOnboarding && !isDismissing && (
+				{!isFullyLoading && !error && dashboardData && showOnboarding && !isDismissing && !judicialState.loading && (
 					<Fade in timeout={400}>
 						<Grid container item spacing={2.75}>
 							{/* Checklist ocupa lg=7 cuando el user ya tiene recursos para
 							    dar espacio a los widgets de KPI; full-width si recién empieza. */}
 							<Grid item xs={12} lg={dashboardData?.folders?.total ? 7 : 12}>
 								<OnboardingChecklist
+									userId={personalUserId}
 									userName={userName}
 									hasFolders={(dashboardData?.folders?.total || 0) > 0}
 									hasPjnCredentials={judicialState.hasPjnCredentials}
 									hasScbaCredentials={judicialState.hasScbaCredentials}
+									hasMevCredentials={judicialState.hasMevCredentials}
+									hasLinkedFolders={(onboardingSignals?.linkedFolders || 0) > 0}
+									hasContacts={(onboardingSignals?.contacts || 0) > 0}
+									hasDeadlines={(onboardingSignals?.deadlines || 0) > 0}
 									onDismiss={handleDismissOnboarding}
 								/>
 							</Grid>
