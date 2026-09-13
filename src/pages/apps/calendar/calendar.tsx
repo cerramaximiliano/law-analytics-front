@@ -1,6 +1,6 @@
 import React from "react";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 
 // material-ui
@@ -704,6 +704,22 @@ const Calendar = () => {
 		dispatch(selectEvent(null));
 		setLocalModalOpen(true);
 	};
+
+	// Onboarding (O4, 2026-09-12): el checklist del dashboard navega con
+	// ?action=create y antes esta página lo ignoraba. Abre "Nuevo evento" una
+	// sola vez, cuando terminó la carga inicial.
+	const [searchParams, setSearchParams] = useSearchParams();
+	const [onboardingActionFired, setOnboardingActionFired] = useState(false);
+	useEffect(() => {
+		if (onboardingActionFired || loading) return;
+		if (searchParams.get("action") !== "create") return;
+		setOnboardingActionFired(true);
+		if (canCreate) handleAddEventClick();
+		const next = new URLSearchParams(searchParams);
+		next.delete("action");
+		setSearchParams(next, { replace: true });
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [searchParams, setSearchParams, loading, canCreate, onboardingActionFired]);
 
 	const handleSwitchToEditMode = () => {
 		setIsViewingEvent(false);

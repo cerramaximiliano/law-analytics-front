@@ -2453,10 +2453,15 @@ const FoldersLayout = () => {
 		const onboarding = searchParams.get("onboarding");
 		const action = searchParams.get("action");
 		const jurisdiction = searchParams.get("jurisdiction");
-		if (onboarding !== "true" || action !== "create" || !jurisdiction) return;
+		if (onboarding !== "true" || action !== "create") return;
 
-		const j = jurisdiction.toUpperCase();
-		if (j === "EJE") {
+		const j = (jurisdiction || "").toUpperCase();
+		if (!jurisdiction) {
+			// O4 (2026-09-12): "Empezar ahora" del step "Crear tu primera carpeta"
+			// llega sin jurisdicción y antes no abría nada. Mismo camino que el botón
+			// "Agregar carpeta" (respeta el límite del plan).
+			handleAddFolder();
+		} else if (j === "EJE") {
 			handleOpenCabaFolder();
 		} else if (j === "MEV") {
 			setAddFolderInitialStep(2);
@@ -2490,7 +2495,7 @@ const FoldersLayout = () => {
 		next.delete("action");
 		next.delete("jurisdiction");
 		setSearchParams(next, { replace: true });
-	}, [searchParams, setSearchParams, handleOpenCabaFolder]);
+	}, [searchParams, setSearchParams, handleOpenCabaFolder, handleAddFolder]);
 
 	const handleArchiveSelected = useCallback(
 		async (selectedRows: Row<any>[]) => {
@@ -3222,7 +3227,9 @@ const FoldersLayout = () => {
 								</Stack>
 								{/* El motivo real lo devuelve el portal y vive en `causaAssociationError`;
 								    hasta ahora el tooltip decía siempre lo mismo. */}
-								<Tooltip title={isMevCredMissing(folder) ? `${pjnFailedCopy(folder)} ${MEV_CRED_MISSING_ON_FAILED}` : pjnFailedCopy(folder)}>
+								<Tooltip
+									title={isMevCredMissing(folder) ? `${pjnFailedCopy(folder)} ${MEV_CRED_MISSING_ON_FAILED}` : pjnFailedCopy(folder)}
+								>
 									<Box
 										sx={{
 											display: "inline-flex",

@@ -24,6 +24,7 @@ import {
 } from "@mui/material";
 
 // third-party
+import { useSearchParams } from "react-router-dom";
 import { PatternFormat } from "react-number-format";
 import {
 	useFilters,
@@ -839,6 +840,21 @@ const CustomerListPage = () => {
 		setAddCustomerMode("add");
 		setCustomer(null);
 	}, [subscription, contacts]);
+
+	// Onboarding (O4, 2026-09-12): el checklist del dashboard navega con
+	// ?action=create y antes esta página lo ignoraba. Se abre el alta una sola
+	// vez, con la lista ya cargada (el chequeo de límite usa la cantidad actual).
+	const [searchParams, setSearchParams] = useSearchParams();
+	const onboardingActionFired = useRef(false);
+	useEffect(() => {
+		if (onboardingActionFired.current || isInitialLoad) return;
+		if (searchParams.get("action") !== "create") return;
+		onboardingActionFired.current = true;
+		if (canCreate) handleAddContact();
+		const next = new URLSearchParams(searchParams);
+		next.delete("action");
+		setSearchParams(next, { replace: true });
+	}, [searchParams, setSearchParams, isInitialLoad, canCreate, handleAddContact]);
 
 	const handleEditContact = useCallback((contactData: any) => {
 		setAdd(true);

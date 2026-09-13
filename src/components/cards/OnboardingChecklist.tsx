@@ -28,7 +28,6 @@ import {
 	trackOnboardingStepClicked,
 	trackOnboardingStepCompleted,
 	trackOnboardingJudicialLogoClicked,
-	trackOnboardingExampleFolderUsed,
 	trackOnboardingDismissed,
 	trackOnboardingCompleted,
 } from "utils/gtm";
@@ -234,15 +233,6 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 		trackOnboardingStepClicked("first_folder");
 		ApiService.trackOnboardingEvent("onboarding_step_clicked", { step_id: "first_folder" });
 		navigate("/apps/folders/list?onboarding=true&action=create");
-	};
-
-	const goCreateExampleFolder = () => {
-		trackOnboardingExampleFolderUsed();
-		ApiService.trackOnboardingEvent("onboarding_example_folder_used");
-		// Mismo destino, con flag de ejemplo. La página de folders puede leer
-		// `example=true` y pre-llenar el form con datos demo. Si todavía no
-		// está implementado del lado de folders, simplemente abre el create.
-		navigate("/apps/folders/list?onboarding=true&action=create&example=true");
 	};
 
 	const goLinkCredential = (jurisdiction: "PJN" | "SCBA") => {
@@ -524,7 +514,6 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 										? goAddDeadline
 										: undefined
 								}
-								onSecondaryClick={step.id === "first_folder" ? goCreateExampleFolder : undefined}
 								renderExtra={
 									step.id === "judicial_connection" && !isDone
 										? () => (
