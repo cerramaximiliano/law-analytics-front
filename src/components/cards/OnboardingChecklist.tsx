@@ -38,9 +38,17 @@ import { ThemeMode } from "types/config";
 // assets — logos de portales judiciales (reusa los del flujo de register)
 import logoPJNacion from "assets/images/logos/logo_pj_nacion.png";
 import logoMEV from "assets/images/logos/logo_pj_buenos_aires.svg";
+import logoPJCatamarca from "assets/images/logos/logo_pj_catamarca.png";
+import logoPJMendoza from "assets/images/logos/logo_pj_mendoza.png";
 
 // Logo EJE — hosted Cloudinary, ya usado en register.tsx y Header.tsx
 const LOGO_EJE = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
+// Logo PJ Salta — mismo asset que el wizard de alta y LinkToJudicialPower
+const LOGO_SALTA =
+	"https://res.cloudinary.com/dqyoeolib/image/upload/v1779137783/ChatGPT_Image_18_may_2026__05_52_35_p.m.-removebg-preview_bngpqd.png";
+
+// Jurisdicciones del alta individual (Opción B del step judicial)
+type IndividualJurisdiction = "PJN" | "MEV" | "EJE" | "SALTA" | "CATAMARCA" | "MENDOZA";
 
 // =============================================================================
 // ONBOARDING CHECKLIST — componente único que reemplaza el banner + educational
@@ -246,7 +254,7 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 		navigate(`/apps/profiles/account/pjn?view=${view}`);
 	};
 
-	const goLinkIndividualFolder = (jurisdiction: "PJN" | "MEV" | "EJE") => {
+	const goLinkIndividualFolder = (jurisdiction: IndividualJurisdiction) => {
 		trackOnboardingStepClicked("judicial_connection");
 		trackOnboardingJudicialLogoClicked(jurisdiction, "individual");
 		ApiService.trackOnboardingEvent("onboarding_judicial_logo_clicked", { jurisdiction, mode: "individual" });
@@ -789,11 +797,11 @@ interface JudicialConnectionPanelProps {
 	isDark: boolean;
 	theme: Theme;
 	onLinkCredential: (jurisdiction: "PJN" | "SCBA") => void;
-	onLinkIndividual: (jurisdiction: "PJN" | "MEV" | "EJE") => void;
+	onLinkIndividual: (jurisdiction: IndividualJurisdiction) => void;
 }
 
 interface JudicialOption {
-	jurisdiction: "PJN" | "MEV" | "SCBA" | "EJE";
+	jurisdiction: IndividualJurisdiction | "SCBA";
 	label: string;
 	logo: string;
 	bgColor: string;
@@ -810,6 +818,10 @@ const INDIVIDUAL_OPTIONS: JudicialOption[] = [
 	{ jurisdiction: "PJN", label: "PJN", logo: logoPJNacion, bgColor: "#232D4F", hasBorder: false },
 	{ jurisdiction: "MEV", label: "MEV", logo: logoMEV, bgColor: "#FFFFFF", hasBorder: true },
 	{ jurisdiction: "EJE", label: "EJE", logo: LOGO_EJE, bgColor: "#FFFFFF", hasBorder: true },
+	// O8 (2026-09-12): portales IOL ya integrados por el mismo asistente de alta
+	{ jurisdiction: "SALTA", label: "Salta", logo: LOGO_SALTA, bgColor: "#FFFFFF", hasBorder: true },
+	{ jurisdiction: "CATAMARCA", label: "Catamarca", logo: logoPJCatamarca, bgColor: "#FFFFFF", hasBorder: true },
+	{ jurisdiction: "MENDOZA", label: "Mendoza", logo: logoPJMendoza, bgColor: "#FFFFFF", hasBorder: true },
 ];
 
 const JudicialConnectionPanel: React.FC<JudicialConnectionPanelProps> = ({
@@ -919,7 +931,7 @@ const JudicialConnectionPanel: React.FC<JudicialConnectionPanelProps> = ({
 					Opción B — Vinculá expedientes uno por uno
 				</Typography>
 				<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>
-					Ideal si solo trackeás algunas causas puntuales o si no tenés cuenta del portal.
+					Ideal si solo seguís algunas causas puntuales. PJN y EJE no piden cuenta; MEV usa tu cuenta del portal.
 				</Typography>
 				<Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
 					{INDIVIDUAL_OPTIONS.map((opt) => (
@@ -928,7 +940,7 @@ const JudicialConnectionPanel: React.FC<JudicialConnectionPanelProps> = ({
 							option={opt}
 							isDark={isDark}
 							theme={theme}
-							onClick={() => onLinkIndividual(opt.jurisdiction as "PJN" | "MEV" | "EJE")}
+							onClick={() => onLinkIndividual(opt.jurisdiction as IndividualJurisdiction)}
 						/>
 					))}
 				</Stack>

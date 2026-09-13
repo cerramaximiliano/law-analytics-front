@@ -2483,6 +2483,16 @@ const FoldersLayout = () => {
 			setAdd(true);
 			setAddFolderMode("add");
 			setFolder(null);
+		} else if (j === "SALTA" || j === "CATAMARCA" || j === "MENDOZA") {
+			// O8 (2026-09-12): portales IOL, mismo asistente con el poder judicial preseleccionado
+			setAddFolderInitialStep(2);
+			setAddFolderInitialFormValues({
+				entryMethod: "automatic",
+				judicialPower: j.toLowerCase(),
+			});
+			setAdd(true);
+			setAddFolderMode("add");
+			setFolder(null);
 		} else {
 			return;
 		}
