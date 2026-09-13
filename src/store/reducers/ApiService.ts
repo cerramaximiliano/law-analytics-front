@@ -166,6 +166,8 @@ export interface NotificationPreferences {
 		email: boolean;
 		browser: boolean;
 		mobile: boolean;
+		/** WhatsApp: opt-in, solo se puede prender con teléfono verificado + consentimiento (ver /api/phone) */
+		whatsapp?: boolean;
 	};
 	user: {
 		enabled: boolean;
@@ -207,6 +209,39 @@ export interface NotificationPreferences {
 	};
 	otherCommunications?: boolean;
 	loginAlerts?: boolean;
+}
+
+/** Estado del teléfono verificado por WhatsApp y del consentimiento del canal (GET /api/phone/status) */
+export interface PhoneStatus {
+	phone: string | null;
+	phoneVerified: boolean;
+	phoneVerifiedAt: string | null;
+	whatsappOptIn: {
+		accepted: boolean;
+		acceptedAt: string | null;
+		revokedAt: string | null;
+	};
+	channelEnabled: boolean;
+	pendingVerification: { phone: string; expiresAt: string } | null;
+	/** Si el canal puede mandar un código ahora (hay línea conectada, etc.) */
+	availability?: { available: boolean; reason: string | null };
+}
+
+/**
+ * Respuesta de los endpoints /api/phone. Los estados "esperables" (código
+ * incorrecto, canal no disponible, cooldown) vienen como 4xx/5xx con `code`
+ * y `message` — no se lanzan como excepción, se devuelven tal cual.
+ */
+export interface PhoneApiResponse extends Partial<PhoneStatus> {
+	success: boolean;
+	message?: string;
+	/** express-rate-limit responde con `error` en vez de `message` */
+	error?: string;
+	code?: string;
+	reason?: string;
+	retryAfterSeconds?: number;
+	expiresAt?: string;
+	httpStatus: number;
 }
 
 export interface DeactivateAccountData {
@@ -565,6 +600,47 @@ class ApiService {
 		} catch (error) {
 			throw this.handleAxiosError(error);
 		}
+	}
+
+	// ===============================
+	// Teléfono / canal WhatsApp (/api/phone)
+	// ===============================
+
+	private static async phoneRequest(method: "get" | "post" | "delete", path: string, data?: unknown): Promise<PhoneApiResponse> {
+		const response = await axios.request({
+			method,
+			url: `${API_BASE_URL}/api/phone${path}`,
+			data,
+			withCredentials: true,
+			validateStatus: () => true,
+		});
+		const body = response.data && typeof response.data === "object" ? response.data : {};
+		return { success: false, ...body, httpStatus: response.status };
+	}
+
+	/** Estado del número + consentimiento + disponibilidad del canal */
+	static getPhoneStatus(): Promise<PhoneApiResponse> {
+		return this.phoneRequest("get", "/status");
+	}
+
+	/** Manda un código de 6 dígitos por WhatsApp al número (E.164) */
+	static startPhoneVerification(phone: string): Promise<PhoneApiResponse> {
+		return this.phoneRequest("post", "/verify/start", { phone });
+	}
+
+	/** Confirma el código; con acceptOptIn registra el consentimiento y prende el canal */
+	static confirmPhoneVerification(code: string, acceptOptIn: boolean): Promise<PhoneApiResponse> {
+		return this.phoneRequest("post", "/verify/confirm", { code, acceptOptIn });
+	}
+
+	/** Vuelve a activar los avisos con un número ya verificado (después de una baja) */
+	static acceptWhatsappOptIn(): Promise<PhoneApiResponse> {
+		return this.phoneRequest("post", "/opt-in");
+	}
+
+	/** Quita el número y apaga el canal */
+	static removePhone(): Promise<PhoneApiResponse> {
+		return this.phoneRequest("delete", "");
 	}
 
 	/**

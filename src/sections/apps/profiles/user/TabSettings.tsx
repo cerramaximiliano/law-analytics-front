@@ -26,7 +26,8 @@ import { alpha, useTheme } from "@mui/material/styles";
 
 // project-imports
 import MainCard from "components/MainCard";
-import ApiService, { NotificationPreferences, NotificationSettings, InactivitySettings } from "store/reducers/ApiService";
+import ApiService, { NotificationPreferences, NotificationSettings, InactivitySettings, PhoneStatus } from "store/reducers/ApiService";
+import WhatsAppChannelPanel from "./WhatsAppChannelPanel";
 
 // assets
 import { ArrowDown2, Calendar1, Notification, Sms, Warning2, MessageNotif } from "iconsax-react";
@@ -67,7 +68,7 @@ const TabSettings = () => {
 
 	const [preferences, setPreferences] = useState<NotificationPreferences>({
 		enabled: true,
-		channels: { email: true, browser: true, mobile: false },
+		channels: { email: true, browser: true, mobile: false, whatsapp: false },
 		user: {
 			enabled: true,
 			calendar: true,
@@ -86,7 +87,15 @@ const TabSettings = () => {
 
 	const [expanded, setExpanded] = useState<string | null>(null);
 
-	const [channelsEnabled, setChannelsEnabled] = useState<boolean>(preferences.channels?.email || preferences.channels?.browser || false);
+	// Estado del teléfono/consentimiento de WhatsApp (lo mantiene WhatsAppChannelPanel).
+	// El switch del canal solo se puede prender con número verificado + opt-in vigente;
+	// el backend lo rechaza igual (WHATSAPP_NOT_VERIFIED), esto evita el intento.
+	const [whatsappStatus, setWhatsappStatus] = useState<PhoneStatus | null>(null);
+	const canEnableWhatsapp = !!whatsappStatus?.phoneVerified && whatsappStatus.whatsappOptIn.accepted && !whatsappStatus.whatsappOptIn.revokedAt;
+
+	const [channelsEnabled, setChannelsEnabled] = useState<boolean>(
+		preferences.channels?.email || preferences.channels?.browser || preferences.channels?.whatsapp || false,
+	);
 	const [userOptionsEnabled, setUserOptionsEnabled] = useState<boolean>(
 		preferences.user?.calendar ||
 			preferences.user?.expiration ||
@@ -99,7 +108,7 @@ const TabSettings = () => {
 	);
 
 	useEffect(() => {
-		const isAnyChannelEnabled = preferences.channels?.email || preferences.channels?.browser || false;
+		const isAnyChannelEnabled = preferences.channels?.email || preferences.channels?.browser || preferences.channels?.whatsapp || false;
 		setChannelsEnabled(isAnyChannelEnabled);
 
 		const isAnyUserOptionEnabled =
@@ -136,6 +145,7 @@ const TabSettings = () => {
 	}, [
 		preferences.channels?.email,
 		preferences.channels?.browser,
+		preferences.channels?.whatsapp,
 		preferences.user?.calendar,
 		preferences.user?.expiration,
 		preferences.user?.taskExpiration,
@@ -169,6 +179,7 @@ const TabSettings = () => {
 				email: notifications?.channels?.email ?? true,
 				browser: notifications?.channels?.browser ?? true,
 				mobile: notifications?.channels?.mobile ?? false,
+				whatsapp: notifications?.channels?.whatsapp ?? false,
 			},
 			user: {
 				enabled: notifications?.user?.enabled ?? true,
@@ -240,6 +251,7 @@ const TabSettings = () => {
 					email: preferences.channels?.email ?? false,
 					browser: preferences.channels?.browser ?? false,
 					mobile: false,
+					whatsapp: preferences.channels?.whatsapp ?? false,
 				},
 				user: {
 					enabled: checked.includes("sen"),
@@ -293,7 +305,8 @@ const TabSettings = () => {
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: "Error al guardar preferencias",
+					// El backend explica los rechazos (ej. WhatsApp sin número verificado)
+					message: error instanceof Error && error.message ? error.message : "Error al guardar preferencias",
 					variant: "alert",
 					alert: { color: "error" },
 					close: false,
@@ -317,9 +330,10 @@ const TabSettings = () => {
 			} else if (value === "usn") {
 				setPreferences((prev) => ({ ...prev, system: { ...prev.system, enabled: true, alerts: true, news: true, userActivity: true } }));
 			} else if (value === "chn") {
+				// WhatsApp no se prende en bloque: requiere número verificado + opt-in
 				setPreferences((prev) => ({
 					...prev,
-					channels: { email: true, browser: true, mobile: prev.channels?.mobile ?? false },
+					channels: { email: true, browser: true, mobile: prev.channels?.mobile ?? false, whatsapp: prev.channels?.whatsapp ?? false },
 				}));
 			}
 		} else {
@@ -334,7 +348,7 @@ const TabSettings = () => {
 			} else if (value === "chn") {
 				setPreferences((prev) => ({
 					...prev,
-					channels: { email: false, browser: false, mobile: prev.channels?.mobile ?? false },
+					channels: { email: false, browser: false, mobile: prev.channels?.mobile ?? false, whatsapp: false },
 				}));
 			}
 		}
@@ -477,15 +491,34 @@ const TabSettings = () => {
 		});
 	};
 
-	const handleChannelChange = (channel: "email" | "browser", value: boolean) => {
+	const handleChannelChange = (channel: "email" | "browser" | "whatsapp", value: boolean) => {
 		setPreferences((prev) => ({
 			...prev,
 			channels: {
 				email: channel === "email" ? value : prev.channels?.email ?? false,
 				browser: channel === "browser" ? value : prev.channels?.browser ?? false,
 				mobile: prev.channels?.mobile ?? false,
+				whatsapp: channel === "whatsapp" ? value : prev.channels?.whatsapp ?? false,
 			},
 		}));
+	};
+
+	// El panel de WhatsApp escribe en el servidor (verificar/aceptar/quitar prende o
+	// apaga el canal allá); acá se refleja en el estado y en la copia "guardada" para
+	// que Cancelar/Guardar no lo pisen con un valor viejo.
+	const handleWhatsappStatusChange = (status: PhoneStatus) => {
+		setWhatsappStatus(status);
+		const syncChannels = (prev: NotificationPreferences): NotificationPreferences => ({
+			...prev,
+			channels: {
+				email: prev.channels?.email ?? true,
+				browser: prev.channels?.browser ?? true,
+				mobile: prev.channels?.mobile ?? false,
+				whatsapp: status.channelEnabled,
+			},
+		});
+		setPreferences(syncChannels);
+		if (savedPreferencesRef.current) savedPreferencesRef.current = syncChannels(savedPreferencesRef.current);
 	};
 
 	// ── Brand helpers ──────────────────────────────────────────────────────────
@@ -745,7 +778,13 @@ const TabSettings = () => {
 							title="Canales de comunicación"
 							description="Por dónde querés recibir tus notificaciones"
 							icon={<Sms size={18} variant="Bulk" />}
-							switchChecked={checked.indexOf("chn") !== -1 || preferences.channels?.email || preferences.channels?.browser || false}
+							switchChecked={
+								checked.indexOf("chn") !== -1 ||
+								preferences.channels?.email ||
+								preferences.channels?.browser ||
+								preferences.channels?.whatsapp ||
+								false
+							}
 							onSwitchChange={handleToggle("chn")}
 						/>
 					</AccordionSummary>
@@ -775,7 +814,26 @@ const TabSettings = () => {
 									sx={switchSx}
 								/>
 							</ListItem>
+							<ListItem sx={subRowSx}>
+								<Stack sx={{ flex: 1, minWidth: 0 }}>
+									<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>WhatsApp</Typography>
+									<Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }}>
+										Aviso breve con las carpetas que tienen novedades. Requiere número verificado.
+									</Typography>
+								</Stack>
+								<Switch
+									size="small"
+									onChange={() => handleChannelChange("whatsapp", !preferences.channels?.whatsapp)}
+									checked={preferences.channels?.whatsapp ?? false}
+									// Apagar siempre se puede; prender solo con número verificado + opt-in vigente
+									disabled={!channelsEnabled || !canEditSettings || (!preferences.channels?.whatsapp && !canEnableWhatsapp)}
+									sx={switchSx}
+								/>
+							</ListItem>
 						</List>
+						<Box sx={{ ...settingsBoxSx, mt: 0.5 }}>
+							<WhatsAppChannelPanel disabled={!canEditSettings} onStatusChange={handleWhatsappStatusChange} />
+						</Box>
 					</AccordionDetails>
 				</Accordion>
 
