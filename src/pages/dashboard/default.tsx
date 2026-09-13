@@ -182,6 +182,8 @@ const DashboardDefault = () => {
 	// Estado combinado de carga (ambos deben estar listos)
 	const isFullyLoading = isLoading || onboardingLoading;
 
+	const hasFolders = (dashboardData?.folders?.total || 0) > 0;
+
 	// Estado de cred judicial (PJN/SCBA/MEV). Skip si el onboarding no se va a
 	// mostrar — evita requests inútiles en cada carga del dashboard del user
 	// que ya completó/dismissó el flow. Se basa en showOnboarding (y no en
@@ -471,13 +473,15 @@ const DashboardDefault = () => {
 				{!isFullyLoading && !error && dashboardData && showOnboarding && !isDismissing && !judicialState.loading && (
 					<Fade in timeout={400}>
 						<Grid container item spacing={2.75}>
-							{/* Checklist ocupa lg=7 cuando el user ya tiene recursos para
-							    dar espacio a los widgets de KPI; full-width si recién empieza. */}
-							<Grid item xs={12} lg={dashboardData?.folders?.total ? 7 : 12}>
+							{/* Checklist full-width. Si el user ya tiene carpetas, el
+							    dashboard completo se renderiza debajo (O2, 2026-09-12): antes
+							    el checklist lo reemplazaba y, como no se podía completar, el
+							    user nunca volvía a ver KPIs, tareas ni vencimientos. */}
+							<Grid item xs={12}>
 								<OnboardingChecklist
 									userId={personalUserId}
 									userName={userName}
-									hasFolders={(dashboardData?.folders?.total || 0) > 0}
+									hasFolders={hasFolders}
 									hasPjnCredentials={judicialState.hasPjnCredentials}
 									hasScbaCredentials={judicialState.hasScbaCredentials}
 									hasMevCredentials={judicialState.hasMevCredentials}
@@ -487,24 +491,14 @@ const DashboardDefault = () => {
 									onDismiss={handleDismissOnboarding}
 								/>
 							</Grid>
-
-							{/* Cuando ya creó carpeta, aparece la columna derecha con
-							    widgets para que el dashboard no se sienta "vacío" pero el
-							    checklist mantiene el foco. */}
-							{dashboardData?.folders?.total ? (
-								<Grid item xs={12} lg={5}>
-									<Stack spacing={2.75}>
-										<ActiveFoldersWidget />
-										<StorageWidget />
-									</Stack>
-								</Grid>
-							) : null}
 						</Grid>
 					</Fade>
 				)}
 
-				{/* Mostrar datos normales si estan disponibles y no es onboarding */}
-				{!isFullyLoading && !error && dashboardData && !showOnboarding && !isDismissing && (
+				{/* Datos normales: sin onboarding, o con onboarding si el user ya tiene
+				    carpetas (el checklist queda arriba). Sin carpetas el dashboard está
+				    vacío y el checklist ocupa toda la vista. */}
+				{!isFullyLoading && !error && dashboardData && (!showOnboarding || hasFolders) && !isDismissing && (
 					<Fade in timeout={400}>
 						<Grid container item spacing={2.75}>
 							{/* row 1 - Mostrar estadisticas clave del dashboard */}

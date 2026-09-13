@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 // material-ui
-import { Box, Button, Chip, Link, Stack, Tooltip, Typography, useMediaQuery } from "@mui/material";
+import { Box, Button, Chip, Link, Stack, Typography, useMediaQuery } from "@mui/material";
 import { alpha, useTheme, Theme } from "@mui/material/styles";
 
 // project-imports
@@ -99,6 +99,8 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 	const isShortViewport = useMediaQuery("(max-height: 980px)");
 	const isTightViewport = useMediaQuery("(max-height: 760px)");
 	const navigate = useNavigate();
+	// Ocultar la guía es permanente: se confirma en línea antes de descartar.
+	const [confirmingDismiss, setConfirmingDismiss] = useState(false);
 
 	// Build de los 4 steps con su status calculado.
 	// judicial_connection: done si hay una credencial conectada (PJN, SCBA o
@@ -384,29 +386,53 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 							</Typography>
 						</Box>
 
-						<Tooltip title="Podés volver a abrir esta guía desde Ayuda" placement="left" arrow>
-							<Link
-								component="button"
-								variant="caption"
-								onClick={handleDismiss}
+						{/* O2/O7: antes era un link de 0,72 rem al 50% de opacidad y el
+						    tooltip prometía reabrir la guía desde Ayuda (no existe). */}
+						{confirmingDismiss ? (
+							<Stack direction="row" alignItems="center" spacing={0.75} sx={{ flexWrap: "wrap", justifyContent: "flex-end", rowGap: 0.5 }}>
+								<Typography sx={{ fontSize: "0.8rem", color: "text.secondary" }}>¿Ocultar la guía? No se vuelve a mostrar.</Typography>
+								<Button
+									size="small"
+									variant="text"
+									onClick={() => setConfirmingDismiss(false)}
+									sx={{ textTransform: "none", fontSize: "0.8rem", color: "text.secondary", minWidth: 0 }}
+								>
+									Cancelar
+								</Button>
+								<Button
+									size="small"
+									variant="outlined"
+									onClick={handleDismiss}
+									sx={{
+										textTransform: "none",
+										fontSize: "0.8rem",
+										fontWeight: 600,
+										color: BRAND_BLUE,
+										borderColor: alpha(BRAND_BLUE, 0.4),
+										"&:hover": { borderColor: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, 0.06) },
+									}}
+								>
+									Ocultar guía
+								</Button>
+							</Stack>
+						) : (
+							<Button
+								size="small"
+								variant="text"
+								onClick={() => setConfirmingDismiss(true)}
+								startIcon={<CloseCircle size={15} variant="Bulk" />}
 								sx={{
-									color: alpha(theme.palette.text.primary, 0.5),
-									textDecoration: "none",
-									cursor: "pointer",
-									fontSize: "0.72rem",
-									border: "none",
-									background: "none",
-									display: "inline-flex",
-									alignItems: "center",
-									gap: 0.5,
-									transition: "color 0.2s ease",
-									"&:hover": { color: theme.palette.text.primary, textDecoration: "underline", textUnderlineOffset: "2px" },
+									textTransform: "none",
+									fontSize: "0.82rem",
+									fontWeight: 500,
+									color: "text.secondary",
+									whiteSpace: "nowrap",
+									"&:hover": { color: "text.primary", bgcolor: alpha(theme.palette.text.primary, 0.05) },
 								}}
 							>
-								<CloseCircle size={13} variant="Bulk" />
 								Ocultar guía
-							</Link>
-						</Tooltip>
+							</Button>
+						)}
 					</Stack>
 
 					<Stack spacing={0.5}>
