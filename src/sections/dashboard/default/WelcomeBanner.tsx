@@ -1,7 +1,7 @@
 import React from "react";
 
 // material-ui
-import { Box, Button, Link, Stack, Tooltip, Typography, useMediaQuery } from "@mui/material";
+import { Box, Button, Stack, Typography } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 
 // project-imports
@@ -18,28 +18,18 @@ import { ThemeMode } from "types/config";
 import { useNavigate } from "react-router-dom";
 
 interface WelcomeBannerProps {
-	showOnboarding?: boolean;
 	userName?: string;
-	onDismiss?: () => void;
-	sessionCount?: number;
-	maxSessions?: number;
 }
 
 // ==============================|| DASHBOARD - WELCOME BANNER ||============================== //
-// Dos variantes según `showOnboarding`:
-// - onboarding (usuarios nuevos sin carpetas): hero grande con eyebrow, h2 y CTA
-//   primario "Crear primera carpeta". Lo más visible del dashboard al loguearse.
-// - default (usuarios con recursos): billboard horizontal compacto con greeting
-//   personalizado + CTA dual (planes + nueva carpeta). Mucho menos altura para
-//   no robar foco a las cards de KPIs que vienen debajo.
+// Billboard horizontal compacto con greeting personalizado + CTA dual (planes +
+// nueva carpeta). Poca altura para no robar foco a las cards de KPIs de abajo.
+// El onboarding de usuarios nuevos lo resuelve OnboardingChecklist; la variante
+// hero de este banner quedó sin uso y se eliminó (O9, 2026-09-12).
 
-const WelcomeBanner = ({ showOnboarding = false, userName, onDismiss }: WelcomeBannerProps) => {
+const WelcomeBanner = ({ userName }: WelcomeBannerProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === ThemeMode.DARK;
-	// Adaptación a altura de viewport. Threshold a 980 captura laptops 1080p
-	// (~950-980 disponibles después de barra de URL del navegador).
-	const isShortViewport = useMediaQuery("(max-height: 980px)");
-	const isTightViewport = useMediaQuery("(max-height: 760px)");
 	const navigate = useNavigate();
 
 	const handleCreateFolder = () => navigate("/apps/folders/list?onboarding=true");
@@ -78,172 +68,9 @@ const WelcomeBanner = ({ showOnboarding = false, userName, onDismiss }: WelcomeB
 		"&:active": { transform: "translateY(0)" },
 	};
 
-	// ============================== ONBOARDING (nuevo) ==============================
-	if (showOnboarding) {
-		return (
-			<MainCard border={false} sx={containerSx}>
-				{/* Atmósfera — blob brand-blue arriba derecha + dot grid */}
-				<Box
-					aria-hidden
-					sx={{
-						position: "absolute",
-						top: "-40%",
-						right: "-15%",
-						width: { xs: 320, md: 460 },
-						height: { xs: 320, md: 460 },
-						borderRadius: "50%",
-						background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.13)} 0%, transparent 65%)`,
-						filter: "blur(60px)",
-						pointerEvents: "none",
-						zIndex: 0,
-					}}
-				/>
-				<Box
-					aria-hidden
-					sx={{
-						position: "absolute",
-						inset: 0,
-						backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDark ? 0.08 : 0.06)} 1px, transparent 1px)`,
-						backgroundSize: "26px 26px",
-						maskImage: "radial-gradient(ellipse 60% 80% at 80% 30%, #000 0%, transparent 75%)",
-						WebkitMaskImage: "radial-gradient(ellipse 60% 80% at 80% 30%, #000 0%, transparent 75%)",
-						pointerEvents: "none",
-						zIndex: 0,
-					}}
-				/>
-
-				<Stack
-					spacing={{
-						xs: isTightViewport ? 1 : isShortViewport ? 1.25 : 1.75,
-						sm: isTightViewport ? 1.25 : isShortViewport ? 1.5 : 2.25,
-					}}
-					sx={{
-						px: { xs: 2.5, sm: 4 },
-						py: {
-							xs: isTightViewport ? 1.5 : isShortViewport ? 2 : 3,
-							sm: isTightViewport ? 2 : isShortViewport ? 2.25 : 4,
-						},
-						position: "relative",
-						zIndex: 1,
-						maxWidth: { md: 620 },
-					}}
-				>
-					{/* Eyebrow chip — patrón SectionEyebrow del landing */}
-					<Box
-						sx={{
-							display: "inline-flex",
-							alignSelf: "flex-start",
-							alignItems: "center",
-							px: 1.25,
-							py: 0.4,
-							borderRadius: 1,
-							bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
-							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.2)}`,
-						}}
-					>
-						<Typography
-							sx={{
-								fontSize: "0.68rem",
-								fontWeight: 600,
-								letterSpacing: "0.14em",
-								textTransform: "uppercase",
-								color: BRAND_BLUE,
-							}}
-						>
-							Empezá acá
-						</Typography>
-					</Box>
-
-					<Typography
-						variant="h2"
-						sx={{
-							fontSize: {
-								xs: isTightViewport ? "1.25rem" : isShortViewport ? "1.35rem" : "1.5rem",
-								sm: isTightViewport ? "1.5rem" : isShortViewport ? "1.625rem" : "1.875rem",
-								md: isTightViewport ? "1.625rem" : isShortViewport ? "1.75rem" : "2.125rem",
-							},
-							fontWeight: 600,
-							letterSpacing: "-0.025em",
-							lineHeight: 1.15,
-							color: "text.primary",
-							textWrap: "balance",
-						}}
-					>
-						{userName ? `Bienvenido, ${userName}` : "Bienvenido a Law·Analytics"}
-					</Typography>
-
-					<Typography
-						sx={{
-							fontSize: { xs: "0.9rem", sm: "1rem" },
-							color: "text.secondary",
-							lineHeight: 1.55,
-							maxWidth: 540,
-							textWrap: "pretty",
-						}}
-					>
-						Empezá creando tu primera carpeta. Es el corazón de Law·Analytics: desde ahí gestionás documentos, cálculos y vencimientos.
-					</Typography>
-
-					<Box sx={{ pt: 0.5 }}>
-						<Button variant="contained" onClick={handleCreateFolder} startIcon={<Add size={18} />} sx={primaryButtonSx}>
-							Crear mi primera carpeta
-						</Button>
-					</Box>
-
-					{/* Helper — oculto en viewport corto para ahorrar altura */}
-					{!isShortViewport && (
-						<Typography
-							variant="caption"
-							sx={{
-								color: "text.secondary",
-								opacity: 0.75,
-								display: { xs: "none", sm: "block" },
-								mt: -0.5,
-							}}
-						>
-							Organizá un expediente en menos de 1 minuto
-						</Typography>
-					)}
-				</Stack>
-
-				{/* Dismiss link */}
-				{onDismiss && (
-					<Box sx={{ position: "absolute", bottom: 10, right: 16, zIndex: 3 }}>
-						<Tooltip title="Podés volver a ver esta guía desde Ayuda" placement="top" arrow>
-							<Link
-								component="button"
-								variant="caption"
-								onClick={onDismiss}
-								sx={{
-									color: alpha(theme.palette.text.primary, 0.45),
-									textDecoration: "none",
-									cursor: "pointer",
-									fontSize: "0.7rem",
-									border: "none",
-									background: "none",
-									transition: "color 0.2s ease",
-									"&:hover": {
-										color: theme.palette.text.primary,
-										textDecoration: "underline",
-										textUnderlineOffset: "2px",
-									},
-								}}
-							>
-								No mostrar esta guía nuevamente
-							</Link>
-						</Tooltip>
-					</Box>
-				)}
-			</MainCard>
-		);
-	}
-
-	// ============================== DEFAULT (con recursos) ==============================
-	// Billboard horizontal compacto. La altura baja deliberadamente — las KPI cards
-	// de abajo son el foco visual, este banner es contexto + acceso rápido.
 	return (
 		<MainCard border={false} sx={containerSx}>
-			{/* Atmósfera — más sutil que en el hero onboarding (banner más bajo) */}
+			{/* Atmósfera — blob brand-blue sutil + dot grid */}
 			<Box
 				aria-hidden
 				sx={{

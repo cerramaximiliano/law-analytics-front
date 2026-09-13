@@ -398,7 +398,7 @@ const DashboardDefault = () => {
 						) : (
 							<Fade in={!isFullyLoading} timeout={300}>
 								<div>
-									<WelcomeBanner showOnboarding={false} userName={userName} />
+									<WelcomeBanner userName={userName} />
 								</div>
 							</Fade>
 						)}
