@@ -489,6 +489,7 @@ const DashboardDefault = () => {
 									hasLinkedFolders={(onboardingSignals?.linkedFolders || 0) > 0}
 									hasContacts={(onboardingSignals?.contacts || 0) > 0}
 									hasDeadlines={(onboardingSignals?.deadlines || 0) > 0}
+									preferredJurisdiction={onboardingSignals?.preferredJurisdiction || null}
 									onDismiss={handleDismissOnboarding}
 								/>
 							</Grid>

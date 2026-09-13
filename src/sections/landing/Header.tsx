@@ -304,6 +304,13 @@ const HeaderPage = () => {
 				disableHoverListener={!isMobile}
 			>
 				<Box
+					// Tile disponible → registro con la jurisdicción como atribución
+					// (?jurisdiction=<key>): el checklist de onboarding la ofrece primero.
+					{...(isAvailable && {
+						component: RouterLink,
+						to: `/register?source=integraciones&jurisdiction=${encodeURIComponent(integration.key)}`,
+						"aria-label": `Registrarte para seguir causas del ${integration.tooltipTitle}`,
+					})}
 					sx={{
 						display: "flex",
 						flexDirection: "column",
@@ -312,6 +319,9 @@ const HeaderPage = () => {
 						width: { xs: 64, sm: 120 },
 						flex: "0 0 auto",
 						opacity: isAvailable ? 1 : 0.55,
+						textDecoration: "none",
+						color: "inherit",
+						cursor: isAvailable ? "pointer" : "default",
 					}}
 				>
 					<Box

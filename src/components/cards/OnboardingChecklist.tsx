@@ -83,6 +83,7 @@ interface OnboardingChecklistProps {
 	hasLinkedFolders?: boolean; // signals.linkedFolders > 0 (alta individual PJN/MEV/EJE/IOL)
 	hasContacts?: boolean; // signals.contacts > 0
 	hasDeadlines?: boolean; // signals.deadlines > 0 (vencimiento o audiencia)
+	preferredJurisdiction?: string | null; // signals.preferredJurisdiction (key del catálogo)
 	onDismiss: () => void;
 }
 
@@ -97,6 +98,7 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 	hasLinkedFolders = false,
 	hasContacts = false,
 	hasDeadlines = false,
+	preferredJurisdiction = null,
 	onDismiss,
 }) => {
 	const theme = useTheme();
@@ -110,7 +112,10 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 	// Jurisdicciones del panel judicial: catálogo de /admin/integrations (el mismo
 	// que usa la landing), con respaldo local si el endpoint no responde.
 	const { integrations: publicIntegrations } = usePublicIntegrations();
-	const judicialOptions = useMemo(() => buildJudicialOptions(publicIntegrations.landingCatalog), [publicIntegrations.landingCatalog]);
+	const judicialOptions = useMemo(
+		() => buildJudicialOptions(publicIntegrations.landingCatalog, preferredJurisdiction),
+		[publicIntegrations.landingCatalog, preferredJurisdiction],
+	);
 
 	// Build de los 4 steps con su status calculado.
 	// judicial_connection: done si hay una credencial conectada (PJN, SCBA o
@@ -523,6 +528,7 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 												<JudicialConnectionPanel
 													credentialOptions={judicialOptions.credential}
 													individualOptions={judicialOptions.individual}
+													preferredLabel={judicialOptions.preferredLabel}
 													hasPjnCredentials={hasPjnCredentials}
 													hasScbaCredentials={hasScbaCredentials}
 													hasMevCredentials={hasMevCredentials}
@@ -801,6 +807,7 @@ interface JudicialOption {
 interface JudicialConnectionPanelProps {
 	credentialOptions: JudicialOption[];
 	individualOptions: JudicialOption[];
+	preferredLabel?: string | null; // jurisdicción elegida en la landing (va primera)
 	hasPjnCredentials: boolean;
 	hasScbaCredentials: boolean;
 	hasMevCredentials: boolean;
@@ -918,12 +925,20 @@ const FALLBACK_CATALOG: CatalogItem[] = [
 ];
 
 // Arma las dos listas del panel desde el catálogo: sólo jurisdicciones `available`,
-// en el orden del admin. Sin logo (local o logoUrl) no se muestran, igual que en la
-// landing. Una key desconocida con credentialSync no tiene destino de credencial y
-// se omite de la Opción A; con individualCauses abre el alta genérica.
-function buildJudicialOptions(catalog?: LandingCatalogEntry[]): { credential: JudicialOption[]; individual: JudicialOption[] } {
+// en el orden del admin; la elegida en la landing al registrarse (`preferred`) va
+// primera. Sin logo (local o logoUrl) no se muestran, igual que en la landing. Una
+// key desconocida con credentialSync no tiene destino de credencial y se omite de
+// la Opción A; con individualCauses abre el alta genérica.
+function buildJudicialOptions(
+	catalog?: LandingCatalogEntry[],
+	preferred?: string | null,
+): { credential: JudicialOption[]; individual: JudicialOption[]; preferredLabel: string | null } {
 	const source: CatalogItem[] = catalog && catalog.length > 0 ? catalog : FALLBACK_CATALOG;
-	const entries = source.filter((entry) => entry.status === "available").sort((a, b) => a.order - b.order);
+	const entries = source
+		.filter((entry) => entry.status === "available")
+		.sort((a, b) => Number(b.key === preferred) - Number(a.key === preferred) || a.order - b.order);
+	const preferredEntry = preferred ? entries.find((entry) => entry.key === preferred) : undefined;
+	const preferredLabel = preferredEntry ? LOCAL_JURISDICTIONS[preferredEntry.key]?.label || preferredEntry.shortName : null;
 
 	const credential: JudicialOption[] = [];
 	const individual: JudicialOption[] = [];
@@ -956,12 +971,13 @@ function buildJudicialOptions(catalog?: LandingCatalogEntry[]): { credential: Ju
 			});
 		}
 	}
-	return { credential, individual };
+	return { credential, individual, preferredLabel };
 }
 
 const JudicialConnectionPanel: React.FC<JudicialConnectionPanelProps> = ({
 	credentialOptions,
 	individualOptions,
+	preferredLabel = null,
 	hasPjnCredentials,
 	hasScbaCredentials,
 	hasMevCredentials,
@@ -972,7 +988,9 @@ const JudicialConnectionPanel: React.FC<JudicialConnectionPanelProps> = ({
 }) => {
 	// Copy del sub-encabezado del path "Credencial". El panel sólo se ve con el step
 	// judicial pendiente (ninguna cuenta conectada), así que no hay estado parcial.
-	const credentialHint = hasFolders
+	const credentialHint = preferredLabel
+		? `Elegiste ${preferredLabel} al registrarte: está primero. Conectá una vez y traemos todos tus expedientes.`
+		: hasFolders
 		? "Sumá automatización completa. Conectá tu cuenta y traemos todos tus expedientes futuros."
 		: "Una sola vez. Traemos todos tus expedientes y los mantenemos sincronizados.";
 	const isConnected = (opt: JudicialOption) =>

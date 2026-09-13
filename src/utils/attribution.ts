@@ -29,6 +29,8 @@ export interface AttributionPayload {
 	lastTouch: AttributionTouch | null;
 	internalSource: string | null;
 	internalFeature: string | null;
+	/** Jurisdicción tocada en la landing (?jurisdiction=pjn|mev|eje|pjsalta|...). */
+	internalJurisdiction: string | null;
 }
 
 const safeStorage = {
@@ -140,12 +142,17 @@ export const captureAttribution = (): void => {
  * Devuelve el payload que mandamos al backend al registrar/loguear.
  * Los internal source/feature vienen de los CTAs internos (?source=hero&feature=causas).
  */
-export const getAttributionPayload = (internalSource?: string | null, internalFeature?: string | null): AttributionPayload => {
+export const getAttributionPayload = (
+	internalSource?: string | null,
+	internalFeature?: string | null,
+	internalJurisdiction?: string | null,
+): AttributionPayload => {
 	return {
 		firstTouch: readTouch(FIRST_TOUCH_KEY),
 		lastTouch: readTouch(LAST_TOUCH_KEY),
 		internalSource: internalSource ?? null,
 		internalFeature: internalFeature ?? null,
+		internalJurisdiction: internalJurisdiction ?? null,
 	};
 };
 
@@ -166,9 +173,7 @@ export const getAttributionPayload = (internalSource?: string | null, internalFe
  */
 export const resolveInternalSource = (params: URLSearchParams): string | null => {
 	return (
-		params.get("source") ||
-		params.get("utm_source") ||
-		(params.get("gclid") ? "google_ads" : params.get("fbclid") ? "facebook_ads" : null)
+		params.get("source") || params.get("utm_source") || (params.get("gclid") ? "google_ads" : params.get("fbclid") ? "facebook_ads" : null)
 	);
 };
 

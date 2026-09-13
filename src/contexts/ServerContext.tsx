@@ -149,7 +149,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				const params = new URLSearchParams(window.location.search);
 				const result = await axios.post<LoginResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/google`, {
 					token: credential,
-					attribution: getAttributionPayload(resolveInternalSource(params), params.get("feature")),
+					attribution: getAttributionPayload(resolveInternalSource(params), params.get("feature"), params.get("jurisdiction")),
 					// Confirma la reactivación de una cuenta desactivada (cuentas Google,
 					// sin password): el backend ya verificó el token → reactiva y loguea.
 					...(confirmReactivation ? { confirmReactivation: true } : {}),
@@ -567,7 +567,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				password,
 				...(firstName && { firstName }),
 				...(lastName && { lastName }),
-				attribution: getAttributionPayload(resolveInternalSource(params), params.get("feature")),
+				attribution: getAttributionPayload(resolveInternalSource(params), params.get("feature"), params.get("jurisdiction")),
 			});
 
 			// Siempre necesitará verificación para nuevos registros
