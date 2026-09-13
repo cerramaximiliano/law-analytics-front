@@ -131,7 +131,7 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 				status: judicialStatus,
 				icon: Link21,
 				title: "Conectar con el Poder Judicial",
-				description: "Sin esto, vas a cargar todo a mano. Conectalo una vez y Law·Analytics trae los movimientos automáticamente.",
+				description: "Sin esto, vas a cargar todo a mano. Conectalo una vez y Law Analytics trae los movimientos automáticamente.",
 			},
 			{
 				id: "first_contact",
@@ -296,15 +296,15 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 		: completedCount === 0
 		? userName
 			? `Bienvenido, ${userName}`
-			: "Bienvenido a Law·Analytics"
+			: "Bienvenido a Law Analytics"
 		: userName
 		? `Bien hecho, ${userName}`
 		: "Bien hecho";
 
 	const subline = allDone
-		? "Ya tenés todo configurado. Law·Analytics está trabajando por vos."
+		? "Ya tenés todo configurado. Law Analytics está trabajando por vos."
 		: completedCount === 0
-		? `${totalSteps} pasos para que Law·Analytics empiece a trabajar por vos.`
+		? `${totalSteps} pasos para que Law Analytics empiece a trabajar por vos.`
 		: `${totalSteps - completedCount} ${totalSteps - completedCount === 1 ? "paso más" : "pasos más"} para activar todo el potencial.`;
 
 	const eyebrowLabel = allDone ? "TODO LISTO" : completedCount === 0 ? "EMPEZÁ ACÁ" : completedCount >= 3 ? "CASI LISTO" : "SEGUÍ ASÍ";
@@ -878,7 +878,7 @@ const JudicialConnectionPanel: React.FC<JudicialConnectionPanelProps> = ({
 						textTransform: "uppercase",
 					}}
 				>
-					Activa el 80% del valor de Law·Analytics
+					Activa el 80% del valor de Law Analytics
 				</Typography>
 			</Box>
 

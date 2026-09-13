@@ -43,7 +43,7 @@ const Footer = () => {
 						letterSpacing: "-0.005em",
 					}}
 				>
-					© {new Date().getFullYear()} Law·Analytics
+					© {new Date().getFullYear()} Law Analytics
 				</Typography>
 
 				<Stack
