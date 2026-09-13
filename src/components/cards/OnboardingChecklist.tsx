@@ -1072,21 +1072,20 @@ export interface JudicialConnectionState {
 const NO_JUDICIAL_CONNECTION = { hasPjnCredentials: false, hasScbaCredentials: false, hasMevCredentials: false };
 
 export function useJudicialConnectionState(skip = false): JudicialConnectionState {
-	const [state, setState] = useState<JudicialConnectionState>({
-		loading: !skip,
-		...NO_JUDICIAL_CONNECTION,
-	});
+	// `loading` se deriva en el render (!skip && !resolved), no en un efecto: en el
+	// render en que `skip` pasa a false ya vale true. Antes quedaba un render
+	// intermedio con loading=false que montaba el checklist, lo desmontaba al
+	// empezar la consulta y lo volvía a montar → onboarding_shown y
+	// onboarding_completed duplicados (visto en prod el 2026-09-13).
+	const [result, setResult] = useState({ resolved: false, ...NO_JUDICIAL_CONNECTION });
 
 	useEffect(() => {
 		if (skip) {
-			setState({ loading: false, ...NO_JUDICIAL_CONNECTION });
+			setResult({ resolved: false, ...NO_JUDICIAL_CONNECTION });
 			return;
 		}
 
 		let cancelled = false;
-		// loading=true mientras se consulta: el dashboard no monta el checklist
-		// hasta tener el estado real (evita un "pendiente" falso y su tracking).
-		setState((prev) => ({ ...prev, loading: true }));
 		Promise.allSettled([
 			pjnCredentialsService.getCredentialsStatus(),
 			scbaCredentialsService.getCredentialsStatus(),
@@ -1101,7 +1100,7 @@ export function useJudicialConnectionState(skip = false): JudicialConnectionStat
 			const mevGlobal = mevResult.status === "fulfilled" && mevResult.value?.success ? mevResult.value.data?.global : null;
 			const mevOk = !!mevGlobal && mevGlobal.enabled !== false && !isMevCredentialBroken(mevGlobal);
 
-			setState({ loading: false, hasPjnCredentials: pjnOk, hasScbaCredentials: scbaOk, hasMevCredentials: mevOk });
+			setResult({ resolved: true, hasPjnCredentials: pjnOk, hasScbaCredentials: scbaOk, hasMevCredentials: mevOk });
 		});
 
 		return () => {
@@ -1109,7 +1108,12 @@ export function useJudicialConnectionState(skip = false): JudicialConnectionStat
 		};
 	}, [skip]);
 
-	return state;
+	return {
+		loading: !skip && !result.resolved,
+		hasPjnCredentials: result.hasPjnCredentials,
+		hasScbaCredentials: result.hasScbaCredentials,
+		hasMevCredentials: result.hasMevCredentials,
+	};
 }
 
 export default OnboardingChecklist;
