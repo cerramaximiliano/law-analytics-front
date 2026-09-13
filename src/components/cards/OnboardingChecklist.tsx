@@ -20,7 +20,8 @@ import scbaCredentialsService from "api/scbaCredentials";
 import mevCredentialsService from "api/mevCredentials";
 import { isScbaConnected } from "utils/scbaBindingState";
 import { isMevCredentialBroken } from "utils/mevCredential";
-import ApiService from "store/reducers/ApiService";
+import ApiService, { LandingCatalogEntry } from "store/reducers/ApiService";
+import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 
 // tracking
 import {
@@ -46,9 +47,6 @@ const LOGO_EJE = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/
 // Logo PJ Salta — mismo asset que el wizard de alta y LinkToJudicialPower
 const LOGO_SALTA =
 	"https://res.cloudinary.com/dqyoeolib/image/upload/v1779137783/ChatGPT_Image_18_may_2026__05_52_35_p.m.-removebg-preview_bngpqd.png";
-
-// Jurisdicciones del alta individual (Opción B del step judicial)
-type IndividualJurisdiction = "PJN" | "MEV" | "EJE" | "SALTA" | "CATAMARCA" | "MENDOZA";
 
 // =============================================================================
 // ONBOARDING CHECKLIST — componente único que reemplaza el banner + educational
@@ -108,6 +106,11 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 	const navigate = useNavigate();
 	// Ocultar la guía es permanente: se confirma en línea antes de descartar.
 	const [confirmingDismiss, setConfirmingDismiss] = useState(false);
+
+	// Jurisdicciones del panel judicial: catálogo de /admin/integrations (el mismo
+	// que usa la landing), con respaldo local si el endpoint no responde.
+	const { integrations: publicIntegrations } = usePublicIntegrations();
+	const judicialOptions = useMemo(() => buildJudicialOptions(publicIntegrations.landingCatalog), [publicIntegrations.landingCatalog]);
 
 	// Build de los 4 steps con su status calculado.
 	// judicial_connection: done si hay una credencial conectada (PJN, SCBA o
@@ -243,22 +246,14 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 		navigate("/apps/folders/list?onboarding=true&action=create");
 	};
 
-	const goLinkCredential = (jurisdiction: "PJN" | "SCBA") => {
+	// Tile del panel judicial. Las credenciales viven en `/apps/profiles/account/pjn`
+	// (`TabPjnIntegration` lee `view=pjn|scba|mev`); el alta individual abre el
+	// asistente de carpetas con la jurisdicción preseleccionada (folders.tsx).
+	const goJudicialOption = (option: JudicialOption, mode: "credential" | "individual") => {
 		trackOnboardingStepClicked("judicial_connection");
-		trackOnboardingJudicialLogoClicked(jurisdiction, "credential");
-		ApiService.trackOnboardingEvent("onboarding_judicial_logo_clicked", { jurisdiction, mode: "credential" });
-		// Ambas creds viven en el mismo tab `/apps/profiles/account/pjn` —
-		// el componente `TabPjnIntegration` lee el query param `view=pjn|scba`
-		// para decidir cuál card mostrar (ver `TabPjnIntegration.tsx:44`).
-		const view = jurisdiction === "SCBA" ? "scba" : "pjn";
-		navigate(`/apps/profiles/account/pjn?view=${view}`);
-	};
-
-	const goLinkIndividualFolder = (jurisdiction: IndividualJurisdiction) => {
-		trackOnboardingStepClicked("judicial_connection");
-		trackOnboardingJudicialLogoClicked(jurisdiction, "individual");
-		ApiService.trackOnboardingEvent("onboarding_judicial_logo_clicked", { jurisdiction, mode: "individual" });
-		navigate(`/apps/folders/list?onboarding=true&action=create&jurisdiction=${jurisdiction}`);
+		trackOnboardingJudicialLogoClicked(option.key, mode);
+		ApiService.trackOnboardingEvent("onboarding_judicial_logo_clicked", { jurisdiction: option.key, mode });
+		navigate(option.href);
 	};
 
 	const goAddContact = () => {
@@ -526,13 +521,15 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 									step.id === "judicial_connection" && !isDone
 										? () => (
 												<JudicialConnectionPanel
+													credentialOptions={judicialOptions.credential}
+													individualOptions={judicialOptions.individual}
 													hasPjnCredentials={hasPjnCredentials}
 													hasScbaCredentials={hasScbaCredentials}
+													hasMevCredentials={hasMevCredentials}
 													hasFolders={hasFolders}
 													isDark={isDark}
 													theme={theme}
-													onLinkCredential={goLinkCredential}
-													onLinkIndividual={goLinkIndividualFolder}
+													onSelect={goJudicialOption}
 												/>
 										  )
 										: undefined
@@ -782,66 +779,206 @@ const StepRow: React.FC<StepRowProps> = ({ step, isNext, isDark, theme, onPrimar
 // =============================================================================
 // JudicialConnectionPanel — sub-componente del step #2
 //
-// Muestra los dos paths para conectar con el Poder Judicial:
-//   (a) Credencial → PJN o SCBA (sincroniza TODOS los expedientes automáticamente)
-//   (b) Individual → PJN, MEV o EJE (vinculá expediente por número, sin login)
-//
-// Si ya tiene una cred parcial (ej. PJN OK pero SCBA no), el panel adapta el
-// copy para sugerir lo que falta.
+// Muestra los dos paths para conectar con el Poder Judicial, armados desde el
+// catálogo de jurisdicciones de /admin/integrations (capabilities), igual que la
+// landing:
+//   (a) Credencial → credentialSync (PJN; Buenos Aires = SCBA + cuenta MEV)
+//   (b) Individual → individualCauses (PJN, MEV, EJE, Salta, Catamarca, Mendoza…)
+// Una jurisdicción nueva habilitada en el admin aparece sola: usa su logoUrl y
+// abre el alta genérica de carpetas.
 // =============================================================================
 
-interface JudicialConnectionPanelProps {
-	hasPjnCredentials: boolean;
-	hasScbaCredentials: boolean;
-	hasFolders: boolean;
-	isDark: boolean;
-	theme: Theme;
-	onLinkCredential: (jurisdiction: "PJN" | "SCBA") => void;
-	onLinkIndividual: (jurisdiction: IndividualJurisdiction) => void;
-}
-
 interface JudicialOption {
-	jurisdiction: IndividualJurisdiction | "SCBA";
+	key: string; // valor de tracking: PJN | SCBA | MEV | EJE | SALTA | … o la key del catálogo
 	label: string;
 	logo: string;
 	bgColor: string;
 	hasBorder: boolean;
+	href: string;
+	connectedBy?: "pjn" | "scba" | "mev"; // credencial que marca el tile como conectado
 }
 
-const CREDENTIAL_OPTIONS: JudicialOption[] = [
-	{ jurisdiction: "PJN", label: "PJN", logo: logoPJNacion, bgColor: "#232D4F", hasBorder: false },
-	// SCBA usa el logo del PJ Buenos Aires (misma jurisdicción)
-	{ jurisdiction: "SCBA", label: "SCBA", logo: logoMEV, bgColor: "#FFFFFF", hasBorder: true },
+interface JudicialConnectionPanelProps {
+	credentialOptions: JudicialOption[];
+	individualOptions: JudicialOption[];
+	hasPjnCredentials: boolean;
+	hasScbaCredentials: boolean;
+	hasMevCredentials: boolean;
+	hasFolders: boolean;
+	isDark: boolean;
+	theme: Theme;
+	onSelect: (option: JudicialOption, mode: "credential" | "individual") => void;
+}
+
+// Metadata local por key del catálogo: logo y colores (como en la landing), cómo se
+// conecta la cuenta y qué parámetro entiende el alta de carpetas (folders.tsx).
+interface LocalJurisdiction {
+	label: string;
+	logo: string;
+	bgColor: string;
+	hasBorder: boolean;
+	individualParam?: string;
+	credentials?: { key: string; label: string; view: "pjn" | "scba" | "mev" }[];
+}
+
+const LOCAL_JURISDICTIONS: Record<string, LocalJurisdiction> = {
+	pjn: {
+		label: "PJN",
+		logo: logoPJNacion,
+		bgColor: "#232D4F",
+		hasBorder: false,
+		individualParam: "PJN",
+		credentials: [{ key: "PJN", label: "PJN", view: "pjn" }],
+	},
+	// Buenos Aires: la cuenta se conecta por SCBA (Mis Causas) o por la credencial MEV
+	mev: {
+		label: "MEV",
+		logo: logoMEV,
+		bgColor: "#FFFFFF",
+		hasBorder: true,
+		individualParam: "MEV",
+		credentials: [
+			{ key: "SCBA", label: "SCBA", view: "scba" },
+			{ key: "MEV", label: "MEV", view: "mev" },
+		],
+	},
+	eje: { label: "EJE", logo: LOGO_EJE, bgColor: "#FFFFFF", hasBorder: true, individualParam: "EJE" },
+	pjsalta: { label: "Salta", logo: LOGO_SALTA, bgColor: "#FFFFFF", hasBorder: true, individualParam: "SALTA" },
+	pjcatamarca: { label: "Catamarca", logo: logoPJCatamarca, bgColor: "#FFFFFF", hasBorder: true, individualParam: "CATAMARCA" },
+	pjmendoza: { label: "Mendoza", logo: logoPJMendoza, bgColor: "#FFFFFF", hasBorder: true, individualParam: "MENDOZA" },
+};
+
+type CatalogItem = Pick<
+	LandingCatalogEntry,
+	"key" | "shortName" | "logoUrl" | "bgColor" | "hasBorder" | "status" | "order" | "capabilities"
+>;
+
+// Respaldo si el catálogo no llega (endpoint caído): jurisdicciones integradas al 2026-09-13.
+const FALLBACK_CATALOG: CatalogItem[] = [
+	{
+		key: "pjn",
+		shortName: "PJN",
+		logoUrl: null,
+		bgColor: "#232D4F",
+		hasBorder: false,
+		status: "available",
+		order: 1,
+		capabilities: { credentialSync: true, individualCauses: true },
+	},
+	{
+		key: "mev",
+		shortName: "MEV",
+		logoUrl: null,
+		bgColor: "#FFFFFF",
+		hasBorder: true,
+		status: "available",
+		order: 2,
+		capabilities: { credentialSync: true, individualCauses: true },
+	},
+	{
+		key: "eje",
+		shortName: "EJE",
+		logoUrl: null,
+		bgColor: "#FFFFFF",
+		hasBorder: true,
+		status: "available",
+		order: 3,
+		capabilities: { credentialSync: false, individualCauses: true },
+	},
+	{
+		key: "pjsalta",
+		shortName: "SALTA",
+		logoUrl: null,
+		bgColor: "#FFFFFF",
+		hasBorder: true,
+		status: "available",
+		order: 4,
+		capabilities: { credentialSync: false, individualCauses: true },
+	},
+	{
+		key: "pjcatamarca",
+		shortName: "CATAMARCA",
+		logoUrl: null,
+		bgColor: "#FFFFFF",
+		hasBorder: true,
+		status: "available",
+		order: 5,
+		capabilities: { credentialSync: false, individualCauses: true },
+	},
+	{
+		key: "pjmendoza",
+		shortName: "MENDOZA",
+		logoUrl: null,
+		bgColor: "#FFFFFF",
+		hasBorder: true,
+		status: "available",
+		order: 6,
+		capabilities: { credentialSync: false, individualCauses: true },
+	},
 ];
 
-const INDIVIDUAL_OPTIONS: JudicialOption[] = [
-	{ jurisdiction: "PJN", label: "PJN", logo: logoPJNacion, bgColor: "#232D4F", hasBorder: false },
-	{ jurisdiction: "MEV", label: "MEV", logo: logoMEV, bgColor: "#FFFFFF", hasBorder: true },
-	{ jurisdiction: "EJE", label: "EJE", logo: LOGO_EJE, bgColor: "#FFFFFF", hasBorder: true },
-	// O8 (2026-09-12): portales IOL ya integrados por el mismo asistente de alta
-	{ jurisdiction: "SALTA", label: "Salta", logo: LOGO_SALTA, bgColor: "#FFFFFF", hasBorder: true },
-	{ jurisdiction: "CATAMARCA", label: "Catamarca", logo: logoPJCatamarca, bgColor: "#FFFFFF", hasBorder: true },
-	{ jurisdiction: "MENDOZA", label: "Mendoza", logo: logoPJMendoza, bgColor: "#FFFFFF", hasBorder: true },
-];
+// Arma las dos listas del panel desde el catálogo: sólo jurisdicciones `available`,
+// en el orden del admin. Sin logo (local o logoUrl) no se muestran, igual que en la
+// landing. Una key desconocida con credentialSync no tiene destino de credencial y
+// se omite de la Opción A; con individualCauses abre el alta genérica.
+function buildJudicialOptions(catalog?: LandingCatalogEntry[]): { credential: JudicialOption[]; individual: JudicialOption[] } {
+	const source: CatalogItem[] = catalog && catalog.length > 0 ? catalog : FALLBACK_CATALOG;
+	const entries = source.filter((entry) => entry.status === "available").sort((a, b) => a.order - b.order);
+
+	const credential: JudicialOption[] = [];
+	const individual: JudicialOption[] = [];
+	for (const entry of entries) {
+		const local = LOCAL_JURISDICTIONS[entry.key];
+		const logo = local?.logo || entry.logoUrl || "";
+		if (!logo) continue;
+		const visual = { logo, bgColor: local?.bgColor || entry.bgColor || "#FFFFFF", hasBorder: local ? local.hasBorder : entry.hasBorder };
+
+		if (entry.capabilities?.credentialSync && local?.credentials) {
+			for (const cred of local.credentials) {
+				credential.push({
+					...visual,
+					key: cred.key,
+					label: cred.label,
+					href: `/apps/profiles/account/pjn?view=${cred.view}`,
+					connectedBy: cred.view,
+				});
+			}
+		}
+		if (entry.capabilities?.individualCauses) {
+			const param = local?.individualParam;
+			individual.push({
+				...visual,
+				key: param || entry.key.toUpperCase(),
+				label: local?.label || entry.shortName,
+				href: param
+					? `/apps/folders/list?onboarding=true&action=create&jurisdiction=${param}`
+					: "/apps/folders/list?onboarding=true&action=create",
+			});
+		}
+	}
+	return { credential, individual };
+}
 
 const JudicialConnectionPanel: React.FC<JudicialConnectionPanelProps> = ({
+	credentialOptions,
+	individualOptions,
 	hasPjnCredentials,
 	hasScbaCredentials,
+	hasMevCredentials,
 	hasFolders,
 	isDark,
 	theme,
-	onLinkCredential,
-	onLinkIndividual,
+	onSelect,
 }) => {
-	// Copy del sub-encabezado del path "Credencial" — adapta según estado.
-	let credentialHint = "Una sola vez. Traemos todos tus expedientes y los mantenemos sincronizados.";
-	if (hasPjnCredentials && !hasScbaCredentials) {
-		credentialHint = "Tu cuenta del PJN ya está conectada. ¿También usás la SCBA?";
-	} else if (hasScbaCredentials && !hasPjnCredentials) {
-		credentialHint = "Tu cuenta de la SCBA ya está conectada. ¿También usás el PJN?";
-	} else if (hasFolders) {
-		credentialHint = "Sumá automatización completa. Conectá tu cuenta y traemos todos tus expedientes futuros.";
-	}
+	// Copy del sub-encabezado del path "Credencial". El panel sólo se ve con el step
+	// judicial pendiente (ninguna cuenta conectada), así que no hay estado parcial.
+	const credentialHint = hasFolders
+		? "Sumá automatización completa. Conectá tu cuenta y traemos todos tus expedientes futuros."
+		: "Una sola vez. Traemos todos tus expedientes y los mantenemos sincronizados.";
+	const isConnected = (opt: JudicialOption) =>
+		(opt.connectedBy === "pjn" && hasPjnCredentials) ||
+		(opt.connectedBy === "scba" && hasScbaCredentials) ||
+		(opt.connectedBy === "mev" && hasMevCredentials);
 
 	return (
 		<Stack spacing={2.25} sx={{ pt: 0.5 }}>
@@ -906,19 +1043,16 @@ const JudicialConnectionPanel: React.FC<JudicialConnectionPanelProps> = ({
 				</Stack>
 				<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>{credentialHint}</Typography>
 				<Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
-					{CREDENTIAL_OPTIONS.map((opt) => {
-						const isConnected = (opt.jurisdiction === "PJN" && hasPjnCredentials) || (opt.jurisdiction === "SCBA" && hasScbaCredentials);
-						return (
-							<LogoTile
-								key={`cred-${opt.jurisdiction}`}
-								option={opt}
-								isConnected={isConnected}
-								isDark={isDark}
-								theme={theme}
-								onClick={() => onLinkCredential(opt.jurisdiction as "PJN" | "SCBA")}
-							/>
-						);
-					})}
+					{credentialOptions.map((opt) => (
+						<LogoTile
+							key={`cred-${opt.key}`}
+							option={opt}
+							isConnected={isConnected(opt)}
+							isDark={isDark}
+							theme={theme}
+							onClick={() => onSelect(opt, "credential")}
+						/>
+					))}
 				</Stack>
 			</Stack>
 
@@ -934,14 +1068,8 @@ const JudicialConnectionPanel: React.FC<JudicialConnectionPanelProps> = ({
 					Ideal si solo seguís algunas causas puntuales. PJN y EJE no piden cuenta; MEV usa tu cuenta del portal.
 				</Typography>
 				<Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
-					{INDIVIDUAL_OPTIONS.map((opt) => (
-						<LogoTile
-							key={`ind-${opt.jurisdiction}`}
-							option={opt}
-							isDark={isDark}
-							theme={theme}
-							onClick={() => onLinkIndividual(opt.jurisdiction as IndividualJurisdiction)}
-						/>
+					{individualOptions.map((opt) => (
+						<LogoTile key={`ind-${opt.key}`} option={opt} isDark={isDark} theme={theme} onClick={() => onSelect(opt, "individual")} />
 					))}
 				</Stack>
 			</Stack>

@@ -422,11 +422,10 @@ export const trackOnboardingStepCompleted = (stepId: string): void => {
 };
 
 /** Click sobre un logo de jurisdicción dentro del step judicial.
- *  `mode` = "credential" (PJN/SCBA → conectar cuenta) | "individual" (PJN/MEV/EJE/Salta/Catamarca/Mendoza → vincular expediente). */
-export const trackOnboardingJudicialLogoClicked = (
-	jurisdiction: "PJN" | "MEV" | "SCBA" | "EJE" | "SALTA" | "CATAMARCA" | "MENDOZA",
-	mode: "credential" | "individual",
-): void => {
+ *  `jurisdiction`: PJN | SCBA | MEV | EJE | SALTA | CATAMARCA | MENDOZA, o la key de una
+ *  jurisdicción nueva del catálogo de /admin/integrations (el panel se arma desde ahí).
+ *  `mode` = "credential" (conectar cuenta) | "individual" (vincular expediente). */
+export const trackOnboardingJudicialLogoClicked = (jurisdiction: string, mode: "credential" | "individual"): void => {
 	pushGTMEvent(GTMEvents.ONBOARDING_JUDICIAL_LOGO_CLICKED, { jurisdiction, mode });
 };
 
