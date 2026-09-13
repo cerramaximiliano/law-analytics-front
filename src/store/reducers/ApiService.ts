@@ -1453,6 +1453,14 @@ export interface OnboardingSignals {
 	contacts: number; // contactos no archivados
 	deadlines: number; // eventos de tipo vencimiento o audiencia
 	linkedFolders: number; // carpetas vinculadas a una causa de un portal
+	/** Primera carpeta que ya trajo movimientos del portal (null si ninguna). */
+	firstSyncedFolder?: {
+		folderId: string;
+		folderName: string;
+		movementsCount: number;
+		lastMovementDate: string | null;
+		syncedAt: string | null;
+	} | null;
 }
 
 // Interfaz para el estado de onboarding

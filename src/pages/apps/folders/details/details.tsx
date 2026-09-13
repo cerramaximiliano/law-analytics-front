@@ -250,8 +250,10 @@ const Details = () => {
 	// Deep-link a un movimiento (?movement=<id>, ej. desde la vista pública /m/:token):
 	// abrir la pestaña Actividad para que ActivityTables monte y resalte el movimiento.
 	// Va después del reset de arriba: en mount el reset pone 0 y esto lo lleva a 1.
+	// ?tab=activity: mismo destino desde el aviso "Tu primera causa ya tiene N
+	// movimientos" del dashboard.
 	useEffect(() => {
-		if (searchParams.get("movement")) {
+		if (searchParams.get("movement") || searchParams.get("tab") === "activity") {
 			setTabValue(1);
 		}
 	}, [searchParams]);

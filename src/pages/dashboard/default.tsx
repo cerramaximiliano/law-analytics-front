@@ -22,6 +22,7 @@ import ResourceUsageWidget from "sections/widget/chart/ResourceUsageWidget";
 // assets
 import { Calendar, CloudChange } from "iconsax-react";
 import WelcomeBanner from "sections/dashboard/default/WelcomeBanner";
+import FirstSyncBanner from "sections/dashboard/default/FirstSyncBanner";
 import { useSelector, dispatch } from "store";
 import { getUnifiedStats } from "store/reducers/unifiedStats";
 import { fetchUserStats } from "store/reducers/userStats";
@@ -493,6 +494,14 @@ const DashboardDefault = () => {
 							</Grid>
 						</Grid>
 					</Fade>
+				)}
+
+				{/* Momento de éxito: primera causa con movimientos sincronizados. Una sola
+				    vez por usuario y carpeta; se muestra con o sin checklist. */}
+				{!isFullyLoading && !error && !isDismissing && onboardingSignals?.firstSyncedFolder && (
+					<Grid item xs={12}>
+						<FirstSyncBanner userId={personalUserId} folder={onboardingSignals.firstSyncedFolder} />
+					</Grid>
 				)}
 
 				{/* Datos normales: sin onboarding, o con onboarding si el user ya tiene
