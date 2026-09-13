@@ -391,7 +391,7 @@ export const trackNotificationMovementCtaClick = (hasFolder: boolean): void => {
 //   - "first_contact"       — agregar primer contacto
 //   - "first_deadline"      — configurar primera alerta de vencimiento
 //
-// jurisdiction values: "PJN" | "MEV" | "SCBA" | "EJE"
+// jurisdiction values: "PJN" | "MEV" | "SCBA" | "EJE" | "SALTA" | "CATAMARCA" | "MENDOZA"
 //
 // Tags GTM a crear post-deploy:
 //   - onboarding_shown                → GA4 event con dimensión completed_count
@@ -421,10 +421,10 @@ export const trackOnboardingStepCompleted = (stepId: string): void => {
 	pushGTMEvent(GTMEvents.ONBOARDING_STEP_COMPLETED, { step_id: stepId });
 };
 
-/** Click sobre un logo de jurisdicción (PJN/MEV/SCBA/EJE) dentro del step judicial.
- *  `mode` = "credential" (PJN/SCBA → conectar cuenta) | "individual" (PJN/MEV/EJE → vincular expediente). */
+/** Click sobre un logo de jurisdicción dentro del step judicial.
+ *  `mode` = "credential" (PJN/SCBA → conectar cuenta) | "individual" (PJN/MEV/EJE/Salta/Catamarca/Mendoza → vincular expediente). */
 export const trackOnboardingJudicialLogoClicked = (
-	jurisdiction: "PJN" | "MEV" | "SCBA" | "EJE",
+	jurisdiction: "PJN" | "MEV" | "SCBA" | "EJE" | "SALTA" | "CATAMARCA" | "MENDOZA",
 	mode: "credential" | "individual",
 ): void => {
 	pushGTMEvent(GTMEvents.ONBOARDING_JUDICIAL_LOGO_CLICKED, { jurisdiction, mode });
