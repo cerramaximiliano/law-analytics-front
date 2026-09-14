@@ -91,10 +91,15 @@ const TabSettings = () => {
 	// El switch del canal solo se puede prender con número verificado + opt-in vigente;
 	// el backend lo rechaza igual (WHATSAPP_NOT_VERIFIED), esto evita el intento.
 	const [whatsappStatus, setWhatsappStatus] = useState<PhoneStatus | null>(null);
-	const canEnableWhatsapp = !!whatsappStatus?.phoneVerified && whatsappStatus.whatsappOptIn.accepted && !whatsappStatus.whatsappOptIn.revokedAt;
-	// Piloto: la fila solo aparece cuando el backend confirma que el usuario puede
-	// inscribirse (inscripción abierta o grant) o ya tiene un número verificado.
-	const showWhatsappRow = !!whatsappStatus && (whatsappStatus.enrollment?.allowed !== false || whatsappStatus.phoneVerified);
+	const canEnableWhatsapp =
+		!!whatsappStatus?.phoneVerified && whatsappStatus.whatsappOptIn.accepted && !whatsappStatus.whatsappOptIn.revokedAt;
+	// La fila se oculta solo durante el piloto (inscripción cerrada y sin grant)
+	// para quien no tiene número. Prueba vencida / plan requerido sí se muestran:
+	// el panel explica cómo seguir.
+	const showWhatsappRow =
+		!!whatsappStatus &&
+		(whatsappStatus.phoneVerified ||
+			(whatsappStatus.enrollment?.reason ? whatsappStatus.enrollment.reason !== "closed" : whatsappStatus.enrollment?.allowed !== false));
 
 	const [channelsEnabled, setChannelsEnabled] = useState<boolean>(
 		preferences.channels?.email || preferences.channels?.browser || preferences.channels?.whatsapp || false,
@@ -347,7 +352,10 @@ const TabSettings = () => {
 					user: { ...prev.user, enabled: false, calendar: false, expiration: false, taskExpiration: false, inactivity: false },
 				}));
 			} else if (value === "usn") {
-				setPreferences((prev) => ({ ...prev, system: { ...prev.system, enabled: false, alerts: false, news: false, userActivity: false } }));
+				setPreferences((prev) => ({
+					...prev,
+					system: { ...prev.system, enabled: false, alerts: false, news: false, userActivity: false },
+				}));
 			} else if (value === "chn") {
 				setPreferences((prev) => ({
 					...prev,
@@ -687,9 +695,7 @@ const TabSettings = () => {
 			<MainCard content={false} sx={{ borderRadius: 2, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`, p: 2.5 }}>
 				<Stack alignItems="center" justifyContent="center" sx={{ py: 6 }} spacing={1.25}>
 					<CircularProgress size={32} sx={{ color: BRAND_BLUE }} />
-					<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
-						Cargando preferencias…
-					</Typography>
+					<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>Cargando preferencias…</Typography>
 				</Stack>
 			</MainCard>
 		);
@@ -762,8 +768,8 @@ const TabSettings = () => {
 							<MessageNotif size={14} variant="Bulk" />
 						</Box>
 						<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-							Estás en modo equipo ({activeTeam?.name}). Solo el propietario o administradores pueden modificar estas configuraciones. Tu rol
-							actual:{" "}
+							Estás en modo equipo ({activeTeam?.name}). Solo el propietario o administradores pueden modificar estas configuraciones. Tu
+							rol actual:{" "}
 							<Box component="span" sx={{ fontWeight: 600, color: BRAND_BLUE }}>
 								{userRole ? ROLE_CONFIG[userRole]?.label : "Desconocido"}
 							</Box>
@@ -880,10 +886,7 @@ const TabSettings = () => {
 							</ListItem>
 							<Collapse in={preferences.user?.judicialMovements?.enabled ?? true} timeout="auto" unmountOnExit>
 								<Box sx={settingsBoxSx}>
-									<RadioGroup
-										value={preferences.user?.judicialMovements?.mode ?? "scheduled"}
-										onChange={handleJudicialMovementsMode}
-									>
+									<RadioGroup value={preferences.user?.judicialMovements?.mode ?? "scheduled"} onChange={handleJudicialMovementsMode}>
 										<FormControlLabel
 											value="scheduled"
 											control={<Radio size="small" />}
@@ -895,7 +898,13 @@ const TabSettings = () => {
 														<Typography sx={{ fontSize: "0.8rem", fontWeight: 600, color: "text.primary" }}>
 															Resumen al final del día
 														</Typography>
-														<Chip label="Recomendado" size="small" variant="outlined" color="primary" sx={{ height: 18, fontSize: "0.62rem" }} />
+														<Chip
+															label="Recomendado"
+															size="small"
+															variant="outlined"
+															color="primary"
+															sx={{ height: 18, fontSize: "0.62rem" }}
+														/>
 													</Stack>
 													<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
 														Un único email consolidado con todos los movimientos del día, alrededor de las 19 h. Todo junto, sin ruido.
@@ -914,25 +923,23 @@ const TabSettings = () => {
 														Notificaciones inmediatas
 													</Typography>
 													<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
-														Te avisamos apenas detectamos cada movimiento (en general dentro de los 30 minutos). Si tus causas tienen
-														mucha actividad, podés recibir varios emails por día.
+														Te avisamos apenas detectamos cada movimiento (en general dentro de los 30 minutos). Si tus causas tienen mucha
+														actividad, podés recibir varios emails por día.
 													</Typography>
 												</Box>
 											}
 										/>
 									</RadioGroup>
 									<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", mt: 1, fontStyle: "italic" }}>
-										Las cédulas y notificaciones electrónicas se envían siempre (aunque desactives los movimientos) y siguen el modo
-										que elijas.
+										Las cédulas y notificaciones electrónicas se envían siempre (aunque desactives los movimientos) y siguen el modo que
+										elijas.
 									</Typography>
 								</Box>
 							</Collapse>
 							{/* Seguimiento postal */}
 							<ListItem sx={subRowSx}>
 								<Box sx={{ flex: 1 }}>
-									<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>
-										Seguimiento postal
-									</Typography>
+									<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>Seguimiento postal</Typography>
 									<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 										Avisos inmediatos ante cada novedad de tus envíos del Correo Argentino
 									</Typography>
@@ -1238,8 +1245,7 @@ const TabSettings = () => {
 						<Stack sx={{ flex: 1 }}>
 							<Typography sx={{ fontSize: "0.9rem", fontWeight: 600, letterSpacing: "-0.01em" }}>Correos que recibo</Typography>
 							<Typography sx={{ fontSize: "0.75rem", color: "text.secondary" }}>
-								Elegí qué comunicaciones querés recibir por email. Podés desactivar las que no te interesen sin darte de baja de
-								todo.
+								Elegí qué comunicaciones querés recibir por email. Podés desactivar las que no te interesen sin darte de baja de todo.
 							</Typography>
 						</Stack>
 					</AccordionSummary>

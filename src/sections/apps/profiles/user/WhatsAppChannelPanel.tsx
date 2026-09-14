@@ -56,6 +56,14 @@ const toStatus = (res: PhoneApiResponse): PhoneStatus => ({
 
 const responseMessage = (res: PhoneApiResponse, fallback: string) => res.message || res.error || fallback;
 
+const PLANS_PATH = "/apps/profiles/account/subscription?source=whatsapp_channel";
+
+const formatDate = (iso: string | null | undefined) => {
+	if (!iso) return "";
+	const d = new Date(iso);
+	return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+};
+
 const WhatsAppChannelPanel = ({ disabled = false, hidden = false, containerSx, onStatusChange }: Props) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
@@ -160,6 +168,11 @@ const WhatsAppChannelPanel = ({ disabled = false, hidden = false, containerSx, o
 	const inboundMode = status?.availability?.mode !== "outbound";
 	const verified = status?.phoneVerified === true && !!status?.phone;
 	const optInActive = verified && status?.whatsappOptIn.accepted && !status?.whatsappOptIn.revokedAt;
+	// Gating por plan (lo decide el backend): con acceso perdido no se puede
+	// verificar ni re-activar; si ya está verificado, los avisos quedan en pausa.
+	const enrollment = status?.enrollment;
+	const accessLost = enrollment?.reason === "trial_expired" || enrollment?.reason === "plan_required";
+	const canAct = available && !accessLost;
 
 	const handleStart = async () => {
 		setBusy(true);
@@ -322,14 +335,59 @@ const WhatsAppChannelPanel = ({ disabled = false, hidden = false, containerSx, o
 					</Typography>
 				)}
 
-				{status?.availability && !available && !verified && (
+				{/* Acceso por plan: prueba disponible / vigente / vencida, o plan requerido */}
+				{enrollment?.reason === "trial_available" && !verified && (
+					<Typography sx={smallText}>
+						Incluido en los planes Estándar, Pro y Premium. Con el plan gratuito podés probarlo{" "}
+						{enrollment.trialDays ? `${enrollment.trialDays} días` : "por un tiempo"} desde que verificás tu número.
+					</Typography>
+				)}
+				{enrollment?.reason === "trial" && enrollment.trial?.endsAt && (
+					<Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
+						<Chip
+							size="small"
+							label={`Prueba gratis hasta el ${formatDate(enrollment.trial.endsAt)}`}
+							sx={{
+								height: 20,
+								fontSize: "0.68rem",
+								fontWeight: 600,
+								bgcolor: alpha(theme.palette.warning.main, 0.14),
+								color: theme.palette.warning.dark,
+							}}
+						/>
+						<Typography sx={smallText}>
+							Después sigue con un plan Estándar o superior.{" "}
+							<Typography component="a" href={PLANS_PATH} sx={{ ...smallText, color: BRAND_BLUE, fontWeight: 600, textDecoration: "none" }}>
+								Ver planes
+							</Typography>
+						</Typography>
+					</Stack>
+				)}
+				{accessLost && (
+					<Stack spacing={0.75}>
+						<Typography sx={{ ...smallText, color: theme.palette.warning.dark }}>
+							{enrollment?.reason === "trial_expired"
+								? `Tu período de prueba de WhatsApp terminó${enrollment.trial?.endsAt ? ` el ${formatDate(enrollment.trial.endsAt)}` : ""}.`
+								: "Los avisos por WhatsApp están incluidos en los planes Estándar, Pro y Premium."}{" "}
+							{verified ? "Los avisos por WhatsApp quedan en pausa (el email sigue llegando)." : ""} Para seguir usándolo pasá a un plan
+							pago.
+						</Typography>
+						<Box>
+							<Button size="small" component="a" href={PLANS_PATH} sx={primaryBtnSx}>
+								Ver planes
+							</Button>
+						</Box>
+					</Stack>
+				)}
+
+				{status?.availability && !available && !verified && !accessLost && (
 					<Typography sx={{ ...smallText, color: theme.palette.warning.dark }}>
 						La verificación por WhatsApp todavía no está disponible. Vas a poder cargar tu número cuando activemos el canal.
 					</Typography>
 				)}
 
 				{/* Paso 1: número */}
-				{!verified && step === "idle" && (
+				{!verified && !accessLost && step === "idle" && (
 					<Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
 						<TextField
 							id="whatsapp-phone"
@@ -337,14 +395,14 @@ const WhatsAppChannelPanel = ({ disabled = false, hidden = false, containerSx, o
 							placeholder="+54 9 11 5555 5555"
 							value={phone}
 							onChange={(e) => setPhone(e.target.value)}
-							disabled={disabled || busy || !available}
+							disabled={disabled || busy || !canAct}
 							helperText="Con código de país"
 							sx={{ ...inputSx, flex: 1, "& .MuiFormHelperText-root": { fontSize: "0.68rem", mx: 0.5 } }}
 						/>
 						<Button
 							size="small"
 							onClick={handleStart}
-							disabled={disabled || busy || !available || phone.trim().length < 8}
+							disabled={disabled || busy || !canAct || phone.trim().length < 8}
 							sx={{ ...primaryBtnSx, alignSelf: { xs: "flex-start", sm: "center" }, mb: { sm: 2.5 } }}
 						>
 							{busy ? "Un momento…" : inboundMode ? "Verificar por WhatsApp" : "Enviar código"}
@@ -458,7 +516,7 @@ const WhatsAppChannelPanel = ({ disabled = false, hidden = false, containerSx, o
 				{verified && (
 					<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
 						{!optInActive && (
-							<Button size="small" onClick={handleOptIn} disabled={disabled || busy} sx={primaryBtnSx}>
+							<Button size="small" onClick={handleOptIn} disabled={disabled || busy || accessLost} sx={primaryBtnSx}>
 								{busy ? "Activando…" : "Volver a recibir avisos"}
 							</Button>
 						)}

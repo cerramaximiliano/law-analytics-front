@@ -228,8 +228,19 @@ export interface PhoneStatus {
 	 * mensaje prellenado desde su WhatsApp (link wa.me); 'outbound' = recibe un código.
 	 */
 	availability?: { available: boolean; reason: string | null; mode?: "inbound" | "outbound" | null; number?: string | null };
-	/** Piloto: si este usuario puede inscribirse (inscripción abierta o grant). Sin inscripción y sin número, la opción no se muestra */
-	enrollment?: { allowed: boolean };
+	/**
+	 * Si este usuario puede inscribirse y por qué: grant manual, plan pago,
+	 * prueba del plan gratuito (`trial`, `trial_available`) o no (`closed` =
+	 * piloto, `trial_expired`, `plan_required`). Con `closed` y sin número, la
+	 * opción no se muestra.
+	 */
+	enrollment?: {
+		allowed: boolean;
+		reason?: "grant" | "plan" | "trial" | "trial_available" | "trial_expired" | "plan_required" | "closed";
+		plan?: string | null;
+		trial?: { startedAt: string | null; endsAt: string; active: boolean } | null;
+		trialDays?: number;
+	};
 }
 
 /**
