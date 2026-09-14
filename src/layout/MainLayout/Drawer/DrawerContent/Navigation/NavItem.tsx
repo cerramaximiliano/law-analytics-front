@@ -11,6 +11,7 @@ import Dot from "components/@extended/Dot";
 import useConfig from "hooks/useConfig";
 import { dispatch, useSelector } from "store";
 import { activeItem, openDrawer } from "store/reducers/menu";
+import { navActiveBg, navActiveBorder } from "themes/dashboardTokens";
 
 // types
 import { MenuOrientation, ThemeMode } from "types/config";
@@ -62,8 +63,11 @@ const NavItem = ({ item, level }: Props) => {
 		// eslint-disable-next-line
 	}, [pathname]);
 
-	const textColor = theme.palette.mode === ThemeMode.DARK ? "secondary.400" : "secondary.main";
+	const isDark = theme.palette.mode === ThemeMode.DARK;
+	const textColor = isDark ? "secondary.400" : "secondary.main";
 	const iconSelectedColor = "primary.main";
+	const activePillBg = navActiveBg(isDark);
+	const activePillBorder = navActiveBorder(isDark);
 
 	return (
 		<>
@@ -94,12 +98,19 @@ const NavItem = ({ item, level }: Props) => {
 								mx: 1.25,
 								my: 0.5,
 								borderRadius: 1,
+								// Border transparente base para que no haya layout shift al
+								// pasar a selected (que sí define el borderColor).
+								border: "1px solid transparent",
 								"&:hover": {
 									bgcolor: theme.palette.mode === ThemeMode.DARK ? "divider" : "secondary.200",
 								},
 								"&.Mui-selected": {
+									bgcolor: activePillBg,
+									border: `1px solid ${activePillBorder}`,
 									color: iconSelectedColor,
 									"&:hover": {
+										bgcolor: activePillBg,
+										border: `1px solid ${activePillBorder}`,
 										color: iconSelectedColor,
 									},
 								},
@@ -134,15 +145,18 @@ const NavItem = ({ item, level }: Props) => {
 										height: 46,
 										alignItems: "center",
 										justifyContent: "center",
+										border: "1px solid transparent",
 										"&:hover": {
 											bgcolor: theme.palette.mode === ThemeMode.DARK ? "secondary.light" : "secondary.200",
 										},
 									}),
 								...(!drawerOpen &&
 									isSelected && {
-										bgcolor: theme.palette.mode === ThemeMode.DARK ? "secondary.100" : "primary.lighter",
+										bgcolor: activePillBg,
+										border: `1px solid ${activePillBorder}`,
 										"&:hover": {
-											bgcolor: theme.palette.mode === ThemeMode.DARK ? "secondary.200" : "primary.lighter",
+											bgcolor: activePillBg,
+											border: `1px solid ${activePillBorder}`,
 										},
 									}),
 							}}

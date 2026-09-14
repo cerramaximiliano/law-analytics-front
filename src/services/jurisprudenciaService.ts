@@ -1,0 +1,61 @@
+// Búsqueda semántica de jurisprudencia — consume pjn-rag-api (ia.lawanalytics.app)
+// vía ragAxios (Bearer + refresh automático).
+//
+// El corpus habilitado (solo SAIJ curado vs todo el corpus embebido) lo decide
+// el BACKEND según la config administrable `configuracion-semantic-worker
+// .searchCorpus.app` — el cliente no manda `source`: el server lo fuerza
+// cuando corresponde y aplica el gate editorial del corpus público.
+import ragAxios from "utils/ragAxios";
+import { JurisprudenciaFilters, JurisprudenciaSearchResponse } from "types/jurisprudencia";
+
+interface SearchOptions {
+	topK?: number;
+	filters?: JurisprudenciaFilters;
+}
+
+export interface JurisprudenciaSearchConfig {
+	corpus: "saij" | "all";
+	quota: { plan: string; limit: number | null; used: number | null; remaining: number | null } | null;
+}
+
+const jurisprudenciaService = {
+	// Config efectiva para esta vista: corpus habilitado (adapta copy/filtros)
+	// + snapshot de la cuota del mes SIN consumirla (chip inicial).
+	getSearchConfig: async (): Promise<JurisprudenciaSearchConfig> => {
+		const response = await ragAxios.get("/rag/sentencias/search-config");
+		return { corpus: response.data?.corpus === "all" ? "all" : "saij", quota: response.data?.quota ?? null };
+	},
+
+	// Búsqueda en lenguaje natural con query planner LLM (deriva filtros del prompt).
+	// Los filtros explícitos del cliente pisan los del planner.
+	ask: async (prompt: string, options: SearchOptions = {}): Promise<JurisprudenciaSearchResponse> => {
+		const body: Record<string, unknown> = {
+			prompt,
+			options: { topK: options.topK ?? 10 },
+			...(options.filters && Object.keys(options.filters).length > 0 ? { filters: options.filters } : {}),
+		};
+		// skipPlanLimitEvent: el 403 de cuota lo maneja la vista con su propio
+		// LimitErrorModal — sin esto el interceptor global abre un segundo modal.
+		const response = await ragAxios.post("/rag/sentencias/ask", body, { skipPlanLimitEvent: true } as any);
+		// Cuota mensual restante (solo plan free) — el backend la manda por header
+		const remainingHeader = response.headers?.["x-search-quota-remaining"];
+		const quotaRemaining = remainingHeader !== undefined ? parseInt(remainingHeader, 10) : null;
+		return { ...response.data, quotaRemaining: isNaN(quotaRemaining as number) ? null : quotaRemaining };
+	},
+
+	// Sentencias similares a una dada ("más como esta") — mismo corpus que ask
+	similares: async (sentenciaId: string, topK: number = 5): Promise<JurisprudenciaSearchResponse> => {
+		const response = await ragAxios.post("/rag/sentencias/buscar/similar", { sentenciaId, options: { topK } }, {
+			skipPlanLimitEvent: true,
+		} as any);
+		return response.data;
+	},
+
+	// Texto completo de la sentencia
+	getTexto: async (sentenciaId: string): Promise<string> => {
+		const response = await ragAxios.get(`/rag/sentencias/${sentenciaId}/texto`);
+		return response.data?.text || "";
+	},
+};
+
+export default jurisprudenciaService;

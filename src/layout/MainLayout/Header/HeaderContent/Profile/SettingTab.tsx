@@ -7,12 +7,19 @@ import { List, ListItemButton, ListItemIcon, ListItemText } from "@mui/material"
 // assets
 import { Clipboard, I24Support, Lock1, Messages1, Profile } from "iconsax-react";
 
+// project-imports
+import { FEEDBACK_OPEN_EVENT } from "components/feedback/FeedbackWidget";
+
 // ==============================|| HEADER PROFILE - SETTING TAB ||============================== //
 
 const SettingTab = () => {
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const handleListItemClick = (event: MouseEvent<HTMLDivElement>, index: number) => {
 		setSelectedIndex(index);
+		if (index === 3) {
+			// "Feedback" — dispara el modal del widget global
+			window.dispatchEvent(new CustomEvent(FEEDBACK_OPEN_EVENT));
+		}
 	};
 
 	return (

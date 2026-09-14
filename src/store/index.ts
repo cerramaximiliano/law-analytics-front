@@ -51,4 +51,10 @@ const { dispatch } = store;
 const useDispatch = () => useAppDispatch<AppDispatch>();
 const useSelector: TypedUseSelectorHook<RootState> = useAppSelector;
 
+// En dev mode (Vite DEV), exponer el store a window para tests E2E
+// que simulan eventos Socket.io (dispatch directo de acciones).
+if (import.meta.env?.DEV) {
+	(window as unknown as { __store__?: typeof store }).__store__ = store;
+}
+
 export { store, dispatch, persister, useSelector, useDispatch };

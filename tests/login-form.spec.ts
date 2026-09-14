@@ -28,7 +28,7 @@ test.describe("GRUPO 1 — Validación client-side del formulario de login", () 
 
 	test("submit con campos vacíos → muestra errores de requerido", async ({ page }) => {
 		// Click en Login con campos vacíos (ya limpiados en beforeEach)
-		await page.getByRole("button", { name: "Login", exact: true }).click();
+		await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 
 		// Formik valida al hacer submit → ambos campos tocan "touched"
 		await expect(page.getByText("El e-mail es requerido")).toBeVisible({ timeout: 5_000 });
@@ -63,7 +63,7 @@ test.describe("GRUPO 1 — Validación client-side del formulario de login", () 
 
 	test("email válido + password lleno → errores de validación desaparecen", async ({ page }) => {
 		// Primero disparar errores
-		await page.getByRole("button", { name: "Login", exact: true }).click();
+		await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 		await expect(page.getByText("El e-mail es requerido")).toBeVisible({ timeout: 5_000 });
 
 		// Llenar correctamente
@@ -101,7 +101,7 @@ test.describe("GRUPO 2 — Credenciales incorrectas", () => {
 
 		await page.fill("#email-login", CREDENTIALS.email);
 		await page.fill("#password-login", "contraseña-incorrecta");
-		await page.getByRole("button", { name: "Login", exact: true }).click();
+		await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 
 		// El componente AuthLogin muestra un snackbar con el error
 		await expect(page.getByText("Credenciales inválidas", { exact: false })).toBeVisible({ timeout: 10_000 });
@@ -121,7 +121,7 @@ test.describe("GRUPO 2 — Credenciales incorrectas", () => {
 
 		await page.fill("#email-login", CREDENTIALS.email);
 		await page.fill("#password-login", CREDENTIALS.password);
-		await page.getByRole("button", { name: "Login", exact: true }).click();
+		await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 
 		// El código maneja 500 con "Error del servidor. Por favor, intente más tarde."
 		await expect(page.getByText("Error del servidor", { exact: false })).toBeVisible({ timeout: 10_000 });
@@ -155,7 +155,7 @@ test.describe("GRUPO 3 — Estado del botón durante el submit", () => {
 		await page.fill("#password-login", CREDENTIALS.password);
 
 		// Click en Login — dispara el submit y el request queda colgado
-		await page.getByRole("button", { name: "Login", exact: true }).click();
+		await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 
 		// El botón debe mostrar "Iniciando sesión..." y estar deshabilitado
 		await expect(page.getByRole("button", { name: "Iniciando sesión...", exact: true })).toBeDisabled({ timeout: 5_000 });
@@ -191,7 +191,7 @@ test.describe("GRUPO 4 — Rate limiting 429", () => {
 			}),
 		);
 
-		await page.getByRole("button", { name: "Login", exact: true }).click();
+		await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 
 		await expect(page.getByText(/has realizado demasiados intentos/i)).toBeVisible({ timeout: 10_000 });
 		// Fallback cuando no hay retryAfter ni error
@@ -210,7 +210,7 @@ test.describe("GRUPO 4 — Rate limiting 429", () => {
 			}),
 		);
 
-		await page.getByRole("button", { name: "Login", exact: true }).click();
+		await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 
 		await expect(page.getByText(/has realizado demasiados intentos/i)).toBeVisible({ timeout: 10_000 });
 		await expect(page.getByText(/cuenta bloqueada por seguridad/i)).toBeVisible({ timeout: 5_000 });
@@ -227,7 +227,7 @@ test.describe("GRUPO 4 — Rate limiting 429", () => {
 			});
 		});
 
-		await page.getByRole("button", { name: "Login", exact: true }).click();
+		await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 
 		await expect(page.getByText(/has realizado demasiados intentos/i)).toBeVisible({ timeout: 10_000 });
 		await expect(page.getByText(/podrás intentar nuevamente en 30 minutos/i)).toBeVisible({ timeout: 5_000 });
@@ -244,7 +244,7 @@ test.describe("GRUPO 4 — Rate limiting 429", () => {
 			});
 		});
 
-		await page.getByRole("button", { name: "Login", exact: true }).click();
+		await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 
 		await expect(page.getByText(/has realizado demasiados intentos/i)).toBeVisible({ timeout: 10_000 });
 		await expect(page.getByText(/podrás intentar nuevamente en 1 hora\./i)).toBeVisible({ timeout: 5_000 });
@@ -261,7 +261,7 @@ test.describe("GRUPO 4 — Rate limiting 429", () => {
 			});
 		});
 
-		await page.getByRole("button", { name: "Login", exact: true }).click();
+		await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 
 		await expect(page.getByText(/has realizado demasiados intentos/i)).toBeVisible({ timeout: 10_000 });
 		await expect(page.getByText(/podrás intentar nuevamente en 1 hora y 30 minutos/i)).toBeVisible({ timeout: 5_000 });
@@ -276,13 +276,13 @@ test.describe("GRUPO 4 — Rate limiting 429", () => {
 			}),
 		);
 
-		await page.getByRole("button", { name: "Login", exact: true }).click();
+		await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 
 		// Esperar que el error aparezca
 		await expect(page.getByText(/has realizado demasiados intentos/i)).toBeVisible({ timeout: 10_000 });
 
 		// El botón debe volver a estar habilitado (isSubmitting=false tras el finally)
-		await expect(page.getByRole("button", { name: "Login", exact: true })).toBeEnabled({ timeout: 5_000 });
+		await expect(page.getByRole("button", { name: "Iniciar sesión", exact: true })).toBeEnabled({ timeout: 5_000 });
 		await expect(page).toHaveURL(/\/login/);
 	});
 });

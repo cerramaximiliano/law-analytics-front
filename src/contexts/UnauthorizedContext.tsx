@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
 import {
 	Dialog,
 	DialogTitle,
@@ -22,6 +21,7 @@ import {
 import { Eye, EyeSlash } from "iconsax-react";
 import * as Yup from "yup";
 import { Formik, FormikHelpers } from "formik";
+import { safeFormikBlur } from "utils/formikSafeBlur";
 import IconButton from "components/@extended/IconButton";
 import useAuth from "hooks/useAuth";
 import { dispatch as reduxDispatch } from "store";
@@ -87,20 +87,7 @@ export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ 
 		}
 	}, [showUnauthorizedModal]);
 
-	useEffect(() => {
-		const interceptor = axios.interceptors.response.use(
-			(response) => response,
-			(error) => {
-				if (error.response?.status === 401 && !error.config.url?.includes("/api/auth/") && !error.config._retry) {
-					error.config._retry = true;
-					setShowUnauthorizedModal(true);
-				}
-				return Promise.reject(error);
-			},
-		);
-
-		return () => axios.interceptors.response.eject(interceptor);
-	}, []);
+	// El manejo de 401 (refresco automático + modal) está centralizado en ServerContext.
 
 	const handleFormSubmit = async (values: FormValues, { setErrors, setStatus }: FormikHelpers<FormValues>) => {
 		if (isSubmitting) return;
@@ -216,7 +203,7 @@ export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ 
 												type="email"
 												value={values.email}
 												name="email"
-												onBlur={handleBlur}
+												onBlur={safeFormikBlur(handleBlur)}
 												onChange={handleChange}
 												placeholder="Ingresa tu email"
 												fullWidth
@@ -237,7 +224,7 @@ export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ 
 												type={showPassword ? "text" : "password"}
 												value={values.password}
 												name="password"
-												onBlur={handleBlur}
+												onBlur={safeFormikBlur(handleBlur)}
 												onChange={handleChange}
 												disabled={isSubmitting}
 												endAdornment={

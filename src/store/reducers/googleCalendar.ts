@@ -70,6 +70,12 @@ const googleCalendarSlice = createSlice({
 		setGoogleEvents: (state, action: PayloadAction<EventInput[]>) => {
 			state.googleEvents = action.payload;
 		},
+		// Hidrata la última sincronización conocida desde el backend
+		// (user.googleCalendarLastSync). Sin esto el estado arranca en null en cada
+		// load y la auto-sincronización periódica nunca se dispara.
+		setLastSyncTime: (state, action: PayloadAction<string | null>) => {
+			state.lastSyncTime = action.payload;
+		},
 		setSyncStats: (
 			state,
 			action: PayloadAction<{ created: number; updated: number; deleted: number; imported: EventInput[] | number }>,
@@ -88,8 +94,17 @@ const googleCalendarSlice = createSlice({
 	},
 });
 
-export const { setLoading, setSyncing, setSyncProgress, setConnected, setUserProfile, setGoogleEvents, setSyncStats, resetState } =
-	googleCalendarSlice.actions;
+export const {
+	setLoading,
+	setSyncing,
+	setSyncProgress,
+	setConnected,
+	setUserProfile,
+	setGoogleEvents,
+	setLastSyncTime,
+	setSyncStats,
+	resetState,
+} = googleCalendarSlice.actions;
 
 export default googleCalendarSlice.reducer;
 
@@ -167,9 +182,7 @@ export const connectGoogleCalendar = () => async (dispatch: any, getState: any) 
 				console.log("Guardando en backend:", updateData);
 
 				await axios.put(`${baseUrl}/api/users/${userId}/google-calendar-connection`, updateData, {
-					headers: {
-						Authorization: `Bearer ${localStorage.getItem("token")}`,
-					},
+					withCredentials: true,
 				});
 				console.log("Estado de Google Calendar guardado en el backend");
 			} catch (error) {
@@ -460,9 +473,7 @@ export const disconnectGoogleCalendar = () => async (dispatch: any, getState: an
 						lastSync: null,
 					},
 					{
-						headers: {
-							Authorization: `Bearer ${localStorage.getItem("token")}`,
-						},
+						withCredentials: true,
 					},
 				);
 				console.log("Estado de desconexión guardado en el backend");
@@ -525,7 +536,10 @@ export const disconnectGoogleCalendar = () => async (dispatch: any, getState: an
 	}
 };
 
-export const fetchGoogleEvents = () => async () => {
+// Devuelve los eventos, o null si la consulta a Google falló. La distinción
+// importa: [] es un calendario sin eventos (importación válida), null es un
+// fallo — y quien llama no debe sellar lastSync sobre un fallo.
+export const fetchGoogleEvents = () => async (): Promise<EventInput[] | null> => {
 	dispatch(setLoading(true));
 	try {
 		const events = await googleCalendarService.fetchEvents();
@@ -544,9 +558,28 @@ export const fetchGoogleEvents = () => async () => {
 				close: true,
 			}),
 		);
-		return [];
+		return null;
 	} finally {
 		dispatch(setLoading(false));
+	}
+};
+
+// Marca una sincronización como realizada, en Redux y en el backend.
+// La usa la sincronización automática, que es de solo lectura (importa de Google
+// pero NO empuja eventos locales) y por eso no pasa por setSyncStats.
+export const markGoogleCalendarSynced = () => async (dispatch: any, getState: any) => {
+	const now = new Date().toISOString();
+	dispatch(setLastSyncTime(now));
+
+	const userId = getState().auth?.user?._id;
+	if (!userId) return;
+
+	try {
+		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
+		await axios.put(`${baseUrl}/api/users/${userId}/google-calendar-connection`, { lastSync: now }, { withCredentials: true });
+	} catch (error) {
+		// No es crítico: el peor caso es que la auto-sincronización se repita en el próximo load.
+		console.error("No se pudo persistir lastSync de Google Calendar:", error);
 	}
 };
 
@@ -662,10 +695,12 @@ export const checkGoogleCalendarConnection = () => async (dispatch: any, getStat
 		if (!userId) return;
 
 		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
+		// Auth via cookie httpOnly + interceptor global (igual que el resto de la app).
+		// NO setear Authorization manualmente desde localStorage["token"]: ese slot no
+		// se usa para el token de sesión (vive en authTokenService/memoria), así que
+		// mandaba "Bearer null" y el backend respondía 401 → loop de refresh infinito.
 		const response = await axios.get(`${baseUrl}/api/users/${userId}/google-calendar-status`, {
-			headers: {
-				Authorization: `Bearer ${localStorage.getItem("token")}`,
-			},
+			withCredentials: true,
 		});
 
 		if (response.data?.googleCalendarStatus?.connected) {
@@ -686,6 +721,10 @@ export const checkGoogleCalendarConnection = () => async (dispatch: any, getStat
 					imageUrl: imageUrl || "",
 				}),
 			);
+
+			// Traer la última sincronización persistida: es lo que habilita la
+			// auto-sincronización periódica en sesiones nuevas.
+			dispatch(setLastSyncTime(lastSync ? new Date(lastSync).toISOString() : null));
 
 			// Intentar reconexión silenciosa
 			try {

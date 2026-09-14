@@ -1,53 +1,80 @@
-import React from "react";
+import React, { useState } from "react";
+
 // material-ui
-import { useState } from "react";
-import { Button, CardMedia, Stack, Typography } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
+import { Box, ButtonBase, Stack, Typography } from "@mui/material";
 
 // project-imports
-import MainCard from "components/MainCard";
-import AnimateButton from "components/@extended/AnimateButton";
 import SupportModal from "./SupportModal";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 // assets
-import avatar from "assets/images/users/customer-support-1.png";
+import { MessageQuestion } from "iconsax-react";
 
-// ==============================|| DRAWER CONTENT - NAV CARD ||============================== //
+// types
+import { ThemeMode } from "types/config";
+
+// ==============================|| DRAWER CONTENT - HELP TILE ||============================== //
+// Reemplaza el viejo NavCard de "soporte" (avatar genérico + "Respuesta en 24
+// horas" sin SLA real). Tile compacta on-brand con un solo CTA — abre el mismo
+// SupportModal que existía antes, sin promesas que no podemos garantizar.
 
 const NavCard = () => {
-	// Estado para controlar la apertura/cierre del modal
+	const theme = useTheme();
+	const isDark = theme.palette.mode === ThemeMode.DARK;
 	const [openModal, setOpenModal] = useState(false);
-
-	// Funciones para abrir y cerrar el modal
-	const handleOpenModal = () => {
-		setOpenModal(true);
-	};
-
-	const handleCloseModal = () => {
-		setOpenModal(false);
-	};
 
 	return (
 		<>
-			<MainCard sx={{ bgcolor: "secondary.lighter", m: 3 }}>
-				<Stack alignItems="center" spacing={2.5}>
-					<CardMedia component="img" image={avatar} />
-					<Stack alignItems="center">
-						<Typography variant="h5">¿Necesita ayuda?</Typography>
-						<Typography variant="h6" color="secondary">
-							Respuesta en 24 horas
+			<Box sx={{ mx: 2, mb: 2, mt: 1.5 }}>
+				<ButtonBase
+					onClick={() => setOpenModal(true)}
+					aria-label="Abrir soporte"
+					sx={{
+						width: "100%",
+						p: 1.5,
+						borderRadius: 1.5,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.05),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.16)}`,
+						justifyContent: "flex-start",
+						gap: 1.25,
+						transition: "background-color 180ms, border-color 180ms",
+						"&:hover": {
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.09),
+							borderColor: alpha(BRAND_BLUE, isDark ? 0.4 : 0.26),
+						},
+						"&:focus-visible": {
+							outline: `2px solid ${BRAND_BLUE}`,
+							outlineOffset: 2,
+						},
+					}}
+				>
+					<Box
+						sx={{
+							width: 32,
+							height: 32,
+							borderRadius: 1,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.12),
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							flexShrink: 0,
+						}}
+					>
+						<MessageQuestion size={18} variant="Bulk" color={BRAND_BLUE} />
+					</Box>
+					<Stack spacing={0.15} sx={{ minWidth: 0, textAlign: "left" }}>
+						<Typography sx={{ fontSize: "0.82rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+							¿Necesitás ayuda?
+						</Typography>
+						<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+							Contactá a soporte
 						</Typography>
 					</Stack>
-					<AnimateButton>
-						{/* Cambiamos el href por onClick para abrir el modal */}
-						<Button variant="shadow" size="small" onClick={handleOpenModal}>
-							Soporte
-						</Button>
-					</AnimateButton>
-				</Stack>
-			</MainCard>
+				</ButtonBase>
+			</Box>
 
-			{/* Modal de Soporte */}
-			<SupportModal open={openModal} onClose={handleCloseModal} />
+			<SupportModal open={openModal} onClose={() => setOpenModal(false)} variant="dashboard" />
 		</>
 	);
 };

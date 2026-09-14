@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 // material-ui
 import { styled, useTheme } from "@mui/material/styles";
 import { Box, Container, Grid, Link, Stack, Typography, Button } from "@mui/material";
@@ -41,6 +41,37 @@ const FooterButton = styled(Button)(({ theme }) => ({
 
 type showProps = {
 	isFull?: boolean;
+};
+
+// Logo del footer: dispara el trazo la primera vez que entra en viewport.
+// El visitante ya recorrió toda la landing — acá la animación premia el scroll
+// sin competir con el hero ni el CTA. El remount via key reinicia la animación.
+const FooterLogo = () => {
+	const ref = useRef<HTMLDivElement>(null);
+	const [inView, setInView] = useState(false);
+	useEffect(() => {
+		const el = ref.current;
+		if (!el || typeof IntersectionObserver === "undefined") {
+			setInView(true);
+			return;
+		}
+		const obs = new IntersectionObserver(
+			([entry]) => {
+				if (entry.isIntersecting) {
+					setInView(true);
+					obs.disconnect();
+				}
+			},
+			{ threshold: 0.4 },
+		);
+		obs.observe(el);
+		return () => obs.disconnect();
+	}, []);
+	return (
+		<div ref={ref}>
+			<Logo key={inView ? "footer-draw" : "footer-static"} reverse to="/" animation={inView ? "draw" : undefined} />
+		</div>
+	);
 };
 
 const FooterBlock = ({ isFull }: showProps) => {
@@ -89,7 +120,7 @@ const FooterBlock = ({ isFull }: showProps) => {
 							>
 								<Grid container spacing={2}>
 									<Grid item xs={12}>
-										<Logo reverse to="/" />
+										<FooterLogo />
 									</Grid>
 									<Grid item xs={12}>
 										<Typography variant="subtitle1" sx={{ fontWeight: 400 }}>
@@ -160,6 +191,14 @@ const FooterBlock = ({ isFull }: showProps) => {
 									<Stack spacing={3}>
 										<Typography variant="h5">Recursos útiles</Typography>
 										<Stack spacing={{ xs: 1.5, md: 2.5 }}>
+											{/* Jurisprudencia y el blog viven FUERA de la SPA (mini-sitio
+											    servido por nginx): anchor con recarga completa, no RouterLink */}
+											<a href="/jurisprudencia" style={{ textDecoration: "none" }}>
+												<FooterButton sx={{ color: theme.palette.text.primary }}>Jurisprudencia</FooterButton>
+											</a>
+											<a href="/educativo" style={{ textDecoration: "none" }}>
+												<FooterButton sx={{ color: theme.palette.text.primary }}>Blog educativo</FooterButton>
+											</a>
 											<RouterLink to="/plans" style={{ textDecoration: "none" }}>
 												<FooterButton sx={{ color: theme.palette.text.primary }}>Planes y Precios</FooterButton>
 											</RouterLink>

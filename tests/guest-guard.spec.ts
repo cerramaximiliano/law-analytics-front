@@ -13,11 +13,11 @@ import { loginViaForm } from "./helpers/auth";
 
 // Rutas protegidas por GuestGuard
 const GUEST_ROUTES = [
-	{ path: "/login",            label: "login" },
-	{ path: "/register",         label: "register" },
-	{ path: "/forgot-password",  label: "forgot-password" },
-	{ path: "/check-mail",       label: "check-mail" },
-	{ path: "/reset-password",   label: "reset-password" },
+	{ path: "/login", label: "login" },
+	{ path: "/register", label: "register" },
+	{ path: "/forgot-password", label: "forgot-password" },
+	{ path: "/check-mail", label: "check-mail" },
+	{ path: "/reset-password", label: "reset-password" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ test.describe("GuestGuard — respeta state.from al redirigir post-login", () =>
 		// En este punto location.state.from = /apps/calendar
 		await page.fill("#email-login", (await import("./helpers/auth")).CREDENTIALS.email);
 		await page.fill("#password-login", (await import("./helpers/auth")).CREDENTIALS.password);
-		await page.getByRole("button", { name: "Login", exact: true }).click();
+		await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 
 		// GuestGuard debe leer state.from y redirigir al calendario
 		await expect(page).toHaveURL(/\/apps\/calendar/, { timeout: 15_000 });
@@ -64,7 +64,7 @@ test.describe("GuestGuard — respeta state.from al redirigir post-login", () =>
 		await page.goto("/login");
 		await page.fill("#email-login", (await import("./helpers/auth")).CREDENTIALS.email);
 		await page.fill("#password-login", (await import("./helpers/auth")).CREDENTIALS.password);
-		await page.getByRole("button", { name: "Login", exact: true }).click();
+		await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 
 		// Debe ir al default, no quedar en un loop
 		await expect(page).toHaveURL(/\/dashboard\/default/, { timeout: 15_000 });

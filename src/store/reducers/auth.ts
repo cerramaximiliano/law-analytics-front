@@ -25,6 +25,7 @@ import { Payment } from "./ApiService";
 import { resetFoldersState } from "./folder";
 import { resetContactsState } from "./contacts";
 import { resetCalculatorsState } from "./calculator";
+import { resetTeamsState } from "./teams";
 import { extractErrorMessage } from "utils/errorMessages";
 
 // initial state
@@ -362,6 +363,8 @@ export const logoutUser = () => (dispatch: Dispatch) => {
 	dispatch(resetContactsState());
 	// Resetear el estado de calculators al hacer logout
 	dispatch(resetCalculatorsState());
+	// Resetear el estado de teams al hacer logout
+	dispatch(resetTeamsState() as any);
 	// Resetear otros estados relacionados con el usuario
 	dispatch({ type: "RESET_EVENTS_STATE" });
 	dispatch({ type: "RESET_TASKS_STATE" });

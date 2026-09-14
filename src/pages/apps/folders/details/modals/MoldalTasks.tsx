@@ -1,7 +1,7 @@
 import React from "react";
 import {
+	Box,
 	DialogTitle,
-	Divider,
 	Button,
 	Stack,
 	DialogContent,
@@ -12,30 +12,49 @@ import {
 	CircularProgress,
 	Grid,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
 import * as Yup from "yup";
-import { Formik, Form } from "formik"; // Importar Form de Formik
+import { Formik, Form } from "formik";
 import { dispatch, useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
-import { addTask } from "store/reducers/tasks";
+import { addTask, updateTask } from "store/reducers/tasks";
+import { useTeam } from "contexts/TeamContext";
+import dayjs from "utils/dayjs-config";
 
-// icons
 import { TaskSquare } from "iconsax-react";
 
-// project imports
 import { PopupTransition } from "components/@extended/Transitions";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
-// types
 import { TaskModalType, TaskFormValues } from "types/task";
 
-const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: TaskModalType) => {
+const ModalTasks = ({
+	open,
+	setOpen,
+	handlerAddress,
+	folderId,
+	folderName,
+	editMode,
+	taskToEdit,
+	onClose,
+	initialValues: externalInitialValues,
+	dialogSx,
+}: TaskModalType) => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const userId = useSelector((state: any) => state.auth?.user?._id);
+	const { getRequestHeaders } = useTeam();
+
+	const isEditMode = editMode && taskToEdit;
 
 	function closeTaskModal() {
 		setOpen(false);
+		if (onClose) {
+			onClose();
+		}
 	}
 
 	const CustomerSchema = Yup.object().shape({
@@ -48,25 +67,67 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 		description: Yup.string().max(500),
 	});
 
-	const getInitialValues = (folderId: string, userId: string | undefined): TaskFormValues => ({
-		dueDate: "",
-		name: "",
-		description: "",
-		checked: false,
-		folderId,
-		userId,
-	});
+	const getInitialValues = (folderId: string, userId: string | undefined): TaskFormValues => {
+		if (isEditMode && taskToEdit) {
+			// Format dueDate to DD/MM/YYYY if it exists
+			let formattedDueDate = "";
+			if (taskToEdit.dueDate) {
+				const parsedDate = dayjs(taskToEdit.dueDate);
+				if (parsedDate.isValid()) {
+					formattedDueDate = parsedDate.format("DD/MM/YYYY");
+				}
+			} else if (taskToEdit.date) {
+				// Fallback to date field if dueDate is not available
+				const parsedDate = dayjs(taskToEdit.date, "DD/MM/YYYY");
+				if (parsedDate.isValid()) {
+					formattedDueDate = parsedDate.format("DD/MM/YYYY");
+				}
+			}
+
+			return {
+				dueDate: formattedDueDate,
+				name: taskToEdit.name || "",
+				description: taskToEdit.description || "",
+				checked: taskToEdit.checked || false,
+				folderId: taskToEdit.folderId || folderId,
+				userId: taskToEdit.userId || userId,
+			};
+		}
+
+		const defaults: TaskFormValues = {
+			dueDate: "",
+			name: "",
+			description: "",
+			checked: false,
+			folderId,
+			userId,
+		};
+
+		if (externalInitialValues) {
+			return { ...defaults, ...externalInitialValues };
+		}
+
+		return defaults;
+	};
 	const initialValues = getInitialValues(folderId, userId);
 
 	async function _submitForm(values: TaskFormValues, actions: any) {
 		try {
-			const result = await dispatch(addTask(values));
+			let result;
+
+			if (isEditMode && taskToEdit) {
+				// Update existing task
+				result = await dispatch(updateTask(taskToEdit._id, values));
+			} else {
+				// Create new task
+				result = await dispatch(addTask(values, { headers: getRequestHeaders() }));
+			}
 
 			if (result.success) {
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: "Tarea creada exitosamente.",
+						message: isEditMode ? "Tarea actualizada exitosamente." : "Tarea creada exitosamente.",
 						variant: "alert",
 						alert: {
 							color: "success",
@@ -76,7 +137,7 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 				);
 
 				if (handlerAddress) {
-					handlerAddress(result.task);
+					handlerAddress((result as any).task);
 				}
 				closeTaskModal();
 				actions.resetForm();
@@ -85,7 +146,7 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: "Error al crear la tarea.",
+						message: isEditMode ? "Error al actualizar la tarea." : "Error al crear la tarea.",
 						variant: "alert",
 						alert: {
 							color: "error",
@@ -101,7 +162,7 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: "Error al crear la tarea.",
+					message: isEditMode ? "Error al actualizar la tarea." : "Error al crear la tarea.",
 					variant: "alert",
 					alert: {
 						color: "error",
@@ -122,7 +183,13 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 	}
 
 	return (
-		<Formik initialValues={initialValues} validationSchema={CustomerSchema} onSubmit={_handleSubmit} enableReinitialize>
+		<Formik
+			key={isEditMode ? `edit-${taskToEdit?._id}` : "create"}
+			initialValues={initialValues}
+			validationSchema={CustomerSchema}
+			onSubmit={_handleSubmit}
+			enableReinitialize
+		>
 			{({ isSubmitting, resetForm, handleSubmit }) => {
 				const handleClose = () => {
 					if (!isSubmitting) {
@@ -140,10 +207,13 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 						maxWidth="sm"
 						fullWidth
 						aria-labelledby="task-modal-title"
+						sx={dialogSx}
 						PaperProps={{
-							elevation: 5,
+							elevation: 0,
 							sx: {
 								borderRadius: 2,
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+								boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
 								overflow: "hidden",
 							},
 						}}
@@ -152,51 +222,92 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 							<DialogTitle
 								id="task-modal-title"
 								sx={{
-									bgcolor: theme.palette.primary.lighter,
-									p: 3,
-									borderBottom: `1px solid ${theme.palette.divider}`,
+									display: "flex",
+									alignItems: "center",
+									gap: 1.25,
+									px: 2.5,
+									py: 1.75,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+									borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 								}}
 							>
-								<Stack spacing={1}>
-									<Stack direction="row" alignItems="center" spacing={1}>
-										<TaskSquare size={24} color={theme.palette.primary.main} variant="Bold" />
-										<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
-											Nueva Tarea
+								<Box
+									sx={{
+										width: 32,
+										height: 32,
+										borderRadius: 1,
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+										color: BRAND_BLUE,
+									}}
+								>
+									<TaskSquare size={18} variant="Bulk" />
+								</Box>
+								<Stack spacing={0.125} sx={{ minWidth: 0, flex: 1 }}>
+									<Stack direction="row" spacing={0.5} alignItems="center">
+										<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+										<Typography
+											sx={{
+												fontSize: "0.6rem",
+												fontWeight: 600,
+												letterSpacing: "0.08em",
+												textTransform: "uppercase",
+												color: "text.secondary",
+											}}
+										>
+											{isEditMode ? "Editar" : "Nueva"}
 										</Typography>
 									</Stack>
-									<Typography variant="body2" color="textSecondary">
-										Agrega una nueva tarea a la carpeta "{folderName}"
+									<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+										{isEditMode ? "Editar tarea" : "Nueva tarea"}
+									</Typography>
+									<Typography
+										sx={{
+											fontSize: "0.72rem",
+											color: "text.secondary",
+											letterSpacing: "-0.005em",
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											whiteSpace: "nowrap",
+										}}
+									>
+										{isEditMode ? `Editás "${taskToEdit?.name}" de "${folderName}"` : `Agregás una nueva tarea a "${folderName}"`}
 									</Typography>
 								</Stack>
 							</DialogTitle>
-							<Divider />
 
-							<DialogContent sx={{ p: 3 }}>
-								<Grid container spacing={2.5}>
-									{/* Nombre de la tarea - Media columna */}
+							<DialogContent sx={{ p: 2.5 }}>
+								<Grid container spacing={2}>
 									<Grid item xs={12} sm={6}>
-										<Stack spacing={1}>
-											<InputLabel htmlFor="name">Nombre de la tarea *</InputLabel>
-											<InputField name="name" id="name" autoFocus placeholder="Ingresa el nombre de la tarea" disabled={isSubmitting} />
+										<Stack spacing={0.75}>
+											<InputLabel htmlFor="name" sx={{ fontSize: "0.78rem", fontWeight: 500, color: "text.primary" }}>
+												Nombre de la tarea *
+											</InputLabel>
+											<InputField name="name" id="name" autoFocus placeholder="Ingresá el nombre de la tarea" disabled={isSubmitting} />
 										</Stack>
 									</Grid>
 
-									{/* Fecha de vencimiento - Media columna */}
 									<Grid item xs={12} sm={6}>
-										<Stack spacing={1}>
-											<InputLabel htmlFor="dueDate">Fecha de vencimiento *</InputLabel>
+										<Stack spacing={0.75}>
+											<InputLabel htmlFor="dueDate" sx={{ fontSize: "0.78rem", fontWeight: 500, color: "text.primary" }}>
+												Fecha de vencimiento *
+											</InputLabel>
 											<DateInputField name="dueDate" id="dueDate" placeholder="DD/MM/AAAA" disabled={isSubmitting} />
 										</Stack>
 									</Grid>
 
-									{/* Descripción - Ancho completo */}
 									<Grid item xs={12}>
-										<Stack spacing={1}>
-											<InputLabel htmlFor="description">Descripción (opcional)</InputLabel>
+										<Stack spacing={0.75}>
+											<InputLabel htmlFor="description" sx={{ fontSize: "0.78rem", fontWeight: 500, color: "text.primary" }}>
+												Descripción (opcional)
+											</InputLabel>
 											<InputField
 												name="description"
 												id="description"
-												placeholder="Agrega una descripción de la tarea"
+												placeholder="Agregá una descripción de la tarea"
 												multiline
 												rows={4}
 												disabled={isSubmitting}
@@ -207,18 +318,47 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 								</Grid>
 							</DialogContent>
 
-							<Divider />
-							<DialogActions sx={{ px: 3, py: 2 }}>
-								<Button onClick={handleClose} color="error" disabled={isSubmitting}>
+							<DialogActions sx={{ px: 2.5, py: 1.75, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}>
+								<Button
+									onClick={handleClose}
+									disabled={isSubmitting}
+									sx={{
+										textTransform: "none",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										color: "text.secondary",
+										borderRadius: 1.25,
+										px: 2,
+										py: 0.875,
+										border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+										"&:hover": {
+											color: BRAND_BLUE,
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+											borderColor: alpha(BRAND_BLUE, 0.28),
+										},
+									}}
+								>
 									Cancelar
 								</Button>
 								<Button
 									type="submit"
 									variant="contained"
 									disabled={isSubmitting}
-									startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
+									startIcon={isSubmitting ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : null}
+									sx={{
+										textTransform: "none",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										bgcolor: BRAND_BLUE,
+										color: "#fff",
+										borderRadius: 1.25,
+										px: 2,
+										py: 0.875,
+										boxShadow: "none",
+										"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+									}}
 								>
-									{isSubmitting ? "Creando..." : "Crear tarea"}
+									{isSubmitting ? (isEditMode ? "Guardando…" : "Creando…") : isEditMode ? "Guardar cambios" : "Crear tarea"}
 								</Button>
 							</DialogActions>
 						</Form>

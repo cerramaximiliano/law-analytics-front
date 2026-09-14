@@ -1,13 +1,13 @@
 import React from "react";
 // project-imports
 import Hero from "sections/landing/Header";
+import ComoFunciona from "sections/landing/ComoFunciona";
 import Technologies from "sections/landing/Technologies";
-import Combo from "sections/landing/Combo";
-//import Apps from "sections/landing/Apps";
-import Free from "sections/landing/Free";
 import Testimonial from "sections/landing/Testimonial";
-//import Partner from "sections/landing/Partner";
+import Planes from "sections/landing/Planes";
+import Faq from "sections/landing/Faq";
 import ContactUs from "sections/landing/ContactUs";
+import DiscountBanner from "sections/landing/DiscountBanner";
 import SEO from "components/SEO/SEO";
 import SectionTracker from "components/analytics/SectionTracker";
 import { LandingSections } from "utils/gtm";
@@ -18,23 +18,25 @@ const Landing = () => {
 	return (
 		<>
 			<SEO path="/" />
+			<DiscountBanner />
 			<SectionTracker sectionName={LandingSections.HERO}>
 				<Hero />
+			</SectionTracker>
+			<SectionTracker sectionName={LandingSections.COMO_FUNCIONA}>
+				<ComoFunciona />
 			</SectionTracker>
 			<SectionTracker sectionName={LandingSections.HERRAMIENTAS}>
 				<Technologies />
 			</SectionTracker>
-			<SectionTracker sectionName={LandingSections.INTEGRACIONES}>
-				<Combo />
-			</SectionTracker>
-			{/* <Apps /> */}
-			<SectionTracker sectionName={LandingSections.PRUEBA_PAGAR}>
-				<Free />
-			</SectionTracker>
 			<SectionTracker sectionName={LandingSections.TESTIMONIOS}>
 				<Testimonial />
 			</SectionTracker>
-			{/* <Partner /> */}
+			<SectionTracker sectionName={LandingSections.PLANES}>
+				<Planes />
+			</SectionTracker>
+			<SectionTracker sectionName={LandingSections.FAQ}>
+				<Faq />
+			</SectionTracker>
 			<SectionTracker sectionName={LandingSections.CONTACTO}>
 				<ContactUs />
 			</SectionTracker>

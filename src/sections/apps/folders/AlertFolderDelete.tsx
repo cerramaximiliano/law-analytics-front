@@ -1,8 +1,11 @@
 import React from "react";
-//AlertFolderDelete.tsx
-import { Button, Dialog, DialogContent, Stack, Typography, Zoom } from "@mui/material";
-import Avatar from "components/@extended/Avatar";
+import { Box, Button, Dialog, DialogContent, Stack, Typography, Zoom } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
+
+// project-imports
 import { PopupTransition } from "components/@extended/Transitions";
+import { BRAND_BLUE } from "themes/dashboardTokens";
+
 // assets
 import { Trash } from "iconsax-react";
 import { dispatch } from "store";
@@ -13,23 +16,23 @@ import { enqueueSnackbar } from "notistack";
 
 // types
 import { PropsAlert } from "types/folders";
+
 // ==============================|| FOLDER - DELETE ||============================== //
+
 export default function AlertFolderDelete({ title, open, handleClose, id, onDelete }: PropsAlert) {
-	// Obtener el contexto para verificar errores de restricción
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const errorColor = theme.palette.error.main;
 	const authContext = useContext(AuthContext);
-	// Verificar si hay un error de restricción del plan para evitar proceder
+
 	const handleClick = async () => {
-		// Prevenir la eliminación si hay un error reciente de restricción del plan
 		if (authContext && authContext.hasPlanRestrictionError) {
-			handleClose(false); // Cerrar sin eliminar
+			handleClose(false);
 			return;
 		}
-
-		// Continuar normalmente si no hay restricciones
 		handleClose(true);
 		if (id) {
 			const result = await dispatch(deleteFolderById(id));
-
 			if (result.success) {
 				enqueueSnackbar("Causa eliminada correctamente", {
 					variant: "success",
@@ -45,47 +48,30 @@ export default function AlertFolderDelete({ title, open, handleClose, id, onDele
 					autoHideDuration: 3000,
 				});
 			}
-
-			// Llamar al callback de eliminación si existe
-			if (onDelete) {
-				onDelete();
-			}
+			if (onDelete) onDelete();
 		}
 	};
 
-	// Efecto para cerrar automáticamente este modal cuando hay un error de restricción
 	useEffect(() => {
-		// Cerrar por estado de restricción del plan
-		if (open && authContext && authContext.hasPlanRestrictionError) {
-			handleClose(false);
-		}
+		if (open && authContext && authContext.hasPlanRestrictionError) handleClose(false);
 
-		// Manejador para eventos de restricción de plan
 		const handlePlanRestriction = () => {
-			if (open) {
-				handleClose(false);
-			}
+			if (open) handleClose(false);
 		};
 
-		// Verificar periódicamente si hay una flag global para cerrar modales
 		const checkGlobalFlag = () => {
-			if ((window as any).FORCE_CLOSE_ALL_MODALS && open) {
-				handleClose(false);
-			}
+			if ((window as any).FORCE_CLOSE_ALL_MODALS && open) handleClose(false);
 		};
 
-		// Agregar listener para el evento
 		window.addEventListener("planRestrictionError", handlePlanRestriction);
-
-		// Configurar intervalo para verificar la flag global
 		const intervalId = setInterval(checkGlobalFlag, 200);
 
-		// Limpieza
 		return () => {
 			window.removeEventListener("planRestrictionError", handlePlanRestriction);
 			clearInterval(intervalId);
 		};
 	}, [open, authContext, handleClose]);
+
 	return (
 		<Dialog
 			open={open}
@@ -93,40 +79,117 @@ export default function AlertFolderDelete({ title, open, handleClose, id, onDele
 			keepMounted
 			TransitionComponent={PopupTransition}
 			maxWidth="xs"
-			aria-labelledby="column-delete-title"
-			aria-describedby="column-delete-description"
+			fullWidth
+			aria-labelledby="folder-delete-title"
+			aria-describedby="folder-delete-description"
+			PaperProps={{
+				sx: {
+					borderRadius: 2,
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+					boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+					overflow: "hidden",
+				},
+			}}
 		>
-			<DialogContent sx={{ mt: 2, my: 1 }}>
-				<Stack alignItems="center" spacing={3.5}>
-					<Avatar color="error" sx={{ width: 72, height: 72, fontSize: "1.75rem" }}>
-						<Trash variant="Bold" />
-					</Avatar>
-					<Stack spacing={2}>
-						<Typography variant="h4" align="center">
-							¿Estás seguro que deseas eliminarlo?
+			<DialogContent sx={{ p: { xs: 3, sm: 3.5 }, position: "relative" }}>
+				<Box
+					sx={{
+						position: "absolute",
+						top: -80,
+						left: "50%",
+						transform: "translateX(-50%)",
+						width: 280,
+						height: 280,
+						borderRadius: "50%",
+						background: `radial-gradient(circle, ${alpha(errorColor, isDark ? 0.18 : 0.1)} 0%, transparent 70%)`,
+						pointerEvents: "none",
+					}}
+				/>
+				<Stack alignItems="center" spacing={2.25} sx={{ position: "relative" }}>
+					<Box
+						sx={{
+							width: 60,
+							height: 60,
+							borderRadius: 1.5,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(errorColor, isDark ? 0.16 : 0.08),
+							border: `1px solid ${alpha(errorColor, isDark ? 0.32 : 0.2)}`,
+							color: errorColor,
+						}}
+					>
+						<Trash size={26} variant="Bulk" />
+					</Box>
+					<Stack spacing={1} alignItems="center">
+						<Typography
+							id="folder-delete-title"
+							sx={{
+								fontSize: "1.05rem",
+								fontWeight: 600,
+								letterSpacing: "-0.015em",
+								color: "text.primary",
+								textAlign: "center",
+								textWrap: "balance",
+							}}
+						>
+							¿Eliminar esta causa?
 						</Typography>
-						<Typography align="center">
-							Eliminando el elemento
-							<Typography variant="subtitle1" component="span">
-								{" "}
-								"{title}"{" "}
-							</Typography>
-							no podrás luego recuperar sus datos.
+						<Typography
+							id="folder-delete-description"
+							sx={{
+								fontSize: "0.85rem",
+								color: "text.secondary",
+								letterSpacing: "-0.005em",
+								textAlign: "center",
+								textWrap: "pretty",
+							}}
+						>
+							Vas a eliminar{" "}
+							<Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
+								"{title}"
+							</Box>{" "}
+							de forma permanente. Esta acción no se puede deshacer.
 						</Typography>
 					</Stack>
 
-					<Stack direction="row" spacing={2} sx={{ width: 1 }}>
-						<Button fullWidth onClick={() => handleClose(false)} color="secondary" variant="outlined">
+					<Stack direction="row" spacing={1.25} sx={{ width: 1, mt: 0.5 }}>
+						<Button
+							fullWidth
+							onClick={() => handleClose(false)}
+							sx={{
+								textTransform: "none",
+								fontWeight: 600,
+								letterSpacing: "-0.005em",
+								color: "text.secondary",
+								borderRadius: 1.25,
+								py: 1,
+								border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+								"&:hover": {
+									color: BRAND_BLUE,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+									borderColor: alpha(BRAND_BLUE, 0.28),
+								},
+							}}
+						>
 							Cancelar
 						</Button>
 						<Button
 							fullWidth
-							color="error"
-							variant="contained"
-							onClick={() => {
-								handleClick();
-							}}
+							onClick={handleClick}
 							autoFocus
+							variant="contained"
+							sx={{
+								textTransform: "none",
+								fontWeight: 600,
+								letterSpacing: "-0.005em",
+								bgcolor: errorColor,
+								color: "#fff",
+								borderRadius: 1.25,
+								py: 1,
+								boxShadow: "none",
+								"&:hover": { bgcolor: alpha(errorColor, 0.88), boxShadow: "none" },
+							}}
 						>
 							Eliminar
 						</Button>

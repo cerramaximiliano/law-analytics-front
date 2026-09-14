@@ -2,7 +2,7 @@ import React from "react";
 import { useState } from "react";
 
 // material-ui
-import { Button, Stack, Box, Typography } from "@mui/material";
+import { Alert, Button, Stack, Box, Typography } from "@mui/material";
 
 // project-imports
 import AnimateButton from "components/@extended/AnimateButton";
@@ -16,6 +16,19 @@ import { Formik, Form } from "formik";
 
 //types
 import { WizardProps } from "types/wizards";
+
+type ResarcimientoMethod = "vuoto" | "mendez";
+
+interface ResarcimientoWizardProps extends WizardProps {
+	method?: ResarcimientoMethod;
+}
+
+const METHOD_DESCRIPTIONS: Record<ResarcimientoMethod, string> = {
+	vuoto:
+		'Metodología Vuoto: calcula el resarcimiento por incapacidad laboral usando la fórmula del fallo "Vuoto c/ Segba" (capital × tasa × años restantes de vida laboral). Esta fórmula está en desarrollo.',
+	mendez:
+		'Metodología Méndez: calcula el resarcimiento por incapacidad laboral usando la fórmula del fallo "Méndez c/ Mylba" (variante actualizada de Vuoto con ajuste por coeficiente de productividad). Esta fórmula está en desarrollo.',
+};
 
 // step options
 const steps = ["Datos requeridos", "Resultados"];
@@ -34,7 +47,7 @@ function getStepContent(step: number, values: any, folder?: any, onFolderChange?
 
 // ==============================|| FORMS WIZARD - BASIC ||============================== //
 
-const ResarcimientoWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
+const ResarcimientoWizard: React.FC<ResarcimientoWizardProps> = ({ folder, onFolderChange, method }) => {
 	const [activeStep, setActiveStep] = useState(0);
 	const currentValidationSchema = validationSchema[activeStep];
 	const isLastStep = activeStep === steps.length - 1;
@@ -64,6 +77,11 @@ const ResarcimientoWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) 
 
 	return (
 		<Box sx={{ width: "100%" }}>
+			{method && (
+				<Alert severity="info" sx={{ mb: 3 }}>
+					{METHOD_DESCRIPTIONS[method]}
+				</Alert>
+			)}
 			<Stack direction="row" spacing={1.5} sx={{ pb: 4 }}>
 				{steps.map((label, index) => (
 					<Box key={label} sx={{ position: "relative", width: "100%" }}>

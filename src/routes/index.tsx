@@ -4,7 +4,9 @@ import { useRoutes } from "react-router-dom";
 
 // project-imports
 import CommonLayout from "layout/CommonLayout";
+import PublicLayout from "layout/PublicLayout";
 import Loadable from "components/Loadable";
+import EmailVisitTracker from "contexts/EmailVisitTracker";
 import LoginRoutes from "./LoginRoutes";
 import MainRoutes from "./MainRoutes";
 const MaintenanceError = Loadable(lazy(() => import("pages/maintenance/error/404")));
@@ -12,17 +14,21 @@ const MaintenanceError = Loadable(lazy(() => import("pages/maintenance/error/404
 // render - landing and static pages
 const PagesLanding = Loadable(lazy(() => import("pages/landing")));
 const GuidesPage = Loadable(lazy(() => import("pages/guides")));
+const JurisprudenciaPage = Loadable(lazy(() => import("pages/jurisprudencia")));
+const JurisprudenciaDetailPage = Loadable(lazy(() => import("pages/jurisprudencia/detail")));
 const FaqPage = Loadable(lazy(() => import("pages/faq")));
 const PrivacyPolicy = Loadable(lazy(() => import("pages/privacy-policy")));
 const CookiesPolicy = Loadable(lazy(() => import("pages/cookies-policy")));
 const UnsubscribePage = Loadable(lazy(() => import("pages/unsubscribe")));
 const TermsPage = Loadable(lazy(() => import("pages/terms")));
 const Plans = Loadable(lazy(() => import("pages/plans")));
+const FeedbackInvitePage = Loadable(lazy(() => import("pages/feedback-invite")));
+const MovementDocPublicPage = Loadable(lazy(() => import("pages/public/movement-doc")));
 
 // ==============================|| ROUTES RENDER ||============================== //
 
 export default function ThemeRoutes() {
-	return useRoutes([
+	const routes = useRoutes([
 		{
 			path: "/",
 			element: <CommonLayout layout="landing" />,
@@ -34,6 +40,14 @@ export default function ThemeRoutes() {
 				{
 					path: "guides",
 					element: <GuidesPage />,
+				},
+				{
+					path: "jurisprudencia",
+					element: <JurisprudenciaPage />,
+				},
+				{
+					path: "jurisprudencia/:id",
+					element: <JurisprudenciaDetailPage />,
 				},
 				{
 					path: "faq",
@@ -64,8 +78,28 @@ export default function ThemeRoutes() {
 		LoginRoutes,
 		MainRoutes,
 		{
+			path: "/",
+			element: <PublicLayout />,
+			children: [
+				{
+					path: "f/:token",
+					element: <FeedbackInvitePage />,
+				},
+				{
+					path: "m/:token",
+					element: <MovementDocPublicPage />,
+				},
+			],
+		},
+		{
 			path: "*",
 			element: <MaintenanceError />,
 		},
 	]);
+	return (
+		<>
+			<EmailVisitTracker />
+			{routes}
+		</>
+	);
 }

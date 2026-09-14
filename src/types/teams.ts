@@ -109,6 +109,8 @@ export interface TeamState {
 	isLoading: boolean;
 	error: string | null;
 	isInitialized: boolean;
+	serviceAvailable: boolean;
+	serviceMessage: string | null;
 }
 
 // Roles and permissions

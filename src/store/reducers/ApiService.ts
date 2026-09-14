@@ -19,6 +19,121 @@ export interface ApiResponse<T = any> {
 }
 
 // ===============================
+// Integraciones públicas (toggles de disponibilidad UI)
+// ===============================
+// Embebido en el response de GET /api/plan-configs/public para evitar requests
+// extra al cargar la landing. Cada flag indica si la opción se muestra en UI.
+// `enabled: false` → la UI debe ocultar la opción de esa integración.
+
+/**
+ * releaseStage: 'beta' → chip "Beta" + CTA "Solicitar acceso" + form de soporte.
+ *                'stable' → chip "Disponible" + CTA directo a /connect.
+ */
+export type ReleaseStage = "beta" | "stable";
+
+export interface ServiceFlag {
+	enabled: boolean;
+	maintenanceMessage: string | null;
+	releaseStage: ReleaseStage;
+}
+
+/** Estado de cada ícono del strip "Integrado con" de la landing, administrable
+ *  desde /admin/integrations (la metadata visual vive en Header.tsx). */
+export type LandingIntegrationStatus = "available" | "comingSoon" | "hidden";
+export interface LandingIntegrationEntry {
+	status: LandingIntegrationStatus;
+	/** Posición del ícono en el strip (menor = más a la izquierda). */
+	order?: number;
+}
+/** Entrada por jurisdicción — {status, order}. El string suelto se tolera por
+ *  compat con la primera versión del endpoint. */
+export type LandingIntegrationsMap = Record<string, LandingIntegrationEntry | LandingIntegrationStatus>;
+
+/** Entry del catálogo dinámico de jurisdicciones — metadata completa +
+ *  capacidades, administrable desde /admin/integrations. Permite agregar
+ *  jurisdicciones sin deploy del front (logo por URL). */
+export interface LandingCatalogEntry {
+	key: string;
+	shortName: string;
+	name: string;
+	/** Nombre corto para listas de texto ("PJN, MEV, EJE y Salta"). */
+	listLabel: string;
+	/** Logo remoto — las jurisdicciones core usan el asset local si viene null. */
+	logoUrl: string | null;
+	bgColor: string;
+	hasBorder: boolean;
+	status: LandingIntegrationStatus;
+	order: number;
+	capabilities: {
+		/** Permite vincular credenciales y sincronizar automáticamente. */
+		credentialSync: boolean;
+		/** Permite agregar causas individualmente por N° de expediente. */
+		individualCauses: boolean;
+	};
+}
+
+export interface PublicIntegrations {
+	/** Toggle para mostrar el banner MCP de Claude.ai en landing/plans + página /integraciones/claude-ai. */
+	claudeAi: ServiceFlag;
+	/** Toggle equivalente para ChatGPT — UI futura (placeholder hasta que el MCP soporte ChatGPT). */
+	chatGpt: ServiceFlag;
+	/** Strip "Integrado con" de la landing (por jurisdicción). Opcional para
+	 *  compat con respuestas de backends previos al feature. */
+	landing?: LandingIntegrationsMap;
+	/** Catálogo dinámico completo (ordenado por order asc). Opcional para
+	 *  compat con backends previos al feature. */
+	landingCatalog?: LandingCatalogEntry[];
+}
+
+/**
+ * Defaults fail-CLOSED si el endpoint falla — ambas integraciones se asumen
+ * NO disponibles. Cambiado de fail-open a fail-closed cuando el producto decidió
+ * lanzar la integración deshabilitada por default (no exponer features que no
+ * están listas en producción si el backend no puede confirmar el flag).
+ */
+export const DEFAULT_PUBLIC_INTEGRATIONS: PublicIntegrations = {
+	claudeAi: { enabled: false, maintenanceMessage: null, releaseStage: "beta" },
+	chatGpt: { enabled: false, maintenanceMessage: null, releaseStage: "beta" },
+	// Fail-safe del strip de la landing = comportamiento histórico hardcodeado.
+	landing: {
+		pjn: { status: "available", order: 1 },
+		mev: { status: "available", order: 2 },
+		eje: { status: "available", order: 3 },
+		seclo: { status: "comingSoon", order: 4 },
+		pjsalta: { status: "comingSoon", order: 5 },
+		pjcatamarca: { status: "comingSoon", order: 6 },
+	},
+};
+
+// ====================================
+// Public Addons (piggyback en getPublicPlans)
+// ====================================
+// Cada entry incluye precio leído desde Stripe + flag de disponibilidad
+// calculado en función de IntegrationsConfig (un addon mcp_access está
+// available si claudeAi.enabled OR chatGpt.enabled).
+
+export type AddonKey = "mcp_access";
+
+export interface PublicAddon {
+	key: AddonKey;
+	displayName: string;
+	description: string;
+	/** Precio mensual en moneda real (no centavos). null si Stripe no devolvió precio. */
+	priceMonthly: number | null;
+	/** ISO currency lowercase: 'usd', 'ars', etc. */
+	currency: string;
+	interval: "month" | "year" | string;
+	/** El addon está disponible para mostrar/comprar (alguna integración requerida enabled). */
+	available: boolean;
+	/** Planes en los que el user puede contratar el addon. Si no está en estos planes, debe upgradear primero. */
+	requiredPlans: string[];
+	/** Si el user no está en uno de estos planes, debe upgradear primero. */
+	requiresIntegrationsAny: string[];
+}
+
+export const DEFAULT_PUBLIC_ADDONS: PublicAddon[] = [];
+
+// ===============================
 // Interfaces de usuario y sesiones
 // ===============================
 
@@ -28,6 +143,9 @@ export interface UserPreferences {
 	language: string;
 	theme: "light" | "dark" | "system";
 	notifications: NotificationPreferences;
+	pjn?: {
+		syncContactsFromIntervinientes: boolean;
+	};
 }
 
 export interface NotificationSettings {
@@ -48,6 +166,8 @@ export interface NotificationPreferences {
 		email: boolean;
 		browser: boolean;
 		mobile: boolean;
+		/** WhatsApp: opt-in, solo se puede prender con teléfono verificado + consentimiento (ver /api/phone) */
+		whatsapp?: boolean;
 	};
 	user: {
 		enabled: boolean;
@@ -59,6 +179,15 @@ export interface NotificationPreferences {
 		taskExpirationSettings?: NotificationSettings;
 		inactivity: boolean;
 		inactivitySettings?: InactivitySettings;
+		/** Movimientos judiciales: switch general + modo de entrega */
+		judicialMovements?: {
+			enabled: boolean;
+			mode: "scheduled" | "immediate";
+		};
+		/** Seguimiento postal (Correo Argentino): avisos inmediatos */
+		postalTracking?: {
+			enabled: boolean;
+		};
 	};
 	system: {
 		enabled: boolean;
@@ -66,8 +195,55 @@ export interface NotificationPreferences {
 		news: boolean;
 		userActivity: boolean;
 	};
+	/**
+	 * Comunicaciones por EMAIL, por tipo. Distinto de `system`, que son avisos
+	 * dentro de la app: acá el usuario elige qué correos quiere recibir.
+	 * Todo arranca activo (es opt-out) y darse de baja de un tipo no afecta al
+	 * resto ni a la baja global de la lista.
+	 */
+	emailComunicaciones?: {
+		jurisprudencia?: boolean;
+		producto?: boolean;
+		promociones?: boolean;
+		recursos?: boolean;
+	};
 	otherCommunications?: boolean;
 	loginAlerts?: boolean;
+}
+
+/** Estado del teléfono verificado por WhatsApp y del consentimiento del canal (GET /api/phone/status) */
+export interface PhoneStatus {
+	phone: string | null;
+	phoneVerified: boolean;
+	phoneVerifiedAt: string | null;
+	whatsappOptIn: {
+		accepted: boolean;
+		acceptedAt: string | null;
+		revokedAt: string | null;
+	};
+	channelEnabled: boolean;
+	pendingVerification: { phone: string; expiresAt: string } | null;
+	/** Si el canal puede mandar un código ahora (hay línea conectada, etc.) */
+	availability?: { available: boolean; reason: string | null };
+	/** Piloto: si este usuario puede inscribirse (inscripción abierta o grant). Sin inscripción y sin número, la opción no se muestra */
+	enrollment?: { allowed: boolean };
+}
+
+/**
+ * Respuesta de los endpoints /api/phone. Los estados "esperables" (código
+ * incorrecto, canal no disponible, cooldown) vienen como 4xx/5xx con `code`
+ * y `message` — no se lanzan como excepción, se devuelven tal cual.
+ */
+export interface PhoneApiResponse extends Partial<PhoneStatus> {
+	success: boolean;
+	message?: string;
+	/** express-rate-limit responde con `error` en vez de `message` */
+	error?: string;
+	code?: string;
+	reason?: string;
+	retryAfterSeconds?: number;
+	expiresAt?: string;
+	httpStatus: number;
 }
 
 export interface DeactivateAccountData {
@@ -221,8 +397,6 @@ export interface Subscription {
 	features: {
 		advancedAnalytics: boolean;
 		exportReports: boolean;
-		taskAutomation: boolean;
-		bulkOperations: boolean;
 		prioritySupport: boolean;
 	};
 	createdAt: string;
@@ -430,6 +604,47 @@ class ApiService {
 		}
 	}
 
+	// ===============================
+	// Teléfono / canal WhatsApp (/api/phone)
+	// ===============================
+
+	private static async phoneRequest(method: "get" | "post" | "delete", path: string, data?: unknown): Promise<PhoneApiResponse> {
+		const response = await axios.request({
+			method,
+			url: `${API_BASE_URL}/api/phone${path}`,
+			data,
+			withCredentials: true,
+			validateStatus: () => true,
+		});
+		const body = response.data && typeof response.data === "object" ? response.data : {};
+		return { success: false, ...body, httpStatus: response.status };
+	}
+
+	/** Estado del número + consentimiento + disponibilidad del canal */
+	static getPhoneStatus(): Promise<PhoneApiResponse> {
+		return this.phoneRequest("get", "/status");
+	}
+
+	/** Manda un código de 6 dígitos por WhatsApp al número (E.164) */
+	static startPhoneVerification(phone: string): Promise<PhoneApiResponse> {
+		return this.phoneRequest("post", "/verify/start", { phone });
+	}
+
+	/** Confirma el código; con acceptOptIn registra el consentimiento y prende el canal */
+	static confirmPhoneVerification(code: string, acceptOptIn: boolean): Promise<PhoneApiResponse> {
+		return this.phoneRequest("post", "/verify/confirm", { code, acceptOptIn });
+	}
+
+	/** Vuelve a activar los avisos con un número ya verificado (después de una baja) */
+	static acceptWhatsappOptIn(): Promise<PhoneApiResponse> {
+		return this.phoneRequest("post", "/opt-in");
+	}
+
+	/** Quita el número y apaga el canal */
+	static removePhone(): Promise<PhoneApiResponse> {
+		return this.phoneRequest("delete", "");
+	}
+
 	/**
 	 * Obtiene todas las preferencias del usuario
 	 */
@@ -484,7 +699,7 @@ class ApiService {
 	 */
 	static async reactivateAccount(data: ReactivateAccountData): Promise<ApiResponse> {
 		try {
-			const response = await axios.post<ApiResponse>(`${API_BASE_URL}/api/reactivate-account`, data);
+			const response = await axios.post<ApiResponse>(`${API_BASE_URL}/api/auth/reactivate-account`, data);
 			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);
@@ -579,9 +794,114 @@ class ApiService {
 	 * Obtiene los planes públicos disponibles
 	 */
 
-	static async getPublicPlans(): Promise<ApiResponse<Plan[]>> {
+	static async getPublicPlans(options?: {
+		landingOnly?: boolean;
+	}): Promise<ApiResponse<Plan[]> & { integrations?: PublicIntegrations; addons?: PublicAddon[] }> {
 		try {
+			// landingOnly=true fuerza al backend a devolver solo descuentos con
+			// showOnLanding=true aunque haya sesión. Lo usa la landing pública (`/`)
+			// para mostrar la promesa universal en vez del descuento personalizado.
+			const params = options?.landingOnly ? { landingOnly: "true" } : undefined;
 			const response = await axios.get(`${API_BASE_URL}/api/plan-configs/public`, {
+				withCredentials: true,
+				params,
+			});
+			// Cachear los bloques `integrations` y `addons` para que componentes que
+			// solo los necesitan (Technologies banner, /plans banner, /integraciones/*)
+			// no disparen su propia request. La landing ya consume getPublicPlans
+			// dos veces (Planes + DiscountBanner) → cache se hidrata en el primer call.
+			if (response.data?.integrations) {
+				ApiService._cachedPublicIntegrations = response.data.integrations;
+			}
+			if (Array.isArray(response.data?.addons)) {
+				ApiService._cachedPublicAddons = response.data.addons;
+			}
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	// Cache module-level del bloque integrations devuelto por /plan-configs/public.
+	// Vida = duración del bundle JS en memoria. Se hidrata en la primera call exitosa
+	// a getPublicPlans y queda disponible vía fetchPublicIntegrations().
+	private static _cachedPublicIntegrations: PublicIntegrations | null = null;
+	private static _publicIntegrationsInflight: Promise<PublicIntegrations> | null = null;
+	private static _cachedPublicAddons: PublicAddon[] | null = null;
+	private static _publicAddonsInflight: Promise<PublicAddon[]> | null = null;
+
+	/**
+	 * Devuelve los flags de integraciones públicas. Usa cache (si existe) o
+	 * dispara getPublicPlans para hidratarlo. Promise-dedupes — múltiples calls
+	 * concurrentes comparten el mismo fetch.
+	 *
+	 * Fail-open: si el endpoint falla, asume todas las integraciones enabled.
+	 */
+	static async fetchPublicIntegrations(): Promise<PublicIntegrations> {
+		if (ApiService._cachedPublicIntegrations) return ApiService._cachedPublicIntegrations;
+		if (ApiService._publicIntegrationsInflight) return ApiService._publicIntegrationsInflight;
+
+		ApiService._publicIntegrationsInflight = ApiService.getPublicPlans({ landingOnly: true })
+			.then(() => ApiService._cachedPublicIntegrations || DEFAULT_PUBLIC_INTEGRATIONS)
+			.catch(() => DEFAULT_PUBLIC_INTEGRATIONS)
+			.finally(() => {
+				ApiService._publicIntegrationsInflight = null;
+			});
+		return ApiService._publicIntegrationsInflight;
+	}
+
+	/** Lectura síncrona del cache — null si todavía no se hidrató. */
+	static getCachedPublicIntegrations(): PublicIntegrations | null {
+		return ApiService._cachedPublicIntegrations;
+	}
+
+	/**
+	 * Devuelve los addons públicos. Mismo patrón que fetchPublicIntegrations —
+	 * cache + Promise dedup. La landing piggybackea esto con getPublicPlans.
+	 */
+	static async fetchPublicAddons(): Promise<PublicAddon[]> {
+		if (ApiService._cachedPublicAddons) return ApiService._cachedPublicAddons;
+		if (ApiService._publicAddonsInflight) return ApiService._publicAddonsInflight;
+
+		ApiService._publicAddonsInflight = ApiService.getPublicPlans({ landingOnly: true })
+			.then(() => ApiService._cachedPublicAddons || DEFAULT_PUBLIC_ADDONS)
+			.catch(() => DEFAULT_PUBLIC_ADDONS)
+			.finally(() => {
+				ApiService._publicAddonsInflight = null;
+			});
+		return ApiService._publicAddonsInflight;
+	}
+
+	static getCachedPublicAddons(): PublicAddon[] | null {
+		return ApiService._cachedPublicAddons;
+	}
+
+	/**
+	 * Agregar addon a la subscription paga del user.
+	 * El backend hace stripe.subscriptions.update + el webhook de la-subscriptions
+	 * sincroniza el campo addons[] cuando llega (~1-2s después).
+	 */
+	static async addAddon(addonKey: AddonKey): Promise<{
+		success: boolean;
+		alreadyActive?: boolean;
+		pendingWebhookSync?: boolean;
+		addon?: { key: AddonKey; status: string; stripePriceId: string; currentPeriodEnd: string | null };
+		message?: string;
+	}> {
+		try {
+			const response = await axios.post(`${API_BASE_URL}/api/subscriptions/addons/checkout`, { addonKey }, { withCredentials: true });
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Remover un addon de la subscription. Stripe prorratea automáticamente.
+	 */
+	static async removeAddon(addonKey: AddonKey): Promise<{ success: boolean; message?: string }> {
+		try {
+			const response = await axios.delete(`${API_BASE_URL}/api/subscriptions/addons/${addonKey}`, {
 				withCredentials: true,
 			});
 			return response.data;
@@ -819,6 +1139,22 @@ class ApiService {
 		}
 	}
 
+	/**
+	 * Reporta un intento de checkout fallido (fallo pre-Stripe: la sesión no se
+	 * pudo crear o el backend devolvió error). Fire-and-forget: nunca lanza ni
+	 * bloquea el flujo de UX, solo deja el registro para estadísticas.
+	 * @param planId - Plan que se intentó contratar
+	 * @param reason - Motivo legible del fallo
+	 */
+	static async reportFailedCheckout(planId: string, reason?: string): Promise<void> {
+		try {
+			await axios.post(`${API_BASE_URL}/api/subscriptions/payment-attempt-failed`, { planId, reason }, { withCredentials: true });
+		} catch (error) {
+			// Best-effort: no propagar — el registro de telemetría no debe romper el front
+			console.warn("No se pudo reportar el intento de checkout fallido", error);
+		}
+	}
+
 	// getPaymentHistory method has been removed - payment history is now fetched during login
 	// and stored in Redux auth state. Use the fetchPaymentHistory action from auth reducer instead.
 
@@ -920,7 +1256,9 @@ class ApiService {
 		} catch (error: any) {
 			return {
 				success: false,
+				code: error.response?.data?.code,
 				message: error.response?.data?.message || "Error al cambiar el plan",
+				teamCheck: error.response?.data?.teamCheck,
 			};
 		}
 	}
@@ -937,7 +1275,9 @@ class ApiService {
 		} catch (error: any) {
 			return {
 				success: false,
+				code: error.response?.data?.code,
 				message: error.response?.data?.message || "Error al programar el cambio de plan",
+				teamCheck: error.response?.data?.teamCheck,
 			};
 		}
 	}
@@ -1023,7 +1363,10 @@ class ApiService {
 	 * Verifica si el usuario ha alcanzado el límite de un recurso específico
 	 * @param resourceType - Tipo de recurso a verificar (folders, calculators, contacts, etc.)
 	 */
-	static async checkResourceLimit(resourceType: string): Promise<
+	static async checkResourceLimit(
+		resourceType: string,
+		options?: { headers?: Record<string, string> },
+	): Promise<
 		ApiResponse<{
 			hasReachedLimit: boolean;
 			resourceType: string;
@@ -1037,6 +1380,7 @@ class ApiService {
 		try {
 			const response = await axios.get<ApiResponse>(`${API_BASE_URL}/api/plan-configs/check-resource/${resourceType}`, {
 				withCredentials: true,
+				headers: options?.headers,
 			});
 			return response.data;
 		} catch (error) {
@@ -1104,16 +1448,19 @@ class ApiService {
 	// ================================
 
 	/**
-	 * Obtiene el estado de onboarding del usuario
+	 * Obtiene el estado de onboarding del usuario.
+	 * @param options.peek - true: refresca estado y señales sin contar una sesión de onboarding.
 	 */
-	static async getOnboardingStatus(): Promise<ApiResponse<{ onboarding: OnboardingStatus; activeFoldersCount: number }>> {
+	static async getOnboardingStatus(
+		options: { peek?: boolean } = {},
+	): Promise<ApiResponse<{ onboarding: OnboardingStatus; activeFoldersCount: number; signals?: OnboardingSignals }>> {
 		try {
-			const response = await axios.get<ApiResponse<{ onboarding: OnboardingStatus; activeFoldersCount: number }>>(
-				`${API_BASE_URL}/api/auth/onboarding`,
-				{
-					withCredentials: true,
-				},
-			);
+			const response = await axios.get<
+				ApiResponse<{ onboarding: OnboardingStatus; activeFoldersCount: number; signals?: OnboardingSignals }>
+			>(`${API_BASE_URL}/api/auth/onboarding`, {
+				withCredentials: true,
+				params: options.peek ? { peek: "true" } : undefined,
+			});
 			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);
@@ -1145,6 +1492,55 @@ class ApiService {
 	static async dismissOnboarding(): Promise<ApiResponse<{ onboarding: OnboardingStatus }>> {
 		return this.updateOnboarding({ dismissed: true });
 	}
+
+	/**
+	 * Registra un evento del flujo de onboarding en la colección OnboardingEvent.
+	 * Complementa a los eventos GTM/GA4 (que viven en analytics) con persistencia
+	 * en Mongo para poder cruzarlos con el resto del estado del user en la
+	 * admin UI (/admin/users/onboarding tab Eventos).
+	 *
+	 * Eventos válidos (ver authController.trackOnboardingEvent):
+	 *   - onboarding_shown
+	 *   - onboarding_step_clicked
+	 *   - onboarding_step_completed
+	 *   - onboarding_judicial_logo_clicked
+	 *   - onboarding_example_folder_used
+	 *   - onboarding_dismissed
+	 *   - onboarding_completed
+	 *   - (legacy) onboarding_cta_clicked, folder_created_from_onboarding
+	 *
+	 * El metadata es libre — se guarda tal cual. Convenciones que usa el
+	 * OnboardingChecklist: `{ step_id, jurisdiction, mode, completed_count }`.
+	 */
+	static async trackOnboardingEvent(event: string, metadata?: Record<string, unknown>, sessionsCount?: number): Promise<void> {
+		try {
+			await axios.post(
+				`${API_BASE_URL}/api/auth/onboarding/track`,
+				{ event, metadata: metadata || {}, sessionsCount: sessionsCount || 1 },
+				{ withCredentials: true },
+			);
+		} catch (error) {
+			// Tracking no debe romper el flow del user — log y seguir.
+			console.warn("trackOnboardingEvent failed", event, error);
+		}
+	}
+}
+
+// Señales del backend para los steps del OnboardingChecklist (conteos en vivo)
+export interface OnboardingSignals {
+	contacts: number; // contactos no archivados
+	deadlines: number; // eventos de tipo vencimiento o audiencia
+	linkedFolders: number; // carpetas vinculadas a una causa de un portal
+	/** Jurisdicción tocada en la landing al registrarse (key del catálogo) o null. */
+	preferredJurisdiction?: string | null;
+	/** Primera carpeta que ya trajo movimientos del portal (null si ninguna). */
+	firstSyncedFolder?: {
+		folderId: string;
+		folderName: string;
+		movementsCount: number;
+		lastMovementDate: string | null;
+		syncedAt: string | null;
+	} | null;
 }
 
 // Interfaz para el estado de onboarding

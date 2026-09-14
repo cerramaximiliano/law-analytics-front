@@ -21,10 +21,10 @@ const VITE_BASE = "http://localhost:5000";
 const VITE_PROXY = "http://localhost:3000";
 
 // Endpoints usados por cada página
-const STATS_API    = `${VITE_BASE}/api/stats/**`;
+const STATS_API = `${VITE_BASE}/api/stats/**`;
 const CALENDAR_API = `${VITE_PROXY}/api/calendar/**`;
-const POSTAL_API   = `${VITE_PROXY}/api/postal-documents/**`;
-const DOCS_API     = `${VITE_PROXY}/api/rich-text-documents/**`;
+const POSTAL_API = `${VITE_PROXY}/api/postal-documents/**`;
+const DOCS_API = `${VITE_PROXY}/api/rich-text-documents/**`;
 const TEMPLATES_API = `${VITE_PROXY}/api/rich-text-templates/**`;
 
 const ERR_500 = {

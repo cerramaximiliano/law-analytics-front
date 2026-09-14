@@ -3,13 +3,9 @@ import { useNavigate } from "react-router-dom";
 import {
 	Box,
 	Button,
-	Chip,
 	CircularProgress,
 	DialogActions,
-	DialogContent,
-	DialogContentText,
 	DialogTitle,
-	Divider,
 	IconButton,
 	Menu,
 	MenuItem,
@@ -23,7 +19,7 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { useTheme, alpha } from "@mui/material/styles";
 import { ResponsiveDialog } from "components/@extended/ResponsiveDialog";
 import { Add, ArrowDown2, DocumentDownload, DocumentText, Eye, Printer, Trash } from "iconsax-react";
 import { useDispatch, useSelector } from "store";
@@ -37,8 +33,7 @@ import CreatePostalDocumentModal from "sections/apps/postal-documents/CreatePost
 import PickModelDialog from "sections/apps/rich-text-documents/PickModelDialog";
 import type { PostalDocumentType } from "types/postal-document";
 import type { RichTextDocument } from "types/rich-text-document";
-
-// ── Types ──────────────────────────────────────────────────────────────────────
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 type DocKind = "postal" | "richtext";
 
@@ -51,8 +46,6 @@ interface DocRow {
 	createdAt?: string;
 	documentUrl?: string;
 }
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
 
 const toRow = (doc: PostalDocumentType | RichTextDocument, kind: DocKind): DocRow => ({
 	_id: doc._id,
@@ -80,22 +73,18 @@ const KIND_LABEL: Record<DocKind, string> = {
 	richtext: "Mis Modelos",
 };
 
-const KIND_COLOR: Record<DocKind, "primary" | "secondary"> = {
-	postal: "secondary",
-	richtext: "primary",
-};
-
-// ── Component ──────────────────────────────────────────────────────────────────
-
 interface Props {
 	folderId: string;
 	folderName?: string;
 }
 
 const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
+	void folderName;
 	const navigate = useNavigate();
 	const dispatch = useDispatch();
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const errorColor = theme.palette.error.main;
 
 	const postalDocs: PostalDocumentType[] = useSelector((state: any) => state.postalDocumentsReducer?.folderDocuments ?? []);
 	const rtDocs: RichTextDocument[] = useSelector((state: any) => state.richTextDocumentsReducer?.folderDocuments ?? []);
@@ -115,7 +104,6 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 		limit: number;
 	} | null>(null);
 
-	// Load on mount / folderId change
 	useEffect(() => {
 		if (!folderId) return;
 		dispatch(fetchPostalDocumentsByFolder(folderId) as any);
@@ -216,26 +204,132 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 		dispatch(fetchRichTextDocumentsByFolder(folderId) as any);
 	};
 
-	// Dropdown menu compartido (se reutiliza en header y empty state)
+	const brandIconButtonSx = (accent: string = BRAND_BLUE) => ({
+		width: 28,
+		height: 28,
+		borderRadius: 0.75,
+		border: `1px solid ${alpha(accent, isDark ? 0.22 : 0.14)}`,
+		bgcolor: alpha(accent, isDark ? 0.08 : 0.04),
+		color: accent,
+		transition: "all 180ms ease",
+		"&:hover": {
+			bgcolor: alpha(accent, isDark ? 0.18 : 0.1),
+			borderColor: alpha(accent, isDark ? 0.38 : 0.28),
+		},
+		"&:disabled": {
+			bgcolor: alpha(theme.palette.text.disabled, 0.06),
+			color: theme.palette.text.disabled,
+		},
+	});
+
+	const getStatusAccent = (status: string) => {
+		switch (status) {
+			case "final":
+			case "generated":
+			case "sent":
+				return LIVE_GREEN;
+			case "draft":
+				return STALE_AMBER;
+			case "archived":
+				return theme.palette.text.disabled as string;
+			default:
+				return theme.palette.text.secondary as string;
+		}
+	};
+
+	const KindPill = ({ kind }: { kind: DocKind }) => (
+		<Box
+			sx={{
+				display: "inline-flex",
+				alignItems: "center",
+				gap: 0.5,
+				px: 0.75,
+				py: 0.125,
+				borderRadius: 0.625,
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+			}}
+		>
+			<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+			<Typography
+				sx={{
+					fontSize: "0.62rem",
+					fontWeight: 600,
+					color: BRAND_BLUE,
+					letterSpacing: "0.04em",
+					textTransform: "uppercase",
+					lineHeight: 1,
+				}}
+			>
+				{KIND_LABEL[kind]}
+			</Typography>
+		</Box>
+	);
+
+	const StatusPill = ({ status }: { status: string }) => {
+		const accent = getStatusAccent(status);
+		return (
+			<Box
+				sx={{
+					display: "inline-flex",
+					alignItems: "center",
+					gap: 0.5,
+					px: 0.75,
+					py: 0.125,
+					borderRadius: 0.625,
+					bgcolor: alpha(accent, isDark ? 0.16 : 0.1),
+					border: `1px solid ${alpha(accent, isDark ? 0.32 : 0.22)}`,
+				}}
+			>
+				<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: accent }} />
+				<Typography
+					sx={{
+						fontSize: "0.62rem",
+						fontWeight: 600,
+						color: accent,
+						letterSpacing: "0.04em",
+						textTransform: "uppercase",
+						lineHeight: 1,
+					}}
+				>
+					{STATUS_LABEL[status] ?? status}
+				</Typography>
+			</Box>
+		);
+	};
+
+	// Dropdown menu
 	const newDocMenu = (
-		<Menu anchorEl={newDocAnchor} open={Boolean(newDocAnchor)} onClose={() => setNewDocAnchor(null)}>
-			<MenuItem onClick={handleNewPostal} sx={{ py: 1.5 }}>
+		<Menu
+			anchorEl={newDocAnchor}
+			open={Boolean(newDocAnchor)}
+			onClose={() => setNewDocAnchor(null)}
+			PaperProps={{
+				sx: {
+					borderRadius: 1.25,
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+					boxShadow: `0 8px 24px ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)}`,
+					mt: 0.5,
+				},
+			}}
+		>
+			<MenuItem onClick={handleNewPostal} sx={{ py: 1.25, px: 1.75 }}>
 				<Stack spacing={0.25}>
-					<Typography variant="body2" fontWeight={500}>
-						Modelo del Sistema
+					<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+						Modelo del sistema
 					</Typography>
-					<Typography variant="caption" color="text.secondary">
+					<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 						Telegramas, cartas documento y más
 					</Typography>
 				</Stack>
 			</MenuItem>
-			<Divider />
-			<MenuItem onClick={handleNewRichText} sx={{ py: 1.5 }}>
+			<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1), mx: 1.5 }} />
+			<MenuItem onClick={handleNewRichText} sx={{ py: 1.25, px: 1.75 }}>
 				<Stack spacing={0.25}>
-					<Typography variant="body2" fontWeight={500}>
-						Mis Modelos
+					<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+						Mis modelos
 					</Typography>
-					<Typography variant="caption" color="text.secondary">
+					<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 						Escritos personalizados con editor de texto
 					</Typography>
 				</Stack>
@@ -243,54 +337,138 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 		</Menu>
 	);
 
+	const ctaButtonSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		borderRadius: 1.25,
+		px: 1.75,
+		py: 0.875,
+		boxShadow: "none",
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+	};
+
+	const ghostButtonSx = {
+		textTransform: "none" as const,
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: BRAND_BLUE,
+		borderRadius: 1.25,
+		px: 1.5,
+		py: 0.625,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+		bgcolor: "transparent",
+		"&:hover": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+		},
+	};
+
 	return (
 		<Box>
-			{/* Table */}
 			{isLoading ? (
 				<Stack alignItems="center" justifyContent="center" py={6}>
-					<CircularProgress size={28} />
+					<CircularProgress size={28} sx={{ color: BRAND_BLUE }} />
 				</Stack>
 			) : rows.length === 0 ? (
-				<Stack alignItems="center" justifyContent="center" spacing={2} py={8}>
-					<DocumentText size={44} variant="Linear" color="text.secondary" />
-					<Stack alignItems="center" spacing={0.5}>
-						<Typography variant="body1" fontWeight={500} color="text.secondary">
-							Sin documentos vinculados
-						</Typography>
-						<Typography variant="body2" color="text.disabled">
-							Creá un nuevo documento o vinculá uno existente desde Documentos › Escritos
-						</Typography>
-					</Stack>
+				<Box
+					sx={{
+						p: 4,
+						textAlign: "center",
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+						border: `1px dashed ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.2)}`,
+						borderRadius: 1.5,
+					}}
+				>
+					<Box
+						sx={{
+							width: 56,
+							height: 56,
+							borderRadius: 1.5,
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+							color: BRAND_BLUE,
+							mb: 1.5,
+						}}
+					>
+						<DocumentText size={28} variant="Bulk" />
+					</Box>
+					<Typography sx={{ fontSize: "1rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.015em" }}>
+						Sin documentos vinculados
+					</Typography>
+					<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", letterSpacing: "-0.005em", mt: 0.5, maxWidth: 380, mx: "auto" }}>
+						Creá un nuevo documento o vinculá uno existente desde Documentos › Escritos.
+					</Typography>
 					<Button
 						variant="contained"
 						size="small"
-						startIcon={<Add size={16} />}
-						endIcon={<ArrowDown2 size={14} />}
+						startIcon={<Add size={16} variant="Bulk" />}
+						endIcon={<ArrowDown2 size={12} variant="Bulk" />}
 						onClick={(e) => setNewDocAnchor(e.currentTarget)}
+						sx={{ ...ctaButtonSx, mt: 2 }}
 					>
 						Nuevo documento
 					</Button>
 					{newDocMenu}
-				</Stack>
+				</Box>
 			) : (
 				<>
-					{/* Header con botón cuando hay documentos */}
-					<Stack direction="row" justifyContent="flex-end" mb={1.5}>
+					{/* Header */}
+					<Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
+						<Stack direction="row" spacing={0.5} alignItems="center">
+							<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+							<Typography
+								sx={{
+									fontSize: "0.6rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+								}}
+							>
+								Documentos vinculados · {rows.length}
+							</Typography>
+						</Stack>
 						<Button
-							variant="outlined"
 							size="small"
-							startIcon={<Add size={16} />}
-							endIcon={<ArrowDown2 size={14} />}
+							startIcon={<Add size={14} variant="Bulk" />}
+							endIcon={<ArrowDown2 size={12} variant="Bulk" />}
 							onClick={(e) => setNewDocAnchor(e.currentTarget)}
+							sx={ghostButtonSx}
 						>
 							Nuevo documento
 						</Button>
 						{newDocMenu}
 					</Stack>
-					<TableContainer>
+
+					{/* Table */}
+					<TableContainer
+						sx={{
+							borderRadius: 1.5,
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+						}}
+					>
 						<Table size="small">
 							<TableHead>
-								<TableRow>
+								<TableRow
+									sx={{
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+										"& th": {
+											borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+											fontSize: "0.6rem",
+											fontWeight: 600,
+											letterSpacing: "0.08em",
+											textTransform: "uppercase",
+											color: "text.secondary",
+											py: 1,
+										},
+									}}
+								>
 									<TableCell>Tipo</TableCell>
 									<TableCell>Título</TableCell>
 									<TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>Categoría</TableCell>
@@ -301,52 +479,84 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 							</TableHead>
 							<TableBody>
 								{rows.map((row) => (
-									<TableRow key={row._id} hover>
+									<TableRow
+										key={row._id}
+										sx={{
+											"& td": {
+												borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.12 : 0.08)}`,
+												py: 1.25,
+											},
+											"&:last-child td": { borderBottom: "none" },
+											transition: "background 180ms ease",
+											"&:hover": {
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+											},
+										}}
+									>
 										<TableCell>
-											<Chip
-												label={KIND_LABEL[row.kind]}
-												size="small"
-												color={KIND_COLOR[row.kind]}
-												variant="outlined"
-												sx={{ fontSize: "0.65rem", height: 20 }}
-											/>
+											<KindPill kind={row.kind} />
 										</TableCell>
 										<TableCell>
-											<Typography variant="body2" noWrap sx={{ maxWidth: 220 }}>
+											<Typography
+												sx={{
+													fontSize: "0.82rem",
+													fontWeight: 500,
+													color: "text.primary",
+													letterSpacing: "-0.005em",
+													maxWidth: 220,
+													overflow: "hidden",
+													textOverflow: "ellipsis",
+													whiteSpace: "nowrap",
+												}}
+											>
 												{row.title}
 											</Typography>
 										</TableCell>
 										<TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
-											<Typography variant="caption" color="text.secondary" noWrap>
+											<Typography
+												sx={{
+													fontSize: "0.78rem",
+													color: "text.secondary",
+													letterSpacing: "-0.005em",
+													overflow: "hidden",
+													textOverflow: "ellipsis",
+													whiteSpace: "nowrap",
+												}}
+											>
 												{row.category}
 											</Typography>
 										</TableCell>
 										<TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
-											<Typography variant="caption">{STATUS_LABEL[row.status] ?? row.status}</Typography>
+											<StatusPill status={row.status} />
 										</TableCell>
 										<TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
-											<Typography variant="caption" color="text.secondary">
+											<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", fontVariantNumeric: "tabular-nums" }}>
 												{row.createdAt
 													? new Date(row.createdAt).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" })
 													: "—"}
 											</Typography>
 										</TableCell>
 										<TableCell align="right">
-											<Stack direction="row" spacing={0.5} justifyContent="flex-end">
+											<Stack direction="row" spacing={0.625} justifyContent="flex-end">
 												<Tooltip title={row.kind === "richtext" ? "Ver / Editar" : "Ver en Escritos"}>
-													<IconButton size="small" onClick={() => handleView(row)}>
-														<Eye size={16} />
+													<IconButton size="small" onClick={() => handleView(row)} sx={brandIconButtonSx()}>
+														<Eye size={14} variant="Bulk" />
 													</IconButton>
 												</Tooltip>
 												<Tooltip title={row.documentUrl ? "Descargar PDF" : "Imprimir"}>
 													<span>
-														<IconButton size="small" disabled={printLoading === row._id} onClick={() => handleDownloadOrPrint(row)}>
+														<IconButton
+															size="small"
+															disabled={printLoading === row._id}
+															onClick={() => handleDownloadOrPrint(row)}
+															sx={brandIconButtonSx()}
+														>
 															{printLoading === row._id ? (
-																<CircularProgress size={14} />
+																<CircularProgress size={12} sx={{ color: BRAND_BLUE }} />
 															) : row.documentUrl ? (
-																<DocumentDownload size={16} />
+																<DocumentDownload size={14} variant="Bulk" />
 															) : (
-																<Printer size={16} />
+																<Printer size={14} variant="Bulk" />
 															)}
 														</IconButton>
 													</span>
@@ -354,10 +564,10 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 												<Tooltip title="Eliminar">
 													<IconButton
 														size="small"
-														color="error"
 														onClick={() => setDeleteTarget({ _id: row._id, kind: row.kind, title: row.title })}
+														sx={brandIconButtonSx(errorColor)}
 													>
-														<Trash size={16} />
+														<Trash size={14} variant="Bulk" />
 													</IconButton>
 												</Tooltip>
 											</Stack>
@@ -370,7 +580,6 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 				</>
 			)}
 
-			{/* Modals */}
 			<PickModelDialog open={openPickModel} onClose={() => setOpenPickModel(false)} folderId={folderId} />
 
 			<CreatePostalDocumentModal
@@ -390,36 +599,125 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 				limitInfo={limitErrorData ?? undefined}
 			/>
 
+			{/* Delete dialog — brand sober destructive */}
 			<ResponsiveDialog
 				open={!!deleteTarget}
 				onClose={() => setDeleteTarget(null)}
 				maxWidth="xs"
 				fullWidth
-				PaperProps={{ elevation: 5, sx: { borderRadius: 2, overflow: "hidden" } }}
+				PaperProps={{
+					sx: {
+						borderRadius: 2,
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+						boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+						overflow: "hidden",
+					},
+				}}
 			>
-				<DialogTitle sx={{ bgcolor: theme.palette.error.lighter, p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
-					<Stack spacing={1}>
-						<Stack direction="row" alignItems="center" spacing={1}>
-							<Trash size={24} color={theme.palette.error.main} variant="Bold" />
-							<Typography variant="h5" color="error" sx={{ fontWeight: 600 }}>
-								Eliminar documento
-							</Typography>
+				<DialogTitle sx={{ p: 0 }}>
+					<Box sx={{ p: { xs: 3, sm: 3.5 }, position: "relative" }}>
+						<Box
+							sx={{
+								position: "absolute",
+								top: -80,
+								left: "50%",
+								transform: "translateX(-50%)",
+								width: 280,
+								height: 280,
+								borderRadius: "50%",
+								background: `radial-gradient(circle, ${alpha(errorColor, isDark ? 0.18 : 0.1)} 0%, transparent 70%)`,
+								pointerEvents: "none",
+							}}
+						/>
+						<Stack alignItems="center" spacing={2.25} sx={{ position: "relative" }}>
+							<Box
+								sx={{
+									width: 60,
+									height: 60,
+									borderRadius: 1.5,
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									bgcolor: alpha(errorColor, isDark ? 0.16 : 0.08),
+									border: `1px solid ${alpha(errorColor, isDark ? 0.32 : 0.2)}`,
+									color: errorColor,
+								}}
+							>
+								<Trash size={26} variant="Bulk" />
+							</Box>
+							<Stack spacing={1} alignItems="center">
+								<Typography
+									sx={{
+										fontSize: "1.05rem",
+										fontWeight: 600,
+										letterSpacing: "-0.015em",
+										color: "text.primary",
+										textAlign: "center",
+										textWrap: "balance" as any,
+									}}
+								>
+									¿Eliminar este documento?
+								</Typography>
+								<Typography
+									sx={{
+										fontSize: "0.85rem",
+										color: "text.secondary",
+										letterSpacing: "-0.005em",
+										textAlign: "center",
+										textWrap: "pretty" as any,
+									}}
+								>
+									Vas a eliminar{" "}
+									<Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
+										"{deleteTarget?.title}"
+									</Box>{" "}
+									de forma permanente. Esta acción no se puede deshacer.
+								</Typography>
+							</Stack>
 						</Stack>
-					</Stack>
+					</Box>
 				</DialogTitle>
-				<Divider />
-				<DialogContent sx={{ p: 3 }}>
-					<DialogContentText>
-						¿Eliminás el documento <strong>{deleteTarget?.title}</strong>? Esta acción no se puede deshacer.
-					</DialogContentText>
-				</DialogContent>
-				<Divider />
-				<DialogActions sx={{ px: 3, py: 2 }}>
-					<Button onClick={() => setDeleteTarget(null)} disabled={deleteLoading}>
+				<DialogActions sx={{ px: 3, pb: 3, pt: 0 }}>
+					<Button
+						fullWidth
+						onClick={() => setDeleteTarget(null)}
+						disabled={deleteLoading}
+						sx={{
+							textTransform: "none",
+							fontWeight: 600,
+							letterSpacing: "-0.005em",
+							color: "text.secondary",
+							borderRadius: 1.25,
+							py: 1,
+							border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+							"&:hover": {
+								color: BRAND_BLUE,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+								borderColor: alpha(BRAND_BLUE, 0.28),
+							},
+						}}
+					>
 						Cancelar
 					</Button>
-					<Button color="error" variant="contained" onClick={handleDelete} disabled={deleteLoading}>
-						{deleteLoading ? <CircularProgress size={16} color="inherit" /> : "Eliminar"}
+					<Button
+						fullWidth
+						variant="contained"
+						onClick={handleDelete}
+						disabled={deleteLoading}
+						startIcon={deleteLoading ? <CircularProgress size={14} sx={{ color: "#fff" }} /> : null}
+						sx={{
+							textTransform: "none",
+							fontWeight: 600,
+							letterSpacing: "-0.005em",
+							bgcolor: errorColor,
+							color: "#fff",
+							borderRadius: 1.25,
+							py: 1,
+							boxShadow: "none",
+							"&:hover": { bgcolor: alpha(errorColor, 0.88), boxShadow: "none" },
+						}}
+					>
+						{deleteLoading ? "Eliminando…" : "Eliminar"}
 					</Button>
 				</DialogActions>
 			</ResponsiveDialog>

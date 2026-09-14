@@ -32,6 +32,7 @@ const MEMBER_LEFT = "MEMBER_LEFT";
 const SET_TEAMS_ERROR = "SET_TEAMS_ERROR";
 const RESET_TEAMS_STATE = "RESET_TEAMS_STATE";
 const SET_CURRENT_USER_ROLE = "SET_CURRENT_USER_ROLE";
+const SET_GROUPS_SERVICE_STATUS = "SET_GROUPS_SERVICE_STATUS";
 
 // Initial state
 const initialTeamsState: TeamState = {
@@ -41,6 +42,8 @@ const initialTeamsState: TeamState = {
 	isLoading: false,
 	error: null,
 	isInitialized: false,
+	serviceAvailable: true,
+	serviceMessage: null,
 };
 
 // Reducer
@@ -52,7 +55,9 @@ const teams = (state = initialTeamsState, action: any): TeamState => {
 		case GET_USER_TEAMS:
 			return {
 				...state,
-				teams: action.payload,
+				teams: action.payload.teams,
+				serviceAvailable: action.payload.serviceAvailable,
+				serviceMessage: action.payload.serviceMessage,
 				isLoading: false,
 				isInitialized: true,
 			};
@@ -213,6 +218,13 @@ const teams = (state = initialTeamsState, action: any): TeamState => {
 				isLoading: false,
 			};
 
+		case SET_GROUPS_SERVICE_STATUS:
+			return {
+				...state,
+				serviceAvailable: action.payload.serviceAvailable,
+				serviceMessage: action.payload.serviceMessage,
+			};
+
 		case RESET_TEAMS_STATE:
 			return initialTeamsState;
 
@@ -234,7 +246,11 @@ export const getUserTeams = () => async (dispatch: Dispatch) => {
 		if (response.data.success) {
 			dispatch({
 				type: GET_USER_TEAMS,
-				payload: response.data.groups,
+				payload: {
+					teams: response.data.groups,
+					serviceAvailable: response.data.serviceAvailable ?? true,
+					serviceMessage: response.data.serviceMessage ?? null,
+				},
 			});
 			return { success: true, teams: response.data.groups };
 		}
@@ -295,6 +311,22 @@ export const createTeam = (data: CreateTeamRequest) => async (dispatch: Dispatch
 			message: response.data.message || "Error al crear equipo",
 		};
 	} catch (error) {
+		// El backend devuelve 503 con code "GROUPS_SERVICE_DISABLED" cuando
+		// el admin apagó la creación de equipos vía IntegrationsConfig.
+		if (axios.isAxiosError(error) && error.response?.data?.code === "GROUPS_SERVICE_DISABLED") {
+			dispatch({
+				type: SET_GROUPS_SERVICE_STATUS,
+				payload: {
+					serviceAvailable: false,
+					serviceMessage: error.response.data.serviceMessage || error.response.data.message || null,
+				},
+			});
+			return {
+				success: false,
+				code: "GROUPS_SERVICE_DISABLED",
+				message: error.response.data.message || "La creación de equipos está deshabilitada temporalmente.",
+			};
+		}
 		const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || "Error al crear equipo" : "Error desconocido";
 		dispatch({
 			type: SET_TEAMS_ERROR,

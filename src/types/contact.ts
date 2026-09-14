@@ -75,6 +75,7 @@ export type ContactState = {
 	archivedPagination: ContactPaginationInfo;
 	selectedContacts: Contact[];
 	isLoader: boolean;
+	isArchivedLoader: boolean;
 	error: string | null;
 	isInitialized: boolean;
 	lastFetchedUserId?: string;

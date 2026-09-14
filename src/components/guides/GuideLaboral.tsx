@@ -1,50 +1,14 @@
 import React from "react";
-import { useState } from "react";
 
 // material-ui
-import {
-	Typography,
-	Button,
-	Box,
-	Alert,
-	AlertTitle,
-	Stack,
-	Dialog,
-	DialogTitle,
-	DialogContent,
-	DialogActions,
-	Step,
-	Stepper,
-	StepLabel,
-	Paper,
-	Grid,
-	styled,
-	alpha,
-} from "@mui/material";
+import { Typography, Box, Alert, AlertTitle, Stack, Paper, Grid, styled, alpha } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
 // project imports
-import { PopupTransition } from "components/@extended/Transitions";
-import { Calculator, ArrowRight2, Next, Keyboard, ArrowLeft, ArrowRight, Eye, Trash, DocumentText, SmsStar, Link21 } from "iconsax-react";
+import { Calculator, ArrowRight2, Keyboard, Eye, Trash, DocumentText, SmsStar, Link21 } from "iconsax-react";
+import GuideShell from "./GuideShell";
 
 // ==============================|| GUÍA LABORAL - COMPONENTES INTERNOS ||============================== //
-
-// Componente de paso de la guía
-interface GuideStepProps {
-	title: string;
-	content: React.ReactNode;
-}
-
-const GuideStep: React.FC<GuideStepProps> = ({ title, content }) => {
-	return (
-		<Box sx={{ p: 3 }}>
-			<Typography variant="h4" gutterBottom color="primary">
-				{title}
-			</Typography>
-			<Box sx={{ mb: 3 }}>{content}</Box>
-		</Box>
-	);
-};
 
 // Estilo de papel personalizado
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -370,107 +334,25 @@ interface GuideLaboralProps {
 }
 
 const GuideLaboral: React.FC<GuideLaboralProps> = ({ open, onClose }) => {
-	const [activeStep, setActiveStep] = useState(0);
-	const theme = useTheme();
-
-	const handleNext = () => {
-		setActiveStep((prevStep) => prevStep + 1);
-	};
-
-	const handleBack = () => {
-		setActiveStep((prevStep) => prevStep - 1);
-	};
-
-	const handleClose = () => {
-		onClose();
-		// Reset a paso 0 al cerrar
-		setTimeout(() => setActiveStep(0), 300);
-	};
-
 	const steps = [
-		{
-			title: "Bienvenido a la Calculadora Laboral",
-			content: <IntroductionContent />,
-		},
-		{
-			title: "Acceso a la Calculadora Laboral",
-			content: <AccessCalculatorContent />,
-		},
-		{
-			title: "Completando el Formulario de Despido",
-			content: <FormStepsContent />,
-		},
-		{
-			title: "Fórmulas de Cálculo Aplicadas",
-			content: <FormulasContent />,
-		},
-		{
-			title: "Gestión de Cálculos Guardados",
-			content: <ManageCalculationsContent />,
-		},
-		{
-			title: "Consejos Prácticos",
-			content: <TipsContent />,
-		},
+		{ title: "Bienvenido a la Calculadora Laboral", content: <IntroductionContent /> },
+		{ title: "Acceso a la Calculadora Laboral", content: <AccessCalculatorContent /> },
+		{ title: "Completando el Formulario de Despido", content: <FormStepsContent /> },
+		{ title: "Fórmulas de Cálculo Aplicadas", content: <FormulasContent /> },
+		{ title: "Gestión de Cálculos Guardados", content: <ManageCalculationsContent /> },
+		{ title: "Consejos Prácticos", content: <TipsContent /> },
 	];
 
 	return (
-		<Dialog
+		<GuideShell
 			open={open}
-			onClose={handleClose}
-			maxWidth="md"
-			fullWidth
-			TransitionComponent={PopupTransition}
-			sx={{ "& .MuiDialog-paper": { borderRadius: "12px" } }}
-		>
-			<DialogTitle
-				sx={{
-					borderBottom: `1px solid ${theme.palette.divider}`,
-					p: 2,
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-				}}
-			>
-				<Box display="flex" alignItems="center">
-					<Calculator variant="Bulk" size={28} style={{ marginRight: "12px", color: theme.palette.primary.main }} />
-					<Typography variant="h3">Guía de Calculadora Laboral</Typography>
-				</Box>
-			</DialogTitle>
-
-			<DialogContent sx={{ p: 0 }}>
-				<Stepper activeStep={activeStep} alternativeLabel sx={{ p: 3, pb: 1, pt: 3 }}>
-					{steps.map((step, index) => (
-						<Step key={index}>
-							<StepLabel>{step.title}</StepLabel>
-						</Step>
-					))}
-				</Stepper>
-
-				<Box sx={{ p: 0, height: 400, overflowY: "auto" }}>
-					{steps[activeStep] && <GuideStep title={steps[activeStep].title} content={steps[activeStep].content} />}
-				</Box>
-			</DialogContent>
-
-			<DialogActions sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-				<Button onClick={handleBack} disabled={activeStep === 0} startIcon={<ArrowLeft />}>
-					Anterior
-				</Button>
-				<Box sx={{ flex: "1 1 auto" }} />
-				<Button color="error" onClick={handleClose}>
-					Cerrar
-				</Button>
-				{activeStep === steps.length - 1 ? (
-					<Button variant="contained" color="primary" onClick={handleClose} endIcon={<Next />}>
-						Finalizar
-					</Button>
-				) : (
-					<Button variant="contained" color="primary" onClick={handleNext} endIcon={<ArrowRight />}>
-						Siguiente
-					</Button>
-				)}
-			</DialogActions>
-		</Dialog>
+			onClose={onClose}
+			icon={<Calculator size={18} variant="Bulk" />}
+			eyebrow="Guía"
+			title="Guía de Calculadora Laboral"
+			subtitle="Indemnizaciones, despidos y liquidaciones"
+			steps={steps}
+		/>
 	);
 };
 

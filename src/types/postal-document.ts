@@ -2,7 +2,9 @@ export interface PdfTemplateField {
 	pdfFieldName?: string;
 	name: string;
 	label: string;
-	type: "text" | "multiline" | "date" | "radio" | "checkbox" | "flow-section";
+	type: "text" | "multiline" | "date" | "radio" | "checkbox" | "select" | "flow-section" | "ai-prompt";
+	docxField?: string;
+	aiPrompt?: string;
 	group: string;
 	required: boolean;
 	placeholder?: string;
@@ -29,6 +31,8 @@ export interface PdfTemplate {
 	slug: string;
 	description: string;
 	category: string;
+	// Etiquetas de clasificación data-driven (jurisdicción, fuero, ley) que la card muestra como pills.
+	tags?: string[];
 	s3Key: string;
 	fields: PdfTemplateField[];
 	isActive: boolean;
@@ -36,8 +40,11 @@ export interface PdfTemplate {
 	source?: "system" | "user";
 	modelType?: "static" | "dynamic";
 	supportsTracking?: boolean;
-	fillMethod?: "acroform" | "overlay";
+	fillMethod?: "acroform" | "overlay" | "docx-merge";
 	userId?: string;
+	visibility?: "all" | "development" | "production" | "none";
+	generates?: Array<{ slug: string; name: string; kind: string; s3Key?: string; docxPlaceholders?: string[] }>;
+	docxPlaceholders?: string[];
 	fillConfig: { flatten: boolean };
 	previewUrl?: string;
 	createdAt?: string;
@@ -61,6 +68,8 @@ export interface PostalDocumentType {
 	linkedTrackingId?: string | null;
 	linkedFolderId?: string | null;
 	linkedContactId?: string | null;
+	docKind?: "formulario" | "documento";
+	linkedDocumentId?: string | null;
 	tags?: string[];
 	sentAt?: string | null;
 	sentVia?: string | null;

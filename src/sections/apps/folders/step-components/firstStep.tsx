@@ -1,93 +1,143 @@
 import React from "react";
-import { Grid, Stack, InputLabel, DialogContent } from "@mui/material";
+import { Grid, Stack, InputLabel, DialogContent, Box, Typography } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 import data from "data/folder.json";
 import AsynchronousAutocomplete from "components/UI/AsynchronousAutocomplete";
 import InputField from "components/UI/InputField";
 import SelectField from "components/UI/SelectField";
-
-const customInputStyles = {
-	"& .MuiInputBase-root": {
-		height: 39.91,
-	},
-	"& .MuiInputBase-input": {
-		fontSize: 12,
-	},
-	"& input::placeholder": {
-		color: "#000000",
-		opacity: 0.6,
-	},
-};
-const customTextareaStyles = {
-	"& .MuiInputBase-input": {
-		fontSize: 12,
-	},
-	"& textarea::placeholder": {
-		color: "#000000",
-		opacity: 0.6,
-	},
-};
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 const FirstStep = () => {
-	return (
-		<DialogContent sx={{ p: 2.5 }}>
-			<Grid container spacing={3} justifyContent="center">
-				<Grid item xs={12} md={8}>
-					<Grid container spacing={3}>
-						<Grid item xs={12}>
-							<Stack spacing={1.25}>
-								<InputLabel htmlFor="customer-folderName">Carátula</InputLabel>
-								<InputField
-									fullWidth
-									sx={customInputStyles}
-									id="customer-folderName"
-									placeholder="Ingrese una carátula"
-									name="folderName"
-								/>
-							</Stack>
-						</Grid>
-						<Grid item xs={12}>
-							<Stack spacing={1.25}>
-								<InputLabel htmlFor="customer-orderStatus">Parte</InputLabel>
-								<SelectField
-									required={true}
-									label="Seleccione una parte"
-									data={data.parte}
-									name="orderStatus"
-									style={{ maxHeight: "39.91px" }}
-								></SelectField>
-							</Stack>
-						</Grid>
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 
-						<Grid item xs={12}>
-							<Stack spacing={1.25}>
-								<InputLabel htmlFor="status">Estado</InputLabel>
-								<SelectField label="Seleccione un estado" data={data.estado} name="status" style={{ maxHeight: "39.91px" }}></SelectField>
-							</Stack>
-						</Grid>
-						<Grid item xs={12}>
-							<Stack spacing={1.25}>
-								<InputLabel htmlFor="materia">Materia</InputLabel>
-								<AsynchronousAutocomplete placeholder="Seleccione una materia" options={data.materia} name="materia" />
-							</Stack>
-						</Grid>
-						<Grid item xs={12}>
-							<Stack spacing={1.25}>
-								<InputLabel htmlFor="description">Descripción</InputLabel>
-								<InputField
-									fullWidth
-									sx={customTextareaStyles}
-									id="description"
-									multiline
-									rows={2}
-									placeholder="Ingrese una descripción"
-									name="description"
-								/>
-							</Stack>
-						</Grid>
+	// Estilos brand-aware compartidos para inputs/selects de este step.
+	// Border + hover + focus tintados, sin el hardcoded color #000 en placeholder.
+	const fieldSx = {
+		"& .MuiInputBase-root": { height: 39.91 },
+		"& .MuiInputBase-input": { fontSize: 13 },
+		"& input::placeholder, & textarea::placeholder": {
+			color: "text.secondary",
+			opacity: 0.7,
+		},
+		"& .MuiOutlinedInput-notchedOutline": {
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.26 : 0.16),
+			transition: "border-color 0.15s ease",
+		},
+		"& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.46 : 0.32),
+		},
+		"& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+			borderColor: alpha(BRAND_BLUE, 0.55),
+			borderWidth: 1,
+		},
+	};
+
+	const textareaSx = {
+		...fieldSx,
+		"& .MuiInputBase-root": { height: "auto" },
+	};
+
+	const labelSx = {
+		fontSize: "0.78rem",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		color: "text.primary",
+	};
+
+	return (
+		<DialogContent sx={{ p: { xs: 1, sm: 2 } }}>
+			<Stack spacing={2}>
+				{/* Header de sección */}
+				<Stack spacing={0.5}>
+					<Box
+						sx={{
+							display: "inline-flex",
+							alignSelf: "flex-start",
+							alignItems: "center",
+							px: 1,
+							py: 0.3,
+							borderRadius: 0.75,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.2)}`,
+						}}
+					>
+						<Typography
+							sx={{
+								fontSize: "0.62rem",
+								fontWeight: 600,
+								letterSpacing: "0.14em",
+								textTransform: "uppercase",
+								color: BRAND_BLUE,
+								lineHeight: 1,
+							}}
+						>
+							Datos requeridos
+						</Typography>
+					</Box>
+					<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+						Información de la carpeta
+					</Typography>
+					<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>
+						Cargá la carátula y el estado básico. Después podés completar más detalles.
+					</Typography>
+				</Stack>
+
+				<Grid container spacing={2}>
+					<Grid item xs={12}>
+						<Stack spacing={0.75}>
+							<InputLabel htmlFor="customer-folderName" sx={labelSx}>
+								Carátula
+							</InputLabel>
+							<InputField
+								fullWidth
+								sx={fieldSx}
+								id="customer-folderName"
+								placeholder="Ej. González c/ Pérez s/ Daños y Perjuicios"
+								name="folderName"
+							/>
+						</Stack>
+					</Grid>
+
+					<Grid item xs={12} sm={6}>
+						<Stack spacing={0.75}>
+							<InputLabel htmlFor="customer-orderStatus" sx={labelSx}>
+								Parte
+							</InputLabel>
+							<SelectField required label="Seleccioná una parte" data={data.parte} name="orderStatus" style={{ maxHeight: "39.91px" }} />
+						</Stack>
+					</Grid>
+
+					<Grid item xs={12} sm={6}>
+						<Stack spacing={0.75}>
+							<InputLabel htmlFor="status" sx={labelSx}>
+								Estado
+							</InputLabel>
+							<SelectField label="Seleccioná un estado" data={data.estado} name="status" style={{ maxHeight: "39.91px" }} />
+						</Stack>
+					</Grid>
+
+					<Grid item xs={12}>
+						<Stack spacing={0.75}>
+							<InputLabel htmlFor="materia" sx={labelSx}>
+								Materia
+							</InputLabel>
+							<AsynchronousAutocomplete placeholder="Seleccioná una materia" options={data.materia} name="materia" />
+						</Stack>
+					</Grid>
+
+					<Grid item xs={12}>
+						<Stack spacing={0.75}>
+							<InputLabel htmlFor="description" sx={labelSx}>
+								Descripción
+							</InputLabel>
+							<InputField fullWidth sx={textareaSx} id="description" multiline rows={2} placeholder="Notas, contexto o referencias internas." name="description" />
+						</Stack>
 					</Grid>
 				</Grid>
-			</Grid>
+			</Stack>
 		</DialogContent>
 	);
 };
+
 export default FirstStep;

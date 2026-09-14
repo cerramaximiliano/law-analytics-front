@@ -29,10 +29,19 @@ export type JudFolderData = {
 	numberJudFolder: string;
 	statusJudFolder: string;
 	amountJudFolder: string;
-	/* "En letra" | "En despacho"; */
+	/* Texto libre: vocabulario propio de cada portal ("En letra", "En despacho", "Inicio / demanda", "Remitido"…) — ver data/folder.json situacion */
 	descriptionJudFolder: string;
 	courtNumber?: string;
 	secretaryNumber?: string;
+	salaNumber?: string;
+	vocaliaNumber?: string;
+	// Ubicación ACTUAL del expediente (dónde está hoy), distinta del juzgado de
+	// origen en courtNumber. Sólo presente en folders de causas PJN.
+	currentLocation?: {
+		text?: string;
+		tipo?: string;
+		updatedAt?: string;
+	};
 };
 
 export type FolderData = {
@@ -92,25 +101,63 @@ export type FolderData = {
 	causaIsValid?: boolean; // Indica si la causa es válida
 	causaUpdateEnabled?: boolean; // Indica si las actualizaciones están habilitadas
 	causaAssociationStatus?: string; // Estado de asociación (success, pending, pending_selection, failed)
+	/** @deprecated usar listRemoved + listRemovedSource='pjn'. Se mantiene temporalmente por compat. */
+	pjnNotFound?: boolean;
+	/** Carpeta archivada: no aparece en el listado principal pero sigue accesible por URL directa. */
+	archived?: boolean;
+	/** Contexto del último archivado: 'user' (a mano), 'plan_limit' (creada archivada por tope del plan), 'plan_downgrade' (automático al bajar de plan). */
+	archivedReason?: "user" | "plan_limit" | "plan_downgrade" | string | null;
+	archivedAt?: string | null;
+	archivedBy?: string | null;
+	unarchivedAt?: string | null;
+	/** La causa ya no aparece en el listado del portal origen. Generalizado para PJN/SCBA/MEV/EJE. */
+	listRemoved?: boolean;
+	listRemovedAt?: string;
+	listRemovedSource?: "pjn" | "scba" | "mev" | "eje";
 	causaLastSyncDate?: string; // Fecha de última sincronización
 	lastMovementDate?: string; // Fecha del último movimiento
 	// Campos para selección múltiple de causas (EJE/MEV)
 	pendingCausaIds?: string[]; // IDs de causas pendientes de selección
-	pendingCausaType?: string; // Tipo de causas pendientes ('CausasEje' | 'MEV')
+	/** IOL-1: la búsqueda superó el tope de resultados; pendingCausaIds es un sample de searchTotalResults. */
+	tooManyResults?: boolean;
+	searchTotalResults?: number | null;
+	pendingCausaType?: string; // Tipo de causas pendientes ('CausasEje' | 'MEV' | 'CausasPjSalta' | 'CausasPjCatamarca' | 'CausasPjMendoza')
 	searchTerm?: string; // Término de búsqueda original
 	eje?: boolean; // Indica si es una causa EJE (CABA)
+	scba?: boolean; // Indica si es una causa SCBA (Provincia de Buenos Aires)
+	pjsalta?: boolean; // Indica si es una causa del Poder Judicial de Salta (portal IOL)
+	pjcatamarca?: boolean;
+	pjmendoza?: boolean; // Indica si es una causa del Poder Judicial de Catamarca (portal IOL)
+	/**
+	 * Para causas PJN agregadas individualmente (source !== 'pjn-login'):
+	 * la causa fue marcada como privada/reservada por el privacy-checker
+	 * tras N fallos consecutivos al consultarla públicamente. Las causas
+	 * pjn-login tienen otra ruta de acceso (Mis Causas autenticado) y NO
+	 * usan este flag — el frontend lo ignora cuando source==='pjn-login'.
+	 */
+	causaIsPrivate?: boolean;
+	// Visibilidad por credencial de causas reservadas (solo folders de causas
+	// isPrivate:true): true = el usuario tiene credencial vigente que la cubre;
+	// false = gate 'reserved'; ausente = causa pública.
+	causaCredentialCovered?: boolean;
+	causaPrivateDetectedAt?: string;
 };
 
 // Interfaz para una causa pendiente de selección
 export interface PendingCausa {
 	_id: string;
 	cuij?: string;
+	/** Identificador real de la jurisdicción: Salta "EXP 959839/26", Catamarca CUIJ completo, Mendoza CUIJ. */
+	expedienteId?: string;
 	numero: number;
-	anio: number;
+	anio: number | null;
 	caratula?: string;
 	estado?: string;
 	isPrivate?: boolean;
 	fechaInicio?: string;
+	juzgado?: string;
+	ubicacionActual?: string;
+	tribunalPrimera?: string;
 }
 
 export type PaginationInfo = {
@@ -127,6 +174,7 @@ export type FolderState = {
 	selectedFolders: FolderData[];
 	folder: FolderData | null;
 	isLoader: boolean;
+	isArchivedLoader: boolean;
 	error?: string;
 	isInitialized: boolean;
 	lastFetchedUserId?: string;

@@ -1,6 +1,8 @@
 import { lazy, ComponentType, LazyExoticComponent } from "react";
-import { Box, Button, Stack, Typography, Alert, AlertTitle } from "@mui/material";
-import { Refresh, Global } from "iconsax-react";
+import { Box, Button, Stack, Typography, useTheme } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { Refresh, CloudCross } from "iconsax-react";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 // Sistema robusto de lazy loading con reintentos para móviles
 // Resuelve el problema de chunks que fallan después de actualizaciones
@@ -96,6 +98,10 @@ export function lazyRetry<T extends ComponentType<any>>(
 
 				// Retornar componente de error con botón de recarga
 				const ErrorComponent = (() => {
+					const theme = useTheme();
+					const isDark = theme.palette.mode === "dark";
+					const errorColor = theme.palette.error.main;
+
 					const handleReload = () => {
 						// Limpiar cache y recargar
 						if ("caches" in window) {
@@ -112,31 +118,119 @@ export function lazyRetry<T extends ComponentType<any>>(
 					return (
 						<Box
 							sx={{
-								py: { xs: 3, md: 5 },
+								py: { xs: 4, md: 6 },
 								px: { xs: 2, md: 3 },
-								minHeight: "300px",
+								minHeight: 360,
 								display: "flex",
 								alignItems: "center",
 								justifyContent: "center",
+								position: "relative",
+								overflow: "hidden",
 							}}
 						>
-							<Stack spacing={{ xs: 2, sm: 3 }} alignItems="center" sx={{ maxWidth: { xs: 600, md: 800 }, width: "100%" }}>
-								<Box sx={{ opacity: 0.5 }}>
-									<Global size={48} color="#d32f2f" />
-								</Box>
+							{/* Atmospheric brand backdrop */}
+							<Box
+								sx={{
+									position: "absolute",
+									inset: 0,
+									pointerEvents: "none",
+									background: `radial-gradient(circle at 50% 30%, ${alpha(errorColor, isDark ? 0.12 : 0.06)} 0%, transparent 60%)`,
+								}}
+							/>
+							<Box
+								sx={{
+									position: "relative",
+									width: "100%",
+									maxWidth: 480,
+									p: { xs: 3, md: 4 },
+									borderRadius: 2,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.025),
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+								}}
+							>
+								<Stack spacing={2.5} alignItems="center">
+									{/* Icon ring — destructive sober */}
+									<Box
+										sx={{
+											width: 64,
+											height: 64,
+											borderRadius: 1.5,
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											bgcolor: alpha(errorColor, isDark ? 0.16 : 0.08),
+											border: `1px solid ${alpha(errorColor, isDark ? 0.32 : 0.2)}`,
+											color: errorColor,
+										}}
+									>
+										<CloudCross size={28} variant="Bulk" />
+									</Box>
 
-								<Alert severity="error" sx={{ width: "100%" }}>
-									<AlertTitle sx={{ fontSize: { xs: "1.1rem", md: "1.25rem" } }}>Error al cargar el contenido</AlertTitle>
-									<Typography variant="body2" sx={{ fontSize: { xs: "0.875rem", md: "1rem" } }}>
-										No pudimos cargar esta página. Puede deberse a un problema temporal de conexión o a que el contenido fue actualizado
-										recientemente. Por favor, intenta recargar la página.
-									</Typography>
-								</Alert>
+									{/* Eyebrow + title + body */}
+									<Stack spacing={1} alignItems="center" sx={{ textAlign: "center" }}>
+										<Stack direction="row" spacing={0.625} alignItems="center">
+											<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: errorColor }} />
+											<Typography
+												sx={{
+													fontSize: "0.6rem",
+													fontWeight: 600,
+													letterSpacing: "0.08em",
+													textTransform: "uppercase",
+													color: "text.secondary",
+												}}
+											>
+												No pudimos cargar
+											</Typography>
+										</Stack>
+										<Typography
+											sx={{
+												fontSize: { xs: "1.1rem", md: "1.2rem" },
+												fontWeight: 600,
+												letterSpacing: "-0.015em",
+												color: "text.primary",
+												textWrap: "balance" as any,
+											}}
+										>
+											Error al cargar el contenido
+										</Typography>
+										<Typography
+											sx={{
+												fontSize: "0.85rem",
+												color: "text.secondary",
+												letterSpacing: "-0.005em",
+												lineHeight: 1.5,
+												textWrap: "pretty" as any,
+												maxWidth: 380,
+											}}
+										>
+											Puede ser un problema temporal de conexión, o que el contenido se haya actualizado hace poco. Recargá la página para
+											volver a intentarlo.
+										</Typography>
+									</Stack>
 
-								<Button variant="contained" color="primary" startIcon={<Refresh />} onClick={handleReload} size="large">
-									Recargar página
-								</Button>
-							</Stack>
+									{/* Button sober brand */}
+									<Button
+										onClick={handleReload}
+										variant="contained"
+										startIcon={<Refresh size={18} variant="Bulk" />}
+										sx={{
+											mt: 0.5,
+											textTransform: "none",
+											fontWeight: 600,
+											letterSpacing: "-0.005em",
+											bgcolor: BRAND_BLUE,
+											color: "#fff",
+											borderRadius: 1.25,
+											px: 2.5,
+											py: 1,
+											boxShadow: "none",
+											"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+										}}
+									>
+										Recargar página
+									</Button>
+								</Stack>
+							</Box>
 						</Box>
 					);
 				}) as unknown as T;

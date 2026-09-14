@@ -213,6 +213,16 @@ export const getRichTextDocument = (id: string) => async (dispatch: Dispatch) =>
 	}
 };
 
+// Vista previa (PDF) de un escrito del editor: el server lo renderiza TipTap JSON → PDF.
+export const previewRichTextDocument = (id: string) => async (_dispatch: Dispatch) => {
+	try {
+		const res = await axios.get(`${DOCUMENTS_URL}/${id}/preview`);
+		return { success: true, url: res.data.url as string };
+	} catch (error) {
+		return { success: false, error: getErrorMsg(error, "Error al generar el PDF") };
+	}
+};
+
 export const createRichTextDocument = (data: CreateRichTextDocumentPayload) => async (dispatch: Dispatch) => {
 	try {
 		const res = await axios.post(DOCUMENTS_URL, data);

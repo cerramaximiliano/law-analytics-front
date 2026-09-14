@@ -80,9 +80,9 @@ const DailyWeeklyActivity = () => {
 								justifyContent: "space-between",
 								p: 2,
 								borderRadius: 2,
-								bgcolor: "grey.50",
+								bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.50"),
 								"&:hover": {
-									bgcolor: "grey.100",
+									bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.100"),
 								},
 							}}
 						>

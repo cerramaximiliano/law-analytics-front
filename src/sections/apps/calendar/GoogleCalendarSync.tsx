@@ -13,7 +13,7 @@ import {
 	DialogContent,
 	Skeleton,
 } from "@mui/material";
-import { Google, Refresh, Link21, CloseCircle } from "iconsax-react";
+import { Google, Refresh, CloseCircle } from "iconsax-react";
 import { useDispatch, useSelector } from "store";
 import {
 	initializeGoogleCalendar,
@@ -21,8 +21,10 @@ import {
 	disconnectGoogleCalendar,
 	syncWithGoogleCalendar,
 	fetchGoogleEvents,
+	markGoogleCalendarSynced,
 } from "store/reducers/googleCalendar";
 import { openSnackbar } from "store/reducers/snackbar";
+import { getAutoSyncStatus, getAutoSyncAuthUrl, AutoSyncStatus } from "services/googleCalendarAutoSync";
 import { Event } from "types/events";
 import { PopupTransition } from "components/@extended/Transitions";
 import Avatar2 from "components/@extended/Avatar";
@@ -37,6 +39,70 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 	const { isConnected, isLoading, isSyncing, userProfile, lastSyncTime } = useSelector((state: any) => state.googleCalendar);
 	const [openDisconnectDialog, setOpenDisconnectDialog] = useState(false);
 	const [imageError, setImageError] = useState(false);
+	const [autoSync, setAutoSync] = useState<AutoSyncStatus | null>(null);
+	const [activatingAutoSync, setActivatingAutoSync] = useState(false);
+
+	// Estado de la sincronización server-side (cron). Es independiente de la
+	// conexión del navegador: vive de un refresh token guardado en el servidor.
+	const refreshAutoSyncStatus = React.useCallback(async () => {
+		try {
+			setAutoSync(await getAutoSyncStatus());
+		} catch (error) {
+			console.error("No se pudo obtener el estado de la sincronización automática:", error);
+		}
+	}, []);
+
+	useEffect(() => {
+		refreshAutoSyncStatus();
+	}, [refreshAutoSyncStatus]);
+
+	// Vuelta del consentimiento de Google (?gcalSync=ok|error)
+	useEffect(() => {
+		const params = new URLSearchParams(window.location.search);
+		const result = params.get("gcalSync");
+		if (!result) return;
+
+		dispatch(
+			openSnackbar({
+				open: true,
+				message:
+					result === "ok"
+						? "Sincronización automática activada. Tus eventos de Google se actualizarán solos."
+						: "No se pudo activar la sincronización automática. Intentá de nuevo.",
+				variant: "alert",
+				alert: { color: result === "ok" ? "success" : "error" },
+				close: true,
+			}),
+		);
+
+		if (result === "ok") refreshAutoSyncStatus();
+
+		// Limpiar la query para que el mensaje no se repita al refrescar.
+		params.delete("gcalSync");
+		params.delete("reason");
+		const qs = params.toString();
+		window.history.replaceState({}, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
+	}, [dispatch, refreshAutoSyncStatus]);
+
+	const handleActivateAutoSync = async () => {
+		setActivatingAutoSync(true);
+		try {
+			const url = await getAutoSyncAuthUrl(window.location.pathname);
+			window.location.href = url;
+		} catch (error) {
+			console.error("Error iniciando la autorización de sincronización automática:", error);
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "No se pudo iniciar la autorización con Google",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+			setActivatingAutoSync(false);
+		}
+	};
 
 	// Calcular si la sincronización está pendiente
 	const isSyncPending = (() => {
@@ -95,13 +161,13 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 
 			// Si han pasado 15 días o más, sincronizar automáticamente
 			if (daysDiff >= 15) {
-				console.log(`Han pasado ${daysDiff} días desde la última sincronización. Sincronizando automáticamente...`);
+				console.log(`Han pasado ${daysDiff} días desde la última sincronización. Importando automáticamente...`);
 
 				// Mostrar notificación de sincronización automática
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: `Sincronizando automáticamente con Google Calendar (${daysDiff} días desde última sincronización)...`,
+						message: `Importando eventos de Google Calendar (${daysDiff} días desde última sincronización)...`,
 						variant: "alert",
 						alert: {
 							color: "info",
@@ -110,8 +176,11 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 					}),
 				);
 
-				// Ejecutar sincronización
-				handleSync();
+				// Importación automática: SOLO trae eventos de Google. No empuja los
+				// eventos locales, porque tras semanas sin sincronizar eso significaría
+				// crear en masa en el calendario del usuario sin que lo haya pedido.
+				// El push sigue disponible en el botón "Sincronizar".
+				await handleAutoImport();
 			} else {
 				console.log(
 					`Han pasado ${daysDiff} días desde la última sincronización. Se sincronizará automáticamente en ${15 - daysDiff} días.`,
@@ -166,14 +235,31 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 		}
 	};
 
-	const handleFetchEvents = async () => {
+	// Devuelve si la consulta a Google funcionó. fetchGoogleEvents distingue
+	// [] (calendario vacío, éxito) de null (fallo de red o de la API).
+	const handleFetchEvents = async (): Promise<boolean> => {
 		try {
 			const events = await dispatch(fetchGoogleEvents());
-			if (events && events.length > 0 && onEventsImported) {
+			if (events === null) return false;
+			if (events.length > 0 && onEventsImported) {
 				await onEventsImported(events);
 			}
+			return true;
 		} catch (error) {
 			console.error("Error al obtener eventos:", error);
+			return false;
+		}
+	};
+
+	// Importación automática (solo lectura) + sello de sincronización, para que no
+	// se repita en cada montaje del componente. El sello sólo se escribe si la
+	// consulta funcionó: sellar sobre un fallo pospondría el reintento 15 días.
+	const handleAutoImport = async () => {
+		try {
+			const ok = await handleFetchEvents();
+			if (ok) await dispatch(markGoogleCalendarSynced());
+		} catch (error) {
+			console.error("Error en la importación automática:", error);
 		}
 	};
 
@@ -207,57 +293,32 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 				}}
 			>
 				{!isConnected ? (
-					<Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="space-between">
-						<Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
-							{userProfile?.email ? (
-								// Si hay perfil previo guardado, mostrar avatar
-								<Avatar
-									src={!imageError && userProfile?.imageUrl ? userProfile.imageUrl : undefined}
-									sx={{
-										width: { xs: 18, sm: 20 },
-										height: { xs: 18, sm: 20 },
-										fontSize: "0.7rem",
-										bgcolor: "primary.lighter",
-										color: "primary.main",
-										flexShrink: 0,
-									}}
-									imgProps={{
-										referrerPolicy: "no-referrer",
-										onError: () => setImageError(true),
-									}}
-								>
-									{userProfile?.email?.charAt(0)?.toUpperCase()}
-								</Avatar>
-							) : (
-								// Si no hay perfil previo, mostrar icono de Google
-								<Google size={18} variant="Bold" color="#666" />
-							)}
+					/* Estado idle / no conectado: CTA claro, sin ambigüedad de skeleton */
+					<Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+						{userProfile?.email && (
 							<Box sx={{ minWidth: 0, flex: 1, display: { xs: "none", sm: "block" } }}>
-								<Typography variant="caption" sx={{ lineHeight: 1.2 }} noWrap>
-									Google Calendar
+								<Typography variant="caption" color="text.secondary" noWrap sx={{ fontSize: "0.7rem" }}>
+									{userProfile.email}
 								</Typography>
-								{userProfile?.email && (
-									<Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.7rem" }} noWrap>
-										{userProfile.email}
-									</Typography>
-								)}
 							</Box>
-						</Stack>
+						)}
 						<Button
-							variant="contained"
-							startIcon={<Link21 size={14} />}
+							variant="outlined"
+							startIcon={<Google size={16} variant="Bold" />}
 							onClick={handleConnect}
-							disabled={isLoading}
 							size="small"
 							sx={{
-								minWidth: "auto",
 								fontSize: { xs: "0.7rem", sm: "0.75rem" },
 								py: 0.5,
-								px: { xs: 0.75, sm: 1 },
+								px: { xs: 1, sm: 1.5 },
+								whiteSpace: "nowrap",
 								flexShrink: 0,
+								borderColor: "divider",
+								color: "text.primary",
+								"&:hover": { borderColor: "primary.main", color: "primary.main" },
 							}}
 						>
-							{userProfile?.email ? "Reconectar" : "Conectar"}
+							{userProfile?.email ? "Reconectar Google Calendar" : "Conectar con Google Calendar"}
 						</Button>
 					</Stack>
 				) : (
@@ -340,6 +401,54 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 								</IconButton>
 							</Tooltip>
 						</Stack>
+					</Stack>
+				)}
+
+				{/* Sincronización automática (server-side). Sólo se ofrece si el
+				    usuario ya conectó Google: pedir el consentimiento offline
+				    antes de eso sería un salto de contexto. */}
+				{isConnected && !autoSync?.syncEnabled && (
+					<Stack
+						direction="row"
+						spacing={1}
+						alignItems="center"
+						justifyContent="space-between"
+						sx={{ mt: 0.75, pt: 0.75, borderTop: "1px dashed", borderColor: "divider" }}
+					>
+						<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem", minWidth: 0 }}>
+							Tus eventos se actualizan sólo cuando abrís el calendario.
+						</Typography>
+						<Button
+							size="small"
+							variant="text"
+							onClick={handleActivateAutoSync}
+							disabled={activatingAutoSync}
+							startIcon={activatingAutoSync ? <CircularProgress size={12} /> : undefined}
+							sx={{ fontSize: "0.7rem", py: 0.25, whiteSpace: "nowrap", flexShrink: 0 }}
+						>
+							Activar sincronización automática
+						</Button>
+					</Stack>
+				)}
+
+				{isConnected && autoSync?.syncEnabled && (
+					<Stack
+						direction="row"
+						spacing={0.5}
+						alignItems="center"
+						sx={{ mt: 0.75, pt: 0.75, borderTop: "1px dashed", borderColor: "divider" }}
+					>
+						<Typography variant="caption" color="success.dark" sx={{ fontSize: "0.7rem" }}>
+							Sincronización automática activa
+							{autoSync.lastSyncAt
+								? ` — última: ${new Date(autoSync.lastSyncAt).toLocaleString("es-AR", {
+										day: "2-digit",
+										month: "2-digit",
+										hour: "2-digit",
+										minute: "2-digit",
+								  })}`
+								: " — primera corrida pendiente"}
+						</Typography>
 					</Stack>
 				)}
 			</Box>

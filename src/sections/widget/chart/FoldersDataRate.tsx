@@ -1,12 +1,13 @@
 import React from "react";
 // Componente para mostrar la distribución de carpetas
 import { useEffect } from "react";
-import { useTheme } from "@mui/material/styles";
-import { Chip, Grid, Stack, Typography, CircularProgress } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
+import { Box, Grid, Stack, Typography, CircularProgress } from "@mui/material";
 import ReactApexChart from "react-apexcharts";
 import MainCard from "components/MainCard";
 import { useSelector, dispatch } from "store";
 import { getUnifiedStats } from "store/reducers/unifiedStats";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 const FoldersDataRate = () => {
 	const theme = useTheme();
@@ -73,11 +74,14 @@ const FoldersDataRate = () => {
 				return Math.round(val) + "%";
 			},
 		},
+		// Paleta brand-coherente: BRAND_BLUE es el "nuevo / activo" — vincula el
+		// donut al lenguaje del resto del dashboard. El resto mantiene semántica
+		// (proceso=warning, pendiente=neutro, cerrada=success).
 		colors: [
-			theme.palette.info.main, // Nueva - azul info
-			theme.palette.warning.main, // En Proceso - naranja
-			theme.palette.secondary.main, // Pendiente - secundario
-			theme.palette.success.main, // Cerrada - verde
+			BRAND_BLUE, // Nueva
+			theme.palette.warning.main, // En proceso
+			alpha(theme.palette.text.primary, 0.35), // Pendiente — neutro tintado
+			theme.palette.success.main, // Cerrada
 		],
 		legend: {
 			show: true,
@@ -101,52 +105,83 @@ const FoldersDataRate = () => {
 		},
 	};
 
+	// Status rows usan los mismos colores que el donut (sync visual con la legend).
+	const statusRows = [
+		{ label: "Nueva", pct: nuevaPercentage, color: BRAND_BLUE },
+		{ label: "En proceso", pct: enProcesoPercentage, color: theme.palette.warning.main },
+		{ label: "Pendiente", pct: pendientePercentage, color: alpha(theme.palette.text.primary, 0.35) },
+		{ label: "Cerrada", pct: cerradaPercentage, color: theme.palette.success.main },
+	];
+
 	return (
 		<MainCard>
-			<Typography variant="h5">Distribución de Carpetas</Typography>
+			<Box sx={{ mb: 2.5 }}>
+				<Typography variant="subtitle1" sx={{ letterSpacing: "-0.005em", mb: 0.25 }}>
+					Distribución de carpetas
+				</Typography>
+				<Typography variant="caption" color="text.secondary" sx={{ letterSpacing: "-0.005em" }}>
+					Por estado del expediente
+				</Typography>
+			</Box>
 
-			<Grid container spacing={3} sx={{ mt: 1 }}>
+			<Grid container spacing={3} alignItems="center">
 				<Grid item xs={12} sm={5}>
-					<Stack spacing={2}>
-						<Stack spacing={0.5}>
-							<Typography variant="subtitle1">Resumen Total</Typography>
-							<Typography variant="h4">{total} carpetas</Typography>
-						</Stack>
+					<Stack spacing={2.5}>
+						{/* Total — count hero */}
+						<Box>
+							<Typography
+								sx={{
+									fontSize: { xs: "1.625rem", md: "1.875rem" },
+									fontWeight: 600,
+									letterSpacing: "-0.025em",
+									fontVariantNumeric: "tabular-nums",
+									lineHeight: 1.15,
+									color: "text.primary",
+								}}
+							>
+								{total}
+							</Typography>
+							<Typography variant="caption" color="text.secondary" sx={{ letterSpacing: "-0.005em" }}>
+								carpetas totales
+							</Typography>
+						</Box>
 
+						{/* Status rows — dot + label + percentage */}
 						<Stack spacing={1.5}>
-							<Stack direction="row" alignItems="center" justifyContent="space-between">
-								<Stack direction="row" spacing={1} alignItems="center">
-									<Chip color="info" variant="light" size="small" label="Nueva" />
-									<Typography variant="subtitle1">Nueva</Typography>
+							{statusRows.map((s) => (
+								<Stack key={s.label} direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+									<Stack direction="row" alignItems="center" spacing={1.25}>
+										<Box
+											aria-hidden
+											sx={{
+												width: 8,
+												height: 8,
+												borderRadius: "50%",
+												bgcolor: s.color,
+												flexShrink: 0,
+											}}
+										/>
+										<Typography variant="body2" sx={{ letterSpacing: "-0.005em" }}>
+											{s.label}
+										</Typography>
+									</Stack>
+									<Typography
+										variant="body2"
+										sx={{
+											fontWeight: 600,
+											fontVariantNumeric: "tabular-nums",
+											color: "text.secondary",
+										}}
+									>
+										{s.pct}%
+									</Typography>
 								</Stack>
-								<Typography variant="subtitle2">{nuevaPercentage}%</Typography>
-							</Stack>
-							<Stack direction="row" alignItems="center" justifyContent="space-between">
-								<Stack direction="row" spacing={1} alignItems="center">
-									<Chip color="warning" variant="light" size="small" label="En Proceso" />
-									<Typography variant="subtitle1">En Proceso</Typography>
-								</Stack>
-								<Typography variant="subtitle2">{enProcesoPercentage}%</Typography>
-							</Stack>
-							<Stack direction="row" alignItems="center" justifyContent="space-between">
-								<Stack direction="row" spacing={1} alignItems="center">
-									<Chip color="secondary" variant="light" size="small" label="Pendiente" />
-									<Typography variant="subtitle1">Pendiente</Typography>
-								</Stack>
-								<Typography variant="subtitle2">{pendientePercentage}%</Typography>
-							</Stack>
-							<Stack direction="row" alignItems="center" justifyContent="space-between">
-								<Stack direction="row" spacing={1} alignItems="center">
-									<Chip color="success" variant="light" size="small" label="Cerrada" />
-									<Typography variant="subtitle1">Cerrada</Typography>
-								</Stack>
-								<Typography variant="subtitle2">{cerradaPercentage}%</Typography>
-							</Stack>
+							))}
 						</Stack>
 					</Stack>
 				</Grid>
 				<Grid item xs={12} sm={7}>
-					<ReactApexChart options={donutChartOptions} series={seriesData} type="donut" height={300} />
+					<ReactApexChart options={donutChartOptions} series={seriesData} type="donut" height={280} />
 				</Grid>
 			</Grid>
 		</MainCard>

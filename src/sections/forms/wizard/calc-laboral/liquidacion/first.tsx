@@ -1,6 +1,7 @@
 import React from "react";
 import { useState, useEffect } from "react";
-import { Box, Checkbox, Grid, InputLabel, Typography } from "@mui/material";
+import { Box, Checkbox, Grid, InputLabel, Stack, Typography } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
@@ -8,6 +9,7 @@ import LinkCauseSelector from "./components/LinkCauseSelector";
 import { UserSquare, Calendar2, DocumentText } from "iconsax-react";
 import { useFormikContext, useField } from "formik";
 import { Folder } from "types/folders";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 interface FormField {
 	reclamante: {
@@ -107,42 +109,57 @@ export default function FirstForm(props: FirstFormProps) {
 		}
 	}, [folder]);
 
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+
 	return (
 		<>
-			<Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
-				Datos requeridos
-			</Typography>
-
 			<LinkCauseSelector requiereField={reclamante.name} requeridoField={reclamado.name} onMethodChange={handleMethodChange} />
 
 			<Grid item xs={12}>
 				<Grid container spacing={2} alignItems="center">
 					{inputMethod === "causa" && selectedFolder ? (
 						<Grid item xs={12} sx={{ mb: 2 }}>
-							<Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-								Carpeta vinculada:
-							</Typography>
-							<Box
-								sx={{
-									p: 2,
-									borderRadius: 1,
-									bgcolor: (theme) => theme.palette.background.paper,
-									border: (theme) => `1px solid ${theme.palette.divider}`,
-									display: "flex",
-									alignItems: "center",
-									gap: 2,
-								}}
-							>
-								<DocumentText size={20} variant="Bold" />
-								<Typography variant="body1" fontWeight={500}>
-									{selectedFolder.folderName}
+							<Stack spacing={0.75}>
+								<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+									Carpeta vinculada
 								</Typography>
-								{selectedFolder.materia && (
-									<Typography variant="body2" sx={{ ml: 1, color: "text.secondary" }}>
-										({selectedFolder.materia})
-									</Typography>
-								)}
-							</Box>
+								<Box
+									sx={{
+										p: 1.5,
+										borderRadius: 1.25,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.24 : 0.16)}`,
+										display: "flex",
+										alignItems: "center",
+										gap: 1.25,
+									}}
+								>
+									<Box
+										sx={{
+											width: 28,
+											height: 28,
+											borderRadius: 1,
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+											color: BRAND_BLUE,
+											flexShrink: 0,
+										}}
+									>
+										<DocumentText size={16} variant="Bulk" />
+									</Box>
+									<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+										<Typography sx={{ fontSize: "0.875rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+											{selectedFolder.folderName}
+										</Typography>
+										{selectedFolder.materia && (
+											<Typography sx={{ fontSize: "0.75rem", color: "text.secondary" }}>{selectedFolder.materia}</Typography>
+										)}
+									</Stack>
+								</Box>
+							</Stack>
 						</Grid>
 					) : (
 						<>

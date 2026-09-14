@@ -1,5 +1,6 @@
 import React from "react";
-import { DialogTitle, Divider, Button, Grid, Stack, DialogContent, InputLabel, DialogActions } from "@mui/material";
+import { Box, DialogTitle, Button, Grid, Stack, DialogContent, InputLabel, DialogActions, Typography, useTheme } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
@@ -8,6 +9,8 @@ import NumberField from "components/UI/NumberField";
 import { Dispatch, SetStateAction } from "react";
 import * as Yup from "yup";
 import { Form, Formik, FormikValues } from "formik";
+import { DollarCircle } from "iconsax-react";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 type AddressModalType = {
 	open: boolean;
@@ -40,6 +43,9 @@ const customTextareaStyles = {
 };
 
 const ModalPayment = ({ open, setOpen, handlerAddress, folderId }: AddressModalType) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+
 	function closeTaskModal() {
 		setOpen(false);
 	}
@@ -98,9 +104,61 @@ const ModalPayment = ({ open, setOpen, handlerAddress, folderId }: AddressModalT
 						open={open}
 						onClose={handleClose}
 						sx={{ "& .MuiDialog-paper": { p: 0 }, "& .MuiBackdrop-root": { opacity: "0.5 !important" } }}
+						PaperProps={{
+							sx: {
+								borderRadius: 2,
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+								boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+								overflow: "hidden",
+							},
+						}}
 					>
-						<DialogTitle>Agregar Facturación</DialogTitle>
-						<Divider />
+						<DialogTitle
+							sx={{
+								display: "flex",
+								alignItems: "center",
+								gap: 1.25,
+								px: 2.5,
+								py: 1.75,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+								borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+							}}
+						>
+							<Box
+								sx={{
+									width: 32,
+									height: 32,
+									borderRadius: 1,
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+									color: BRAND_BLUE,
+								}}
+							>
+								<DollarCircle size={18} variant="Bulk" />
+							</Box>
+							<Stack spacing={0.125}>
+								<Stack direction="row" spacing={0.5} alignItems="center">
+									<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+									<Typography
+										sx={{
+											fontSize: "0.6rem",
+											fontWeight: 600,
+											letterSpacing: "0.08em",
+											textTransform: "uppercase",
+											color: "text.secondary",
+										}}
+									>
+										Nueva
+									</Typography>
+								</Stack>
+								<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+									Agregar facturación
+								</Typography>
+							</Stack>
+						</DialogTitle>
 						<Form autoComplete="off" noValidate>
 							<DialogContent sx={{ p: 2.5 }}>
 								<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }} justifyContent="center">
@@ -170,20 +228,48 @@ const ModalPayment = ({ open, setOpen, handlerAddress, folderId }: AddressModalT
 									</Grid>
 								</Grid>
 							</DialogContent>
-							<Divider />
-							<DialogActions sx={{ p: 2.5 }}>
-								<Grid container justifyContent="right" alignItems="right">
-									<Grid item>
-										<Stack direction="row" spacing={2} alignItems="right">
-											<Button color="error" onClick={handleClose}>
-												Cancelar
-											</Button>
-											<Button type="submit" variant="contained" disabled={isSubmitting}>
-												Guardar
-											</Button>
-										</Stack>
-									</Grid>
-								</Grid>
+							<DialogActions
+								sx={{ px: 2.5, py: 1.75, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}
+							>
+								<Button
+									onClick={handleClose}
+									sx={{
+										textTransform: "none",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										color: "text.secondary",
+										borderRadius: 1.25,
+										px: 2,
+										py: 0.875,
+										border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+										"&:hover": {
+											color: BRAND_BLUE,
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+											borderColor: alpha(BRAND_BLUE, 0.28),
+										},
+									}}
+								>
+									Cancelar
+								</Button>
+								<Button
+									type="submit"
+									variant="contained"
+									disabled={isSubmitting}
+									sx={{
+										textTransform: "none",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										bgcolor: BRAND_BLUE,
+										color: "#fff",
+										borderRadius: 1.25,
+										px: 2,
+										py: 0.875,
+										boxShadow: "none",
+										"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+									}}
+								>
+									Guardar
+								</Button>
 							</DialogActions>
 						</Form>
 					</ResponsiveDialog>

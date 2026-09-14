@@ -1,17 +1,21 @@
 import React from "react";
 // Componente compacto para mostrar carpetas activas vs cerradas
 import { useEffect } from "react";
-import { useTheme } from "@mui/material/styles";
+import { alpha, useTheme } from "@mui/material/styles";
 import { Box, Grid, Stack, Typography, CircularProgress } from "@mui/material";
 import ReactApexChart from "react-apexcharts";
 import MainCard from "components/MainCard";
-import Avatar from "components/@extended/Avatar";
 import { Book } from "iconsax-react";
+import { useNavigate } from "react-router-dom";
 import { useSelector, dispatch } from "store";
 import { getUnifiedStats } from "store/reducers/unifiedStats";
+import { BRAND_BLUE } from "themes/dashboardTokens";
+import { ThemeMode } from "types/config";
 
 const ActiveFoldersWidget = () => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === ThemeMode.DARK;
+	const navigate = useNavigate();
 
 	// Obtener userId del usuario actual
 	const user = useSelector((state) => state.auth.user);
@@ -84,7 +88,7 @@ const ActiveFoldersWidget = () => {
 		dataLabels: {
 			enabled: false,
 		},
-		colors: [theme.palette.warning.main, theme.palette.grey[400]],
+		colors: [BRAND_BLUE, theme.palette.grey[400]],
 		legend: {
 			show: false,
 		},
@@ -111,36 +115,70 @@ const ActiveFoldersWidget = () => {
 	};
 
 	return (
-		<MainCard>
-			<Grid container spacing={2}>
-				<Grid item xs={12}>
-					<Stack direction="row" alignItems="center" spacing={2}>
-						<Avatar variant="rounded" color="warning">
-							<Book />
-						</Avatar>
-						<Typography variant="subtitle1">Carpetas Activas</Typography>
-					</Stack>
-				</Grid>
-				<Grid item xs={12}>
-					<MainCard content={false} border={false} sx={{ bgcolor: "background.default" }}>
-						<Box sx={{ p: 3, pb: 1.25 }}>
-							<Grid container spacing={3} alignItems="center">
-								<Grid item xs={7}>
-									<ReactApexChart options={donutChartOptions} series={seriesData} type="donut" height={50} />
-								</Grid>
-								<Grid item xs={5}>
-									<Stack spacing={1}>
-										<Typography variant="h5">{activas}</Typography>
-										<Typography variant="caption" color="text.secondary">
-											{activasPercentage}% del total
-										</Typography>
-									</Stack>
-								</Grid>
-							</Grid>
-						</Box>
-					</MainCard>
-				</Grid>
-			</Grid>
+		<MainCard
+			onClick={() => navigate("/apps/folders/list")}
+			sx={{
+				cursor: "pointer",
+				transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
+				"&:hover": {
+					transform: "translateY(-2px)",
+					borderColor: alpha(BRAND_BLUE, isDark ? 0.32 : 0.22),
+					boxShadow: `0 8px 22px ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+				},
+			}}
+		>
+			<Stack spacing={2}>
+				<Stack direction="row" alignItems="center" spacing={1.5}>
+					<Box
+						sx={{
+							width: 40,
+							height: 40,
+							borderRadius: 1.5,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+							color: BRAND_BLUE,
+						}}
+					>
+						<Book size={20} variant="Bulk" />
+					</Box>
+					<Typography variant="subtitle1" sx={{ letterSpacing: "-0.005em" }}>
+						Carpetas activas
+					</Typography>
+				</Stack>
+				{/* Contenido — count grande con tabular-nums */}
+				<Box sx={{ pt: 1, pb: 0.5 }}>
+					<Grid container spacing={3} alignItems="center">
+						<Grid item xs={7}>
+							<ReactApexChart options={donutChartOptions} series={seriesData} type="donut" height={50} />
+						</Grid>
+						<Grid item xs={5}>
+							<Stack spacing={0.5}>
+								<Typography
+									sx={{
+										fontSize: { xs: "1.4rem", md: "1.625rem" },
+										fontWeight: 600,
+										letterSpacing: "-0.02em",
+										fontVariantNumeric: "tabular-nums",
+										color: "text.primary",
+										lineHeight: 1.15,
+									}}
+								>
+									{activas}
+								</Typography>
+								<Typography
+									variant="caption"
+									sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.005em" }}
+								>
+									{activasPercentage}% del total
+								</Typography>
+							</Stack>
+						</Grid>
+					</Grid>
+				</Box>
+			</Stack>
 		</MainCard>
 	);
 };

@@ -1,18 +1,7 @@
 import React from "react";
 import { dispatch, useSelector } from "store";
-import {
-	DialogTitle,
-	Divider,
-	Button,
-	Stack,
-	DialogContent,
-	DialogActions,
-	Box,
-	Zoom,
-	useTheme,
-	Typography,
-	InputLabel,
-} from "@mui/material";
+import { DialogTitle, Button, Stack, DialogContent, DialogActions, Box, Zoom, useTheme, Typography, InputLabel } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
@@ -23,6 +12,7 @@ import { Notification1, ArrowForwardSquare } from "iconsax-react";
 import PatternField from "components/UI/PatternField";
 import { enqueueSnackbar } from "notistack";
 import { addNotification, updateNotification } from "store/reducers/notifications";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 // types
 import { ModalNotificationsProps, FormValues, NotificationData } from "types/notifications";
 
@@ -35,6 +25,7 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 	folderName = "",
 }) => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const auth = useSelector((state) => state.auth);
 	const userId = auth.user?._id || "";
 
@@ -154,6 +145,7 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 		<>
 			<ResponsiveDialog
 				maxWidth="sm"
+				fullWidth
 				open={open}
 				scroll="paper"
 				PaperProps={{
@@ -163,54 +155,75 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 						flexDirection: "column",
 						p: 0,
 						borderRadius: 2,
-						boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+						boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
 						overflow: "hidden",
 					},
 				}}
-				sx={{
-					"& .MuiBackdrop-root": { opacity: "0.5 !important" },
-				}}
+				sx={{ "& .MuiBackdrop-root": { opacity: "0.5 !important" } }}
 			>
 				<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={_handleSubmit} enableReinitialize={true}>
 					{({ isSubmitting, resetForm, values }) => (
 						<Form autoComplete="off" noValidate style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
 							<DialogTitle
 								sx={{
-									bgcolor: theme.palette.primary.lighter,
-									p: 3,
-									borderBottom: `1px solid ${theme.palette.divider}`,
+									display: "flex",
+									alignItems: "center",
+									gap: 1.25,
+									px: 2.5,
+									py: 1.75,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+									borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 									flexShrink: 0,
 								}}
 							>
-								<Stack direction="row" justifyContent="space-between" alignItems="center">
-									<Stack direction="row" alignItems="center" spacing={1}>
-										<Notification1 size={24} color={theme.palette.primary.main} />
+								<Box
+									sx={{
+										width: 32,
+										height: 32,
+										borderRadius: 1,
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+										color: BRAND_BLUE,
+									}}
+								>
+									<Notification1 size={18} variant="Bulk" />
+								</Box>
+								<Stack spacing={0.125} sx={{ minWidth: 0, flex: 1 }}>
+									<Stack direction="row" spacing={0.5} alignItems="center">
+										<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
 										<Typography
-											variant="h5"
 											sx={{
-												color: theme.palette.primary.main,
+												fontSize: "0.6rem",
 												fontWeight: 600,
+												letterSpacing: "0.08em",
+												textTransform: "uppercase",
+												color: "text.secondary",
 											}}
 										>
-											Agregar Notificación
+											{editMode ? "Editar" : "Nueva"}
 										</Typography>
 									</Stack>
+									<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+										{editMode ? "Editar notificación" : "Agregar notificación"}
+									</Typography>
 									<Typography
-										color="textSecondary"
-										variant="subtitle2"
 										sx={{
-											maxWidth: "30%",
+											fontSize: "0.72rem",
+											color: "text.secondary",
+											letterSpacing: "-0.005em",
 											overflow: "hidden",
 											textOverflow: "ellipsis",
 											whiteSpace: "nowrap",
 										}}
 									>
-										Carpeta: {folderName}
+										{folderName}
 									</Typography>
 								</Stack>
 							</DialogTitle>
-
-							<Divider />
 
 							<DialogContent
 								sx={{
@@ -448,26 +461,54 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 								</Stack>
 							</DialogContent>
 
-							<Divider />
-
 							<DialogActions
 								sx={{
-									p: 2.5,
-									bgcolor: theme.palette.background.default,
-									borderTop: `1px solid ${theme.palette.divider}`,
+									px: 2.5,
+									py: 1.75,
+									borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
 									flexShrink: 0,
 								}}
 							>
 								<Button
-									color="error"
 									onClick={() => {
 										closeModal();
 										resetForm();
 									}}
+									sx={{
+										textTransform: "none",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										color: "text.secondary",
+										borderRadius: 1.25,
+										px: 2,
+										py: 0.875,
+										border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+										"&:hover": {
+											color: BRAND_BLUE,
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+											borderColor: alpha(BRAND_BLUE, 0.28),
+										},
+									}}
 								>
 									Cancelar
 								</Button>
-								<Button type="submit" variant="contained" disabled={isSubmitting}>
+								<Button
+									type="submit"
+									variant="contained"
+									disabled={isSubmitting}
+									sx={{
+										textTransform: "none",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										bgcolor: BRAND_BLUE,
+										color: "#fff",
+										borderRadius: 1.25,
+										px: 2,
+										py: 0.875,
+										boxShadow: "none",
+										"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+									}}
+								>
 									Guardar
 								</Button>
 							</DialogActions>

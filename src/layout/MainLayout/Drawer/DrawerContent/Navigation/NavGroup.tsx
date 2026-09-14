@@ -254,7 +254,7 @@ const NavGroup = ({ item, lastItem, remItems, lastItemId, setSelectedItems, sele
 								<Typography
 									variant="h5"
 									color={theme.palette.mode === ThemeMode.DARK ? "textSecondary" : "secondary.dark"}
-									sx={{ textTransform: "uppercase", fontSize: "0.688rem" }}
+									sx={{ textTransform: "uppercase", fontSize: "0.688rem", fontWeight: 600, letterSpacing: "0.14em" }}
 								>
 									{item.title}
 								</Typography>

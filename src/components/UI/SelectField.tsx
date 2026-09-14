@@ -24,6 +24,16 @@ const SelectField = (props: SelectFieldProps) => {
 	// Verificar si data es un array de strings o de objetos
 	const isObjectData = data.length > 0 && typeof data[0] !== "string";
 
+	// Permisivo: si el valor actual no está en la lista (p. ej. situación escrita
+	// por un worker con el vocabulario propio del portal), se agrega como opción
+	// para que se vea y se pueda conservar al guardar.
+	const stringData = isObjectData ? [] : (data as string[]);
+	const extraValue =
+		!isObjectData && typeof selectedValue === "string" && selectedValue !== "" && !stringData.includes(selectedValue)
+			? selectedValue
+			: null;
+	const stringOptions = extraValue ? [extraValue, ...stringData] : stringData;
+
 	// Función para manejar cambios y asegurar que se guarde el valor correcto
 	const handleChange = (event: any) => {
 		const newValue = event.target.value;
@@ -68,7 +78,7 @@ const SelectField = (props: SelectFieldProps) => {
 								</MenuItem>
 						  ))
 						: // Renderizar items si data es un array de strings
-						  (data as string[]).map((item) => (
+						  stringOptions.map((item) => (
 								<MenuItem key={item} value={item}>
 									<ListItemText primary={item} />
 								</MenuItem>

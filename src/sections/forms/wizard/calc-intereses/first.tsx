@@ -1,5 +1,5 @@
 import React from "react";
-import { Grid, InputLabel, Typography, Divider, Box, alpha, useTheme, Alert } from "@mui/material";
+import { Grid, InputLabel, Typography, Box, alpha, useTheme, Alert, Stack } from "@mui/material";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 import "dayjs/locale/es";
@@ -11,6 +11,7 @@ import LinkCauseSelector from "./components/LinkCauseSelector";
 import { useSelector, dispatch } from "store";
 import { getInterestRates } from "store/reducers/interestRates";
 import InterestSegmentsManager, { InterestSegment, InterestRate } from "components/calculator/InterestSegmentsManager";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 interface FormField {
 	reclamante: {
@@ -150,7 +151,7 @@ export default function FirstForm(props: FirstFormProps) {
 		[setFieldValue, capitalizeInterest.name],
 	);
 
-const handleTotalChange = useCallback(
+	const handleTotalChange = useCallback(
 		(total: { interest: number; amount: number }) => {
 			// Guardar los totales calculados para usarlos en el submit
 			setFieldValue("calculatedInterest", total.interest);
@@ -170,47 +171,64 @@ const handleTotalChange = useCallback(
 	// Obtener el capital como número
 	const capitalValue = typeof values[capital.name] === "string" ? parseFloat(values[capital.name]) || 0 : values[capital.name] || 0;
 
+	const isDark = theme.palette.mode === "dark";
+
+	// Hairline brand-tinted que reemplaza el <Divider /> MUI.
+	const hairline = (
+		<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1), my: 2.5 }} />
+	);
+
 	return (
 		<>
-			<Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
-				Datos requeridos
-			</Typography>
-
 			{/* Selector de método de entrada */}
 			<LinkCauseSelector requiereField={reclamante.name} requeridoField={reclamado.name} onMethodChange={handleMethodChange} />
 
-			<Divider sx={{ my: 3 }} />
+			{hairline}
 
 			<Grid container spacing={2} alignItems="center">
 				{/* Sección reclamante/reclamado o causa vinculada */}
 				{inputMethod === "causa" && selectedFolder ? (
 					<Grid item xs={12}>
-						<Box sx={{ mb: 2 }}>
-							<Typography variant="subtitle1" color="primary" gutterBottom>
+						<Stack spacing={0.75} sx={{ mb: 1 }}>
+							<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
 								Carpeta vinculada
 							</Typography>
 							<Box
 								sx={{
-									p: 2,
-									bgcolor: alpha(theme.palette.primary.main, 0.08),
-									borderRadius: 1,
-									border: `1px solid ${theme.palette.primary.main}`,
+									p: 1.5,
+									borderRadius: 1.25,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.24 : 0.16)}`,
 									display: "flex",
 									alignItems: "center",
-									gap: 2,
+									gap: 1.25,
 								}}
 							>
-								<DocumentText size={20} variant="Bold" />
-								<Typography variant="body1" fontWeight={500}>
-									{selectedFolder.folderName}
-								</Typography>
-								{selectedFolder.materia && (
-									<Typography variant="body2" sx={{ ml: 1, color: "text.secondary" }}>
-										({selectedFolder.materia})
+								<Box
+									sx={{
+										width: 28,
+										height: 28,
+										borderRadius: 1,
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+										color: BRAND_BLUE,
+										flexShrink: 0,
+									}}
+								>
+									<DocumentText size={16} variant="Bulk" />
+								</Box>
+								<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+									<Typography sx={{ fontSize: "0.875rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
+										{selectedFolder.folderName}
 									</Typography>
-								)}
+									{selectedFolder.materia && (
+										<Typography sx={{ fontSize: "0.75rem", color: "text.secondary" }}>{selectedFolder.materia}</Typography>
+									)}
+								</Stack>
 							</Box>
-						</Box>
+						</Stack>
 					</Grid>
 				) : (
 					<>
@@ -266,9 +284,9 @@ const handleTotalChange = useCallback(
 								disabled={(values[segments.name] || []).length > 0}
 							/>
 							{(values[segments.name] || []).length > 0 && (
-								<Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+								<Alert severity="info" sx={{ mt: 1 }}>
 									Elimine los tramos para modificar el capital
-								</Typography>
+								</Alert>
 							)}
 						</Grid>
 					</Grid>
@@ -276,7 +294,7 @@ const handleTotalChange = useCallback(
 			</Grid>
 
 			{/* Sección de tramos de intereses */}
-			<Divider sx={{ my: 3 }} />
+			{hairline}
 
 			<InterestSegmentsManager
 				capital={capitalValue}

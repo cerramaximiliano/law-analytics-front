@@ -1,6 +1,7 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 import authTokenService from "services/authTokenService";
+import { refreshAccessToken } from "utils/refreshToken";
 
 // Create a dedicated axios instance for Notification API
 const notificationAxios = axios.create({
@@ -79,8 +80,8 @@ notificationAxios.interceptors.response.use(
 			originalRequest._retry = true;
 
 			try {
-				// Try to refresh the token
-				await axios.post(`${import.meta.env.VITE_BASE_URL}/api/auth/refresh-token`, {}, { withCredentials: true });
+				// Try to refresh the token (dedup compartida con el resto de interceptors)
+				await refreshAccessToken();
 
 				// Get the new token and retry the request
 				const newToken = getAuthToken();

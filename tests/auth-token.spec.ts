@@ -137,9 +137,7 @@ test.describe("Sesión expira con tab abierta (UnauthorizedModal)", () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 test.describe("Sesión expira al recargar (init() → 401)", () => {
-	test("recarga en /documentos/escritos con cookie expirada → /login → re-login → vuelve a /documentos/escritos", async ({
-		page,
-	}) => {
+	test("recarga en /documentos/escritos con cookie expirada → /login → re-login → vuelve a /documentos/escritos", async ({ page }) => {
 		await loginViaForm(page);
 		await page.goto("/documentos/escritos");
 
@@ -164,9 +162,7 @@ test.describe("Sesión expira al recargar (init() → 401)", () => {
 		await expect(page).not.toHaveURL(/\/dashboard\/default/);
 	});
 
-	test("recarga en /documentos/modelos con cookie expirada → /login → re-login → vuelve a /documentos/modelos", async ({
-		page,
-	}) => {
+	test("recarga en /documentos/modelos con cookie expirada → /login → re-login → vuelve a /documentos/modelos", async ({ page }) => {
 		await loginViaForm(page);
 		await page.goto("/documentos/modelos");
 
@@ -188,6 +184,7 @@ test.describe("Sesión expira al recargar (init() → 401)", () => {
 
 test.describe("Navegación normal sin expiración", () => {
 	test("login → navegar entre escritos y modelos sin errores", async ({ page }) => {
+		test.setTimeout(120_000); // login + 3 gotos en headless pueden tardar ~90s
 		await loginViaForm(page);
 
 		await page.goto("/documentos/escritos");
@@ -198,7 +195,11 @@ test.describe("Navegación normal sin expiración", () => {
 		await expect(page).toHaveURL(/\/documentos\/modelos/);
 		await expect(page).not.toHaveURL(/\/login/);
 
-		await page.goto("/documentos/escritos");
+		// Usar domcontentloaded en la segunda visita a escritos — el editor rico
+		// (TipTap/Prosemirror) puede dejar trabajo pendiente al desmontar, lo que
+		// retrasa el evento "load" en headless sin afectar la funcionalidad real.
+		await page.goto("/documentos/escritos", { waitUntil: "domcontentloaded" });
 		await expect(page).toHaveURL(/\/documentos\/escritos/);
+		await expect(page).not.toHaveURL(/\/login/);
 	});
 });

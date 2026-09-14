@@ -56,8 +56,10 @@ export const useScrapingProgress = (serverProgress: ScrapingProgress | undefined
 		const previousProgress = previousProgressRef.current;
 
 		// Caso 1: Servidor envía progreso → guardar y mostrar
-		// Pero ignorar si está en estado 'pending' con totalProcessed === 0 (scraping nunca realmente empezó)
-		const isStuckInPending = serverProgress?.status === "pending" && serverProgress?.totalProcessed === 0;
+		// Pero ignorar si está en estado 'pending' (o sin status: default del schema del folder)
+		// con totalProcessed === 0 (scraping nunca realmente empezó)
+		const isStuckInPending =
+			!!serverProgress && (!serverProgress.status || serverProgress.status === "pending") && !serverProgress.totalProcessed;
 
 		if (serverProgress && !isStuckInPending) {
 			// Guardar en localStorage

@@ -97,7 +97,7 @@ const AuthForgotPassword = () => {
 										onBlur={handleBlur}
 										onChange={handleChange}
 										placeholder="Ingrese su correo electrónico"
-										inputProps={{}}
+										inputProps={{ autoComplete: "email" }}
 									/>
 									{touched.email && errors.email && (
 										<FormHelperText error id="helper-text-email-forgot">
@@ -119,7 +119,7 @@ const AuthForgotPassword = () => {
 							<Grid item xs={12}>
 								<AnimateButton>
 									<Button disableElevation disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained" color="primary">
-										Enviar Código de Verificación
+										Enviar instrucciones
 									</Button>
 								</AnimateButton>
 							</Grid>

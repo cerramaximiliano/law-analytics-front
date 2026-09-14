@@ -1,5 +1,6 @@
 import React from "react";
 import { useState, MouseEvent } from "react";
+import { fechaFolderAInput, inputAFechaFolder } from "utils/fechaFolder";
 import { dispatch } from "store";
 import {
 	Skeleton,
@@ -32,6 +33,7 @@ import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
+import { useTeam } from "contexts/TeamContext";
 
 // ===========================|| DATA WIDGET - USER PERSONAL DATA ||=========================== //
 
@@ -43,7 +45,7 @@ const customInputStyles = {
 		fontSize: 12,
 	},
 	"& input::placeholder": {
-		color: "#000000",
+		color: "text.primary",
 		opacity: 0.6,
 	},
 };
@@ -52,18 +54,19 @@ const customTextareaStyles = {
 		fontSize: 12,
 	},
 	"& textarea::placeholder": {
-		color: "#000000",
+		color: "text.primary",
 		opacity: 0.6,
 	},
 };
 
 const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean; type: string }) => {
 	const { id } = useParams<{ id: string }>();
+	const { canUpdate } = useTeam();
 
 	const initialValues = {
 		...folder,
-		initialDateFolder: folder?.initialDateFolder ? dayjs(folder.initialDateFolder).format("DD/MM/YYYY") : "",
-		finalDateFolder: folder?.finalDateFolder ? dayjs(folder.finalDateFolder).format("DD/MM/YYYY") : "",
+		initialDateFolder: folder?.initialDateFolder ? fechaFolderAInput(folder.initialDateFolder) : "",
+		finalDateFolder: folder?.finalDateFolder ? fechaFolderAInput(folder.finalDateFolder) : "",
 		folderJuris: folder?.folderJuris
 			? typeof folder.folderJuris === "string"
 				? { item: folder.folderJuris, label: "" }
@@ -103,10 +106,10 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 				const formattedValues = {
 					...values,
 					initialDateFolder: values.initialDateFolder
-						? dayjs(values.initialDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+						? inputAFechaFolder(values.initialDateFolder)
 						: values.initialDateFolder,
 					finalDateFolder: values.finalDateFolder
-						? dayjs(values.finalDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+						? inputAFechaFolder(values.finalDateFolder)
 						: values.finalDateFolder,
 				};
 
@@ -175,7 +178,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 	});
 
 	const secondaryAction =
-		type === "general" ? (
+		type === "general" && canUpdate ? (
 			<Tooltip title="Cambiar estado">
 				<IconButton edge="end" aria-label="delete" color="secondary" onClick={handleStatus}>
 					<Notepad />
@@ -361,7 +364,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 												<DateInputField customInputStyles={customInputStyles} name="initialDateFolder" />
 											) : (
 												<Typography variant="body2">
-													{folder?.initialDateFolder ? dayjs(folder?.initialDateFolder).format("DD/MM/YYYY") : "-"}
+													{folder?.initialDateFolder ? fechaFolderAInput(folder?.initialDateFolder) : "-"}
 												</Typography>
 											)}
 										</>
@@ -381,7 +384,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 											) : (
 												type === "general" && (
 													<Typography variant="body2">
-														{folder?.finalDateFolder ? dayjs(folder?.finalDateFolder).format("DD/MM/YYYY") : "-"}
+														{folder?.finalDateFolder ? fechaFolderAInput(folder?.finalDateFolder) : "-"}
 													</Typography>
 												)
 											)}
@@ -511,7 +514,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 								sx={{
 									mt: 4,
 									borderBottomWidth: 1,
-									borderColor: "rgba(0, 0, 0, 0.12)",
+									borderColor: "divider",
 									width: "100%",
 								}}
 							/>
@@ -530,19 +533,21 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 										</>
 									)}
 
-									<Stack direction="row" spacing={2}>
-										<Grid>
-											{isEditing ? (
-												<Button type="submit" variant="contained" disabled={isLoader}>
-													Aplicar
-												</Button>
-											) : (
-												<Button type="button" onClick={handleEdit} disabled={isLoader}>
-													Editar
-												</Button>
-											)}
-										</Grid>
-									</Stack>
+									{canUpdate && (
+										<Stack direction="row" spacing={2}>
+											<Grid>
+												{isEditing ? (
+													<Button type="submit" variant="contained" disabled={isLoader}>
+														Aplicar
+													</Button>
+												) : (
+													<Button type="button" onClick={handleEdit} disabled={isLoader}>
+														Editar
+													</Button>
+												)}
+											</Grid>
+										</Stack>
+									)}
 								</Stack>
 							</Grid>
 						</Grid>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
 	Box,
 	Paper,
@@ -20,10 +20,6 @@ import {
 	Fade,
 	useMediaQuery,
 	Drawer,
-	Divider,
-	FormControlLabel,
-	Checkbox,
-	Alert,
 	Badge,
 } from "@mui/material";
 import dayjs from "utils/dayjs-config";
@@ -40,15 +36,19 @@ import {
 	TickCircle,
 	DocumentText,
 	Gallery,
+	Note1,
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useParams } from "react-router";
+import { useSearchParams } from "react-router-dom";
 import { useSelector, dispatch } from "store";
 import { getMovementsByFolderId } from "store/reducers/movements";
 import { getNotificationsByFolderId } from "store/reducers/notifications";
 import { getEventsById } from "store/reducers/events";
 import { getCombinedActivities } from "store/reducers/activities";
 import MovementsTable from "./tables/MovementsTable";
+import PjnMovementsViewerSection from "./PjnMovementsViewerSection";
+
 import NotificationsTable from "./tables/NotificationsTable";
 import CalendarTable from "./tables/CalendarTable";
 import CombinedTablePaginated from "./tables/CombinedTablePaginated";
@@ -63,11 +63,20 @@ import { CombinedActivity } from "types/activities";
 import { PopupTransition } from "components/@extended/Transitions";
 import { toggleModal, selectEvent } from "store/reducers/calendar";
 import { deleteEvent } from "store/reducers/events";
+import { openSnackbar } from "store/reducers/snackbar";
 import ActivityFilters from "./filters/ActivityFilters";
 import { exportActivityData } from "./utils/exportUtils";
 import PDFViewer from "components/shared/PDFViewer";
+import DocumentExplorer from "components/shared/DocumentExplorer";
 import ScrapingProgressBanner from "./ScrapingProgressBanner";
+import FolderSyncStatus from "./FolderSyncStatus";
+import SyncPendingEmptyState from "./SyncPendingEmptyState";
 import { useScrapingProgress } from "hooks/useScrapingProgress";
+import { useTeam } from "contexts/TeamContext";
+import { toggleMovementComplete } from "store/reducers/movements";
+import ModalTasks from "../modals/MoldalTasks";
+import ModalNotes from "../modals/ModalNotes";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // Types
 interface ActivityTablesProps {
@@ -86,10 +95,57 @@ interface TabConfig {
 
 const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const { id } = useParams<{ id: string }>();
+	const [searchParams, setSearchParams] = useSearchParams();
+	// Deep-link a un movimiento (?movement=<id> [+ ?action= | ?open=1]).
+	// Es una instrucción de navegación de UN solo uso, no estado persistente:
+	// se captura acá y se CONSUME (se quita de la URL con replace). Sin esto,
+	// volver a la pestaña re-disparaba el resaltado y la auto-apertura del visor.
+	const [deepLink, setDeepLink] = useState<{
+		movementId: string;
+		quickAction: "vencimiento" | "nota" | "tarea" | null;
+		open: boolean;
+	} | null>(null);
+	useEffect(() => {
+		const movementId = searchParams.get("movement");
+		if (!movementId) return;
+		const rawAction = searchParams.get("action");
+		setDeepLink({
+			movementId,
+			quickAction: rawAction === "vencimiento" || rawAction === "nota" || rawAction === "tarea" ? rawAction : null,
+			open: searchParams.get("open") === "1",
+		});
+		// La intención del deep-link es VER ese movimiento: apagar los chips de
+		// filtro para que el locate no lo descarte (un movimiento sin documento
+		// con "Con documento" activo daba not_found siendo que existe).
+		setFilters((prev: any) => ({ ...prev, onlyWithDocuments: false, onlyWithLinked: false }));
+		const next = new URLSearchParams(searchParams);
+		next.delete("movement");
+		next.delete("action");
+		next.delete("open");
+		setSearchParams(next, { replace: true });
+	}, [searchParams, setSearchParams]);
+	const highlightMovementId = deepLink?.movementId ?? null;
+	const quickAction = deepLink?.quickAction ?? null;
+	const openMovement = deepLink?.open ?? false;
+	const { canCreate } = useTeam();
 	const [activeTab, setActiveTab] = useState<TabValue>("movements");
+
+	// Al salir del tab de movimientos el deep-link ya fue atendido — descartarlo
+	// para que volver al tab no re-dispare el visor (las tablas remontan al
+	// cambiar de tab y sus guards one-shot se resetean con el mount).
+	useEffect(() => {
+		if (activeTab !== "movements") {
+			setDeepLink((prev) => (prev ? null : prev));
+		}
+	}, [activeTab]);
 	const [searchQuery, setSearchQuery] = useState("");
+	// Filtros del expediente PJN (viven en el toolbar; la tabla es
+	// PjnMovementsViewerSection y el endpoint pjn-movements los soporta nativos).
+	const [pjnDateFrom, setPjnDateFrom] = useState("");
+	const [pjnDateTo, setPjnDateTo] = useState("");
 	const [showFilters, setShowFilters] = useState(false);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [filters, setFilters] = useState<any>({
@@ -101,7 +157,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		hasExpiration: "",
 		allDay: "",
 		source: "",
-		onlyWithDocuments: true, // Inicialmente activado para mostrar solo movimientos con documento
+		// OFF por defecto (decisión 2026-07-24): mostrar TODO es el default menos
+		// sorpresivo — los movimientos sin documento (pases, cambios de estado)
+		// también son señal. El chip queda como herramienta opt-in de foco.
+		onlyWithDocuments: false,
+		onlyWithLinked: false, // Solo movimientos con notas/tareas/vencimientos vinculados
 	});
 
 	// Modals states - Movements
@@ -134,8 +194,17 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const [pdfUrlFromDetails, setPdfUrlFromDetails] = useState<string>("");
 	const [pdfTitleFromDetails, setPdfTitleFromDetails] = useState<string>("");
 
-	// Estado para ScrapingProgressBanner
+	// Estado para ScrapingProgressBanner (MEV)
 	const [scrapingBannerClosed, setScrapingBannerClosed] = useState(false);
+	// Document Explorer (overlay) states
+	const [explorerOpen, setExplorerOpen] = useState(false);
+	const [explorerMovement, setExplorerMovement] = useState<Movement | null>(null);
+
+	// Quick action modals from DocumentPanel
+	const [panelTaskModalOpen, setPanelTaskModalOpen] = useState(false);
+	const [panelTaskInitialValues, setPanelTaskInitialValues] = useState<any>(undefined);
+	const [panelNoteModalOpen, setPanelNoteModalOpen] = useState(false);
+	const [panelNoteInitialValues, setPanelNoteInitialValues] = useState<any>(undefined);
 
 	// Selectors
 	const movementsData = useSelector((state: any) => state.movements);
@@ -146,11 +215,69 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const auth = useSelector((state: any) => state.auth);
 	const userId = auth.user?._id;
 
-	// Hook personalizado para gestionar scrapingProgress con transición suave
+	// Hook personalizado para gestionar scrapingProgress con transición suave (MEV)
 	const { scrapingProgress } = useScrapingProgress(movementsData.scrapingProgress, id);
 
-	// Detectar si es PJN o MEV basado en la presencia de pjnAccess
-	const scrapingSource: "mev" | "pjn" = movementsData.pjnAccess ? "pjn" : "mev";
+	// Detectar origen del scraping por la presencia del *Access correspondiente
+	// (el server solo devuelve scbaAccess/pjnAccess/ejeAccess cuando el folder es de ese tipo).
+	const scrapingSource: "mev" | "pjn" | "scba" | "eje" | "pjsalta" | "pjcatamarca" | "pjmendoza" = movementsData.scbaAccess
+		? "scba"
+		: movementsData.pjnAccess
+		? "pjn"
+		: movementsData.ejeAccess
+		? "eje"
+		: movementsData.pjsaltaAccess
+		? "pjsalta"
+		: movementsData.pjcatamarcaAccess
+		? "pjcatamarca"
+		: movementsData.pjmendozaAccess
+		? "pjmendoza"
+		: "mev";
+
+	// Carpeta sincronizada (algún *Access presente) vs manual. En sincronizadas el
+	// visor de movimientos reemplaza al "Expediente digital" legacy (que mostraba
+	// los adjuntos como si fueran el expediente) — misma consolidación que PJN.
+	const isSyncedFolder = Boolean(
+		movementsData.pjnAccess ||
+			movementsData.mevAccess ||
+			movementsData.scbaAccess ||
+			movementsData.ejeAccess ||
+			movementsData.pjsaltaAccess ||
+			movementsData.pjcatamarcaAccess ||
+			movementsData.pjmendozaAccess,
+	);
+	const isIolFolder = Boolean(movementsData.pjsaltaAccess || movementsData.pjcatamarcaAccess || movementsData.pjmendozaAccess);
+
+	// En EJE el parser resuelve adjuntos via API pública del portal, pero
+	// solo una minoría de movimientos tiene PDF asociado (en muchas causas
+	// directamente ninguno). Si totalWithLinks llega en 0 con el filtro
+	// "Solo con documento" activo, dejaríamos al user con una tabla vacía
+	// sin pista de qué hay. Apagamos el filtro automáticamente solo en
+	// ese caso — si hay al menos un adjunto, dejamos el default ON.
+	const ejeAutoDisabledRef = useRef(false);
+	useEffect(() => {
+		if (
+			!ejeAutoDisabledRef.current &&
+			(movementsData.ejeAccess || isIolFolder) &&
+			filters.onlyWithDocuments &&
+			movementsData.totalWithLinks === 0 &&
+			!movementsData.isLoading
+		) {
+			ejeAutoDisabledRef.current = true;
+			setFilters((prev: any) => ({ ...prev, onlyWithDocuments: false }));
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [movementsData.ejeAccess, isIolFolder, movementsData.totalWithLinks, movementsData.isLoading]);
+
+	// SCBA recién vinculado pero todavía sin primer scrap: el worker SCBA corre
+	// cada ~5min y hasta que termine no hay movimientos ni causaLastSyncDate.
+	// En esa ventana mostramos un empty state contextual en lugar de tabla vacía.
+	// (Si scrapingProgress está en vuelo, ScrapingProgressBanner ya cubre el caso.)
+	const isScbaFirstSyncPending =
+		(!!movementsData.scbaAccess || isIolFolder) &&
+		!movementsData.causaLastSyncDate &&
+		(movementsData.movements?.length ?? 0) === 0 &&
+		!scrapingProgress;
 
 	// Load data on mount y cuando cambien los filtros
 	useEffect(() => {
@@ -169,20 +296,16 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			dispatch(getNotificationsByFolderId(id));
 			dispatch(getEventsById(id));
 		}
-	}, [id, activeTab, filters.onlyWithDocuments, filters.type]);
+	}, [id, activeTab, filters.onlyWithDocuments, filters.onlyWithLinked, filters.type, filters.startDate, filters.endDate]);
 
-	// Polling para scrapingProgress cada 30 segundos
+	// Polling para scrapingProgress (MEV y PJN): 10s cuando está en progreso, 30s en otros estados activos
 	useEffect(() => {
-		// Solo hacer polling si:
-		// 1. Hay scrapingProgress
-		// 2. No está completo
-		// 3. El estado no es "completed"
-		// 4. Hay un folderId
 		if (!scrapingProgress || scrapingProgress.isComplete || scrapingProgress.status === "completed" || !id) {
 			return;
 		}
 
-		// Configurar intervalo de 30 segundos
+		const pollMs = scrapingProgress.status === "in_progress" ? 10000 : 30000;
+
 		const pollInterval = setInterval(() => {
 			dispatch(
 				getMovementsByFolderId(id, {
@@ -192,11 +315,18 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 					filter: buildFilterObject(filters.onlyWithDocuments),
 				}),
 			);
-		}, 30000); // 30 segundos
+		}, pollMs);
 
-		// Limpiar intervalo al desmontar o cuando cambian las dependencias
 		return () => clearInterval(pollInterval);
-	}, [id, scrapingProgress?.isComplete, scrapingProgress?.status, filters.onlyWithDocuments]);
+	}, [
+		id,
+		scrapingProgress?.isComplete,
+		scrapingProgress?.status,
+		filters.onlyWithDocuments,
+		filters.onlyWithLinked,
+		filters.startDate,
+		filters.endDate,
+	]);
 
 	// Resetear estado del banner cuando cambia scrapingProgress
 	useEffect(() => {
@@ -206,34 +336,34 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		}
 	}, [scrapingProgress?.status]);
 
-	// Tab configuration
+	// Tab configuration — all brand-aligned (no rainbow)
 	const tabs: TabConfig[] = [
 		{
 			value: "movements",
 			label: "Movimientos",
 			icon: <TableDocument size={20} />,
-			color: theme.palette.success.main,
+			color: BRAND_BLUE,
 			description: "Escritos y despachos judiciales",
 		},
 		{
 			value: "notifications",
 			label: "Notificaciones",
 			icon: <NotificationStatus size={20} />,
-			color: theme.palette.primary.main,
+			color: BRAND_BLUE,
 			description: "Cédulas y notificaciones",
 		},
 		{
 			value: "calendar",
 			label: "Calendario",
 			icon: <Calendar size={20} />,
-			color: theme.palette.warning.main,
+			color: BRAND_BLUE,
 			description: "Eventos y audiencias",
 		},
 		{
 			value: "combined",
-			label: "Vista Combinada",
+			label: "Vista combinada",
 			icon: <Link21 size={20} />,
-			color: theme.palette.secondary.main,
+			color: BRAND_BLUE,
 			description: "Todas las actividades unificadas",
 		},
 	];
@@ -351,9 +481,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 	const handleRefreshMovements = () => {
 		if (id) {
+			// Usar la página actual para mantener la vista del usuario
+			const currentPage = movementsData.pagination?.page || 1;
 			dispatch(
 				getMovementsByFolderId(id, {
-					page: 1,
+					page: currentPage,
 					limit: 10,
 					sort: "-time",
 					filter: buildFilterObject(filters.onlyWithDocuments),
@@ -364,6 +496,83 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 	const handleCloseBanner = () => {
 		setScrapingBannerClosed(true);
+	};
+
+	// Document Explorer handlers
+	const handleOpenExplorer = (movement: Movement) => {
+		setExplorerMovement(movement);
+		setExplorerOpen(true);
+	};
+
+	const handleCloseExplorer = () => {
+		setExplorerOpen(false);
+		setExplorerMovement(null);
+	};
+
+	const handleOpenExplorerFromNavigation = () => {
+		// Close document navigation modal, open explorer with current movement
+		const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
+		const movementToOpen = currentDocumentMovement || movementsWithLinks[0];
+		setDocumentNavigationOpen(false);
+		setCurrentDocumentMovement(null);
+		if (movementToOpen) {
+			handleOpenExplorer(movementToOpen);
+		}
+	};
+
+	const handleExplorerPageRequest = async (page: number) => {
+		if (id) {
+			await dispatch(
+				getMovementsByFolderId(id, {
+					page,
+					limit: 10,
+					sort: "-time",
+					filter: buildFilterObject(filters.onlyWithDocuments),
+				}),
+			);
+		}
+	};
+
+	// Cerrar explorer si se cambia de tab
+	useEffect(() => {
+		if (activeTab !== "movements") {
+			handleCloseExplorer();
+		}
+	}, [activeTab]);
+
+	// Quick action handlers from DocumentPanel
+	const handleCreateTaskFromPanel = (movement: Movement) => {
+		const movementRef = movement.source === "pjn" ? movement.link : movement._id;
+		setPanelTaskInitialValues({
+			name: `[${movement.movement}] ${movement.title}`,
+			description: movement.description || "",
+			dueDate: movement.dateExpiration || "",
+			movementRef: movementRef || undefined,
+			movementSource: movement.source || undefined,
+		});
+		setPanelTaskModalOpen(true);
+	};
+
+	const handleAddNoteFromPanel = (movement: Movement) => {
+		const movementRef = movement.source === "pjn" ? movement.link : movement._id;
+		setPanelNoteInitialValues({
+			title: `Nota: ${movement.title}`,
+			content: movement.description || "",
+			movementRef: movementRef || undefined,
+			movementSource: movement.source || undefined,
+		});
+		setPanelNoteModalOpen(true);
+	};
+
+	const handleEditMovementFromPanel = (movement: Movement) => {
+		handleEditMovement(movement);
+	};
+
+	const handleToggleCompleteFromPanel = async (movementId: string) => {
+		const result = await dispatch(toggleMovementComplete(movementId));
+		if (!result.success) {
+			console.error("Error al cambiar el estado del movimiento:", result.error);
+		}
 	};
 
 	// Notification handlers
@@ -416,9 +625,38 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 	const handleConfirmDeleteEvent = async () => {
 		if (eventToDelete) {
-			await dispatch(deleteEvent(eventToDelete));
+			const result = await dispatch(deleteEvent(eventToDelete) as any);
 			setDeleteEventDialog(false);
 			setEventToDelete(null);
+
+			if (result?.success) {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "Evento eliminado exitosamente",
+						variant: "alert",
+						alert: {
+							color: "success",
+						},
+						close: true,
+					}),
+				);
+			} else {
+				// Mostrar mensaje de error apropiado según el código de estado
+				const errorMessage =
+					result?.statusCode === 403 ? "No tienes permisos para eliminar este evento" : result?.error || "Error al eliminar el evento";
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: errorMessage,
+						variant: "alert",
+						alert: {
+							color: "error",
+						},
+						close: true,
+					}),
+				);
+			}
 		}
 	};
 
@@ -577,19 +815,55 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			filterObj.hasLink = true;
 		}
 
+		// Solo movimientos con notas/tareas/vencimientos vinculados (movementRef)
+		if (filters.onlyWithLinked) {
+			filterObj.hasLinked = true;
+		}
+
 		// Agregar filtro de tipo de movimiento si existe
 		if (filters.type) {
 			filterObj.movement = filters.type;
 		}
 
-		// Agregar otros filtros según estén disponibles
-		// (pueden agregarse más filtros en el futuro)
+		// Rango de fechas de los filtros avanzados (Desde/Hasta). Sin esto, los
+		// date pickers del box de filtros no operaban sobre los movimientos.
+		if (filters.startDate && filters.endDate) {
+			filterObj.dateRange = `${dayjs(filters.startDate).format("YYYY-MM-DD")},${dayjs(filters.endDate).format("YYYY-MM-DD")}`;
+		}
 
 		// Si no hay ningún filtro, retornar undefined en lugar de objeto vacío
 		return Object.keys(filterObj).length > 0 ? filterObj : undefined;
 	};
 
 	// Sidebar content
+	const StatRow = ({ label, count }: { label: string; count: number }) => (
+		<Stack
+			direction="row"
+			alignItems="center"
+			justifyContent="space-between"
+			sx={{
+				px: 1,
+				py: 0.625,
+				borderRadius: 0.75,
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+			}}
+		>
+			<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>{label}</Typography>
+			<Typography
+				sx={{
+					fontSize: "0.78rem",
+					fontWeight: 700,
+					color: count > 0 ? BRAND_BLUE : "text.disabled",
+					letterSpacing: "-0.005em",
+					fontVariantNumeric: "tabular-nums",
+				}}
+			>
+				{count}
+			</Typography>
+		</Stack>
+	);
+
 	const sidebarContent = (
 		<Box
 			sx={{
@@ -597,80 +871,177 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 				display: "flex",
 				flexDirection: "column",
 				height: "100%",
-				bgcolor: theme.palette.mode === "dark" ? alpha(theme.palette.background.paper, 0.8) : theme.palette.grey[50],
+				bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+				borderRight: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
 			}}
 		>
-			<Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
-				<Typography variant="h5" gutterBottom>
-					Actividad
-				</Typography>
-				<Typography variant="caption" color="textSecondary">
-					{folderName || "Carpeta"}
-				</Typography>
+			{/* Header */}
+			<Box sx={{ p: 1.75, borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}>
+				<Stack direction="row" spacing={1.25} alignItems="center">
+					<Box
+						sx={{
+							width: 32,
+							height: 32,
+							borderRadius: 1,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+							color: BRAND_BLUE,
+						}}
+					>
+						<TableDocument size={16} variant="Bulk" />
+					</Box>
+					<Stack spacing={0.125} sx={{ minWidth: 0 }}>
+						<Stack direction="row" spacing={0.5} alignItems="center">
+							<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+							<Typography
+								sx={{
+									fontSize: "0.58rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+								}}
+							>
+								Actividad
+							</Typography>
+						</Stack>
+						<Typography
+							sx={{
+								fontSize: "0.82rem",
+								fontWeight: 600,
+								letterSpacing: "-0.005em",
+								color: "text.primary",
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
+							{folderName || "Carpeta"}
+						</Typography>
+					</Stack>
+				</Stack>
 			</Box>
 
+			{/* Tabs verticales */}
 			<Tabs
 				orientation="vertical"
 				variant="scrollable"
 				value={activeTab}
 				onChange={handleTabChange}
+				TabIndicatorProps={{
+					sx: {
+						left: 0,
+						width: 3,
+						borderRadius: "0 2px 2px 0",
+						bgcolor: BRAND_BLUE,
+						transition: "all 200ms ease",
+					},
+				}}
 				sx={{
 					flex: 1,
-					"& .MuiTabs-indicator": {
-						left: 0,
-						width: 4,
-					},
 					"& .MuiTab-root": {
-						minHeight: 72,
+						minHeight: 68,
 						justifyContent: "flex-start",
 						textAlign: "left",
 						alignItems: "flex-start",
-						px: 2,
-						py: 1.5,
+						px: 1.75,
+						py: 1.25,
 						borderRadius: 0,
 						textTransform: "none",
+						transition: "all 180ms ease",
 						"&.Mui-selected": {
-							bgcolor: alpha(theme.palette.primary.main, 0.08),
-							color: theme.palette.primary.main,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
 						},
 						"&:hover": {
-							bgcolor: alpha(theme.palette.primary.main, 0.04),
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
 						},
 					},
 				}}
 			>
-				{tabs.map((tab) => (
-					<Tab
-						key={tab.value}
-						value={tab.value}
-						label={
-							<Stack spacing={0.5} alignItems="flex-start" width="100%">
-								<Stack direction="row" spacing={1} alignItems="center">
-									<Box sx={{ color: tab.color }}>{tab.icon}</Box>
-									<Typography variant="subtitle1" fontWeight={500}>
-										{tab.label}
+				{tabs.map((tab) => {
+					const active = activeTab === tab.value;
+					return (
+						<Tab
+							key={tab.value}
+							value={tab.value}
+							disableRipple
+							label={
+								<Stack spacing={0.5} alignItems="flex-start" width="100%">
+									<Stack direction="row" spacing={1.25} alignItems="center">
+										<Box
+											sx={{
+												width: 26,
+												height: 26,
+												borderRadius: 0.75,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												bgcolor: active ? alpha(BRAND_BLUE, isDark ? 0.18 : 0.1) : alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+												border: `1px solid ${active ? alpha(BRAND_BLUE, isDark ? 0.32 : 0.22) : alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+												color: BRAND_BLUE,
+												flexShrink: 0,
+												transition: "all 180ms ease",
+											}}
+										>
+											{React.cloneElement(tab.icon, {
+												size: 14,
+												variant: active ? "Bulk" : "Linear",
+											})}
+										</Box>
+										<Typography
+											sx={{
+												fontSize: "0.82rem",
+												fontWeight: active ? 600 : 500,
+												letterSpacing: "-0.005em",
+												color: active ? "text.primary" : "text.secondary",
+											}}
+										>
+											{tab.label}
+										</Typography>
+									</Stack>
+									<Typography
+										sx={{
+											fontSize: "0.68rem",
+											color: "text.secondary",
+											letterSpacing: "-0.005em",
+											pl: 4.625,
+											opacity: 0.85,
+										}}
+									>
+										{tab.description}
 									</Typography>
 								</Stack>
-								<Typography variant="caption" color="textSecondary" sx={{ lineHeight: 1.2 }}>
-									{tab.description}
-								</Typography>
-							</Stack>
-						}
-					/>
-				))}
+							}
+						/>
+					);
+				})}
 			</Tabs>
 
-			{/* Stats or Quick Info */}
-			<Box sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-				<Typography variant="caption" color="textSecondary">
-					Total de registros
-				</Typography>
-				<Stack spacing={0.5} mt={1}>
+			{/* Stats footer — brand StatRows */}
+			<Box sx={{ p: 1.75, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}>
+				<Stack direction="row" spacing={0.5} alignItems="center" mb={1}>
+					<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+					<Typography
+						sx={{
+							fontSize: "0.58rem",
+							fontWeight: 600,
+							letterSpacing: "0.08em",
+							textTransform: "uppercase",
+							color: "text.secondary",
+						}}
+					>
+						Total de registros
+					</Typography>
+				</Stack>
+				<Stack spacing={0.625}>
 					{movementsData.isLoading || notificationsData.isLoading || eventsData.isLoading ? (
 						<>
-							<Skeleton variant="rectangular" height={24} />
-							<Skeleton variant="rectangular" height={24} />
-							<Skeleton variant="rectangular" height={24} />
+							<Skeleton variant="rectangular" height={28} sx={{ borderRadius: 0.75 }} />
+							<Skeleton variant="rectangular" height={28} sx={{ borderRadius: 0.75 }} />
+							<Skeleton variant="rectangular" height={28} sx={{ borderRadius: 0.75 }} />
 						</>
 					) : (
 						<>
@@ -679,12 +1050,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 								arrow
 								placement="right"
 							>
-								<Chip
-									size="small"
-									label={`${movementsData.pagination?.total || movementsData.movements?.length || 0} movimientos`}
-									variant="outlined"
-									sx={{ justifyContent: "flex-start", width: "100%" }}
-								/>
+								<Box>
+									<StatRow label="Movimientos" count={movementsData.pagination?.total || movementsData.movements?.length || 0} />
+								</Box>
 							</Tooltip>
 							<Tooltip
 								title={
@@ -695,24 +1063,21 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 								arrow
 								placement="right"
 							>
-								<Chip
-									size="small"
-									label={`${notificationsData.pagination?.total || notificationsData.notifications?.length || 0} notificaciones`}
-									variant="outlined"
-									sx={{ justifyContent: "flex-start", width: "100%" }}
-								/>
+								<Box>
+									<StatRow
+										label="Notificaciones"
+										count={notificationsData.pagination?.total || notificationsData.notifications?.length || 0}
+									/>
+								</Box>
 							</Tooltip>
 							<Tooltip
 								title={eventsData.pagination ? `Mostrando ${eventsData.events?.length} de ${eventsData.pagination.total}` : ""}
 								arrow
 								placement="right"
 							>
-								<Chip
-									size="small"
-									label={`${eventsData.pagination?.total || eventsData.events?.length || 0} eventos`}
-									variant="outlined"
-									sx={{ justifyContent: "flex-start", width: "100%" }}
-								/>
+								<Box>
+									<StatRow label="Eventos" count={eventsData.pagination?.total || eventsData.events?.length || 0} />
+								</Box>
 							</Tooltip>
 						</>
 					)}
@@ -721,15 +1086,32 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		</Box>
 	);
 
+	const brandIconButtonSx = {
+		width: 32,
+		height: 32,
+		borderRadius: 1,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+		bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+		color: BRAND_BLUE,
+		transition: "all 180ms ease",
+		"&:hover": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.38 : 0.28),
+		},
+	};
+
 	return (
 		<MainCard
-			shadow={3}
 			content={false}
 			sx={{
 				"& .MuiCardContent-root": { p: 0 },
 				height: "100%",
 				display: "flex",
 				flexDirection: "column",
+				borderRadius: 1.5,
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+				boxShadow: "none",
+				overflow: "hidden",
 			}}
 		>
 			<Box sx={{ display: "flex", height: "100%", minHeight: 600 }}>
@@ -737,166 +1119,226 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 					<>
 						{/* Mobile Layout */}
 						<Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-							{/* Header Toolbar with Menu Button */}
+							{/* Header Toolbar */}
 							<Box
 								sx={{
-									p: 2,
-									borderBottom: `1px solid ${theme.palette.divider}`,
-									bgcolor: theme.palette.background.paper,
+									p: 1.5,
+									borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 								}}
 							>
-								<Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
-									<Stack direction="row" spacing={2} alignItems="center" flex={1}>
-										{/* Menu Button */}
-										<IconButton onClick={() => setMobileOpen(true)} sx={{ mr: 1 }}>
-											<Menu />
+								<Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+									<Stack direction="row" spacing={1} alignItems="center" flex={1}>
+										{/* Menu */}
+										<IconButton onClick={() => setMobileOpen(true)} size="small" sx={brandIconButtonSx}>
+											<Menu size={16} variant="Bulk" />
 										</IconButton>
 
-										{/* Current Tab Indicator */}
+										{/* Current tab pill */}
 										<Box
 											sx={{
-												display: "flex",
+												display: "inline-flex",
 												alignItems: "center",
-												gap: 1,
-												px: 2,
-												py: 1,
+												gap: 0.625,
+												px: 1,
+												py: 0.5,
 												borderRadius: 1,
-												bgcolor: alpha(currentTab?.color || theme.palette.primary.main, 0.1),
-												color: currentTab?.color,
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+												color: BRAND_BLUE,
 											}}
 										>
-											{currentTab?.icon}
-											<Typography variant="subtitle2" fontWeight={600}>
+											{React.cloneElement(currentTab?.icon || <TableDocument />, { size: 14, variant: "Bulk" })}
+											<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, letterSpacing: "-0.005em", color: BRAND_BLUE }}>
 												{currentTab?.label}
 											</Typography>
 										</Box>
 									</Stack>
 
-									{/* Action Buttons */}
-									<Stack direction="row" spacing={1}>
-										{activeTab !== "combined" && (
+									{/* Action buttons */}
+									<Stack direction="row" spacing={0.75}>
+										{activeTab !== "combined" && canCreate && (
 											<Tooltip title={`Agregar ${currentTab?.label.toLowerCase().slice(0, -1)}`}>
 												<IconButton
 													size="small"
-													color="primary"
 													onClick={() => {
 														if (activeTab === "movements") handleAddMovement();
 														else if (activeTab === "notifications") handleAddNotification();
 														else if (activeTab === "calendar") handleAddEvent();
 													}}
+													sx={brandIconButtonSx}
 												>
-													<Add />
+													<Add size={16} variant="Bulk" />
 												</IconButton>
 											</Tooltip>
 										)}
 									</Stack>
 								</Stack>
 
-								{/* Search Bar - Full width on mobile */}
-								<Box sx={{ mt: 2 }}>
+								{/* Search */}
+								<Box sx={{ mt: 1.5 }}>
 									<TextField
 										size="small"
 										fullWidth
-										placeholder={`Buscar en ${currentTab?.label.toLowerCase()}...`}
+										placeholder={`Buscar en ${currentTab?.label.toLowerCase()}…`}
 										value={searchQuery}
 										onChange={(e) => setSearchQuery(e.target.value)}
 										InputProps={{
 											startAdornment: (
 												<InputAdornment position="start">
-													<SearchNormal1 size={18} />
+													<SearchNormal1 size={16} variant="Bulk" color={BRAND_BLUE} />
 												</InputAdornment>
 											),
+											sx: {
+												bgcolor: theme.palette.background.paper,
+												borderRadius: 1,
+												"& .MuiOutlinedInput-notchedOutline": {
+													borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
+												},
+												"&:hover .MuiOutlinedInput-notchedOutline": {
+													borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+												},
+												"&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+													borderColor: BRAND_BLUE,
+												},
+											},
 										}}
 									/>
 								</Box>
 
-								{/* Controles específicos para movimientos */}
-								{activeTab === "movements" && (
-									<Box
-										sx={{
-											mt: 2,
-											p: 1.5,
-											bgcolor: alpha(theme.palette.primary.main, 0.04),
-											borderRadius: 1,
-											border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-										}}
-									>
-										<Stack spacing={1.5}>
-											<Typography variant="caption" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
-												OPCIONES DE VISUALIZACIÓN
-											</Typography>
-
-											{/* Checkbox para filtrar solo movimientos con documento */}
-											<FormControlLabel
-												control={
-													<Checkbox
-														checked={filters.onlyWithDocuments}
-														onChange={(e) => {
-															// Solo actualizar el estado, el useEffect se encargará del dispatch
-															setFilters({ ...filters, onlyWithDocuments: e.target.checked });
-														}}
-														size="small"
-														color="primary"
-													/>
-												}
-												label={
-													<Stack direction="row" alignItems="center" spacing={1}>
-														<DocumentText size={18} color={theme.palette.primary.main} />
-														<Typography variant="body2">
-															Solo movimientos con documento
-															{movementsData.totalWithLinks > 0 && (
-																<Chip size="small" label={movementsData.totalWithLinks} color="primary" sx={{ ml: 1, height: 20 }} />
-															)}
-														</Typography>
-													</Stack>
-												}
+								{/* Controles para movimientos — mobile. Rediseño 2026-07: controles
+								    compactos en vez de la caja "Opciones de visualización". PJN: solo el
+								    filtro de estado de PDF (los clásicos no operan sobre pjn-movements). */}
+								{activeTab === "movements" && scrapingSource === "pjn" && (
+									<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" rowGap={1} sx={{ mt: 1.5 }}>
+										<Tooltip title="Mostrar solo los movimientos que tienen documento">
+											<Chip
+												size="small"
+												clickable
+												icon={<DocumentText size={14} variant="Bulk" />}
+												label="Con documento"
+												onClick={() => setFilters({ ...filters, onlyWithDocuments: !filters.onlyWithDocuments })}
+												sx={{
+													fontWeight: 600,
+													letterSpacing: "-0.005em",
+													border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithDocuments ? 0.5 : isDark ? 0.22 : 0.14)}`,
+													bgcolor: filters.onlyWithDocuments ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+													color: filters.onlyWithDocuments ? BRAND_BLUE : "text.secondary",
+													"& .MuiChip-icon": { color: BRAND_BLUE },
+												}}
 											/>
-
-											{/* Alerta informativa cuando hay más movimientos disponibles */}
+										</Tooltip>
+										<Tooltip title="Mostrar solo los movimientos que tienen notas, tareas o vencimientos vinculados">
+											<Chip
+												size="small"
+												clickable
+												icon={<Note1 size={14} variant="Bulk" />}
+												label="Con vinculados"
+												onClick={() => setFilters({ ...filters, onlyWithLinked: !filters.onlyWithLinked })}
+												sx={{
+													fontWeight: 600,
+													letterSpacing: "-0.005em",
+													border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithLinked ? 0.5 : isDark ? 0.22 : 0.14)}`,
+													bgcolor: filters.onlyWithLinked ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+													color: filters.onlyWithLinked ? BRAND_BLUE : "text.secondary",
+													"& .MuiChip-icon": { color: BRAND_BLUE },
+												}}
+											/>
+										</Tooltip>
+										<TextField
+											size="small"
+											type="date"
+											label="Desde"
+											value={pjnDateFrom}
+											onChange={(e) => setPjnDateFrom(e.target.value)}
+											InputLabelProps={{ shrink: true }}
+											sx={{ flex: 1, minWidth: 130 }}
+										/>
+										<TextField
+											size="small"
+											type="date"
+											label="Hasta"
+											value={pjnDateTo}
+											onChange={(e) => setPjnDateTo(e.target.value)}
+											InputLabelProps={{ shrink: true }}
+											sx={{ flex: 1, minWidth: 130 }}
+										/>
+									</Stack>
+								)}
+								{activeTab === "movements" && scrapingSource !== "pjn" && (
+									<Stack spacing={1.25} sx={{ mt: 1.5 }}>
+										<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" rowGap={1}>
+											<Chip
+												size="small"
+												clickable
+												icon={<DocumentText size={14} variant="Bulk" />}
+												label={`Con documento${movementsData.totalWithLinks > 0 ? ` (${movementsData.totalWithLinks})` : ""}`}
+												onClick={() => setFilters({ ...filters, onlyWithDocuments: !filters.onlyWithDocuments })}
+												sx={{
+													fontWeight: 600,
+													letterSpacing: "-0.005em",
+													border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithDocuments ? 0.5 : isDark ? 0.22 : 0.14)}`,
+													bgcolor: filters.onlyWithDocuments ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+													color: filters.onlyWithDocuments ? BRAND_BLUE : "text.secondary",
+													"& .MuiChip-icon": { color: BRAND_BLUE },
+												}}
+											/>
+											<Tooltip title="Mostrar solo los movimientos que tienen notas, tareas o vencimientos vinculados">
+												<Chip
+													size="small"
+													clickable
+													icon={<Note1 size={14} variant="Bulk" />}
+													label="Con vinculados"
+													onClick={() => setFilters({ ...filters, onlyWithLinked: !filters.onlyWithLinked })}
+													sx={{
+														fontWeight: 600,
+														letterSpacing: "-0.005em",
+														border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithLinked ? 0.5 : isDark ? 0.22 : 0.14)}`,
+														bgcolor: filters.onlyWithLinked ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+														color: filters.onlyWithLinked ? BRAND_BLUE : "text.secondary",
+														"& .MuiChip-icon": { color: BRAND_BLUE },
+													}}
+												/>
+											</Tooltip>
+											{isSyncedFolder && (
+												<>
+													<TextField
+														size="small"
+														type="date"
+														label="Desde"
+														value={filters.startDate ? dayjs(filters.startDate).format("YYYY-MM-DD") : ""}
+														onChange={(e) =>
+															setFilters({ ...filters, startDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
+														}
+														InputLabelProps={{ shrink: true }}
+														sx={{ width: 150 }}
+													/>
+													<TextField
+														size="small"
+														type="date"
+														label="Hasta"
+														value={filters.endDate ? dayjs(filters.endDate).format("YYYY-MM-DD") : ""}
+														onChange={(e) =>
+															setFilters({ ...filters, endDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
+														}
+														InputLabelProps={{ shrink: true }}
+														sx={{ width: 150 }}
+													/>
+												</>
+											)}
 											{filters.onlyWithDocuments &&
 												(movementsData.pagination?.totalAvailable ?? 0) > (movementsData.pagination?.total ?? 0) && (
-													<Alert
-														severity="info"
-														sx={{
-															mt: 1,
-															py: 0.5,
-															fontSize: "0.75rem",
-															"& .MuiAlert-message": {
-																py: 0.5,
-															},
-														}}
-													>
-														<Typography variant="caption">
-															Mostrando {movementsData.pagination.total || 0} de {movementsData.pagination.totalAvailable} movimientos
-															totales.{" "}
-															<Typography
-																component="span"
-																variant="caption"
-																sx={{
-																	color: "info.main",
-																	cursor: "pointer",
-																	textDecoration: "underline",
-																	fontWeight: 600,
-																}}
-																onClick={() => {
-																	// Solo actualizar el estado, el useEffect se encargará del dispatch
-																	setFilters({ ...filters, onlyWithDocuments: false });
-																}}
-															>
-																Ver todos
-															</Typography>
-														</Typography>
-													</Alert>
+													<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+														{movementsData.pagination.total || 0} de {movementsData.pagination.totalAvailable}
+													</Typography>
 												)}
-
-											<Divider sx={{ my: 1 }} />
-
-											{/* Botón para navegación secuencial de documentos */}
+										</Stack>
+										{!isSyncedFolder && (
 											<Button
 												variant="contained"
 												size="small"
 												fullWidth
-												startIcon={<Gallery size={18} />}
+												startIcon={<Gallery size={16} variant="Bulk" />}
 												onClick={() => {
 													const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
 													if (movementsWithLinks.length > 0) {
@@ -906,42 +1348,46 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												}}
 												disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
 												sx={{
-													bgcolor: theme.palette.primary.main,
-													color: "white",
-													"&:hover": {
-														bgcolor: theme.palette.primary.dark,
-													},
+													textTransform: "none",
+													fontWeight: 600,
+													letterSpacing: "-0.005em",
+													bgcolor: BRAND_BLUE,
+													color: "#fff",
+													borderRadius: 1,
+													py: 0.875,
+													boxShadow: "none",
+													"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
 													"&.Mui-disabled": {
-														bgcolor: theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)",
-														color: theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.26)",
-														opacity: 1,
+														bgcolor: alpha(theme.palette.text.disabled, 0.12),
+														color: theme.palette.text.disabled,
 													},
 												}}
 											>
 												Expediente digital
 												{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
 											</Button>
-										</Stack>
-									</Box>
+										)}
+									</Stack>
 								)}
 
-								{/* Filters Section (Collapsible) */}
-								<Collapse in={showFilters} timeout="auto" unmountOnExit>
-									<Fade in={showFilters} timeout={350}>
-										<Box
-											sx={{
-												mt: 2,
-												p: 2,
-												bgcolor: theme.palette.grey[50],
-												borderRadius: 1,
-												border: `1px solid ${theme.palette.divider}`,
-												transition: "all 0.3s ease-in-out",
-											}}
-										>
-											<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
-										</Box>
-									</Fade>
-								</Collapse>
+								{/* Filtros — brand */}
+								{!(activeTab === "movements" && isSyncedFolder) && (
+									<Collapse in={showFilters} timeout="auto" unmountOnExit>
+										<Fade in={showFilters} timeout={350}>
+											<Box
+												sx={{
+													mt: 1.5,
+													p: 1.75,
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+													borderRadius: 1,
+													border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+												}}
+											>
+												<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
+											</Box>
+										</Fade>
+									</Collapse>
+								)}
 							</Box>
 
 							{/* Table Content Area */}
@@ -953,35 +1399,87 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 									</Stack>
 								) : (
 									<Box>
-										{/* Scraping Progress Banner - solo para movements */}
-										{activeTab === "movements" && scrapingProgress && !scrapingBannerClosed && (
-											<Box sx={{ mb: 2 }}>
-												<ScrapingProgressBanner
-													scrapingProgress={scrapingProgress}
-													source={scrapingSource}
-													onRefresh={handleRefreshMovements}
-													onClose={handleCloseBanner}
-												/>
-											</Box>
+										{/* Scraping Progress Banner / Estado de sincronización PJN */}
+										{activeTab === "movements" && (
+											<>
+												{scrapingProgress && !scrapingBannerClosed && (
+													<Box sx={{ mb: 2 }}>
+														<ScrapingProgressBanner
+															scrapingProgress={scrapingProgress}
+															source={scrapingSource}
+															onRefresh={handleRefreshMovements}
+															onClose={handleCloseBanner}
+														/>
+													</Box>
+												)}
+												{!scrapingProgress && !isScbaFirstSyncPending && scrapingSource !== "pjn" && isSyncedFolder && (
+													<FolderSyncStatus
+														source={scrapingSource}
+														causaLastSyncDate={movementsData.causaLastSyncDate}
+														totalMovements={movementsData.pagination?.totalAvailable ?? movementsData.pagination?.total ?? null}
+													/>
+												)}
+											</>
 										)}
 
-										<Paper elevation={0} sx={{ height: "100%", border: `1px solid ${theme.palette.divider}` }}>
-											{activeTab === "movements" && (
-												<MovementsTable
-													movements={movementsData.movements}
-													searchQuery={searchQuery}
-													onEdit={handleEditMovement}
-													onDelete={handleDeleteMovement}
-													onView={handleViewMovement}
-													filters={filters}
-													pagination={movementsData.pagination}
-													isLoading={movementsData.isLoading}
-													totalWithLinks={movementsData.totalWithLinks}
-													documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
-													documentsInThisPage={movementsData.documentsInThisPage}
-													pjnAccess={movementsData.pjnAccess}
-												/>
-											)}
+										<Paper
+											elevation={0}
+											sx={{
+												height: "100%",
+												borderRadius: 1,
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+												overflow: "hidden",
+											}}
+										>
+											{activeTab === "movements" &&
+												(isScbaFirstSyncPending ? (
+													<SyncPendingEmptyState
+														source={scrapingSource}
+														onRefresh={handleRefreshMovements}
+														isRefreshing={movementsData.isLoading}
+													/>
+												) : scrapingSource === "pjn" && id ? (
+													// PJN: el viewer paginado (pjn-movements) REEMPLAZA la tabla clásica —
+													// una sola tabla. Otros fueros (EJE/SCBA/MEV/manual) usan MovementsTable.
+													<PjnMovementsViewerSection
+														folderId={id}
+														highlightMovementId={highlightMovementId}
+														quickAction={quickAction}
+														autoOpen={openMovement}
+														linkedOnly={filters.onlyWithLinked}
+														searchQuery={searchQuery}
+														withDocuments={filters.onlyWithDocuments}
+														dateFrom={pjnDateFrom}
+														dateTo={pjnDateTo}
+														causaLastSyncDate={movementsData.causaLastSyncDate}
+													/>
+												) : (
+													<MovementsTable
+														movements={movementsData.movements}
+														searchQuery={searchQuery}
+														onEdit={handleEditMovement}
+														onDelete={handleDeleteMovement}
+														onView={handleViewMovement}
+														filters={filters}
+														pagination={movementsData.pagination}
+														isLoading={movementsData.isLoading}
+														totalWithLinks={movementsData.totalWithLinks}
+														documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
+														documentsInThisPage={movementsData.documentsInThisPage}
+														pjnAccess={
+															movementsData.pjnAccess ??
+															movementsData.mevAccess ??
+															movementsData.scbaAccess ??
+															movementsData.ejeAccess ??
+															movementsData.pjsaltaAccess ??
+															movementsData.pjcatamarcaAccess ??
+															movementsData.pjmendozaAccess
+														}
+														folderName={folderName}
+														highlightMovementId={highlightMovementId}
+														autoOpenMovement={openMovement}
+													/>
+												))}
 											{activeTab === "notifications" && (
 												<NotificationsTable
 													notifications={notificationsData.notifications}
@@ -1011,7 +1509,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													pagination={activitiesData.pagination}
 													isLoading={activitiesData.isLoading}
 													stats={activitiesData.stats}
-													pjnAccess={activitiesData.pjnAccess}
+													pjnAccess={
+														activitiesData.pjnAccess ?? activitiesData.mevAccess ?? activitiesData.scbaAccess ?? activitiesData.ejeAccess
+													}
 												/>
 											)}
 										</Paper>
@@ -1035,262 +1535,403 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 				) : (
 					<>
 						{/* Desktop Layout */}
-						<Paper
-							elevation={0}
-							sx={{
-								borderRight: `1px solid ${theme.palette.divider}`,
-							}}
-						>
-							{sidebarContent}
-						</Paper>
+						{sidebarContent}
 
 						{/* Main Content Area */}
-						<Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+						<Box
+							sx={{
+								flex: 1,
+								display: "flex",
+								flexDirection: "column",
+								overflow: "hidden",
+							}}
+						>
 							{/* Header Toolbar */}
 							<Box
 								sx={{
-									p: 2,
-									borderBottom: `1px solid ${theme.palette.divider}`,
-									bgcolor: theme.palette.background.paper,
+									p: 1.5,
+									borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 								}}
 							>
-								<Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
-									<Stack direction="row" spacing={2} alignItems="center" flex={1}>
-										{/* Current Tab Indicator */}
+								<Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
+									<Stack direction="row" spacing={1.25} alignItems="center" flex={1}>
+										{/* Current tab pill */}
 										<Box
 											sx={{
-												display: "flex",
+												display: "inline-flex",
 												alignItems: "center",
-												gap: 1,
-												px: 2,
-												py: 1,
+												gap: 0.625,
+												px: 1.25,
+												py: 0.625,
 												borderRadius: 1,
-												bgcolor: alpha(currentTab?.color || theme.palette.primary.main, 0.1),
-												color: currentTab?.color,
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+												color: BRAND_BLUE,
 											}}
 										>
-											{currentTab?.icon}
-											<Typography variant="subtitle2" fontWeight={600}>
+											{React.cloneElement(currentTab?.icon || <TableDocument />, { size: 14, variant: "Bulk" })}
+											<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, letterSpacing: "-0.005em", color: BRAND_BLUE }}>
 												{currentTab?.label}
 											</Typography>
 										</Box>
 
-										{/* Search Bar */}
+										{/* Search */}
 										<TextField
 											size="small"
-											placeholder={`Buscar en ${currentTab?.label.toLowerCase()}...`}
+											placeholder={`Buscar en ${currentTab?.label.toLowerCase()}…`}
 											value={searchQuery}
 											onChange={(e) => setSearchQuery(e.target.value)}
 											sx={{ minWidth: 300 }}
 											InputProps={{
 												startAdornment: (
 													<InputAdornment position="start">
-														<SearchNormal1 size={18} />
+														<SearchNormal1 size={16} variant="Bulk" color={BRAND_BLUE} />
 													</InputAdornment>
 												),
+												sx: {
+													bgcolor: theme.palette.background.paper,
+													borderRadius: 1,
+													"& .MuiOutlinedInput-notchedOutline": {
+														borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
+													},
+													"&:hover .MuiOutlinedInput-notchedOutline": {
+														borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+													},
+													"&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+														borderColor: BRAND_BLUE,
+													},
+												},
 											}}
 										/>
+
+										{/* PJN: filtros nativos del expediente en el toolbar (estado de PDF +
+										    rango de fechas — el endpoint pjn-movements los soporta) */}
+										{activeTab === "movements" && scrapingSource === "pjn" && (
+											<>
+												<Tooltip title="Mostrar solo los movimientos que tienen documento">
+													<Chip
+														size="small"
+														clickable
+														icon={<DocumentText size={14} variant="Bulk" />}
+														label="Con documento"
+														onClick={() => setFilters({ ...filters, onlyWithDocuments: !filters.onlyWithDocuments })}
+														sx={{
+															fontWeight: 600,
+															letterSpacing: "-0.005em",
+															border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithDocuments ? 0.5 : isDark ? 0.22 : 0.14)}`,
+															bgcolor: filters.onlyWithDocuments ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+															color: filters.onlyWithDocuments ? BRAND_BLUE : "text.secondary",
+															"& .MuiChip-icon": { color: BRAND_BLUE },
+														}}
+													/>
+												</Tooltip>
+												<Tooltip title="Mostrar solo los movimientos que tienen notas, tareas o vencimientos vinculados">
+													<Chip
+														size="small"
+														clickable
+														icon={<Note1 size={14} variant="Bulk" />}
+														label="Con vinculados"
+														onClick={() => setFilters({ ...filters, onlyWithLinked: !filters.onlyWithLinked })}
+														sx={{
+															fontWeight: 600,
+															letterSpacing: "-0.005em",
+															border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithLinked ? 0.5 : isDark ? 0.22 : 0.14)}`,
+															bgcolor: filters.onlyWithLinked ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+															color: filters.onlyWithLinked ? BRAND_BLUE : "text.secondary",
+															"& .MuiChip-icon": { color: BRAND_BLUE },
+														}}
+													/>
+												</Tooltip>
+												<TextField
+													size="small"
+													type="date"
+													label="Desde"
+													value={pjnDateFrom}
+													onChange={(e) => setPjnDateFrom(e.target.value)}
+													InputLabelProps={{ shrink: true }}
+													sx={{ width: 150 }}
+												/>
+												<TextField
+													size="small"
+													type="date"
+													label="Hasta"
+													value={pjnDateTo}
+													onChange={(e) => setPjnDateTo(e.target.value)}
+													InputLabelProps={{ shrink: true }}
+													sx={{ width: 150 }}
+												/>
+											</>
+										)}
+										{/* Sincronizadas no-PJN: mismos filtros inline en la fila del buscador */}
+										{activeTab === "movements" && scrapingSource !== "pjn" && isSyncedFolder && (
+											<>
+												<Tooltip title="Mostrar solo los movimientos que tienen documento">
+													<Chip
+														size="small"
+														clickable
+														icon={<DocumentText size={14} variant="Bulk" />}
+														label={`Con documento${movementsData.totalWithLinks > 0 ? ` (${movementsData.totalWithLinks})` : ""}`}
+														onClick={() => setFilters({ ...filters, onlyWithDocuments: !filters.onlyWithDocuments })}
+														sx={{
+															fontWeight: 600,
+															letterSpacing: "-0.005em",
+															border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithDocuments ? 0.5 : isDark ? 0.22 : 0.14)}`,
+															bgcolor: filters.onlyWithDocuments ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+															color: filters.onlyWithDocuments ? BRAND_BLUE : "text.secondary",
+															"& .MuiChip-icon": { color: BRAND_BLUE },
+														}}
+													/>
+												</Tooltip>
+												<Tooltip title="Mostrar solo los movimientos que tienen notas, tareas o vencimientos vinculados">
+													<Chip
+														size="small"
+														clickable
+														icon={<Note1 size={14} variant="Bulk" />}
+														label="Con vinculados"
+														onClick={() => setFilters({ ...filters, onlyWithLinked: !filters.onlyWithLinked })}
+														sx={{
+															fontWeight: 600,
+															letterSpacing: "-0.005em",
+															border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithLinked ? 0.5 : isDark ? 0.22 : 0.14)}`,
+															bgcolor: filters.onlyWithLinked ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+															color: filters.onlyWithLinked ? BRAND_BLUE : "text.secondary",
+															"& .MuiChip-icon": { color: BRAND_BLUE },
+														}}
+													/>
+												</Tooltip>
+												<TextField
+													size="small"
+													type="date"
+													label="Desde"
+													value={filters.startDate ? dayjs(filters.startDate).format("YYYY-MM-DD") : ""}
+													onChange={(e) =>
+														setFilters({ ...filters, startDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
+													}
+													InputLabelProps={{ shrink: true }}
+													sx={{ width: 150 }}
+												/>
+												<TextField
+													size="small"
+													type="date"
+													label="Hasta"
+													value={filters.endDate ? dayjs(filters.endDate).format("YYYY-MM-DD") : ""}
+													onChange={(e) =>
+														setFilters({ ...filters, endDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
+													}
+													InputLabelProps={{ shrink: true }}
+													sx={{ width: 150 }}
+												/>
+											</>
+										)}
 									</Stack>
 
-									{/* Action Buttons */}
-									<Stack direction="row" spacing={1}>
+									{/* Action buttons — brand */}
+									<Stack direction="row" spacing={0.75}>
 										<Tooltip title="Exportar">
-											<IconButton size="small" onClick={handleExport}>
-												<ExportSquare />
+											<IconButton size="small" onClick={handleExport} sx={brandIconButtonSx}>
+												<ExportSquare size={16} variant="Bulk" />
 											</IconButton>
 										</Tooltip>
-										{activeTab !== "combined" && (
+										{activeTab !== "combined" && canCreate && (
 											<Tooltip title={`Agregar ${currentTab?.label.toLowerCase().slice(0, -1)}`}>
 												<IconButton
 													size="small"
-													color="primary"
 													onClick={() => {
 														if (activeTab === "movements") handleAddMovement();
 														else if (activeTab === "notifications") handleAddNotification();
 														else if (activeTab === "calendar") handleAddEvent();
 													}}
+													sx={brandIconButtonSx}
 												>
-													<Add />
+													<Add size={16} variant="Bulk" />
 												</IconButton>
 											</Tooltip>
 										)}
 									</Stack>
 								</Stack>
 
-								{/* Controles específicos para movimientos - Desktop */}
-								{activeTab === "movements" ? (
-									<Box
-										sx={{
-											mt: 2,
-											p: 1.5,
-											bgcolor: alpha(theme.palette.primary.main, 0.04),
-											borderRadius: 1,
-											border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-										}}
-									>
-										<Stack spacing={1.5}>
-											<Stack direction="row" justifyContent="space-between" alignItems="center">
-												<Typography variant="caption" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
-													OPCIONES DE VISUALIZACIÓN
-												</Typography>
-												<Tooltip title={showFilters ? "Ocultar filtros avanzados" : "Mostrar filtros avanzados"}>
-													<Badge
-														color="primary"
-														variant="dot"
-														invisible={!hasActiveFilters()}
+								{/* Controles para movimientos — desktop. Rediseño 2026-07: fila slim
+							    (chip toggle + botón + filtros) en vez de la caja "Opciones de
+							    visualización". PJN no la usa: su filtro de PDF vive en el toolbar
+							    y los filtros clásicos no operan sobre pjn-movements. */}
+								{activeTab === "movements" && scrapingSource !== "pjn" && !isSyncedFolder ? (
+									<Box sx={{ mt: 1.25 }}>
+										<Stack spacing={1.25}>
+											<Stack direction="row" spacing={1.25} alignItems="center" flexWrap="wrap" rowGap={1}>
+												<Chip
+													size="small"
+													clickable
+													icon={<DocumentText size={14} variant="Bulk" />}
+													label={`Con documento${movementsData.totalWithLinks > 0 ? ` (${movementsData.totalWithLinks})` : ""}`}
+													onClick={() => setFilters({ ...filters, onlyWithDocuments: !filters.onlyWithDocuments })}
+													sx={{
+														fontWeight: 600,
+														letterSpacing: "-0.005em",
+														border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithDocuments ? 0.5 : isDark ? 0.22 : 0.14)}`,
+														bgcolor: filters.onlyWithDocuments ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+														color: filters.onlyWithDocuments ? BRAND_BLUE : "text.secondary",
+														"& .MuiChip-icon": { color: BRAND_BLUE },
+														"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.07) },
+													}}
+												/>
+												<Tooltip title="Mostrar solo los movimientos que tienen notas, tareas o vencimientos vinculados">
+													<Chip
+														size="small"
+														clickable
+														icon={<Note1 size={14} variant="Bulk" />}
+														label="Con vinculados"
+														onClick={() => setFilters({ ...filters, onlyWithLinked: !filters.onlyWithLinked })}
 														sx={{
-															"& .MuiBadge-dot": {
-																right: 2,
-																top: 2,
+															fontWeight: 600,
+															letterSpacing: "-0.005em",
+															border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithLinked ? 0.5 : isDark ? 0.22 : 0.14)}`,
+															bgcolor: filters.onlyWithLinked ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+															color: filters.onlyWithLinked ? BRAND_BLUE : "text.secondary",
+															"& .MuiChip-icon": { color: BRAND_BLUE },
+														}}
+													/>
+												</Tooltip>
+												{isSyncedFolder && (
+													<>
+														<TextField
+															size="small"
+															type="date"
+															label="Desde"
+															value={filters.startDate ? dayjs(filters.startDate).format("YYYY-MM-DD") : ""}
+															onChange={(e) =>
+																setFilters({ ...filters, startDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
+															}
+															InputLabelProps={{ shrink: true }}
+															sx={{ width: 150 }}
+														/>
+														<TextField
+															size="small"
+															type="date"
+															label="Hasta"
+															value={filters.endDate ? dayjs(filters.endDate).format("YYYY-MM-DD") : ""}
+															onChange={(e) =>
+																setFilters({ ...filters, endDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
+															}
+															InputLabelProps={{ shrink: true }}
+															sx={{ width: 150 }}
+														/>
+													</>
+												)}
+												{filters.onlyWithDocuments &&
+													(movementsData.pagination?.totalAvailable ?? 0) > (movementsData.pagination?.total ?? 0) && (
+														<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+															{movementsData.pagination.total || 0} de {movementsData.pagination.totalAvailable}
+														</Typography>
+													)}
+												<Box sx={{ flex: 1 }} />
+												{!isSyncedFolder && (
+													<Button
+														variant="contained"
+														size="small"
+														startIcon={<Gallery size={16} variant="Bulk" />}
+														onClick={() => {
+															const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
+															if (movementsWithLinks.length > 0) {
+																setCurrentDocumentMovement(movementsWithLinks[0]);
+																setDocumentNavigationOpen(true);
+															}
+														}}
+														disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
+														sx={{
+															textTransform: "none",
+															fontWeight: 600,
+															letterSpacing: "-0.005em",
+															bgcolor: BRAND_BLUE,
+															color: "#fff",
+															borderRadius: 1,
+															px: 1.5,
+															py: 0.5,
+															boxShadow: "none",
+															"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+															"&.Mui-disabled": {
+																bgcolor: alpha(theme.palette.text.disabled, 0.12),
+																color: theme.palette.text.disabled,
 															},
 														}}
 													>
-														<IconButton
-															size="small"
-															onClick={() => setShowFilters(!showFilters)}
-															color={showFilters ? "primary" : hasActiveFilters() ? "primary" : "default"}
+														Expediente digital
+														{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
+													</Button>
+												)}
+												{!isSyncedFolder && (
+													<Tooltip title={showFilters ? "Ocultar filtros avanzados" : "Mostrar filtros avanzados"}>
+														<Badge
+															variant="dot"
+															invisible={!hasActiveFilters()}
 															sx={{
-																transition: "all 0.3s ease",
-																transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
+																"& .MuiBadge-dot": {
+																	right: 2,
+																	top: 2,
+																	bgcolor: LIVE_GREEN,
+																},
 															}}
 														>
-															<Filter size={18} />
-														</IconButton>
-													</Badge>
-												</Tooltip>
-											</Stack>
-
-											<Stack direction="row" spacing={3} alignItems="center">
-												{/* Checkbox para filtrar solo movimientos con documento */}
-												<FormControlLabel
-													control={
-														<Checkbox
-															checked={filters.onlyWithDocuments}
-															onChange={(e) => {
-																// Solo actualizar el estado, el useEffect se encargará del dispatch
-																setFilters({ ...filters, onlyWithDocuments: e.target.checked });
-															}}
-															size="small"
-															color="primary"
-														/>
-													}
-													label={
-														<Stack direction="row" alignItems="center" spacing={1}>
-															<DocumentText size={18} color={theme.palette.primary.main} />
-															<Typography variant="body2">
-																Solo con documento
-																{movementsData.totalWithLinks > 0 && (
-																	<Chip size="small" label={movementsData.totalWithLinks} color="primary" sx={{ ml: 1, height: 20 }} />
-																)}
-															</Typography>
-														</Stack>
-													}
-												/>
-
-												<Divider orientation="vertical" flexItem />
-
-												{/* Botón para navegación secuencial de documentos */}
-												<Button
-													variant="contained"
-													size="small"
-													startIcon={<Gallery size={18} />}
-													onClick={() => {
-														const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
-														if (movementsWithLinks.length > 0) {
-															setCurrentDocumentMovement(movementsWithLinks[0]);
-															setDocumentNavigationOpen(true);
-														}
-													}}
-													disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
-													sx={{
-														bgcolor: theme.palette.primary.main,
-														color: "white",
-														"&:hover": {
-															bgcolor: theme.palette.primary.dark,
-														},
-														"&.Mui-disabled": {
-															bgcolor: theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)",
-															color: theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.26)",
-															opacity: 1,
-														},
-													}}
-												>
-													Expediente digital
-													{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
-												</Button>
-											</Stack>
-
-											{/* Alerta informativa cuando hay más movimientos disponibles */}
-											{filters.onlyWithDocuments &&
-												(movementsData.pagination?.totalAvailable ?? 0) > (movementsData.pagination?.total ?? 0) && (
-													<Alert
-														severity="info"
-														sx={{
-															py: 0.5,
-															fontSize: "0.75rem",
-															"& .MuiAlert-message": {
-																py: 0.5,
-															},
-														}}
-													>
-														<Typography variant="caption">
-															Mostrando {movementsData.pagination.total || 0} de {movementsData.pagination.totalAvailable} movimientos
-															totales.{" "}
-															<Typography
-																component="span"
-																variant="caption"
+															<IconButton
+																size="small"
+																onClick={() => setShowFilters(!showFilters)}
 																sx={{
-																	color: "info.main",
-																	cursor: "pointer",
-																	textDecoration: "underline",
-																	fontWeight: 600,
-																}}
-																onClick={() => {
-																	// Solo actualizar el estado, el useEffect se encargará del dispatch
-																	setFilters({ ...filters, onlyWithDocuments: false });
+																	...brandIconButtonSx,
+																	...(showFilters && {
+																		bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+																		borderColor: alpha(BRAND_BLUE, isDark ? 0.38 : 0.28),
+																	}),
+																	transition: "all 200ms ease",
+																	transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
 																}}
 															>
-																Ver todos
-															</Typography>
-														</Typography>
-													</Alert>
+																<Filter size={14} variant="Bulk" />
+															</IconButton>
+														</Badge>
+													</Tooltip>
 												)}
+											</Stack>
 
-											{/* Filtros avanzados - Collapsible */}
-											<Collapse in={showFilters} timeout="auto" unmountOnExit>
-												<Box sx={{ pt: 1.5 }}>
-													<Divider sx={{ mb: 1.5 }} />
-													<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
-												</Box>
-											</Collapse>
+											{!isSyncedFolder && (
+												<Collapse in={showFilters} timeout="auto" unmountOnExit>
+													<Box sx={{ pt: 1.25 }}>
+														<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1), mb: 1.25 }} />
+														<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
+													</Box>
+												</Collapse>
+											)}
 										</Stack>
 									</Box>
-								) : (
-									/* Filtros para otras pestañas */
+								) : activeTab !== "movements" ? (
+									/* Filtros para otras pestañas (PJN en movimientos no muestra nada acá) */
 									<>
-										<Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
+										<Box sx={{ mt: 1.5, display: "flex", justifyContent: "flex-end" }}>
 											<Tooltip title={showFilters ? "Ocultar filtros" : "Mostrar filtros"}>
 												<Badge
-													color="primary"
 													variant="dot"
 													invisible={!hasActiveFilters()}
 													sx={{
 														"& .MuiBadge-dot": {
 															right: 2,
 															top: 2,
+															bgcolor: LIVE_GREEN,
 														},
 													}}
 												>
 													<IconButton
 														size="small"
 														onClick={() => setShowFilters(!showFilters)}
-														color={showFilters ? "primary" : hasActiveFilters() ? "primary" : "default"}
 														sx={{
-															transition: "all 0.3s ease",
+															...brandIconButtonSx,
+															...(showFilters && {
+																bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+																borderColor: alpha(BRAND_BLUE, isDark ? 0.38 : 0.28),
+															}),
+															transition: "all 200ms ease",
 															transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
 														}}
 													>
-														<Filter />
+														<Filter size={14} variant="Bulk" />
 													</IconButton>
 												</Badge>
 											</Tooltip>
@@ -1299,12 +1940,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 											<Fade in={showFilters} timeout={350}>
 												<Box
 													sx={{
-														mt: 2,
-														p: 2,
-														bgcolor: theme.palette.grey[50],
+														mt: 1.5,
+														p: 1.75,
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 														borderRadius: 1,
-														border: `1px solid ${theme.palette.divider}`,
-														transition: "all 0.3s ease-in-out",
+														border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 													}}
 												>
 													<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
@@ -1312,7 +1952,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 											</Fade>
 										</Collapse>
 									</>
-								)}
+								) : null}
 							</Box>
 
 							{/* Table Content Area */}
@@ -1324,35 +1964,88 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 									</Stack>
 								) : (
 									<Box>
-										{/* Scraping Progress Banner - solo para movements */}
-										{activeTab === "movements" && scrapingProgress && !scrapingBannerClosed && (
-											<Box sx={{ mb: 2 }}>
-												<ScrapingProgressBanner
-													scrapingProgress={scrapingProgress}
-													source={scrapingSource}
-													onRefresh={handleRefreshMovements}
-													onClose={handleCloseBanner}
-												/>
-											</Box>
+										{/* Scraping Progress Banner / Estado de sincronización PJN */}
+										{activeTab === "movements" && (
+											<>
+												{scrapingProgress && !scrapingBannerClosed && (
+													<Box sx={{ mb: 2 }}>
+														<ScrapingProgressBanner
+															scrapingProgress={scrapingProgress}
+															source={scrapingSource}
+															onRefresh={handleRefreshMovements}
+															onClose={handleCloseBanner}
+														/>
+													</Box>
+												)}
+												{!scrapingProgress && !isScbaFirstSyncPending && scrapingSource !== "pjn" && isSyncedFolder && (
+													<FolderSyncStatus
+														source={scrapingSource}
+														causaLastSyncDate={movementsData.causaLastSyncDate}
+														totalMovements={movementsData.pagination?.totalAvailable ?? movementsData.pagination?.total ?? null}
+													/>
+												)}
+											</>
 										)}
 
-										<Paper elevation={0} sx={{ height: "100%", border: `1px solid ${theme.palette.divider}` }}>
-											{activeTab === "movements" && (
-												<MovementsTable
-													movements={movementsData.movements}
-													searchQuery={searchQuery}
-													onEdit={handleEditMovement}
-													onDelete={handleDeleteMovement}
-													onView={handleViewMovement}
-													filters={filters}
-													pagination={movementsData.pagination}
-													isLoading={movementsData.isLoading}
-													totalWithLinks={movementsData.totalWithLinks}
-													documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
-													documentsInThisPage={movementsData.documentsInThisPage}
-													pjnAccess={movementsData.pjnAccess}
-												/>
-											)}
+										<Paper
+											elevation={0}
+											sx={{
+												height: "100%",
+												borderRadius: 1,
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+												overflow: "hidden",
+											}}
+										>
+											{activeTab === "movements" &&
+												(isScbaFirstSyncPending ? (
+													<SyncPendingEmptyState
+														source={scrapingSource}
+														onRefresh={handleRefreshMovements}
+														isRefreshing={movementsData.isLoading}
+													/>
+												) : scrapingSource === "pjn" && id ? (
+													// PJN: el viewer paginado (pjn-movements) REEMPLAZA la tabla clásica —
+													// una sola tabla. Otros fueros (EJE/SCBA/MEV/manual) usan MovementsTable.
+													<PjnMovementsViewerSection
+														folderId={id}
+														highlightMovementId={highlightMovementId}
+														quickAction={quickAction}
+														autoOpen={openMovement}
+														linkedOnly={filters.onlyWithLinked}
+														searchQuery={searchQuery}
+														withDocuments={filters.onlyWithDocuments}
+														dateFrom={pjnDateFrom}
+														dateTo={pjnDateTo}
+														causaLastSyncDate={movementsData.causaLastSyncDate}
+													/>
+												) : (
+													<MovementsTable
+														movements={movementsData.movements}
+														searchQuery={searchQuery}
+														onEdit={handleEditMovement}
+														onDelete={handleDeleteMovement}
+														onView={handleViewMovement}
+														onOpenExplorer={handleOpenExplorer}
+														filters={filters}
+														pagination={movementsData.pagination}
+														isLoading={movementsData.isLoading}
+														totalWithLinks={movementsData.totalWithLinks}
+														documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
+														documentsInThisPage={movementsData.documentsInThisPage}
+														pjnAccess={
+															movementsData.pjnAccess ??
+															movementsData.mevAccess ??
+															movementsData.scbaAccess ??
+															movementsData.ejeAccess ??
+															movementsData.pjsaltaAccess ??
+															movementsData.pjcatamarcaAccess ??
+															movementsData.pjmendozaAccess
+														}
+														folderName={folderName}
+														highlightMovementId={highlightMovementId}
+														autoOpenMovement={openMovement}
+													/>
+												))}
 											{activeTab === "notifications" && (
 												<NotificationsTable
 													notifications={notificationsData.notifications}
@@ -1382,7 +2075,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													pagination={activitiesData.pagination}
 													isLoading={activitiesData.isLoading}
 													stats={activitiesData.stats}
-													pjnAccess={activitiesData.pjnAccess}
+													pjnAccess={
+														activitiesData.pjnAccess ?? activitiesData.mevAccess ?? activitiesData.scbaAccess ?? activitiesData.ejeAccess
+													}
 												/>
 											)}
 										</Paper>
@@ -1390,6 +2085,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 								)}
 							</Box>
 						</Box>
+
+						{/* Document Explorer rendered as portal overlay below */}
 					</>
 				)}
 			</Box>
@@ -1402,9 +2099,22 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 				editMode={!!selectedMovement}
 				movementData={selectedMovement}
 				folderName={folderName || ""}
+				onSuccess={handleRefreshMovements}
+				dialogSx={explorerOpen ? { zIndex: (t: any) => t.zIndex.modal + 20 } : undefined}
 			/>
 
-			<AlertMemberDelete title="¿Eliminar movimiento?" open={openDeleteModal} handleClose={handleCloseDeleteModal} id={movementToDelete} />
+			<AlertMemberDelete
+				title={
+					movementToDelete
+						? movementsData.movements.find((m: Movement) => m._id === movementToDelete)?.title ||
+						  activitiesData.activities.find((a: any) => a._id === movementToDelete)?.title ||
+						  "este movimiento"
+						: ""
+				}
+				open={openDeleteModal}
+				handleClose={handleCloseDeleteModal}
+				id={movementToDelete}
+			/>
 
 			{/* Notifications Modals */}
 			<ModalNotifications
@@ -1424,327 +2134,379 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			/>
 
 			{/* View Movement Details Dialog */}
-			{viewMovementDetails && (
-				<Dialog
-					maxWidth="sm"
-					open={!!viewMovementDetails}
-					onClose={() => setViewMovementDetails(null)}
-					TransitionComponent={PopupTransition}
-					PaperProps={{
-						sx: {
-							width: "600px",
-							maxWidth: "600px",
-							p: 0,
-							borderRadius: 2,
-							boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
-							display: "flex",
-							flexDirection: "column",
-							maxHeight: { xs: "90vh", sm: "85vh" },
-						},
-					}}
-					sx={{
-						"& .MuiBackdrop-root": {
-							opacity: "0.5 !important",
-						},
-					}}
-				>
-					{/* Dialog Title - Fixed */}
-					<Box
-						sx={{
-							bgcolor: theme.palette.primary.lighter,
-							p: 3,
-							borderBottom: `1px solid ${theme.palette.divider}`,
-							flexShrink: 0,
-						}}
-					>
-						<Stack direction="row" justifyContent="space-between" alignItems="center">
-							<Stack direction="row" alignItems="center" spacing={1}>
-								<TableDocument size={24} color={theme.palette.primary.main} />
+			{viewMovementDetails &&
+				(() => {
+					// Mapeo de tipo de movimiento a brand accent
+					const movementAccentMap: Record<string, string> = {
+						"Escrito-Actor": LIVE_GREEN,
+						"Escrito-Demandado": theme.palette.error.main,
+						Despacho: BRAND_BLUE,
+						Cédula: BRAND_BLUE,
+						Oficio: BRAND_BLUE,
+						Evento: STALE_AMBER,
+					};
+					const movementAccent = movementAccentMap[viewMovementDetails.movement || ""] ?? theme.palette.text.secondary;
+
+					// Reusable: tarjeta de campo (eyebrow + value box)
+					const FieldRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
+						<Box>
+							<Stack direction="row" spacing={0.5} alignItems="center" mb={0.625}>
+								<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
 								<Typography
-									variant="h5"
 									sx={{
-										color: theme.palette.primary.main,
+										fontSize: "0.6rem",
 										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
 									}}
 								>
-									Detalles del Movimiento
+									{label}
 								</Typography>
 							</Stack>
-							<Typography
-								color="textSecondary"
-								variant="subtitle2"
+							<Box
 								sx={{
-									maxWidth: "30%",
-									overflow: "hidden",
-									textOverflow: "ellipsis",
-									whiteSpace: "nowrap",
+									p: 1.25,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+									borderRadius: 1.25,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 								}}
 							>
-								Carpeta: {folderName}
-							</Typography>
-						</Stack>
-					</Box>
-
-					<Divider />
-
-					{/* Dialog Content - Scrollable */}
-					<Box
-						sx={{
-							p: 3,
-							overflowY: "auto",
-							flex: 1,
-						}}
-					>
-						<Stack spacing={2.5}>
-							{/* Título */}
-							<Box>
-								<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-									Título
-								</Typography>
-								<Box
-									sx={{
-										p: 1.5,
-										bgcolor: theme.palette.grey[50],
-										borderRadius: 1,
-										border: `1px solid ${theme.palette.divider}`,
-									}}
-								>
-									<Typography variant="body1">{viewMovementDetails.title}</Typography>
-								</Box>
+								{children}
 							</Box>
+						</Box>
+					);
 
-							{/* Tipo de Movimiento */}
-							<Box>
-								<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-									Tipo de Movimiento
-								</Typography>
+					return (
+						<Dialog
+							maxWidth="sm"
+							fullWidth
+							open={!!viewMovementDetails}
+							onClose={() => setViewMovementDetails(null)}
+							TransitionComponent={PopupTransition}
+							PaperProps={{
+								sx: {
+									width: 600,
+									maxWidth: 600,
+									p: 0,
+									borderRadius: 2,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+									boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+									overflow: "hidden",
+									display: "flex",
+									flexDirection: "column",
+									maxHeight: { xs: "90vh", sm: "85vh" },
+								},
+							}}
+							sx={{ "& .MuiBackdrop-root": { opacity: "0.5 !important" } }}
+						>
+							{/* Header brand */}
+							<Box
+								sx={{
+									display: "flex",
+									alignItems: "center",
+									gap: 1.25,
+									px: 2.5,
+									py: 1.75,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+									borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+									flexShrink: 0,
+								}}
+							>
 								<Box
 									sx={{
-										p: 1.5,
-										bgcolor: theme.palette.grey[50],
+										width: 32,
+										height: 32,
 										borderRadius: 1,
-										border: `1px solid ${theme.palette.divider}`,
-									}}
-								>
-									<Chip
-										label={viewMovementDetails.movement}
-										size="small"
-										variant="outlined"
-										color={
-											viewMovementDetails.movement === "Escrito-Actor"
-												? "success"
-												: viewMovementDetails.movement === "Escrito-Demandado"
-												? "error"
-												: viewMovementDetails.movement === "Despacho"
-												? "secondary"
-												: viewMovementDetails.movement === "Cédula" || viewMovementDetails.movement === "Oficio"
-												? "primary"
-												: viewMovementDetails.movement === "Evento"
-												? "warning"
-												: "default"
-										}
-									/>
-								</Box>
-							</Box>
-
-							{/* Fecha de Dictado */}
-							<Box>
-								<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-									Fecha de Dictado
-								</Typography>
-								<Box
-									sx={{
-										p: 1.5,
-										bgcolor: theme.palette.grey[50],
-										borderRadius: 1,
-										border: `1px solid ${theme.palette.divider}`,
 										display: "flex",
 										alignItems: "center",
-										gap: 1,
+										justifyContent: "center",
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+										color: BRAND_BLUE,
+										flexShrink: 0,
 									}}
 								>
-									<Calendar size={16} color={theme.palette.text.secondary} />
-									<Typography variant="body1">{formatDate(viewMovementDetails.time)}</Typography>
+									<TableDocument size={18} variant="Bulk" />
 								</Box>
+								<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+									<Stack direction="row" spacing={0.5} alignItems="center">
+										<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+										<Typography
+											sx={{
+												fontSize: "0.6rem",
+												fontWeight: 600,
+												letterSpacing: "0.08em",
+												textTransform: "uppercase",
+												color: "text.secondary",
+											}}
+										>
+											Detalle
+										</Typography>
+									</Stack>
+									<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+										Detalles del movimiento
+									</Typography>
+									{folderName && (
+										<Typography
+											sx={{
+												fontSize: "0.72rem",
+												color: "text.secondary",
+												letterSpacing: "-0.005em",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												whiteSpace: "nowrap",
+											}}
+										>
+											{folderName}
+										</Typography>
+									)}
+								</Stack>
 							</Box>
 
-							{/* Fecha de Vencimiento */}
-							{viewMovementDetails.dateExpiration && (
-								<Box>
-									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-										Fecha de Vencimiento
-									</Typography>
-									<Box
-										sx={{
-											p: 1.5,
-											bgcolor: theme.palette.grey[50],
-											borderRadius: 1,
-											border: `1px solid ${theme.palette.divider}`,
-											display: "flex",
-											alignItems: "center",
-											gap: 1,
-										}}
-									>
-										<Calendar size={16} color={theme.palette.text.secondary} />
-										<Typography variant="body1">{formatDate(viewMovementDetails.dateExpiration)}</Typography>
-									</Box>
-								</Box>
-							)}
-
-							{/* Estado de Completitud */}
-							{viewMovementDetails.completed !== undefined && viewMovementDetails.completed !== null && (
-								<Box>
-									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-										Estado
-									</Typography>
-									<Box
-										sx={{
-											p: 1.5,
-											bgcolor: theme.palette.grey[50],
-											borderRadius: 1,
-											border: `1px solid ${theme.palette.divider}`,
-											display: "flex",
-											alignItems: "center",
-											gap: 1,
-										}}
-									>
-										<TickCircle
-											size={20}
-											variant={viewMovementDetails.completed ? "Bold" : "Linear"}
-											color={viewMovementDetails.completed ? theme.palette.success.main : theme.palette.text.secondary}
-										/>
-										<Typography
-											variant="body1"
-											sx={{
-												color: viewMovementDetails.completed ? theme.palette.success.main : theme.palette.text.primary,
-												fontWeight: viewMovementDetails.completed ? 500 : 400,
-											}}
-										>
-											{viewMovementDetails.completed ? "Completado" : "Pendiente"}
+							{/* Content scrollable */}
+							<Box sx={{ p: 2.5, overflowY: "auto", flex: 1 }}>
+								<Stack spacing={1.75}>
+									{/* Título */}
+									<FieldRow label="Título">
+										<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+											{viewMovementDetails.title}
 										</Typography>
-									</Box>
-								</Box>
-							)}
+									</FieldRow>
 
-							{/* Descripción */}
-							{viewMovementDetails.description && (
-								<Box>
-									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-										Descripción
-									</Typography>
-									<Box
-										sx={{
-											p: 1.5,
-											bgcolor: theme.palette.grey[50],
-											borderRadius: 1,
-											border: `1px solid ${theme.palette.divider}`,
-										}}
-									>
-										<Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
-											{viewMovementDetails.description}
-										</Typography>
-									</Box>
-								</Box>
-							)}
+									{/* Tipo de Movimiento — pill brand-aligned */}
+									{viewMovementDetails.movement && (
+										<FieldRow label="Tipo de movimiento">
+											<Box
+												sx={{
+													display: "inline-flex",
+													alignItems: "center",
+													gap: 0.625,
+													px: 0.875,
+													py: 0.25,
+													borderRadius: 0.75,
+													bgcolor: alpha(movementAccent, isDark ? 0.16 : 0.1),
+													border: `1px solid ${alpha(movementAccent, isDark ? 0.32 : 0.22)}`,
+												}}
+											>
+												<Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: movementAccent }} />
+												<Typography
+													sx={{
+														fontSize: "0.66rem",
+														fontWeight: 600,
+														color: movementAccent,
+														letterSpacing: "0.04em",
+														textTransform: "uppercase",
+														lineHeight: 1,
+													}}
+												>
+													{viewMovementDetails.movement}
+												</Typography>
+											</Box>
+										</FieldRow>
+									)}
 
-							{/* Link */}
-							{viewMovementDetails.link && (
-								<Box>
-									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-										Documento
-									</Typography>
-									<Box
-										sx={{
-											p: 1.5,
-											bgcolor: theme.palette.grey[50],
-											borderRadius: 1,
-											border: `1px solid ${theme.palette.divider}`,
-											display: "flex",
-											alignItems: "center",
-											gap: 1,
-										}}
-									>
-										<Link21 size={16} color={theme.palette.primary.main} />
-										<Typography
-											variant="body2"
-											sx={{
-												color: theme.palette.primary.main,
-												textDecoration: "underline",
-												cursor: "pointer",
-												wordBreak: "break-all",
-											}}
-											onClick={() => {
-												setPdfUrlFromDetails(viewMovementDetails.link || "");
-												setPdfTitleFromDetails(viewMovementDetails.title || "Documento");
-												setPdfViewerFromDetailsOpen(true);
-											}}
-										>
-											Ver documento adjunto
-										</Typography>
-									</Box>
-								</Box>
-							)}
+									{/* Fecha de Dictado */}
+									<FieldRow label="Fecha de dictado">
+										<Stack direction="row" spacing={0.875} alignItems="center">
+											<Calendar size={14} variant="Bulk" color={BRAND_BLUE} />
+											<Typography
+												sx={{
+													fontSize: "0.88rem",
+													fontWeight: 500,
+													color: "text.primary",
+													letterSpacing: "-0.005em",
+													fontVariantNumeric: "tabular-nums",
+												}}
+											>
+												{formatDate(viewMovementDetails.time)}
+											</Typography>
+										</Stack>
+									</FieldRow>
 
-							{/* Origen */}
-							{viewMovementDetails.source === "pjn" && (
-								<Box>
-									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-										Origen
-									</Typography>
-									<Box
-										sx={{
-											p: 1.5,
-											bgcolor: theme.palette.info.lighter,
-											borderRadius: 1,
-											border: `1px solid ${theme.palette.info.light}`,
-										}}
-									>
-										<Typography variant="body2" sx={{ fontStyle: "italic", color: theme.palette.info.dark }}>
-											Sincronizado desde Poder Judicial de la Nación (PJN)
-										</Typography>
-									</Box>
-								</Box>
-							)}
-							{viewMovementDetails.source === "mev" && (
-								<Box>
-									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-										Origen
-									</Typography>
-									<Box
-										sx={{
-											p: 1.5,
-											bgcolor: theme.palette.info.lighter,
-											borderRadius: 1,
-											border: `1px solid ${theme.palette.info.light}`,
-										}}
-									>
-										<Typography variant="body2" sx={{ fontStyle: "italic", color: theme.palette.info.dark }}>
-											Sincronizado desde Poder Judicial de la provincia de Buenos Aires (MEV)
-										</Typography>
-									</Box>
-								</Box>
-							)}
-						</Stack>
-					</Box>
+									{/* Fecha de Vencimiento */}
+									{viewMovementDetails.dateExpiration && (
+										<FieldRow label="Fecha de vencimiento">
+											<Stack direction="row" spacing={0.875} alignItems="center">
+												<Calendar size={14} variant="Bulk" color={STALE_AMBER} />
+												<Typography
+													sx={{
+														fontSize: "0.88rem",
+														fontWeight: 500,
+														color: "text.primary",
+														letterSpacing: "-0.005em",
+														fontVariantNumeric: "tabular-nums",
+													}}
+												>
+													{formatDate(viewMovementDetails.dateExpiration)}
+												</Typography>
+											</Stack>
+										</FieldRow>
+									)}
 
-					<Divider />
+									{/* Estado de Completitud */}
+									{viewMovementDetails.completed !== undefined && viewMovementDetails.completed !== null && (
+										<FieldRow label="Estado">
+											<Stack direction="row" spacing={0.875} alignItems="center">
+												<Box
+													sx={{
+														width: 18,
+														height: 18,
+														borderRadius: "50%",
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														bgcolor: alpha(viewMovementDetails.completed ? LIVE_GREEN : STALE_AMBER, isDark ? 0.16 : 0.1),
+														border: `1px solid ${alpha(viewMovementDetails.completed ? LIVE_GREEN : STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+														color: viewMovementDetails.completed ? LIVE_GREEN : STALE_AMBER,
+													}}
+												>
+													<TickCircle size={11} variant="Bulk" />
+												</Box>
+												<Typography
+													sx={{
+														fontSize: "0.85rem",
+														fontWeight: 600,
+														color: viewMovementDetails.completed ? LIVE_GREEN : STALE_AMBER,
+														letterSpacing: "-0.005em",
+													}}
+												>
+													{viewMovementDetails.completed ? "Completado" : "Pendiente"}
+												</Typography>
+											</Stack>
+										</FieldRow>
+									)}
 
-					{/* Dialog Actions - Fixed */}
-					<Box
-						sx={{
-							p: 2,
-							display: "flex",
-							justifyContent: "flex-end",
-							bgcolor: theme.palette.grey[50],
-							flexShrink: 0,
-						}}
-					>
-						<Button onClick={() => setViewMovementDetails(null)} variant="contained" color="primary">
-							Cerrar
-						</Button>
-					</Box>
-				</Dialog>
-			)}
+									{/* Descripción */}
+									{viewMovementDetails.description && (
+										<FieldRow label="Descripción">
+											<Typography
+												sx={{
+													fontSize: "0.85rem",
+													color: "text.primary",
+													letterSpacing: "-0.005em",
+													lineHeight: 1.6,
+													whiteSpace: "pre-wrap",
+													textWrap: "pretty" as any,
+												}}
+											>
+												{viewMovementDetails.description}
+											</Typography>
+										</FieldRow>
+									)}
+
+									{/* Link */}
+									{viewMovementDetails.link && (
+										<FieldRow label="Documento">
+											<Box
+												onClick={() => {
+													setPdfUrlFromDetails(viewMovementDetails.link || "");
+													setPdfTitleFromDetails(viewMovementDetails.title || "Documento");
+													setPdfViewerFromDetailsOpen(true);
+												}}
+												sx={{
+													display: "inline-flex",
+													alignItems: "center",
+													gap: 0.75,
+													cursor: "pointer",
+													color: BRAND_BLUE,
+													"&:hover": { textDecoration: "underline" },
+												}}
+											>
+												<Link21 size={14} variant="Bulk" color={BRAND_BLUE} />
+												<Typography
+													sx={{
+														fontSize: "0.85rem",
+														fontWeight: 600,
+														color: BRAND_BLUE,
+														letterSpacing: "-0.005em",
+														wordBreak: "break-all",
+													}}
+												>
+													Ver documento adjunto
+												</Typography>
+											</Box>
+										</FieldRow>
+									)}
+
+									{/* Origen — sync notice brand */}
+									{(viewMovementDetails.source === "pjn" || viewMovementDetails.source === "mev") && (
+										<Box>
+											<Stack direction="row" spacing={0.5} alignItems="center" mb={0.625}>
+												<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+												<Typography
+													sx={{
+														fontSize: "0.6rem",
+														fontWeight: 600,
+														letterSpacing: "0.08em",
+														textTransform: "uppercase",
+														color: "text.secondary",
+													}}
+												>
+													Origen
+												</Typography>
+											</Stack>
+											<Box
+												sx={{
+													display: "flex",
+													alignItems: "center",
+													gap: 0.875,
+													p: 1.25,
+													borderRadius: 1.25,
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+													border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+												}}
+											>
+												<ExportSquare size={14} variant="Bulk" color={BRAND_BLUE} />
+												<Typography sx={{ fontSize: "0.78rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em" }}>
+													Sincronizado desde{" "}
+													<Box component="span" sx={{ fontWeight: 700, color: BRAND_BLUE }}>
+														{viewMovementDetails.source === "pjn"
+															? "Poder Judicial de la Nación (PJN)"
+															: "Poder Judicial de Buenos Aires (MEV)"}
+													</Box>
+												</Typography>
+											</Box>
+										</Box>
+									)}
+								</Stack>
+							</Box>
+
+							{/* Actions — ghost brand */}
+							<Box
+								sx={{
+									px: 2.5,
+									py: 1.75,
+									display: "flex",
+									justifyContent: "flex-end",
+									borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+									flexShrink: 0,
+								}}
+							>
+								<Button
+									onClick={() => setViewMovementDetails(null)}
+									sx={{
+										textTransform: "none",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										color: "text.secondary",
+										borderRadius: 1.25,
+										px: 2,
+										py: 0.875,
+										border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+										"&:hover": {
+											color: BRAND_BLUE,
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+											borderColor: alpha(BRAND_BLUE, 0.28),
+										},
+									}}
+								>
+									Cerrar
+								</Button>
+							</Box>
+						</Dialog>
+					);
+				})()}
 
 			{/* View Notification Details Dialog */}
 			{viewNotificationDetails && (
@@ -1819,7 +2581,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 				sx={{ "& .MuiDialog-paper": { p: 0 }, transition: "transform 225ms" }}
 			>
 				<AddEventFrom
-					event={eventsData.events.find((e: any) => e._id === eventsData.selectedEventId)}
+					event={eventsData.events.find((e: any) => e._id === calendarState.selectedEventId)}
 					range={calendarState.selectedRange}
 					onCancel={handleCloseEventModal}
 					userId={userId}
@@ -1958,6 +2720,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 									);
 								}
 							}}
+							onOpenExplorer={!isMobile ? handleOpenExplorerFromNavigation : undefined}
 						/>
 					) : null;
 				})()}
@@ -1973,6 +2736,52 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 				url={pdfUrlFromDetails}
 				title={pdfTitleFromDetails}
 			/>
+
+			{/* Quick Action Modals from Explorer */}
+			<ModalTasks
+				open={panelTaskModalOpen}
+				setOpen={setPanelTaskModalOpen}
+				folderId={id || ""}
+				folderName={folderName || ""}
+				initialValues={panelTaskInitialValues}
+				onClose={() => {
+					setPanelTaskModalOpen(false);
+					setPanelTaskInitialValues(undefined);
+				}}
+				dialogSx={{ zIndex: (t: any) => t.zIndex.modal + 20 }}
+			/>
+			<ModalNotes
+				open={panelNoteModalOpen}
+				setOpen={(open: boolean) => {
+					setPanelNoteModalOpen(open);
+					if (!open) setPanelNoteInitialValues(undefined);
+				}}
+				folderId={id || ""}
+				folderName={folderName || ""}
+				initialValues={panelNoteInitialValues}
+				dialogSx={{ zIndex: (t: any) => t.zIndex.modal + 20 }}
+			/>
+
+			{/* Document Explorer (full-screen overlay) - desktop only */}
+			{!isMobile && (
+				<DocumentExplorer
+					open={explorerOpen}
+					onClose={handleCloseExplorer}
+					initialMovement={explorerMovement}
+					movements={movementsData.movements}
+					pagination={movementsData.pagination}
+					totalWithLinks={movementsData.totalWithLinks}
+					documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
+					isLoading={movementsData.isLoading}
+					onRequestPage={handleExplorerPageRequest}
+					folderId={id || ""}
+					folderName={folderName || ""}
+					onCreateTask={handleCreateTaskFromPanel}
+					onAddNote={handleAddNoteFromPanel}
+					onEditMovement={handleEditMovementFromPanel}
+					onToggleComplete={handleToggleCompleteFromPanel}
+				/>
+			)}
 		</MainCard>
 	);
 };

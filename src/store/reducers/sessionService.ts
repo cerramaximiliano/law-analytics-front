@@ -40,6 +40,8 @@ interface UpdateSessionData {
 interface DeactivateAccountRequest {
 	password: string;
 	reason?: string;
+	reasonCode?: string;
+	otherReason?: string;
 }
 
 // Interfaz para la petición de reactivación de cuenta

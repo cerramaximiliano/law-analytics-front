@@ -7,11 +7,13 @@ import { incrementUserStat, updateUserStorage, isFolderLinkedToCausa } from "./u
 
 // Action types
 const SET_FOLDER_LOADING = "SET_FOLDER_LOADING";
+const SET_ARCHIVED_FOLDER_LOADING = "SET_ARCHIVED_FOLDER_LOADING";
 const ADD_FOLDER = "ADD_FOLDER";
 const GET_FOLDERS_BY_USER = "GET_FOLDERS_BY_USER";
 const GET_FOLDERS_BY_GROUP = "GET_FOLDERS_BY_GROUP";
 const GET_FOLDER_BY_ID = "GET_FOLDER_BY_ID";
 const DELETE_FOLDER = "DELETE_FOLDER";
+const DELETE_FOLDERS = "DELETE_FOLDERS";
 const UPDATE_FOLDER = "UPDATE_FOLDER";
 const SET_FOLDER_ERROR = "SET_FOLDER_ERROR";
 const ARCHIVE_FOLDERS = "ARCHIVE_FOLDERS";
@@ -21,6 +23,7 @@ const GET_FOLDERS_BY_IDS = "GET_FOLDERS_BY_IDS";
 const RESET_FOLDERS_STATE = "RESET_FOLDERS_STATE";
 const SET_SELECTED_FOLDERS = "SET_SELECTED_FOLDERS";
 const SET_FOLDER_SORT = "SET_FOLDER_SORT";
+const UPSERT_FOLDER = "UPSERT_FOLDER";
 
 // Initial state
 const initialFolderState: FolderState = {
@@ -35,6 +38,7 @@ const initialFolderState: FolderState = {
 	selectedFolders: [],
 	folder: null,
 	isLoader: false,
+	isArchivedLoader: false,
 	error: undefined,
 	isInitialized: false,
 	lastFetchedUserId: undefined,
@@ -48,12 +52,27 @@ const folder = (state = initialFolderState, action: any) => {
 	switch (action.type) {
 		case SET_FOLDER_LOADING:
 			return { ...state, isLoader: true, error: null };
+		case SET_ARCHIVED_FOLDER_LOADING:
+			// Loader separado para el fetch de archivados: NO debe encender
+			// isLoader (usado por la tabla principal detrás del modal).
+			return { ...state, isArchivedLoader: true, error: null };
 		case ADD_FOLDER:
 			return {
 				...state,
 				folders: [...state.folders, action.payload],
 				isLoader: false,
 			};
+		case UPSERT_FOLDER: {
+			const id = action.payload._id;
+			const exists = state.folders.some((f: FolderData) => f._id === id);
+			return {
+				...state,
+				folders: exists
+					? state.folders.map((f: FolderData) => (f._id === id ? { ...f, ...action.payload } : f))
+					: [...state.folders, action.payload],
+				isLoader: false,
+			};
+		}
 		case GET_FOLDERS_BY_USER:
 			return {
 				...state,
@@ -73,20 +92,38 @@ const folder = (state = initialFolderState, action: any) => {
 				...state,
 				archivedFolders: action.payload.folders,
 				archivedPagination: action.payload.pagination,
-				isLoader: false,
+				isArchivedLoader: false,
 			};
-		case GET_FOLDER_BY_ID:
+		case GET_FOLDER_BY_ID: {
+			// Mergear en la lista en lugar de reemplazar: si el detalle no trae
+			// algún campo (p.ej. scba/eje por proyección distinta), preservamos
+			// lo que ya teníamos desde getFoldersByUserId. Evita que el tilde
+			// de "Causa vinculada" desaparezca al navegar entre vistas.
+			// Si el folder no está en la lista y NO está archivado, lo agregamos:
+			// es el caso del refetch post-desarchivo desde el gate del detalle —
+			// sin esto el listado muestra la fila sin datos hasta recargar.
+			const inList = state.folders.some((f: FolderData) => f._id === action.payload._id);
 			return {
 				...state,
 				folder: action.payload,
-				// También actualizar el folder en la lista si existe
-				folders: state.folders.map((folder: FolderData) => (folder._id === action.payload._id ? action.payload : folder)),
+				folders: inList
+					? state.folders.map((folder: FolderData) => (folder._id === action.payload._id ? { ...folder, ...action.payload } : folder))
+					: action.payload.archived === true
+					? state.folders
+					: [...state.folders, action.payload],
 				isLoader: false,
 			};
+		}
 		case DELETE_FOLDER:
 			return {
 				...state,
 				folders: state.folders.filter((folder: FolderData) => folder._id !== action.payload),
+				isLoader: false,
+			};
+		case DELETE_FOLDERS:
+			return {
+				...state,
+				folders: state.folders.filter((folder: FolderData) => !action.payload.includes(folder._id)),
 				isLoader: false,
 			};
 		case ARCHIVE_FOLDERS:
@@ -113,9 +150,17 @@ const folder = (state = initialFolderState, action: any) => {
 
 			return {
 				...state,
-				// Añadir las carpetas desarchivadas a la lista de carpetas activas
-				// Si encontramos la carpeta completa en archivedFolders, la usamos, sino usamos la versión parcial
-				folders: [...state.folders, ...(foldersToUnarchive.length > 0 ? foldersToUnarchive : action.payload)],
+				// Añadir las carpetas desarchivadas a la lista de carpetas activas.
+				// Si encontramos la carpeta completa en archivedFolders la usamos;
+				// si no, solo aceptamos objetos folder del payload — NUNCA strings:
+				// al desarchivar desde el gate del detalle archivedFolders está
+				// vacío y el payload son IDs crudos, que renderizaban una fila
+				// vacía en el listado. El folder completo llega igual a la lista
+				// vía el refetch GET_FOLDER_BY_ID posterior.
+				folders: [
+					...state.folders,
+					...(foldersToUnarchive.length > 0 ? foldersToUnarchive : action.payload.filter((f: any) => typeof f !== "string")),
+				],
 				// Remover las carpetas desarchivadas de la lista de archivados
 				archivedFolders: state.archivedFolders.filter((folder: FolderData) => !folderIdsToUnarchive.includes(folder._id)),
 				isLoader: false,
@@ -124,7 +169,9 @@ const folder = (state = initialFolderState, action: any) => {
 			return {
 				...state,
 				folder: action.payload,
-				folders: state.folders.map((folder: FolderData) => (folder._id === action.payload._id ? action.payload : folder)),
+				// Merge igual que GET_FOLDER_BY_ID — el endpoint de update puede
+				// devolver un subset de campos; preservar el resto.
+				folders: state.folders.map((folder: FolderData) => (folder._id === action.payload._id ? { ...folder, ...action.payload } : folder)),
 				isLoader: false,
 			};
 		case SET_FOLDER_ERROR:
@@ -132,6 +179,7 @@ const folder = (state = initialFolderState, action: any) => {
 				...state,
 				error: action.payload,
 				isLoader: false,
+				isArchivedLoader: false,
 			};
 		case GET_FOLDERS_BY_IDS:
 			return {
@@ -220,7 +268,7 @@ export const getFoldersByUserId =
 			dispatch({ type: SET_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación y timestamps
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus,mev,judFolder,createdAt,updatedAt,lastMovementDate";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,source,previousSyncSource,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,createdAt,updatedAt,lastMovementDate";
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/user/${userId}`, {
 				params: { fields },
 			});
@@ -247,7 +295,7 @@ export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatc
 		dispatch({ type: SET_FOLDER_LOADING });
 		// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 		const fields =
-			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus,mev,judFolder,lastMovementDate";
+			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate";
 		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}`, {
 			params: { fields },
 		});
@@ -281,8 +329,15 @@ export const getFolderById =
 				return { success: true, folder: currentFolder };
 			}
 
-			// Si es diferente o no hay folder, hacer la petición
-			dispatch({ type: SET_FOLDER_LOADING });
+			// Si es diferente o no hay folder, hacer la petición.
+			// Cuando forceRefresh=true se trata de un refetch silencioso (p. ej.
+			// el botón "Actualizar estado de verificación" en la fila): no
+			// queremos disparar el loader global, que repinta las tablas como
+			// skeleton completo. El merge a state.folders ocurre igual via
+			// GET_FOLDER_BY_ID.
+			if (!forceRefresh) {
+				dispatch({ type: SET_FOLDER_LOADING });
+			}
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/${folderId}`);
 			if (response.data.success) {
 				dispatch({
@@ -332,6 +387,92 @@ export const deleteFolderById = (folderId: string) => async (dispatch: Dispatch)
 		return { success: false, message: errorMessage };
 	}
 };
+
+export const deleteFoldersByIds = (folderIds: string[], options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_FOLDER_LOADING });
+		const response = await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/folders/bulk/delete`, {
+			data: { ids: folderIds },
+			headers: options?.headers,
+		});
+
+		if (response.data.success || response.data.results?.deleted?.length > 0) {
+			const deletedIds = response.data.results?.deleted?.map((f: { _id: string }) => f._id) || folderIds;
+			dispatch({
+				type: DELETE_FOLDERS,
+				payload: deletedIds,
+			});
+			// Decrementar contador de folders en userStats
+			dispatch(incrementUserStat("folders", -deletedIds.length));
+			return {
+				success: true,
+				deletedCount: deletedIds.length,
+				failedCount: response.data.results?.failed?.length || 0,
+				message: response.data.message,
+			};
+		}
+		return { success: false, message: response.data.message || "Error al eliminar carpetas" };
+	} catch (error) {
+		const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || "Error al eliminar carpetas" : "Error desconocido";
+		dispatch({
+			type: SET_FOLDER_ERROR,
+			payload: errorMessage,
+		});
+		return { success: false, message: errorMessage };
+	}
+};
+
+// Solicita una reverificación manual al backend. Devuelve la carpeta
+// actualizada con los contadores y timestamps nuevos, además de los códigos
+// de error ("REVERIFY_LIMIT_REACHED" / "REVERIFY_IN_FLIGHT") cuando aplica
+// para que la UI pueda diferenciar el motivo del bloqueo.
+export interface ReverifyResult {
+	success: boolean;
+	folder?: FolderData;
+	verificationAttempts?: number;
+	maxAttempts?: number;
+	lastReverifyRequestedAt?: string;
+	message?: string;
+	code?: "REVERIFY_LIMIT_REACHED" | "REVERIFY_IN_FLIGHT" | string;
+}
+
+export const reverifyFolderById =
+	(folderId: string) =>
+	async (dispatch: Dispatch): Promise<ReverifyResult> => {
+		try {
+			const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/folders/${folderId}/reverify`);
+			if (response.data?.success && response.data.folder) {
+				// Merge en state.folders sin disparar el loader global. Misma
+				// estrategia que GET_FOLDER_BY_ID para que la tabla se actualice
+				// si está montada y la vista de detalle lo refleje en vivo.
+				dispatch({
+					type: GET_FOLDER_BY_ID,
+					payload: response.data.folder,
+				});
+				return {
+					success: true,
+					folder: response.data.folder,
+					verificationAttempts: response.data.verificationAttempts,
+					maxAttempts: response.data.maxAttempts,
+					lastReverifyRequestedAt: response.data.lastReverifyRequestedAt,
+				};
+			}
+			return { success: false, message: response.data?.message || "No se pudo solicitar la reverificación" };
+		} catch (error) {
+			if (axios.isAxiosError(error) && error.response?.data) {
+				const data = error.response.data;
+				return {
+					success: false,
+					message: data.message || "Error al solicitar la reverificación",
+					code: data.code,
+					verificationAttempts: data.verificationAttempts,
+					maxAttempts: data.maxAttempts,
+					lastReverifyRequestedAt: data.lastReverifyRequestedAt,
+				};
+			}
+			return { success: false, message: "Error al solicitar la reverificación" };
+		}
+	};
 
 export const updateFolderById = (folderId: string, updatedData: Partial<FolderData>) => async (dispatch: Dispatch) => {
 	try {
@@ -422,20 +563,28 @@ export const archiveFolders =
 	};
 
 export const getArchivedFoldersByUserId =
-	(userId: string, page: number = 1, limit: number = 10) =>
+	(userId: string, page: number = 1, limit?: number, search?: string) =>
 	async (dispatch: Dispatch) => {
 		try {
-			dispatch({ type: SET_FOLDER_LOADING });
+			dispatch({ type: SET_ARCHIVED_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus,mev,judFolder,lastMovementDate";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate,archivedAt,archivedBy,archivedReason,unarchivedAt";
+
+			const params: Record<string, any> = {
+				archived: true,
+				fields,
+				page,
+			};
+			if (limit !== undefined) {
+				params.limit = limit;
+			}
+			if (search && search.trim()) {
+				params.search = search.trim();
+			}
+
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/user/${userId}`, {
-				params: {
-					archived: true,
-					fields,
-					page,
-					limit,
-				},
+				params,
 			});
 			if (response.data.success) {
 				dispatch({
@@ -462,20 +611,28 @@ export const getArchivedFoldersByUserId =
 	};
 
 export const getArchivedFoldersByGroupId =
-	(groupId: string, page: number = 1, limit: number = 10) =>
+	(groupId: string, page: number = 1, limit?: number, search?: string) =>
 	async (dispatch: Dispatch) => {
 		try {
-			dispatch({ type: SET_FOLDER_LOADING });
+			dispatch({ type: SET_ARCHIVED_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus,mev,judFolder,lastMovementDate";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate,archivedAt,archivedBy,archivedReason,unarchivedAt";
+
+			const params: Record<string, any> = {
+				archived: true,
+				fields,
+				page,
+			};
+			if (limit !== undefined) {
+				params.limit = limit;
+			}
+			if (search && search.trim()) {
+				params.search = search.trim();
+			}
+
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}`, {
-				params: {
-					archived: true,
-					fields,
-					page,
-					limit,
-				},
+				params,
 			});
 			if (response.data.success) {
 				dispatch({
@@ -755,25 +912,69 @@ export const resetFoldersState = () => ({
 });
 
 // Vincular carpeta con causa judicial
+/**
+ * Desvincula la carpeta de su causa CONSERVÁNDOLA con todo su contenido.
+ * Aplica a EJE y a los portales IOL, cuyo vínculo es por expediente; PJN, MEV y
+ * SCBA se desvinculan por credenciales desde el perfil.
+ */
+export const unlinkFolderFromCausa = (folderId: string) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_FOLDER_LOADING });
+		const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/folders/unlink-causa/${folderId}`);
+
+		if (response.data.success) {
+			dispatch({ type: UPDATE_FOLDER, payload: response.data.data });
+			return { success: true, message: response.data.message, folder: response.data.data };
+		}
+		return { success: false, message: response.data.message || "No se pudo desvincular la carpeta." };
+	} catch (error) {
+		const errorMessage = axios.isAxiosError(error)
+			? error.response?.data?.message || "Error al desvincular la carpeta."
+			: "Error desconocido al desvincular la carpeta.";
+		return { success: false, message: errorMessage };
+	}
+};
+
 export const linkFolderToCausa =
-	(folderId: string, linkData: { pjnCode: string; number: string; year: string; overwrite?: boolean; pjn?: boolean }) =>
+	(
+		folderId: string,
+		linkData: {
+			pjnCode?: string;
+			number?: string;
+			year?: string;
+			overwrite?: boolean;
+			pjn?: boolean;
+			mev?: boolean;
+			eje?: boolean;
+			cuij?: string;
+			navigationCode?: string;
+			// Portales IOL: se manda uno solo en true.
+			pjsalta?: boolean;
+			pjcatamarca?: boolean;
+			pjmendoza?: boolean;
+		},
+	) =>
 	async (dispatch: Dispatch) => {
 		try {
 			dispatch({ type: SET_FOLDER_LOADING });
 			const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/folders/link-causa/${folderId}`, linkData);
 
 			if (response.data.success) {
-				// Actualizar el folder en el store con los nuevos datos
-				dispatch({
-					type: UPDATE_FOLDER,
-					payload: response.data.folder,
-				});
+				// Las ramas del endpoint no son homogéneas: unas devuelven `folder` y
+				// otras `data`. Sin este fallback, despachar `undefined` rompía el
+				// reducer y el modal mostraba "Error desconocido" pese al 200 OK.
+				const actualizado = response.data.folder ?? response.data.data;
+
+				if (actualizado) {
+					dispatch({ type: UPDATE_FOLDER, payload: actualizado });
+				}
 
 				return {
 					success: true,
 					message: response.data.message,
-					folder: response.data.folder,
+					folder: actualizado,
 					causaInfo: response.data.causaInfo,
+					isPivot: response.data.isPivot,
 				};
 			} else {
 				return {
@@ -829,6 +1030,55 @@ export const linkFolderToPJBA =
 				return {
 					success: false,
 					message: response.data.message || "No se pudo vincular la causa.",
+					code: response.data.code,
+				};
+			}
+		} catch (error) {
+			const errorMessage = axios.isAxiosError(error)
+				? error.response?.data?.message || "Error al vincular la causa."
+				: "Error desconocido al vincular la causa.";
+			// p.ej. MEV_CREDENTIAL_REQUIRED: el modal muestra los campos de credencial.
+			const code = axios.isAxiosError(error) ? error.response?.data?.code : undefined;
+
+			dispatch({
+				type: SET_FOLDER_ERROR,
+				payload: errorMessage,
+			});
+
+			return { success: false, message: errorMessage, code };
+		}
+	};
+
+// Vincular carpeta con Poder Judicial de CABA (EJE)
+export const linkFolderToEJE =
+	(folderId: string, linkData: { cuij?: string; number?: string; year?: string; overwrite?: boolean }) => async (dispatch: Dispatch) => {
+		try {
+			dispatch({ type: SET_FOLDER_LOADING });
+
+			const requestBody = {
+				...linkData,
+				eje: true,
+			};
+
+			const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/folders/link-causa/${folderId}`, requestBody);
+
+			if (response.data.success) {
+				dispatch({
+					type: UPDATE_FOLDER,
+					payload: response.data.folder,
+				});
+
+				return {
+					success: true,
+					message: response.data.message,
+					folder: response.data.folder,
+					causaInfo: response.data.causaInfo,
+					eje: response.data.eje,
+				};
+			} else {
+				return {
+					success: false,
+					message: response.data.message || "No se pudo vincular la causa.",
 				};
 			}
 		} catch (error) {
@@ -862,6 +1112,8 @@ export interface PendingCausasResponse {
 	searchTerm: string | null;
 	count: number;
 	error?: string;
+	tooManyResults?: boolean;
+	searchTotalResults?: number | null;
 }
 
 export interface SelectCausaResponse {
@@ -888,6 +1140,9 @@ export const getPendingCausas =
 					causaType: response.data.data.causaType,
 					searchTerm: response.data.data.searchTerm,
 					count: response.data.data.count,
+					// IOL-1: sample truncado por pivotMaxResults
+					tooManyResults: !!response.data.data.tooManyResults,
+					searchTotalResults: response.data.data.searchTotalResults ?? null,
 				};
 			}
 

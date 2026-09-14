@@ -1,23 +1,9 @@
 import React from "react";
-import {
-	DialogTitle,
-	DialogContent,
-	DialogActions,
-	Button,
-	Typography,
-	Box,
-	Stack,
-	Avatar,
-	Chip,
-	Divider,
-	useTheme,
-	alpha,
-	Grid,
-	Paper,
-} from "@mui/material";
+import { DialogTitle, DialogContent, DialogActions, Button, Typography, Box, Stack, useTheme, alpha, Grid } from "@mui/material";
 import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import { Call, Sms, Location, Building, Briefcase, User, DocumentText, Profile } from "iconsax-react";
 import { Contact } from "types/contact";
+import { BRAND_BLUE, LIVE_GREEN } from "themes/dashboardTokens";
 
 interface ContactProfileModalProps {
 	open: boolean;
@@ -25,65 +11,63 @@ interface ContactProfileModalProps {
 	contact: Contact | null;
 }
 
-const getColorByRole = (role: string) => {
-	switch (role) {
-		case "Abogado":
-			return "primary";
-		case "Cliente":
-			return "secondary";
-		case "Causante":
-			return "error";
-		case "Mediador/Conciliador":
-			return "warning";
-		case "Perito":
-			return "success";
-		case "Contrario":
-			return "info";
-		case "Entidad":
-			return "default";
-		default:
-			return "default";
-	}
-};
-
-const getRoleIcon = (role: string) => {
-	switch (role) {
-		case "Abogado":
-			return "⚖️";
-		case "Cliente":
-			return "👤";
-		case "Causante":
-			return "📋";
-		case "Mediador/Conciliador":
-			return "🤝";
-		case "Perito":
-			return "🔍";
-		case "Contrario":
-			return "⚔️";
-		case "Entidad":
-			return "🏢";
-		default:
-			return "👥";
-	}
-};
-
 const ContactProfileModal: React.FC<ContactProfileModalProps> = ({ open, onClose, contact }) => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 
 	if (!contact) return null;
+
+	const role = Array.isArray(contact?.role) ? contact.role[0] : contact?.role || "";
+	const fullName = `${contact.name || ""} ${contact.lastName || ""}`.trim();
+	const initials = `${(contact.name || "").charAt(0)}${(contact.lastName || "").charAt(0)}`.toUpperCase();
+	const isActive = contact.status === "active";
+	const activeAccent = isActive ? LIVE_GREEN : theme.palette.text.disabled;
 
 	const InfoItem = ({ icon, label, value }: { icon: React.ReactNode; label: string; value?: string | null }) => {
 		if (!value) return null;
 		return (
-			<Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
-				<Box sx={{ color: theme.palette.text.secondary, mt: 0.5 }}>{icon}</Box>
-				<Box sx={{ flex: 1 }}>
-					<Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+			<Stack direction="row" spacing={1.25} alignItems="flex-start">
+				<Box
+					sx={{
+						width: 28,
+						height: 28,
+						borderRadius: 0.75,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.24 : 0.16)}`,
+						color: BRAND_BLUE,
+						flexShrink: 0,
+					}}
+				>
+					{icon}
+				</Box>
+				<Stack spacing={0.125} sx={{ minWidth: 0 }}>
+					<Typography
+						sx={{
+							fontSize: "0.6rem",
+							fontWeight: 600,
+							letterSpacing: "0.08em",
+							textTransform: "uppercase",
+							color: "text.secondary",
+						}}
+					>
 						{label}
 					</Typography>
-					<Typography variant="body2">{value}</Typography>
-				</Box>
-			</Box>
+					<Typography
+						sx={{
+							fontSize: "0.85rem",
+							fontWeight: 500,
+							color: "text.primary",
+							letterSpacing: "-0.005em",
+							wordBreak: "break-word",
+						}}
+					>
+						{value}
+					</Typography>
+				</Stack>
+			</Stack>
 		);
 	};
 
@@ -92,157 +76,269 @@ const ContactProfileModal: React.FC<ContactProfileModalProps> = ({ open, onClose
 			open={open}
 			onClose={onClose}
 			maxWidth="sm"
+			fullWidth
 			PaperProps={{
 				sx: {
 					p: 0,
 					borderRadius: 2,
-					boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+					boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+					overflow: "hidden",
 				},
 			}}
-			sx={{
-				"& .MuiDialog-paper": { p: 0 },
-				"& .MuiBackdrop-root": { opacity: "0.5 !important" },
-			}}
+			sx={{ "& .MuiBackdrop-root": { opacity: "0.5 !important" } }}
 		>
 			<DialogTitle
 				sx={{
-					bgcolor: theme.palette.primary.lighter,
-					p: 3,
-					borderBottom: `1px solid ${theme.palette.divider}`,
+					display: "flex",
+					alignItems: "center",
+					gap: 1.25,
+					px: 2.5,
+					py: 1.75,
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+					borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 				}}
 			>
-				<Stack direction="row" justifyContent="space-between" alignItems="center">
-					<Stack direction="row" alignItems="center" spacing={1}>
-						<Profile size={24} color={theme.palette.primary.main} />
-						<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-							Perfil del Contacto
+				<Box
+					sx={{
+						width: 32,
+						height: 32,
+						borderRadius: 1,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+						color: BRAND_BLUE,
+					}}
+				>
+					<Profile size={18} variant="Bulk" />
+				</Box>
+				<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+					<Stack direction="row" spacing={0.5} alignItems="center">
+						<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+						<Typography
+							sx={{
+								fontSize: "0.6rem",
+								fontWeight: 600,
+								letterSpacing: "0.08em",
+								textTransform: "uppercase",
+								color: "text.secondary",
+							}}
+						>
+							Detalle
 						</Typography>
 					</Stack>
-					<Chip
-						label={Array.isArray(contact?.role) ? contact.role[0] : contact?.role || ""}
-						color={getColorByRole(Array.isArray(contact?.role) ? contact.role[0] : contact?.role || "")}
-						size="small"
-						sx={{
-							fontWeight: 600,
-							...(getColorByRole(Array.isArray(contact?.role) ? contact.role[0] : contact?.role || "") === "warning" && {
-								color: "black",
-								"& .MuiChip-label": {
-									color: "black",
-								},
-							}),
-						}}
-					/>
+					<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+						Perfil del contacto
+					</Typography>
 				</Stack>
 			</DialogTitle>
-			<Divider />
 
-			<DialogContent sx={{ p: 3 }}>
-				{/* Header with Avatar and Basic Info */}
-				<Box sx={{ mb: 3, textAlign: "center" }}>
-					<Avatar
-						src={contact.avatar}
-						variant="rounded"
+			<DialogContent sx={{ p: 2.5 }}>
+				{/* Header — avatar + name + status pills */}
+				<Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2.5 }}>
+					<Box
 						sx={{
-							width: 100,
-							height: 100,
-							bgcolor: alpha(theme.palette.primary.main, 0.1),
-							color: theme.palette.primary.main,
-							fontSize: "2.5rem",
-							border: `3px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-							mx: "auto",
-							mb: 2,
+							width: 64,
+							height: 64,
+							borderRadius: 1.5,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.22)}`,
+							color: BRAND_BLUE,
+							fontSize: "1.4rem",
+							fontWeight: 600,
+							letterSpacing: "-0.02em",
+							flexShrink: 0,
 						}}
 					>
-						{!contact.avatar && getRoleIcon(Array.isArray(contact.role) ? contact.role[0] : contact.role)}
-					</Avatar>
-					<Typography variant="h4" fontWeight={600} gutterBottom>
-						{`${contact.name || ""} ${contact.lastName || ""}`}
-					</Typography>
-					{contact.status && (
-						<Chip
-							label={contact.status === "active" ? "Activo" : "Inactivo"}
-							color={contact.status === "active" ? "success" : "default"}
-							size="small"
-							sx={{ mt: 1 }}
-						/>
-					)}
+						{initials || <Profile size={28} variant="Bulk" />}
+					</Box>
+					<Stack spacing={0.625} sx={{ minWidth: 0 }}>
+						<Typography
+							sx={{
+								fontSize: "1.15rem",
+								fontWeight: 600,
+								letterSpacing: "-0.015em",
+								color: "text.primary",
+								lineHeight: 1.2,
+							}}
+						>
+							{fullName || "Sin nombre"}
+						</Typography>
+						<Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
+							{role && (
+								<Box
+									sx={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 0.5,
+										px: 0.875,
+										py: 0.25,
+										borderRadius: 0.75,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.22)}`,
+									}}
+								>
+									<Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+									<Typography
+										sx={{
+											fontSize: "0.66rem",
+											fontWeight: 600,
+											color: BRAND_BLUE,
+											letterSpacing: "0.04em",
+											textTransform: "uppercase",
+											lineHeight: 1,
+										}}
+									>
+										{role}
+									</Typography>
+								</Box>
+							)}
+							{contact.status && (
+								<Box
+									sx={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 0.5,
+										px: 0.875,
+										py: 0.25,
+										borderRadius: 0.75,
+										bgcolor: alpha(activeAccent, isDark ? 0.16 : 0.1),
+										border: `1px solid ${alpha(activeAccent, isDark ? 0.32 : 0.22)}`,
+									}}
+								>
+									<Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: activeAccent }} />
+									<Typography
+										sx={{
+											fontSize: "0.66rem",
+											fontWeight: 600,
+											color: activeAccent,
+											letterSpacing: "0.04em",
+											textTransform: "uppercase",
+											lineHeight: 1,
+										}}
+									>
+										{isActive ? "Activo" : "Inactivo"}
+									</Typography>
+								</Box>
+							)}
+						</Stack>
+					</Stack>
+				</Stack>
+
+				{/* Contact info — 2 columns */}
+				<Box
+					sx={{
+						p: 2,
+						borderRadius: 1.5,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+					}}
+				>
+					<Grid container spacing={2}>
+						<Grid item xs={12} md={6}>
+							<Stack spacing={1.5}>
+								<InfoItem icon={<User size={14} variant="Bulk" />} label="Documento" value={contact.document} />
+								<InfoItem icon={<User size={14} variant="Bulk" />} label="CUIT" value={contact.cuit} />
+								<InfoItem icon={<Call size={14} variant="Bulk" />} label="Teléfono" value={contact.phone} />
+								<InfoItem icon={<Sms size={14} variant="Bulk" />} label="Email" value={contact.email} />
+							</Stack>
+						</Grid>
+						<Grid item xs={12} md={6}>
+							<Stack spacing={1.5}>
+								<InfoItem icon={<Location size={14} variant="Bulk" />} label="Dirección" value={contact.address} />
+								<InfoItem icon={<Building size={14} variant="Bulk" />} label="Ciudad" value={contact.city} />
+								<InfoItem icon={<Briefcase size={14} variant="Bulk" />} label="Provincia" value={contact.state} />
+							</Stack>
+						</Grid>
+					</Grid>
 				</Box>
 
-				<Divider sx={{ mb: 3 }} />
-
-				{/* Contact Information */}
-				<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
-					<Grid item xs={12} md={6}>
-						<Stack spacing={2.5}>
-							<InfoItem icon={<User size={18} />} label="Documento" value={contact.document} />
-							<InfoItem icon={<User size={18} />} label="CUIT" value={contact.cuit} />
-							<InfoItem icon={<Call size={18} />} label="Teléfono" value={contact.phone} />
-							<InfoItem icon={<Sms size={18} />} label="Email" value={contact.email} />
-						</Stack>
-					</Grid>
-					<Grid item xs={12} md={6}>
-						<Stack spacing={2.5}>
-							<InfoItem icon={<Location size={18} />} label="Dirección" value={contact.address} />
-							<InfoItem icon={<Building size={18} />} label="Ciudad" value={contact.city} />
-							<InfoItem icon={<Briefcase size={18} />} label="Provincia" value={contact.state} />
-						</Stack>
-					</Grid>
-				</Grid>
-
-				{/* Additional Information */}
-				{(contact.activity || contact.company) && (
-					<>
-						<Divider sx={{ my: 3 }} />
-						<Box>
-							<Stack direction="row" spacing={1} alignItems="center" mb={1.5}>
-								<DocumentText size={18} color={theme.palette.text.secondary} />
-								<Typography variant="subtitle2" fontWeight={600}>
-									Información adicional
-								</Typography>
-							</Stack>
-							<Paper
-								elevation={0}
+				{/* Additional info */}
+				{(contact.activity || contact.company || contact.nationality) && (
+					<Box
+						sx={{
+							mt: 2,
+							p: 2,
+							borderRadius: 1.5,
+							bgcolor: theme.palette.background.paper,
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+						}}
+					>
+						<Stack direction="row" spacing={0.625} alignItems="center" mb={1.25}>
+							<DocumentText size={12} variant="Bulk" color={BRAND_BLUE} />
+							<Typography
 								sx={{
-									p: 2,
-									bgcolor: theme.palette.grey[50],
-									border: `1px solid ${theme.palette.divider}`,
-									borderRadius: 1,
+									fontSize: "0.6rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
 								}}
 							>
-								<Stack spacing={1}>
-									{contact.activity && (
-										<Typography variant="body2">
-											<strong>Actividad:</strong> {contact.activity}
-										</Typography>
-									)}
-									{contact.company && (
-										<Typography variant="body2">
-											<strong>Empresa:</strong> {contact.company}
-										</Typography>
-									)}
-									{contact.nationality && (
-										<Typography variant="body2">
-											<strong>Nacionalidad:</strong> {contact.nationality}
-										</Typography>
-									)}
+								Información adicional
+							</Typography>
+						</Stack>
+						<Stack spacing={1}>
+							{contact.activity && (
+								<Stack direction="row" spacing={1} alignItems="baseline">
+									<Typography sx={{ fontSize: "0.7rem", fontWeight: 600, color: "text.secondary", letterSpacing: "-0.005em", minWidth: 90 }}>
+										Actividad
+									</Typography>
+									<Typography sx={{ fontSize: "0.82rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em" }}>
+										{contact.activity}
+									</Typography>
 								</Stack>
-							</Paper>
-						</Box>
-					</>
+							)}
+							{contact.company && (
+								<Stack direction="row" spacing={1} alignItems="baseline">
+									<Typography sx={{ fontSize: "0.7rem", fontWeight: 600, color: "text.secondary", letterSpacing: "-0.005em", minWidth: 90 }}>
+										Empresa
+									</Typography>
+									<Typography sx={{ fontSize: "0.82rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em" }}>
+										{contact.company}
+									</Typography>
+								</Stack>
+							)}
+							{contact.nationality && (
+								<Stack direction="row" spacing={1} alignItems="baseline">
+									<Typography sx={{ fontSize: "0.7rem", fontWeight: 600, color: "text.secondary", letterSpacing: "-0.005em", minWidth: 90 }}>
+										Nacionalidad
+									</Typography>
+									<Typography sx={{ fontSize: "0.82rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em" }}>
+										{contact.nationality}
+									</Typography>
+								</Stack>
+							)}
+						</Stack>
+					</Box>
 				)}
 			</DialogContent>
 
-			<Divider />
-
-			<DialogActions
-				sx={{
-					p: 2.5,
-					bgcolor: theme.palette.background.default,
-					borderTop: `1px solid ${theme.palette.divider}`,
-				}}
-			>
-				<Button color="error" onClick={onClose}>
-					Cancelar
+			<DialogActions sx={{ px: 2.5, py: 1.75, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}>
+				<Button
+					onClick={onClose}
+					sx={{
+						textTransform: "none",
+						fontWeight: 600,
+						letterSpacing: "-0.005em",
+						color: "text.secondary",
+						borderRadius: 1.25,
+						px: 2,
+						py: 0.875,
+						border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+						"&:hover": {
+							color: BRAND_BLUE,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+							borderColor: alpha(BRAND_BLUE, 0.28),
+						},
+					}}
+				>
+					Cerrar
 				</Button>
 			</DialogActions>
 		</ResponsiveDialog>

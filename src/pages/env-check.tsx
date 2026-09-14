@@ -113,7 +113,7 @@ const EnvCheck = () => {
 						</Table>
 					</TableContainer>
 
-					<Box sx={{ mt: 3, p: 2, bgcolor: "grey.100", borderRadius: 1 }}>
+					<Box sx={{ mt: 3, p: 2, bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.100"), borderRadius: 1 }}>
 						<Typography variant="subtitle2" gutterBottom>
 							<strong>Nota:</strong>
 						</Typography>

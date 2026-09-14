@@ -155,10 +155,10 @@ export default function FirstForm(props: FirstFormProps) {
 						<>
 							<Grid item xs={12} lg={6}>
 								<Grid container spacing={2} alignItems="center">
-									<Grid item xs={12} lg={3}>
+									<Grid item xs={12} lg={4}>
 										<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Reclamante:</InputLabel>
 									</Grid>
-									<Grid item xs={12} lg={9}>
+									<Grid item xs={12} lg={8}>
 										<InputField
 											InputProps={{ startAdornment: <UserSquare /> }}
 											fullWidth
@@ -170,10 +170,10 @@ export default function FirstForm(props: FirstFormProps) {
 							</Grid>
 							<Grid item xs={12} lg={6}>
 								<Grid container spacing={2} alignItems="center">
-									<Grid item xs={12} lg={3}>
+									<Grid item xs={12} lg={4}>
 										<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Reclamado:</InputLabel>
 									</Grid>
-									<Grid item xs={12} lg={9}>
+									<Grid item xs={12} lg={8}>
 										<InputField
 											InputProps={{ startAdornment: <UserSquare /> }}
 											fullWidth
@@ -187,10 +187,10 @@ export default function FirstForm(props: FirstFormProps) {
 					)}
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
-							<Grid item xs={12} lg={3}>
+							<Grid item xs={12} lg={4}>
 								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Compensación por daños y perjuicios*</InputLabel>
 							</Grid>
-							<Grid item xs={12} lg={9}>
+							<Grid item xs={12} lg={8}>
 								<NumberField
 									thousandSeparator={","}
 									allowNegative={false}
@@ -206,10 +206,10 @@ export default function FirstForm(props: FirstFormProps) {
 					</Grid>
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
-							<Grid item xs={12} lg={3}>
+							<Grid item xs={12} lg={4}>
 								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Probabilidad de condena por daños y perjuicios*:</InputLabel>
 							</Grid>
-							<Grid item xs={12} lg={9}>
+							<Grid item xs={12} lg={8}>
 								<NumberField
 									thousandSeparator={","}
 									allowNegative={false}
@@ -218,6 +218,7 @@ export default function FirstForm(props: FirstFormProps) {
 									fullWidth
 									placeholder="Indique un porcentaje"
 									name={probabilidadDsPs.name}
+									helperText="Valor entre 0 y 100"
 									InputProps={{ startAdornment: "%" }}
 								/>
 							</Grid>
@@ -225,10 +226,10 @@ export default function FirstForm(props: FirstFormProps) {
 					</Grid>
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
-							<Grid item xs={12} lg={3}>
+							<Grid item xs={12} lg={4}>
 								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Probabilidad de condena por daños punitivos*:</InputLabel>
 							</Grid>
-							<Grid item xs={12} lg={9}>
+							<Grid item xs={12} lg={8}>
 								<NumberField
 									thousandSeparator={","}
 									allowNegative={false}
@@ -237,6 +238,7 @@ export default function FirstForm(props: FirstFormProps) {
 									fullWidth
 									placeholder="Indique un porcentaje"
 									name={probabilidadPunitivos.name}
+									helperText="Valor entre 0 y 100"
 									InputProps={{ startAdornment: "%" }}
 								/>
 							</Grid>
@@ -244,10 +246,10 @@ export default function FirstForm(props: FirstFormProps) {
 					</Grid>
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
-							<Grid item xs={12} lg={3}>
+							<Grid item xs={12} lg={4}>
 								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Nivel de precaución socialmente deseable*:</InputLabel>
 							</Grid>
-							<Grid item xs={12} lg={9}>
+							<Grid item xs={12} lg={8}>
 								<NumberField
 									thousandSeparator={","}
 									allowNegative={false}
@@ -263,10 +265,10 @@ export default function FirstForm(props: FirstFormProps) {
 					</Grid>
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
-							<Grid item xs={12} lg={3}>
+							<Grid item xs={12} lg={4}>
 								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Porcentaje mínimo de nivel de precaución*:</InputLabel>
 							</Grid>
-							<Grid item xs={12} lg={9}>
+							<Grid item xs={12} lg={8}>
 								<NumberField
 									thousandSeparator={","}
 									allowNegative={false}
@@ -275,6 +277,7 @@ export default function FirstForm(props: FirstFormProps) {
 									fullWidth
 									placeholder="Indique un porcentaje"
 									name={porcentajeMin.name}
+									helperText="Valor entre 0 y 100"
 									InputProps={{ startAdornment: "%" }}
 								/>
 							</Grid>
@@ -282,10 +285,10 @@ export default function FirstForm(props: FirstFormProps) {
 					</Grid>
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
-							<Grid item xs={12} lg={3}>
+							<Grid item xs={12} lg={4}>
 								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Probabilidad de ocurrencia del daño*:</InputLabel>
 							</Grid>
-							<Grid item xs={12} lg={9}>
+							<Grid item xs={12} lg={8}>
 								<NumberField
 									thousandSeparator={","}
 									allowNegative={false}
@@ -294,6 +297,7 @@ export default function FirstForm(props: FirstFormProps) {
 									fullWidth
 									placeholder="Indique un porcentaje"
 									name={probOcurrencia.name}
+									helperText="Valor entre 0 y 100"
 									InputProps={{ startAdornment: "%" }}
 								/>
 							</Grid>

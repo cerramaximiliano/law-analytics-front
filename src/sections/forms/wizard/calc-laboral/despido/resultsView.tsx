@@ -21,6 +21,7 @@ import { useNavigate } from "react-router";
 import despidoFormModel from "./formModel/despidoFormModel";
 import dayjs from "utils/dayjs-config";
 import { enqueueSnackbar } from "notistack";
+import { useTeam } from "contexts/TeamContext";
 
 // Tipos
 interface ResultItem {
@@ -48,6 +49,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 	const { formField } = despidoFormModel;
 
 	const userFromRedux = useSelector((state: RootState) => state.auth.user);
+	const { getRequestHeaders } = useTeam();
 	const interestRates = useSelector((state: RootState) => state.interestRates.rates);
 
 	// No longer used but keeping for potential future use
@@ -512,7 +514,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 			};
 
 			// Utilizar la acción asíncrona addCalculator
-			const result = await dispatch(addCalculator(calculatorData));
+			const result = await dispatch(addCalculator(calculatorData, { headers: getRequestHeaders() }));
 
 			if (result.success) {
 				enqueueSnackbar("Cálculo guardado correctamente", {
@@ -873,7 +875,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 										&nbsp;&nbsp;- El tope legal vigente
 										<br />• <strong>Nunca puede superar</strong> la remuneración original
 									</Typography>
-									<Box sx={{ mt: 2, p: 2, bgcolor: "grey.100", borderRadius: 1 }}>
+									<Box sx={{ mt: 2, p: 2, bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.100"), borderRadius: 1 }}>
 										<Typography variant="body2" fontWeight="bold" gutterBottom>
 											Ejemplo práctico:
 										</Typography>

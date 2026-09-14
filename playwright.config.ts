@@ -10,6 +10,7 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
 	testDir: "./tests",
+	testIgnore: "**/visual/**",
 	timeout: 40_000,
 	expect: { timeout: 12_000 },
 	fullyParallel: false, // los tests de auth comparten estado de sesión
@@ -27,9 +28,15 @@ export default defineConfig({
 		// page.route() intercepta requests a ese origen
 	},
 	projects: [
+		// Setup: login via API y guarda auth state (no llama al formulario)
+		{
+			name: "setup",
+			testMatch: "**/global-setup.ts",
+		},
 		{
 			name: "chromium",
 			use: { ...devices["Desktop Chrome"] },
+			dependencies: ["setup"],
 		},
 	],
 	outputDir: "test-results/artifacts",

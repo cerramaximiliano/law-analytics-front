@@ -1,9 +1,9 @@
-import React from "react";
 import { useState, SyntheticEvent } from "react";
 import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
 import {
+	Alert,
 	Button,
 	Checkbox,
 	CircularProgress,
@@ -22,10 +22,12 @@ import {
 // third-party
 import * as Yup from "yup";
 import { Formik } from "formik";
+import { safeFormikBlur } from "utils/formikSafeBlur";
 
 // project-imports
 import useAuth from "hooks/useAuth";
 import useScriptRef from "hooks/useScriptRef";
+import sessionService from "store/reducers/sessionService";
 import IconButton from "components/@extended/IconButton";
 import AnimateButton from "components/@extended/AnimateButton";
 
@@ -44,6 +46,9 @@ interface AuthLoginProps {
 
 const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLoginProps) => {
 	const [checked, setChecked] = useState(false);
+	// Cuenta desactivada detectada en el login → ofrecer reactivación inline (opción A).
+	const [reactivateCreds, setReactivateCreds] = useState<{ email: string; password: string } | null>(null);
+	const [reactivating, setReactivating] = useState(false);
 
 	const { isLoggedIn, login } = useAuth();
 	const scriptedRef = useScriptRef();
@@ -55,6 +60,53 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 
 	const handleMouseDownPassword = (event: SyntheticEvent) => {
 		event.preventDefault();
+	};
+
+	// Reactiva la cuenta con las credenciales ya ingresadas y completa el login.
+	const handleReactivate = async () => {
+		if (!reactivateCreds) return;
+		setReactivating(true);
+		if (onLoadingChange) onLoadingChange(true);
+		try {
+			const res = await sessionService.reactivateAccount({ email: reactivateCreds.email, password: reactivateCreds.password });
+			if (res.success) {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "¡Bienvenido de nuevo! Tu cuenta fue reactivada.",
+						variant: "alert",
+						alert: { color: "success" },
+						close: false,
+					}),
+				);
+				// La cuenta ya está activa → completar el login normal (setea el estado de auth).
+				await login(reactivateCreds.email, reactivateCreds.password, checked);
+				setReactivateCreds(null);
+			} else {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: res.message || "No pudimos reactivar tu cuenta. Verificá tus credenciales.",
+						variant: "alert",
+						alert: { color: "error" },
+						close: true,
+					}),
+				);
+			}
+		} catch (e: any) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: e?.message || "No pudimos reactivar tu cuenta. Verificá tus credenciales.",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+		} finally {
+			setReactivating(false);
+			if (onLoadingChange) onLoadingChange(false);
+		}
 	};
 
 	return (
@@ -70,11 +122,12 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 					password: Yup.string().max(255).required("La contraseña es requerida"),
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
+					setReactivateCreds(null);
 					try {
 						if (onLoadingChange) {
 							onLoadingChange(true);
 						}
-						await login(values.email, values.password);
+						await login(values.email, values.password, checked);
 						if (scriptedRef.current) {
 							setStatus({ success: true });
 							setSubmitting(false);
@@ -82,6 +135,14 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 					} catch (err: any) {
 						if (scriptedRef.current) {
 							setStatus({ success: false });
+
+							// Cuenta desactivada → en vez de un error muerto, ofrecer reactivación inline.
+							if (err?.response?.data?.error?.code === "ACCOUNT_INACTIVE") {
+								setReactivateCreds({ email: values.email, password: values.password });
+								setSubmitting(false);
+								if (onLoadingChange) onLoadingChange(false);
+								return;
+							}
 
 							// Safely extract error message with proper checks
 							let errorMessage = "Error al iniciar sesión";
@@ -198,18 +259,8 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 					// Check if either form is loading
 					const isAnyFormLoading = isSubmitting || isGoogleLoading;
 
-					// Create a custom submit handler to avoid the persist error
-					const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-						e.preventDefault();
-						e.stopPropagation();
-
-						// TEMPORARY FIX: Disable Enter key submission due to Formik/InputBase conflict
-						// Only allow submission via button click
-						return false;
-					};
-
 					return (
-						<form noValidate onSubmit={onFormSubmit}>
+						<form noValidate onSubmit={handleSubmit}>
 							<Grid container spacing={3}>
 								<Grid item xs={12}>
 									<Stack spacing={1}>
@@ -219,20 +270,13 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 											type="email"
 											value={values.email}
 											name="email"
-											onBlur={handleBlur}
+											onBlur={safeFormikBlur(handleBlur)}
 											onChange={handleChange}
 											placeholder="Ingrese su dirección de correo electrónico"
 											fullWidth
 											error={Boolean(touched.email && errors.email)}
 											disabled={isAnyFormLoading}
-											autoComplete="email"
-											onKeyDown={(e) => {
-												// Prevent form submission on Enter in input fields
-												if (e.key === "Enter") {
-													e.preventDefault();
-													e.stopPropagation();
-												}
-											}}
+											autoComplete="username"
 										/>
 										{touched.email && errors.email && (
 											<FormHelperText error id="standard-weight-helper-text-email-login">
@@ -251,17 +295,10 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 											type={showPassword ? "text" : "password"}
 											value={values.password}
 											name="password"
-											onBlur={handleBlur}
+											onBlur={safeFormikBlur(handleBlur)}
 											onChange={handleChange}
 											disabled={isAnyFormLoading}
 											autoComplete="current-password"
-											onKeyDown={(e) => {
-												// Prevent form submission on Enter in input fields
-												if (e.key === "Enter") {
-													e.preventDefault();
-													e.stopPropagation();
-												}
-											}}
 											endAdornment={
 												<InputAdornment position="end">
 													<IconButton
@@ -276,7 +313,7 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 													</IconButton>
 												</InputAdornment>
 											}
-											placeholder="Ingrese una contraseña"
+											placeholder="Ingresá tu contraseña"
 										/>
 										{touched.password && errors.password && (
 											<FormHelperText error id="standard-weight-helper-text-password-login">
@@ -313,10 +350,29 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 												textDecoration: isAnyFormLoading ? "none" : undefined,
 											}}
 										>
-											Olvidé mi Password
+											Olvidé mi contraseña
 										</Link>
 									</Stack>
 								</Grid>
+								{reactivateCreds && (
+									<Grid item xs={12}>
+										<Alert severity="warning">
+											<Typography variant="body2" sx={{ mb: 1 }}>
+												Tu cuenta está desactivada. Podés reactivarla ahora mismo con estas credenciales.
+											</Typography>
+											<Button
+												variant="contained"
+												color="warning"
+												size="small"
+												disabled={reactivating}
+												onClick={handleReactivate}
+												startIcon={reactivating ? <CircularProgress size={16} color="inherit" /> : null}
+											>
+												{reactivating ? "Reactivando..." : "Reactivar mi cuenta"}
+											</Button>
+										</Alert>
+									</Grid>
+								)}
 								<Grid item xs={12}>
 									<AnimateButton>
 										<Button
@@ -324,7 +380,7 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 											disabled={isAnyFormLoading}
 											fullWidth
 											size="large"
-											type="button"
+											type="submit"
 											variant="contained"
 											color="primary"
 											startIcon={
@@ -338,12 +394,6 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 													/>
 												) : null
 											}
-											onClick={(e) => {
-												e.preventDefault();
-												if (!isAnyFormLoading) {
-													handleSubmit();
-												}
-											}}
 											sx={{
 												"&.Mui-disabled": {
 													backgroundColor: (theme) => theme.palette.primary.main,
@@ -352,7 +402,7 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 												},
 											}}
 										>
-											{isSubmitting ? "Iniciando sesión..." : isGoogleLoading ? "Autenticando con Google..." : "Login"}
+											{isSubmitting ? "Iniciando sesión..." : isGoogleLoading ? "Autenticando con Google..." : "Iniciar sesión"}
 										</Button>
 									</AnimateButton>
 								</Grid>

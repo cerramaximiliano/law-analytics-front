@@ -23,6 +23,7 @@ import SimpleBar from "components/third-party/SimpleBar";
 import { TaskSquare, Calendar, Folder } from "iconsax-react";
 import { PopupTransition } from "components/@extended/Transitions";
 import dayjs from "utils/dayjs-config";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // Redux
 import { useSelector, dispatch } from "store";
@@ -50,6 +51,7 @@ interface TaskWithFolder {
 
 const LinkTaskModal: React.FC<LinkTaskModalProps> = ({ open, onClose, folderId, folderName }) => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const [selectedTaskId, setSelectedTaskId] = useState<string>("");
 	const [isLinking, setIsLinking] = useState(false);
 	const [availableTasks, setAvailableTasks] = useState<TaskWithFolder[]>([]);
@@ -178,9 +180,11 @@ const LinkTaskModal: React.FC<LinkTaskModalProps> = ({ open, onClose, folderId, 
 			fullWidth
 			aria-labelledby="link-task-modal-title"
 			PaperProps={{
-				elevation: 5,
+				elevation: 0,
 				sx: {
 					borderRadius: 2,
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+					boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
 					overflow: "hidden",
 				},
 			}}
@@ -188,41 +192,108 @@ const LinkTaskModal: React.FC<LinkTaskModalProps> = ({ open, onClose, folderId, 
 			<DialogTitle
 				id="link-task-modal-title"
 				sx={{
-					bgcolor: theme.palette.primary.lighter,
-					p: 3,
-					borderBottom: `1px solid ${theme.palette.divider}`,
+					display: "flex",
+					alignItems: "center",
+					gap: 1.25,
+					px: 2.5,
+					py: 1.75,
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+					borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 				}}
 			>
-				<Stack spacing={1}>
-					<Stack direction="row" alignItems="center" spacing={1}>
-						<TaskSquare size={24} color={theme.palette.primary.main} variant="Bold" />
-						<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
-							Vincular Tarea Existente
+				<Box
+					sx={{
+						width: 32,
+						height: 32,
+						borderRadius: 1,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+						color: BRAND_BLUE,
+					}}
+				>
+					<TaskSquare size={18} variant="Bulk" />
+				</Box>
+				<Stack spacing={0.125} sx={{ minWidth: 0, flex: 1 }}>
+					<Stack direction="row" spacing={0.5} alignItems="center">
+						<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+						<Typography
+							sx={{
+								fontSize: "0.6rem",
+								fontWeight: 600,
+								letterSpacing: "0.08em",
+								textTransform: "uppercase",
+								color: "text.secondary",
+							}}
+						>
+							Vincular
 						</Typography>
 					</Stack>
-					<Typography variant="body2" color="textSecondary">
-						Selecciona una tarea para vincular a "{folderName}"
+					<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+						Vincular tarea existente
+					</Typography>
+					<Typography
+						sx={{
+							fontSize: "0.72rem",
+							color: "text.secondary",
+							letterSpacing: "-0.005em",
+							overflow: "hidden",
+							textOverflow: "ellipsis",
+							whiteSpace: "nowrap",
+						}}
+					>
+						Seleccioná una tarea para vincular a "{folderName}"
 					</Typography>
 				</Stack>
 			</DialogTitle>
-			<Divider />
 
-			<DialogContent sx={{ p: 3 }}>
+			<DialogContent sx={{ p: 2.5 }}>
 				{isLoadingTasks ? (
-					<Stack spacing={2} sx={{ py: 2 }}>
+					<Stack spacing={1.5} sx={{ py: 1 }}>
 						{[1, 2, 3].map((index) => (
-							<Skeleton key={index} variant="rectangular" height={80} sx={{ borderRadius: 1 }} />
+							<Skeleton key={index} variant="rectangular" height={80} sx={{ borderRadius: 1.5 }} />
 						))}
 					</Stack>
 				) : availableTasks.length === 0 ? (
-					<Alert severity="info" sx={{ mt: 2 }}>
-						No hay tareas disponibles para vincular. Todas tus tareas pendientes ya están asignadas a expedientes.
-					</Alert>
+					<Box
+						sx={{
+							p: 2.5,
+							mt: 1,
+							borderRadius: 1.5,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+							border: `1px dashed ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.2)}`,
+						}}
+					>
+						<Stack direction="row" spacing={1.25} alignItems="flex-start">
+							<TaskSquare size={20} variant="Bulk" color={BRAND_BLUE} />
+							<Stack spacing={0.5}>
+								<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+									Sin tareas disponibles
+								</Typography>
+								<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", lineHeight: 1.5 }}>
+									Todas tus tareas pendientes ya están asignadas a expedientes.
+								</Typography>
+							</Stack>
+						</Stack>
+					</Box>
 				) : (
 					<SimpleBar sx={{ maxHeight: 400 }}>
-						<FormControl component="fieldset" sx={{ width: "100%", mt: 2 }}>
-							<FormLabel component="legend" sx={{ mb: 2 }}>
-								Tareas disponibles ({availableTasks.length})
+						<FormControl component="fieldset" sx={{ width: "100%", mt: 1 }}>
+							<FormLabel
+								component="legend"
+								sx={{
+									mb: 1.5,
+									fontSize: "0.6rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+									"&.Mui-focused": { color: "text.secondary" },
+								}}
+							>
+								Tareas disponibles · {availableTasks.length}
 							</FormLabel>
 							<RadioGroup value={selectedTaskId} onChange={(e) => setSelectedTaskId(e.target.value)}>
 								<Stack spacing={1}>
@@ -230,63 +301,85 @@ const LinkTaskModal: React.FC<LinkTaskModalProps> = ({ open, onClose, folderId, 
 										const taskDate = dayjs(task.dueDate || task.date);
 										const isOverdue = taskDate.isBefore(dayjs(), "day");
 										const isToday = taskDate.isSame(dayjs(), "day");
+										const dateColor = isOverdue ? theme.palette.error.main : isToday ? STALE_AMBER : theme.palette.text.secondary;
+										const isSelected = selectedTaskId === task._id;
 
 										return (
 											<FormControlLabel
 												key={task._id}
 												value={task._id}
-												control={<Radio />}
+												control={<Radio sx={{ color: alpha(BRAND_BLUE, 0.5), "&.Mui-checked": { color: BRAND_BLUE } }} />}
 												label={
 													<Box
 														sx={{
-															p: 2,
-															border: `1px solid ${selectedTaskId === task._id ? theme.palette.primary.main : theme.palette.divider}`,
-															borderRadius: 2,
-															bgcolor: selectedTaskId === task._id ? alpha(theme.palette.primary.main, 0.05) : "background.paper",
-															transition: "all 0.2s ease",
+															p: 1.5,
+															border: `1px solid ${
+																isSelected ? alpha(BRAND_BLUE, isDark ? 0.36 : 0.26) : alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)
+															}`,
+															borderRadius: 1.5,
+															bgcolor: isSelected ? alpha(BRAND_BLUE, isDark ? 0.08 : 0.04) : theme.palette.background.paper,
+															transition: "all 180ms ease",
 															"&:hover": {
-																borderColor: theme.palette.primary.main,
-																bgcolor: alpha(theme.palette.primary.main, 0.02),
+																borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+																bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 															},
-															ml: 1,
+															ml: 0.5,
 															width: "100%",
 														}}
 													>
-														<Typography variant="body1" fontWeight={500}>
+														<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
 															{task.name}
 														</Typography>
 														{task.description && (
-															<Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+															<Typography
+																sx={{
+																	fontSize: "0.72rem",
+																	color: "text.secondary",
+																	letterSpacing: "-0.005em",
+																	display: "block",
+																	mt: 0.375,
+																}}
+															>
 																{task.description}
 															</Typography>
 														)}
-														<Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
-															<Calendar size={14} color={theme.palette.text.secondary} />
-															<Typography
-																variant="caption"
-																color={isOverdue ? "error.main" : isToday ? "warning.main" : "text.secondary"}
-																fontWeight={isOverdue || isToday ? 600 : 400}
-															>
-																{taskDate.format("DD/MM/YYYY")}
-																{isOverdue && " • Vencida"}
-																{isToday && " • Hoy"}
-															</Typography>
+														<Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.75 }} flexWrap="wrap" useFlexGap>
+															<Stack direction="row" spacing={0.5} alignItems="center">
+																<Calendar size={12} variant="Bulk" color={dateColor} />
+																<Typography
+																	sx={{
+																		fontSize: "0.72rem",
+																		color: dateColor,
+																		fontWeight: isOverdue || isToday ? 600 : 400,
+																		letterSpacing: "-0.005em",
+																	}}
+																>
+																	{taskDate.format("DD/MM/YYYY")}
+																	{isOverdue && " · Vencida"}
+																	{isToday && " · Hoy"}
+																</Typography>
+															</Stack>
 															{task.folderId && task.folderName && (
 																<>
-																	<Box sx={{ mx: 0.5 }}>•</Box>
-																	<Folder size={14} color={theme.palette.text.secondary} />
-																	<Typography variant="caption" color="text.secondary">
-																		{task.folderName}
-																	</Typography>
+																	<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: "text.disabled" }} />
+																	<Stack direction="row" spacing={0.5} alignItems="center">
+																		<Folder size={12} variant="Bulk" color={theme.palette.text.secondary} />
+																		<Typography
+																			sx={{
+																				fontSize: "0.72rem",
+																				color: "text.secondary",
+																				letterSpacing: "-0.005em",
+																			}}
+																		>
+																			{task.folderName}
+																		</Typography>
+																	</Stack>
 																</>
 															)}
 														</Stack>
 													</Box>
 												}
-												sx={{
-													margin: 0,
-													width: "100%",
-												}}
+												sx={{ margin: 0, width: "100%" }}
 											/>
 										);
 									})}
@@ -297,13 +390,47 @@ const LinkTaskModal: React.FC<LinkTaskModalProps> = ({ open, onClose, folderId, 
 				)}
 			</DialogContent>
 
-			<Divider />
-			<DialogActions sx={{ px: 3, py: 2 }}>
-				<Button onClick={handleClose} color="error" disabled={isLinking}>
+			<DialogActions sx={{ px: 2.5, py: 1.75, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}>
+				<Button
+					onClick={handleClose}
+					disabled={isLinking}
+					sx={{
+						textTransform: "none",
+						fontWeight: 600,
+						letterSpacing: "-0.005em",
+						color: "text.secondary",
+						borderRadius: 1.25,
+						px: 2,
+						py: 0.875,
+						border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
+						"&:hover": {
+							color: BRAND_BLUE,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+							borderColor: alpha(BRAND_BLUE, 0.28),
+						},
+					}}
+				>
 					Cancelar
 				</Button>
-				<Button onClick={handleLinkTask} variant="contained" disabled={!selectedTaskId || isLinking} startIcon={<TaskSquare size={18} />}>
-					{isLinking ? "Vinculando..." : "Vincular Tarea"}
+				<Button
+					onClick={handleLinkTask}
+					variant="contained"
+					disabled={!selectedTaskId || isLinking}
+					startIcon={<TaskSquare size={16} variant="Bulk" />}
+					sx={{
+						textTransform: "none",
+						fontWeight: 600,
+						letterSpacing: "-0.005em",
+						bgcolor: BRAND_BLUE,
+						color: "#fff",
+						borderRadius: 1.25,
+						px: 2,
+						py: 0.875,
+						boxShadow: "none",
+						"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+					}}
+				>
+					{isLinking ? "Vinculando…" : "Vincular tarea"}
 				</Button>
 			</DialogActions>
 		</ResponsiveDialog>

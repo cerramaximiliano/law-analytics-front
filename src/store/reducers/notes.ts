@@ -70,10 +70,12 @@ const notesReducer = (state = initialState, action: any) => {
 /**
  * Crea una nueva nota
  */
-export const addNote = (data: NoteFormValues) => async (dispatch: Dispatch) => {
+export const addNote = (data: NoteFormValues, options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/notes/create`, data);
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/notes/create`, data, {
+			headers: options?.headers,
+		});
 
 		const note = response.data.note;
 		dispatch({

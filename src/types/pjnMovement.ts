@@ -1,0 +1,80 @@
+// Tipos para el dominio "PjnMovement" — el listado paginado y el viewer
+// del PDF leen desde la nueva colección pjn-movements (Fase 7a).
+//
+// Convive con el tipo Movement existente (de la colección movements del usuario).
+// PjnMovement representa un movimiento del expediente PJN, NO una agenda/recordatorio.
+
+export type PjnMovementPdfStatus = "downloaded" | "pending" | "expired" | "failed" | "not_applicable";
+
+export interface PjnMovement {
+	_id: string; // formato: "{causaId}:{sourceId}"
+	fecha: string | null;
+	tipo: string | null;
+	detalle: string | null;
+	url: string | null; // URL original PJN (puede haber expirado)
+	pdfStatus: PjnMovementPdfStatus;
+	pdfBytes?: number;
+	hasPdf: boolean; // shortcut: pdfStatus === 'downloaded'
+	read?: boolean; // leído por el usuario autenticado (per-viewer)
+}
+
+export interface PjnMovementsPagination {
+	currentPage: number;
+	totalPages: number;
+	limit: number;
+	hasNextPage: boolean;
+	hasPrevPage: boolean;
+}
+
+export interface PjnMovementsListResponse {
+	success: boolean;
+	count: number;
+	pagination: PjnMovementsPagination;
+	causa?: {
+		id: string;
+		causaType: string;
+	};
+	data: PjnMovement[];
+	message?: string;
+	// Gate de plan: cuando el usuario es free, el backend devuelve solo un preview
+	// (últimos N movimientos) y marca requiresUpgrade. count refleja el total real.
+	requiresUpgrade?: boolean;
+	currentPlan?: string | null;
+	requiredPlans?: string[];
+	previewCount?: number;
+	// Deep-link ?locate=: 'ok' (la respuesta ya es la página del movimiento),
+	// 'outside_plan' (existe pero fuera de la ventana free), 'not_found'.
+	locateStatus?: "ok" | "outside_plan" | "not_found";
+	locatedPage?: number | null;
+}
+
+export interface PjnMovementsListParams {
+	page?: number;
+	limit?: number;
+	sort?: string; // ej "-fecha" (default), "fecha", "-tipo"
+	search?: string;
+	pdfStatus?: PjnMovementPdfStatus;
+	hasUrl?: boolean;
+	dateFrom?: string; // YYYY-MM-DD
+	dateTo?: string; // YYYY-MM-DD
+	// Solo movimientos con notas/tareas/vencimientos vinculados.
+	hasLinked?: boolean;
+	// Deep-link: id del movimiento a ubicar — el server salta a su página.
+	locate?: string;
+}
+
+export interface PjnMovementPdfUrlResponse {
+	success: boolean;
+	pdfUrl?: string;
+	expiresIn?: number; // segundos
+	bytes?: number;
+	mimeType?: string;
+	// Si success=false:
+	message?: string;
+	pdfStatus?: PjnMovementPdfStatus;
+	fallbackUrl?: string | null;
+	// Gate de plan: free no accede al PDF de nuestro S3, cae al fallback de PJN.
+	requiresUpgrade?: boolean;
+	currentPlan?: string | null;
+	requiredPlans?: string[];
+}

@@ -100,6 +100,51 @@ Este directorio contiene todas las guías de usuario extraídas del sistema Law 
 
 ---
 
+### 7. [Analytics](./07-analytics.md)
+
+**Descripción**: Aprende a visualizar estadísticas y métricas de tu actividad legal.
+
+**Contenido principal**:
+
+- Dashboard de estadísticas
+- Métricas de productividad
+- Análisis de causas y resultados
+
+**Tiempo estimado**: 10-15 minutos
+
+---
+
+### 8. [Límites de Almacenamiento](./08-limites-almacenamiento.md)
+
+**Descripción**: Aprende cómo funcionan los límites de almacenamiento y recursos según tu plan.
+
+**Contenido principal**:
+
+- Límites por tipo de plan
+- Gestión del espacio de almacenamiento
+- Estrategias para optimizar el uso
+
+**Tiempo estimado**: 5-10 minutos
+
+---
+
+### 9. [Equipos](./09-equipos.md)
+
+**Descripción**: Aprende a crear y gestionar equipos de trabajo para colaborar con otros profesionales.
+
+**Contenido principal**:
+
+- Creación y configuración de equipos
+- Invitación de miembros y asignación de roles
+- Roles y permisos (Propietario, Administrador, Editor, Visor)
+- Aceptación de invitaciones y migración de recursos
+- Trabajo colaborativo y límites compartidos
+- Gestión de miembros y administración del equipo
+
+**Tiempo estimado**: 15-20 minutos
+
+---
+
 ## Estructura de las Guías
 
 Cada guía sigue una estructura consistente:

@@ -5,27 +5,27 @@ import {
 	DialogActions,
 	DialogContent,
 	DialogTitle,
-	Divider,
 	FormControl,
 	InputAdornment,
 	Stack,
 	TextField,
 	Tooltip,
 	Typography,
-	alpha,
-	useTheme,
 	Radio,
 	RadioGroup,
 	FormControlLabel,
-	Chip,
+	CircularProgress,
 } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 import ResponsiveDialog from "components/@extended/ResponsiveDialog";
-import { DocumentCloud, SearchNormal1, Edit2 } from "iconsax-react";
+import { DocumentCloud, SearchNormal1, Edit2, DocumentText1, Folder2 } from "iconsax-react";
 import SimpleBar from "components/third-party/SimpleBar";
 import { useSelector, dispatch } from "store";
-import { getFoldersByUserId } from "store/reducers/folder";
+import { getFoldersByUserId, getFoldersByGroupId } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
 import { Folder } from "types/folders";
+import { useTeam } from "contexts/TeamContext";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 interface LinkCauseSelectorProps {
 	requiereField: string;
@@ -45,6 +45,7 @@ interface GetFoldersResponse {
 
 const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, requeridoField, onMethodChange }) => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const [selectedMethod, setSelectedMethod] = useState<"manual" | "causa">("manual");
 	const [openModal, setOpenModal] = useState(false);
 	const [folders, setFolders] = useState<Folder[]>([]);
@@ -52,23 +53,20 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 	const [searchTerm, setSearchTerm] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 
-	// Obtener el ID del usuario desde Redux
 	const userId = useSelector((state) => state.auth.user?._id);
+	const { isTeamMode, activeTeam } = useTeam();
 
-	// Efecto para cargar carpetas cuando se abre el modal
 	useEffect(() => {
 		if (openModal) {
 			fetchFolders();
 		}
-	}, [openModal, userId]);
+	}, [openModal, userId, isTeamMode, activeTeam?._id]);
 
 	// Manejar cambio de tab
 	const handleMethodClick = (method: "manual" | "causa") => {
 		setSelectedMethod(method);
 
-		// Notificar al componente padre sobre el cambio
 		if (method === "causa" && selectedFolder) {
-			// Pasar los datos de carpeta (folderId y folderName) cuando hay una carpeta seleccionada
 			onMethodChange(method, selectedFolder, {
 				folderId: selectedFolder._id,
 				folderName: selectedFolder.folderName,
@@ -77,37 +75,23 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 			onMethodChange(method, method === "causa" ? selectedFolder : null);
 		}
 
-		// Si cambia a manual y hay una carpeta seleccionada, resetear la selección
 		if (method === "manual" && selectedFolder) {
 			setSelectedFolder(null);
-		}
-		// Si cambia a causa pero no hay carpeta seleccionada, abrir el modal
-		else if (method === "causa" && !selectedFolder) {
+		} else if (method === "causa" && !selectedFolder) {
 			setOpenModal(true);
 		}
 	};
 
-	// Obtener carpetas del usuario
 	const fetchFolders = async () => {
 		setIsLoading(true);
 
 		try {
-			if (userId) {
-				const response = (await dispatch(getFoldersByUserId(userId))) as unknown as GetFoldersResponse;
+			let response: GetFoldersResponse;
 
-				if (response.success && response.folders) {
-					setFolders(response.folders);
-				} else {
-					dispatch(
-						openSnackbar({
-							open: true,
-							message: "No se encontraron carpetas disponibles",
-							variant: "alert",
-							alert: { color: "warning" },
-							close: true,
-						}),
-					);
-				}
+			if (isTeamMode && activeTeam?._id) {
+				response = (await dispatch(getFoldersByGroupId(activeTeam._id))) as unknown as GetFoldersResponse;
+			} else if (userId) {
+				response = (await dispatch(getFoldersByUserId(userId))) as unknown as GetFoldersResponse;
 			} else {
 				dispatch(
 					openSnackbar({
@@ -115,6 +99,21 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 						message: "Necesita iniciar sesión para acceder a las carpetas",
 						variant: "alert",
 						alert: { color: "error" },
+						close: true,
+					}),
+				);
+				return;
+			}
+
+			if (response.success && response.folders) {
+				setFolders(response.folders);
+			} else {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "No se encontraron carpetas disponibles",
+						variant: "alert",
+						alert: { color: "warning" },
 						close: true,
 					}),
 				);
@@ -134,12 +133,10 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 		}
 	};
 
-	// Manejar búsqueda
 	const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		setSearchTerm(event.target.value);
 	};
 
-	// Filtrar carpetas según término de búsqueda
 	const filteredFolders = folders.filter((folder) => {
 		const searchLower = searchTerm.toLowerCase();
 		return (
@@ -149,82 +146,112 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 		);
 	});
 
-	// Manejar selección de carpeta
 	const handleSelectFolder = (folder: Folder) => {
 		setSelectedFolder(folder);
 		setSelectedMethod("causa");
 
-		// Notificar al componente padre sobre el cambio con los datos de folderId y folderName
 		onMethodChange("causa", folder, {
 			folderId: folder._id,
 			folderName: folder.folderName,
 		});
 
-		// Cerrar el modal
 		setOpenModal(false);
 	};
 
-	// Cambiar selección de carpeta
 	const handleChangeFolder = () => {
-		// Abrir el modal para seleccionar una nueva carpeta
 		setOpenModal(true);
+	};
+
+	// Estilo brand-aware compartido para los Radio
+	const radioSx = {
+		color: alpha(BRAND_BLUE, isDark ? 0.4 : 0.3),
+		"&.Mui-checked": { color: BRAND_BLUE },
+	};
+
+	// Botón brand sober reusable.
+	const brandButtonSx = {
+		textTransform: "none" as const,
+		bgcolor: BRAND_BLUE,
+		color: "#fff",
+		fontWeight: 600,
+		letterSpacing: "-0.005em",
+		borderRadius: 1.25,
+		boxShadow: "none",
+		transition: "background-color 0.15s ease",
+		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+	};
+
+	const ghostButtonSx = {
+		textTransform: "none" as const,
+		color: "text.secondary",
+		fontWeight: 500,
+		"&:hover": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.06),
+			color: BRAND_BLUE,
+		},
 	};
 
 	return (
 		<>
 			<Box sx={{ width: "100%", mb: 1.5 }}>
-				<Typography variant="subtitle2" color="textPrimary" sx={{ mb: 0.75, fontWeight: 600 }}>
+				<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary", mb: 0.75 }}>
 					Método de ingreso
 				</Typography>
 
 				<Box
 					sx={{
-						border: 1,
-						borderColor: theme.palette.divider,
-						borderRadius: 1,
-						p: 1,
-						bgcolor: theme.palette.background.paper,
+						borderRadius: 1.5,
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+						p: 1.25,
 					}}
 				>
 					<RadioGroup value={selectedMethod} onChange={(e) => handleMethodClick(e.target.value as "manual" | "causa")}>
 						<Stack spacing={0.75}>
-							{/* Opciones horizontales */}
-							<Stack direction="row" spacing={1.5} alignItems="center">
-								{/* Opción Manual */}
+							<Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.75, sm: 1.5 }} alignItems={{ xs: "flex-start", sm: "center" }}>
 								<FormControlLabel
 									value="manual"
-									control={<Radio size="small" />}
+									control={<Radio size="small" sx={radioSx} />}
 									label={
-										<Stack direction="row" spacing={0.5} alignItems="center">
-											<Edit2 size={16} color={theme.palette.text.secondary} />
-											<Typography variant="body2">Ingreso Manual</Typography>
+										<Stack direction="row" spacing={0.625} alignItems="center">
+											<Edit2 size={14} variant="Bulk" color={selectedMethod === "manual" ? BRAND_BLUE : theme.palette.text.secondary} />
+											<Typography
+												sx={{
+													fontSize: "0.82rem",
+													fontWeight: selectedMethod === "manual" ? 600 : 500,
+													color: selectedMethod === "manual" ? "text.primary" : "text.secondary",
+												}}
+											>
+												Ingreso manual
+											</Typography>
 										</Stack>
 									}
 									sx={{ m: 0 }}
 								/>
 
-								{/* Opción Carpeta */}
 								<FormControlLabel
 									value="causa"
-									control={<Radio size="small" />}
+									control={<Radio size="small" sx={radioSx} />}
 									label={
-										<Stack direction="row" spacing={0.5} alignItems="center">
-											<DocumentCloud size={16} color={theme.palette.text.secondary} />
-											<Typography variant="body2">Seleccionar Carpeta</Typography>
+										<Stack direction="row" spacing={0.625} alignItems="center">
+											<DocumentCloud size={14} variant="Bulk" color={selectedMethod === "causa" ? BRAND_BLUE : theme.palette.text.secondary} />
+											<Typography
+												sx={{
+													fontSize: "0.82rem",
+													fontWeight: selectedMethod === "causa" ? 600 : 500,
+													color: selectedMethod === "causa" ? "text.primary" : "text.secondary",
+												}}
+											>
+												Seleccionar carpeta
+											</Typography>
 										</Stack>
 									}
 									sx={{ m: 0 }}
 								/>
 
-								{/* Botón Elegir */}
 								{!selectedFolder && selectedMethod === "causa" && (
-									<Button
-										size="small"
-										variant="outlined"
-										onClick={handleChangeFolder}
-										sx={{ ml: "auto", textTransform: "none", py: 0.25, px: 1.5 }}
-									>
-										Elegir
+									<Button size="small" onClick={handleChangeFolder} sx={{ ml: { sm: "auto" }, ...brandButtonSx, px: 1.5, py: 0.5 }}>
+										Elegir carpeta
 									</Button>
 								)}
 							</Stack>
@@ -233,30 +260,71 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 							{selectedFolder && selectedMethod === "causa" && (
 								<Box
 									sx={{
-										pl: 1.5,
-										pr: 1,
-										py: 0.75,
-										borderLeft: `2px solid ${theme.palette.primary.main}`,
-										bgcolor: alpha(theme.palette.primary.main, 0.04),
-										borderRadius: "0 4px 4px 0",
+										display: "flex",
+										alignItems: "center",
+										gap: 1.25,
+										p: 1.25,
+										borderRadius: 1.25,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.1 : 0.05),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
 									}}
 								>
-									<Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-										<Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
-											<Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
-												{selectedFolder.folderName}
-											</Typography>
-											<Chip label={selectedFolder.materia} size="small" sx={{ height: 18, fontSize: "0.65rem" }} />
+									<Box
+										sx={{
+											width: 28,
+											height: 28,
+											borderRadius: 1,
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.12),
+											color: BRAND_BLUE,
+											flexShrink: 0,
+										}}
+									>
+										<DocumentText1 size={14} variant="Bulk" />
+									</Box>
+									<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+										<Typography
+											sx={{
+												fontSize: "0.82rem",
+												fontWeight: 600,
+												letterSpacing: "-0.005em",
+												color: "text.primary",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												whiteSpace: "nowrap",
+											}}
+										>
+											{selectedFolder.folderName}
+										</Typography>
+										<Stack direction="row" spacing={0.75} alignItems="center" sx={{ minWidth: 0 }}>
+											<Box
+												sx={{
+													display: "inline-flex",
+													alignItems: "center",
+													px: 0.625,
+													py: 0.125,
+													borderRadius: 0.625,
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.12),
+													border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.22)}`,
+													flexShrink: 0,
+												}}
+											>
+												<Typography sx={{ fontSize: "0.6rem", fontWeight: 600, letterSpacing: "0.04em", color: BRAND_BLUE, lineHeight: 1 }}>
+													{selectedFolder.materia}
+												</Typography>
+											</Box>
 											{selectedFolder.description && (
-												<Tooltip title={selectedFolder.description}>
+												<Tooltip title={selectedFolder.description} arrow placement="top">
 													<Typography
-														variant="caption"
-														color="textSecondary"
 														sx={{
+															fontSize: "0.72rem",
+															color: "text.secondary",
 															overflow: "hidden",
 															textOverflow: "ellipsis",
 															whiteSpace: "nowrap",
-															maxWidth: "150px",
+															maxWidth: 180,
 														}}
 													>
 														{selectedFolder.description}
@@ -264,10 +332,10 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 												</Tooltip>
 											)}
 										</Stack>
-										<Button size="small" variant="outlined" onClick={handleChangeFolder} sx={{ flexShrink: 0, py: 0.25, px: 1 }}>
-											Cambiar
-										</Button>
 									</Stack>
+									<Button size="small" onClick={handleChangeFolder} sx={{ flexShrink: 0, ...ghostButtonSx, fontSize: "0.74rem", px: 1 }}>
+										Cambiar
+									</Button>
 								</Box>
 							)}
 						</Stack>
@@ -275,31 +343,57 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 				</Box>
 			</Box>
 
-			{/* Modal de selección de carpeta */}
+			{/* Modal de selección de carpeta — brand-aware */}
 			<ResponsiveDialog
 				maxWidth="sm"
 				open={openModal}
 				onClose={() => setOpenModal(false)}
-				PaperProps={{
-					sx: {
-						p: 0,
-					},
-				}}
+				PaperProps={{ sx: { p: 0 } }}
 			>
-				<DialogTitle sx={{ bgcolor: theme.palette.primary.lighter, pb: 2 }}>
-					<Stack spacing={1}>
-						<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-							Seleccionar Carpeta
-						</Typography>
-						<Typography variant="body2" color="textSecondary">
-							Seleccione la carpeta para completar automáticamente los datos
-						</Typography>
+				<DialogTitle
+					sx={{
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+						p: { xs: 1.75, sm: 2 },
+						borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+					}}
+				>
+					<Stack direction="row" alignItems="center" spacing={1.25}>
+						<Box
+							sx={{
+								width: 36,
+								height: 36,
+								borderRadius: 1.25,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								color: BRAND_BLUE,
+								flexShrink: 0,
+							}}
+						>
+							<Folder2 size={20} variant="Bulk" />
+						</Box>
+						<Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+							<Typography
+								sx={{
+									fontSize: "1.05rem",
+									fontWeight: 600,
+									letterSpacing: "-0.015em",
+									lineHeight: 1.2,
+									color: "text.primary",
+								}}
+							>
+								Seleccionar carpeta
+							</Typography>
+							<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1.4 }}>
+								Elegí la carpeta para completar automáticamente los datos del cálculo.
+							</Typography>
+						</Stack>
 					</Stack>
 				</DialogTitle>
-				<Divider />
 
-				<DialogContent sx={{ p: 2.5, width: "100%", overflow: "hidden" }}>
-					<FormControl sx={{ width: "100%", mb: 2.5 }}>
+				<DialogContent sx={{ p: { xs: 2, sm: 2.5 }, width: "100%", overflow: "hidden" }}>
+					<FormControl sx={{ width: "100%", mb: 2 }}>
 						<TextField
 							autoFocus
 							value={searchTerm}
@@ -307,18 +401,26 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 							InputProps={{
 								startAdornment: (
 									<InputAdornment position="start">
-										<SearchNormal1 size={18} color={theme.palette.primary.main} />
+										<SearchNormal1 size={16} color={BRAND_BLUE} />
 									</InputAdornment>
 								),
-								sx: {
-									bgcolor: theme.palette.background.paper,
-									"&:hover": {
-										bgcolor: theme.palette.action.hover,
-									},
+							}}
+							placeholder="Buscar por carátula, materia o descripción…"
+							fullWidth
+							size="small"
+							sx={{
+								"& .MuiOutlinedInput-notchedOutline": {
+									borderColor: alpha(BRAND_BLUE, isDark ? 0.26 : 0.16),
+									transition: "border-color 0.15s ease",
+								},
+								"& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+									borderColor: alpha(BRAND_BLUE, isDark ? 0.46 : 0.32),
+								},
+								"& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+									borderColor: alpha(BRAND_BLUE, 0.55),
+									borderWidth: 1,
 								},
 							}}
-							placeholder="Buscar carpetas..."
-							fullWidth
 						/>
 					</FormControl>
 
@@ -330,7 +432,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 							overflowY: "auto",
 						}}
 					>
-						<Stack spacing={1.5} sx={{ p: 0.5 }}>
+						<Stack spacing={1} sx={{ p: 0.25 }}>
 							{!isLoading && filteredFolders.length > 0 ? (
 								filteredFolders.map((folder) => (
 									<Box
@@ -338,28 +440,44 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 										onClick={() => handleSelectFolder(folder)}
 										sx={{
 											width: "100%",
-											border: "1px solid",
-											borderColor: theme.palette.divider,
-											borderRadius: 1,
-											p: 2,
-											cursor: "pointer",
+											borderRadius: 1.5,
+											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
 											bgcolor: theme.palette.background.paper,
-											transition: "all 0.3s ease",
+											p: 1.5,
+											cursor: "pointer",
+											transition: "border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease",
 											"&:hover": {
-												borderColor: theme.palette.primary.main,
-												bgcolor: alpha(theme.palette.primary.main, 0.08),
-												transform: "translateY(-2px)",
-												boxShadow: `0 4px 8px ${alpha(theme.palette.primary.main, 0.15)}`,
+												borderColor: alpha(BRAND_BLUE, isDark ? 0.45 : 0.32),
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
 											},
+											"&:active": { transform: "scale(0.997)" },
 										}}
 									>
-										<Stack spacing={1.5}>
+										<Stack spacing={0.75}>
 											<Stack direction="row" alignItems="center" spacing={1}>
-												<Tooltip title={folder.folderName}>
+												<Box
+													sx={{
+														width: 24,
+														height: 24,
+														borderRadius: 0.875,
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+														color: BRAND_BLUE,
+														flexShrink: 0,
+													}}
+												>
+													<DocumentText1 size={14} variant="Bulk" />
+												</Box>
+												<Tooltip title={folder.folderName} arrow placement="top">
 													<Typography
-														variant="h6"
 														sx={{
 															flex: 1,
+															fontSize: "0.92rem",
+															fontWeight: 600,
+															letterSpacing: "-0.01em",
+															color: "text.primary",
 															overflow: "hidden",
 															textOverflow: "ellipsis",
 															whiteSpace: "nowrap",
@@ -369,33 +487,33 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 													</Typography>
 												</Tooltip>
 											</Stack>
-											<Stack
-												direction="row"
-												spacing={2}
-												sx={{
-													color: "text.secondary",
-													bgcolor: theme.palette.background.default,
-													p: 1,
-													borderRadius: 1,
-												}}
-											>
-												<Typography
-													variant="body2"
+											<Stack direction="row" spacing={0.875} alignItems="center" sx={{ pl: 4 }}>
+												<Box
 													sx={{
-														fontWeight: 500,
+														display: "inline-flex",
+														alignItems: "center",
+														px: 0.75,
+														py: 0.2,
+														borderRadius: 0.625,
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+														border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
 													}}
 												>
-													{folder.materia}
-												</Typography>
+													<Typography sx={{ fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.04em", color: BRAND_BLUE, lineHeight: 1 }}>
+														{folder.materia}
+													</Typography>
+												</Box>
 												{folder.description && (
-													<Tooltip title={folder.description}>
+													<Tooltip title={folder.description} arrow placement="top">
 														<Typography
-															variant="body2"
 															sx={{
-																maxWidth: "250px",
+																fontSize: "0.74rem",
+																color: "text.secondary",
 																overflow: "hidden",
 																textOverflow: "ellipsis",
 																whiteSpace: "nowrap",
+																maxWidth: 240,
+																flex: 1,
 															}}
 														>
 															{folder.description}
@@ -409,30 +527,85 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 							) : (
 								<Box
 									sx={{
+										position: "relative",
+										overflow: "hidden",
 										textAlign: "center",
-										py: 4,
-										bgcolor: theme.palette.background.paper,
-										borderRadius: 1,
-										border: `1px dashed ${theme.palette.divider}`,
-										minHeight: "400px",
+										minHeight: 380,
 										display: "flex",
 										alignItems: "center",
 										justifyContent: "center",
+										borderRadius: 1.5,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+										border: `1px dashed ${alpha(BRAND_BLUE, isDark ? 0.24 : 0.16)}`,
 									}}
 								>
-									{isLoading ? (
-										<Typography>Cargando carpetas...</Typography>
-									) : (
-										<Typography color="textSecondary">No se encontraron carpetas</Typography>
-									)}
+									<Box
+										aria-hidden
+										sx={{
+											position: "absolute",
+											inset: 0,
+											background: `radial-gradient(circle at center, ${alpha(BRAND_BLUE, isDark ? 0.1 : 0.06)} 0%, transparent 60%)`,
+											pointerEvents: "none",
+										}}
+									/>
+									<Stack spacing={1.5} alignItems="center" sx={{ position: "relative", zIndex: 1, px: 3 }}>
+										{isLoading ? (
+											<>
+												<CircularProgress size={28} sx={{ color: BRAND_BLUE }} />
+												<Typography sx={{ fontSize: "0.85rem", color: "text.secondary" }}>Cargando carpetas…</Typography>
+											</>
+										) : (
+											<>
+												<Box
+													sx={{
+														width: 64,
+														height: 64,
+														borderRadius: "50%",
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+														color: BRAND_BLUE,
+													}}
+												>
+													<Folder2 size={32} variant="Bulk" />
+												</Box>
+												<Stack spacing={0.5} alignItems="center">
+													<Typography
+														sx={{
+															fontSize: "0.95rem",
+															fontWeight: 600,
+															letterSpacing: "-0.01em",
+															color: "text.primary",
+														}}
+													>
+														{searchTerm ? "No encontramos carpetas" : "Todavía no hay carpetas"}
+													</Typography>
+													<Typography sx={{ fontSize: "0.8rem", color: "text.secondary", maxWidth: 280, lineHeight: 1.5, textWrap: "pretty" }}>
+														{searchTerm
+															? "Probá con otra carátula, materia o descripción."
+															: "Cuando tengas carpetas creadas, las vas a poder seleccionar acá."}
+													</Typography>
+												</Stack>
+											</>
+										)}
+									</Stack>
 								</Box>
 							)}
 						</Stack>
 					</SimpleBar>
 				</DialogContent>
 
-				<DialogActions sx={{ p: 2.5, bgcolor: theme.palette.background.default }}>
-					<Button onClick={() => setOpenModal(false)}>Cancelar</Button>
+				<DialogActions
+					sx={{
+						p: { xs: 1.5, sm: 2 },
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
+						borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+					}}
+				>
+					<Button onClick={() => setOpenModal(false)} sx={ghostButtonSx}>
+						Cancelar
+					</Button>
 				</DialogActions>
 			</ResponsiveDialog>
 		</>

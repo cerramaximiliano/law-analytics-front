@@ -1,0 +1,1265 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+
+// material-ui
+import { Box, Button, Chip, Link, Stack, Typography, useMediaQuery } from "@mui/material";
+import { alpha, useTheme, Theme } from "@mui/material/styles";
+
+// project-imports
+import MainCard from "components/MainCard";
+import { BRAND_BLUE, LIVE_GREEN, LIVE_PULSE_KEYFRAMES } from "themes/dashboardTokens";
+
+// icons
+import { Add, ArrowRight, CloseCircle, FolderAdd, Link21, Profile2User, Calendar, TickCircle } from "iconsax-react";
+
+// hooks
+import { useNavigate } from "react-router-dom";
+
+// services — para detectar estado de cred en background
+import pjnCredentialsService from "api/pjnCredentials";
+import scbaCredentialsService from "api/scbaCredentials";
+import mevCredentialsService from "api/mevCredentials";
+import { isScbaConnected } from "utils/scbaBindingState";
+import { isMevCredentialBroken } from "utils/mevCredential";
+import ApiService, { LandingCatalogEntry } from "store/reducers/ApiService";
+import { usePublicIntegrations } from "hooks/usePublicIntegrations";
+
+// tracking
+import {
+	trackOnboardingShown,
+	trackOnboardingStepClicked,
+	trackOnboardingStepCompleted,
+	trackOnboardingJudicialLogoClicked,
+	trackOnboardingDismissed,
+	trackOnboardingCompleted,
+} from "utils/gtm";
+
+// types
+import { ThemeMode } from "types/config";
+
+// assets — logos de portales judiciales (reusa los del flujo de register)
+import logoPJNacion from "assets/images/logos/logo_pj_nacion.png";
+import logoMEV from "assets/images/logos/logo_pj_buenos_aires.svg";
+import logoPJCatamarca from "assets/images/logos/logo_pj_catamarca.png";
+import logoPJMendoza from "assets/images/logos/logo_pj_mendoza.png";
+
+// Logo EJE — hosted Cloudinary, ya usado en register.tsx y Header.tsx
+const LOGO_EJE = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
+// Logo PJ Salta — mismo asset que el wizard de alta y LinkToJudicialPower
+const LOGO_SALTA =
+	"https://res.cloudinary.com/dqyoeolib/image/upload/v1779137783/ChatGPT_Image_18_may_2026__05_52_35_p.m.-removebg-preview_bngpqd.png";
+
+// =============================================================================
+// ONBOARDING CHECKLIST — componente único que reemplaza el banner + educational
+// block + 4 cards. Persistente hasta completarse o ser dismissado explícito.
+//
+// Origen: el funnel post-registro mostró 0% vinculación de cred judicial y 10%
+// retención a 7 días entre activados. El onboarding anterior solo empujaba a
+// "crear carpeta", sin siguiente paso. Este checklist incluye el step crítico
+// "conectar cuenta judicial" (cred PJN/SCBA o vincular expediente individual
+// PJN/MEV/EJE) que mueve la propuesta de valor real del producto.
+// =============================================================================
+
+// ── Tipos del step ──────────────────────────────────────────────────────────
+type StepId = "first_folder" | "judicial_connection" | "first_contact" | "first_deadline";
+type StepStatus = "pending" | "in_progress" | "done";
+
+interface Step {
+	id: StepId;
+	status: StepStatus;
+	icon: React.ElementType;
+	title: string;
+	description: string;
+	expandedHint?: React.ReactNode; // contenido extra cuando es el "next focus"
+}
+
+// ── Props ───────────────────────────────────────────────────────────────────
+interface OnboardingChecklistProps {
+	userId?: string; // para persistir el estado previo de los steps (tracking)
+	userName?: string;
+	hasFolders: boolean; // dashboardData.folders.total > 0
+	hasPjnCredentials: boolean; // PJN cred enabled
+	hasScbaCredentials: boolean; // SCBA cred enabled
+	hasMevCredentials?: boolean; // MEV cred de la cuenta conectada y sana
+	hasLinkedFolders?: boolean; // signals.linkedFolders > 0 (alta individual PJN/MEV/EJE/IOL)
+	hasContacts?: boolean; // signals.contacts > 0
+	hasDeadlines?: boolean; // signals.deadlines > 0 (vencimiento o audiencia)
+	preferredJurisdiction?: string | null; // signals.preferredJurisdiction (key del catálogo)
+	onDismiss: () => void;
+}
+
+// ── Componente principal ────────────────────────────────────────────────────
+const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
+	userId,
+	userName,
+	hasFolders,
+	hasPjnCredentials,
+	hasScbaCredentials,
+	hasMevCredentials = false,
+	hasLinkedFolders = false,
+	hasContacts = false,
+	hasDeadlines = false,
+	preferredJurisdiction = null,
+	onDismiss,
+}) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === ThemeMode.DARK;
+	const isShortViewport = useMediaQuery("(max-height: 980px)");
+	const isTightViewport = useMediaQuery("(max-height: 760px)");
+	const navigate = useNavigate();
+	// Ocultar la guía es permanente: se confirma en línea antes de descartar.
+	const [confirmingDismiss, setConfirmingDismiss] = useState(false);
+
+	// Jurisdicciones del panel judicial: catálogo de /admin/integrations (el mismo
+	// que usa la landing), con respaldo local si el endpoint no responde.
+	const { integrations: publicIntegrations } = usePublicIntegrations();
+	const judicialOptions = useMemo(
+		() => buildJudicialOptions(publicIntegrations.landingCatalog, preferredJurisdiction),
+		[publicIntegrations.landingCatalog, preferredJurisdiction],
+	);
+
+	// Build de los 4 steps con su status calculado.
+	// judicial_connection: done si hay una credencial conectada (PJN, SCBA o
+	// MEV) o al menos una carpeta vinculada a una causa de un portal (Opción B
+	// del panel). in_progress si sólo tiene carpetas manuales. pending si nada.
+	const hasJudicialLink = hasPjnCredentials || hasScbaCredentials || hasMevCredentials || hasLinkedFolders;
+	const judicialStatus: StepStatus = hasJudicialLink ? "done" : hasFolders ? "in_progress" : "pending";
+
+	const steps: Step[] = useMemo(
+		() => [
+			{
+				id: "first_folder",
+				status: hasFolders ? "done" : "pending",
+				icon: FolderAdd,
+				title: "Crear tu primera carpeta",
+				description:
+					"Un expediente, una causa o un cliente. Es donde organizás documentos, contactos, vencimientos y cálculos en un solo lugar.",
+			},
+			{
+				id: "judicial_connection",
+				status: judicialStatus,
+				icon: Link21,
+				title: "Conectar con el Poder Judicial",
+				description: "Sin esto, vas a cargar todo a mano. Conectalo una vez y Law Analytics trae los movimientos automáticamente.",
+			},
+			{
+				id: "first_contact",
+				status: hasContacts ? "done" : "pending",
+				icon: Profile2User,
+				title: "Agregar tu primer contacto",
+				description: "Cliente, contraparte o profesional. Vinculá personas a tus carpetas para tener todo a mano.",
+			},
+			{
+				id: "first_deadline",
+				status: hasDeadlines ? "done" : "pending",
+				icon: Calendar,
+				title: "Configurar tu primera alerta de vencimiento",
+				description: "Recibí notificaciones antes de cada fecha clave para no perder un plazo procesal.",
+			},
+		],
+		[hasFolders, hasContacts, hasDeadlines, judicialStatus],
+	);
+
+	const completedCount = steps.filter((s) => s.status === "done").length;
+	const totalSteps = steps.length;
+	const progressPct = (completedCount / totalSteps) * 100;
+	const allDone = completedCount === totalSteps;
+
+	// Próximo step recomendado: primer "pending" o "in_progress".
+	const nextStepIdx = steps.findIndex((s) => s.status !== "done");
+	const nextStepId = nextStepIdx >= 0 ? steps[nextStepIdx].id : null;
+
+	// ── Tracking lifecycle ──
+	// onboarding_shown: una vez al mount. Dispara GTM (analytics) +
+	// OnboardingEvent en Mongo (admin tab Eventos del panel).
+	const shownRef = useRef(false);
+	useEffect(() => {
+		if (!shownRef.current) {
+			shownRef.current = true;
+			trackOnboardingShown(completedCount, totalSteps);
+			ApiService.trackOnboardingEvent("onboarding_shown", {
+				completed_count: completedCount,
+				total_steps: totalSteps,
+			});
+		}
+	}, [completedCount, totalSteps]);
+
+	// onboarding_step_completed: dispara cuando el status de un step
+	// transiciona a "done". El estado previo se persiste por usuario en
+	// localStorage: el step casi siempre se completa en otra página (crear
+	// carpeta, contacto o vencimiento) y al volver el componente se monta de
+	// nuevo, así que con una ref sola la transición nunca se veía.
+	const prevStatusesRef = useRef<Record<StepId, StepStatus> | null>(null);
+	useEffect(() => {
+		const current: Record<StepId, StepStatus> = steps.reduce((acc, s) => {
+			acc[s.id] = s.status;
+			return acc;
+		}, {} as Record<StepId, StepStatus>);
+
+		const storageKey = userId ? `onboarding_step_statuses_${userId}` : null;
+		let previous = prevStatusesRef.current;
+		if (!previous && storageKey) {
+			try {
+				const raw = localStorage.getItem(storageKey);
+				previous = raw ? (JSON.parse(raw) as Record<StepId, StepStatus>) : null;
+			} catch {
+				previous = null;
+			}
+		}
+
+		if (previous) {
+			for (const step of steps) {
+				const prev = previous[step.id];
+				if (prev && prev !== "done" && step.status === "done") {
+					trackOnboardingStepCompleted(step.id);
+					ApiService.trackOnboardingEvent("onboarding_step_completed", { step_id: step.id });
+				}
+			}
+		}
+		prevStatusesRef.current = current;
+		if (storageKey) {
+			try {
+				localStorage.setItem(storageKey, JSON.stringify(current));
+			} catch {
+				// sin storage disponible: el tracking de transiciones queda por montaje
+			}
+		}
+	}, [steps, userId]);
+
+	// onboarding_completed: 4/4. Dispara GTM + backend (el endpoint del back
+	// `trackOnboardingEvent` con event="onboarding_completed" persiste
+	// onboarding.onboardingComplete=true en User). El próximo getOnboardingStatus
+	// va a devolver complete y el dashboard ocultará el checklist.
+	const completedDispatchedRef = useRef(false);
+	useEffect(() => {
+		if (allDone && !completedDispatchedRef.current) {
+			completedDispatchedRef.current = true;
+			trackOnboardingCompleted();
+			ApiService.trackOnboardingEvent("onboarding_completed", { total_steps: totalSteps });
+			ApiService.updateOnboarding({ step: "first_feature" }).catch(() => {
+				// silencioso: si falla, el checklist sigue visible al próximo login
+				// y el user puede dismissarlo manual o intentaremos de nuevo
+			});
+		}
+	}, [allDone, totalSteps]);
+
+	// ── Handlers de navegación ──
+	// Cada handler dispara: GTM (analytics) + OnboardingEvent (admin UI).
+	// Ambos son fire-and-forget — no bloquean la navegación.
+	const goCreateFolder = () => {
+		trackOnboardingStepClicked("first_folder");
+		ApiService.trackOnboardingEvent("onboarding_step_clicked", { step_id: "first_folder" });
+		navigate("/apps/folders/list?onboarding=true&action=create");
+	};
+
+	// Tile del panel judicial. Las credenciales viven en `/apps/profiles/account/pjn`
+	// (`TabPjnIntegration` lee `view=pjn|scba|mev`); el alta individual abre el
+	// asistente de carpetas con la jurisdicción preseleccionada (folders.tsx).
+	const goJudicialOption = (option: JudicialOption, mode: "credential" | "individual") => {
+		trackOnboardingStepClicked("judicial_connection");
+		trackOnboardingJudicialLogoClicked(option.key, mode);
+		ApiService.trackOnboardingEvent("onboarding_judicial_logo_clicked", { jurisdiction: option.key, mode });
+		navigate(option.href);
+	};
+
+	const goAddContact = () => {
+		trackOnboardingStepClicked("first_contact");
+		ApiService.trackOnboardingEvent("onboarding_step_clicked", { step_id: "first_contact" });
+		navigate("/apps/customer/customer-list?onboarding=true&action=create");
+	};
+
+	const goAddDeadline = () => {
+		trackOnboardingStepClicked("first_deadline");
+		ApiService.trackOnboardingEvent("onboarding_step_clicked", { step_id: "first_deadline" });
+		navigate("/apps/calendar?onboarding=true&action=create");
+	};
+
+	const handleDismiss = () => {
+		trackOnboardingDismissed(completedCount, totalSteps);
+		ApiService.trackOnboardingEvent("onboarding_dismissed", { completed_count: completedCount, total_steps: totalSteps });
+		onDismiss();
+	};
+
+	// ── Estilo compartido del container — atmósfera blob + dot grid (mismo
+	//    lenguaje que el WelcomeBanner anterior, para no romper continuidad). ──
+	const containerSx = {
+		position: "relative" as const,
+		overflow: "hidden",
+		bgcolor: theme.palette.background.paper,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+		boxShadow: `0 4px 18px ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)}`,
+		p: 0,
+	};
+
+	// ── Header (eyebrow + título + progreso) ──
+	const headline = allDone
+		? "Onboarding completo"
+		: completedCount === 0
+		? userName
+			? `Bienvenido, ${userName}`
+			: "Bienvenido a Law Analytics"
+		: userName
+		? `Bien hecho, ${userName}`
+		: "Bien hecho";
+
+	const subline = allDone
+		? "Ya tenés todo configurado. Law Analytics está trabajando por vos."
+		: completedCount === 0
+		? `${totalSteps} pasos para que Law Analytics empiece a trabajar por vos.`
+		: `${totalSteps - completedCount} ${totalSteps - completedCount === 1 ? "paso más" : "pasos más"} para activar todo el potencial.`;
+
+	const eyebrowLabel = allDone ? "TODO LISTO" : completedCount === 0 ? "EMPEZÁ ACÁ" : completedCount >= 3 ? "CASI LISTO" : "SEGUÍ ASÍ";
+
+	return (
+		<MainCard border={false} sx={containerSx}>
+			{/* Atmósfera — blob brand-blue arriba derecha */}
+			<Box
+				aria-hidden
+				sx={{
+					position: "absolute",
+					top: "-40%",
+					right: "-15%",
+					width: { xs: 320, md: 460 },
+					height: { xs: 320, md: 460 },
+					borderRadius: "50%",
+					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.13)} 0%, transparent 65%)`,
+					filter: "blur(60px)",
+					pointerEvents: "none",
+					zIndex: 0,
+				}}
+			/>
+			{/* Dot grid con mask radial */}
+			<Box
+				aria-hidden
+				sx={{
+					position: "absolute",
+					inset: 0,
+					backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDark ? 0.08 : 0.06)} 1px, transparent 1px)`,
+					backgroundSize: "26px 26px",
+					maskImage: "radial-gradient(ellipse 60% 80% at 80% 30%, #000 0%, transparent 75%)",
+					WebkitMaskImage: "radial-gradient(ellipse 60% 80% at 80% 30%, #000 0%, transparent 75%)",
+					pointerEvents: "none",
+					zIndex: 0,
+				}}
+			/>
+
+			<Stack
+				spacing={{
+					xs: isTightViewport ? 1.5 : isShortViewport ? 2 : 2.75,
+					sm: isTightViewport ? 1.75 : isShortViewport ? 2.25 : 3,
+				}}
+				sx={{
+					px: { xs: 2.5, sm: 3.5, md: 4 },
+					py: {
+						xs: isTightViewport ? 2 : isShortViewport ? 2.5 : 3.25,
+						sm: isTightViewport ? 2.25 : isShortViewport ? 2.75 : 3.75,
+					},
+					position: "relative",
+					zIndex: 1,
+				}}
+			>
+				{/* ── Header ── */}
+				<Stack spacing={1.25}>
+					<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+						<Box
+							sx={{
+								display: "inline-flex",
+								alignItems: "center",
+								px: 1.25,
+								py: 0.4,
+								borderRadius: 1,
+								bgcolor: alpha(allDone ? LIVE_GREEN : BRAND_BLUE, isDark ? 0.16 : 0.08),
+								border: `1px solid ${alpha(allDone ? LIVE_GREEN : BRAND_BLUE, isDark ? 0.32 : 0.2)}`,
+							}}
+						>
+							<Typography
+								sx={{
+									fontSize: "0.68rem",
+									fontWeight: 600,
+									letterSpacing: "0.14em",
+									textTransform: "uppercase",
+									color: allDone ? LIVE_GREEN : BRAND_BLUE,
+								}}
+							>
+								{eyebrowLabel}
+							</Typography>
+						</Box>
+
+						{/* O2/O7: antes era un link de 0,72 rem al 50% de opacidad y el
+						    tooltip prometía reabrir la guía desde Ayuda (no existe). */}
+						{confirmingDismiss ? (
+							<Stack direction="row" alignItems="center" spacing={0.75} sx={{ flexWrap: "wrap", justifyContent: "flex-end", rowGap: 0.5 }}>
+								<Typography sx={{ fontSize: "0.8rem", color: "text.secondary" }}>¿Ocultar la guía? No se vuelve a mostrar.</Typography>
+								<Button
+									size="small"
+									variant="text"
+									onClick={() => setConfirmingDismiss(false)}
+									sx={{ textTransform: "none", fontSize: "0.8rem", color: "text.secondary", minWidth: 0 }}
+								>
+									Cancelar
+								</Button>
+								<Button
+									size="small"
+									variant="outlined"
+									onClick={handleDismiss}
+									sx={{
+										textTransform: "none",
+										fontSize: "0.8rem",
+										fontWeight: 600,
+										color: BRAND_BLUE,
+										borderColor: alpha(BRAND_BLUE, 0.4),
+										"&:hover": { borderColor: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, 0.06) },
+									}}
+								>
+									Ocultar guía
+								</Button>
+							</Stack>
+						) : (
+							<Button
+								size="small"
+								variant="text"
+								onClick={() => setConfirmingDismiss(true)}
+								startIcon={<CloseCircle size={15} variant="Bulk" />}
+								sx={{
+									textTransform: "none",
+									fontSize: "0.82rem",
+									fontWeight: 500,
+									color: "text.secondary",
+									whiteSpace: "nowrap",
+									"&:hover": { color: "text.primary", bgcolor: alpha(theme.palette.text.primary, 0.05) },
+								}}
+							>
+								Ocultar guía
+							</Button>
+						)}
+					</Stack>
+
+					<Stack spacing={0.5}>
+						<Typography
+							component="h2"
+							sx={{
+								fontSize: {
+									xs: isTightViewport ? "1.125rem" : isShortViewport ? "1.25rem" : "1.5rem",
+									sm: isTightViewport ? "1.25rem" : isShortViewport ? "1.5rem" : "1.75rem",
+								},
+								fontWeight: 600,
+								letterSpacing: "-0.025em",
+								lineHeight: 1.15,
+								color: "text.primary",
+								textWrap: "balance",
+							}}
+						>
+							{headline}
+						</Typography>
+						<Typography
+							sx={{
+								fontSize: { xs: "0.875rem", sm: "0.95rem" },
+								color: "text.secondary",
+								lineHeight: 1.5,
+								maxWidth: 620,
+								textWrap: "pretty",
+							}}
+						>
+							{subline}
+						</Typography>
+					</Stack>
+
+					{/* Progress bar — width animada */}
+					<Stack direction="row" alignItems="center" spacing={1.5} sx={{ pt: 0.5 }}>
+						<Box
+							sx={{
+								flex: 1,
+								height: 6,
+								borderRadius: 3,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+								overflow: "hidden",
+								position: "relative",
+							}}
+						>
+							<Box
+								sx={{
+									position: "absolute",
+									inset: 0,
+									width: `${progressPct}%`,
+									bgcolor: allDone ? LIVE_GREEN : BRAND_BLUE,
+									transition: "width 600ms cubic-bezier(0.22, 1, 0.36, 1), background-color 400ms ease",
+									borderRadius: 3,
+								}}
+							/>
+						</Box>
+						<Typography
+							sx={{
+								fontSize: "0.78rem",
+								fontWeight: 600,
+								color: "text.secondary",
+								fontVariantNumeric: "tabular-nums",
+								whiteSpace: "nowrap",
+							}}
+						>
+							{completedCount} de {totalSteps}
+						</Typography>
+					</Stack>
+				</Stack>
+
+				{/* ── Lista de steps ── */}
+				<Stack spacing={1.25}>
+					{steps.map((step) => {
+						const isNext = step.id === nextStepId;
+						const isDone = step.status === "done";
+
+						return (
+							<StepRow
+								key={step.id}
+								step={step}
+								isNext={isNext}
+								isDark={isDark}
+								theme={theme}
+								onPrimaryClick={
+									step.id === "first_folder"
+										? goCreateFolder
+										: step.id === "first_contact"
+										? goAddContact
+										: step.id === "first_deadline"
+										? goAddDeadline
+										: undefined
+								}
+								renderExtra={
+									step.id === "judicial_connection" && !isDone
+										? () => (
+												<JudicialConnectionPanel
+													credentialOptions={judicialOptions.credential}
+													individualOptions={judicialOptions.individual}
+													preferredLabel={judicialOptions.preferredLabel}
+													hasPjnCredentials={hasPjnCredentials}
+													hasScbaCredentials={hasScbaCredentials}
+													hasMevCredentials={hasMevCredentials}
+													hasFolders={hasFolders}
+													isDark={isDark}
+													theme={theme}
+													onSelect={goJudicialOption}
+												/>
+										  )
+										: undefined
+								}
+							/>
+						);
+					})}
+				</Stack>
+			</Stack>
+		</MainCard>
+	);
+};
+
+// =============================================================================
+// StepRow — fila individual del checklist
+// =============================================================================
+
+interface StepRowProps {
+	step: Step;
+	isNext: boolean;
+	isDark: boolean;
+	theme: Theme;
+	onPrimaryClick?: () => void;
+	onSecondaryClick?: () => void;
+	renderExtra?: () => React.ReactNode;
+}
+
+const StepRow: React.FC<StepRowProps> = ({ step, isNext, isDark, theme, onPrimaryClick, onSecondaryClick, renderExtra }) => {
+	const isDone = step.status === "done";
+	const StepIcon = step.icon;
+
+	// Coloring: done = verde tintado, next = brand-blue reforzado, otros = neutral
+	const accent = isDone ? LIVE_GREEN : BRAND_BLUE;
+	const rowBg = isDone
+		? alpha(LIVE_GREEN, isDark ? 0.08 : 0.05)
+		: isNext
+		? alpha(BRAND_BLUE, isDark ? 0.07 : 0.04)
+		: theme.palette.background.default;
+	const rowBorder = isDone
+		? alpha(LIVE_GREEN, isDark ? 0.32 : 0.22)
+		: isNext
+		? alpha(BRAND_BLUE, isDark ? 0.36 : 0.26)
+		: alpha(theme.palette.text.primary, isDark ? 0.1 : 0.07);
+	const rowBorderWidth = isNext && !isDone ? "1.5px" : "1px";
+
+	return (
+		<Box
+			sx={{
+				borderRadius: 1.5,
+				bgcolor: rowBg,
+				border: `${rowBorderWidth} solid ${rowBorder}`,
+				transition: "background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease",
+				...(isNext && !isDone && { boxShadow: `0 4px 16px ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }),
+				...(!isDone && {
+					"&:hover": {
+						borderColor: alpha(BRAND_BLUE, isDark ? 0.42 : 0.32),
+						transform: "translateY(-1px)",
+						boxShadow: `0 6px 18px ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)}`,
+					},
+				}),
+			}}
+		>
+			<Stack direction="row" spacing={2} alignItems="flex-start" sx={{ p: { xs: 1.75, sm: 2 } }}>
+				{/* Status indicator: ✓ done | ● next (con pulse) | ○ pending */}
+				<Box sx={{ position: "relative", display: "inline-flex", flexShrink: 0, mt: 0.25 }}>
+					{isDone ? (
+						<Box
+							sx={{
+								width: 28,
+								height: 28,
+								borderRadius: "50%",
+								bgcolor: LIVE_GREEN,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								color: "#fff",
+								boxShadow: `0 4px 12px ${alpha(LIVE_GREEN, 0.32)}`,
+							}}
+						>
+							<TickCircle size={20} variant="Bold" color="#fff" />
+						</Box>
+					) : (
+						<Box
+							sx={{
+								width: 28,
+								height: 28,
+								borderRadius: "50%",
+								border: `2px solid ${alpha(accent, isNext ? 1 : 0.42)}`,
+								bgcolor: isNext ? accent : "transparent",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								color: isNext ? "#fff" : accent,
+								fontSize: "0.8rem",
+								fontWeight: 700,
+							}}
+						>
+							{isNext && (
+								<Box
+									aria-hidden
+									sx={{
+										position: "absolute",
+										inset: -2,
+										borderRadius: "50%",
+										bgcolor: BRAND_BLUE,
+										animation: "la-live-pulse 2.4s ease-out infinite",
+										zIndex: -1,
+									}}
+								/>
+							)}
+							<StepIcon size={14} variant="Bulk" color={isNext ? "#fff" : accent} />
+						</Box>
+					)}
+					<Box sx={LIVE_PULSE_KEYFRAMES} />
+				</Box>
+
+				{/* Contenido del step */}
+				<Stack spacing={isNext && !isDone ? 1.5 : 0.5} sx={{ flex: 1, minWidth: 0 }}>
+					<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+						<Typography
+							sx={{
+								fontSize: "1rem",
+								fontWeight: 600,
+								letterSpacing: "-0.01em",
+								color: isDone ? "text.secondary" : "text.primary",
+								textDecoration: isDone ? "line-through" : "none",
+								textDecorationColor: alpha(LIVE_GREEN, 0.5),
+								lineHeight: 1.3,
+							}}
+						>
+							{step.title}
+						</Typography>
+						{isDone && (
+							<Typography
+								sx={{
+									fontSize: "0.72rem",
+									fontWeight: 600,
+									color: LIVE_GREEN,
+									letterSpacing: "0.04em",
+									textTransform: "uppercase",
+									whiteSpace: "nowrap",
+								}}
+							>
+								Listo
+							</Typography>
+						)}
+					</Stack>
+
+					{!isDone && (
+						<Typography
+							sx={{
+								fontSize: "0.875rem",
+								color: "text.secondary",
+								lineHeight: 1.5,
+								textWrap: "pretty",
+							}}
+						>
+							{step.description}
+						</Typography>
+					)}
+
+					{/* Extra content (panel del step judicial) o CTAs del step "next" */}
+					{!isDone && renderExtra && renderExtra()}
+
+					{!isDone && !renderExtra && isNext && onPrimaryClick && (
+						<Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} alignItems={{ xs: "stretch", sm: "center" }} sx={{ pt: 0.5 }}>
+							<Button
+								variant="contained"
+								onClick={onPrimaryClick}
+								startIcon={<Add size={16} />}
+								sx={{
+									bgcolor: BRAND_BLUE,
+									color: "#fff",
+									textTransform: "none",
+									fontWeight: 600,
+									letterSpacing: "-0.005em",
+									borderRadius: 1.25,
+									fontSize: "0.875rem",
+									px: 2,
+									py: 0.85,
+									whiteSpace: "nowrap",
+									alignSelf: { xs: "stretch", sm: "flex-start" },
+									boxShadow: `0 6px 16px ${alpha(BRAND_BLUE, 0.24)}`,
+									transition: "transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease",
+									"&:hover": {
+										bgcolor: alpha(BRAND_BLUE, 0.92),
+										boxShadow: `0 10px 22px ${alpha(BRAND_BLUE, 0.32)}`,
+										transform: "translateY(-1px)",
+									},
+									"&:active": { transform: "translateY(0)" },
+								}}
+							>
+								Empezar ahora
+							</Button>
+
+							{onSecondaryClick && (
+								<Button
+									variant="text"
+									onClick={onSecondaryClick}
+									sx={{
+										color: BRAND_BLUE,
+										textTransform: "none",
+										fontWeight: 500,
+										fontSize: "0.85rem",
+										letterSpacing: "-0.005em",
+										alignSelf: { xs: "stretch", sm: "flex-start" },
+										"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.06) },
+									}}
+								>
+									o usar datos de ejemplo
+								</Button>
+							)}
+						</Stack>
+					)}
+
+					{!isDone && !renderExtra && !isNext && onPrimaryClick && (
+						<Link
+							component="button"
+							onClick={onPrimaryClick}
+							sx={{
+								alignSelf: "flex-start",
+								color: BRAND_BLUE,
+								fontWeight: 500,
+								fontSize: "0.85rem",
+								textDecoration: "none",
+								cursor: "pointer",
+								border: "none",
+								background: "none",
+								p: 0,
+								display: "inline-flex",
+								alignItems: "center",
+								gap: 0.5,
+								mt: 0.5,
+								"&:hover": { textDecoration: "underline", textUnderlineOffset: "2px" },
+							}}
+						>
+							Hacerlo ahora
+							<ArrowRight size={14} />
+						</Link>
+					)}
+				</Stack>
+			</Stack>
+		</Box>
+	);
+};
+
+// =============================================================================
+// JudicialConnectionPanel — sub-componente del step #2
+//
+// Muestra los dos paths para conectar con el Poder Judicial, armados desde el
+// catálogo de jurisdicciones de /admin/integrations (capabilities), igual que la
+// landing:
+//   (a) Credencial → credentialSync (PJN; Buenos Aires = SCBA + cuenta MEV)
+//   (b) Individual → individualCauses (PJN, MEV, EJE, Salta, Catamarca, Mendoza…)
+// Una jurisdicción nueva habilitada en el admin aparece sola: usa su logoUrl y
+// abre el alta genérica de carpetas.
+// =============================================================================
+
+interface JudicialOption {
+	key: string; // valor de tracking: PJN | SCBA | MEV | EJE | SALTA | … o la key del catálogo
+	label: string;
+	logo: string;
+	bgColor: string;
+	hasBorder: boolean;
+	href: string;
+	connectedBy?: "pjn" | "scba" | "mev"; // credencial que marca el tile como conectado
+}
+
+interface JudicialConnectionPanelProps {
+	credentialOptions: JudicialOption[];
+	individualOptions: JudicialOption[];
+	preferredLabel?: string | null; // jurisdicción elegida en la landing (va primera)
+	hasPjnCredentials: boolean;
+	hasScbaCredentials: boolean;
+	hasMevCredentials: boolean;
+	hasFolders: boolean;
+	isDark: boolean;
+	theme: Theme;
+	onSelect: (option: JudicialOption, mode: "credential" | "individual") => void;
+}
+
+// Metadata local por key del catálogo: logo y colores (como en la landing), cómo se
+// conecta la cuenta y qué parámetro entiende el alta de carpetas (folders.tsx).
+interface LocalJurisdiction {
+	label: string;
+	logo: string;
+	bgColor: string;
+	hasBorder: boolean;
+	individualParam?: string;
+	credentials?: { key: string; label: string; view: "pjn" | "scba" | "mev" }[];
+}
+
+const LOCAL_JURISDICTIONS: Record<string, LocalJurisdiction> = {
+	pjn: {
+		label: "PJN",
+		logo: logoPJNacion,
+		bgColor: "#232D4F",
+		hasBorder: false,
+		individualParam: "PJN",
+		credentials: [{ key: "PJN", label: "PJN", view: "pjn" }],
+	},
+	// Buenos Aires: la cuenta se conecta por SCBA (Mis Causas) o por la credencial MEV
+	mev: {
+		label: "MEV",
+		logo: logoMEV,
+		bgColor: "#FFFFFF",
+		hasBorder: true,
+		individualParam: "MEV",
+		credentials: [
+			{ key: "SCBA", label: "SCBA", view: "scba" },
+			{ key: "MEV", label: "MEV", view: "mev" },
+		],
+	},
+	eje: { label: "EJE", logo: LOGO_EJE, bgColor: "#FFFFFF", hasBorder: true, individualParam: "EJE" },
+	pjsalta: { label: "Salta", logo: LOGO_SALTA, bgColor: "#FFFFFF", hasBorder: true, individualParam: "SALTA" },
+	pjcatamarca: { label: "Catamarca", logo: logoPJCatamarca, bgColor: "#FFFFFF", hasBorder: true, individualParam: "CATAMARCA" },
+	pjmendoza: { label: "Mendoza", logo: logoPJMendoza, bgColor: "#FFFFFF", hasBorder: true, individualParam: "MENDOZA" },
+};
+
+type CatalogItem = Pick<
+	LandingCatalogEntry,
+	"key" | "shortName" | "logoUrl" | "bgColor" | "hasBorder" | "status" | "order" | "capabilities"
+>;
+
+// Respaldo si el catálogo no llega (endpoint caído): jurisdicciones integradas al 2026-09-13.
+const FALLBACK_CATALOG: CatalogItem[] = [
+	{
+		key: "pjn",
+		shortName: "PJN",
+		logoUrl: null,
+		bgColor: "#232D4F",
+		hasBorder: false,
+		status: "available",
+		order: 1,
+		capabilities: { credentialSync: true, individualCauses: true },
+	},
+	{
+		key: "mev",
+		shortName: "MEV",
+		logoUrl: null,
+		bgColor: "#FFFFFF",
+		hasBorder: true,
+		status: "available",
+		order: 2,
+		capabilities: { credentialSync: true, individualCauses: true },
+	},
+	{
+		key: "eje",
+		shortName: "EJE",
+		logoUrl: null,
+		bgColor: "#FFFFFF",
+		hasBorder: true,
+		status: "available",
+		order: 3,
+		capabilities: { credentialSync: false, individualCauses: true },
+	},
+	{
+		key: "pjsalta",
+		shortName: "SALTA",
+		logoUrl: null,
+		bgColor: "#FFFFFF",
+		hasBorder: true,
+		status: "available",
+		order: 4,
+		capabilities: { credentialSync: false, individualCauses: true },
+	},
+	{
+		key: "pjcatamarca",
+		shortName: "CATAMARCA",
+		logoUrl: null,
+		bgColor: "#FFFFFF",
+		hasBorder: true,
+		status: "available",
+		order: 5,
+		capabilities: { credentialSync: false, individualCauses: true },
+	},
+	{
+		key: "pjmendoza",
+		shortName: "MENDOZA",
+		logoUrl: null,
+		bgColor: "#FFFFFF",
+		hasBorder: true,
+		status: "available",
+		order: 6,
+		capabilities: { credentialSync: false, individualCauses: true },
+	},
+];
+
+// Arma las dos listas del panel desde el catálogo: sólo jurisdicciones `available`,
+// en el orden del admin; la elegida en la landing al registrarse (`preferred`) va
+// primera. Sin logo (local o logoUrl) no se muestran, igual que en la landing. Una
+// key desconocida con credentialSync no tiene destino de credencial y se omite de
+// la Opción A; con individualCauses abre el alta genérica.
+function buildJudicialOptions(
+	catalog?: LandingCatalogEntry[],
+	preferred?: string | null,
+): { credential: JudicialOption[]; individual: JudicialOption[]; preferredLabel: string | null } {
+	const source: CatalogItem[] = catalog && catalog.length > 0 ? catalog : FALLBACK_CATALOG;
+	const entries = source
+		.filter((entry) => entry.status === "available")
+		.sort((a, b) => Number(b.key === preferred) - Number(a.key === preferred) || a.order - b.order);
+	const preferredEntry = preferred ? entries.find((entry) => entry.key === preferred) : undefined;
+	const preferredLabel = preferredEntry ? LOCAL_JURISDICTIONS[preferredEntry.key]?.label || preferredEntry.shortName : null;
+
+	const credential: JudicialOption[] = [];
+	const individual: JudicialOption[] = [];
+	for (const entry of entries) {
+		const local = LOCAL_JURISDICTIONS[entry.key];
+		const logo = local?.logo || entry.logoUrl || "";
+		if (!logo) continue;
+		const visual = { logo, bgColor: local?.bgColor || entry.bgColor || "#FFFFFF", hasBorder: local ? local.hasBorder : entry.hasBorder };
+
+		if (entry.capabilities?.credentialSync && local?.credentials) {
+			for (const cred of local.credentials) {
+				credential.push({
+					...visual,
+					key: cred.key,
+					label: cred.label,
+					href: `/apps/profiles/account/pjn?view=${cred.view}`,
+					connectedBy: cred.view,
+				});
+			}
+		}
+		if (entry.capabilities?.individualCauses) {
+			const param = local?.individualParam;
+			individual.push({
+				...visual,
+				key: param || entry.key.toUpperCase(),
+				label: local?.label || entry.shortName,
+				href: param
+					? `/apps/folders/list?onboarding=true&action=create&jurisdiction=${param}`
+					: "/apps/folders/list?onboarding=true&action=create",
+			});
+		}
+	}
+	return { credential, individual, preferredLabel };
+}
+
+const JudicialConnectionPanel: React.FC<JudicialConnectionPanelProps> = ({
+	credentialOptions,
+	individualOptions,
+	preferredLabel = null,
+	hasPjnCredentials,
+	hasScbaCredentials,
+	hasMevCredentials,
+	hasFolders,
+	isDark,
+	theme,
+	onSelect,
+}) => {
+	// Copy del sub-encabezado del path "Credencial". El panel sólo se ve con el step
+	// judicial pendiente (ninguna cuenta conectada), así que no hay estado parcial.
+	const credentialHint = preferredLabel
+		? `Elegiste ${preferredLabel} al registrarte: está primero. Conectá una vez y traemos todos tus expedientes.`
+		: hasFolders
+		? "Sumá automatización completa. Conectá tu cuenta y traemos todos tus expedientes futuros."
+		: "Una sola vez. Traemos todos tus expedientes y los mantenemos sincronizados.";
+	const isConnected = (opt: JudicialOption) =>
+		(opt.connectedBy === "pjn" && hasPjnCredentials) ||
+		(opt.connectedBy === "scba" && hasScbaCredentials) ||
+		(opt.connectedBy === "mev" && hasMevCredentials);
+
+	return (
+		<Stack spacing={2.25} sx={{ pt: 0.5 }}>
+			{/* Chip "+80% del valor" — señal de prioridad para este step */}
+			<Box
+				sx={{
+					display: "inline-flex",
+					alignSelf: "flex-start",
+					alignItems: "center",
+					gap: 0.5,
+					px: 1.25,
+					py: 0.4,
+					borderRadius: 1,
+					bgcolor: alpha(LIVE_GREEN, isDark ? 0.18 : 0.1),
+					border: `1px solid ${alpha(LIVE_GREEN, isDark ? 0.32 : 0.22)}`,
+				}}
+			>
+				<Box
+					aria-hidden
+					sx={{
+						width: 7,
+						height: 7,
+						borderRadius: "50%",
+						bgcolor: LIVE_GREEN,
+						boxShadow: `0 0 8px ${alpha(LIVE_GREEN, 0.5)}`,
+					}}
+				/>
+				<Typography
+					sx={{
+						fontSize: "0.68rem",
+						fontWeight: 700,
+						letterSpacing: "0.04em",
+						color: isDark ? alpha(LIVE_GREEN, 0.95) : "#0F7A3F",
+						textTransform: "uppercase",
+					}}
+				>
+					Activa el 80% del valor de Law Analytics
+				</Typography>
+			</Box>
+
+			{/* Path A: Credencial */}
+			<Stack spacing={1.25}>
+				<Stack direction="row" alignItems="baseline" spacing={1.5} flexWrap="wrap">
+					<Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+						Opción A — Conectá tu cuenta
+					</Typography>
+					<Chip
+						label="Recomendado"
+						size="small"
+						sx={{
+							height: 18,
+							fontSize: "0.62rem",
+							fontWeight: 700,
+							letterSpacing: "0.04em",
+							textTransform: "uppercase",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.1),
+							color: BRAND_BLUE,
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.2)}`,
+							"& .MuiChip-label": { px: 0.75 },
+						}}
+					/>
+				</Stack>
+				<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>{credentialHint}</Typography>
+				<Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
+					{credentialOptions.map((opt) => (
+						<LogoTile
+							key={`cred-${opt.key}`}
+							option={opt}
+							isConnected={isConnected(opt)}
+							isDark={isDark}
+							theme={theme}
+							onClick={() => onSelect(opt, "credential")}
+						/>
+					))}
+				</Stack>
+			</Stack>
+
+			{/* Divider sutil */}
+			<Box sx={{ height: 1, bgcolor: alpha(theme.palette.divider, 0.6) }} />
+
+			{/* Path B: Individual */}
+			<Stack spacing={1.25}>
+				<Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+					Opción B — Vinculá expedientes uno por uno
+				</Typography>
+				<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>
+					Ideal si solo seguís algunas causas puntuales. PJN y EJE no piden cuenta; MEV usa tu cuenta del portal.
+				</Typography>
+				<Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
+					{individualOptions.map((opt) => (
+						<LogoTile key={`ind-${opt.key}`} option={opt} isDark={isDark} theme={theme} onClick={() => onSelect(opt, "individual")} />
+					))}
+				</Stack>
+			</Stack>
+		</Stack>
+	);
+};
+
+// =============================================================================
+// LogoTile — tile cuadrado clickeable con logo del portal judicial
+//
+// Reutiliza el patrón visual de los tiles del Header del landing y de
+// FeatureContextPanel en register.tsx — logo dentro de tile coloreado, sigla
+// debajo, hover translateY + shadow tintada.
+// =============================================================================
+
+interface LogoTileProps {
+	option: JudicialOption;
+	isConnected?: boolean;
+	isDark: boolean;
+	theme: Theme;
+	onClick: () => void;
+}
+
+const LogoTile: React.FC<LogoTileProps> = ({ option, isConnected, isDark, theme, onClick }) => {
+	const isDarkTile = option.hasBorder === false;
+	const baseShadow = isDarkTile
+		? "0 4px 12px rgba(35, 45, 79, 0.28), 0 2px 5px rgba(0, 0, 0, 0.1)"
+		: "0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 5px rgba(0, 0, 0, 0.05)";
+
+	return (
+		<Stack
+			component="button"
+			onClick={onClick}
+			alignItems="center"
+			spacing={0.75}
+			sx={{
+				width: 72,
+				border: "none",
+				background: "none",
+				p: 0,
+				cursor: "pointer",
+				transition: "transform 0.2s ease",
+				"&:hover": { transform: "translateY(-2px)" },
+				"&:hover .logo-tile-inner": {
+					borderColor: alpha(BRAND_BLUE, 0.42),
+					boxShadow: isDarkTile
+						? "0 8px 20px rgba(35, 45, 79, 0.4), 0 3px 8px rgba(0, 0, 0, 0.15)"
+						: `0 8px 20px ${alpha(BRAND_BLUE, 0.18)}, 0 3px 8px rgba(0, 0, 0, 0.08)`,
+				},
+				"&:focus-visible": { outline: `2px solid ${BRAND_BLUE}`, outlineOffset: 4, borderRadius: 1.5 },
+			}}
+		>
+			<Box
+				className="logo-tile-inner"
+				sx={{
+					position: "relative",
+					width: 56,
+					height: 56,
+					borderRadius: 1.5,
+					bgcolor: option.bgColor,
+					border: option.hasBorder ? `1px solid ${alpha("#000000", 0.1)}` : "none",
+					boxShadow: baseShadow,
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					p: 0.75,
+					transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+				}}
+			>
+				<Box
+					component="img"
+					src={option.logo}
+					alt={`Logo ${option.label}`}
+					sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+				/>
+				{isConnected && (
+					<Box
+						aria-hidden
+						sx={{
+							position: "absolute",
+							top: -4,
+							right: -4,
+							width: 18,
+							height: 18,
+							borderRadius: "50%",
+							bgcolor: LIVE_GREEN,
+							border: `2px solid ${theme.palette.background.paper}`,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							boxShadow: `0 2px 6px ${alpha(LIVE_GREEN, 0.4)}`,
+						}}
+					>
+						<TickCircle size={11} variant="Bold" color="#fff" />
+					</Box>
+				)}
+			</Box>
+			<Typography
+				sx={{
+					fontSize: "0.72rem",
+					fontWeight: 600,
+					letterSpacing: "-0.005em",
+					color: isConnected ? LIVE_GREEN : "text.secondary",
+					textAlign: "center",
+					lineHeight: 1.25,
+				}}
+			>
+				{option.label}
+			</Typography>
+		</Stack>
+	);
+};
+
+// =============================================================================
+// Hook auxiliar — fetch del estado de cred PJN/SCBA con cache simple
+//
+// Reutiliza los services existentes (pjnCredentialsService, scbaCredentialsService).
+// Evita re-fetch en re-renders dentro de la misma sesión del componente.
+// =============================================================================
+
+export interface JudicialConnectionState {
+	loading: boolean;
+	hasPjnCredentials: boolean;
+	hasScbaCredentials: boolean;
+	hasMevCredentials: boolean;
+}
+
+const NO_JUDICIAL_CONNECTION = { hasPjnCredentials: false, hasScbaCredentials: false, hasMevCredentials: false };
+
+export function useJudicialConnectionState(skip = false): JudicialConnectionState {
+	// `loading` se deriva en el render (!skip && !resolved), no en un efecto: en el
+	// render en que `skip` pasa a false ya vale true. Antes quedaba un render
+	// intermedio con loading=false que montaba el checklist, lo desmontaba al
+	// empezar la consulta y lo volvía a montar → onboarding_shown y
+	// onboarding_completed duplicados (visto en prod el 2026-09-13).
+	const [result, setResult] = useState({ resolved: false, ...NO_JUDICIAL_CONNECTION });
+
+	useEffect(() => {
+		if (skip) {
+			setResult({ resolved: false, ...NO_JUDICIAL_CONNECTION });
+			return;
+		}
+
+		let cancelled = false;
+		Promise.allSettled([
+			pjnCredentialsService.getCredentialsStatus(),
+			scbaCredentialsService.getCredentialsStatus(),
+			mevCredentialsService.getCredentialsStatus(),
+		]).then(([pjnResult, scbaResult, mevResult]) => {
+			if (cancelled) return;
+
+			const pjnOk = pjnResult.status === "fulfilled" && !!pjnResult.value?.hasCredentials && !!pjnResult.value?.data?.enabled;
+			// Criterio único de "conectada" (S15), compartido con el widget y el perfil.
+			const scbaOk = scbaResult.status === "fulfilled" && !!scbaResult.value?.hasCredentials && isScbaConnected(scbaResult.value?.data);
+			// MEV: credencial de la cuenta habilitada y sin fallo que requiera acción.
+			const mevGlobal = mevResult.status === "fulfilled" && mevResult.value?.success ? mevResult.value.data?.global : null;
+			const mevOk = !!mevGlobal && mevGlobal.enabled !== false && !isMevCredentialBroken(mevGlobal);
+
+			setResult({ resolved: true, hasPjnCredentials: pjnOk, hasScbaCredentials: scbaOk, hasMevCredentials: mevOk });
+		});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [skip]);
+
+	return {
+		loading: !skip && !result.resolved,
+		hasPjnCredentials: result.hasPjnCredentials,
+		hasScbaCredentials: result.hasScbaCredentials,
+		hasMevCredentials: result.hasMevCredentials,
+	};
+}
+
+export default OnboardingChecklist;

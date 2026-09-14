@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { SearchNormal1 } from "iconsax-react";
+import { SearchNormal1, Calculator as CalculatorIcon } from "iconsax-react";
 import { useSelector } from "react-redux";
 import {
 	Box,
 	Button,
-	Divider,
 	DialogActions,
 	DialogTitle,
 	DialogContent,
@@ -17,12 +16,13 @@ import {
 	Menu,
 	MenuItem,
 } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { useTheme, alpha } from "@mui/material/styles";
 import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import { getCalculatorsByUserId } from "store/reducers/calculator";
 import { RootState, dispatch } from "store";
 import { Add } from "iconsax-react";
 import { useNavigate, useParams } from "react-router";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 //types
 import { CalcModalType, Calculator, CalcFormProps } from "types/calculator";
@@ -219,6 +219,7 @@ const CalcForm = ({ handlerAddress, searchTerm, selectedCalculators }: CalcFormP
 
 const ModalCalcTable = ({ open, setOpen, folderId = "", folderName = "" }: CalcModalType) => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedCalculators, setSelectedCalculators] = useState<Calculator[]>([]);
 
@@ -265,97 +266,164 @@ const ModalCalcTable = ({ open, setOpen, folderId = "", folderName = "" }: CalcM
 			maxWidth="sm"
 			open={open}
 			onClose={closeModal}
+			fullWidth
 			PaperProps={{
 				sx: {
 					p: 0,
+					borderRadius: 2,
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+					boxShadow: `0 16px 40px ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+					overflow: "hidden",
 				},
 			}}
-			sx={{
-				"& .MuiBackdrop-root": { opacity: "0.5 !important" },
-			}}
+			sx={{ "& .MuiBackdrop-root": { opacity: "0.5 !important" } }}
 		>
-			<DialogTitle sx={{ bgcolor: theme.palette.primary.lighter, pb: 2 }}>
-				<Stack spacing={1}>
-					<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-						Seleccione Cálculos
+			<DialogTitle
+				sx={{
+					display: "flex",
+					alignItems: "center",
+					gap: 1.25,
+					px: 2.5,
+					py: 1.75,
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+					borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+				}}
+			>
+				<Box
+					sx={{
+						width: 32,
+						height: 32,
+						borderRadius: 1,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+						color: BRAND_BLUE,
+					}}
+				>
+					<CalculatorIcon size={18} variant="Bulk" />
+				</Box>
+				<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+					<Stack direction="row" spacing={0.5} alignItems="center">
+						<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+						<Typography
+							sx={{
+								fontSize: "0.6rem",
+								fontWeight: 600,
+								letterSpacing: "0.08em",
+								textTransform: "uppercase",
+								color: "text.secondary",
+							}}
+						>
+							Vincular cálculos
+						</Typography>
+					</Stack>
+					<Typography sx={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+						Seleccioná cálculos
 					</Typography>
-					<Typography variant="body2" color="textSecondary">
-						Carpeta: {folderName}
-					</Typography>
-					<Typography variant="body2" color="textSecondary">
-						{selectedCalculators.length} {selectedCalculators.length === 1 ? "cálculo seleccionado" : "cálculos seleccionados"}
+					<Typography
+						sx={{
+							fontSize: "0.72rem",
+							color: "text.secondary",
+							letterSpacing: "-0.005em",
+							overflow: "hidden",
+							textOverflow: "ellipsis",
+							whiteSpace: "nowrap",
+						}}
+					>
+						{folderName} · {selectedCalculators.length}{" "}
+						{selectedCalculators.length === 1 ? "cálculo seleccionado" : "cálculos seleccionados"}
 					</Typography>
 				</Stack>
 			</DialogTitle>
 
-			<Divider />
-
 			<DialogContent sx={{ p: 2.5, width: "100%", overflow: "visible" }}>
 				{selectedCalculators.length > 0 && (
-					<Box sx={{ mb: 2.5 }}>
-						<Stack spacing={1}>
-							<Typography variant="subtitle2" color="textSecondary">
-								Cálculos Seleccionados:
-							</Typography>
-							<Box
+					<Box sx={{ mb: 2 }}>
+						<Stack direction="row" spacing={0.5} alignItems="center" mb={1}>
+							<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+							<Typography
 								sx={{
-									p: 2,
-									border: `2px solid ${theme.palette.primary.main}`,
-									borderRadius: 2,
-									bgcolor: theme.palette.primary.lighter,
+									fontSize: "0.6rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
 								}}
 							>
-								<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-									{selectedCalculators.map((calc) => (
-										<Tooltip key={calc._id} title={calc.reclamante}>
-											<Box
-												sx={{
-													p: 1,
-													bgcolor: theme.palette.background.paper,
-													borderRadius: 1,
-													border: "1px solid",
-													borderColor: theme.palette.primary.main,
-													display: "flex",
-													alignItems: "center",
-													gap: 1,
-												}}
-											>
-												<Typography variant="body2">{calc.reclamante}</Typography>
-											</Box>
-										</Tooltip>
-									))}
-								</Stack>
-							</Box>
+								Cálculos seleccionados
+							</Typography>
 						</Stack>
+						<Box
+							sx={{
+								p: 1.5,
+								borderRadius: 1.5,
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.22)}`,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+							}}
+						>
+							<Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+								{selectedCalculators.map((calc) => (
+									<Tooltip key={calc._id} title={calc.reclamante}>
+										<Box
+											sx={{
+												px: 1,
+												py: 0.5,
+												bgcolor: theme.palette.background.paper,
+												borderRadius: 0.875,
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+												display: "flex",
+												alignItems: "center",
+												gap: 0.5,
+											}}
+										>
+											<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+											<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+												{calc.reclamante}
+											</Typography>
+										</Box>
+									</Tooltip>
+								))}
+							</Stack>
+						</Box>
 					</Box>
 				)}
 
-				<FormControl sx={{ width: "100%", mb: 2.5 }}>
+				<FormControl sx={{ width: "100%", mb: 2 }}>
 					<TextField
 						autoFocus
 						value={searchTerm}
 						onChange={handleSearchChange}
+						size="small"
 						InputProps={{
 							startAdornment: (
 								<InputAdornment position="start">
-									<SearchNormal1 size={18} color={theme.palette.primary.main} />
+									<SearchNormal1 size={16} variant="Bulk" color={BRAND_BLUE} />
 								</InputAdornment>
 							),
 							sx: {
 								bgcolor: theme.palette.background.paper,
-								"&:hover": {
-									bgcolor: theme.palette.action.hover,
+								borderRadius: 1,
+								"& .MuiOutlinedInput-notchedOutline": {
+									borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
+								},
+								"&:hover .MuiOutlinedInput-notchedOutline": {
+									borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+								},
+								"&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+									borderColor: BRAND_BLUE,
 								},
 							},
 						}}
-						placeholder="Buscar por reclamante, reclamado, tipo, categoría..."
+						placeholder="Buscar por reclamante, reclamado, tipo, categoría…"
 						fullWidth
 					/>
 				</FormControl>
 
 				<Box
 					sx={{
-						maxHeight: "500px",
+						maxHeight: 500,
 						width: "100%",
 						overflowX: "hidden",
 						overflowY: "auto",
@@ -368,22 +436,44 @@ const ModalCalcTable = ({ open, setOpen, folderId = "", folderName = "" }: CalcM
 				</Box>
 			</DialogContent>
 
-			<Divider />
-
-			<DialogActions sx={{ p: 2.5, bgcolor: theme.palette.background.default }}>
+			<DialogActions sx={{ px: 2.5, py: 1.75, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` }}>
 				<Button
-					color="error"
 					onClick={closeModal}
 					sx={{
-						color: theme.palette.text.secondary,
+						textTransform: "none",
+						fontWeight: 600,
+						letterSpacing: "-0.005em",
+						color: "text.secondary",
+						borderRadius: 1.25,
+						px: 2,
+						py: 0.875,
+						border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`,
 						"&:hover": {
-							bgcolor: theme.palette.action.hover,
+							color: BRAND_BLUE,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+							borderColor: alpha(BRAND_BLUE, 0.28),
 						},
 					}}
 				>
 					Cancelar
 				</Button>
-				<Button onClick={handleVincular} color="primary" variant="contained" disabled={selectedCalculators.length === 0}>
+				<Button
+					onClick={handleVincular}
+					variant="contained"
+					disabled={selectedCalculators.length === 0}
+					sx={{
+						textTransform: "none",
+						fontWeight: 600,
+						letterSpacing: "-0.005em",
+						bgcolor: BRAND_BLUE,
+						color: "#fff",
+						borderRadius: 1.25,
+						px: 2,
+						py: 0.875,
+						boxShadow: "none",
+						"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+					}}
+				>
 					Vincular ({selectedCalculators.length})
 				</Button>
 			</DialogActions>

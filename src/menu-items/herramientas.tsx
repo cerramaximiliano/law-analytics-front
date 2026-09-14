@@ -1,11 +1,12 @@
 import React from "react";
 import { FormattedMessage } from "react-intl";
-import { Box, Setting2 } from "iconsax-react";
+import { Box, Judge, Setting2 } from "iconsax-react";
 import { NavItemType } from "types/menu";
 
 const icons = {
 	herramientas: Setting2,
 	postalTracking: Box,
+	jurisprudencia: Judge,
 };
 
 const herramientas: NavItemType = {
@@ -14,6 +15,13 @@ const herramientas: NavItemType = {
 	icon: icons.herramientas,
 	type: "group",
 	children: [
+		{
+			id: "jurisprudencia-search",
+			title: <FormattedMessage id="Jurisprudencia" />,
+			type: "item",
+			icon: icons.jurisprudencia,
+			url: "/herramientas/jurisprudencia",
+		},
 		{
 			id: "postal-tracking",
 			title: <FormattedMessage id="Seguimiento de envíos" />,

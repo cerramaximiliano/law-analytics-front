@@ -13,11 +13,25 @@ interface PreFolder {
 
 // Estado del juicio (judFolder)
 interface JudFolder {
+	/** CUIJ del expediente (EJE/Salta/Catamarca/Mendoza) — lo escribe el worker */
+	cuij?: string;
+	judge?: string;
 	initialDateJudFolder?: string; // Fecha inicial del juicio
 	finalDateJudFolder?: string; // Fecha final del juicio
 	numberJudFolder?: string; // Número del juicio
 	statusJudFolder?: string; // Estado del juicio
 	descriptionJudFolder?: string; // Descripción del juicio
+	courtNumber?: string; // N° de juzgado (origen)
+	secretaryNumber?: string; // N° de secretaría
+	salaNumber?: string; // N° de sala (Cámara)
+	vocaliaNumber?: string; // N° de vocalía (Cámara)
+	// Ubicación ACTUAL del expediente (dónde está hoy), distinta del juzgado de
+	// origen en courtNumber. Sólo presente en folders de causas PJN.
+	currentLocation?: {
+		text?: string;
+		tipo?: string;
+		updatedAt?: string;
+	};
 }
 
 // Tipos principales de la carpeta (folder)
@@ -46,6 +60,13 @@ export interface Folder {
 	expedientYear?: string; // Año del expediente para ingreso automático
 	pjn?: boolean; // Indica si los datos provienen del Poder Judicial de la Nación
 	source?: string; // Fuente de los datos (manual o auto)
+	// Marker para folders desvinculados. Aunque source pase a "manual", este
+	// campo conserva el origen original para que la UI distinga "desvinculada"
+	// de "nunca vinculada". PJN/SCBA (modo "keep" al desvincular la cuenta)
+	// bloquean la re-vinculación individual (el matching por fuero+numero+año
+	// puede unirse a una causa distinta); MEV/EJE/IOL se re-vinculan por
+	// número de expediente desde la misma carpeta.
+	previousSyncSource?: "pjn" | "scba" | "mev" | "eje" | "pjsalta" | "pjcatamarca" | "pjmendoza" | null;
 	createdAt?: string; // Fecha de creación de la carpeta
 	updatedAt?: string; // Fecha de última actualización de la carpeta
 }
@@ -92,4 +113,6 @@ export interface PropsAddFolder {
 	onAddFolder: (folder: any) => void;
 	open: boolean;
 	mode: "add" | "edit";
+	initialStep?: number;
+	initialFormValues?: { entryMethod?: string; judicialPower?: string; pjnImportMode?: string; baImportMode?: string };
 }

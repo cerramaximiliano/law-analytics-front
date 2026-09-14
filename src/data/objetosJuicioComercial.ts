@@ -1,0 +1,47 @@
+// Códigos de objetos de juicio — Cámara Nacional de Apelaciones en lo Comercial.
+// Fuente: PJN — https://old.pjn.gov.ar/publico/oj/COMERCIAL.pdf (39 códigos, alfanuméricos).
+// Usado por el modelo de sistema "Formulario de Inicio de Causas — Cámara Nacional Comercial".
+
+import { ObjetoJuicio } from "./objetosJuicioCivil";
+
+export const OBJETOS_JUICIO_COMERCIAL: ObjetoJuicio[] = [
+	{ code: "14", description: "ACUERDO PREVENTIVO EXTRAJUDICIAL" },
+	{ code: "14A", description: "ACUERDOS PRE-CONCURSAL" },
+	{ code: "24", description: "AMPARO" },
+	{ code: "18", description: "BENEFICIO DE LITIGAR SIN GASTOS" },
+	{ code: "9", description: "CANCELACION" },
+	{ code: "13", description: "CONCURSO PREVENTIVO" },
+	{ code: "46", description: "CONVOCATORIA A ASAMBLEA" },
+	{ code: "8", description: "DILIGENCIA PRELIMINAR" },
+	{ code: "7", description: "EJECUCION HIPOTECARIA" },
+	{ code: "6", description: "EJECUCION PRENDARIA" },
+	{ code: "4", description: "EJECUTIVO" },
+	{ code: "45", description: "EXEQUATUR" },
+	{ code: "41", description: "EXHIBICION DE LIBROS" },
+	{ code: "10", description: "EXHORTO" },
+	{ code: "44", description: "INHIBITORIA" },
+	{ code: "51", description: "INTERVENCION JUDICIAL DE ENTIDADES FINANCIERAS" },
+	{ code: "54", description: "LIQUIDACION JUDICIAL" },
+	{ code: "50", description: "LIQUIDACION JUDICIAL DE ASEGURADORAS" },
+	{ code: "52", description: "LIQUIDACION JUDICIAL DE ENTIDADES FINANCIERAS" },
+	{ code: "3", description: "MEDIDA PRECAUTORIA" },
+	{ code: "10A", description: "OFICIOS LEY 22.172" },
+	{ code: "1", description: "ORDINARIO" },
+	{ code: "30", description: "ORGANISMOS EXTERNOS" },
+	{ code: "12", description: "PEDIDO DE PROPIA QUIEBRA" },
+	{ code: "11", description: "PEDIDO DE QUIEBRA" },
+	{ code: "15", description: "PEDIDO DE QUIEBRA (COMPAÑIAS DE SEGUROS Y ENTIDADES FINANCIERAS)" },
+	{ code: "47", description: "PROCESO ARBITRAL" },
+	{ code: "16", description: "PROPIA QUIEBRA (COMPAÑIAS DE SEGUROS Y ENTIDADES FINANCIERAS)" },
+	{ code: "48", description: "PRUEBA ANTICIPADA" },
+	{ code: "19", description: "QUIEBRA" },
+	{ code: "53", description: "QUIEBRA DE ENTIDADES FINANCIERAS" },
+	{ code: "23", description: "RECURSO - LEY 24241" },
+	{ code: "22", description: "RECURSO - LEY 24452" },
+	{ code: "RQA", description: "RECURSO DE QUEJA (OEX)" },
+	{ code: "49", description: "SECUESTRO EN LEASING" },
+	{ code: "25", description: "SECUESTRO PRENDARIO" },
+	{ code: "2", description: "SUMARIO" },
+	{ code: "5", description: "SUMARISIMO" },
+	{ code: "17", description: "TERCERIA" },
+];

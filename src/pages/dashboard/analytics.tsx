@@ -4,22 +4,25 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 // mui
-import { Grid, Box, Alert, Button, useTheme, Tooltip, Paper, Stack, Typography, Skeleton, Chip } from "@mui/material";
+import { Grid, Box, Button, useTheme, Tooltip, Stack, Typography, Skeleton } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
 // icons
-import { Lock, Export, Crown, InfoCircle, Clock } from "iconsax-react";
+import { Lock, Export, Crown, InfoCircle, Clock, Chart2, CloseSquare } from "iconsax-react";
 
 // project imports
 import MainCard from "components/MainCard";
 import IconButton from "components/@extended/IconButton";
 import { AppDispatch, RootState } from "store";
-import { getUnifiedStats } from "store/reducers/unifiedStats";
+import { getUnifiedStats, setSelectedHistory } from "store/reducers/unifiedStats";
 import useAuth from "hooks/useAuth";
 import useSubscription from "hooks/useSubscription";
+import { useEffectiveUser } from "hooks/useEffectiveUser";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import ExportReportModal from "sections/dashboard/analytics/ExportReportModal";
 import AnalyticsHistorySelector from "sections/dashboard/analytics/AnalyticsHistorySelector";
 import { GuideAnalytics } from "components/guides";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // widgets
 import AverageResolutionTime from "sections/widget/analytics/AverageResolutionTime";
@@ -43,10 +46,16 @@ const DashboardAnalytics = () => {
 	const dispatch = useDispatch<AppDispatch>();
 	const navigate = useNavigate();
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const { user } = useAuth();
 	const subscriptionData = useSubscription();
 	const subscription = subscriptionData?.subscription;
 	const hasFeatureLocal = subscriptionData?.hasFeatureLocal || (() => false);
+
+	// Get effective user for team-aware data fetching
+	// effectiveUserId: owner's userId in team mode, personal userId otherwise
+	// isReady: true when context is fully initialized
+	const { effectiveUserId, isReady: isTeamReady, isViewingTeamData } = useEffectiveUser();
 
 	// Obtener el estado de las estadísticas
 	const {
@@ -70,6 +79,7 @@ const DashboardAnalytics = () => {
 	const [isCheckingFeatures, setIsCheckingFeatures] = useState(true);
 
 	// Función para crear el objeto featureInfo
+	// Usa el plan efectivo (puede ser del owner si es miembro de equipo)
 	const createFeatureInfo = () => ({
 		feature: "Analíticas Avanzadas y Exportación de Reportes",
 		plan: subscription?.plan || "free",
@@ -89,11 +99,16 @@ const DashboardAnalytics = () => {
 
 	// Verificar si el usuario tiene acceso a las características
 	useEffect(() => {
-		if (!subscription) return; // Esperar a que se cargue la suscripción
+		// Esperar a que se cargue la suscripción Y el contexto de equipos esté completamente listo
+		// isTeamReady es true cuando: inicializado Y (sin equipos O equipo activo seleccionado)
+		// Esto es importante para miembros de equipos que heredan features del owner
+		if (!subscription || !isTeamReady) return;
 
 		setIsCheckingFeatures(true);
 
 		// Verificar si tiene las características usando el hook
+		// hasFeatureLocal ya considera si el usuario es miembro de un equipo
+		// y hereda features del owner
 		const hasAdvanced = hasFeatureLocal("advancedAnalytics");
 		const hasExport = hasFeatureLocal("exportReports");
 
@@ -114,7 +129,7 @@ const DashboardAnalytics = () => {
 		}
 
 		setIsCheckingFeatures(false);
-	}, [subscription, hasModalBeenClosed]);
+	}, [subscription, isTeamReady, hasModalBeenClosed]);
 
 	// Manejar cierre del modal
 	const handleCloseLimitModal = () => {
@@ -128,41 +143,76 @@ const DashboardAnalytics = () => {
 	// Estado para controlar si ya intentamos cargar los datos
 	const [hasTriedToLoad, setHasTriedToLoad] = useState(false);
 
-	// Usar el ID correcto del usuario
-	const userId = user?._id || user?.id;
+	// Usar effectiveUserId del hook (owner's userId en modo equipo)
+	const userId = effectiveUserId;
 
 	useEffect(() => {
 		console.log("📊 [Analytics] useEffect triggered:", {
 			hasUser: !!user,
-			userId: userId,
-			user_id: user?._id,
-			user_id_alt: user?.id,
-			userName: user?.name,
-			userObject: user,
+			effectiveUserId,
+			isTeamReady,
+			isViewingTeamData,
 			statsLoading,
 			hasData: !!statsData,
 			hasTriedToLoad,
 		});
 
-		if (userId && !hasTriedToLoad) {
-			console.log("📊 [Analytics] Fetching stats for user:", userId);
+		// Esperar a que el contexto esté listo antes de cargar
+		if (effectiveUserId && isTeamReady && !hasTriedToLoad) {
+			console.log("📊 [Analytics] Fetching stats for:", isViewingTeamData ? "team owner" : "personal user", effectiveUserId);
 			// Fetch all sections for analytics
-			dispatch(getUnifiedStats(userId, "all", false));
+			dispatch(getUnifiedStats(effectiveUserId, "all", false));
 			setHasTriedToLoad(true);
-		} else if (!userId) {
-			console.log("⚠️ [Analytics] No user ID available yet");
+		} else if (!effectiveUserId) {
+			console.log("⚠️ [Analytics] No effective user ID available yet");
 		}
-	}, [dispatch, userId, hasTriedToLoad]);
+	}, [dispatch, effectiveUserId, isTeamReady, hasTriedToLoad, isViewingTeamData]);
 
-	// Mostrar skeleton mientras se carga el usuario, los datos, la suscripción o se verifican features
-	if (!user || statsLoading || !subscription || isCheckingFeatures) {
+	// Configuración de items skeleton: representativos en mobile (4 items), completos en desktop (12)
+	// Cada item define su columna para cada breakpoint: xs, md, lg
+	const skeletonItems: Array<{ xs: number; md: number; lg: number; chartBar?: boolean }> = [
+		{ xs: 6, md: 6, lg: 3 },
+		{ xs: 6, md: 6, lg: 3 },
+		{ xs: 6, md: 6, lg: 3 },
+		{ xs: 6, md: 6, lg: 3 },
+		{ xs: 12, md: 6, lg: 3, chartBar: true },
+		{ xs: 12, md: 6, lg: 5, chartBar: true },
+		{ xs: 12, md: 6, lg: 4 },
+		{ xs: 12, md: 12, lg: 8, chartBar: true },
+		{ xs: 12, md: 6, lg: 4 },
+		{ xs: 12, md: 6, lg: 6, chartBar: true },
+		{ xs: 12, md: 6, lg: 6, chartBar: true },
+		{ xs: 12, md: 12, lg: 12, chartBar: true },
+	];
+
+	// Mostrar skeleton mientras se carga el usuario, los datos, la suscripción, el contexto de equipos o se verifican features
+	if (!user || statsLoading || !subscription || !isTeamReady || isCheckingFeatures) {
 		return (
 			<Box>
 				<MainCard title="Panel de Analíticas">
 					<Grid container spacing={3}>
-						{[...Array(12)].map((_, index) => (
-							<Grid item xs={12} md={6} lg={index < 4 ? 3 : index < 6 ? 8 : 6} key={index}>
-								<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1 }} />
+						{skeletonItems.map((item, index) => (
+							<Grid
+								item
+								// En mobile mostramos solo los primeros 4 como pares (6+6 = fila completa x2)
+								// Los items siguientes se ocultan en xs via display
+								xs={item.xs}
+								md={item.md}
+								lg={item.lg}
+								key={index}
+								sx={index >= 4 ? { display: { xs: "none", md: "block" } } : undefined}
+							>
+								<Skeleton
+									variant="rectangular"
+									sx={{ borderRadius: 1, height: item.chartBar ? { xs: 120, md: 200 } : { xs: 80, md: 140 } }}
+								/>
+								{item.chartBar && (
+									<Stack direction="row" spacing={0.5} sx={{ mt: 1, display: { xs: "none", md: "flex" } }}>
+										{[...Array(6)].map((__, i) => (
+											<Skeleton key={i} variant="rectangular" width="100%" height={8} sx={{ borderRadius: 0.5 }} />
+										))}
+									</Stack>
+								)}
 							</Grid>
 						))}
 					</Grid>
@@ -171,205 +221,436 @@ const DashboardAnalytics = () => {
 		);
 	}
 
+	const cacheAccent = cacheInfo && cacheInfo.hoursAgo > 24 ? STALE_AMBER : LIVE_GREEN;
+	const cacheHoursLabel = cacheInfo ? Math.round(cacheInfo.hoursAgo) : 0;
+
+	// Pill brand reutilizable
+	const BrandPill = ({
+		accent,
+		icon,
+		label,
+		onDelete,
+		tooltip,
+	}: {
+		accent: string;
+		icon?: React.ReactNode;
+		label: React.ReactNode;
+		onDelete?: () => void;
+		tooltip?: string;
+	}) => {
+		const pill = (
+			<Box
+				sx={{
+					display: "inline-flex",
+					alignItems: "center",
+					gap: 0.625,
+					px: 0.875,
+					py: 0.375,
+					borderRadius: 0.875,
+					bgcolor: alpha(accent, isDark ? 0.16 : 0.1),
+					border: `1px solid ${alpha(accent, isDark ? 0.32 : 0.22)}`,
+				}}
+			>
+				{icon}
+				<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: accent }} />
+				<Typography
+					sx={{
+						fontSize: "0.66rem",
+						fontWeight: 600,
+						color: accent,
+						letterSpacing: "0.04em",
+						textTransform: "uppercase",
+						lineHeight: 1,
+						fontVariantNumeric: "tabular-nums",
+					}}
+				>
+					{label}
+				</Typography>
+				{onDelete && (
+					<IconButton
+						onClick={onDelete}
+						size="small"
+						sx={{
+							width: 16,
+							height: 16,
+							ml: 0.25,
+							color: accent,
+							"&:hover": { bgcolor: alpha(accent, 0.2) },
+						}}
+					>
+						<CloseSquare size={11} variant="Bulk" />
+					</IconButton>
+				)}
+			</Box>
+		);
+		return tooltip ? <Tooltip title={tooltip}>{pill}</Tooltip> : pill;
+	};
+
+	// Botón icon-ring brand reutilizable
+	const brandIconBtnSx = {
+		width: 36,
+		height: 36,
+		borderRadius: 1,
+		color: BRAND_BLUE,
+		border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+		bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+		transition: "all 180ms ease",
+		"&:hover": {
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+		},
+	};
+
 	return (
 		<Box>
 			<MainCard
+				sx={{ border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`, boxShadow: "none" }}
 				title={
-					<Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-						<Typography variant="h3">Panel de Analíticas</Typography>
-						{selectedHistoryId && <Chip label="Viendo histórico" size="small" color="info" variant="filled" />}
-					</Box>
+					<Stack direction="row" alignItems="center" spacing={1.25}>
+						<Box
+							sx={{
+								width: 36,
+								height: 36,
+								borderRadius: 1,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+								flexShrink: 0,
+							}}
+						>
+							<Chart2 size={20} variant="Bulk" />
+						</Box>
+						<Stack spacing={0.125}>
+							<Stack direction="row" spacing={0.5} alignItems="center">
+								<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+								<Typography
+									sx={{
+										fontSize: "0.6rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+									}}
+								>
+									Analíticas
+								</Typography>
+							</Stack>
+							<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+								<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+									Panel de analíticas
+								</Typography>
+								{selectedHistoryId && (
+									<BrandPill accent={BRAND_BLUE} label="Viendo histórico" onDelete={() => dispatch(setSelectedHistory(null))} />
+								)}
+							</Stack>
+						</Stack>
+					</Stack>
 				}
 				secondary={
-					<Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+					<Stack direction="row" alignItems="center" spacing={1.25} flexWrap="wrap" useFlexGap>
 						{cacheInfo && (
-							<Tooltip
-								title={`Última actualización: ${new Date(cacheInfo.generatedAt).toLocaleString()}. Próxima actualización: ${new Date(
+							<BrandPill
+								accent={cacheAccent}
+								icon={<Clock size={11} variant="Bulk" color={cacheAccent} />}
+								label={`Hace ${cacheHoursLabel} ${cacheHoursLabel === 1 ? "h" : "h"}`}
+								tooltip={`Última actualización: ${new Date(cacheInfo.generatedAt).toLocaleString()} · Próxima: ${new Date(
 									cacheInfo.nextUpdate,
 								).toLocaleString()}`}
-							>
-								<Chip
-									icon={<Clock size={14} />}
-									label={`Actualizado hace ${Math.round(cacheInfo.hoursAgo)} ${Math.round(cacheInfo.hoursAgo) === 1 ? "hora" : "horas"}`}
-									size="small"
-									variant="outlined"
-									color={cacheInfo.hoursAgo > 24 ? "warning" : "default"}
-								/>
-							</Tooltip>
+							/>
 						)}
 						{userId && <AnalyticsHistorySelector userId={userId} />}
-						{hasExportReports ? (
-							<Button variant="outlined" startIcon={<Export size={16} />} onClick={() => setExportModalOpen(true)}>
-								Exportar Reporte
+						<Box sx={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+							<Button
+								startIcon={<Export size={14} variant="Bulk" />}
+								onClick={() => (hasExportReports ? setExportModalOpen(true) : setLimitModalOpen(true))}
+								sx={{
+									textTransform: "none",
+									fontWeight: 600,
+									letterSpacing: "-0.005em",
+									color: BRAND_BLUE,
+									borderRadius: 1.25,
+									px: 1.5,
+									py: 0.625,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+									bgcolor: "transparent",
+									whiteSpace: "nowrap",
+									"&:hover": {
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+										borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+									},
+								}}
+							>
+								Exportar reporte
 							</Button>
-						) : (
-							<Tooltip title="Función disponible en planes superiores">
-								<span>
-									<Button variant="outlined" startIcon={<Lock size={16} />} onClick={() => navigate("/suscripciones/tables")} disabled>
-										Exportar Reporte
-									</Button>
-								</span>
-							</Tooltip>
-						)}
-						<Tooltip title="Ver Guía">
-							<IconButton color="success" onClick={() => setGuideOpen(true)}>
-								<InfoCircle variant="Bulk" />
+							{!hasExportReports && (
+								<Box
+									sx={{
+										position: "absolute",
+										top: -7,
+										right: -10,
+										px: 0.625,
+										py: 0.125,
+										borderRadius: 0.625,
+										bgcolor: STALE_AMBER,
+										color: "#fff",
+										fontSize: "0.56rem",
+										fontWeight: 700,
+										letterSpacing: "0.06em",
+										textTransform: "uppercase",
+										lineHeight: 1.4,
+										boxShadow: `0 2px 6px ${alpha(STALE_AMBER, 0.4)}`,
+										pointerEvents: "none",
+									}}
+								>
+									Premium
+								</Box>
+							)}
+						</Box>
+						<Tooltip title="Ver guía">
+							<IconButton onClick={() => setGuideOpen(true)} sx={brandIconBtnSx}>
+								<InfoCircle size={16} variant="Bulk" />
 							</IconButton>
 						</Tooltip>
-					</Box>
+					</Stack>
 				}
 			>
+				{/* Alerta de plan limitado — patrón brand atmosférico STALE_AMBER */}
 				{(!hasAdvancedAnalytics || !hasExportReports) && (
-					<Alert
-						severity="warning"
-						icon={<Lock variant="Bulk" size={24} color={theme.palette.warning.main} />}
-						sx={{ mb: 3 }}
-						action={
-							<Button color="warning" size="small" onClick={() => navigate("/suscripciones/tables")}>
-								Actualizar Plan
-							</Button>
-						}
+					<Box
+						sx={{
+							mb: 3,
+							p: 1.75,
+							borderRadius: 1.5,
+							bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.06),
+							border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+							display: "flex",
+							alignItems: "center",
+							gap: 1.5,
+							flexWrap: "wrap",
+						}}
 					>
-						{!hasAdvancedAnalytics && !hasExportReports
-							? "Las analíticas avanzadas y la exportación de reportes están limitadas a planes superiores."
-							: !hasAdvancedAnalytics
-							? "Las analíticas avanzadas están limitadas a planes superiores."
-							: "La exportación de reportes está limitada a planes superiores."}
-					</Alert>
+						<Box
+							sx={{
+								width: 32,
+								height: 32,
+								borderRadius: 1,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(STALE_AMBER, isDark ? 0.2 : 0.12),
+								border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.36 : 0.26)}`,
+								color: STALE_AMBER,
+								flexShrink: 0,
+							}}
+						>
+							<Lock size={16} variant="Bulk" />
+						</Box>
+						<Typography sx={{ flex: 1, fontSize: "0.85rem", color: "text.primary", letterSpacing: "-0.005em", minWidth: 240 }}>
+							{!hasAdvancedAnalytics && !hasExportReports
+								? "Las analíticas avanzadas y la exportación de reportes están limitadas a planes superiores."
+								: !hasAdvancedAnalytics
+								? "Las analíticas avanzadas están limitadas a planes superiores."
+								: "La exportación de reportes está limitada a planes superiores."}
+						</Typography>
+						<Button
+							size="small"
+							onClick={() => navigate("/suscripciones/tables")}
+							sx={{
+								textTransform: "none",
+								fontWeight: 600,
+								letterSpacing: "-0.005em",
+								color: STALE_AMBER,
+								borderRadius: 1,
+								px: 1.25,
+								py: 0.5,
+								border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.36 : 0.26)}`,
+								whiteSpace: "nowrap",
+								"&:hover": {
+									bgcolor: alpha(STALE_AMBER, isDark ? 0.18 : 0.12),
+									borderColor: alpha(STALE_AMBER, isDark ? 0.5 : 0.4),
+								},
+							}}
+						>
+							Actualizar plan
+						</Button>
+					</Box>
 				)}
 
-				{/* Contenedor con overlay cuando no tiene permisos */}
+				{/* Contenedor de widgets con degradado de preview para plan free */}
 				<Box sx={{ position: "relative" }}>
-					<Grid container spacing={3}>
-						{/* Row 1 - Key Metrics */}
-						<Grid item xs={12} md={6} lg={3}>
-							<AverageResolutionTime />
-						</Grid>
-						<Grid item xs={12} md={6} lg={3}>
-							<DataQuality />
-						</Grid>
-						<Grid item xs={12} md={6} lg={3}>
-							<TaskCompletionRate />
-						</Grid>
-						<Grid item xs={12} md={6} lg={3}>
-							<TaskDistributionByPriority />
-						</Grid>
-
-						{/* Row 2 - Calculator and Financial */}
-						<Grid item xs={12} md={6} lg={3}>
-							<CalculatorTypeBreakdown />
-						</Grid>
-						<Grid item xs={12} lg={5}>
-							<AmountsByFolderStatus />
-						</Grid>
-						<Grid item xs={12} lg={4}>
-							<NotificationStatus />
-						</Grid>
-
-						{/* Row 3 - Trends and Activity */}
-						<Grid item xs={12} lg={8}>
-							<DailyWeeklyActivity />
-						</Grid>
-						<Grid item xs={12} lg={4}>
-							<RecentActivityFeed />
-						</Grid>
-
-						{/* Row 4 - Matters and Folders */}
-						<Grid item xs={12} lg={6}>
-							<TopMatters />
-						</Grid>
-						<Grid item xs={12} lg={6}>
-							<FoldersByMatter />
-						</Grid>
-
-						{/* Row 5 - Projections and Trends */}
-						<Grid item xs={12} lg={6}>
-							<DeadlineProjections />
-						</Grid>
-						<Grid item xs={12} lg={6}>
-							<FolderClosingTrends />
-						</Grid>
-
-						{/* Row 6 - Historical Trends */}
-						<Grid item xs={12}>
-							<HistoricalTrends />
-						</Grid>
-					</Grid>
-
-					{/* Overlay de bloqueo cuando no tiene permisos */}
+					{/* Banner sticky — brand atmospheric para plan free */}
 					{!hasAdvancedAnalytics && (
 						<Box
 							sx={{
-								position: "absolute",
-								top: 0,
-								left: 0,
-								right: 0,
-								bottom: 0,
-								backgroundColor: theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.7)",
-								backdropFilter: "blur(3px)",
-								zIndex: 1,
+								position: "sticky",
+								top: theme.spacing(2),
+								zIndex: 2,
 								display: "flex",
-								alignItems: "flex-start",
 								justifyContent: "center",
-								borderRadius: 1,
-								pt: 8,
+								mb: 2,
+								pointerEvents: "auto",
 							}}
 						>
-							<Paper
-								elevation={3}
+							<Box
 								sx={{
-									p: 3,
+									position: "relative",
+									overflow: "hidden",
+									px: { xs: 2, sm: 2.5 },
+									py: 1.75,
 									textAlign: "center",
-									maxWidth: 450,
-									backgroundColor: "background.paper",
+									maxWidth: { xs: "100%", sm: 560 },
+									width: "100%",
+									borderRadius: 2,
+									bgcolor: theme.palette.background.paper,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+									boxShadow: `0 12px 32px ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.16)}`,
 								}}
 							>
-								<Stack direction="row" alignItems="center" justifyContent="center" spacing={2} sx={{ mb: 2 }}>
-									<Lock variant="Bulk" size={48} color={theme.palette.primary.main} />
-									<Typography variant="h5">Contenido Bloqueado</Typography>
-								</Stack>
-								<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-									Las analíticas avanzadas están disponibles en planes Standard y Premium.
-								</Typography>
-								<Grid container spacing={1} sx={{ mb: 2, textAlign: "left" }}>
-									<Grid item xs={6}>
-										<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-											<Crown size={14} color={theme.palette.primary.main} />
-											<Typography variant="caption">Métricas detalladas</Typography>
-										</Box>
-									</Grid>
-									<Grid item xs={6}>
-										<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-											<Crown size={14} color={theme.palette.primary.main} />
-											<Typography variant="caption">Análisis de tendencias</Typography>
-										</Box>
-									</Grid>
-									<Grid item xs={6}>
-										<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-											<Crown size={14} color={theme.palette.primary.main} />
-											<Typography variant="caption">Exportar reportes</Typography>
-										</Box>
-									</Grid>
-									<Grid item xs={6}>
-										<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-											<Crown size={14} color={theme.palette.primary.main} />
-											<Typography variant="caption">Dashboards personalizados</Typography>
-										</Box>
-									</Grid>
-								</Grid>
-								<Button
-									variant="contained"
-									color="primary"
-									size="medium"
-									startIcon={<Crown size={18} />}
-									onClick={() => navigate("/suscripciones/tables")}
-									fullWidth
+								<Box
+									sx={{
+										position: "absolute",
+										top: -60,
+										right: -40,
+										width: 200,
+										height: 200,
+										borderRadius: "50%",
+										background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.12)} 0%, transparent 70%)`,
+										pointerEvents: "none",
+									}}
+								/>
+								<Stack
+									direction={{ xs: "column", sm: "row" }}
+									alignItems="center"
+									justifyContent="center"
+									spacing={1.5}
+									sx={{ position: "relative" }}
 								>
-									Actualizar Plan
-								</Button>
-							</Paper>
+									<Box
+										sx={{
+											width: 36,
+											height: 36,
+											borderRadius: 1,
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+											color: BRAND_BLUE,
+											flexShrink: 0,
+										}}
+									>
+										<Crown size={18} variant="Bulk" />
+									</Box>
+									<Stack spacing={0.125} sx={{ textAlign: { xs: "center", sm: "left" }, flex: 1 }}>
+										<Stack direction="row" spacing={0.5} alignItems="center" justifyContent={{ xs: "center", sm: "flex-start" }}>
+											<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+											<Typography
+												sx={{
+													fontSize: "0.6rem",
+													fontWeight: 600,
+													letterSpacing: "0.08em",
+													textTransform: "uppercase",
+													color: "text.secondary",
+												}}
+											>
+												Vista previa
+											</Typography>
+										</Stack>
+										<Typography sx={{ fontSize: "0.92rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+											Desbloqueá las analíticas completas
+										</Typography>
+										<Typography sx={{ fontSize: "0.76rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+											Actualizá tu plan para acceder a métricas, exportaciones e históricos.
+										</Typography>
+									</Stack>
+									<Button
+										size="small"
+										variant="contained"
+										startIcon={<Crown size={14} variant="Bulk" />}
+										onClick={() => navigate("/suscripciones/tables")}
+										sx={{
+											textTransform: "none",
+											fontWeight: 600,
+											letterSpacing: "-0.005em",
+											bgcolor: BRAND_BLUE,
+											color: "#fff",
+											borderRadius: 1.25,
+											px: 1.75,
+											py: 0.875,
+											whiteSpace: "nowrap",
+											flexShrink: 0,
+											boxShadow: "none",
+											"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+										}}
+									>
+										Ver planes
+									</Button>
+								</Stack>
+							</Box>
 						</Box>
 					)}
+
+					{/* Grid de widgets — opacity reducida + sin interacción en plan free */}
+					<Box sx={!hasAdvancedAnalytics ? { opacity: 0.4, pointerEvents: "none", userSelect: "none" } : undefined}>
+						<Grid container spacing={3}>
+							{/* Row 1 - Key Metrics */}
+							<Grid item xs={12} md={6} lg={3}>
+								<AverageResolutionTime />
+							</Grid>
+							<Grid item xs={12} md={6} lg={3}>
+								<DataQuality />
+							</Grid>
+							<Grid item xs={12} md={6} lg={3}>
+								<TaskCompletionRate />
+							</Grid>
+							<Grid item xs={12} md={6} lg={3}>
+								<TaskDistributionByPriority />
+							</Grid>
+
+							{/* Row 2 - Calculator and Financial */}
+							<Grid item xs={12} md={6} lg={3}>
+								<CalculatorTypeBreakdown />
+							</Grid>
+							<Grid item xs={12} lg={5}>
+								<AmountsByFolderStatus />
+							</Grid>
+							<Grid item xs={12} lg={4}>
+								<NotificationStatus />
+							</Grid>
+
+							{/* Row 3 - Trends and Activity */}
+							<Grid item xs={12} lg={8}>
+								<DailyWeeklyActivity />
+							</Grid>
+							<Grid item xs={12} lg={4}>
+								<RecentActivityFeed />
+							</Grid>
+
+							{/* Row 4 - Matters and Folders */}
+							<Grid item xs={12} lg={6}>
+								<TopMatters />
+							</Grid>
+							<Grid item xs={12} lg={6}>
+								<FoldersByMatter />
+							</Grid>
+
+							{/* Row 5 - Projections and Trends */}
+							<Grid item xs={12} lg={6}>
+								<DeadlineProjections />
+							</Grid>
+							<Grid item xs={12} lg={6}>
+								<FolderClosingTrends />
+							</Grid>
+
+							{/* Row 6 - Historical Trends */}
+							<Grid item xs={12}>
+								<HistoricalTrends />
+							</Grid>
+						</Grid>
+					</Box>
 				</Box>
 			</MainCard>
 

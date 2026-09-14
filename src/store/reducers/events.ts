@@ -3,6 +3,7 @@ import axios from "axios";
 import { Dispatch } from "redux";
 // Types for the actions and state
 import { Event, EventState, Action } from "types/events";
+import { invalidateUpcomingDeadlinesCache } from "hooks/useUpcomingDeadlines";
 
 // action types
 const ADD_EVENT = "ADD_EVENT";
@@ -93,17 +94,19 @@ const eventReducer = (state = initialEventState, action: Action): EventState => 
 // Action creators
 
 // Agregar un nuevo evento
-export const addEvent = (eventData: Event) => async (dispatch: Dispatch) => {
+export const addEvent = (eventData: Event, options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
 		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 		const response = await axios.post(`${baseUrl}/api/events`, eventData, {
 			headers: {
 				"X-Calendar-Operation": "true", // Evitar rate limit para operaciones de calendario
+				...options?.headers,
 			},
 		});
 
 		if (response.data && response.data.event) {
+			invalidateUpcomingDeadlinesCache();
 			dispatch({
 				type: ADD_EVENT,
 				payload: response.data.event,
@@ -140,6 +143,7 @@ export const updateEvent = (eventId: string, updateData: Partial<Event>) => asyn
 		});
 
 		if (response.data && response.data.event) {
+			invalidateUpcomingDeadlinesCache();
 			dispatch({
 				type: UPDATE_EVENT,
 				payload: response.data.event,
@@ -169,7 +173,8 @@ export const getEventsByUserId = (userId: string) => async (dispatch: Dispatch) 
 	dispatch({ type: SET_LOADING });
 	try {
 		// Campos optimizados para listas - IMPORTANTE: incluir googleCalendarId
-		const fields = "_id,title,description,type,color,allDay,start,end,folderId,folderName,googleCalendarId,syncedWithGoogle";
+		const fields =
+			"_id,title,description,type,color,allDay,start,end,folderId,folderName,googleCalendarId,syncedWithGoogle,movementRef,movementSource";
 		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 		const response = await axios.get(`${baseUrl}/api/events/user/${userId}`, {
 			params: { fields },
@@ -194,27 +199,33 @@ export const getEventsByUserId = (userId: string) => async (dispatch: Dispatch) 
 	}
 };
 
-// Obtener eventos por userId
-export const getEventsById = (_id: string) => async (dispatch: Dispatch) => {
+// Obtener eventos por folderId
+export const getEventsById = (folderId: string) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
 		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
-		const response = await axios.get(`${baseUrl}/api/events/id/${_id}`);
+		const response = await axios.get(`${baseUrl}/api/events/folder/${folderId}`);
 		if (response.data.success && Array.isArray(response.data.events)) {
 			dispatch({
 				type: GET_EVENTS_BY_ID,
 				payload: response.data.events,
 			});
 		} else {
+			// Si no hay eventos, establecer array vacío (no es un error)
 			dispatch({
-				type: SET_EVENT_ERROR,
-				payload: "No se encontraron eventos para este id",
+				type: GET_EVENTS_BY_ID,
+				payload: [],
 			});
 		}
 	} catch (error) {
+		// En caso de error, limpiar eventos para no mostrar datos incorrectos
+		dispatch({
+			type: GET_EVENTS_BY_ID,
+			payload: [],
+		});
 		dispatch({
 			type: SET_EVENT_ERROR,
-			payload: (error as any).response?.data?.message || "Error al obtener eventos del usuario",
+			payload: (error as any).response?.data?.message || "Error al obtener eventos de la carpeta",
 		});
 	}
 };
@@ -225,10 +236,18 @@ export const getEventsByGroupId = (groupId: string) => async (dispatch: Dispatch
 	try {
 		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 		const response = await axios.get(`${baseUrl}/api/events/group/${groupId}`);
-		dispatch({
-			type: GET_EVENTS_BY_GROUP,
-			payload: response.data,
-		});
+
+		if (response.data.success && Array.isArray(response.data.events)) {
+			dispatch({
+				type: GET_EVENTS_BY_GROUP,
+				payload: response.data.events,
+			});
+		} else {
+			dispatch({
+				type: SET_EVENT_ERROR,
+				payload: "No se encontraron eventos para este grupo",
+			});
+		}
 	} catch (error) {
 		dispatch({
 			type: SET_EVENT_ERROR,
@@ -243,15 +262,24 @@ export const deleteEvent = (eventId: string) => async (dispatch: Dispatch) => {
 	try {
 		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 		await axios.delete(`${baseUrl}/api/events/${eventId}`);
+		invalidateUpcomingDeadlinesCache();
 		dispatch({
 			type: DELETE_EVENT,
 			payload: eventId,
 		});
+		return { success: true };
 	} catch (error) {
+		const errorMessage = (error as any).response?.data?.message || "Error al eliminar evento";
+		const statusCode = (error as any).response?.status;
 		dispatch({
 			type: SET_EVENT_ERROR,
-			payload: (error as any).response?.data?.message || "Error al eliminar evento",
+			payload: errorMessage,
 		});
+		return {
+			success: false,
+			error: errorMessage,
+			statusCode,
+		};
 	}
 };
 
@@ -282,6 +310,7 @@ export const addBatchEvents = (events: Event[], onProgress?: (processed: number,
 	const MAX_RETRIES = 3;
 	let totalSuccessCount = 0;
 	let totalErrorCount = 0;
+	let totalDuplicatesCount = 0;
 	const allCreatedEvents: Event[] = [];
 
 	try {
@@ -310,13 +339,18 @@ export const addBatchEvents = (events: Event[], onProgress?: (processed: number,
 
 					if (response.data) {
 						const createdEvents = response.data.events || [];
-						const successCount = response.data.successCount || createdEvents.length;
-						const errorCount = response.data.errorCount || batch.length - successCount;
 						const duplicatesCount = response.data.duplicatesCount || 0;
+						// Los duplicados cuentan como éxito: el evento ya está en la base, que es
+						// el resultado buscado. El índice único {userId, googleCalendarId} los
+						// rechaza al reimportar, y contarlos como fallo mostraba un snackbar de
+						// error en cada sincronización de un calendario ya importado.
+						const successCount = response.data.successCount ?? createdEvents.length + duplicatesCount;
+						const errorCount = response.data.errorCount ?? Math.max(0, batch.length - successCount);
 
 						allCreatedEvents.push(...createdEvents);
 						totalSuccessCount += successCount;
 						totalErrorCount += errorCount;
+						totalDuplicatesCount += duplicatesCount;
 						batchProcessed = true;
 
 						// Log si hay duplicados (no son errores reales)
@@ -404,6 +438,8 @@ export const addBatchEvents = (events: Event[], onProgress?: (processed: number,
 			events: allCreatedEvents,
 			successCount: totalSuccessCount,
 			errorCount: totalErrorCount,
+			duplicatesCount: totalDuplicatesCount,
+			createdCount: allCreatedEvents.length,
 		};
 	} catch (error: any) {
 		console.error("Error general al agregar eventos en lote:", error);

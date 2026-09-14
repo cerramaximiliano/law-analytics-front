@@ -1,0 +1,382 @@
+/**
+ * API Service para credenciales SCBA
+ *
+ * Permite vincular credenciales del Portal del Poder Judicial de la Provincia
+ * de Buenos Aires (SCBA) para sincronizar automáticamente las causas del usuario.
+ */
+
+import axios, { AxiosError } from "axios";
+import type { ScbaStatusReason } from "utils/scbaBindingState";
+
+const BASE_URL = import.meta.env.VITE_BASE_URL;
+
+// Interfaces
+export interface ScbaSyncProgress {
+	startedAt: string;
+	currentPage: number;
+	totalPages: number;
+	causasFound: number;
+	causasProcessed: number;
+	causasCreated: number;
+	progress: number;
+	lastUpdate: string;
+}
+
+export interface ScbaCredentialStats {
+	totalCausasFound: number;
+	causasCreated: number;
+	causasLinked: number;
+	causasSkipped: number;
+	errors: number;
+}
+
+export interface ScbaSyncHistoryEntry {
+	date: string;
+	totalCausas: number;
+	causasCreated: number;
+	causasLinked: number;
+	durationSeconds: number;
+	pagesProcessed: number;
+}
+
+export interface ScbaCredentialsData {
+	id: string;
+	/** CUIL/CUIT de la cuenta SCBA (desencriptado por el hub) para pre-popular el form de re-link. */
+	username?: string;
+	enabled: boolean;
+	verified: boolean;
+	verifiedAt: string | null;
+	lastUsed: string | null;
+	isExpired: boolean;
+	consecutiveErrors: number;
+	/** Sin `screenshotKey` (evidencia interna; sólo el admin la ve). */
+	lastError: { message: string | null; date: string | null; code: string | null } | null;
+	/** Motivo derivado por el hub (S10). Ausente en servers viejos → `getScbaStatusReason` lo aproxima. */
+	statusReason?: ScbaStatusReason | null;
+	/** `{ count, required }` mientras un rechazo del portal está pendiente de confirmación. */
+	rejectionProgress?: { count: number; required: number } | null;
+	explicitRejections?: number;
+	lastExplicitRejectionAt?: string | null;
+	transientErrors?: number;
+	lastTransientErrorAt?: string | null;
+	/** 'user_inactive' = reconciler del manager; 'admin' = pausada por el administrador (S23). */
+	disabledReason?: "user_inactive" | "admin" | null;
+	syncStatus: "never_synced" | "pending" | "in_progress" | "completed" | "error";
+	lastSync: string | null;
+	lastSyncAttempt: string | null;
+	currentSyncProgress: ScbaSyncProgress | null;
+	stats: ScbaCredentialStats;
+	syncHistory: ScbaSyncHistoryEntry[];
+	description: string;
+	/** Carpetas SCBA que el usuario eliminó y quedaron excluidas del sync (S4). */
+	excludedCausasCount?: number;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface ScbaExcludedCausa {
+	scbaIdCausa: string;
+	scbaIdOrganismo: string;
+	excludedAt: string | null;
+	causaId: string | null;
+	causaExists: boolean;
+	scbaNumber: string | null;
+	caratula: string | null;
+	organismoNombre: string | null;
+}
+
+export interface GetScbaCredentialsStatusResponse {
+	success: boolean;
+	hasCredentials: boolean;
+	serviceAvailable: boolean;
+	serviceMessage?: string | null;
+	data: ScbaCredentialsData | null;
+	error?: string;
+}
+
+export interface ScbaSiteStatusSnapshot {
+	status: "healthy" | "down" | "unknown";
+	message: string | null;
+	lastTransitionAt: string | null;
+}
+
+export interface LinkScbaCredentialsResponse {
+	success: boolean;
+	message?: string;
+	data?: {
+		id: string;
+		causaId: string | null;
+		enabled: boolean;
+		verified: boolean;
+		syncStatus: string;
+		isGlobal: boolean;
+		createdAt?: string;
+		updatedAt?: string;
+	};
+	error?: string;
+	/** Cuando el server bloquea por portal caído. */
+	code?: "SCBA_MAINTENANCE";
+	scbaSiteStatus?: ScbaSiteStatusSnapshot;
+}
+
+export interface GenericScbaResponse {
+	success: boolean;
+	message?: string;
+	error?: string;
+	data?: any;
+	code?: "SCBA_MAINTENANCE";
+	scbaSiteStatus?: ScbaSiteStatusSnapshot;
+}
+
+export interface ScbaUnlinkImpact {
+	folders: {
+		total: number;
+		active: number;
+		archived: number;
+		names: string[];
+	};
+	/** Lo manda el hub pero ninguna vista lo lee (el diálogo muestra solo `folders`). */
+	causas?: {
+		totalToDelete: number;
+		totalToUnlink: number;
+	};
+}
+
+class ScbaCredentialsService {
+	/**
+	 * Vincula credenciales SCBA a la cuenta del usuario
+	 */
+	async linkCredentials(username: string, password: string, causaId?: string): Promise<LinkScbaCredentialsResponse> {
+		try {
+			const response = await axios.post(
+				`${BASE_URL}/api/scba-credentials`,
+				{ username, password, causaId: causaId || null },
+				{ withCredentials: true },
+			);
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+
+			if (axiosError.response?.status === 400) {
+				return { success: false, error: axiosError.response.data?.error || "Error de validación" };
+			}
+			if (axiosError.response?.status === 401) {
+				return { success: false, error: "Sesión expirada. Por favor, inicie sesión nuevamente." };
+			}
+			if (axiosError.response?.status === 409) {
+				return { success: false, error: axiosError.response.data?.error || "Ya existen credenciales vinculadas" };
+			}
+			if (axiosError.response?.status === 503 && axiosError.response.data?.code === "SCBA_MAINTENANCE") {
+				return {
+					success: false,
+					error: axiosError.response.data?.message || "El portal de la SCBA no está respondiendo.",
+					code: "SCBA_MAINTENANCE",
+					scbaSiteStatus: axiosError.response.data?.scbaSiteStatus,
+				};
+			}
+
+			return { success: false, error: axiosError.response?.data?.error || "Error al vincular credenciales SCBA" };
+		}
+	}
+
+	/**
+	 * Obtiene el estado de las credenciales SCBA del usuario
+	 * Incluye serviceAvailable y syncProgress
+	 */
+	async getCredentialsStatus(): Promise<GetScbaCredentialsStatusResponse> {
+		try {
+			const response = await axios.get(`${BASE_URL}/api/scba-credentials`, {
+				withCredentials: true,
+			});
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			// Sesión vencida (S16): antes caía en el mensaje genérico y el hook
+			// global useScbaCredentialError degradaba en silencio a "sin error".
+			if (axiosError.response?.status === 401) {
+				return {
+					success: false,
+					hasCredentials: false,
+					serviceAvailable: true,
+					error: "Sesión expirada. Por favor, inicie sesión nuevamente.",
+					data: null,
+				};
+			}
+			return {
+				success: false,
+				hasCredentials: false,
+				serviceAvailable: true,
+				error: axiosError.response?.data?.error || "Error al obtener estado de credenciales SCBA",
+				data: null,
+			};
+		}
+	}
+
+	/**
+	 * Solicita una nueva sincronización de causas
+	 */
+	async requestSync(): Promise<GenericScbaResponse> {
+		try {
+			const response = await axios.post(`${BASE_URL}/api/scba-credentials/sync`, {}, { withCredentials: true });
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+
+			if (axiosError.response?.status === 400) {
+				return {
+					success: false,
+					error: axiosError.response.data?.error || "No se puede iniciar sincronización",
+					data: axiosError.response.data?.currentProgress,
+				};
+			}
+			if (axiosError.response?.status === 503 && axiosError.response.data?.code === "SCBA_MAINTENANCE") {
+				return {
+					success: false,
+					error: axiosError.response.data?.message || "El portal de la SCBA no está respondiendo.",
+					code: "SCBA_MAINTENANCE",
+					scbaSiteStatus: axiosError.response.data?.scbaSiteStatus,
+				};
+			}
+
+			return { success: false, error: axiosError.response?.data?.error || "Error al solicitar sincronización" };
+		}
+	}
+
+	/**
+	 * Causas excluidas del sync: carpetas SCBA que el usuario eliminó.
+	 */
+	async getExcludedCausas(): Promise<{ success: boolean; data?: ScbaExcludedCausa[]; error?: string }> {
+		try {
+			const response = await axios.get(`${BASE_URL}/api/scba-credentials/excluded-causas`, { withCredentials: true });
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "Error al obtener las causas excluidas" };
+		}
+	}
+
+	/**
+	 * Restaura una causa excluida: la carpeta la vuelve a crear la próxima
+	 * sincronización (el backend la pide automáticamente si la cuenta está activa).
+	 */
+	async restoreExcludedCausa(key: { scbaIdCausa: string; scbaIdOrganismo: string }): Promise<GenericScbaResponse> {
+		try {
+			const response = await axios.post(`${BASE_URL}/api/scba-credentials/excluded-causas/restore`, key, { withCredentials: true });
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			if (axiosError.response?.status === 503 && axiosError.response.data?.code === "SCBA_MAINTENANCE") {
+				return {
+					success: false,
+					error: axiosError.response.data?.message || "El portal de la SCBA no está respondiendo.",
+					code: "SCBA_MAINTENANCE",
+					scbaSiteStatus: axiosError.response.data?.scbaSiteStatus,
+				};
+			}
+			return { success: false, error: axiosError.response?.data?.error || "Error al restaurar la causa" };
+		}
+	}
+
+	/**
+	 * Análisis previo a desvincular: cuenta cuántos folders/causas se afectarán
+	 * por cada modo. Útil para mostrar diálogo informado en la UI.
+	 */
+	async getUnlinkImpact(): Promise<{ success: boolean; data?: ScbaUnlinkImpact; error?: string }> {
+		try {
+			const response = await axios.get(`${BASE_URL}/api/scba-credentials/unlink-impact`, { withCredentials: true });
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "Error al analizar impacto de desvinculación" };
+		}
+	}
+
+	/**
+	 * Desvincula credenciales SCBA del usuario.
+	 * @param id - ID del documento de credenciales
+	 * @param mode - "keep" conserva carpetas como manuales (default), "delete" elimina folders + causas sin otros vínculos
+	 */
+	async unlinkCredentials(id: string, mode: "keep" | "delete" = "keep"): Promise<GenericScbaResponse> {
+		try {
+			const response = await axios.delete(`${BASE_URL}/api/scba-credentials/${id}`, {
+				data: { mode },
+				withCredentials: true,
+			});
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "Error al desvincular credenciales SCBA" };
+		}
+	}
+
+	/**
+	 * Polling del estado de sincronización
+	 * @returns Función para detener el polling
+	 */
+	pollSyncStatus(
+		intervalMs: number = 3000,
+		onProgress: (status: ScbaCredentialsData) => void,
+		onComplete: (status: ScbaCredentialsData) => void,
+		onError: (error: string) => void,
+	): () => void {
+		let isPolling = true;
+
+		const poll = async () => {
+			if (!isPolling) return;
+
+			try {
+				const response = await this.getCredentialsStatus();
+				// Si stop() llegó mientras la request estaba en vuelo (el WS ya
+				// manejó el completed), descartar: evita el doble snackbar (S16).
+				if (!isPolling) return;
+
+				if (!response.success) {
+					onError(response.error || "Error obteniendo estado");
+					return;
+				}
+
+				// data ausente = la cred ya no existe (eliminada o desvinculada
+				// mientras polleabamos). No es un error de "obtener estado" — el
+				// componente debe re-renderizar con hasCredentials:false. Detenemos
+				// silenciosamente para no disparar el snackbar genérico.
+				if (!response.data) {
+					isPolling = false;
+					return;
+				}
+
+				const status = response.data;
+
+				if (status.syncStatus === "completed") {
+					onComplete(status);
+					isPolling = false;
+					return;
+				}
+
+				if (status.syncStatus === "error") {
+					onError(status.lastError?.message || "Error en sincronización");
+					isPolling = false;
+					return;
+				}
+
+				// Notificar progreso
+				onProgress(status);
+
+				// Continuar polling si sigue en progreso o pendiente
+				if (status.syncStatus === "in_progress" || status.syncStatus === "pending") {
+					setTimeout(poll, intervalMs);
+				}
+			} catch {
+				onError("Error de conexión");
+				isPolling = false;
+			}
+		};
+
+		poll();
+
+		return () => {
+			isPolling = false;
+		};
+	}
+}
+
+export default new ScbaCredentialsService();

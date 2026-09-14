@@ -1,9 +1,11 @@
 import React from "react";
-import { Divider, Switch, FormControlLabel, Grid, Typography, Box } from "@mui/material";
+import { Switch, FormControlLabel, Grid, Box } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 import LaborTopes from "../components/labor-topes";
 import LaborMultas from "../components/labor-multas";
 import CalculationSelector from "./components/CalculationSelector";
 import { useField } from "formik";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 export default function SecondForm(props: any) {
 	const {
@@ -48,17 +50,34 @@ export default function SecondForm(props: any) {
 		{ value: "multaArt80", label: "Multa art. 80 LCT" },
 		{ value: "multaArt245bis", label: "Art. 245 bis (Ley 27.742)" },
 	];
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+
+	// Hairline divider brand-tinted que reemplaza el <Divider /> MUI.
+	const hairline = (
+		<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1), my: 1.5 }} />
+	);
+
+	// Switch styling brand: track + thumb en BRAND_BLUE cuando checked.
+	const switchSx = {
+		"& .MuiSwitch-switchBase.Mui-checked": {
+			color: BRAND_BLUE,
+			"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08) },
+		},
+		"& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+			bgcolor: BRAND_BLUE,
+		},
+	};
+
 	return (
 		<>
-			<Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
-				Seleccione Cálculos opcionales
-			</Typography>
 			<Grid item xs={12}>
 				<Grid>
 					<FormControlLabel
 						name={isLiquidacion.name}
 						control={
 							<Switch
+								sx={switchSx}
 								checked={fieldIsLiquidacion.value}
 								onChange={(e) => {
 									helperIsLiquidacion.setValue(e.target.checked);
@@ -71,15 +90,16 @@ export default function SecondForm(props: any) {
 					/>
 				</Grid>
 				{fieldIsLiquidacion.value && (
-					<Box sx={{ mt: 3 }}>
+					<Box sx={{ mt: 2 }}>
 						<CalculationSelector name={liquidacion.name} options={optionsLiquidacion} />
 					</Box>
 				)}
-				<Divider />
+				{hairline}
 				<Grid>
 					<FormControlLabel
 						control={
 							<Switch
+								sx={switchSx}
 								checked={fieldIsTopes.value}
 								onChange={(e) => {
 									helperTopesArray.setValue([]);
@@ -87,23 +107,24 @@ export default function SecondForm(props: any) {
 								}}
 							/>
 						}
-						label="Aplicación de Topes"
+						label="Aplicación de topes"
 						labelPlacement="end"
 					/>
 				</Grid>
 				{fieldIsTopes.value && <LaborTopes name={topes.name} nameRemuneracion={remuneracionTopes.name} options={optionsTopes} />}
-				<Divider />
+				{hairline}
 				<Grid>
 					<FormControlLabel
 						control={
 							<Switch
+								sx={switchSx}
 								checked={fieldIsMultas.value}
 								onChange={(e) => {
 									helperIsMultas.setValue(e.target.checked);
 								}}
 							/>
 						}
-						label="Aplicación de Multas"
+						label="Aplicación de multas"
 						labelPlacement="end"
 					/>
 				</Grid>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
 	Table,
 	TableBody,
@@ -20,30 +20,47 @@ import {
 	Popover,
 	Link,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import {
 	Edit,
 	Trash,
 	Eye,
-	Link2,
-	DocumentText,
-	Judge,
-	NotificationStatus,
-	Status,
 	Clock,
 	TickCircle,
-	DocumentDownload,
 	Link1,
+	TableDocument,
+	DocumentText,
+	Paperclip2,
+	Note1,
+	TaskSquare,
+	Calendar,
 } from "iconsax-react";
 import { Movement, PaginationInfo, PjnAccess } from "types/movements";
 import dayjs from "utils/dayjs-config";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 import { visuallyHidden } from "@mui/utils";
-import { dispatch } from "store";
+import { dispatch, useSelector } from "store";
 import { getMovementsByFolderId, toggleMovementComplete } from "store/reducers/movements";
+import { getNotesByFolderId } from "store/reducers/notes";
+import { getTasksByFolderId } from "store/reducers/tasks";
+import { getEventsById } from "store/reducers/events";
+import type { Note } from "types/note";
+import type { TaskType } from "types/task";
+import type { Event as CalendarEvent } from "types/events";
 import { useParams } from "react-router";
 import PDFViewer from "components/shared/PDFViewer";
+import MovementTextViewer from "components/shared/MovementTextViewer";
+import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
+import ModalTasks from "pages/apps/folders/details/modals/MoldalTasks";
+import AddEventFrom from "sections/apps/calendar/AddEventForm";
+import { Dialog } from "@mui/material";
+import { getMovementsReadSet, setMovementReadStatus } from "services/movementReadStatusService";
+import { openSnackbar } from "store/reducers/snackbar";
 import PaginationWithJump from "components/shared/PaginationWithJump";
 import PjnAccessAlert from "components/shared/PjnAccessAlert";
 import ScrollX from "components/ScrollX";
+import { useTeam } from "contexts/TeamContext";
+import { getMovementIcon, getMovementColor, parseDate, formatDate } from "../utils/movementUtils";
 
 interface MovementsTableProps {
 	movements: Movement[];
@@ -51,6 +68,7 @@ interface MovementsTableProps {
 	onEdit: (movement: Movement) => void;
 	onDelete: (id: string) => void;
 	onView: (movement: Movement) => void;
+	onOpenExplorer?: (movement: Movement) => void;
 	filters?: any;
 	pagination?: PaginationInfo;
 	isLoading?: boolean;
@@ -58,6 +76,12 @@ interface MovementsTableProps {
 	documentsBeforeThisPage?: number;
 	documentsInThisPage?: number;
 	pjnAccess?: PjnAccess;
+	folderName?: string;
+	// Deep-link ?movement=<id>: resalta + scrollea la fila si está en la página
+	// cargada (best-effort, igual que la tabla PJN).
+	highlightMovementId?: string | null;
+	// ?open=1 (calendario / chips "Ir al movimiento"): además auto-abre el visor.
+	autoOpenMovement?: boolean;
 }
 
 type Order = "asc" | "desc";
@@ -79,91 +103,6 @@ const headCells: HeadCell[] = [
 	{ id: "actions", label: "Acciones", numeric: false, width: "140px" },
 ];
 
-const getMovementIcon = (movement?: string) => {
-	switch (movement) {
-		case "Escrito-Actor":
-		case "Escrito-Demandado":
-			return <DocumentText size={16} />;
-		case "Despacho":
-			return <Judge size={16} />;
-		case "Cédula":
-		case "Oficio":
-			return <NotificationStatus size={16} />;
-		case "Evento":
-			return <Status size={16} />;
-		default:
-			return <DocumentText size={16} />;
-	}
-};
-
-const getMovementColor = (movement?: string): "success" | "error" | "secondary" | "primary" | "warning" | "default" => {
-	switch (movement) {
-		case "Escrito-Actor":
-			return "success";
-		case "Escrito-Demandado":
-			return "error";
-		case "Despacho":
-			return "secondary";
-		case "Cédula":
-		case "Oficio":
-			return "primary";
-		case "Evento":
-			return "warning";
-		default:
-			return "default";
-	}
-};
-
-const parseDate = (dateString: string) => {
-	try {
-		// Try to parse as ISO date first
-		if (dateString.includes("T") || dateString.includes("-")) {
-			const parsed = dayjs(dateString);
-			if (parsed.isValid()) {
-				// Normalizar a medianoche en zona horaria local para evitar cambios de fecha
-				return dayjs(parsed.format("YYYY-MM-DD")).toDate();
-			}
-		}
-
-		// Try to parse as DD/MM/YYYY format
-		const parsed = dayjs(dateString, "DD/MM/YYYY");
-		if (parsed.isValid()) {
-			return parsed.toDate();
-		}
-
-		return new Date(0);
-	} catch {
-		return new Date(0);
-	}
-};
-
-const formatDate = (dateString: string) => {
-	if (!dateString || dateString.trim() === "") {
-		return "";
-	}
-
-	try {
-		// Try to parse as ISO date first
-		if (dateString.includes("T") || dateString.includes("-")) {
-			const parsed = dayjs.utc(dateString);
-			if (parsed.isValid()) {
-				// Usar componentes de fecha UTC para evitar conversión de zona horaria
-				return parsed.format("DD/MM/YYYY");
-			}
-		}
-
-		// Try to parse as DD/MM/YYYY format
-		const parsed = dayjs(dateString, "DD/MM/YYYY");
-		if (parsed.isValid()) {
-			return parsed.format("DD/MM/YYYY");
-		}
-
-		return "";
-	} catch {
-		return "";
-	}
-};
-
 // Helper para construir el filtro de movimiento
 // Nota: Todos los tipos (tanto generales como PJN) usan el campo 'movement' en el backend
 const buildMovementFilter = (type: string) => {
@@ -184,6 +123,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	onEdit,
 	onDelete,
 	onView,
+	onOpenExplorer,
 	filters = {},
 	pagination,
 	isLoading,
@@ -191,10 +131,15 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	documentsBeforeThisPage,
 	documentsInThisPage,
 	pjnAccess,
+	folderName,
+	highlightMovementId,
+	autoOpenMovement = false,
 }) => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+	const { canDelete, canUpdate } = useTeam();
 	const [order, setOrder] = useState<Order>("desc");
 	const [orderBy, setOrderBy] = useState<keyof Movement>("time");
 	const [page, setPage] = useState(0);
@@ -208,10 +153,215 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	const [selectedPdfTitle, setSelectedPdfTitle] = useState<string>("");
 	const [selectedMovementId, setSelectedMovementId] = useState<string>("");
 	const [isLoadingMoreForPdf, setIsLoadingMoreForPdf] = useState(false);
+	// Estado para el visor de texto (SCBA/MEV: no hay PDF embedable, el
+	// "documento" es el texto extraído + lista de adjuntos)
+	const [textViewerOpen, setTextViewerOpen] = useState(false);
+	const [textViewerMovement, setTextViewerMovement] = useState<Movement | null>(null);
 
 	// Estados para el popover de attachments
 	const [attachmentsAnchor, setAttachmentsAnchor] = useState<HTMLElement | null>(null);
 	const [selectedAttachments, setSelectedAttachments] = useState<Movement["attachments"]>([]);
+
+	// Notas / tareas / vencimientos del folder para los indicadores por fila
+	// (contados por movementRef = movement._id, mismo patrón que la tabla PJN).
+	// Reactivo: crear/borrar desde el visor actualiza los contadores solos.
+	useEffect(() => {
+		if (id) {
+			dispatch(getNotesByFolderId(id));
+			dispatch(getTasksByFolderId(id));
+			dispatch(getEventsById(id));
+		}
+	}, [id]);
+
+	const folderNotes = useSelector((s: any) => s.notesReducer?.selectedNotes ?? []);
+	const folderTasks = useSelector((s: any) => s.tasksReducer?.selectedTasks ?? []);
+	const folderEvents = useSelector((s: any) => s.events?.events ?? []);
+	const notesCountByMov = useMemo(() => {
+		const map: Record<string, number> = {};
+		(folderNotes as Note[]).forEach((n) => {
+			if (n.movementRef) map[n.movementRef] = (map[n.movementRef] || 0) + 1;
+		});
+		return map;
+	}, [folderNotes]);
+	const tasksCountByMov = useMemo(() => {
+		const map: Record<string, number> = {};
+		(folderTasks as TaskType[]).forEach((t) => {
+			if (t.movementRef) map[t.movementRef] = (map[t.movementRef] || 0) + 1;
+		});
+		return map;
+	}, [folderTasks]);
+	const eventsCountByMov = useMemo(() => {
+		const map: Record<string, number> = {};
+		(folderEvents as CalendarEvent[]).forEach((e) => {
+			if (e.movementRef) map[e.movementRef] = (map[e.movementRef] || 0) + 1;
+		});
+		return map;
+	}, [folderEvents]);
+
+	// Fecha del vencimiento vinculado por movementRef, para la columna
+	// "Vencimiento" de movs sincronizados (que no tienen dateExpiration propio):
+	// el próximo por vencer; si todos pasaron, el más reciente.
+	const eventDueByMov = useMemo(() => {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const byMov: Record<string, Date[]> = {};
+		(folderEvents as CalendarEvent[]).forEach((e) => {
+			if (!e.movementRef || !e.start) return;
+			const d = new Date(e.start);
+			if (isNaN(d.getTime())) return;
+			(byMov[e.movementRef] = byMov[e.movementRef] || []).push(d);
+		});
+		const map: Record<string, Date> = {};
+		Object.entries(byMov).forEach(([ref, dates]) => {
+			const upcoming = dates.filter((d) => d >= today).sort((a, b) => a.getTime() - b.getTime());
+			map[ref] = upcoming[0] ?? dates.sort((a, b) => b.getTime() - a.getTime())[0];
+		});
+		return map;
+	}, [folderEvents]);
+
+	// Chip de fecha de vencimiento (rojo vencido / amarillo próximo), para los
+	// vencimientos vinculados por movementRef (Events, sin flag completed).
+	const renderLinkedDueChip = (d: Date) => {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const isExpired = d < today;
+		const days = Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+		const isNear = days >= 0 && days <= 7;
+		return (
+			<Stack direction="row" spacing={0.5} alignItems="center">
+				<Chip
+					label={d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })}
+					color={isExpired ? "error" : isNear ? "warning" : "success"}
+					size="small"
+					variant={isExpired ? "filled" : "outlined"}
+					icon={isExpired || isNear ? <Clock size={14} style={{ color: "inherit" }} /> : undefined}
+					sx={{ fontWeight: isExpired ? 600 : 500, "& .MuiChip-icon": { marginLeft: "4px", marginRight: "-2px" } }}
+				/>
+				{isExpired && (
+					<Typography variant="caption" color="error" fontWeight={600}>
+						Vencido
+					</Typography>
+				)}
+				{isNear && !isExpired && (
+					<Typography variant="caption" color="warning.main" fontWeight={500}>
+						{days === 0 ? "Hoy" : `${days}d`}
+					</Typography>
+				)}
+			</Stack>
+		);
+	};
+
+	// === Acciones PJN-parity para movimientos sincronizados (MEV/SCBA/EJE) ===
+	// Ref real = _id de subdocumento (MEV/SCBA) o actId (EJE); los sintéticos
+	// posicionales "scba-*/eje-*" no admiten notas ni read-status.
+	const isSyncedRow = (m: Movement) => m.source === "mev" || m.source === "scba" || m.source === "eje";
+	const hasRealRef = (m: Movement) => Boolean(m._id && !String(m._id).startsWith("scba-") && !String(m._id).startsWith("eje-"));
+	const userId = useSelector((s: any) => s.auth?.user?._id);
+
+	// Read-status per-usuario (mismo modelo de presencia que PJN).
+	const [readSet, setReadSet] = useState<Set<string>>(new Set());
+	useEffect(() => {
+		const ids = movements.filter((m) => isSyncedRow(m) && hasRealRef(m)).map((m) => String(m._id));
+		if (!ids.length) {
+			setReadSet(new Set());
+			return;
+		}
+		let cancelled = false;
+		getMovementsReadSet(ids)
+			.then((set) => {
+				if (!cancelled) setReadSet(set);
+			})
+			.catch(() => {
+				/* silencioso: el read-status no es crítico */
+			});
+		return () => {
+			cancelled = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [movements]);
+
+	const markRead = (movementId: string, read: boolean) => {
+		setReadSet((prev) => {
+			const next = new Set(prev);
+			if (read) next.add(movementId);
+			else next.delete(movementId);
+			return next;
+		});
+		if (id) {
+			setMovementReadStatus(movementId, id, read).catch(() => {
+				/* silencioso */
+			});
+		}
+	};
+
+	// Modals de acciones rápidas (nota / tarea / vencimiento) prefijados con movementRef.
+	const [actionMovement, setActionMovement] = useState<Movement | null>(null);
+	const [quickNoteOpen, setQuickNoteOpen] = useState(false);
+	const [quickTaskOpen, setQuickTaskOpen] = useState(false);
+	const [quickEventOpen, setQuickEventOpen] = useState(false);
+
+	// Deep-link ?movement=: scroll one-shot a la fila resaltada y (con ?open=1)
+	// auto-apertura del visor. Best-effort: solo si el movimiento está en la
+	// página cargada (el sort default fecha desc deja los recientes en la 1ª).
+	const highlightRowRef = React.useRef<HTMLTableRowElement | null>(null);
+	const hasScrolledToHighlight = React.useRef(false);
+	const hasAutoOpenedMovement = React.useRef(false);
+	const hasTriedLocate = React.useRef(false);
+	useEffect(() => {
+		hasScrolledToHighlight.current = false;
+		hasAutoOpenedMovement.current = false;
+		hasTriedLocate.current = false;
+	}, [highlightMovementId]);
+	useEffect(() => {
+		if (!highlightMovementId) return;
+		if (highlightRowRef.current && !hasScrolledToHighlight.current) {
+			hasScrolledToHighlight.current = true;
+			highlightRowRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+		}
+		if (autoOpenMovement && !hasAutoOpenedMovement.current) {
+			const target = movements.find((m) => String(m._id) === highlightMovementId);
+			if (target) {
+				hasAutoOpenedMovement.current = true;
+				openMovementDocument(target);
+			}
+		}
+		// Si el movimiento NO está en la página cargada, pedirle al server que lo
+		// ubique (?locate=): responde la página que lo contiene (saltamos a ella)
+		// o outside_plan / not_found (avisamos). Un solo intento por deep-link.
+		if (!hasTriedLocate.current && movements.length > 0 && !movements.some((m) => String(m._id) === highlightMovementId) && id) {
+			hasTriedLocate.current = true;
+			const sortParam = order === "desc" ? `-${orderBy}` : orderBy;
+			(dispatch(getMovementsByFolderId(id, { page: 1, limit: rowsPerPage, sort: sortParam, locate: highlightMovementId })) as any).then(
+				(res: any) => {
+					if (res?.locateStatus === "ok" && res?.locatedPage) {
+						setPage(res.locatedPage - 1);
+					} else if (res?.locateStatus === "outside_plan") {
+						dispatch(
+							openSnackbar({
+								open: true,
+								message:
+									"El movimiento vinculado no está entre los movimientos visibles de tu plan. Actualizá tu plan para ver el historial completo.",
+								variant: "alert",
+								alert: { color: "warning" },
+								close: true,
+							}),
+						);
+					} else if (res?.locateStatus === "not_found") {
+						dispatch(
+							openSnackbar({
+								open: true,
+								message: "El movimiento vinculado ya no está disponible en el expediente.",
+								variant: "alert",
+								alert: { color: "warning" },
+								close: true,
+							}),
+						);
+					}
+				},
+			);
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [highlightMovementId, autoOpenMovement, movements]);
 
 	// Actualizar valores locales cuando cambien las props
 	useEffect(() => {
@@ -246,6 +396,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
 								: undefined,
 						hasLink: localFilters.onlyWithDocuments ? true : undefined,
+						hasLinked: localFilters.onlyWithLinked ? true : undefined,
 					},
 				}),
 			);
@@ -270,6 +421,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
 								: undefined,
 						hasLink: localFilters.onlyWithDocuments ? true : undefined,
+						hasLinked: localFilters.onlyWithLinked ? true : undefined,
 					},
 				}),
 			);
@@ -301,6 +453,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
 								: undefined,
 						hasLink: localFilters.onlyWithDocuments ? true : undefined,
+						hasLinked: localFilters.onlyWithLinked ? true : undefined,
 					},
 				}),
 			);
@@ -340,6 +493,42 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 		setSelectedMovementId(movement._id || "");
 	};
 
+	// Decide qué viewer abrir según el tipo de documento del movimiento.
+	//   - documentType='text' (SCBA migrado vía keep, o cualquier mov que el
+	//     backend marque explícitamente): MovementTextViewer.
+	//   - documentType='pdf' o sin marcar pero con link: PDFViewer (PJN, MEV
+	//     con su endpoint /api/movements/mev/.../documento, links manuales).
+	//
+	// MEV: el mapper del backend marca documentType='text' + description=texto
+	// cuando el movimiento tiene texto completo (Fase 5); los MEV con URL
+	// externa o sin texto siguen en el PDFViewer legacy.
+	const openMovementDocument = (movement: Movement) => {
+		const isTextDoc = movement.documentType === "text";
+		if (isTextDoc) {
+			setTextViewerMovement(movement);
+			setSelectedMovementId(movement._id || "");
+			setTextViewerOpen(true);
+			// Auto-marcar leído al abrir (abrir el doc = leerlo, igual que PJN).
+			if (isSyncedRow(movement) && hasRealRef(movement) && !readSet.has(String(movement._id))) {
+				markRead(String(movement._id), true);
+			}
+		} else {
+			setSelectedPdfUrl(movement.link || "");
+			setSelectedPdfTitle(movement.title || "Documento");
+			setSelectedMovementId(movement._id || "");
+			setPdfViewerOpen(true);
+		}
+	};
+
+	// Navegación dentro del TextViewer entre movs visibles
+	const handleTextNavigate = (movement: Movement) => {
+		setTextViewerMovement(movement);
+		setSelectedMovementId(movement._id || "");
+		if (isSyncedRow(movement) && hasRealRef(movement) && !readSet.has(String(movement._id))) {
+			markRead(String(movement._id), true);
+		}
+	};
+
 	// Cargar más movimientos para el PDF viewer (página siguiente)
 	const handleRequestNextPageForPdf = async () => {
 		if (id && pagination?.hasNext && !isLoadingMoreForPdf) {
@@ -359,6 +548,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
 								: undefined,
 						hasLink: localFilters.onlyWithDocuments ? true : undefined,
+						hasLinked: localFilters.onlyWithLinked ? true : undefined,
 					},
 				}),
 			);
@@ -398,6 +588,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
 								: undefined,
 						hasLink: localFilters.onlyWithDocuments ? true : undefined,
+						hasLinked: localFilters.onlyWithLinked ? true : undefined,
 					},
 				}),
 			);
@@ -507,84 +698,130 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 								))
 							) : movements.length === 0 ? (
 								<TableRow key="no-data-row">
-									<TableCell colSpan={headCells.length} align="center">
-										<Typography variant="subtitle1" color="textSecondary" sx={{ py: 3 }}>
-											No se encontraron movimientos
-										</Typography>
+									<TableCell colSpan={headCells.length} align="center" sx={{ py: 5, border: "none" }}>
+										<Stack alignItems="center" spacing={1.5}>
+											<Box
+												sx={{
+													width: 56,
+													height: 56,
+													borderRadius: 1.5,
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+													border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+													color: BRAND_BLUE,
+												}}
+											>
+												<TableDocument size={28} variant="Bulk" />
+											</Box>
+											<Stack alignItems="center" spacing={0.375}>
+												<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.015em" }}>
+													{localFilters.onlyWithLinked ? "Sin movimientos con vinculados" : "Sin movimientos registrados"}
+												</Typography>
+												<Typography
+													sx={{
+														fontSize: "0.78rem",
+														color: "text.secondary",
+														letterSpacing: "-0.005em",
+														maxWidth: 360,
+														textAlign: "center",
+													}}
+												>
+													{localFilters.onlyWithLinked
+														? "Ningún movimiento tiene notas, tareas o vencimientos vinculados. Podés crearlos desde las acciones de cada fila o desde el visor."
+														: "Los escritos y despachos judiciales aparecerán acá cuando se sincronicen o agreguen."}
+												</Typography>
+											</Stack>
+										</Stack>
 									</TableCell>
 								</TableRow>
 							) : (
 								<>
 									{movements.map((movement) => {
+										const isHighlighted = Boolean(highlightMovementId && String(movement._id) === highlightMovementId);
+										const isUnread = isSyncedRow(movement) && hasRealRef(movement) && !readSet.has(String(movement._id));
 										return (
-											<TableRow hover tabIndex={-1} key={movement._id} sx={{ cursor: "pointer" }}>
+											<TableRow
+												hover
+												tabIndex={-1}
+												key={movement._id}
+												ref={isHighlighted ? highlightRowRef : undefined}
+												sx={{
+													cursor: "pointer",
+													// No leído: toda la fila en negrita (no solo el título)
+													...(isUnread && {
+														"& .MuiTableCell-root": { fontWeight: 700, color: "text.primary" },
+														"& .MuiTableCell-root .MuiTypography-root": { fontWeight: 700 },
+													}),
+													...(isHighlighted && {
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+														"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) },
+													}),
+												}}
+											>
 												<TableCell>{formatDate(movement.time)}</TableCell>
 												<TableCell>
 													<Box sx={{ maxWidth: 400 }}>
-														<Typography
-															variant="subtitle2"
-															sx={{
-																display: "-webkit-box",
-																WebkitLineClamp: 2,
-																WebkitBoxOrient: "vertical",
-																overflow: "hidden",
-																textOverflow: "ellipsis",
-																lineHeight: 1.4,
-																wordBreak: "break-word",
-															}}
-														>
-															{movement.title}
-														</Typography>
-														<Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
-															{movement.source === "pjn" && (
-																<Typography
-																	variant="caption"
-																	color="text.secondary"
-																	sx={{
-																		fontStyle: "italic",
-																		fontSize: "0.7rem",
-																	}}
-																>
-																	Sincronizado • PJN
-																</Typography>
-															)}
-															{movement.source === "mev" && (
-																<Typography
-																	variant="caption"
-																	color="text.secondary"
-																	sx={{
-																		fontStyle: "italic",
-																		fontSize: "0.7rem",
-																	}}
-																>
-																	Sincronizado • MEV
-																</Typography>
-															)}
-															{movement.attachments && movement.attachments.length > 0 && (
-																<Tooltip title="Ver archivos adjuntos">
-																	<Chip
-																		icon={<DocumentDownload size={14} />}
-																		label={movement.attachments.length}
-																		size="small"
-																		color="info"
-																		variant="outlined"
-																		onClick={(e) => handleAttachmentsClick(e, movement.attachments)}
-																		sx={{
-																			height: 20,
-																			fontSize: "0.7rem",
-																			cursor: "pointer",
-																			"& .MuiChip-icon": {
-																				marginLeft: "4px",
-																				marginRight: "-2px",
-																			},
-																			"&:hover": {
-																				backgroundColor: theme.palette.info.lighter,
-																				borderColor: theme.palette.info.main,
-																			},
-																		}}
+														<Stack direction="row" alignItems="flex-start" spacing={0.75}>
+															{isSyncedRow(movement) && hasRealRef(movement) && !readSet.has(String(movement._id)) && (
+																<Tooltip title="No leído">
+																	<Box
+																		component="span"
+																		sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "primary.main", flexShrink: 0, mt: 0.75 }}
 																	/>
 																</Tooltip>
 															)}
+															<Typography
+																variant="subtitle2"
+																sx={{
+																	display: "-webkit-box",
+																	WebkitLineClamp: 2,
+																	WebkitBoxOrient: "vertical",
+																	overflow: "hidden",
+																	textOverflow: "ellipsis",
+																	lineHeight: 1.4,
+																	wordBreak: "break-word",
+																	fontWeight:
+																		isSyncedRow(movement) && hasRealRef(movement) && !readSet.has(String(movement._id)) ? 700 : undefined,
+																}}
+															>
+																{movement.title}
+															</Typography>
+														</Stack>
+														<Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+															{movement._id && notesCountByMov[movement._id] ? (
+																<Tooltip title={`${notesCountByMov[movement._id]} nota${notesCountByMov[movement._id] > 1 ? "s" : ""}`}>
+																	<Stack direction="row" alignItems="center" spacing={0.25} sx={{ color: "primary.main" }}>
+																		<Note1 size="13" variant="Bulk" />
+																		<Typography variant="caption" sx={{ fontWeight: 600 }}>
+																			{notesCountByMov[movement._id]}
+																		</Typography>
+																	</Stack>
+																</Tooltip>
+															) : null}
+															{movement._id && tasksCountByMov[movement._id] ? (
+																<Tooltip title={`${tasksCountByMov[movement._id]} tarea${tasksCountByMov[movement._id] > 1 ? "s" : ""}`}>
+																	<Stack direction="row" alignItems="center" spacing={0.25} sx={{ color: "success.main" }}>
+																		<TaskSquare size="13" variant="Bulk" />
+																		<Typography variant="caption" sx={{ fontWeight: 600 }}>
+																			{tasksCountByMov[movement._id]}
+																		</Typography>
+																	</Stack>
+																</Tooltip>
+															) : null}
+															{movement._id && eventsCountByMov[movement._id] ? (
+																<Tooltip
+																	title={`${eventsCountByMov[movement._id]} vencimiento${eventsCountByMov[movement._id] > 1 ? "s" : ""}`}
+																>
+																	<Stack direction="row" alignItems="center" spacing={0.25} sx={{ color: "error.main" }}>
+																		<Calendar size="13" variant="Bulk" />
+																		<Typography variant="caption" sx={{ fontWeight: 600 }}>
+																			{eventsCountByMov[movement._id]}
+																		</Typography>
+																	</Stack>
+																</Tooltip>
+															) : null}
 														</Stack>
 													</Box>
 												</TableCell>
@@ -654,33 +891,84 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																	</Stack>
 																);
 														  })()
+														: movement._id && eventDueByMov[movement._id]
+														? renderLinkedDueChip(eventDueByMov[movement._id])
 														: "-"}
 												</TableCell>
 												<TableCell>
-													{movement.link ? (
-														<Tooltip title="Ver documento">
-															<IconButton
-																size="small"
-																color="primary"
-																onClick={(e) => {
-																	e.stopPropagation();
-																	console.log("Documento URL:", movement.link);
-																	setSelectedPdfUrl(movement.link || "");
-																	setSelectedPdfTitle(movement.title || "Documento");
-																	setSelectedMovementId(movement._id || "");
-																	setPdfViewerOpen(true);
-																}}
-															>
-																<Link2 size={18} />
-															</IconButton>
-														</Tooltip>
-													) : (
-														"-"
-													)}
+													{(() => {
+														// Mostrar el botón si hay algo que ver:
+														//   - documentType='text': texto extraído o adjuntos.
+														//   - otro caso (PJN/MEV/manual): link directo (comportamiento legacy).
+														const isText = movement.documentType === "text";
+														const hasContent = isText
+															? !!(movement.description?.trim() || (movement.attachments && movement.attachments.length > 0))
+															: !!movement.link;
+														const attachmentsChip =
+															movement.attachments && movement.attachments.length > 0 ? (
+																<Tooltip title="Ver archivos adjuntos">
+																	<Chip
+																		icon={<Paperclip2 size={12} variant="Bulk" />}
+																		label={movement.attachments.length}
+																		size="small"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			handleAttachmentsClick(e, movement.attachments);
+																		}}
+																		sx={{
+																			height: 20,
+																			fontSize: "0.7rem",
+																			fontWeight: 600,
+																			cursor: "pointer",
+																			bgcolor: "transparent",
+																			border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+																			color: "text.secondary",
+																			"& .MuiChip-icon": { marginLeft: "4px", marginRight: "-2px", color: BRAND_BLUE },
+																			"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.07), borderColor: alpha(BRAND_BLUE, 0.4) },
+																		}}
+																	/>
+																</Tooltip>
+															) : null;
+														if (!hasContent && !attachmentsChip) return "-";
+														return (
+															<Stack direction="row" spacing={0.5} alignItems="center">
+																{hasContent && (
+																	<Tooltip title="Ver documento">
+																		<IconButton
+																			size="small"
+																			onClick={(e) => {
+																				e.stopPropagation();
+																				openMovementDocument(movement);
+																			}}
+																			sx={{ color: BRAND_BLUE }}
+																		>
+																			<DocumentText size={18} variant="Bulk" />
+																		</IconButton>
+																	</Tooltip>
+																)}
+																{attachmentsChip}
+															</Stack>
+														);
+													})()}
 												</TableCell>
 												<TableCell>
-													<Stack direction="row" spacing={0.5}>
-														{movement.dateExpiration && (
+													{/* Slots FIJOS: cada posición existe en todas las filas (placeholder
+													    invisible si la acción no aplica) — botones siempre alineados. */}
+													<Stack direction="row" spacing={0.5} alignItems="center">
+														{isSyncedRow(movement) && hasRealRef(movement) ? (
+															<Tooltip title={readSet.has(String(movement._id)) ? "Leído — marcar como no leído" : "Marcar como leído"}>
+																<IconButton
+																	size="small"
+																	color={readSet.has(String(movement._id)) ? "success" : "default"}
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		markRead(String(movement._id), !readSet.has(String(movement._id)));
+																	}}
+																>
+																	<TickCircle size={18} variant={readSet.has(String(movement._id)) ? "Bold" : "Linear"} />
+																</IconButton>
+															</Tooltip>
+														) : movement.dateExpiration && canUpdate ? (
 															<Tooltip title={movement.completed ? "Marcar como pendiente" : "Marcar como completado"}>
 																<IconButton
 																	size="small"
@@ -688,14 +976,14 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																	onClick={(e) => handleToggleComplete(movement._id!, e)}
 																	sx={{
 																		backgroundColor: movement.completed ? "success.lighter" : "transparent",
-																		"&:hover": {
-																			backgroundColor: movement.completed ? "success.light" : "action.hover",
-																		},
+																		"&:hover": { backgroundColor: movement.completed ? "success.light" : "action.hover" },
 																	}}
 																>
 																	{movement.completed ? <TickCircle size={18} variant="Bold" /> : <TickCircle size={18} />}
 																</IconButton>
 															</Tooltip>
+														) : (
+															<Box sx={{ width: 28, height: 28 }} />
 														)}
 														<Tooltip title="Ver detalles">
 															<IconButton
@@ -708,33 +996,82 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																<Eye size={18} />
 															</IconButton>
 														</Tooltip>
-														{movement.source !== "pjn" && movement.source !== "mev" && (
-															<>
-																<Tooltip title="Editar">
-																	<IconButton
-																		size="small"
-																		color="primary"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			onEdit(movement);
-																		}}
-																	>
-																		<Edit size={18} />
-																	</IconButton>
-																</Tooltip>
-																<Tooltip title="Eliminar">
-																	<IconButton
-																		size="small"
-																		color="error"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			onDelete(movement._id!);
-																		}}
-																	>
-																		<Trash size={18} />
-																	</IconButton>
-																</Tooltip>
-															</>
+														{isSyncedRow(movement) && hasRealRef(movement) ? (
+															<Tooltip title="Agregar nota">
+																<IconButton
+																	size="small"
+																	color="primary"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		setActionMovement(movement);
+																		setQuickNoteOpen(true);
+																	}}
+																>
+																	<Note1 size={18} />
+																</IconButton>
+															</Tooltip>
+														) : movement.source !== "pjn" && !isSyncedRow(movement) && canUpdate ? (
+															<Tooltip title="Editar">
+																<IconButton
+																	size="small"
+																	color="primary"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		onEdit(movement);
+																	}}
+																>
+																	<Edit size={18} />
+																</IconButton>
+															</Tooltip>
+														) : (
+															<Box sx={{ width: 28, height: 28 }} />
+														)}
+														{isSyncedRow(movement) && hasRealRef(movement) ? (
+															<Tooltip title="Agregar tarea">
+																<IconButton
+																	size="small"
+																	sx={{ color: "success.main" }}
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		setActionMovement(movement);
+																		setQuickTaskOpen(true);
+																	}}
+																>
+																	<TaskSquare size={18} />
+																</IconButton>
+															</Tooltip>
+														) : movement.source !== "pjn" && !isSyncedRow(movement) && canDelete ? (
+															<Tooltip title="Eliminar">
+																<IconButton
+																	size="small"
+																	color="error"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		onDelete(movement._id!);
+																	}}
+																>
+																	<Trash size={18} />
+																</IconButton>
+															</Tooltip>
+														) : (
+															<Box sx={{ width: 28, height: 28 }} />
+														)}
+														{isSyncedRow(movement) && hasRealRef(movement) ? (
+															<Tooltip title="Agregar vencimiento">
+																<IconButton
+																	size="small"
+																	color="error"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		setActionMovement(movement);
+																		setQuickEventOpen(true);
+																	}}
+																>
+																	<Calendar size={18} />
+																</IconButton>
+															</Tooltip>
+														) : (
+															<Box sx={{ width: 28, height: 28 }} />
 														)}
 													</Stack>
 												</TableCell>
@@ -823,21 +1160,20 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 					</Table>
 				</TableContainer>
 			</ScrollX>
-			{/* Barra de paginación personalizada */}
+			{/* Barra de paginación */}
 			<Box
 				sx={{
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "space-between",
 					flexDirection: isMobile ? "column" : "row",
-					gap: 2,
-					p: 2,
-					borderTop: 1,
-					borderColor: "divider",
+					gap: 1.5,
+					px: 1.5,
+					py: 1,
+					borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
 				}}
 			>
-				{/* Controles de filas por página y información */}
-				<Stack direction="row" spacing={isMobile ? 2 : 3} alignItems="center" flexWrap="wrap" sx={{ width: isMobile ? "100%" : "auto" }}>
+				<Stack direction="row" spacing={isMobile ? 1.5 : 2} alignItems="center" flexWrap="wrap" sx={{ width: isMobile ? "100%" : "auto" }}>
 					<TablePagination
 						rowsPerPageOptions={[5, 10, 25, 50]}
 						component="div"
@@ -846,29 +1182,41 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 						page={page}
 						onPageChange={handleChangePage}
 						onRowsPerPageChange={handleChangeRowsPerPage}
-						labelRowsPerPage={isMobile ? "Filas:" : "Filas por página:"}
+						labelRowsPerPage={isMobile ? "Filas" : "Filas por página"}
 						labelDisplayedRows={({ from, to, count }) =>
-							isMobile ? `${from}-${to} / ${count}` : `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
+							isMobile ? `${from}–${to} / ${count}` : `${from}–${to} de ${count !== -1 ? count : `más de ${to}`}`
 						}
 						sx={{
 							"& .MuiTablePagination-toolbar": {
 								paddingLeft: 0,
-								minHeight: isMobile ? 40 : 52,
+								minHeight: isMobile ? 40 : 44,
 							},
-							"& .MuiTablePagination-actions": {
-								display: "none", // Ocultar las flechas predeterminadas
+							"& .MuiTablePagination-actions": { display: "none" },
+							"& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
+								fontSize: "0.74rem",
+								fontWeight: 500,
+								letterSpacing: "-0.005em",
+								color: "text.secondary",
+								fontVariantNumeric: "tabular-nums",
+							},
+							"& .MuiTablePagination-select": {
+								fontSize: "0.78rem",
+								fontWeight: 600,
+								color: BRAND_BLUE,
+								fontVariantNumeric: "tabular-nums",
+								borderRadius: 0.875,
+								"&:focus": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04) },
 							},
 						}}
 					/>
 				</Stack>
 
-				{/* Paginación con números */}
 				{pagination && pagination.pages > 1 && (
 					<PaginationWithJump page={page} totalPages={pagination.pages} onPageChange={handlePageChange} disabled={isLoading} />
 				)}
 			</Box>
 
-			{/* PDF Viewer Dialog con navegación */}
+			{/* PDF Viewer Dialog con navegación (PJN o cualquier link directo a PDF) */}
 			<PDFViewer
 				open={pdfViewerOpen}
 				onClose={() => setPdfViewerOpen(false)}
@@ -885,7 +1233,82 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 				totalWithLinks={totalWithLinks}
 				documentsBeforeThisPage={documentsBeforeThisPage}
 				documentsInThisPage={documentsInThisPage}
+				onOpenExplorer={
+					onOpenExplorer
+						? () => {
+								// Find the current movement and open explorer with it
+								const currentMov = movements.find((m) => m._id === selectedMovementId) || movements.find((m) => m.link === selectedPdfUrl);
+								setPdfViewerOpen(false);
+								if (currentMov) {
+									onOpenExplorer(currentMov);
+								}
+						  }
+						: undefined
+				}
 			/>
+
+			{/* Text Viewer Dialog (SCBA/MEV: texto extraído + lista de adjuntos) */}
+			<MovementTextViewer
+				open={textViewerOpen}
+				onClose={() => setTextViewerOpen(false)}
+				movement={textViewerMovement}
+				folderId={id}
+				folderName={folderName}
+				movements={movements}
+				currentMovementId={selectedMovementId}
+				onNavigate={handleTextNavigate}
+				onRequestNextPage={handleRequestNextPageForPdf}
+				onRequestPreviousPage={handleRequestPreviousPageForPdf}
+				hasNextPage={pagination?.hasNext || false}
+				hasPreviousPage={pagination?.hasPrev || false}
+				isLoadingMore={isLoadingMoreForPdf}
+				totalWithLinks={totalWithLinks}
+				documentsBeforeThisPage={documentsBeforeThisPage}
+			/>
+
+			{/* Acciones rápidas por fila (nota / tarea / vencimiento) con movementRef prefijado */}
+			{actionMovement && id && (
+				<ModalNotes
+					open={quickNoteOpen}
+					setOpen={setQuickNoteOpen}
+					folderId={id}
+					folderName={folderName}
+					note={null}
+					initialValues={{ movementRef: actionMovement._id, movementSource: (actionMovement.source as any) ?? "manual" }}
+				/>
+			)}
+			{actionMovement && id && (
+				<ModalTasks
+					open={quickTaskOpen}
+					setOpen={setQuickTaskOpen}
+					folderId={id}
+					folderName={folderName ?? ""}
+					editMode={false}
+					taskToEdit={null}
+					initialValues={{ movementRef: actionMovement._id, movementSource: (actionMovement.source as any) ?? "manual" }}
+				/>
+			)}
+			{actionMovement && id && (
+				<Dialog
+					open={quickEventOpen}
+					onClose={() => setQuickEventOpen(false)}
+					maxWidth="sm"
+					fullWidth
+					sx={{ "& .MuiDialog-paper": { p: 0 } }}
+				>
+					<AddEventFrom
+						event={null}
+						range={null}
+						onCancel={() => setQuickEventOpen(false)}
+						userId={userId}
+						folderId={id}
+						folderName={folderName}
+						movementRef={actionMovement._id}
+						movementSource={(actionMovement.source as any) ?? "manual"}
+						defaultType="vencimiento"
+					/>
+				</Dialog>
+			)}
 
 			{/* Popover para mostrar archivos adjuntos */}
 			<Popover
