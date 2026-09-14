@@ -92,6 +92,9 @@ const TabSettings = () => {
 	// el backend lo rechaza igual (WHATSAPP_NOT_VERIFIED), esto evita el intento.
 	const [whatsappStatus, setWhatsappStatus] = useState<PhoneStatus | null>(null);
 	const canEnableWhatsapp = !!whatsappStatus?.phoneVerified && whatsappStatus.whatsappOptIn.accepted && !whatsappStatus.whatsappOptIn.revokedAt;
+	// Piloto: la fila solo aparece cuando el backend confirma que el usuario puede
+	// inscribirse (inscripción abierta o grant) o ya tiene un número verificado.
+	const showWhatsappRow = !!whatsappStatus && (whatsappStatus.enrollment?.allowed !== false || whatsappStatus.phoneVerified);
 
 	const [channelsEnabled, setChannelsEnabled] = useState<boolean>(
 		preferences.channels?.email || preferences.channels?.browser || preferences.channels?.whatsapp || false,
@@ -814,26 +817,32 @@ const TabSettings = () => {
 									sx={switchSx}
 								/>
 							</ListItem>
-							<ListItem sx={subRowSx}>
-								<Stack sx={{ flex: 1, minWidth: 0 }}>
-									<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>WhatsApp</Typography>
-									<Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }}>
-										Aviso breve con las carpetas que tienen novedades. Requiere número verificado.
-									</Typography>
-								</Stack>
-								<Switch
-									size="small"
-									onChange={() => handleChannelChange("whatsapp", !preferences.channels?.whatsapp)}
-									checked={preferences.channels?.whatsapp ?? false}
-									// Apagar siempre se puede; prender solo con número verificado + opt-in vigente
-									disabled={!channelsEnabled || !canEditSettings || (!preferences.channels?.whatsapp && !canEnableWhatsapp)}
-									sx={switchSx}
-								/>
-							</ListItem>
+							{showWhatsappRow && (
+								<ListItem sx={subRowSx}>
+									<Stack sx={{ flex: 1, minWidth: 0 }}>
+										<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>WhatsApp</Typography>
+										<Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }}>
+											Aviso breve con las carpetas que tienen novedades. Requiere número verificado.
+										</Typography>
+									</Stack>
+									<Switch
+										size="small"
+										onChange={() => handleChannelChange("whatsapp", !preferences.channels?.whatsapp)}
+										checked={preferences.channels?.whatsapp ?? false}
+										// Apagar siempre se puede; prender solo con número verificado + opt-in vigente
+										disabled={!channelsEnabled || !canEditSettings || (!preferences.channels?.whatsapp && !canEnableWhatsapp)}
+										sx={switchSx}
+									/>
+								</ListItem>
+							)}
 						</List>
-						<Box sx={{ ...settingsBoxSx, mt: 0.5 }}>
-							<WhatsAppChannelPanel disabled={!canEditSettings} onStatusChange={handleWhatsappStatusChange} />
-						</Box>
+						{/* Siempre montado: es quien carga el estado; se oculta solo si el usuario no puede inscribirse */}
+						<WhatsAppChannelPanel
+							disabled={!canEditSettings}
+							hidden={!showWhatsappRow}
+							containerSx={{ ...settingsBoxSx, mt: 0.5 }}
+							onStatusChange={handleWhatsappStatusChange}
+						/>
 					</AccordionDetails>
 				</Accordion>
 

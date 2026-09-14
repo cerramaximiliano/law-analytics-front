@@ -225,6 +225,8 @@ export interface PhoneStatus {
 	pendingVerification: { phone: string; expiresAt: string } | null;
 	/** Si el canal puede mandar un código ahora (hay línea conectada, etc.) */
 	availability?: { available: boolean; reason: string | null };
+	/** Piloto: si este usuario puede inscribirse (inscripción abierta o grant). Sin inscripción y sin número, la opción no se muestra */
+	enrollment?: { allowed: boolean };
 }
 
 /**

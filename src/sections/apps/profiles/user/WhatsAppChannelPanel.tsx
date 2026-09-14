@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 // material-ui
 import { Box, Button, Checkbox, Chip, CircularProgress, FormControlLabel, Stack, TextField, Typography } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
+import type { SxProps, Theme } from "@mui/material/styles";
 import OtpInput from "react18-input-otp";
 
 // project-imports
@@ -22,6 +23,9 @@ import { BRAND_BLUE } from "themes/dashboardTokens";
 
 interface Props {
 	disabled?: boolean;
+	/** El padre decide si la opción se muestra (piloto: sin inscripción y sin número, no); el panel igual carga el estado */
+	hidden?: boolean;
+	containerSx?: SxProps<Theme>;
 	onStatusChange?: (status: PhoneStatus) => void;
 }
 
@@ -41,11 +45,12 @@ const toStatus = (res: PhoneApiResponse): PhoneStatus => ({
 	channelEnabled: res.channelEnabled === true,
 	pendingVerification: res.pendingVerification ?? null,
 	availability: res.availability,
+	enrollment: res.enrollment,
 });
 
 const responseMessage = (res: PhoneApiResponse, fallback: string) => res.message || res.error || fallback;
 
-const WhatsAppChannelPanel = ({ disabled = false, onStatusChange }: Props) => {
+const WhatsAppChannelPanel = ({ disabled = false, hidden = false, containerSx, onStatusChange }: Props) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 
@@ -207,182 +212,193 @@ const WhatsAppChannelPanel = ({ disabled = false, onStatusChange }: Props) => {
 	const feedbackColor =
 		feedback?.kind === "error" ? theme.palette.error.main : feedback?.kind === "success" ? theme.palette.success.main : BRAND_BLUE;
 
+	if (hidden) return null;
+
 	if (loading) {
 		return (
-			<Stack direction="row" alignItems="center" spacing={1} sx={{ py: 1 }}>
-				<CircularProgress size={16} sx={{ color: BRAND_BLUE }} />
-				<Typography sx={smallText}>Cargando estado de WhatsApp…</Typography>
-			</Stack>
+			<Box sx={containerSx}>
+				<Stack direction="row" alignItems="center" spacing={1} sx={{ py: 1 }}>
+					<CircularProgress size={16} sx={{ color: BRAND_BLUE }} />
+					<Typography sx={smallText}>Cargando estado de WhatsApp…</Typography>
+				</Stack>
+			</Box>
 		);
 	}
 
 	return (
-		<Stack spacing={1.25}>
-			{/* Estado actual */}
-			{verified ? (
-				<Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
-					<Typography sx={{ fontSize: "0.86rem", fontWeight: 600, color: "text.primary" }}>{status?.phone}</Typography>
-					<Chip
-						size="small"
-						label="Verificado"
-						sx={{
-							height: 20,
-							fontSize: "0.68rem",
-							fontWeight: 600,
-							bgcolor: alpha(theme.palette.success.main, 0.12),
-							color: theme.palette.success.dark,
-						}}
-					/>
-					{optInActive ? (
+		<Box sx={containerSx}>
+			<Stack spacing={1.25}>
+				{/* Estado actual */}
+				{verified ? (
+					<Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
+						<Typography sx={{ fontSize: "0.86rem", fontWeight: 600, color: "text.primary" }}>{status?.phone}</Typography>
 						<Chip
 							size="small"
-							label="Avisos activados"
-							sx={{ height: 20, fontSize: "0.68rem", fontWeight: 600, bgcolor: alpha(BRAND_BLUE, 0.1), color: BRAND_BLUE }}
-						/>
-					) : (
-						<Chip size="small" label="Avisos desactivados" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 600 }} />
-					)}
-				</Stack>
-			) : (
-				<Typography sx={smallText}>
-					Recibí un aviso breve por WhatsApp con las carpetas que tienen novedades, además del email. Nunca reemplaza al correo.
-				</Typography>
-			)}
-
-			{status?.availability && !available && !verified && (
-				<Typography sx={{ ...smallText, color: theme.palette.warning.dark }}>
-					La verificación por WhatsApp todavía no está disponible. Vas a poder cargar tu número cuando activemos el canal.
-				</Typography>
-			)}
-
-			{/* Paso 1: número */}
-			{!verified && step === "idle" && (
-				<Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
-					<TextField
-						id="whatsapp-phone"
-						size="small"
-						placeholder="+54 9 11 5555 5555"
-						value={phone}
-						onChange={(e) => setPhone(e.target.value)}
-						disabled={disabled || busy || !available}
-						helperText="Con código de país"
-						sx={{ ...inputSx, flex: 1, "& .MuiFormHelperText-root": { fontSize: "0.68rem", mx: 0.5 } }}
-					/>
-					<Button
-						size="small"
-						onClick={handleStart}
-						disabled={disabled || busy || !available || phone.trim().length < 8}
-						sx={{ ...primaryBtnSx, alignSelf: { xs: "flex-start", sm: "center" }, mb: { sm: 2.5 } }}
-					>
-						{busy ? "Enviando…" : "Enviar código"}
-					</Button>
-				</Stack>
-			)}
-
-			{/* Paso 2: código + consentimiento */}
-			{!verified && step === "code" && (
-				<Stack spacing={1.25}>
-					<Typography sx={smallText}>
-						Ingresá el código que te llegó por WhatsApp al <strong>{phone}</strong>.
-					</Typography>
-					<Box sx={{ maxWidth: 320 }}>
-						<OtpInput
-							value={code}
-							onChange={(value: string) => setCode(value)}
-							numInputs={6}
-							isInputNum
-							isDisabled={disabled || busy}
-							containerStyle={{ justifyContent: "space-between" }}
-							inputStyle={{
-								width: "100%",
-								margin: "2px",
-								padding: "8px 0",
-								fontSize: "1rem",
-								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.3 : 0.2)}`,
-								borderRadius: 6,
-								background: "transparent",
-								color: theme.palette.text.primary,
+							label="Verificado"
+							sx={{
+								height: 20,
+								fontSize: "0.68rem",
+								fontWeight: 600,
+								bgcolor: alpha(theme.palette.success.main, 0.12),
+								color: theme.palette.success.dark,
 							}}
-							focusStyle={{ outline: "none", border: `1px solid ${BRAND_BLUE}`, boxShadow: `0 0 0 2px ${alpha(BRAND_BLUE, 0.2)}` }}
 						/>
-					</Box>
-					<FormControlLabel
-						control={
-							<Checkbox
-								id="whatsapp-opt-in"
+						{optInActive ? (
+							<Chip
 								size="small"
-								checked={acceptOptIn}
-								onChange={(e) => setAcceptOptIn(e.target.checked)}
-								disabled={disabled || busy}
-								sx={{ color: alpha(BRAND_BLUE, isDark ? 0.4 : 0.32), "&.Mui-checked": { color: BRAND_BLUE } }}
+								label="Avisos activados"
+								sx={{ height: 20, fontSize: "0.68rem", fontWeight: 600, bgcolor: alpha(BRAND_BLUE, 0.1), color: BRAND_BLUE }}
 							/>
-						}
-						label={
-							<Typography sx={{ fontSize: "0.78rem", color: "text.primary" }}>
-								Acepto recibir por WhatsApp los avisos de novedades de mis causas. Puedo darme de baja cuando quiera respondiendo BAJA.
-							</Typography>
-						}
-						sx={{ alignItems: "flex-start", ml: 0, "& .MuiCheckbox-root": { pt: 0.25 } }}
-					/>
-					<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-						<Button size="small" onClick={handleConfirm} disabled={disabled || busy || code.length !== 6 || !acceptOptIn} sx={primaryBtnSx}>
-							{busy ? "Confirmando…" : "Confirmar"}
-						</Button>
-						<Button size="small" onClick={handleStart} disabled={disabled || busy || cooldown > 0 || !available} sx={ghostBtnSx}>
-							{cooldown > 0 ? `Reenviar en ${cooldown}s` : "Reenviar código"}
-						</Button>
+						) : (
+							<Chip size="small" label="Avisos desactivados" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 600 }} />
+						)}
+					</Stack>
+				) : (
+					<Typography sx={smallText}>
+						Recibí un aviso breve por WhatsApp con las carpetas que tienen novedades, además del email. Nunca reemplaza al correo.
+					</Typography>
+				)}
+
+				{status?.availability && !available && !verified && (
+					<Typography sx={{ ...smallText, color: theme.palette.warning.dark }}>
+						La verificación por WhatsApp todavía no está disponible. Vas a poder cargar tu número cuando activemos el canal.
+					</Typography>
+				)}
+
+				{/* Paso 1: número */}
+				{!verified && step === "idle" && (
+					<Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+						<TextField
+							id="whatsapp-phone"
+							size="small"
+							placeholder="+54 9 11 5555 5555"
+							value={phone}
+							onChange={(e) => setPhone(e.target.value)}
+							disabled={disabled || busy || !available}
+							helperText="Con código de país"
+							sx={{ ...inputSx, flex: 1, "& .MuiFormHelperText-root": { fontSize: "0.68rem", mx: 0.5 } }}
+						/>
 						<Button
 							size="small"
-							onClick={() => {
-								setStep("idle");
-								setCode("");
-								setFeedback(null);
-							}}
-							disabled={busy}
-							sx={ghostBtnSx}
+							onClick={handleStart}
+							disabled={disabled || busy || !available || phone.trim().length < 8}
+							sx={{ ...primaryBtnSx, alignSelf: { xs: "flex-start", sm: "center" }, mb: { sm: 2.5 } }}
 						>
-							Cambiar número
+							{busy ? "Enviando…" : "Enviar código"}
 						</Button>
 					</Stack>
-				</Stack>
-			)}
+				)}
 
-			{/* Verificado: reactivar tras una baja / quitar número */}
-			{verified && (
-				<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-					{!optInActive && (
-						<Button size="small" onClick={handleOptIn} disabled={disabled || busy} sx={primaryBtnSx}>
-							{busy ? "Activando…" : "Volver a recibir avisos"}
-						</Button>
-					)}
-					{confirmRemove ? (
-						<>
+				{/* Paso 2: código + consentimiento */}
+				{!verified && step === "code" && (
+					<Stack spacing={1.25}>
+						<Typography sx={smallText}>
+							Ingresá el código que te llegó por WhatsApp al <strong>{phone}</strong>.
+						</Typography>
+						<Box sx={{ maxWidth: 320 }}>
+							<OtpInput
+								value={code}
+								onChange={(value: string) => setCode(value)}
+								numInputs={6}
+								isInputNum
+								isDisabled={disabled || busy}
+								containerStyle={{ justifyContent: "space-between" }}
+								inputStyle={{
+									width: "100%",
+									margin: "2px",
+									padding: "8px 0",
+									fontSize: "1rem",
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.3 : 0.2)}`,
+									borderRadius: 6,
+									background: "transparent",
+									color: theme.palette.text.primary,
+								}}
+								focusStyle={{ outline: "none", border: `1px solid ${BRAND_BLUE}`, boxShadow: `0 0 0 2px ${alpha(BRAND_BLUE, 0.2)}` }}
+							/>
+						</Box>
+						<FormControlLabel
+							control={
+								<Checkbox
+									id="whatsapp-opt-in"
+									size="small"
+									checked={acceptOptIn}
+									onChange={(e) => setAcceptOptIn(e.target.checked)}
+									disabled={disabled || busy}
+									sx={{ color: alpha(BRAND_BLUE, isDark ? 0.4 : 0.32), "&.Mui-checked": { color: BRAND_BLUE } }}
+								/>
+							}
+							label={
+								<Typography sx={{ fontSize: "0.78rem", color: "text.primary" }}>
+									Acepto recibir por WhatsApp los avisos de novedades de mis causas. Puedo darme de baja cuando quiera respondiendo BAJA.
+								</Typography>
+							}
+							sx={{ alignItems: "flex-start", ml: 0, "& .MuiCheckbox-root": { pt: 0.25 } }}
+						/>
+						<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
 							<Button
 								size="small"
-								onClick={handleRemove}
-								disabled={disabled || busy}
-								sx={{ ...ghostBtnSx, color: theme.palette.error.main }}
+								onClick={handleConfirm}
+								disabled={disabled || busy || code.length !== 6 || !acceptOptIn}
+								sx={primaryBtnSx}
 							>
-								{busy ? "Quitando…" : "Sí, quitar el número"}
+								{busy ? "Confirmando…" : "Confirmar"}
 							</Button>
-							<Button size="small" onClick={() => setConfirmRemove(false)} disabled={busy} sx={ghostBtnSx}>
-								Cancelar
+							<Button size="small" onClick={handleStart} disabled={disabled || busy || cooldown > 0 || !available} sx={ghostBtnSx}>
+								{cooldown > 0 ? `Reenviar en ${cooldown}s` : "Reenviar código"}
 							</Button>
-						</>
-					) : (
-						<Button size="small" onClick={() => setConfirmRemove(true)} disabled={disabled || busy} sx={ghostBtnSx}>
-							Quitar número
-						</Button>
-					)}
-				</Stack>
-			)}
+							<Button
+								size="small"
+								onClick={() => {
+									setStep("idle");
+									setCode("");
+									setFeedback(null);
+								}}
+								disabled={busy}
+								sx={ghostBtnSx}
+							>
+								Cambiar número
+							</Button>
+						</Stack>
+					</Stack>
+				)}
 
-			{feedback && (
-				<Typography role={feedback.kind === "error" ? "alert" : "status"} sx={{ fontSize: "0.76rem", color: feedbackColor }}>
-					{feedback.text}
-				</Typography>
-			)}
-		</Stack>
+				{/* Verificado: reactivar tras una baja / quitar número */}
+				{verified && (
+					<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+						{!optInActive && (
+							<Button size="small" onClick={handleOptIn} disabled={disabled || busy} sx={primaryBtnSx}>
+								{busy ? "Activando…" : "Volver a recibir avisos"}
+							</Button>
+						)}
+						{confirmRemove ? (
+							<>
+								<Button
+									size="small"
+									onClick={handleRemove}
+									disabled={disabled || busy}
+									sx={{ ...ghostBtnSx, color: theme.palette.error.main }}
+								>
+									{busy ? "Quitando…" : "Sí, quitar el número"}
+								</Button>
+								<Button size="small" onClick={() => setConfirmRemove(false)} disabled={busy} sx={ghostBtnSx}>
+									Cancelar
+								</Button>
+							</>
+						) : (
+							<Button size="small" onClick={() => setConfirmRemove(true)} disabled={disabled || busy} sx={ghostBtnSx}>
+								Quitar número
+							</Button>
+						)}
+					</Stack>
+				)}
+
+				{feedback && (
+					<Typography role={feedback.kind === "error" ? "alert" : "status"} sx={{ fontSize: "0.76rem", color: feedbackColor }}>
+						{feedback.text}
+					</Typography>
+				)}
+			</Stack>
+		</Box>
 	);
 };
 
