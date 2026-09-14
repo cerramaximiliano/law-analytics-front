@@ -11,14 +11,17 @@ import ApiService, { PhoneApiResponse, PhoneStatus } from "store/reducers/ApiSer
 import { BRAND_BLUE } from "themes/dashboardTokens";
 
 /**
- * Alta del canal WhatsApp dentro de Configuración → Canales: cargar el número,
- * confirmarlo con el código que llega por WhatsApp y aceptar explícitamente
- * los avisos. Mientras el servicio no tenga una línea conectada, el backend
- * responde "no disponible" y acá se muestra tal cual (sin ocultar la opción).
+ * Alta del canal WhatsApp dentro de Configuración → Canales.
+ *
+ * Dos modos, los decide el backend (`availability.mode`):
+ *  - inbound (default): "Verificar por WhatsApp" abre un chat con nuestro número
+ *    y un mensaje ya escrito con el código; al enviarlo, el número queda
+ *    verificado y el consentimiento registrado. El panel consulta el estado
+ *    hasta ver la verificación.
+ *  - outbound: recibe un código de 6 dígitos y lo tipea + checkbox de consentimiento.
  *
  * El switch del canal vive en TabSettings; este panel le avisa cada cambio de
- * estado con `onStatusChange` para que el switch refleje lo que quedó en el
- * servidor (confirmar con consentimiento ya lo prende del lado del backend).
+ * estado con `onStatusChange`.
  */
 
 interface Props {
@@ -30,8 +33,11 @@ interface Props {
 }
 
 type Feedback = { kind: "success" | "error" | "info"; text: string } | null;
+type Step = "idle" | "code" | "inbound";
 
 const RESEND_COOLDOWN_SECONDS = 60;
+const INBOUND_POLL_MS = 4_000;
+const INBOUND_POLL_TIMEOUT_MS = 10 * 60_000;
 
 const toStatus = (res: PhoneApiResponse): PhoneStatus => ({
 	phone: res.phone ?? null,
@@ -56,19 +62,26 @@ const WhatsAppChannelPanel = ({ disabled = false, hidden = false, containerSx, o
 
 	const [loading, setLoading] = useState(true);
 	const [status, setStatus] = useState<PhoneStatus | null>(null);
-	const [step, setStep] = useState<"idle" | "code">("idle");
+	const [step, setStep] = useState<Step>("idle");
 	const [phone, setPhone] = useState("");
 	const [code, setCode] = useState("");
+	const [waLink, setWaLink] = useState<string | null>(null);
 	const [acceptOptIn, setAcceptOptIn] = useState(false);
 	const [busy, setBusy] = useState(false);
 	const [feedback, setFeedback] = useState<Feedback>(null);
 	const [cooldown, setCooldown] = useState(0);
 	const [confirmRemove, setConfirmRemove] = useState(false);
 	const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+	const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
 	const applyStatus = (next: PhoneStatus) => {
 		setStatus(next);
 		onStatusChange?.(next);
+	};
+
+	const stopPolling = () => {
+		if (pollRef.current) clearInterval(pollRef.current);
+		pollRef.current = null;
 	};
 
 	const startCooldown = (seconds: number) => {
@@ -85,6 +98,33 @@ const WhatsAppChannelPanel = ({ disabled = false, hidden = false, containerSx, o
 		}, 1000);
 	};
 
+	// Modo inbound: mientras el usuario envía el mensaje desde WhatsApp, se
+	// consulta el estado hasta ver el número verificado.
+	const startPolling = () => {
+		stopPolling();
+		const deadline = Date.now() + INBOUND_POLL_TIMEOUT_MS;
+		pollRef.current = setInterval(async () => {
+			if (Date.now() > deadline) {
+				stopPolling();
+				setFeedback({
+					kind: "info",
+					text: "No vimos tu mensaje todavía. Si ya lo enviaste, actualizá la página; si no, generá un link nuevo.",
+				});
+				return;
+			}
+			const res = await ApiService.getPhoneStatus();
+			if (!res.success) return;
+			const next = toStatus(res);
+			if (next.phoneVerified) {
+				stopPolling();
+				applyStatus(next);
+				setStep("idle");
+				setWaLink(null);
+				setFeedback({ kind: "success", text: "Número verificado. Vas a recibir las novedades de tus causas por WhatsApp." });
+			}
+		}, INBOUND_POLL_MS);
+	};
+
 	useEffect(() => {
 		let active = true;
 		(async () => {
@@ -95,7 +135,13 @@ const WhatsAppChannelPanel = ({ disabled = false, hidden = false, containerSx, o
 				applyStatus(next);
 				if (next.pendingVerification) {
 					setPhone(next.pendingVerification.phone);
-					setStep("code");
+					if (next.pendingVerification.mode === "inbound") {
+						// Puede que ya haya enviado el mensaje: escuchar sin pedir otro link.
+						setStep("inbound");
+						startPolling();
+					} else {
+						setStep("code");
+					}
 				}
 			} else {
 				setFeedback({ kind: "error", text: responseMessage(res, "No pudimos cargar el estado de WhatsApp") });
@@ -105,11 +151,13 @@ const WhatsAppChannelPanel = ({ disabled = false, hidden = false, containerSx, o
 		return () => {
 			active = false;
 			if (cooldownRef.current) clearInterval(cooldownRef.current);
+			stopPolling();
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	const available = status?.availability?.available === true;
+	const inboundMode = status?.availability?.mode !== "outbound";
 	const verified = status?.phoneVerified === true && !!status?.phone;
 	const optInActive = verified && status?.whatsappOptIn.accepted && !status?.whatsappOptIn.revokedAt;
 
@@ -119,14 +167,21 @@ const WhatsAppChannelPanel = ({ disabled = false, hidden = false, containerSx, o
 		const res = await ApiService.startPhoneVerification(phone);
 		setBusy(false);
 		if (res.success) {
-			setStep("code");
-			setCode("");
 			startCooldown(RESEND_COOLDOWN_SECONDS);
-			setFeedback({ kind: "success", text: responseMessage(res, "Te enviamos un código por WhatsApp") });
+			if (res.mode === "inbound" && res.waLink) {
+				setWaLink(res.waLink);
+				setStep("inbound");
+				startPolling();
+				setFeedback(null);
+			} else {
+				setStep("code");
+				setCode("");
+				setFeedback({ kind: "success", text: responseMessage(res, "Te enviamos un código por WhatsApp") });
+			}
 			return;
 		}
 		if (res.code === "COOLDOWN" && res.retryAfterSeconds) startCooldown(res.retryAfterSeconds);
-		setFeedback({ kind: "error", text: responseMessage(res, "No pudimos enviar el código") });
+		setFeedback({ kind: "error", text: responseMessage(res, "No pudimos iniciar la verificación") });
 	};
 
 	const handleConfirm = async () => {
@@ -176,6 +231,14 @@ const WhatsAppChannelPanel = ({ disabled = false, hidden = false, containerSx, o
 			kind: res.success ? "info" : "error",
 			text: responseMessage(res, res.success ? "Número eliminado" : "No pudimos quitar el número"),
 		});
+	};
+
+	const resetToIdle = () => {
+		stopPolling();
+		setStep("idle");
+		setCode("");
+		setWaLink(null);
+		setFeedback(null);
 	};
 
 	// ── estilos (mismo lenguaje que TabSettings) ──────────────────────────
@@ -284,12 +347,50 @@ const WhatsAppChannelPanel = ({ disabled = false, hidden = false, containerSx, o
 							disabled={disabled || busy || !available || phone.trim().length < 8}
 							sx={{ ...primaryBtnSx, alignSelf: { xs: "flex-start", sm: "center" }, mb: { sm: 2.5 } }}
 						>
-							{busy ? "Enviando…" : "Enviar código"}
+							{busy ? "Un momento…" : inboundMode ? "Verificar por WhatsApp" : "Enviar código"}
 						</Button>
 					</Stack>
 				)}
 
-				{/* Paso 2: código + consentimiento */}
+				{/* Paso 2 (inbound): el usuario envía el mensaje prellenado desde su WhatsApp */}
+				{!verified && step === "inbound" && (
+					<Stack spacing={1.25}>
+						<Typography sx={{ fontSize: "0.82rem", color: "text.primary" }}>
+							Tocá el botón: se abre WhatsApp con un mensaje ya escrito para <strong>{phone}</strong>. Enviálo y volvé a esta pantalla.
+						</Typography>
+						<Typography sx={smallText}>
+							Al enviar ese mensaje aceptás recibir por WhatsApp los avisos de novedades de tus causas. Podés darte de baja cuando quieras
+							respondiendo BAJA.
+						</Typography>
+						<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+							{waLink ? (
+								<Button size="small" component="a" href={waLink} target="_blank" rel="noopener noreferrer" sx={primaryBtnSx}>
+									Abrir WhatsApp
+								</Button>
+							) : (
+								<Button size="small" onClick={handleStart} disabled={disabled || busy || cooldown > 0 || !available} sx={primaryBtnSx}>
+									{cooldown > 0 ? `Generar link en ${cooldown}s` : "Generar link de verificación"}
+								</Button>
+							)}
+							<Stack direction="row" spacing={0.75} alignItems="center">
+								<CircularProgress size={12} sx={{ color: BRAND_BLUE }} />
+								<Typography sx={smallText}>Esperando tu mensaje…</Typography>
+							</Stack>
+						</Stack>
+						<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+							{waLink && (
+								<Button size="small" onClick={handleStart} disabled={disabled || busy || cooldown > 0 || !available} sx={ghostBtnSx}>
+									{cooldown > 0 ? `Nuevo link en ${cooldown}s` : "Generar otro link"}
+								</Button>
+							)}
+							<Button size="small" onClick={resetToIdle} disabled={busy} sx={ghostBtnSx}>
+								Cambiar número
+							</Button>
+						</Stack>
+					</Stack>
+				)}
+
+				{/* Paso 2 (outbound): código + consentimiento */}
 				{!verified && step === "code" && (
 					<Stack spacing={1.25}>
 						<Typography sx={smallText}>
@@ -346,16 +447,7 @@ const WhatsAppChannelPanel = ({ disabled = false, hidden = false, containerSx, o
 							<Button size="small" onClick={handleStart} disabled={disabled || busy || cooldown > 0 || !available} sx={ghostBtnSx}>
 								{cooldown > 0 ? `Reenviar en ${cooldown}s` : "Reenviar código"}
 							</Button>
-							<Button
-								size="small"
-								onClick={() => {
-									setStep("idle");
-									setCode("");
-									setFeedback(null);
-								}}
-								disabled={busy}
-								sx={ghostBtnSx}
-							>
+							<Button size="small" onClick={resetToIdle} disabled={busy} sx={ghostBtnSx}>
 								Cambiar número
 							</Button>
 						</Stack>

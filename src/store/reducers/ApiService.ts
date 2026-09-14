@@ -222,9 +222,12 @@ export interface PhoneStatus {
 		revokedAt: string | null;
 	};
 	channelEnabled: boolean;
-	pendingVerification: { phone: string; expiresAt: string } | null;
-	/** Si el canal puede mandar un código ahora (hay línea conectada, etc.) */
-	availability?: { available: boolean; reason: string | null };
+	pendingVerification: { phone: string; expiresAt: string; mode?: "inbound" | "outbound" } | null;
+	/**
+	 * Si el canal puede verificar ahora y cómo: 'inbound' = el usuario envía un
+	 * mensaje prellenado desde su WhatsApp (link wa.me); 'outbound' = recibe un código.
+	 */
+	availability?: { available: boolean; reason: string | null; mode?: "inbound" | "outbound" | null; number?: string | null };
 	/** Piloto: si este usuario puede inscribirse (inscripción abierta o grant). Sin inscripción y sin número, la opción no se muestra */
 	enrollment?: { allowed: boolean };
 }
@@ -243,6 +246,11 @@ export interface PhoneApiResponse extends Partial<PhoneStatus> {
 	reason?: string;
 	retryAfterSeconds?: number;
 	expiresAt?: string;
+	/** verify/start: cómo sigue la verificación */
+	mode?: "inbound" | "outbound";
+	/** verify/start en modo inbound: link wa.me con el mensaje prellenado */
+	waLink?: string;
+	number?: string;
 	httpStatus: number;
 }
 
