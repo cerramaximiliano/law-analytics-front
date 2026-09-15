@@ -146,6 +146,16 @@ import { getPjnBindingState, PJN_BINDING_COPY, pjnFailedCopy, PJN_PROFILE_PATH }
 import { getScbaBindingState, SCBA_BINDING_COPY, SCBA_PROFILE_PATH } from "utils/scbaBindingState";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 import { usePjnCredentialError } from "hooks/usePjnCredentialError";
+// Logos de portal reutilizados de judicialPowerSelection.tsx / LinkToJudicialPower.tsx —
+// mismo asset para PJN / EJE / PJ Salta (URLs de Cloudinary) y los archivos locales
+// para SCBA+MEV (comparten el logo de Buenos Aires) / PJ Catamarca / PJ Mendoza.
+import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
+import logoPJCatamarca from "assets/images/logos/logo_pj_catamarca.png";
+import logoPJMendoza from "assets/images/logos/logo_pj_mendoza.png";
+const PJN_LOGO_URL = "https://res.cloudinary.com/dqyoeolib/image/upload/v1746884259/xndhymcmzv3kk0f62v0y.png";
+const EJE_LOGO_URL = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
+const PJSALTA_LOGO_URL =
+	"https://res.cloudinary.com/dqyoeolib/image/upload/v1779137783/ChatGPT_Image_18_may_2026__05_52_35_p.m.-removebg-preview_bngpqd.png";
 
 /**
  * Segunda línea de la columna Jurisdicción / opción del filtro Departamento:
@@ -364,6 +374,12 @@ function ReactTable({
 	const csvLinkRef = useRef<any>(null);
 	const g1ButtonRef = useRef<HTMLButtonElement>(null);
 	const g2StackRef = useRef<HTMLDivElement>(null);
+	// Estado de credencial SCBA/PJN del usuario (cache singleton con TTL, ver
+	// useScbaCredentialError) — para el ícono superpuesto del badge de fuente en
+	// las cards mobile. Llamarlo acá también es seguro: el hook está diseñado
+	// para que N call-sites no dupliquen el fetch al backend.
+	const scbaCredError = useScbaCredentialError();
+	const pjnCredError = usePjnCredentialError();
 	// Mobile overflow menu
 	const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null);
 	const mobileMenuOpen = Boolean(mobileMenuAnchor);
@@ -1360,50 +1376,130 @@ function ReactTable({
 						// Chip de estado — replica el patrón brand-aware del desktop.
 						const statusChip = folder.status ? <StatusPill status={folder.status} /> : null;
 
-						// Badge de fuente (PJN / MEV / EJE / SCBA / PJ Salta) — patrón monocromo
-						// brand con dot indicador. Replica el live-dot del landing (integraciones).
-						const sourceLabel = folder.pjn
-							? "PJN"
+						// Badge de fuente (PJN / MEV / EJE / SCBA / PJ Salta / Catamarca / Mendoza) —
+						// ícono del portal (mismo logo que judicialPowerSelection.tsx /
+						// LinkToJudicialPower.tsx) con el estado de vinculación superpuesto
+						// abajo a la derecha, igual patrón que el verifyIcon de BindingPill
+						// (FolderView.tsx). Reemplaza el chip de texto anterior — "PJ CATAMARCA"
+						// o "PJ MENDOZA" competían por espacio con el nombre de la carpeta en
+						// esta misma fila del header de la card.
+						const sourceKind = folder.pjn
+							? "pjn"
 							: folder.mev
-							? "MEV"
+							? "mev"
 							: folder.eje
-							? "EJE"
+							? "eje"
 							: folder.scba
-							? "SCBA"
+							? "scba"
 							: folder.pjsalta
-							? "PJ SALTA"
+							? "pjsalta"
 							: folder.pjcatamarca
-							? "PJ CATAMARCA"
+							? "pjcatamarca"
 							: folder.pjmendoza
-							? "PJ MENDOZA"
+							? "pjmendoza"
 							: null;
-						const sourceBadge = sourceLabel ? (
-							<Box
-								sx={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: 0.6,
-									px: 0.75,
-									height: 20,
-									borderRadius: 0.75,
-									bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.14 : 0.08),
-									border: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.32 : 0.2)}`,
-								}}
-							>
-								<Box aria-hidden sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: BRAND_BLUE, flexShrink: 0 }} />
-								<Typography
-									sx={{
-										fontSize: "0.62rem",
-										fontWeight: 600,
-										letterSpacing: "0.08em",
-										color: BRAND_BLUE,
-										lineHeight: 1,
-										fontVariantNumeric: "tabular-nums",
-									}}
-								>
-									{sourceLabel}
-								</Typography>
-							</Box>
+						const sourceMeta: { label: string; logo: string; bg: string } | null = !sourceKind
+							? null
+							: sourceKind === "pjn"
+							? { label: "PJN", logo: PJN_LOGO_URL, bg: "#222E43" }
+							: sourceKind === "scba" || sourceKind === "mev"
+							? { label: sourceKind === "scba" ? "SCBA" : "MEV", logo: logoPJBuenosAires, bg: "#f8f8f8" }
+							: sourceKind === "eje"
+							? { label: "EJE", logo: EJE_LOGO_URL, bg: "#ffffff" }
+							: sourceKind === "pjsalta"
+							? { label: "PJ Salta", logo: PJSALTA_LOGO_URL, bg: "#ffffff" }
+							: sourceKind === "pjcatamarca"
+							? { label: "PJ Catamarca", logo: logoPJCatamarca, bg: "#ffffff" }
+							: { label: "PJ Mendoza", logo: logoPJMendoza, bg: "#ffffff" };
+						// Estado superpuesto — señal simplificada (ok / atención) para un
+						// vistazo rápido en la card colapsada; los matices completos por
+						// jurisdicción (revoked, reserved, pending_selection, etc.) siguen
+						// viviendo en la fila expandida (FolderView.tsx renderBinding).
+						const sourceStatus: { accent: string; tooltip: string; kind: "ok" | "warn" } | null = !sourceKind
+							? null
+							: sourceKind === "pjn"
+							? (() => {
+									const state = getPjnBindingState(folder, { credError: pjnCredError.hasError });
+									if (state === "ok") return { accent: LIVE_GREEN, tooltip: PJN_BINDING_COPY.ok, kind: "ok" as const };
+									if (state === "reserved" || state === "failed")
+										return {
+											accent: theme.palette.error.main,
+											tooltip: pjnFailedCopy(folder) || PJN_BINDING_COPY.reserved,
+											kind: "warn" as const,
+										};
+									return { accent: STALE_AMBER, tooltip: (state && PJN_BINDING_COPY[state]) || "Requiere atención", kind: "warn" as const };
+							  })()
+							: sourceKind === "scba"
+							? (() => {
+									const state = getScbaBindingState(folder, { credError: scbaCredError.hasError });
+									return state === "ok"
+										? { accent: LIVE_GREEN, tooltip: SCBA_BINDING_COPY.ok, kind: "ok" as const }
+										: { accent: STALE_AMBER, tooltip: (state && SCBA_BINDING_COPY[state]) || "Requiere atención", kind: "warn" as const };
+							  })()
+							: sourceKind === "mev"
+							? (() => {
+									const issue = mevCredIssue(folder);
+									return issue
+										? { accent: STALE_AMBER, tooltip: "Requiere atención", kind: "warn" as const }
+										: { accent: LIVE_GREEN, tooltip: "Vinculado con MEV", kind: "ok" as const };
+							  })()
+							: folder.causaAssociationStatus === "pending_selection"
+							? { accent: STALE_AMBER, tooltip: "Elegí el expediente correcto", kind: "warn" as const }
+							: folder.listRemoved
+							? { accent: STALE_AMBER, tooltip: "El portal ya no encuentra esta causa", kind: "warn" as const }
+							: folder.causaVerified === false && folder.causaIsValid === false
+							? { accent: theme.palette.error.main, tooltip: "Vinculación fallida", kind: "warn" as const }
+							: { accent: LIVE_GREEN, tooltip: `Vinculado con ${sourceMeta?.label}`, kind: "ok" as const };
+						const sourceBadge = sourceMeta ? (
+							<Tooltip title={sourceStatus ? `${sourceMeta.label} — ${sourceStatus.tooltip}` : sourceMeta.label}>
+								<Box sx={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
+									<Box
+										sx={{
+											width: 24,
+											height: 24,
+											borderRadius: "50%",
+											overflow: "hidden",
+											bgcolor: sourceMeta.bg,
+											border: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.32 : 0.2)}`,
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											flexShrink: 0,
+										}}
+									>
+										<Box
+											component="img"
+											src={sourceMeta.logo}
+											alt={sourceMeta.label}
+											sx={{ width: "72%", height: "72%", objectFit: "contain" }}
+										/>
+									</Box>
+									{sourceStatus && (
+										<Box
+											aria-hidden
+											sx={{
+												position: "absolute",
+												bottom: -3,
+												right: -3,
+												width: 14,
+												height: 14,
+												borderRadius: "50%",
+												bgcolor: sourceStatus.accent,
+												border: `1.5px solid ${theme.palette.background.paper}`,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+											}}
+										>
+											{sourceStatus.kind === "ok" ? (
+												<TickCircle size={9} variant="Bold" color="#fff" />
+											) : (
+												<Warning2 size={9} variant="Bold" color="#fff" />
+											)}
+										</Box>
+									)}
+								</Box>
+							</Tooltip>
 						) : null;
 
 						// Último movimiento formateado
