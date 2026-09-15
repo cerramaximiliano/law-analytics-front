@@ -4,7 +4,7 @@ import { Box, Stack, Typography, LinearProgress, Chip, Skeleton, Tooltip } from 
 import { alpha, useTheme } from "@mui/material/styles";
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
-import { FolderOpen, Profile2User, Calculator, StatusUp, TickCircle, Add, Warning2, ArrowDown2 } from "iconsax-react";
+import { FolderOpen, Profile2User, Calculator, StatusUp, TickCircle, Add, Warning2, ArrowRight2 } from "iconsax-react";
 import { useSelector, dispatch } from "store";
 import { fetchUserStats } from "store/reducers/userStats";
 import { cleanPlanDisplayName } from "utils/planPricingUtils";
@@ -257,9 +257,11 @@ export const FoldersSyncBadges = ({
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	// IOL-8: PJN/BA/CABA quedan siempre visibles (son las jurisdicciones con más
-	// tráfico); Salta/Catamarca/Mendoza — mismas "shortcut" pills que CABA, sin
-	// cuenta propia — quedan detrás de este toggle. Ni mobile ni desktop tienen
-	// espacio cómodo para 6 pills en una sola fila sin que se vea amontonado.
+	// tráfico y las únicas con estado de cuenta real); Salta/Catamarca/Mendoza —
+	// mismas "shortcut" pills que CABA, sin cuenta propia — aparecen al tocar la
+	// flecha y se invisibilizan (no sólo se ocultan visualmente: no se renderizan)
+	// al volver a tocarla. Reemplaza el botón "+3 / Menos" — se pidió algo más
+	// parecido a un control de carrusel, sin texto.
 	const [showMoreJurisdictions, setShowMoreJurisdictions] = useState(false);
 	// null = cargando. "attention" = cred vinculada pero rechazada/expirada:
 	// el badge avisa y el click lleva a Integraciones a actualizarla.
@@ -474,23 +476,23 @@ export const FoldersSyncBadges = ({
 				state="shortcut"
 				onClick={onCabaClick}
 			/>
-			<Tooltip title={showMoreJurisdictions ? "Mostrar menos jurisdicciones" : "Mostrar más jurisdicciones"} arrow placement="top">
+			<Tooltip title={showMoreJurisdictions ? "Volver" : `Ver ${EXTRA_JURISDICTIONS_COUNT} jurisdicciones más`} arrow placement="top">
 				<Box
 					component="button"
 					onClick={() => setShowMoreJurisdictions((v) => !v)}
-					aria-label={showMoreJurisdictions ? "Mostrar menos jurisdicciones" : `Mostrar ${EXTRA_JURISDICTIONS_COUNT} jurisdicciones más`}
+					aria-label={showMoreJurisdictions ? "Ocultar jurisdicciones adicionales" : `Ver ${EXTRA_JURISDICTIONS_COUNT} jurisdicciones más`}
 					aria-expanded={showMoreJurisdictions}
 					sx={{
 						display: "inline-flex",
 						alignItems: "center",
-						gap: 0.375,
+						justifyContent: "center",
+						width: 34,
 						height: 34,
-						px: 1,
-						borderRadius: 1.25,
+						borderRadius: "50%",
 						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.24 : 0.16)}`,
 						bgcolor: theme.palette.background.paper,
 						cursor: "pointer",
-						transition: "background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease",
+						transition: "background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease",
 						flexShrink: 0,
 						font: "inherit",
 						appearance: "none",
@@ -499,20 +501,20 @@ export const FoldersSyncBadges = ({
 							bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.09),
 							borderColor: alpha(BRAND_BLUE, isDark ? 0.42 : 0.28),
 						},
-						"&:active": { transform: "scale(0.97)" },
+						"&:active": { transform: "scale(0.9)" },
 						"&:focus-visible": {
 							outline: `2px solid ${alpha(BRAND_BLUE, 0.45)}`,
 							outlineOffset: 2,
 						},
 					}}
 				>
-					<Typography sx={{ fontSize: "0.72rem", fontWeight: 700, color: "inherit", fontVariantNumeric: "tabular-nums" }}>
-						{showMoreJurisdictions ? "Menos" : `+${EXTRA_JURISDICTIONS_COUNT}`}
-					</Typography>
-					<ArrowDown2
-						size={13}
+					{/* Apunta hacia "las otras opciones" y se da vuelta 180° al
+					    expandir — misma flecha vuelve a apuntar "hacia atrás" para
+					    volver, sin necesitar texto "más/menos". */}
+					<ArrowRight2
+						size={16}
 						variant="Bold"
-						style={{ transform: showMoreJurisdictions ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }}
+						style={{ transform: showMoreJurisdictions ? "rotate(180deg)" : "none", transition: "transform 0.2s ease" }}
 					/>
 				</Box>
 			</Tooltip>
