@@ -64,29 +64,60 @@ const FirstSyncBanner = ({ userId, folder }: FirstSyncBannerProps) => {
 	};
 
 	const movs = folder.movementsCount;
+	const title = `Tu primera causa ya tiene ${movs} ${movs === 1 ? "movimiento" : "movimientos"}`;
+
+	// Layout: en desktop una sola fila (ícono · texto · acciones). En móvil la fila
+	// no entra y cada pieza quedaba apilada en franjas: ahora el título lleva el
+	// ícono al lado, la carátula va en una línea con elipsis y las acciones en
+	// una fila propia debajo, alineadas a la derecha.
+	const dismissButton = (
+		<IconButton size="small" aria-label="Cerrar aviso" onClick={markSeen} sx={{ color: "text.secondary" }}>
+			<CloseCircle size={18} variant="Bulk" />
+		</IconButton>
+	);
+	const activityButton = (
+		<Button
+			variant="text"
+			size="small"
+			onClick={goToActivity}
+			endIcon={<ArrowRight size={14} />}
+			sx={{
+				color: BRAND_BLUE,
+				fontWeight: 600,
+				fontSize: "0.85rem",
+				textTransform: "none",
+				whiteSpace: "nowrap",
+				"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.06) },
+			}}
+		>
+			Ver movimientos
+		</Button>
+	);
 
 	return (
 		<Box
 			role="status"
 			sx={{
 				display: "flex",
-				alignItems: { xs: "flex-start", sm: "center" },
-				gap: 1.5,
+				flexDirection: { xs: "column", sm: "row" },
+				alignItems: { xs: "stretch", sm: "center" },
+				gap: { xs: 0.75, sm: 1.5 },
 				px: { xs: 2, sm: 2.5 },
-				py: { xs: 1.75, sm: 1.5 },
+				py: { xs: 1.5, sm: 1.5 },
 				borderRadius: 1.5,
 				bgcolor: alpha(LIVE_GREEN, isDark ? 0.1 : 0.06),
 				border: `1px solid ${alpha(LIVE_GREEN, isDark ? 0.32 : 0.24)}`,
 			}}
 		>
+			{/* Ícono grande sólo en desktop; en móvil va embebido en el título */}
 			<Box
 				sx={{
+					display: { xs: "none", sm: "flex" },
 					width: 32,
 					height: 32,
 					borderRadius: "50%",
 					bgcolor: LIVE_GREEN,
 					color: "#fff",
-					display: "flex",
 					alignItems: "center",
 					justifyContent: "center",
 					flexShrink: 0,
@@ -97,34 +128,54 @@ const FirstSyncBanner = ({ userId, folder }: FirstSyncBannerProps) => {
 			</Box>
 
 			<Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
-				<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary", textWrap: "balance" }}>
-					Tu primera causa ya tiene {movs} {movs === 1 ? "movimiento" : "movimientos"}
-				</Typography>
-				<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>
-					{folder.folderName ? `${folder.folderName}. ` : ""}A partir de ahora te avisamos de cada novedad que aparezca en el portal.
+				<Stack direction="row" alignItems="center" spacing={1}>
+					<Box sx={{ display: { xs: "inline-flex", sm: "none" }, color: LIVE_GREEN, flexShrink: 0 }}>
+						<TickCircle size={20} variant="Bold" color={LIVE_GREEN} />
+					</Box>
+					<Typography
+						sx={{
+							flex: 1,
+							minWidth: 0,
+							fontSize: { xs: "0.875rem", sm: "0.95rem" },
+							lineHeight: 1.3,
+							fontWeight: 600,
+							letterSpacing: "-0.01em",
+							color: "text.primary",
+						}}
+					>
+						{title}
+					</Typography>
+					<Box sx={{ display: { xs: "inline-flex", sm: "none" }, mr: -1 }}>{dismissButton}</Box>
+				</Stack>
+				{folder.folderName && (
+					<Typography
+						title={folder.folderName}
+						sx={{
+							fontSize: "0.85rem",
+							color: "text.secondary",
+							lineHeight: 1.5,
+							whiteSpace: { xs: "nowrap", sm: "normal" },
+							overflow: "hidden",
+							textOverflow: "ellipsis",
+						}}
+					>
+						{folder.folderName}
+					</Typography>
+				)}
+				<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", lineHeight: 1.5, display: { xs: "none", sm: "block" } }}>
+					A partir de ahora te avisamos de cada novedad que aparezca en el portal.
 				</Typography>
 			</Stack>
 
-			<Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexShrink: 0 }}>
-				<Button
-					variant="text"
-					size="small"
-					onClick={goToActivity}
-					endIcon={<ArrowRight size={14} />}
-					sx={{
-						color: BRAND_BLUE,
-						fontWeight: 600,
-						fontSize: "0.85rem",
-						textTransform: "none",
-						whiteSpace: "nowrap",
-						"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.06) },
-					}}
-				>
-					Ver movimientos
-				</Button>
-				<IconButton size="small" aria-label="Cerrar aviso" onClick={markSeen} sx={{ color: "text.secondary" }}>
-					<CloseCircle size={18} variant="Bulk" />
-				</IconButton>
+			{/* Acciones: fila propia en móvil, al final de la fila en desktop */}
+			<Stack
+				direction="row"
+				alignItems="center"
+				spacing={0.5}
+				sx={{ flexShrink: 0, justifyContent: { xs: "flex-end", sm: "flex-start" }, mr: { xs: -1, sm: 0 } }}
+			>
+				{activityButton}
+				<Box sx={{ display: { xs: "none", sm: "inline-flex" } }}>{dismissButton}</Box>
 			</Stack>
 		</Box>
 	);
