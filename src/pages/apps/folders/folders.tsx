@@ -2528,6 +2528,33 @@ const FoldersLayout = () => {
 		setFolder(null);
 	}, []);
 
+	// IOL-8: mismo patrón que handleOpenCabaFolder — abren el wizard de alta con
+	// la jurisdicción IOL pre-seleccionada. Detrás del toggle "mostrar más" del
+	// sync bar (FoldersSyncBadges), ver ResourceUsageWidget.tsx.
+	const handleOpenSaltaFolder = useCallback(() => {
+		setAddFolderInitialStep(2);
+		setAddFolderInitialFormValues({ entryMethod: "automatic", judicialPower: "salta" });
+		setAdd(true);
+		setAddFolderMode("add");
+		setFolder(null);
+	}, []);
+
+	const handleOpenCatamarcaFolder = useCallback(() => {
+		setAddFolderInitialStep(2);
+		setAddFolderInitialFormValues({ entryMethod: "automatic", judicialPower: "catamarca" });
+		setAdd(true);
+		setAddFolderMode("add");
+		setFolder(null);
+	}, []);
+
+	const handleOpenMendozaFolder = useCallback(() => {
+		setAddFolderInitialStep(2);
+		setAddFolderInitialFormValues({ entryMethod: "automatic", judicialPower: "mendoza" });
+		setAdd(true);
+		setAddFolderMode("add");
+		setFolder(null);
+	}, []);
+
 	// Auto-abrir modal AddFolder cuando se llega desde el onboarding checklist
 	// con `?onboarding=true&action=create&jurisdiction=PJN|MEV|EJE`. El click en
 	// el logo de cada jurisdicción en el step "Conectar con el Poder Judicial"
@@ -4234,6 +4261,9 @@ const FoldersLayout = () => {
 								onCabaClick={canCreate ? handleOpenCabaFolder : undefined}
 								onBaClick={canCreate ? handleOpenBaFolder : undefined}
 								onPjnClick={canCreate ? handleOpenPjnFolder : undefined}
+								onSaltaClick={canCreate ? handleOpenSaltaFolder : undefined}
+								onCatamarcaClick={canCreate ? handleOpenCatamarcaFolder : undefined}
+								onMendozaClick={canCreate ? handleOpenMendozaFolder : undefined}
 							/>
 						</Box>
 					</Stack>

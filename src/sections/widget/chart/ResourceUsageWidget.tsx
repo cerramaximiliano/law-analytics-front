@@ -4,7 +4,7 @@ import { Box, Stack, Typography, LinearProgress, Chip, Skeleton, Tooltip } from 
 import { alpha, useTheme } from "@mui/material/styles";
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
-import { FolderOpen, Profile2User, Calculator, StatusUp, TickCircle, Add, Warning2 } from "iconsax-react";
+import { FolderOpen, Profile2User, Calculator, StatusUp, TickCircle, Add, Warning2, ArrowDown2 } from "iconsax-react";
 import { useSelector, dispatch } from "store";
 import { fetchUserStats } from "store/reducers/userStats";
 import { cleanPlanDisplayName } from "utils/planPricingUtils";
@@ -12,6 +12,10 @@ import { useNavigate } from "react-router-dom";
 import pjnCredentialsService from "api/pjnCredentials";
 import scbaCredentialsService from "api/scbaCredentials";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
+// IOL-8: mismos assets que judicialPowerSelection.tsx / LinkToJudicialPower.tsx
+// para las jurisdicciones que quedan detrás del toggle "mostrar más".
+import logoPJCatamarca from "assets/images/logos/logo_pj_catamarca.png";
+import logoPJMendoza from "assets/images/logos/logo_pj_mendoza.png";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import { isScbaConnected, isScbaCredentialBroken, SCBA_PROFILE_PATH } from "utils/scbaBindingState";
 
@@ -19,6 +23,8 @@ import { isScbaConnected, isScbaCredentialBroken, SCBA_PROFILE_PATH } from "util
 
 const PJN_LOGO_URL = "https://res.cloudinary.com/dqyoeolib/image/upload/v1746884259/xndhymcmzv3kk0f62v0y.png";
 const CABA_LOGO_URL = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
+const PJSALTA_LOGO_URL =
+	"https://res.cloudinary.com/dqyoeolib/image/upload/v1779137783/ChatGPT_Image_18_may_2026__05_52_35_p.m.-removebg-preview_bngpqd.png";
 
 // ==============================|| TYPES ||============================== //
 
@@ -31,6 +37,11 @@ interface ResourceUsageBarProps {
 	onCabaClick?: () => void;
 	onBaClick?: () => void;
 	onPjnClick?: () => void;
+	// IOL-8: jurisdicciones sin cuenta (shortcut para agregar causa individual),
+	// igual patrón que onCabaClick — detrás del toggle "mostrar más" de FoldersSyncBadges.
+	onSaltaClick?: () => void;
+	onCatamarcaClick?: () => void;
+	onMendozaClick?: () => void;
 	/** Deshabilita el padding horizontal interno cuando el contenedor padre ya provee el suyo. */
 	disableContainerPadding?: boolean;
 }
@@ -231,8 +242,25 @@ export const FoldersSyncBadges = ({
 	onCabaClick,
 	onBaClick,
 	onPjnClick,
-}: { onCabaClick?: () => void; onBaClick?: () => void; onPjnClick?: () => void } = {}) => {
+	onSaltaClick,
+	onCatamarcaClick,
+	onMendozaClick,
+}: {
+	onCabaClick?: () => void;
+	onBaClick?: () => void;
+	onPjnClick?: () => void;
+	onSaltaClick?: () => void;
+	onCatamarcaClick?: () => void;
+	onMendozaClick?: () => void;
+} = {}) => {
 	const navigate = useNavigate();
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	// IOL-8: PJN/BA/CABA quedan siempre visibles (son las jurisdicciones con más
+	// tráfico); Salta/Catamarca/Mendoza — mismas "shortcut" pills que CABA, sin
+	// cuenta propia — quedan detrás de este toggle. Ni mobile ni desktop tienen
+	// espacio cómodo para 6 pills en una sola fila sin que se vea amontonado.
+	const [showMoreJurisdictions, setShowMoreJurisdictions] = useState(false);
 	// null = cargando. "attention" = cred vinculada pero rechazada/expirada:
 	// el badge avisa y el click lleva a Integraciones a actualizarla.
 	type AccountState = "connected" | "attention" | "disconnected";
@@ -369,6 +397,54 @@ export const FoldersSyncBadges = ({
 		}
 	};
 
+	// IOL-8: las 3 jurisdicciones "extra" son todas shortcut (sin cuenta propia),
+	// igual patrón que CABA — un click abre el wizard de alta con esa jurisdicción
+	// pre-seleccionada (ver handleOpen{Salta,Catamarca,Mendoza}Folder en folders.tsx).
+	const extraJurisdictionPills = (
+		<>
+			<JurisdictionPill
+				logoSrc={PJSALTA_LOGO_URL}
+				alt="PJ Salta"
+				logoBg="#ffffff"
+				label="Salta"
+				tooltip={
+					onSaltaClick
+						? "PJ Salta · Poder Judicial de Salta — Click para agregar una causa individual"
+						: "PJ Salta · Poder Judicial de Salta"
+				}
+				state="shortcut"
+				onClick={onSaltaClick}
+			/>
+			<JurisdictionPill
+				logoSrc={logoPJCatamarca}
+				alt="PJ Catamarca"
+				logoBg="#ffffff"
+				label="Catamarca"
+				tooltip={
+					onCatamarcaClick
+						? "PJ Catamarca · Poder Judicial de Catamarca — Click para agregar una causa individual"
+						: "PJ Catamarca · Poder Judicial de Catamarca"
+				}
+				state="shortcut"
+				onClick={onCatamarcaClick}
+			/>
+			<JurisdictionPill
+				logoSrc={logoPJMendoza}
+				alt="PJ Mendoza"
+				logoBg="#ffffff"
+				label="Mendoza"
+				tooltip={
+					onMendozaClick
+						? "PJ Mendoza · Poder Judicial de Mendoza — Click para agregar una causa individual"
+						: "PJ Mendoza · Poder Judicial de Mendoza"
+				}
+				state="shortcut"
+				onClick={onMendozaClick}
+			/>
+		</>
+	);
+	const EXTRA_JURISDICTIONS_COUNT = 3;
+
 	return (
 		<Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap" useFlexGap>
 			<JurisdictionPill
@@ -398,6 +474,49 @@ export const FoldersSyncBadges = ({
 				state="shortcut"
 				onClick={onCabaClick}
 			/>
+			<Tooltip title={showMoreJurisdictions ? "Mostrar menos jurisdicciones" : "Mostrar más jurisdicciones"} arrow placement="top">
+				<Box
+					component="button"
+					onClick={() => setShowMoreJurisdictions((v) => !v)}
+					aria-label={showMoreJurisdictions ? "Mostrar menos jurisdicciones" : `Mostrar ${EXTRA_JURISDICTIONS_COUNT} jurisdicciones más`}
+					aria-expanded={showMoreJurisdictions}
+					sx={{
+						display: "inline-flex",
+						alignItems: "center",
+						gap: 0.375,
+						height: 34,
+						px: 1,
+						borderRadius: 1.25,
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.24 : 0.16)}`,
+						bgcolor: theme.palette.background.paper,
+						cursor: "pointer",
+						transition: "background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease",
+						flexShrink: 0,
+						font: "inherit",
+						appearance: "none",
+						color: alpha(BRAND_BLUE, isDark ? 0.85 : 0.7),
+						"&:hover": {
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.09),
+							borderColor: alpha(BRAND_BLUE, isDark ? 0.42 : 0.28),
+						},
+						"&:active": { transform: "scale(0.97)" },
+						"&:focus-visible": {
+							outline: `2px solid ${alpha(BRAND_BLUE, 0.45)}`,
+							outlineOffset: 2,
+						},
+					}}
+				>
+					<Typography sx={{ fontSize: "0.72rem", fontWeight: 700, color: "inherit", fontVariantNumeric: "tabular-nums" }}>
+						{showMoreJurisdictions ? "Menos" : `+${EXTRA_JURISDICTIONS_COUNT}`}
+					</Typography>
+					<ArrowDown2
+						size={13}
+						variant="Bold"
+						style={{ transform: showMoreJurisdictions ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }}
+					/>
+				</Box>
+			</Tooltip>
+			{showMoreJurisdictions && extraJurisdictionPills}
 		</Stack>
 	);
 };
@@ -411,6 +530,9 @@ export const ResourceUsageBar = ({
 	onCabaClick,
 	onBaClick,
 	onPjnClick,
+	onSaltaClick,
+	onCatamarcaClick,
+	onMendozaClick,
 	disableContainerPadding = false,
 }: ResourceUsageBarProps) => {
 	const theme = useTheme();
@@ -509,7 +631,14 @@ export const ResourceUsageBar = ({
 			    línea. Escala bien cuando se sumen más jurisdicciones. */}
 			{isFolders && compact && (
 				<Box sx={{ mt: 1.25, display: "flex", justifyContent: { xs: "flex-start", md: "flex-end" } }}>
-					<FoldersSyncBadges onCabaClick={onCabaClick} onBaClick={onBaClick} onPjnClick={onPjnClick} />
+					<FoldersSyncBadges
+						onCabaClick={onCabaClick}
+						onBaClick={onBaClick}
+						onPjnClick={onPjnClick}
+						onSaltaClick={onSaltaClick}
+						onCatamarcaClick={onCatamarcaClick}
+						onMendozaClick={onMendozaClick}
+					/>
 				</Box>
 			)}
 		</Box>
