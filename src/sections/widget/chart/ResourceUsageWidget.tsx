@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { isPjnConnected, isPjnCredentialBroken } from "utils/pjnBindingState";
 import { Box, Stack, Typography, LinearProgress, Chip, Skeleton, Tooltip } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
@@ -256,13 +256,36 @@ export const FoldersSyncBadges = ({
 	const navigate = useNavigate();
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
-	// IOL-8: PJN/BA/CABA quedan siempre visibles (son las jurisdicciones con más
-	// tráfico y las únicas con estado de cuenta real); Salta/Catamarca/Mendoza —
-	// mismas "shortcut" pills que CABA, sin cuenta propia — aparecen al tocar la
-	// flecha y se invisibilizan (no sólo se ocultan visualmente: no se renderizan)
-	// al volver a tocarla. Reemplaza el botón "+3 / Menos" — se pidió algo más
-	// parecido a un control de carrusel, sin texto.
+	// IOL-8: carrusel de 2 "páginas" — PJN/BA/CABA (tráfico alto + estado de
+	// cuenta real) y Salta/Catamarca/Mendoza (shortcuts, igual patrón que CABA).
+	// Reemplaza dos intentos previos: un botón "+3/Menos" que no encajaba visualmente,
+	// y luego un toggle show/hide que agregaba una fila nueva abajo (el Stack tenía
+	// flexWrap) y aparecía/desaparecía de golpe. Ahora es un slide real: ambas
+	// páginas están montadas una al lado de la otra dentro de un viewport de ancho
+	// fijo con overflow oculto, y sólo se anima `translateX` — la saliente se ve
+	// desplazarse hacia afuera mientras la entrante se desliza adentro, sin nunca
+	// ocupar una segunda línea (el viewport no crece).
 	const [showMoreJurisdictions, setShowMoreJurisdictions] = useState(false);
+	const page0Ref = useRef<HTMLDivElement>(null);
+	const page1Ref = useRef<HTMLDivElement>(null);
+	const [slotWidth, setSlotWidth] = useState(0);
+
+	// Mide el ancho natural de cada página (varía: "Catamarca" es bastante más
+	// larga que "BA") y usa el más ancho como ancho fijo del viewport, para que
+	// el slide no recorte contenido de ninguna de las dos. Vuelve a medir si
+	// cambia el contenido (ej. tooltip/label por i18n futuro) via ResizeObserver.
+	useLayoutEffect(() => {
+		const measure = () => {
+			const w0 = page0Ref.current?.scrollWidth ?? 0;
+			const w1 = page1Ref.current?.scrollWidth ?? 0;
+			setSlotWidth(Math.max(w0, w1));
+		};
+		measure();
+		const ro = new ResizeObserver(measure);
+		if (page0Ref.current) ro.observe(page0Ref.current);
+		if (page1Ref.current) ro.observe(page1Ref.current);
+		return () => ro.disconnect();
+	}, []);
 	// null = cargando. "attention" = cred vinculada pero rechazada/expirada:
 	// el badge avisa y el click lleva a Integraciones a actualizarla.
 	type AccountState = "connected" | "attention" | "disconnected";
@@ -399,83 +422,104 @@ export const FoldersSyncBadges = ({
 		}
 	};
 
-	// IOL-8: las 3 jurisdicciones "extra" son todas shortcut (sin cuenta propia),
-	// igual patrón que CABA — un click abre el wizard de alta con esa jurisdicción
-	// pre-seleccionada (ver handleOpen{Salta,Catamarca,Mendoza}Folder en folders.tsx).
-	const extraJurisdictionPills = (
-		<>
-			<JurisdictionPill
-				logoSrc={PJSALTA_LOGO_URL}
-				alt="PJ Salta"
-				logoBg="#ffffff"
-				label="Salta"
-				tooltip={
-					onSaltaClick
-						? "PJ Salta · Poder Judicial de Salta — Click para agregar una causa individual"
-						: "PJ Salta · Poder Judicial de Salta"
-				}
-				state="shortcut"
-				onClick={onSaltaClick}
-			/>
-			<JurisdictionPill
-				logoSrc={logoPJCatamarca}
-				alt="PJ Catamarca"
-				logoBg="#ffffff"
-				label="Catamarca"
-				tooltip={
-					onCatamarcaClick
-						? "PJ Catamarca · Poder Judicial de Catamarca — Click para agregar una causa individual"
-						: "PJ Catamarca · Poder Judicial de Catamarca"
-				}
-				state="shortcut"
-				onClick={onCatamarcaClick}
-			/>
-			<JurisdictionPill
-				logoSrc={logoPJMendoza}
-				alt="PJ Mendoza"
-				logoBg="#ffffff"
-				label="Mendoza"
-				tooltip={
-					onMendozaClick
-						? "PJ Mendoza · Poder Judicial de Mendoza — Click para agregar una causa individual"
-						: "PJ Mendoza · Poder Judicial de Mendoza"
-				}
-				state="shortcut"
-				onClick={onMendozaClick}
-			/>
-		</>
-	);
 	const EXTRA_JURISDICTIONS_COUNT = 3;
 
 	return (
-		<Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap" useFlexGap>
-			<JurisdictionPill
-				logoSrc={PJN_LOGO_URL}
-				alt="PJN"
-				logoBg="#222E43"
-				label="PJN"
-				tooltip={pjnTooltip}
-				state={pjnState}
-				onClick={handlePjnClick}
-			/>
-			<JurisdictionPill
-				logoSrc={logoPJBuenosAires}
-				alt="PJ Buenos Aires"
-				logoBg="#f8f8f8"
-				label="BA"
-				tooltip={scbaTooltip}
-				state={scbaState}
-				onClick={scbaSynced === "connected" || scbaSynced === "attention" || onBaClick ? handleScbaClick : undefined}
-			/>
-			<JurisdictionPill
-				logoSrc={CABA_LOGO_URL}
-				alt="PJ CABA"
-				logoBg="#f8f8f8"
-				label="CABA"
-				tooltip={onCabaClick ? "CABA · Ciudad de Buenos Aires — Click para agregar una causa individual" : "CABA · Ciudad de Buenos Aires"}
-				state="shortcut"
-				onClick={onCabaClick}
-			/>
+		<Stack direction="row" alignItems="center" spacing={0.75}>
+			{/* Viewport de ancho fijo — overflow oculto, nunca crece ni envuelve a una
+			    segunda línea. Adentro, las 2 páginas van una al lado de la otra y sólo
+			    se anima el transform del track; ver comentario en el estado de arriba. */}
+			<Box sx={{ position: "relative", overflow: "hidden", width: slotWidth || "auto", maxWidth: "100%", height: 34, flexShrink: 0 }}>
+				<Box
+					sx={{
+						display: "flex",
+						position: "absolute",
+						top: 0,
+						left: 0,
+						transform: `translateX(${showMoreJurisdictions ? -slotWidth : 0}px)`,
+						transition: "transform 320ms cubic-bezier(0.4, 0, 0.2, 1)",
+					}}
+				>
+					<Stack ref={page0Ref} direction="row" spacing={0.75} sx={{ width: slotWidth || "auto", flexShrink: 0 }}>
+						<JurisdictionPill
+							logoSrc={PJN_LOGO_URL}
+							alt="PJN"
+							logoBg="#222E43"
+							label="PJN"
+							tooltip={pjnTooltip}
+							state={pjnState}
+							onClick={handlePjnClick}
+						/>
+						<JurisdictionPill
+							logoSrc={logoPJBuenosAires}
+							alt="PJ Buenos Aires"
+							logoBg="#f8f8f8"
+							label="BA"
+							tooltip={scbaTooltip}
+							state={scbaState}
+							onClick={scbaSynced === "connected" || scbaSynced === "attention" || onBaClick ? handleScbaClick : undefined}
+						/>
+						<JurisdictionPill
+							logoSrc={CABA_LOGO_URL}
+							alt="PJ CABA"
+							logoBg="#f8f8f8"
+							label="CABA"
+							tooltip={
+								onCabaClick ? "CABA · Ciudad de Buenos Aires — Click para agregar una causa individual" : "CABA · Ciudad de Buenos Aires"
+							}
+							state="shortcut"
+							onClick={onCabaClick}
+						/>
+					</Stack>
+					{/* IOL-8: las 3 jurisdicciones "extra" son todas shortcut (sin cuenta
+					    propia), igual patrón que CABA — un click abre el wizard de alta con
+					    esa jurisdicción pre-seleccionada (ver handleOpen{Salta,Catamarca,
+					    Mendoza}Folder en folders.tsx). Montada siempre (no condicional) para
+					    que el ResizeObserver pueda medirla incluso mientras está fuera de
+					    vista, y para no perder el estado si tuviera alguno. */}
+					<Stack ref={page1Ref} direction="row" spacing={0.75} sx={{ width: slotWidth || "auto", flexShrink: 0 }}>
+						<JurisdictionPill
+							logoSrc={PJSALTA_LOGO_URL}
+							alt="PJ Salta"
+							logoBg="#ffffff"
+							label="Salta"
+							tooltip={
+								onSaltaClick
+									? "PJ Salta · Poder Judicial de Salta — Click para agregar una causa individual"
+									: "PJ Salta · Poder Judicial de Salta"
+							}
+							state="shortcut"
+							onClick={onSaltaClick}
+						/>
+						<JurisdictionPill
+							logoSrc={logoPJCatamarca}
+							alt="PJ Catamarca"
+							logoBg="#ffffff"
+							label="Catamarca"
+							tooltip={
+								onCatamarcaClick
+									? "PJ Catamarca · Poder Judicial de Catamarca — Click para agregar una causa individual"
+									: "PJ Catamarca · Poder Judicial de Catamarca"
+							}
+							state="shortcut"
+							onClick={onCatamarcaClick}
+						/>
+						<JurisdictionPill
+							logoSrc={logoPJMendoza}
+							alt="PJ Mendoza"
+							logoBg="#ffffff"
+							label="Mendoza"
+							tooltip={
+								onMendozaClick
+									? "PJ Mendoza · Poder Judicial de Mendoza — Click para agregar una causa individual"
+									: "PJ Mendoza · Poder Judicial de Mendoza"
+							}
+							state="shortcut"
+							onClick={onMendozaClick}
+						/>
+					</Stack>
+				</Box>
+			</Box>
 			<Tooltip title={showMoreJurisdictions ? "Volver" : `Ver ${EXTRA_JURISDICTIONS_COUNT} jurisdicciones más`} arrow placement="top">
 				<Box
 					component="button"
@@ -518,7 +562,6 @@ export const FoldersSyncBadges = ({
 					/>
 				</Box>
 			</Tooltip>
-			{showMoreJurisdictions && extraJurisdictionPills}
 		</Stack>
 	);
 };
