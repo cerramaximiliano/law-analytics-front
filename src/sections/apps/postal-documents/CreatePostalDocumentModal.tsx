@@ -92,7 +92,10 @@ interface Props {
 	preselectedTemplate?: PdfTemplate | null;
 	prefilledFolderId?: string | null;
 	// Retomar un borrador: prefila los datos cargados y actualiza ese doc al guardar/generar.
-	resumeDoc?: { _id: string; title?: string; description?: string; formData?: Record<string, string> } | null;
+	// _id opcional: presente al continuar un borrador (guarda sobre el mismo doc);
+	// ausente al duplicar un documento ya generado (currentDocId queda null y
+	// "Generar documento" crea uno nuevo sin tocar el original).
+	resumeDoc?: { _id?: string; title?: string; description?: string; formData?: Record<string, string> } | null;
 	showSnackbar: (msg: string, sev: "success" | "error") => void;
 }
 

@@ -38,6 +38,7 @@ import {
 	Add,
 	ArrowDown2,
 	CloseSquare,
+	DocumentCopy,
 	DocumentDownload,
 	DocumentText,
 	Edit,
@@ -1450,7 +1451,9 @@ const EscritosPage = () => {
 	// Retomar un borrador: template + datos del doc para reabrir el modal de llenado.
 	const [resumeData, setResumeData] = useState<{
 		template: any;
-		doc: { _id: string; title?: string; description?: string; formData?: Record<string, string> };
+		// _id opcional: presente al continuar un borrador (actualiza el mismo doc),
+		// ausente al duplicar un documento generado (crea uno nuevo, ver handleDuplicate).
+		doc: { _id?: string; title?: string; description?: string; formData?: Record<string, string> };
 	} | null>(null);
 	const [continuing, setContinuing] = useState(false);
 	const [openTemplatePicker, setOpenTemplatePicker] = useState(false);
@@ -1556,6 +1559,31 @@ const EscritosPage = () => {
 			});
 		} else {
 			showSnackbar("No se pudo cargar el formulario del borrador", "error");
+		}
+	};
+
+	// Duplicar un documento ya generado (no borrador): precarga el modal con el
+	// MISMO formData pero SIN _id, así "Generar documento" crea un registro
+	// nuevo e independiente — el original no se toca ni se sobrescribe. Sólo
+	// para plantillas PDF (overlay/acroform, sin docKind); los docx-merge y los
+	// escritos de texto quedan fuera de este botón por ahora.
+	const handleDuplicate = async (row: DocRow) => {
+		const d = row.rawPostal;
+		if (!d || !row.templateSlug) return;
+		setContinuing(true);
+		const res: any = await dispatch(getPdfTemplate(row.templateSlug) as any);
+		setContinuing(false);
+		if (res?.success && res.template) {
+			setResumeData({
+				template: res.template,
+				doc: {
+					title: d.title ? `${d.title} (copia)` : "",
+					description: (d as any).description,
+					formData: ((d as any).formData as Record<string, string>) || {},
+				},
+			});
+		} else {
+			showSnackbar("No se pudo cargar el formulario del documento", "error");
 		}
 	};
 
@@ -2001,6 +2029,13 @@ const EscritosPage = () => {
 																<Printer size={16} variant="Linear" />
 															</IconButton>
 														</Tooltip>
+														{!row.docKind && (
+															<Tooltip title="Duplicar — crea una copia editable para otro destinatario">
+																<IconButton sx={iconBtnSx} onClick={() => handleDuplicate(row)} disabled={continuing}>
+																	<DocumentCopy size={16} variant="Linear" />
+																</IconButton>
+															</Tooltip>
+														)}
 													</>
 												)
 											) : (
@@ -2172,6 +2207,13 @@ const EscritosPage = () => {
 																			<Printer size={16} variant="Linear" />
 																		</IconButton>
 																	</Tooltip>
+																	{!row.docKind && (
+																		<Tooltip title="Duplicar — crea una copia editable para otro destinatario">
+																			<IconButton sx={iconBtnSx} onClick={() => handleDuplicate(row)} disabled={continuing}>
+																				<DocumentCopy size={16} variant="Linear" />
+																			</IconButton>
+																		</Tooltip>
+																	)}
 																</>
 															)
 														) : (
