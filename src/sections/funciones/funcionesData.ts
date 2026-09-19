@@ -20,13 +20,10 @@ import {
 
 import { FeatureNames } from "utils/gtm";
 
-// Capturas reales del producto.
-import capExpedientes from "assets/images/folders_movements_view.png";
-import capCalendario from "assets/images/calendar_view.png";
-import capCalculos from "assets/images/calculators_labor.png";
-import capIntereses from "assets/images/calculator_interest_steps.png";
-import capTareas from "assets/images/tasks_view.png";
-import capContactos from "assets/images/folders_details.png";
+// Sin capturas de la app: las que había mostraban causas reales con nombre y
+// apellido de las partes, y la agenda personal del dueño de la cuenta. Hasta que
+// estén las maquetas dibujadas, cada bloque se apoya en datos concretos
+// (2026-09-19).
 
 export interface DatoBloque {
 	valor: string;
@@ -65,8 +62,10 @@ export const FUNCIONES: Funcion[] = [
 			"Aviso por email y en la app apenas aparece el movimiento",
 			"El escrito y la cédula quedan guardados en la carpeta",
 		],
-		imagen: capExpedientes,
-		imagenAlt: "Listado de movimientos de un expediente dentro de Law Analytics",
+		datos: [
+			{ valor: "6", etiqueta: "jurisdicciones sincronizadas" },
+			{ valor: "Diario", etiqueta: "chequeo de movimientos nuevos" },
+		],
 	},
 	{
 		id: "calendario",
@@ -81,8 +80,10 @@ export const FUNCIONES: Funcion[] = [
 			"Recordatorios configurables por tipo de plazo",
 			"Vista por causa, por responsable o por semana",
 		],
-		imagen: capCalendario,
-		imagenAlt: "Calendario de vencimientos con eventos de varias causas",
+		datos: [
+			{ valor: "Dos vías", etiqueta: "sincronización con Google Calendar" },
+			{ valor: "Automático", etiqueta: "cálculo de plazos y ferias" },
+		],
 	},
 	{
 		id: "calculos",
@@ -97,8 +98,10 @@ export const FUNCIONES: Funcion[] = [
 			"Detalle exportable, no solo el número final",
 			"Se guarda dentro de la causa con su fecha de cálculo",
 		],
-		imagen: capCalculos,
-		imagenAlt: "Calculadora de indemnización laboral con el detalle por rubro",
+		datos: [
+			{ valor: "Ley 27.742", etiqueta: "y topes por convenio al día" },
+			{ valor: "Rubro por rubro", etiqueta: "detalle exportable, no solo el total" },
+		],
 	},
 	{
 		id: "intereses",
@@ -113,8 +116,10 @@ export const FUNCIONES: Funcion[] = [
 			"Series oficiales actualizadas todos los días",
 			"Comparación entre dos criterios en la misma pantalla",
 		],
-		imagen: capIntereses,
-		imagenAlt: "Cálculo de intereses con los tramos y las tasas aplicadas",
+		datos: [
+			{ valor: "Por tramo", etiqueta: "cada período con su tasa" },
+			{ valor: "CER · activa · pasiva", etiqueta: "series oficiales actualizadas a diario" },
+		],
 	},
 	{
 		id: "tareas",
@@ -129,8 +134,10 @@ export const FUNCIONES: Funcion[] = [
 			"Vista propia por persona del estudio",
 			"Se convierten en vencimientos del calendario",
 		],
-		imagen: capTareas,
-		imagenAlt: "Tablero de tareas del estudio con responsables y prioridades",
+		datos: [
+			{ valor: "Por causa", etiqueta: "cada tarea vive en su expediente" },
+			{ valor: "Por persona", etiqueta: "vista propia de cada integrante" },
+		],
 	},
 	{
 		id: "contactos",
@@ -145,8 +152,10 @@ export const FUNCIONES: Funcion[] = [
 			"Historial de movimientos y documentos compartidos",
 			"Datos de contacto verificados contra el expediente",
 		],
-		imagen: capContactos,
-		imagenAlt: "Ficha de una causa con sus contactos asociados",
+		datos: [
+			{ valor: "Una ficha", etiqueta: "con todas las causas del contacto" },
+			{ valor: "Historial", etiqueta: "movimientos y documentos compartidos" },
+		],
 	},
 	{
 		id: "escritos",
