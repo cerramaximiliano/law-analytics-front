@@ -105,7 +105,7 @@ const FuncionesHero = ({ onEmpezar, onVerFunciones }: Props) => {
 								color="text.secondary"
 								sx={{ fontWeight: 400, lineHeight: 1.6, maxWidth: "58ch", mb: 4.5 }}
 							>
-								Law Analytics sincroniza tus causas con los portales judiciales, proyecta los vencimientos,
+								Law||Analytics sincroniza tus causas con los portales judiciales, proyecta los vencimientos,
 								calcula liquidaciones con los topes del mes y guarda todo en la carpeta que corresponde.
 								Mirá cada función antes de crear la cuenta.
 							</Typography>
@@ -164,8 +164,11 @@ const FuncionesHero = ({ onEmpezar, onVerFunciones }: Props) => {
 							sx={{
 								mt: 5,
 								display: "grid",
-								gridTemplateColumns: { xs: "repeat(3, 1fr)" },
+								// Tres columnas en un teléfono angosto apretaban "+15.000" contra
+								// su etiqueta; en xs van de a dos y la tercera baja.
+								gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" },
 								columnGap: { xs: 2, sm: 3 },
+								rowGap: { xs: 2.5, sm: 0 },
 								maxWidth: 520,
 							}}
 						>
@@ -173,8 +176,11 @@ const FuncionesHero = ({ onEmpezar, onVerFunciones }: Props) => {
 								<Box
 									key={c.etiqueta}
 									sx={{
-										pl: i === 0 ? 0 : { xs: 2, sm: 3 },
-										borderLeft: i === 0 ? "none" : `1px solid ${theme.palette.divider}`,
+										pl: { xs: i % 2 === 0 ? 0 : 2, sm: i === 0 ? 0 : 3 },
+										borderLeft: {
+											xs: i % 2 === 0 ? "none" : `1px solid ${theme.palette.divider}`,
+											sm: i === 0 ? "none" : `1px solid ${theme.palette.divider}`,
+										},
 									}}
 								>
 									<Typography

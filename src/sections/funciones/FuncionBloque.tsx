@@ -133,7 +133,14 @@ const FuncionBloque = ({ funcion, indice, onCtaClick }: Props) => {
 			sx={{ py: { xs: 7, md: 11 }, scrollMarginTop: 96 }}
 		>
 			<Container maxWidth="lg">
-				<Grid container spacing={{ xs: 5, md: 9 }} alignItems="center" direction={invertido ? "row-reverse" : "row"}>
+				{/* En móvil la captura va siempre arriba: entra por la imagen y después lee.
+				    En escritorio alterna lado para romper la simetría. */}
+				<Grid
+					container
+					spacing={{ xs: 4, md: 9 }}
+					alignItems="center"
+					direction={{ xs: "row-reverse", md: invertido ? "row-reverse" : "row" }}
+				>
 					<Grid item xs={12} md={6}>
 						<Box component={motion.div} {...entrada(0)}>
 							<Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: 2 }}>
@@ -204,7 +211,7 @@ const FuncionBloque = ({ funcion, indice, onCtaClick }: Props) => {
 									onClick={() => onCtaClick(funcion)}
 									endIcon={<ArrowRight size={17} />}
 									sx={{
-										alignSelf: "flex-start",
+										alignSelf: { xs: "stretch", sm: "flex-start" },
 										bgcolor: AZUL,
 										px: 2.75,
 										py: 1.15,

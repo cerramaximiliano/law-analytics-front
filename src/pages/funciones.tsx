@@ -52,7 +52,7 @@ const Funciones = () => {
 	return (
 		<>
 			<SEO path="/funciones" />
-			<Box component="main">
+			<Box component="main" sx={{ pb: { xs: 9, md: 0 } }}>
 				<FuncionesHero onEmpezar={() => irARegistro(undefined, "hero")} onVerFunciones={bajarAFunciones} />
 
 				<Box component="section" aria-label="Funciones de Law Analytics">

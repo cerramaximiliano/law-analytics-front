@@ -20,16 +20,30 @@ const GARANTIAS = [
 	{ icono: ShieldTick, texto: "Tus datos quedan en tu cuenta" },
 ];
 
+export const ID_CIERRE = "cierre-funciones";
+
 export const BarraFija = ({ onEmpezar }: Props) => {
 	const theme = useTheme();
-	const [visible, setVisible] = useState(false);
+	const [pasoElHero, setPasoElHero] = useState(false);
+	const [cierreALaVista, setCierreALaVista] = useState(false);
 
 	useEffect(() => {
-		const alScrollear = () => setVisible(window.scrollY > 640);
+		const alScrollear = () => setPasoElHero(window.scrollY > 640);
 		alScrollear();
 		window.addEventListener("scroll", alScrollear, { passive: true });
 		return () => window.removeEventListener("scroll", alScrollear);
 	}, []);
+
+	// Con el cierre en pantalla la barra sobra y encima tapa el pie: ahí se esconde.
+	useEffect(() => {
+		const cierre = document.getElementById(ID_CIERRE);
+		if (!cierre) return;
+		const obs = new IntersectionObserver(([e]) => setCierreALaVista(e.isIntersecting), { threshold: 0.12 });
+		obs.observe(cierre);
+		return () => obs.disconnect();
+	}, []);
+
+	const visible = pasoElHero && !cierreALaVista;
 
 	return (
 		<Slide direction="up" in={visible} mountOnEnter unmountOnExit>
@@ -79,6 +93,7 @@ const CierreFunciones = ({ onEmpezar }: Props) => {
 	return (
 		<Box
 			component="section"
+			id={ID_CIERRE}
 			sx={{
 				position: "relative",
 				overflow: "hidden",
