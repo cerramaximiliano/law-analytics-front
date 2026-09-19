@@ -57,7 +57,9 @@ export const MockVentana = ({ titulo, children }: { titulo: string; children: Re
 const fila = (i: number) => ({
 	initial: { opacity: 0, x: -10 },
 	whileInView: { opacity: 1, x: 0 },
-	viewport: { once: true, amount: 0.4 },
+	// Umbral bajo a propósito: con 0.4 las filas de abajo quedaban invisibles
+	// mientras se scrolleaba y la maqueta parecía cortada.
+	viewport: { once: true, amount: 0.05 },
 	transition: { duration: 0.35, delay: 0.06 * i, ease: [0.22, 0.61, 0.36, 1] as const },
 });
 

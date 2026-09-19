@@ -15,6 +15,8 @@ export const MOVIMIENTOS = [
 	{ fecha: "09/09", titulo: "Agréguese la prueba documental", tipo: "Despacho", nuevo: true },
 	{ fecha: "02/09", titulo: "Se provee la prueba pericial", tipo: "Despacho", nuevo: false },
 	{ fecha: "28/08", titulo: "Contesta demanda", tipo: "Escrito", nuevo: false },
+	{ fecha: "21/08", titulo: "Intímase a acompañar el poder", tipo: "Despacho", nuevo: false },
+	{ fecha: "14/08", titulo: "Inicio de demanda", tipo: "Escrito", nuevo: false },
 ];
 
 export const EVENTOS_MES = [

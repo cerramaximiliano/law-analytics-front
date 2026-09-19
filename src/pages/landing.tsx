@@ -3,6 +3,7 @@ import React from "react";
 import Hero from "sections/landing/Header";
 import ComoFunciona from "sections/landing/ComoFunciona";
 import Technologies from "sections/landing/Technologies";
+import VistaProducto from "sections/landing/VistaProducto";
 import Testimonial from "sections/landing/Testimonial";
 import Planes from "sections/landing/Planes";
 import Faq from "sections/landing/Faq";
@@ -28,6 +29,8 @@ const Landing = () => {
 			<SectionTracker sectionName={LandingSections.HERRAMIENTAS}>
 				<Technologies />
 			</SectionTracker>
+			{/* El producto se ve recién acá: antes el recorrido era todo texto. */}
+			<VistaProducto />
 			<SectionTracker sectionName={LandingSections.TESTIMONIOS}>
 				<Testimonial />
 			</SectionTracker>
