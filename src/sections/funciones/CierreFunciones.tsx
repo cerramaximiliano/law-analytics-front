@@ -27,20 +27,24 @@ export const BarraFija = ({ onEmpezar }: Props) => {
 	const [pasoElHero, setPasoElHero] = useState(false);
 	const [cierreALaVista, setCierreALaVista] = useState(false);
 
+	// Una sola regla, medida en el mismo listener: aparece pasado el encabezado y
+	// se esconde en el tramo final, donde ya está el CTA grande y el pie. Se probó
+	// antes con IntersectionObserver sobre el cierre y no bajaba de forma fiable.
 	useEffect(() => {
-		const alScrollear = () => setPasoElHero(window.scrollY > 640);
+		const alScrollear = () => {
+			const y = window.scrollY;
+			const alto = document.documentElement.scrollHeight;
+			const enElTramoFinal = y + window.innerHeight > alto - 420;
+			setPasoElHero(y > 640);
+			setCierreALaVista(enElTramoFinal);
+		};
 		alScrollear();
 		window.addEventListener("scroll", alScrollear, { passive: true });
-		return () => window.removeEventListener("scroll", alScrollear);
-	}, []);
-
-	// Con el cierre en pantalla la barra sobra y encima tapa el pie: ahí se esconde.
-	useEffect(() => {
-		const cierre = document.getElementById(ID_CIERRE);
-		if (!cierre) return;
-		const obs = new IntersectionObserver(([e]) => setCierreALaVista(e.isIntersecting), { threshold: 0.12 });
-		obs.observe(cierre);
-		return () => obs.disconnect();
+		window.addEventListener("resize", alScrollear);
+		return () => {
+			window.removeEventListener("scroll", alScrollear);
+			window.removeEventListener("resize", alScrollear);
+		};
 	}, []);
 
 	const visible = pasoElHero && !cierreALaVista;
