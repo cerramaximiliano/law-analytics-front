@@ -35,6 +35,37 @@ Use VS Code with auto-formatting on save for consistent code style.
 
 ---
 
+## Vista `/funciones` (aterrizaje del tráfico pago)
+
+Existe desde el 19/09/2026. Los anuncios de Meta ya **no** van a `/register`: van a
+`/funciones?source=meta_ads` y desde ahí al registro. Motivo: sobre 188 visitas a `/register` en
+una semana nadie escribió un carácter en el formulario.
+
+| Archivo | Qué es |
+|---|---|
+| `src/pages/funciones.tsx` | Página; arma los bloques y maneja los CTA |
+| `src/sections/funciones/funcionesData.ts` | Las funciones: copy, captura, puntos, datos |
+| `src/sections/funciones/FuncionesHero.tsx` | Encabezado |
+| `src/sections/funciones/FuncionBloque.tsx` | Bloque en zig-zag, reutilizable |
+| `src/sections/funciones/CierreFunciones.tsx` | Cierre y barra fija de móvil |
+
+Para **agregar una función**: una entrada en `funcionesData.ts`. Con `imagen` usa una captura real
+(las que hay están en `src/assets/images`); sin ella, muestra la lista `datos`. No inventar
+capturas de pantallas que no existen.
+
+Reglas de la vista, para no romperlas al editar:
+
+- El copy visible dice **Law||Analytics**, igual que el resto del landing. En `alt` y en el título
+  para buscadores va "Law Analytics" (un lector de pantalla leería las barras).
+- Los CTA propagan `source` y `feature` por query string hasta `/register`: si se tocan, se rompe
+  la atribución de las campañas.
+- Cada clic al registro emite `cta_click_funciones` con `cta_location`. **Todo evento nuevo
+  necesita su etiqueta en GTM o no llega a GA4** (setup B); documentarlo en
+  `la-ads/docs/tracking-map.md`.
+- Los botones llevan `textTransform: "none"`: el tema global capitaliza cada palabra.
+
+Detalle completo del diseño y la medición: `la-ads/docs/bitacora-2026-09-19.md`.
+
 ## Flujo de credenciales judiciales (SCBA / PJN)
 
 UX de la card de cred + sincronización + manejo de errores. SCBA y PJN comparten patrón, con algunas particularidades por jurisdicción.
