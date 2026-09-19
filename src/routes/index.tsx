@@ -13,6 +13,8 @@ const MaintenanceError = Loadable(lazy(() => import("pages/maintenance/error/404
 
 // render - landing and static pages
 const PagesLanding = Loadable(lazy(() => import("pages/landing")));
+// Vista de funciones: aterrizaje del tráfico pago antes de pedir el registro.
+const PagesFunciones = Loadable(lazy(() => import("pages/funciones")));
 const GuidesPage = Loadable(lazy(() => import("pages/guides")));
 const JurisprudenciaPage = Loadable(lazy(() => import("pages/jurisprudencia")));
 const JurisprudenciaDetailPage = Loadable(lazy(() => import("pages/jurisprudencia/detail")));
@@ -36,6 +38,10 @@ export default function ThemeRoutes() {
 				{
 					path: "/",
 					element: <PagesLanding />,
+				},
+				{
+					path: "funciones",
+					element: <PagesFunciones />,
 				},
 				{
 					path: "guides",

@@ -36,6 +36,12 @@ export const pageSEO: Record<string, SEOConfig> = {
 			"Optimiza tu práctica legal con herramientas inteligentes: gestión de causas, cálculos laborales, sincronización con Poder Judicial y más. Prueba gratis.",
 		keywords: [...defaultSEO.keywords, "software jurídico", "herramientas legales"],
 	},
+	"/funciones": {
+		title: "Funciones - Qué hace Law Analytics | Software legal para abogados",
+		description:
+			"Sincronización de expedientes con PJN, MEV y EJE, vencimientos, cálculos laborales con Ley 27.742, intereses, escritos con IA y seguimiento postal. Mirá cada función antes de crear la cuenta.",
+		keywords: [...defaultSEO.keywords, "funciones", "gestión de causas", "calculadora laboral"],
+	},
 	"/jurisprudencia": {
 		title: "Jurisprudencia Argentina - Sentencias con Resumen IA | Law Analytics",
 		description:
