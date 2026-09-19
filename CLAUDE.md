@@ -49,9 +49,23 @@ una semana nadie escribió un carácter en el formulario.
 | `src/sections/funciones/FuncionBloque.tsx` | Bloque en zig-zag, reutilizable |
 | `src/sections/funciones/CierreFunciones.tsx` | Cierre y barra fija de móvil |
 
-Para **agregar una función**: una entrada en `funcionesData.ts`. Con `imagen` usa una captura real
-(las que hay están en `src/assets/images`); sin ella, muestra la lista `datos`. No inventar
-capturas de pantallas que no existen.
+### Nada de capturas de la app en marketing
+
+La vista usaba capturas reales y mostraban **carátulas con nombre y apellido de las partes** y la
+agenda personal del dueño de la cuenta, publicadas en una página con tráfico pago. Se sacaron el
+19/09/2026. En su lugar hay **maquetas dibujadas** en `src/sections/funciones/mocks/`:
+
+- `MockPantallas.tsx` — un marco reutilizable (`MockVentana`) y una maqueta por función,
+  registradas en `MOCKS` por el `id` de la función.
+- `datosFicticios.ts` — todo el contenido. **Nada de acá sale de la base**: carátulas, nombres,
+  montos y teléfonos son inventados.
+
+Ventajas frente a la captura: acompañan el tema claro y oscuro, se animan con framer-motion,
+pesan una fracción y se editan cambiando una línea.
+
+Para **agregar una función**: una entrada en `funcionesData.ts`. Si además querés maqueta, sumá el
+componente a `MOCKS` con el mismo `id`; sin maqueta, el bloque muestra su lista `datos`. Si alguna
+vez hace falta una captura real, hay que revisar que no tenga datos de terceros.
 
 Reglas de la vista, para no romperlas al editar:
 
