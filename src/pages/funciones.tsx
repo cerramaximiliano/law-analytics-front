@@ -2,9 +2,9 @@
 //
 // Por qué existe: los anuncios mandaban directo a /register y, sobre 188 visitas
 // de una semana, nadie escribió un carácter en el formulario (19/09/2026). Acá la
-// persona ve qué hace el producto, con capturas reales, y el registro aparece
-// recién cuando ya sabe para qué es. El `source` del anuncio se propaga al
-// registro para no perder la atribución.
+// persona ve qué hace el producto, con maquetas dibujadas de la interfaz, y el
+// registro aparece recién cuando ya sabe para qué es. El `source` del anuncio
+// se propaga al registro para no perder la atribución.
 
 import { useCallback, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";

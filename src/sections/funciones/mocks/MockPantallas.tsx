@@ -8,7 +8,7 @@
 // Son ilustraciones de la interfaz, no capturas: se parecen al producto sin
 // pretender ser una foto de una pantalla concreta.
 
-import { ReactNode } from "react";
+import { ComponentType, ReactNode } from "react";
 
 import { Box, Stack, Typography } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
@@ -88,12 +88,14 @@ const Etiqueta = ({ texto, tono = "neutro" }: { texto: string; tono?: "acento" |
 };
 
 // ---------------------------------------------------------------- expedientes
-const MockExpedientes = () => {
+/** `filas` recorta la lista: el encabezado muestra una versión corta para no
+ *  repetir la misma ventana que el primer bloque, que va unos píxeles más abajo. */
+const MockExpedientes = ({ filas }: { filas?: number }) => {
 	const theme = useTheme();
 	return (
 		<MockVentana titulo={CARATULA}>
 			<Stack spacing={1.25}>
-				{MOVIMIENTOS.map((m, i) => (
+				{(filas ? MOVIMIENTOS.slice(0, filas) : MOVIMIENTOS).map((m, i) => (
 					<Stack
 						key={m.titulo}
 						component={motion.div}
@@ -344,7 +346,7 @@ const MockContactos = () => {
 };
 
 /** Maqueta por id de función. Sin maqueta, el bloque cae en su lista de datos. */
-export const MOCKS: Record<string, () => JSX.Element> = {
+export const MOCKS: Record<string, ComponentType<{ filas?: number }>> = {
 	expedientes: MockExpedientes,
 	calendario: MockCalendario,
 	calculos: MockCalculos,

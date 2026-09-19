@@ -10,10 +10,12 @@ import { alpha, useTheme } from "@mui/material/styles";
 import { motion } from "framer-motion";
 import { ArrowDown2, ArrowRight } from "iconsax-react";
 
-import capDashboard from "assets/images/desktop_dashboard.png";
+import { MOCKS } from "./mocks/MockPantallas";
+import { TOTAL_LIQUIDACION } from "./mocks/datosFicticios";
 import { CIFRAS } from "./funcionesData";
 
 const AZUL = "#3A7BFF";
+const VERDE = "#2E9E6B";
 
 // Grano en base64 (SVG de ruido): rompe la planicie del fondo sin pedir un archivo.
 const GRANO =
@@ -27,6 +29,7 @@ interface Props {
 const FuncionesHero = ({ onEmpezar, onVerFunciones }: Props) => {
 	const theme = useTheme();
 	const oscuro = theme.palette.mode === "dark";
+	const Expedientes = MOCKS.expedientes;
 
 	const entrada = (retraso: number) => ({
 		initial: { opacity: 0, y: 22 },
@@ -40,7 +43,9 @@ const FuncionesHero = ({ onEmpezar, onVerFunciones }: Props) => {
 			sx={{
 				position: "relative",
 				overflow: "hidden",
-				pt: { xs: 8, md: 13 },
+				// En el teléfono la barra del logo se apoya sobre el encabezado: con 64 px
+				// la etiqueta quedaba pegada al logotipo (revisado a 390 px, 2026-09-19).
+				pt: { xs: 12, md: 13 },
 				pb: { xs: 8, md: 12 },
 				bgcolor: oscuro ? "#0b101c" : "#f7f9fc",
 				"&::before": {
@@ -105,9 +110,8 @@ const FuncionesHero = ({ onEmpezar, onVerFunciones }: Props) => {
 								color="text.secondary"
 								sx={{ fontWeight: 400, lineHeight: 1.6, maxWidth: "58ch", mb: 4.5 }}
 							>
-								Law||Analytics sincroniza tus causas con los portales judiciales, proyecta los vencimientos,
-								calcula liquidaciones con los topes del mes y guarda todo en la carpeta que corresponde.
-								Mirá cada función antes de crear la cuenta.
+								Law||Analytics sincroniza tus causas con los portales judiciales, proyecta los vencimientos, calcula liquidaciones con los
+								topes del mes y guarda todo en la carpeta que corresponde. Mirá cada función antes de crear la cuenta.
 							</Typography>
 						</Box>
 
@@ -203,27 +207,69 @@ const FuncionesHero = ({ onEmpezar, onVerFunciones }: Props) => {
 					</Grid>
 
 					<Grid item xs={12} md={6}>
+						{/* Reemplaza la foto del monitor, cuyo texto era ilegible. La maqueta se
+							    dibuja: no hay datos de causas reales y acompaña el tema. La tarjeta del
+							    total se apoya en el borde inferior, corrida hacia afuera, y solo pisa el
+							    margen de la ventana: ninguna fila queda tapada (2026-09-19). */}
 						<Box
 							component={motion.div}
 							{...entrada(0.14)}
 							sx={{
 								position: "relative",
 								// Se sale de la grilla en escritorio: rompe la simetría del bloque.
-								mr: { md: -8, lg: -14 },
+								mr: { md: -6, lg: -12 },
 							}}
 						>
+							<Expedientes filas={4} />
 							<Box
-								component="img"
-								src={capDashboard}
-								alt="Panel de Law Analytics con las causas sincronizadas y sus vencimientos"
 								sx={{
-									width: "100%",
-									height: "auto",
-									display: "block",
+									// También en el teléfono: es el 93 % del tráfico y la cifra es lo que
+									// más rápido explica para qué sirve la app.
+									position: "relative",
+									zIndex: 2,
+									width: { xs: 236, sm: 244, md: 268 },
+									ml: { xs: 2, sm: -3, md: -7 },
+									mt: -2.5,
+									p: 2,
 									borderRadius: 3,
-									filter: `drop-shadow(0 30px 60px ${alpha(AZUL, oscuro ? 0.45 : 0.28)})`,
+									bgcolor: oscuro ? alpha("#0d1220", 0.94) : "#fff",
+									border: `1px solid ${alpha(AZUL, oscuro ? 0.24 : 0.14)}`,
+									boxShadow: `0 26px 56px -26px ${alpha(AZUL, oscuro ? 0.55 : 0.4)}`,
 								}}
-							/>
+							>
+								<Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+									Liquidación por despido
+								</Typography>
+								<Typography
+									sx={{
+										fontSize: { xs: "1.45rem", md: "1.7rem" },
+										fontWeight: 600,
+										letterSpacing: "-0.03em",
+										fontVariantNumeric: "tabular-nums",
+										lineHeight: 1.15,
+										color: AZUL,
+										mt: 0.25,
+									}}
+								>
+									$ {TOTAL_LIQUIDACION}
+								</Typography>
+								<Box
+									component="span"
+									sx={{
+										display: "inline-block",
+										mt: 1,
+										px: 0.9,
+										py: 0.3,
+										borderRadius: 1,
+										fontSize: "0.66rem",
+										fontWeight: 600,
+										color: VERDE,
+										bgcolor: alpha(VERDE, oscuro ? 0.16 : 0.1),
+									}}
+								>
+									Topes de convenio al día
+								</Box>
+							</Box>
 						</Box>
 					</Grid>
 				</Grid>
