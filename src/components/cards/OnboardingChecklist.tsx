@@ -1060,7 +1060,7 @@ const JudicialConnectionPanel: React.FC<JudicialConnectionPanelProps> = ({
 					/>
 				</Stack>
 				<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>{credentialHint}</Typography>
-				<Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
+				<Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(64px, 1fr))", gap: 1.5 }}>
 					{credentialOptions.map((opt) => (
 						<LogoTile
 							key={`cred-${opt.key}`}
@@ -1071,7 +1071,7 @@ const JudicialConnectionPanel: React.FC<JudicialConnectionPanelProps> = ({
 							onClick={() => onSelect(opt, "credential")}
 						/>
 					))}
-				</Stack>
+				</Box>
 			</Stack>
 
 			{/* Divider sutil */}
@@ -1085,11 +1085,11 @@ const JudicialConnectionPanel: React.FC<JudicialConnectionPanelProps> = ({
 				<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>
 					Ideal si solo seguís algunas causas puntuales. PJN y EJE no piden cuenta; MEV usa tu cuenta del portal.
 				</Typography>
-				<Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
+				<Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(64px, 1fr))", gap: 1.5 }}>
 					{individualOptions.map((opt) => (
 						<LogoTile key={`ind-${opt.key}`} option={opt} isDark={isDark} theme={theme} onClick={() => onSelect(opt, "individual")} />
 					))}
-				</Stack>
+				</Box>
 			</Stack>
 		</Stack>
 	);
@@ -1124,7 +1124,9 @@ const LogoTile: React.FC<LogoTileProps> = ({ option, isConnected, isDark, theme,
 			alignItems="center"
 			spacing={0.75}
 			sx={{
-				width: 72,
+				width: "100%",
+				maxWidth: 72,
+				mx: "auto",
 				border: "none",
 				background: "none",
 				p: 0,
