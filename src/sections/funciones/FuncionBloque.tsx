@@ -20,6 +20,7 @@ import { motion, useInView } from "framer-motion";
 // project-imports
 import { TickCircle, ArrowRight } from "iconsax-react";
 import { Funcion } from "./funcionesData";
+import { MOCKS } from "./mocks/MockPantallas";
 
 const AZUL = "#3A7BFF";
 
@@ -43,7 +44,13 @@ const FuncionBloque = ({ funcion, indice, onCtaClick }: Props) => {
 		transition: { duration: 0.5, delay: retraso, ease: [0.22, 0.61, 0.36, 1] as const },
 	});
 
-	const visual = funcion.imagen ? (
+	const Maqueta = MOCKS[funcion.id];
+
+	const visual = Maqueta ? (
+		<Box component={motion.div} {...entrada(0.12)}>
+			<Maqueta />
+		</Box>
+	) : funcion.imagen ? (
 		<Box
 			component={motion.div}
 			{...entrada(0.12)}
