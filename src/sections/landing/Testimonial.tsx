@@ -373,6 +373,7 @@ const TestimonialPage = () => {
 									borderRadius: 2,
 									fontWeight: 600,
 									fontSize: "1rem",
+									textTransform: "none",
 									boxShadow: theme.shadows[4],
 									"&:hover": {
 										boxShadow: theme.shadows[8],

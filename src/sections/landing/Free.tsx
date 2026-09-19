@@ -76,6 +76,7 @@ const FreePage = () => {
 										fontSize: "1.1rem",
 										fontWeight: 600,
 										borderRadius: 2,
+										textTransform: "none",
 										boxShadow: theme.shadows[4],
 										"&:hover": {
 											boxShadow: theme.shadows[8],

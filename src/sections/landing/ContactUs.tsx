@@ -240,6 +240,7 @@ const ContactUsPage = () => {
 									px: 2.5,
 									fontSize: "0.9rem",
 									fontWeight: 500,
+									textTransform: "none",
 									"&:hover": {
 										boxShadow: `0 8px 20px ${alpha(BRAND_BLUE, 0.3)}`,
 									},
