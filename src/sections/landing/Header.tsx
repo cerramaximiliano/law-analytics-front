@@ -17,6 +17,7 @@ import AnimateButton from "components/@extended/AnimateButton";
 import PageBackground from "components/PageBackground";
 import MockupFrame from "components/MockupFrame";
 import { useLandingAnalytics } from "hooks/useLandingAnalytics";
+import { pushGTMEvent } from "utils/gtm";
 import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 import { formatAvailableIntegrations } from "utils/landingIntegrations";
 
@@ -620,10 +621,27 @@ const HeaderPage = () => {
 														color="primary"
 														variant="contained"
 														onClick={trackHeroCTA}
+														sx={{ textTransform: "none" }}
 													>
-														Probar Gratis
+														Probar gratis
 													</Button>
 												</AnimateButton>
+											</Grid>
+											{/* Salida para quien todavía no quiere crear una cuenta: la vista de
+											    funciones. Sin esto, el único camino desde el hero es el registro,
+											    y de 188 visitas a /register en una semana no tipeó nadie (19/09). */}
+											<Grid item>
+												<Button
+													component={RouterLink}
+													to="/funciones?source=hero_landing"
+													size="large"
+													variant="outlined"
+													color="primary"
+													onClick={() => pushGTMEvent("cta_click_ver_funciones", { cta_location: "hero_landing" })}
+													sx={{ textTransform: "none" }}
+												>
+													Ver las funciones
+												</Button>
 											</Grid>
 										</Grid>
 										<Typography
