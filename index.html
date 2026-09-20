@@ -86,86 +86,6 @@
 		     botón sin esperar a React, que lo reemplaza cuando termina de cargar.
 		     Medido el 2026-09-19 en la-ads/analysis/2026-09-19-por-que-nadie-hace-clic.md.
 		     Si cambia el titular de la landing o de /funciones, cambiarlo también acá. -->
-		<style>
-			/* Copia de la mitad de arriba de /funciones, para que cuando React monte
-			   la diferencia sea mínima y el cambio no se note como un salto. Si se
-			   toca el encabezado de esa vista, tocar esto también. */
-			#shell-inicial {
-				position: fixed;
-				inset: 0;
-				z-index: 3;
-				overflow: hidden;
-				background: #f7f9fc;
-				color: #1d2630;
-				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-				padding: 0 20px;
-				opacity: 1;
-				transition: opacity 0.22s ease;
-			}
-			#shell-inicial[data-saliendo="si"] {
-				opacity: 0;
-				pointer-events: none;
-			}
-			#shell-inicial .shell-barra {
-				padding: 22px 4px 0;
-				font-size: 0.95rem;
-				font-weight: 700;
-				letter-spacing: -0.01em;
-				color: #101828;
-			}
-			#shell-inicial .shell-caja {
-				max-width: 560px;
-				padding-top: 48px;
-			}
-			#shell-inicial .shell-chip {
-				display: inline-block;
-				font-size: 0.7rem;
-				font-weight: 600;
-				letter-spacing: 0.14em;
-				text-transform: uppercase;
-				color: #3a7bff;
-				border: 1px solid rgba(58, 123, 255, 0.22);
-				background: rgba(58, 123, 255, 0.07);
-				border-radius: 6px;
-				padding: 5px 10px;
-				margin-bottom: 24px;
-			}
-			#shell-inicial h1 {
-				font-size: clamp(2.3rem, 7vw, 3.4rem);
-				line-height: 1.04;
-				letter-spacing: -0.038em;
-				font-weight: 600;
-				margin: 0 0 20px;
-				text-wrap: balance;
-			}
-			#shell-inicial p {
-				font-size: 1.06rem;
-				line-height: 1.6;
-				color: #5b6b79;
-				margin: 0 0 36px;
-			}
-			#shell-inicial .shell-boton {
-				display: inline-block;
-				background: #3a7bff;
-				color: #fff;
-				text-decoration: none;
-				font-size: 1rem;
-				font-weight: 600;
-				padding: 13px 26px;
-				border-radius: 8px;
-				box-shadow: 0 14px 30px -14px rgba(58, 123, 255, 0.95);
-			}
-			#shell-inicial .shell-pie {
-				font-size: 0.8rem;
-				margin: 16px 0 0;
-			}
-			@media (max-width: 599px) {
-				#shell-inicial .shell-boton {
-					display: block;
-					text-align: center;
-				}
-			}
-		</style>
 	</head>
 
 	<body font-feature-settings="salt">
@@ -180,41 +100,7 @@
 		></noscript>
 		<!-- End Google Tag Manager (noscript) -->
 		<noscript>You need to enable JavaScript to run this app.</noscript>
-		<!-- Capa de primer pintado. Va FUERA de #root y por encima, así React
-		     monta debajo sin pelear con ella y la capa se desvanece cuando ya hay
-		     algo dibujado: sin corte seco. Solo se muestra en /funciones, que es
-		     adonde llegan los anuncios; en la landing la diferencia entre esto y
-		     la portada real era demasiado grande y se notaba el cambio. -->
-		<div id="shell-inicial" hidden>
-			<div class="shell-barra">Law&#124;&#124;Analytics</div>
-			<div class="shell-caja">
-				<span class="shell-chip">Todo lo que hace la app</span>
-				<h1 id="shell-titulo">El expediente te avisa a vos, no al revés</h1>
-				<p id="shell-bajada">
-					Law&#124;&#124;Analytics sincroniza tus causas con los portales judiciales, proyecta los vencimientos, calcula liquidaciones con
-					los topes del mes y guarda todo en la carpeta que corresponde.
-				</p>
-				<a class="shell-boton" id="shell-boton" href="/register?source=funciones">Empezar gratis</a>
-				<p class="shell-pie">Sin tarjeta. Configuración inicial en menos de dos minutos.</p>
-			</div>
-		</div>
 		<div id="root"></div>
-		<script>
-			(function () {
-				var shell = document.getElementById("shell-inicial");
-				if (!shell) return;
-				// Solo la vista de funciones. Ver el comentario de arriba.
-				if (location.pathname.indexOf("/funciones") !== 0) {
-					shell.parentNode.removeChild(shell);
-					return;
-				}
-				shell.hidden = false;
-				// El origen del anuncio viaja en la URL y no se puede perder: si alguien
-				// toca el botón antes de que cargue React, la atribución tiene que llegar.
-				var origen = new URLSearchParams(location.search).get("source") || "funciones";
-				document.getElementById("shell-boton").href = "/register?source=" + encodeURIComponent(origen);
-			})();
-		</script>
 
 		<!-- Script de limpieza de Service Worker (solo si existe) -->
 		<script>

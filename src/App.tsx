@@ -47,9 +47,11 @@ const App = () => {
 
 	useEffect(() => {
 		captureAttribution();
-		dispatch(fetchMenu()).then(() => {
-			setLoading(false);
-		});
+		// El menú del panel ya no frena el primer dibujado: se pide y llega cuando
+		// llega. Antes la aplicación entera esperaba a que resolviera, incluso en
+		// las páginas públicas, que no tienen menú (2026-09-20).
+		dispatch(fetchMenu());
+		setLoading(false);
 	}, []);
 
 	if (loading) return <Loader />;

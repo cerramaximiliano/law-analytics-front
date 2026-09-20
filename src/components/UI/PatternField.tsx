@@ -1,5 +1,5 @@
 import React from "react";
-import { at } from "lodash";
+import at from "lodash/at";
 import { useField } from "formik";
 import { PatternFormat } from "react-number-format";
 import { TextField } from "@mui/material";

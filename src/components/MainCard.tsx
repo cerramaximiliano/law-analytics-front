@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { forwardRef, CSSProperties, ReactNode, Ref } from "react";
 
 // material-ui
@@ -6,7 +6,12 @@ import { useTheme } from "@mui/material/styles";
 import { Card, CardContent, CardHeader, Divider, Typography, CardProps, CardHeaderProps, CardContentProps } from "@mui/material";
 
 // project-imports
-import Highlighter from "components/third-party/Highlighter";
+// El resaltador de sintaxis arrastra highlight.js: 1.437 KB sin comprimir, el
+// 26 % del paquete de arranque. Solo lo usan las páginas de muestra de
+// componentes, que nadie visita en producción, y solo cuando la tarjeta recibe
+// `codeString`. Se carga bajo demanda (2026-09-20, ver
+// la-ads/analysis/2026-09-19-por-que-nadie-hace-clic.md).
+const Highlighter = lazy(() => import("components/third-party/Highlighter"));
 import useConfig from "hooks/useConfig";
 
 // types
@@ -125,7 +130,9 @@ const MainCard = forwardRef(
 				{codeString && (
 					<>
 						<Divider sx={{ borderStyle: "dashed" }} />
-						<Highlighter codeString={codeString} codeHighlight={codeHighlight} />
+						<Suspense fallback={null}>
+							<Highlighter codeString={codeString} codeHighlight={codeHighlight} />
+						</Suspense>
 					</>
 				)}
 			</Card>

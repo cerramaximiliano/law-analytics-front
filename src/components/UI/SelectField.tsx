@@ -1,7 +1,7 @@
 import React from "react";
 import { FormControl, FormHelperText, Select, Typography, MenuItem, ListItemText } from "@mui/material";
 import { useField } from "formik";
-import { at } from "lodash";
+import at from "lodash/at";
 
 interface SelectOption {
 	label: string;

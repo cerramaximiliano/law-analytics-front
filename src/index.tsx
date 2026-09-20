@@ -44,19 +44,6 @@ const root = createRoot(container!);
 // Precargar rutas críticas en segundo plano
 preloadCriticalRoutes();
 
-// La capa estática del index.html ya cumplió: se vio mientras bajaba el paquete.
-// Se desvanece en vez de desaparecer de golpe, y recién se saca del documento
-// cuando terminó la transición. React monta debajo, así que no hay un instante
-// en blanco entre las dos (2026-09-19).
-const apagarCapaInicial = () => {
-	const capa = document.getElementById("shell-inicial");
-	if (!capa) return;
-	requestAnimationFrame(() => {
-		capa.dataset.saliendo = "si";
-		setTimeout(() => capa.remove(), 260);
-	});
-};
-
 // ==============================|| MAIN - REACT DOM RENDER  ||============================== //
 
 // Wrapper component to handle persist errors
@@ -94,8 +81,6 @@ root.render(
 		</PersistGateWrapper>
 	</ReduxProvider>,
 );
-
-apagarCapaInicial();
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))

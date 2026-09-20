@@ -2,7 +2,6 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 // types
 import { MenuProps } from "types/menu";
-import menuData from "data/menu";
 
 // initial state
 const initialState: MenuProps = {
@@ -17,8 +16,12 @@ const initialState: MenuProps = {
 
 // ==============================|| SLICE - MENU ||============================== //
 
-// Load menu from static local data (no API call needed)
+// El menú del panel se carga bajo demanda. Trae 34 iconos y todo el árbol de
+// navegación del producto, que en una página pública no se usa para nada y
+// viajaba en el arranque de todas (2026-09-20, ver
+// la-ads/analysis/2026-09-19-por-que-nadie-hace-clic.md).
 export const fetchMenu = createAsyncThunk("menu/fetch", async () => {
+	const { default: menuData } = await import("data/menu");
 	return { dashboard: menuData };
 });
 

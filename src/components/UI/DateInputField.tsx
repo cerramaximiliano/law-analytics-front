@@ -6,7 +6,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { Calendar } from "iconsax-react";
 import { DateField } from "@mui/x-date-pickers";
 import { useField } from "formik";
-import { at } from "lodash";
+import at from "lodash/at";
 import { FormControl, FormHelperText } from "@mui/material";
 import dayjs from "dayjs";
 

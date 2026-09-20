@@ -2,7 +2,7 @@ import React from "react";
 import { useEffect, useState } from "react";
 import { Autocomplete, CircularProgress, TextField, FormHelperText, FormControl } from "@mui/material";
 import { useField } from "formik";
-import { at } from "lodash";
+import at from "lodash/at";
 
 function sleep(delay = 0) {
 	return new Promise((resolve) => {

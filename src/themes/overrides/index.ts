@@ -2,7 +2,7 @@
 import { Theme } from "@mui/material/styles";
 
 // third-party
-import { merge } from "lodash";
+import merge from "lodash/merge";
 
 // project-imports
 import Accordion from "./Accordion";

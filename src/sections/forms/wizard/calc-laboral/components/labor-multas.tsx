@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import { Calendar, InfoCircle } from "iconsax-react";
 import { useField } from "formik";
-import { at } from "lodash";
+import at from "lodash/at";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 
