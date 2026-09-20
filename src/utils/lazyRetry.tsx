@@ -243,8 +243,46 @@ export function lazyRetry<T extends ComponentType<any>>(
 	});
 }
 
+// Rutas que ve alguien que todavía no es usuario: landing, vista de funciones,
+// registro, contenido público. En ninguna de ellas sirve tener el panel en
+// memoria, y precargarlo ahí le cuesta unos 400 KB al teléfono de alguien que
+// vino de un anuncio. Medido el 2026-09-19:
+// `la-ads/analysis/2026-09-19-por-que-nadie-hace-clic.md`.
+//
+// La lista es de rutas públicas y no de rutas del producto a propósito: si
+// alguna ruta nueva del producto no figura acá, lo único que pasa es que no se
+// precarga. Al revés, olvidar una pública significa volver a gastar esos 400 KB
+// en la página que menos lo puede pagar.
+const RUTAS_PUBLICAS = [
+	"/funciones",
+	"/register",
+	"/login",
+	"/guides",
+	"/jurisprudencia",
+	"/educativo",
+	"/integraciones",
+	"/faq",
+	"/plans",
+	"/terms",
+	"/privacy-policy",
+	"/cookies-policy",
+	"/unsubscribe",
+	"/oauth",
+	"/forgot-password",
+	"/reset-password",
+	"/code-verification",
+	"/check-mail",
+	"/maintenance",
+	"/f/",
+	"/m/",
+];
+
+export const esRutaPublica = (ruta: string): boolean => ruta === "/" || RUTAS_PUBLICAS.some((p) => ruta.startsWith(p));
+
 // Función para prelanzar módulos críticos en segundo plano
 export const preloadCriticalRoutes = () => {
+	if (typeof window !== "undefined" && esRutaPublica(window.location.pathname)) return;
+
 	// Lista de rutas críticas que se usan frecuentemente
 	const criticalRoutes = [
 		() => import("pages/dashboard/default"),
