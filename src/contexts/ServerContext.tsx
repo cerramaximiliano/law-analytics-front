@@ -10,6 +10,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 import authReducer from "store/reducers/auth";
 import { logoutUser } from "store/reducers/auth";
 import Loader from "components/Loader";
+import { esRutaPublica } from "utils/lazyRetry";
 import { UnauthorizedModal } from "../sections/auth/UnauthorizedModal";
 import { LimitErrorModal } from "../sections/auth/LimitErrorModal";
 import { AuthProps, ServerContextType, UserProfile, LoginResponse, RegisterResponse, VerifyCodeResponse } from "../types/auth";
@@ -761,7 +762,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		}
 	};
 
-	if (!state.isInitialized) {
+	// Las rutas públicas dibujan sin esperar a /api/auth/me. Para un anónimo esa
+	// llamada es un 401 que llegaba en serie después de ejecutar todo el
+	// JavaScript, y mientras tanto la pantalla mostraba un cargador. Ninguna
+	// página pública lee isInitialized (2026-09-20, ver
+	// la-ads/analysis/2026-09-20-plan-velocidad-paginas-publicas.md).
+	if (!state.isInitialized && !esRutaPublica(window.location.pathname)) {
 		return <Loader />;
 	}
 

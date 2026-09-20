@@ -44,6 +44,21 @@ const root = createRoot(container!);
 // Precargar rutas críticas en segundo plano
 preloadCriticalRoutes();
 
+// El archivo de la ruta pública se pedía recién cuando la aplicación terminaba
+// de arrancar, un segundo y pico después de que bajó el arranque. Pedirlo ya
+// lo pone en paralelo. Son los mismos módulos que cargan las rutas, así que el
+// paquete no se duplica (2026-09-20).
+const RUTAS_PRECARGA: Array<[RegExp, () => Promise<unknown>]> = [
+	[/^\/$/, () => import("pages/landing")],
+	[/^\/funciones/, () => import("pages/funciones")],
+	[/^\/register/, () => import("pages/auth/auth1/register")],
+	[/^\/login/, () => import("pages/auth/auth1/login")],
+	[/^\/faq/, () => import("pages/faq")],
+	[/^\/plans/, () => import("pages/plans")],
+];
+const precarga = RUTAS_PRECARGA.find(([re]) => re.test(window.location.pathname));
+if (precarga) precarga[1]().catch(() => {});
+
 // ==============================|| MAIN - REACT DOM RENDER  ||============================== //
 
 // Wrapper component to handle persist errors

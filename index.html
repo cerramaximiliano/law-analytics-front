@@ -76,7 +76,9 @@
 		<noscript>
 			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&display=swap" />
 		</noscript>
-		<script src="https://cdn.jsdelivr.net/npm/resize-observer-polyfill@1.5.1/dist/ResizeObserver.min.js"></script>
+		<!-- Acá había un polyfill de ResizeObserver cargado de forma sincrónica desde un CDN
+		     ajeno: bloqueaba el primer dibujado 758 ms en todas las páginas, para una función
+		     que todos los navegadores soportados traen desde 2020 (2026-09-20). -->
 		<!-- Primer pintado sin JavaScript.
 		     El paquete de la aplicación pesa cerca de un megabyte y medio y en un
 		     teléfono de gama media tarda unos diez segundos en mostrar algo. Quien

@@ -2,7 +2,12 @@ import { useTheme, alpha } from "@mui/material/styles";
 import { Box } from "@mui/material";
 import { motion } from "framer-motion";
 
+// La captura del panel era un PNG de 148 KB y 1.878 px sin tamaños alternativos.
+// Ahora va en WebP con dos anchos; el PNG queda como respaldo para navegadores
+// sin WebP, que hoy son casi ninguno (2026-09-20).
 import dashboardImage from "assets/images/dashboard.png";
+import dashboardWebp from "assets/images/dashboard-1878.webp";
+import dashboardWebpChico from "assets/images/dashboard-940.webp";
 
 const BRAND_BLUE = "#3A7BFF";
 
@@ -26,6 +31,8 @@ const MockupFrame = ({
 	textColor,
 }: MockupFrameProps) => {
 	const theme = useTheme();
+	// Solo la captura por defecto tiene versiones WebP; si pasan otra imagen, va tal cual.
+	const esCapturaDelPanel = image === dashboardImage;
 	const effectivePaperBg = paperBg ?? theme.palette.background.paper;
 	const effectiveTextColor = textColor ?? theme.palette.text.primary;
 
@@ -52,9 +59,13 @@ const MockupFrame = ({
 			{!compact && showSecondaryCopy && (
 				<Box
 					component="img"
-					src={image}
+					src={esCapturaDelPanel ? dashboardWebpChico : image}
 					alt=""
 					aria-hidden
+					loading="lazy"
+					decoding="async"
+					width={1878}
+					height={912}
 					sx={{
 						position: "absolute",
 						top: -18,
@@ -133,8 +144,13 @@ const MockupFrame = ({
 
 					<Box
 						component="img"
-						src={image}
+						src={esCapturaDelPanel ? dashboardWebpChico : image}
+						srcSet={esCapturaDelPanel ? `${dashboardWebpChico} 940w, ${dashboardWebp} 1878w` : undefined}
+						sizes={esCapturaDelPanel ? (compact ? "(max-width: 600px) 92vw, 420px" : "(max-width: 900px) 92vw, 560px") : undefined}
 						alt={alt}
+						decoding="async"
+						width={1878}
+						height={912}
 						sx={{
 							width: "100%",
 							height: "auto",

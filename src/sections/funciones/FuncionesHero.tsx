@@ -31,9 +31,12 @@ const FuncionesHero = ({ onEmpezar, onVerFunciones }: Props) => {
 	const oscuro = theme.palette.mode === "dark";
 	const Expedientes = MOCKS.expedientes;
 
+	// Sin opacidad inicial en cero: el navegador no cuenta un elemento invisible
+	// como contenido principal, y cada animación de entrada sumaba su retraso a la
+	// métrica. El desplazamiento se mantiene; la visibilidad, no (2026-09-20).
 	const entrada = (retraso: number) => ({
-		initial: { opacity: 0, y: 22 },
-		animate: { opacity: 1, y: 0 },
+		initial: { y: 22 },
+		animate: { y: 0 },
 		transition: { duration: 0.55, delay: retraso, ease: [0.22, 0.61, 0.36, 1] as const },
 	});
 

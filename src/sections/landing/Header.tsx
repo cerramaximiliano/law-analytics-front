@@ -27,10 +27,11 @@ import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 import logoPJCatamarca from "assets/images/logos/logo_pj_catamarca.png";
 
 // Logos externos (Cloudinary)
-const logoPJCABA = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
-const logoSECLO = "https://res.cloudinary.com/dqyoeolib/image/upload/q_auto/f_auto/v1776203385/seclo-removebg-preview_rxcvzm.png";
+const logoPJCABA =
+	"https://res.cloudinary.com/dqyoeolib/image/upload/f_auto,q_auto,w_160/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
+const logoSECLO = "https://res.cloudinary.com/dqyoeolib/image/upload/f_auto,q_auto,w_160/v1776203385/seclo-removebg-preview_rxcvzm.png";
 const logoPJSalta =
-	"https://res.cloudinary.com/dqyoeolib/image/upload/v1779137783/ChatGPT_Image_18_may_2026__05_52_35_p.m.-removebg-preview_bngpqd.png";
+	"https://res.cloudinary.com/dqyoeolib/image/upload/f_auto,q_auto,w_160/v1779137783/ChatGPT_Image_18_may_2026__05_52_35_p.m.-removebg-preview_bngpqd.png";
 
 // ============================== TOKENS ============================== //
 // El gradiente sobre "Estudio Jurídico" es el ÚNICO uso intencional de púrpura
@@ -352,6 +353,10 @@ const HeaderPage = () => {
 							component="img"
 							src={integration.logoSrc}
 							alt={integration.tooltipTitle}
+							loading="lazy"
+							decoding="async"
+							width={64}
+							height={64}
 							sx={{
 								width: "100%",
 								height: "100%",
@@ -531,8 +536,8 @@ const HeaderPage = () => {
 							<Grid container spacing={{ xs: 1, sm: 1.5, md: 2.5, lg: 3 }} sx={{ textAlign: "center", maxWidth: { md: 580 } }}>
 								<Grid item xs={12}>
 									<motion.div
-										initial={{ opacity: 0, translateY: 50 }}
-										animate={{ opacity: 1, translateY: 0 }}
+										initial={{ translateY: 50 }}
+										animate={{ translateY: 0 }}
 										transition={{
 											type: "spring",
 											stiffness: 150,
@@ -572,8 +577,8 @@ const HeaderPage = () => {
 								</Grid>
 								<Grid item xs={12}>
 									<motion.div
-										initial={{ opacity: 0, translateY: 30 }}
-										animate={{ opacity: 1, translateY: 0 }}
+										initial={{ translateY: 30 }}
+										animate={{ translateY: 0 }}
 										transition={{
 											type: "spring",
 											stiffness: 150,
@@ -602,8 +607,8 @@ const HeaderPage = () => {
 								{/* CTA - Botón y microtexto */}
 								<Grid item xs={12}>
 									<motion.div
-										initial={{ opacity: 0, translateY: 30 }}
-										animate={{ opacity: 1, translateY: 0 }}
+										initial={{ translateY: 30 }}
+										animate={{ translateY: 0 }}
 										transition={{
 											type: "spring",
 											stiffness: 150,
@@ -666,8 +671,8 @@ const HeaderPage = () => {
 								{/* Mockup mobile - solo visible en xs y sm */}
 								<Grid item xs={12} sx={{ display: { xs: "block", md: "none" } }}>
 									<motion.div
-										initial={{ opacity: 0, translateY: 30 }}
-										animate={{ opacity: 1, translateY: 0 }}
+										initial={{ translateY: 30 }}
+										animate={{ translateY: 0 }}
 										transition={{
 											type: "spring",
 											stiffness: 150,
@@ -680,8 +685,8 @@ const HeaderPage = () => {
 								</Grid>
 								<Grid item xs={12}>
 									<motion.div
-										initial={{ opacity: 0, translateY: 30 }}
-										animate={{ opacity: 1, translateY: 0 }}
+										initial={{ translateY: 30 }}
+										animate={{ translateY: 0 }}
 										transition={{
 											type: "spring",
 											stiffness: 150,
@@ -714,8 +719,8 @@ const HeaderPage = () => {
 								{/* Sección métricas — fila de 3 (desktop / tablet) */}
 								<Grid item xs={12} sx={{ mt: { xs: 0.5, md: 1.5 }, display: { xs: "none", sm: "block" } }}>
 									<motion.div
-										initial={{ opacity: 0, translateY: 30 }}
-										animate={{ opacity: 1, translateY: 0 }}
+										initial={{ translateY: 30 }}
+										animate={{ translateY: 0 }}
 										transition={{
 											type: "spring",
 											stiffness: 150,
@@ -763,8 +768,8 @@ const HeaderPage = () => {
 						{/* Sección de integraciones - ocupa todo el ancho */}
 						<Grid item xs={12} sx={{ mt: { xs: 0, sm: 1, md: 1.5 } }}>
 							<motion.div
-								initial={{ opacity: 0, translateY: 30 }}
-								animate={{ opacity: 1, translateY: 0 }}
+								initial={{ translateY: 30 }}
+								animate={{ translateY: 0 }}
 								transition={{
 									type: "spring",
 									stiffness: 150,
