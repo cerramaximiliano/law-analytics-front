@@ -44,6 +44,10 @@ const root = createRoot(container!);
 // Precargar rutas críticas en segundo plano
 preloadCriticalRoutes();
 
+// El bloque estático del index.html ya cumplió: se ve mientras baja el paquete.
+// Se saca antes de montar para que no quede un instante con las dos versiones.
+document.getElementById("shell-inicial")?.remove();
+
 // ==============================|| MAIN - REACT DOM RENDER  ||============================== //
 
 // Wrapper component to handle persist errors

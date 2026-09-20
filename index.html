@@ -59,9 +59,88 @@
 		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:title" content="Law Analytics - Software Legal Inteligente" />
 		<meta name="twitter:description" content="Gestiona causas judiciales y optimiza tu estudio jurídico." />
-		<link rel="preconnect" href="https://fonts.gstatic.com" />
-		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&display=swap" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<!-- La hoja de estilo de Google bloqueaba el primer pintado: hasta que no
+		     resolvía la conexión con fonts.googleapis.com el navegador no dibujaba
+		     nada, y en un teléfono con 4G eso son segundos. Se carga como hoja de
+		     impresión y se pasa a "all" al terminar, que es la forma estándar de
+		     pedirla sin bloquear. Cinzel solo se usa en el logotipo, así que el
+		     cambio de tipografía al llegar no se nota (2026-09-19). -->
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&display=swap"
+			media="print"
+			onload="this.media='all'"
+		/>
+		<noscript>
+			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&display=swap" />
+		</noscript>
 		<script src="https://cdn.jsdelivr.net/npm/resize-observer-polyfill@1.5.1/dist/ResizeObserver.min.js"></script>
+		<!-- Primer pintado sin JavaScript.
+		     El paquete de la aplicación pesa cerca de un megabyte y medio y en un
+		     teléfono de gama media tarda unos diez segundos en mostrar algo. Quien
+		     llega de un anuncio se va antes: las sesiones desde Meta duran entre
+		     cero y seis segundos. Este bloque escribe el titular y el botón en el
+		     HTML, así que se ven apenas responde el servidor y se puede tocar el
+		     botón sin esperar a React, que lo reemplaza cuando termina de cargar.
+		     Medido el 2026-09-19 en la-ads/analysis/2026-09-19-por-que-nadie-hace-clic.md.
+		     Si cambia el titular de la landing o de /funciones, cambiarlo también acá. -->
+		<style>
+			#shell-inicial {
+				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+				background: #f7f9fc;
+				color: #1d2630;
+				min-height: 100vh;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 32px 20px;
+				box-sizing: border-box;
+			}
+			#shell-inicial .shell-caja {
+				max-width: 680px;
+				text-align: center;
+			}
+			#shell-inicial .shell-marca {
+				font-size: 0.82rem;
+				font-weight: 700;
+				letter-spacing: 0.16em;
+				text-transform: uppercase;
+				color: #3a7bff;
+				margin-bottom: 28px;
+			}
+			#shell-inicial h1 {
+				font-size: clamp(1.9rem, 6vw, 3rem);
+				line-height: 1.07;
+				letter-spacing: -0.03em;
+				font-weight: 600;
+				margin: 0 0 18px;
+				text-wrap: balance;
+			}
+			#shell-inicial p {
+				font-size: 1.05rem;
+				line-height: 1.6;
+				color: #5b6b79;
+				margin: 0 auto 28px;
+				max-width: 54ch;
+			}
+			#shell-inicial .shell-boton {
+				display: inline-block;
+				background: #3a7bff;
+				color: #fff;
+				text-decoration: none;
+				font-size: 1.02rem;
+				font-weight: 600;
+				padding: 14px 30px;
+				border-radius: 10px;
+				box-shadow: 0 14px 30px -14px rgba(58, 123, 255, 0.95);
+			}
+			#shell-inicial .shell-pie {
+				font-size: 0.86rem;
+				margin: 18px 0 0;
+			}
+		</style>
 	</head>
 
 	<body font-feature-settings="salt">
@@ -76,7 +155,45 @@
 		></noscript>
 		<!-- End Google Tag Manager (noscript) -->
 		<noscript>You need to enable JavaScript to run this app.</noscript>
-		<div id="root"></div>
+		<div id="root">
+			<div id="shell-inicial">
+				<div class="shell-caja">
+					<div class="shell-marca">Law&#124;&#124;Analytics</div>
+					<h1 id="shell-titulo">Automatizá tu estudio jurídico</h1>
+					<p id="shell-bajada">
+						Gestioná expedientes, cálculos, agenda y vencimientos desde una sola plataforma para abogados.
+					</p>
+					<a class="shell-boton" id="shell-boton" href="/register?source=hero">Probar gratis</a>
+					<p class="shell-pie">Sin tarjeta. Configuración inicial en menos de dos minutos.</p>
+				</div>
+			</div>
+		</div>
+		<script>
+			(function () {
+				var shell = document.getElementById("shell-inicial");
+				if (!shell) return;
+				var ruta = location.pathname;
+				var enFunciones = ruta.indexOf("/funciones") === 0;
+				// Fuera de la landing y de /funciones el bloque no corresponde: quien
+				// entra al panel no tiene por qué ver un titular de marketing.
+				if (ruta !== "/" && !enFunciones) {
+					shell.parentNode.removeChild(shell);
+					return;
+				}
+				if (enFunciones) {
+					document.getElementById("shell-titulo").textContent = "El expediente te avisa a vos, no al revés";
+					document.getElementById("shell-bajada").textContent =
+						"Law\u007C\u007CAnalytics sincroniza tus causas con los portales judiciales, proyecta los vencimientos y calcula liquidaciones con los topes del mes.";
+					document.getElementById("shell-boton").textContent = "Empezar gratis";
+				}
+				// El origen del anuncio viaja en la URL y no se puede perder: si alguien
+				// toca el botón antes de que cargue React, la atribución tiene que
+				// llegar igual. Sin origen en la URL se usa el mismo valor por defecto
+				// que usa la vista en React, para que las dos cuenten lo mismo.
+				var origen = new URLSearchParams(location.search).get("source") || (enFunciones ? "funciones" : "hero");
+				document.getElementById("shell-boton").href = "/register?source=" + encodeURIComponent(origen);
+			})();
+		</script>
 
 		<!-- Script de limpieza de Service Worker (solo si existe) -->
 		<script>
