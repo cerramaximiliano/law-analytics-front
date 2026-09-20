@@ -6,8 +6,11 @@ import { motion } from "framer-motion";
 // Ahora va en WebP con dos anchos; el PNG queda como respaldo para navegadores
 // sin WebP, que hoy son casi ninguno (2026-09-20).
 import dashboardImage from "assets/images/dashboard.png";
-import dashboardWebp from "assets/images/dashboard-1878.webp";
-import dashboardWebpChico from "assets/images/dashboard-940.webp";
+// Rutas estables en public/ (sin hash) para poder precargarlas desde index.html:
+// en la portada esta imagen es el contenido principal y se pedía recién cuando
+// React la montaba, casi 5 s después del HTML (2026-09-20).
+const dashboardWebp = "/images/dashboard-1878.webp";
+const dashboardWebpChico = "/images/dashboard-940.webp";
 
 const BRAND_BLUE = "#3A7BFF";
 
@@ -149,6 +152,8 @@ const MockupFrame = ({
 						sizes={esCapturaDelPanel ? (compact ? "(max-width: 600px) 92vw, 420px" : "(max-width: 900px) 92vw, 560px") : undefined}
 						alt={alt}
 						decoding="async"
+						// React 18 no tipa fetchpriority; en minúsculas llega al DOM igual.
+						{...({ fetchpriority: "high" } as Record<string, string>)}
 						width={1878}
 						height={912}
 						sx={{

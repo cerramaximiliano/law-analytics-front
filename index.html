@@ -2,17 +2,37 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<!-- Google Tag Manager -->
+		<!-- Google Tag Manager, diferido.
+		     Tag Manager, gtag y el píxel de Facebook suman 510 KB y medio segundo de
+		     procesador, y competían con el arranque de la aplicación por el mismo
+		     hilo. El dataLayer existe desde el primer instante, así que ningún push se
+		     pierde: se encola y GTM lo procesa cuando llega. Lo que se posterga es
+		     solo la descarga de gtm.js, hasta que el navegador queda libre o hasta 3 s
+		     después de cargar, lo que ocurra primero. Ningún evento que medimos ocurre
+		     antes (2026-09-20, ver la-ads/analysis/2026-09-20-plan-velocidad-paginas-publicas.md). -->
 		<script>
 			(function (w, d, s, l, i) {
 				w[l] = w[l] || [];
 				w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
-				var f = d.getElementsByTagName(s)[0],
-					j = d.createElement(s),
-					dl = l != "dataLayer" ? "&l=" + l : "";
-				j.async = true;
-				j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
-				f.parentNode.insertBefore(j, f);
+				var cargado = false;
+				function cargar() {
+					if (cargado) return;
+					cargado = true;
+					var f = d.getElementsByTagName(s)[0],
+						j = d.createElement(s),
+						dl = l != "dataLayer" ? "&l=" + l : "";
+					j.async = true;
+					j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+					f.parentNode.insertBefore(j, f);
+				}
+				function cuandoLibre() {
+					if ("requestIdleCallback" in w) w.requestIdleCallback(cargar, { timeout: 3000 });
+					else setTimeout(cargar, 1500);
+				}
+				if (d.readyState === "complete") cuandoLibre();
+				else w.addEventListener("load", cuandoLibre, { once: true });
+				// Red de seguridad por si "load" tarda demasiado en un teléfono lento.
+				setTimeout(cargar, 3000);
 			})(window, document, "script", "dataLayer", "GTM-5K3HP8K4");
 		</script>
 		<!-- End Google Tag Manager -->
@@ -101,6 +121,22 @@
 			></iframe
 		></noscript>
 		<!-- End Google Tag Manager (noscript) -->
+		<script>
+			// Precarga de la captura del panel solo donde es el contenido principal
+			// (portada y registro). Con ruta estable en public/, sin hash.
+			(function () {
+				var r = location.pathname;
+				if (r !== "/" && r.indexOf("/register") !== 0) return;
+				var l = document.createElement("link");
+				l.rel = "preload";
+				l.as = "image";
+				l.href = "/images/dashboard-940.webp";
+				l.setAttribute("imagesrcset", "/images/dashboard-940.webp 940w, /images/dashboard-1878.webp 1878w");
+				l.setAttribute("imagesizes", "(max-width: 900px) 92vw, 560px");
+				l.setAttribute("fetchpriority", "high");
+				document.head.appendChild(l);
+			})();
+		</script>
 		<noscript>You need to enable JavaScript to run this app.</noscript>
 		<div id="root"></div>
 

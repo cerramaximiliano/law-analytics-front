@@ -10,7 +10,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 import authReducer from "store/reducers/auth";
 import { logoutUser } from "store/reducers/auth";
 import Loader from "components/Loader";
-import { esRutaPublica } from "utils/lazyRetry";
+import { esRutaPublica, necesitaGoogleSignIn } from "utils/lazyRetry";
 import { UnauthorizedModal } from "../sections/auth/UnauthorizedModal";
 import { LimitErrorModal } from "../sections/auth/LimitErrorModal";
 import { AuthProps, ServerContextType, UserProfile, LoginResponse, RegisterResponse, VerifyCodeResponse } from "../types/auth";
@@ -793,13 +793,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			}}
 		>
 			{children}
-			<UnauthorizedModal
-				open={showUnauthorizedModal}
-				onClose={() => setShowUnauthorizedModal(false)}
-				onLogin={login}
-				onGoogleLogin={loginWithGoogle}
-				onLogout={handleLogoutAndRedirect}
-			/>
+			{/* El modal usa useGoogleLogin, que exige el proveedor de Google; ese
+			    proveedor ya no se monta en las páginas de marketing. Se monta el modal
+			    solo cuando hay que abrirlo y solo donde el proveedor existe. */}
+			{showUnauthorizedModal && necesitaGoogleSignIn(window.location.pathname) && (
+				<UnauthorizedModal
+					open={showUnauthorizedModal}
+					onClose={() => setShowUnauthorizedModal(false)}
+					onLogin={login}
+					onGoogleLogin={loginWithGoogle}
+					onLogout={handleLogoutAndRedirect}
+				/>
+			)}
 			<LimitErrorModal
 				open={showLimitErrorModal}
 				onClose={() => setShowLimitErrorModal(false)}

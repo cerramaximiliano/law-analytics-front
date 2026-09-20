@@ -20,6 +20,8 @@ import { fetchMenu } from "store/reducers/menu";
 import { captureAttribution } from "utils/attribution";
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { useLocation } from "react-router-dom";
+import { necesitaGoogleSignIn } from "utils/lazyRetry";
 
 // auth-provider
 import { AuthProvider } from "contexts/ServerContext";
@@ -31,6 +33,14 @@ const googleClientId = import.meta.env.VITE_AUTH0_GOOGLE_ID;
 if (!googleClientId) {
 	throw new Error("VITE_AUTH0_GOOGLE_ID no está definida. Asegúrate de configurarla en tu archivo .env");
 }
+
+// Envuelve con el proveedor de Google solo en las rutas que tienen un botón de
+// Google. En el resto, los hijos van tal cual y el cliente gsi no se descarga.
+const ProveedorGoogle = ({ children }: { children: React.ReactNode }) => {
+	const { pathname } = useLocation();
+	if (!necesitaGoogleSignIn(pathname)) return <>{children}</>;
+	return <GoogleOAuthProvider clientId={googleClientId}>{children}</GoogleOAuthProvider>;
+};
 
 const App = () => {
 	const [loading, setLoading] = useState<boolean>(true);
@@ -62,7 +72,7 @@ const App = () => {
 				<RTLLayout>
 					<Locales>
 						<ScrollTop>
-							<GoogleOAuthProvider clientId={googleClientId}>
+							<ProveedorGoogle>
 								<AuthProvider>
 									<WebSocketProvider>
 										<Notistack>
@@ -73,7 +83,7 @@ const App = () => {
 										</Notistack>
 									</WebSocketProvider>
 								</AuthProvider>
-							</GoogleOAuthProvider>
+							</ProveedorGoogle>
 						</ScrollTop>
 					</Locales>
 				</RTLLayout>

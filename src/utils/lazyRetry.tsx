@@ -279,6 +279,12 @@ const RUTAS_PUBLICAS = [
 
 export const esRutaPublica = (ruta: string): boolean => ruta === "/" || RUTAS_PUBLICAS.some((p) => ruta.startsWith(p));
 
+// El cliente de Google Sign-In (99 KB) solo hace falta donde hay un botón de
+// Google: login, registro, el consentimiento OAuth y el producto (por el modal
+// de sesión vencida). En la landing, funciones, planes o preguntas frecuentes
+// no hay nada que lo use y viajaba igual (2026-09-20).
+export const necesitaGoogleSignIn = (ruta: string): boolean => !esRutaPublica(ruta) || /^\/(login|register|oauth)/.test(ruta);
+
 // Función para prelanzar módulos críticos en segundo plano
 export const preloadCriticalRoutes = () => {
 	if (typeof window !== "undefined" && esRutaPublica(window.location.pathname)) return;
