@@ -1,5 +1,9 @@
 import { WS_BASE_URL } from "../../config";
-import { io, Socket } from "socket.io-client";
+// Importación solo de tipos: se borra al compilar. La librería en sí se pide
+// dentro de connect(), que es el único lugar que la necesita. Antes viajaba en
+// el arranque de cualquier página, incluidas las públicas, donde nunca hay una
+// conexión que abrir (2026-09-19).
+import type { Socket } from "socket.io-client";
 import { Alert } from "types/alert";
 import secureStorage from "../../services/secureStorage";
 import { refreshAccessToken } from "../../utils/refreshToken";
@@ -43,6 +47,11 @@ type LogLevel = "info" | "error" | "debug";
  */
 class WebSocketService {
 	private socket: Socket | null = null;
+	// Cada connect() incrementa esto. Como ahora la librería se pide de forma
+	// asíncrona, entre el pedido y la respuesta puede haber llegado un
+	// disconnect(): el contador permite descartar una conexión que ya no
+	// corresponde en vez de dejar un socket huérfano (2026-09-19).
+	private generacion = 0;
 	private messageListeners: Map<WSMessageType, Set<MessageListener>> = new Map();
 	private stateListeners: Set<StateChangeListener> = new Set();
 	private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
@@ -61,7 +70,7 @@ class WebSocketService {
 	 * @param authToken Token de autenticación opcional
 	 * @param customOptions Opciones personalizadas para la conexión
 	 */
-	public connect(userId?: string, authToken?: string, customOptions?: Partial<WebSocketOptions>): void {
+	public async connect(userId?: string, authToken?: string, customOptions?: Partial<WebSocketOptions>): Promise<void> {
 		// Guardar el userId para autenticación
 		if (userId) {
 			this.userId = userId;
@@ -83,6 +92,7 @@ class WebSocketService {
 
 		// Actualizar estado
 		this.updateConnectionState(ConnectionState.CONNECTING);
+		const generacionActual = ++this.generacion;
 
 		try {
 			// Construir opciones con token de autenticación si está disponible
@@ -101,6 +111,11 @@ class WebSocketService {
 			};
 
 			// Crear nueva conexión Socket.IO
+			const { io } = await import("socket.io-client");
+			if (generacionActual !== this.generacion) {
+				this.log("Se pidió otra conexión mientras cargaba la librería: se descarta esta");
+				return;
+			}
 			this.socket = io(WS_BASE_URL, options);
 			this.log(`Socket.IO inicializando con URL: ${WS_BASE_URL}`);
 
@@ -203,6 +218,8 @@ class WebSocketService {
 	 * Cierra la conexión Socket.IO
 	 */
 	public disconnect(): void {
+		// Invalida cualquier connect() que esté esperando a que cargue la librería.
+		this.generacion++;
 		if (this.socket) {
 			this.log("Cerrando conexión Socket.IO manualmente");
 			this.socket.disconnect();

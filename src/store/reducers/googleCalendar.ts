@@ -1,6 +1,11 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { EventInput } from "@fullcalendar/common";
-import googleCalendarService from "services/googleCalendarService";
+// El cliente de la API de Google pesa 18 KB comprimidos y se cargaba en el
+// arranque de **cualquier** página, la landing incluida: este reductor lo
+// importaba arriba de todo y el store se monta siempre. Ahora se pide cuando
+// de verdad hace falta, que es dentro de las acciones (2026-09-19, ver
+// la-ads/analysis/2026-09-19-por-que-nadie-hace-clic.md).
+const servicioGoogle = async () => (await import("services/googleCalendarService")).default;
 import { dispatch } from "store";
 import { openSnackbar } from "./snackbar";
 import { Event } from "types/events";
@@ -112,13 +117,13 @@ export default googleCalendarSlice.reducer;
 export const initializeGoogleCalendar = () => async () => {
 	dispatch(setLoading(true));
 	try {
-		await googleCalendarService.init();
+		await (await servicioGoogle()).init();
 
 		// IMPORTANTE: No basta con verificar isSignedIn porque el usuario puede estar
 		// logueado con Google (via Auth0) pero sin los scopes de Calendar.
 		// Solo consideramos "conectado" si tiene los scopes correctos de Calendar.
-		const isSignedIn = googleCalendarService.isUserSignedIn();
-		const hasCalendarScopes = googleCalendarService.hasCalendarScopes();
+		const isSignedIn = (await servicioGoogle()).isUserSignedIn();
+		const hasCalendarScopes = (await servicioGoogle()).hasCalendarScopes();
 
 		// Solo setear como conectado si tiene los scopes de Calendar
 		const isActuallyConnected = isSignedIn && hasCalendarScopes;
@@ -132,7 +137,7 @@ export const initializeGoogleCalendar = () => async () => {
 		dispatch(setConnected(isActuallyConnected));
 
 		if (isActuallyConnected) {
-			const profile = googleCalendarService.getUserProfile();
+			const profile = (await servicioGoogle()).getUserProfile();
 			dispatch(setUserProfile(profile));
 		}
 	} catch (error: any) {
@@ -147,13 +152,13 @@ export const initializeGoogleCalendar = () => async () => {
 export const connectGoogleCalendar = () => async (dispatch: any, getState: any) => {
 	dispatch(setLoading(true));
 	try {
-		await googleCalendarService.signIn();
+		await (await servicioGoogle()).signIn();
 
 		// Pequeña espera para asegurar que Google haya actualizado el estado
 		await new Promise((resolve) => setTimeout(resolve, 100));
 
 		// Obtener el perfil del usuario
-		const profile = googleCalendarService.getUserProfile();
+		const profile = (await servicioGoogle()).getUserProfile();
 
 		if (!profile) {
 			throw new Error("No se pudo obtener el perfil del usuario");
@@ -221,7 +226,7 @@ export const connectGoogleCalendar = () => async (dispatch: any, getState: any) 
 			);
 
 			// Obtener eventos de Google Calendar
-			const googleEvents = await googleCalendarService.fetchEvents();
+			const googleEvents = await (await servicioGoogle()).fetchEvents();
 			console.log(`Eventos encontrados en Google Calendar: ${googleEvents.length}`);
 
 			if (googleEvents.length > 0) {
@@ -455,7 +460,7 @@ export const disconnectGoogleCalendar = () => async (dispatch: any, getState: an
 		console.log("Resultado de eliminación:", deleteResult);
 
 		// Luego, desconectar de Google
-		await googleCalendarService.signOut();
+		await (await servicioGoogle()).signOut();
 		dispatch(resetState());
 
 		// Actualizar estado en el backend
@@ -542,7 +547,7 @@ export const disconnectGoogleCalendar = () => async (dispatch: any, getState: an
 export const fetchGoogleEvents = () => async (): Promise<EventInput[] | null> => {
 	dispatch(setLoading(true));
 	try {
-		const events = await googleCalendarService.fetchEvents();
+		const events = await (await servicioGoogle()).fetchEvents();
 		dispatch(setGoogleEvents(events));
 		return events;
 	} catch (error) {
@@ -610,7 +615,7 @@ export const syncWithGoogleCalendar = (localEvents: Event[]) => async () => {
 			setTimeout(() => reject(new Error("Timeout: La sincronización está tardando demasiado")), timeoutMs),
 		);
 
-		const syncPromise = googleCalendarService.syncEvents(localEvents);
+		const syncPromise = (await servicioGoogle()).syncEvents(localEvents);
 
 		// Ejecutar con timeout
 		const stats = (await Promise.race([syncPromise, timeoutPromise])) as {
@@ -728,11 +733,11 @@ export const checkGoogleCalendarConnection = () => async (dispatch: any, getStat
 
 			// Intentar reconexión silenciosa
 			try {
-				await googleCalendarService.signInSilently();
-				const isSignedIn = googleCalendarService.isSignedIn;
+				await (await servicioGoogle()).signInSilently();
+				const isSignedIn = (await servicioGoogle()).isSignedIn;
 				// IMPORTANTE: Verificar que también tenga los scopes de Calendar
 				// El usuario puede estar logueado con Google pero sin permisos de Calendar
-				const hasCalendarScopes = googleCalendarService.hasCalendarScopes();
+				const hasCalendarScopes = (await servicioGoogle()).hasCalendarScopes();
 
 				console.log("checkGoogleCalendarConnection - signInSilently:", {
 					isSignedIn,
@@ -741,7 +746,7 @@ export const checkGoogleCalendarConnection = () => async (dispatch: any, getStat
 
 				if (isSignedIn && hasCalendarScopes) {
 					// Reconexión exitosa CON los scopes correctos
-					const profile = googleCalendarService.getUserProfile();
+					const profile = (await servicioGoogle()).getUserProfile();
 					dispatch(setConnected(true));
 					dispatch(setUserProfile(profile));
 
@@ -813,7 +818,7 @@ export const checkGoogleCalendarConnection = () => async (dispatch: any, getStat
 
 export const createGoogleEvent = (event: Event) => async () => {
 	try {
-		const googleId = await googleCalendarService.createEvent(event);
+		const googleId = await (await servicioGoogle()).createEvent(event);
 		dispatch(
 			openSnackbar({
 				open: true,
@@ -845,7 +850,7 @@ export const createGoogleEvent = (event: Event) => async () => {
 
 export const updateGoogleEvent = (eventId: string, event: Partial<Event>) => async () => {
 	try {
-		await googleCalendarService.updateEvent(eventId, event);
+		await (await servicioGoogle()).updateEvent(eventId, event);
 		dispatch(
 			openSnackbar({
 				open: true,
@@ -877,7 +882,7 @@ export const updateGoogleEvent = (eventId: string, event: Partial<Event>) => asy
 
 export const deleteGoogleEvent = (eventId: string) => async () => {
 	try {
-		await googleCalendarService.deleteEvent(eventId);
+		await (await servicioGoogle()).deleteEvent(eventId);
 		dispatch(
 			openSnackbar({
 				open: true,
