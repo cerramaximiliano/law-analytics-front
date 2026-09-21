@@ -1181,6 +1181,17 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 	);
 };
 
+// Descarga sin abrir pestaña: la URL viene firmada con `Content-Disposition: attachment`,
+// así que el navegador guarda el archivo y la vista queda donde estaba.
+const triggerDownload = (url: string) => {
+	const a = document.createElement("a");
+	a.href = url;
+	a.rel = "noopener";
+	document.body.appendChild(a);
+	a.click();
+	a.remove();
+};
+
 // ── PostalDetailDialog ─────────────────────────────────────────────────────────
 
 interface PostalDetailDialogProps {
@@ -1228,7 +1239,7 @@ const PostalDetailDialog = ({ open, doc, onClose }: PostalDetailDialogProps) => 
 	return (
 		<Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: dialogPaperSx }}>
 			<DialogBrandHeader
-				eyebrow="Documento postal"
+				eyebrow="Documento"
 				title={doc.title}
 				subtitle={doc.templateName}
 				icon={<DocumentDownload size={20} variant="Bulk" />}
@@ -1291,7 +1302,7 @@ const PostalDetailDialog = ({ open, doc, onClose }: PostalDetailDialogProps) => 
 				)}
 				{downloadUrl && (
 					<Button
-						onClick={() => window.open(downloadUrl, "_blank")}
+						onClick={() => triggerDownload(downloadUrl)}
 						startIcon={<DocumentDownload size={16} variant="Linear" />}
 						sx={brandPrimaryButtonSx}
 					>
@@ -1594,6 +1605,13 @@ const EscritosPage = () => {
 				: await (dispatch as any)(previewPostalDocument(row.id));
 		if (res?.success && res.url) window.open(res.url, "_blank");
 		else showSnackbar(res?.error || "No se pudo obtener el PDF", "error");
+	};
+
+	// "Descargar": pide una URL fresca que fuerza la descarga (la de la lista abre el archivo en el navegador).
+	const handleDownload = async (row: DocRow) => {
+		const res: any = await (dispatch as any)(previewPostalDocument(row.id));
+		if (res?.success && res.downloadUrl) triggerDownload(res.downloadUrl);
+		else showSnackbar(res?.error || "No se pudo descargar el documento", "error");
 	};
 
 	const refreshDocuments = () => {
@@ -2019,7 +2037,7 @@ const EscritosPage = () => {
 														</Tooltip>
 														{row.documentUrl && (
 															<Tooltip title="Descargar">
-																<IconButton sx={iconBtnSx} onClick={() => window.open(row.documentUrl, "_blank")}>
+																<IconButton sx={iconBtnSx} onClick={() => handleDownload(row)}>
 																	<DocumentDownload size={16} variant="Linear" />
 																</IconButton>
 															</Tooltip>
@@ -2197,7 +2215,7 @@ const EscritosPage = () => {
 																	</Tooltip>
 																	{row.documentUrl && (
 																		<Tooltip title="Descargar">
-																			<IconButton sx={iconBtnSx} onClick={() => window.open(row.documentUrl, "_blank")}>
+																			<IconButton sx={iconBtnSx} onClick={() => handleDownload(row)}>
 																				<DocumentDownload size={16} variant="Linear" />
 																			</IconButton>
 																		</Tooltip>
