@@ -46,6 +46,15 @@ const ctaLabelFor = (plan: Plan, loadingPlanId: string | null): string => {
 	return `Probar ${cleanPlanDisplayName(plan.displayName)}`;
 };
 
+// Los botones van al registro con el plan elegido, igual que el teaser de la
+// landing (source=plan_teaser). Iban a /login: quien llegaba desde un precio de
+// Google Ads caía en el inicio de sesión y se perdían el origen y el plan.
+const registerUrlFor = (planId: string): string => `/register?source=plans_page&plan=${encodeURIComponent(planId)}`;
+
+const trackPlanCTA = (planId: string) => {
+	pushGTMEvent("cta_click_plans_page", { source: "plans_page", plan: planId });
+};
+
 // ============================== PLANS ============================== //
 
 const Plans = () => {
@@ -261,11 +270,13 @@ const Plans = () => {
 									cta={{
 										label: ctaLabelFor(plan, loadingPlanId),
 										component: RouterLink,
-										to: "/login",
+										to: registerUrlFor(plan.planId),
 										disabled: !plan.isActive || loadingPlanId !== null,
 										loading: loadingPlanId === plan.planId,
 										onClick: () => {
-											if (plan.isActive) setLoadingPlanId(plan.planId);
+											if (!plan.isActive) return;
+											trackPlanCTA(plan.planId);
+											setLoadingPlanId(plan.planId);
 										},
 										variant: highlighted ? "contained" : "outlined",
 										color: "primary",
