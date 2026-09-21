@@ -227,7 +227,10 @@ export const FUNCIONES: Funcion[] = [
 			{ valor: "+15.000", etiqueta: "sentencias publicadas" },
 			{ valor: "Nacional · CSJN", etiqueta: "jurisdicciones cubiertas" },
 		],
-		enlace: { texto: "Probar la búsqueda sin cuenta", a: "/jurisprudencia" },
+		// /jurisprudencia es el archivo abierto: se lee sin cuenta y se filtra por
+		// carátula. La búsqueda por sentido vive dentro de la app (5 por mes en el
+		// plan gratuito), así que el enlace no puede prometer "probar la búsqueda".
+		enlace: { texto: "Ver el archivo de fallos", a: "/jurisprudencia" },
 	},
 ];
 
