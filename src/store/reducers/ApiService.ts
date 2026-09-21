@@ -133,6 +133,8 @@ export interface PublicAddon {
 
 export const DEFAULT_PUBLIC_ADDONS: PublicAddon[] = [];
 
+export type PublicPlansResponse = ApiResponse<Plan[]> & { integrations?: PublicIntegrations; addons?: PublicAddon[] };
+
 // ===============================
 // Interfaces de usuario y sesiones
 // ===============================
@@ -813,9 +815,26 @@ class ApiService {
 	 * Obtiene los planes públicos disponibles
 	 */
 
-	static async getPublicPlans(options?: {
-		landingOnly?: boolean;
-	}): Promise<ApiResponse<Plan[]> & { integrations?: PublicIntegrations; addons?: PublicAddon[] }> {
+	static getPublicPlans(options?: { landingOnly?: boolean }): Promise<PublicPlansResponse> {
+		// Pedido en vuelo compartido: varios componentes de una misma vista piden
+		// los planes al montar (en /plans eran tres GET idénticos por carga, contra
+		// una ruta con limitador). Mientras haya uno en curso con los mismos
+		// parámetros se devuelve esa promesa. No es un caché: al resolverse se
+		// descarta, así un pedido posterior trae datos frescos.
+		const key = options?.landingOnly ? "landing" : "full";
+		const inflight = ApiService._publicPlansInflight.get(key);
+		if (inflight) return inflight;
+
+		const request = ApiService.requestPublicPlans(options).finally(() => {
+			ApiService._publicPlansInflight.delete(key);
+		});
+		ApiService._publicPlansInflight.set(key, request);
+		return request;
+	}
+
+	private static _publicPlansInflight = new Map<"landing" | "full", Promise<PublicPlansResponse>>();
+
+	private static async requestPublicPlans(options?: { landingOnly?: boolean }): Promise<PublicPlansResponse> {
 		try {
 			// landingOnly=true fuerza al backend a devolver solo descuentos con
 			// showOnLanding=true aunque haya sesión. Lo usa la landing pública (`/`)
@@ -841,6 +860,20 @@ class ApiService {
 		}
 	}
 
+	/**
+	 * Pedido de planes para quien solo necesita los bloques `integrations` o
+	 * `addons`, que son iguales con o sin landingOnly: se cuelga de cualquier
+	 * pedido en curso y recién si no hay ninguno dispara el suyo. Cede un
+	 * microtick antes de mirar porque los hooks corren su efecto antes que el de
+	 * la página que los usa, dentro del mismo commit: sin la espera, en /plans
+	 * salía primero el pedido del hook (landingOnly) y después el de la página.
+	 */
+	private static async publicPlansForBlocks(): Promise<PublicPlansResponse> {
+		await Promise.resolve();
+		const inflight = ApiService._publicPlansInflight.values().next().value;
+		return inflight ?? ApiService.getPublicPlans({ landingOnly: true });
+	}
+
 	// Cache module-level del bloque integrations devuelto por /plan-configs/public.
 	// Vida = duración del bundle JS en memoria. Se hidrata en la primera call exitosa
 	// a getPublicPlans y queda disponible vía fetchPublicIntegrations().
@@ -860,7 +893,7 @@ class ApiService {
 		if (ApiService._cachedPublicIntegrations) return ApiService._cachedPublicIntegrations;
 		if (ApiService._publicIntegrationsInflight) return ApiService._publicIntegrationsInflight;
 
-		ApiService._publicIntegrationsInflight = ApiService.getPublicPlans({ landingOnly: true })
+		ApiService._publicIntegrationsInflight = ApiService.publicPlansForBlocks()
 			.then(() => ApiService._cachedPublicIntegrations || DEFAULT_PUBLIC_INTEGRATIONS)
 			.catch(() => DEFAULT_PUBLIC_INTEGRATIONS)
 			.finally(() => {
@@ -882,7 +915,7 @@ class ApiService {
 		if (ApiService._cachedPublicAddons) return ApiService._cachedPublicAddons;
 		if (ApiService._publicAddonsInflight) return ApiService._publicAddonsInflight;
 
-		ApiService._publicAddonsInflight = ApiService.getPublicPlans({ landingOnly: true })
+		ApiService._publicAddonsInflight = ApiService.publicPlansForBlocks()
 			.then(() => ApiService._cachedPublicAddons || DEFAULT_PUBLIC_ADDONS)
 			.catch(() => DEFAULT_PUBLIC_ADDONS)
 			.finally(() => {
