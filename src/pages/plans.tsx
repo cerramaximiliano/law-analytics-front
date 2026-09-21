@@ -4,7 +4,7 @@ import { useDispatch } from "react-redux";
 
 // material-ui
 import { useTheme, alpha } from "@mui/material/styles";
-import { Alert, Box, Button, Chip, CircularProgress, Container, Grid, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, Container, Grid, Stack, Typography } from "@mui/material";
 
 // third-party
 import { motion } from "framer-motion";
@@ -15,6 +15,7 @@ import { ArrowRight2 } from "iconsax-react";
 // project-imports
 import PlanCard from "components/cards/PlanCard";
 import ApiService, { Plan } from "store/reducers/ApiService";
+import { PLANES_RESPALDO } from "data/planesRespaldo";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
@@ -73,9 +74,12 @@ const Plans = () => {
 	);
 	const userPlanIsPaid = userPlan === "standard" || userPlan === "premium";
 
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-	const [plans, setPlans] = useState<Plan[]>([]);
+	// Las tarjetas se dibujan desde el primer momento con el respaldo estático y
+	// se actualizan en sitio cuando responde la API (mismo criterio que la sección
+	// Planes de la landing). Antes había un indicador de carga que después se
+	// reemplazaba por las cuatro tarjetas: todo lo de abajo saltaba (CLS 0,98) y
+	// quien llegaba desde un precio del anuncio veía una página sin precios.
+	const [plans, setPlans] = useState<Plan[]>(PLANES_RESPALDO);
 	const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
 	const [addonBusy, setAddonBusy] = useState(false);
 
@@ -118,9 +122,7 @@ const Plans = () => {
 			setAddonBusy(true);
 			const res = await ApiService.addAddon("mcp_access");
 			if (res.success) {
-				const msg = res.alreadyActive
-					? "El conector MCP ya estaba activo."
-					: "Conector MCP agregado a tu suscripción. Procesando…";
+				const msg = res.alreadyActive ? "El conector MCP ya estaba activo." : "Conector MCP agregado a tu suscripción. Procesando…";
 				dispatch(openSnackbar({ open: true, message: msg, variant: "alert", alert: { color: "success" }, close: false }));
 				// Redirigir a la página de integración después del éxito.
 				setTimeout(() => navigate(AI_INTEGRATION_PATH), 1500);
@@ -136,32 +138,31 @@ const Plans = () => {
 	const mcpCtaLabel = !isLoggedIn
 		? "Iniciar sesión para agregar"
 		: userHasAddon
-			? "Conectar Claude.ai / ChatGPT"
-			: !userPlanIsPaid
-				? "Mejorar plan para agregar"
-				: addonBusy
-					? "Procesando…"
-					: "Agregar conector MCP";
+		? "Conectar Claude.ai / ChatGPT"
+		: !userPlanIsPaid
+		? "Mejorar plan para agregar"
+		: addonBusy
+		? "Procesando…"
+		: "Agregar conector MCP";
 
 	const breadcrumbItems = [{ title: "Inicio", to: "/" }, { title: "Planes y Precios" }];
 
 	useEffect(() => {
+		let cancelled = false;
 		const fetchPlans = async () => {
 			try {
-				setLoading(true);
 				const response = await ApiService.getPublicPlans();
-				if (response.success && response.data) {
+				if (!cancelled && response.success && response.data?.length) {
 					setPlans(response.data);
-				} else {
-					setError("No se pudieron cargar los planes");
 				}
 			} catch {
-				setError("Error al cargar los planes. Por favor, intentá más tarde.");
-			} finally {
-				setLoading(false);
+				// silencioso: quedan los valores del respaldo
 			}
 		};
 		fetchPlans();
+		return () => {
+			cancelled = true;
+		};
 	}, []);
 
 	// `currentEnv` ya no se usa acá — la lógica de visibility vive en PlanCard.
@@ -248,48 +249,32 @@ const Plans = () => {
 					</motion.div>
 				</Box>
 
-				{loading && (
-					<Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-						<CircularProgress sx={{ color: BRAND_BLUE }} />
-					</Box>
-				)}
-
-				{error && (
-					<Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-						<Alert severity="error" sx={{ borderRadius: 2 }}>
-							{error}
-						</Alert>
-					</Box>
-				)}
-
-				{!loading && !error && (
-					<Grid container spacing={3} alignItems="stretch" justifyContent="center">
-						{plans.map((plan, idx) => {
-							const highlighted = isHighlightedPlan(plan.planId);
-							return (
-								<Grid item xs={12} sm={6} md={4} key={plan.planId}>
-									<PlanCard
-										plan={plan}
-										highlighted={highlighted}
-										animationIdx={idx}
-										cta={{
-											label: ctaLabelFor(plan, loadingPlanId),
-											component: RouterLink,
-											to: "/login",
-											disabled: !plan.isActive || loadingPlanId !== null,
-											loading: loadingPlanId === plan.planId,
-											onClick: () => {
-												if (plan.isActive) setLoadingPlanId(plan.planId);
-											},
-											variant: highlighted ? "contained" : "outlined",
-											color: "primary",
-										}}
-									/>
-								</Grid>
-							);
-						})}
-					</Grid>
-				)}
+				<Grid container spacing={3} alignItems="stretch" justifyContent="center">
+					{plans.map((plan, idx) => {
+						const highlighted = isHighlightedPlan(plan.planId);
+						return (
+							<Grid item xs={12} sm={6} md={4} key={plan.planId}>
+								<PlanCard
+									plan={plan}
+									highlighted={highlighted}
+									animationIdx={idx}
+									cta={{
+										label: ctaLabelFor(plan, loadingPlanId),
+										component: RouterLink,
+										to: "/login",
+										disabled: !plan.isActive || loadingPlanId !== null,
+										loading: loadingPlanId === plan.planId,
+										onClick: () => {
+											if (plan.isActive) setLoadingPlanId(plan.planId);
+										},
+										variant: highlighted ? "contained" : "outlined",
+										color: "primary",
+									}}
+								/>
+							</Grid>
+						);
+					})}
+				</Grid>
 
 				{/* Cards MCP — addon mcp_access (Phase 9 — billing real).
 				    Una card SEPARADA por cliente AI activo (Claude.ai, ChatGPT).
@@ -297,7 +282,7 @@ const Plans = () => {
 				    Grid 6/6 con el mismo peso visual. CTA contextual compartido
 				    (el addon mcp_access cubre ambos clientes). NO va a /register
 				    → no impacta Funnel 1. Tracking: mcp_plans_cta_click con user_state. */}
-				{!loading && !error && plans.length > 0 && showMcpBanner && (
+				{showMcpBanner && (
 					<Box sx={{ mt: 6 }}>
 						<Grid container spacing={3} alignItems="stretch">
 							{(["claudeAi", "chatGpt"] as AiClient[])
@@ -373,6 +358,5 @@ const Plans = () => {
 		</Box>
 	);
 };
-
 
 export default Plans;
