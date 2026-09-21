@@ -13,6 +13,7 @@ import { ArrowDown2, ArrowRight } from "iconsax-react";
 import { MOCKS } from "./mocks/MockPantallas";
 import { TOTAL_LIQUIDACION } from "./mocks/datosFicticios";
 import { CIFRAS } from "./funcionesData";
+import { varianteDesdeBusqueda } from "./jurisdiccion";
 
 const AZUL = "#3A7BFF";
 const VERDE = "#2E9E6B";
@@ -30,6 +31,8 @@ const FuncionesHero = ({ onEmpezar, onVerFunciones }: Props) => {
 	const theme = useTheme();
 	const oscuro = theme.palette.mode === "dark";
 	const Expedientes = MOCKS.expedientes;
+	// Llega con ?jur= desde los anuncios del interior; sin eso, null y la página no cambia.
+	const variante = varianteDesdeBusqueda(window.location.search);
 
 	// Sin opacidad inicial en cero: el navegador no cuenta un elemento invisible
 	// como contenido principal, y cada animación de entrada sumaba su retraso a la
@@ -90,7 +93,7 @@ const FuncionesHero = ({ onEmpezar, onVerFunciones }: Props) => {
 									mb: 3,
 								}}
 							>
-								Todo lo que hace la app
+								{variante ? variante.etiqueta : "Todo lo que hace la app"}
 							</Typography>
 
 							<Typography
@@ -113,8 +116,10 @@ const FuncionesHero = ({ onEmpezar, onVerFunciones }: Props) => {
 								color="text.secondary"
 								sx={{ fontWeight: 400, lineHeight: 1.6, maxWidth: "58ch", mb: 4.5 }}
 							>
-								Law||Analytics sincroniza tus causas con los portales judiciales, proyecta los vencimientos, calcula liquidaciones con los
-								topes del mes y guarda todo en la carpeta que corresponde. Mirá cada función antes de crear la cuenta.
+								Law||Analytics sincroniza tus causas con{" "}
+								{variante ? `${variante.portal}, además de PJN, MEV, EJE y SCBA` : "los portales judiciales"}, proyecta los vencimientos,
+								calcula liquidaciones con los topes del mes y guarda todo en la carpeta que corresponde. Mirá cada función antes de crear la
+								cuenta.
 							</Typography>
 						</Box>
 
