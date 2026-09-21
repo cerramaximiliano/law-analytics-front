@@ -17,6 +17,7 @@ import ApiService, { Plan as ApiPlan, PlanFeature } from "store/reducers/ApiServ
 import { getCurrentEnvironment, getPlanPricing } from "utils/planPricingUtils";
 import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 import { withDynamicIntegrations } from "utils/landingIntegrations";
+import { PLANES_RESPALDO } from "data/planesRespaldo";
 import dayjs from "utils/dayjs-config";
 
 // ============================== TOKENS ============================== //
@@ -79,26 +80,14 @@ const TEASER_ROWS: TeaserRowDef[] = [
 	{ kind: "feature", featureName: "booking", label: "Sistema de reservas online" },
 ];
 
-// Fallback estático para mostrar antes de que cargue el API (o si falla).
-// Cada plan tiene 5 rows que matchean el schema TEASER_ROWS — cuando el API
-// responde, estos rows se reemplazan con datos reales (mismo topic, mismos labels).
-// Los valores de estas filas son el fallback que se muestra mientras el API
-// responde, y si falla. Tienen que coincidir con `planconfigs` en la base: son
-// la fuente de verdad de los cupos. Estuvieron 10x por encima en consultas de
-// IA, prometiendo al visitante algo que el plan no otorgaba.
-const PLAN_DEFAULTS: Plan[] = [
+// Lo que no viene del API: nombre corto, CTA, orden en móvil. El precio y las
+// filas del fallback salen de data/planesRespaldo (compartido con /plans) y se
+// arman más abajo, en PLAN_DEFAULTS, con la misma función que procesa la
+// respuesta real.
+const PLAN_META: Omit<Plan, "price" | "priceSuffix" | "rows">[] = [
 	{
 		id: "free",
 		name: "Gratuito",
-		price: "$0",
-		priceSuffix: "Para siempre",
-		rows: [
-			{ label: "5 causas activas", enabled: true },
-			{ label: "Sincronización con PJN, MEV y EJE", enabled: false },
-			{ label: "5 consultas IA/mes", enabled: true },
-			{ label: "5 búsquedas de jurisprudencia/mes", enabled: true },
-			{ label: "Sistema de reservas online", enabled: false },
-		],
 		cta: "Empezar gratis",
 		ctaTo: "/register?source=plan_teaser&plan=free",
 		highlighted: false,
@@ -107,15 +96,6 @@ const PLAN_DEFAULTS: Plan[] = [
 	{
 		id: "standard",
 		name: "Estándar",
-		price: "$7.99",
-		priceSuffix: "/mes",
-		rows: [
-			{ label: "50 causas activas", enabled: true },
-			{ label: "Sincronización con PJN, MEV y EJE", enabled: true },
-			{ label: "50 consultas IA/mes", enabled: true },
-			{ label: "Búsqueda de jurisprudencia con IA ilimitada", enabled: true },
-			{ label: "Sistema de reservas online", enabled: true },
-		],
 		cta: "Probar Estándar",
 		ctaTo: "/register?source=plan_teaser&plan=standard",
 		highlighted: true,
@@ -124,15 +104,6 @@ const PLAN_DEFAULTS: Plan[] = [
 	{
 		id: "pro",
 		name: "Pro",
-		price: "$14.99",
-		priceSuffix: "/mes",
-		rows: [
-			{ label: "200 causas activas", enabled: true },
-			{ label: "Sincronización con PJN, MEV y EJE", enabled: true },
-			{ label: "200 consultas IA/mes", enabled: true },
-			{ label: "Búsqueda de jurisprudencia con IA ilimitada", enabled: true },
-			{ label: "Sistema de reservas online", enabled: true },
-		],
 		cta: "Probar Pro",
 		ctaTo: "/register?source=plan_teaser&plan=pro",
 		highlighted: false,
@@ -141,27 +112,12 @@ const PLAN_DEFAULTS: Plan[] = [
 	{
 		id: "premium",
 		name: "Premium",
-		price: "$29.99",
-		priceSuffix: "/mes",
-		rows: [
-			{ label: "500 causas activas", enabled: true },
-			{ label: "Sincronización con PJN, MEV y EJE", enabled: true },
-			{ label: "500 consultas IA/mes", enabled: true },
-			{ label: "Búsqueda de jurisprudencia con IA ilimitada", enabled: true },
-			{ label: "Sistema de reservas online", enabled: true },
-		],
 		cta: "Probar Premium",
 		ctaTo: "/register?source=plan_teaser&plan=premium",
 		highlighted: false,
 		mobileOrder: 3,
 	},
 ];
-
-// Defaults estables que se muestran mientras el API responde y si falla.
-// PRO ya está activo en producción (PlanConfig 'pro', isActive: true), así que
-// entra en el fallback: excluirlo escondía un plan real cada vez que la llamada
-// al API fallaba.
-const STABLE_PLAN_DEFAULTS: Plan[] = PLAN_DEFAULTS;
 
 const billingSuffixShort = (period: string): string => {
 	switch (period) {
@@ -226,6 +182,27 @@ const computeRowsFromApiPlan = (apiPlan: ApiPlan, currentEnv: string): PlanRow[]
 	return rows;
 };
 
+// Fallback estático para mostrar antes de que cargue el API (o si falla).
+// Cada plan tiene 5 rows que matchean el schema TEASER_ROWS — cuando el API
+// responde, estos rows se reemplazan con datos reales (mismo topic, mismos labels).
+// Los valores salen de PLANES_RESPALDO, que tiene que coincidir con `planconfigs`
+// en la base: son la fuente de verdad de los cupos. Estuvieron 10x por encima en
+// consultas de IA, prometiendo al visitante algo que el plan no otorgaba.
+// PRO ya está activo en producción (PlanConfig 'pro', isActive: true), así que
+// entra en el fallback: excluirlo escondía un plan real cada vez que la llamada
+// al API fallaba.
+const PLAN_DEFAULTS: Plan[] = PLAN_META.map((meta) => {
+	const respaldo = PLANES_RESPALDO.find((p) => p.planId === meta.id)!;
+	const isFree = respaldo.pricingInfo.basePrice === 0;
+	return {
+		...meta,
+		price: formatPriceShort(respaldo.pricingInfo.basePrice),
+		priceSuffix: isFree ? "Para siempre" : billingSuffixShort(respaldo.pricingInfo.billingPeriod),
+		// En el respaldo todo es visibility "all": el entorno no cambia el resultado.
+		rows: computeRowsFromApiPlan(respaldo, "production") ?? [],
+	};
+});
+
 // ============================== LANDING - PLANES ============================== //
 
 const Planes = () => {
@@ -235,7 +212,7 @@ const Planes = () => {
 	const isDark = theme.palette.mode === "dark";
 	void LIVE_GREEN;
 
-	const [plans, setPlans] = useState<Plan[]>(STABLE_PLAN_DEFAULTS);
+	const [plans, setPlans] = useState<Plan[]>(PLAN_DEFAULTS);
 
 	useEffect(() => {
 		let cancelled = false;
