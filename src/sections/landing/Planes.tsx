@@ -96,7 +96,7 @@ const PLAN_DEFAULTS: Plan[] = [
 			{ label: "5 causas activas", enabled: true },
 			{ label: "Sincronización con PJN, MEV y EJE", enabled: false },
 			{ label: "5 consultas IA/mes", enabled: true },
-			{ label: "10 búsquedas de jurisprudencia/mes", enabled: true },
+			{ label: "5 búsquedas de jurisprudencia/mes", enabled: true },
 			{ label: "Sistema de reservas online", enabled: false },
 		],
 		cta: "Empezar gratis",
