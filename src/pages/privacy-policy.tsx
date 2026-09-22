@@ -24,6 +24,7 @@ const PRIVACY_TOC_ITEMS: TocItem[] = [
 	{ id: "cookies", label: "Cookies" },
 	{ id: "seguridad", label: "Seguridad" },
 	{ id: "integracion-google-calendar", label: "Integración con Google Calendar" },
+	{ id: "publicidad", label: "Publicidad y públicos similares" },
 	{ id: "enlaces-terceros", label: "Enlaces a terceros" },
 	{ id: "control-informacion", label: "Control de su información personal" },
 	{ id: "cambios-politica", label: "Cambios en la política de privacidad" },
@@ -336,6 +337,26 @@ const PrivacyPolicy = () => {
 									configuración de permisos de Google
 								</Link>
 								.
+							</Typography>
+
+							{sectionHeading("Publicidad y públicos similares", "publicidad")}
+							<Typography paragraph sx={bodySx}>
+								Para dar a conocer Law||Analytics a otros profesionales, podemos usar la dirección de correo electrónico de nuestros
+								usuarios como referencia para que plataformas publicitarias (por ejemplo, Meta, que opera Facebook e Instagram) construyan
+								un &ldquo;público similar&rdquo;: un conjunto de personas con características parecidas a las de quienes ya usan la
+								aplicación. Vigente desde el 22 de septiembre de 2026.
+							</Typography>
+							<Typography paragraph sx={bodySx}>
+								Cómo funciona: antes de enviarla, la dirección de correo se transforma con una función de cifrado irreversible (SHA-256). La
+								plataforma solo la usa para cotejarla con sus propios registros y descartarla después; no recibe su nombre, sus causas, sus
+								datos de facturación ni ninguna otra información de su cuenta, y no la utiliza para mostrarle anuncios a usted ni para
+								contactarlo.
+							</Typography>
+							<Typography paragraph sx={bodySx}>
+								Usted puede oponerse en cualquier momento y sin costo desde Configuración &rarr; Notificaciones &rarr; &ldquo;Públicos
+								similares en anuncios&rdquo;, o con el enlace incluido en el correo en el que le informamos este cambio. Si se opone, su
+								dirección deja de incluirse en las listas siguientes; esto no afecta el uso de la aplicación ni el resto de sus
+								comunicaciones. Los datos obtenidos a través de la integración con Google Calendar nunca se utilizan para este fin.
 							</Typography>
 
 							{sectionHeading("Enlaces a terceros", "enlaces-terceros")}

@@ -208,6 +208,8 @@ export interface NotificationPreferences {
 		producto?: boolean;
 		promociones?: boolean;
 		recursos?: boolean;
+		// Permiso para usar el email cifrado como semilla de públicos similares en anuncios. No es un correo.
+		publicidad?: boolean;
 	};
 	otherCommunications?: boolean;
 	loginAlerts?: boolean;

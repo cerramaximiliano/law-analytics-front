@@ -23,6 +23,7 @@ const TIPO_LABELS: Record<string, string> = {
 	producto: "novedades del producto",
 	promociones: "promociones y descuentos",
 	recursos: "guías y recursos",
+	publicidad: "públicos similares en anuncios",
 };
 
 // ==============================|| UNSUBSCRIBE PAGE ||============================== //

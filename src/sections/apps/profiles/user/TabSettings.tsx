@@ -218,6 +218,7 @@ const TabSettings = () => {
 				producto: notifications?.emailComunicaciones?.producto ?? true,
 				promociones: notifications?.emailComunicaciones?.promociones ?? true,
 				recursos: notifications?.emailComunicaciones?.recursos ?? true,
+				publicidad: notifications?.emailComunicaciones?.publicidad ?? true,
 			},
 			otherCommunications: notifications?.otherCommunications,
 			loginAlerts: notifications?.loginAlerts,
@@ -290,6 +291,7 @@ const TabSettings = () => {
 					producto: preferences.emailComunicaciones?.producto ?? true,
 					promociones: preferences.emailComunicaciones?.promociones ?? true,
 					recursos: preferences.emailComunicaciones?.recursos ?? true,
+					publicidad: preferences.emailComunicaciones?.publicidad ?? true,
 				},
 				loginAlerts: checked.includes("lc"),
 			};
@@ -1257,6 +1259,11 @@ const TabSettings = () => {
 									{ tipo: "producto", label: "Novedades de la plataforma", desc: "Funciones nuevas y mejoras" },
 									{ tipo: "promociones", label: "Promociones y descuentos", desc: "Ofertas sobre planes y complementos" },
 									{ tipo: "recursos", label: "Guías y recursos", desc: "Material de trabajo y plantillas" },
+									{
+										tipo: "publicidad",
+										label: "Públicos similares en anuncios",
+										desc: "Usar tu email cifrado para que Meta encuentre abogados parecidos a vos. No te llega ningún correo",
+									},
 								] as const
 							).map((item) => (
 								<ListItem key={item.tipo} sx={subRowSx}>
