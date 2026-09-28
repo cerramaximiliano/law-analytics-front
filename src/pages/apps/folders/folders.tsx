@@ -142,7 +142,14 @@ import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
 import { ResourceUsageBar } from "sections/widget/chart/ResourceUsageWidget";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER, LIVE_PULSE_KEYFRAMES } from "themes/dashboardTokens";
-import { getPjnBindingState, PJN_BINDING_COPY, pjnFailedCopy, PJN_PROFILE_PATH } from "utils/pjnBindingState";
+import {
+	getPjnBindingState,
+	PJN_BINDING_COPY,
+	PJN_CRED_ERROR_BANNER_COPY,
+	pjnCredErrorCopy,
+	pjnFailedCopy,
+	PJN_PROFILE_PATH,
+} from "utils/pjnBindingState";
 import { getScbaBindingState, SCBA_BINDING_COPY, SCBA_PROFILE_PATH } from "utils/scbaBindingState";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 import { usePjnCredentialError } from "hooks/usePjnCredentialError";
@@ -1361,6 +1368,29 @@ function ReactTable({
 							</Stack>
 						</Alert>
 					)}
+
+					{/* Credencial PJN rechazada (2026-09-28): no se suspenden los avisos — las
+					    causas públicas siguen; las reservadas esperan la contraseña nueva. */}
+					{pjnCredError.requiresAction && (
+						<Alert
+							severity="warning"
+							icon={<Warning2 variant="Bold" />}
+							action={
+								<Button
+									color="warning"
+									size="small"
+									variant="outlined"
+									onClick={() => navigate(PJN_PROFILE_PATH)}
+									sx={{ textTransform: "none", whiteSpace: "nowrap", fontWeight: 600 }}
+								>
+									Actualizar credencial
+								</Button>
+							}
+							sx={{ alignItems: "center" }}
+						>
+							<Typography variant="body2">{PJN_CRED_ERROR_BANNER_COPY}</Typography>
+						</Alert>
+					)}
 				</Stack>
 			)}
 
@@ -1419,8 +1449,10 @@ function ReactTable({
 							? null
 							: sourceKind === "pjn"
 							? (() => {
-									const state = getPjnBindingState(folder, { credError: pjnCredError.hasError });
+									const state = getPjnBindingState(folder, { credError: pjnCredError.requiresAction });
 									if (state === "ok") return { accent: LIVE_GREEN, tooltip: PJN_BINDING_COPY.ok, kind: "ok" as const };
+									// Credencial rechazada: copy por carpeta (pública sigue / reservada no).
+									if (state === "cred_error") return { accent: STALE_AMBER, tooltip: pjnCredErrorCopy(folder), kind: "warn" as const };
 									if (state === "reserved" || state === "failed")
 										return {
 											accent: theme.palette.error.main,
@@ -3127,11 +3159,13 @@ const FoldersLayout = () => {
 					//  - reservada sin acceso: causa individual (no pjn-login) marcada privada
 					//    por el privacy-checker o sin cobertura → consulta pública restringida.
 					// Predicados y copy compartidos con la fila expandida y el detalle (F10).
-					const pjnState = getPjnBindingState(folder);
+					// Misma señal de credencial que la card mobile y el ícono de la celda (2026-09-28):
+					// antes la fila se calculaba sin `credError` y podía mostrar otro estado.
+					const pjnState = getPjnBindingState(folder, { credError: pjnCredError.requiresAction });
 					const isPjnRevoked = pjnState === "revoked";
 					const isPjnReservedCovered = pjnState === "reserved_covered";
 					const isPjnPrivateRestricted = pjnState === "reserved";
-					const renderPrivacyRow = (tooltip: string, icon: React.ReactNode, hoverBg: string) => (
+					const renderPrivacyRow = (tooltip: string, icon: React.ReactNode, hoverBg: string, onIconClick?: () => void) => (
 						<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 							<Tooltip title={value || ""}>
 								<span
@@ -3150,7 +3184,10 @@ const FoldersLayout = () => {
 							<Tooltip title={tooltip}>
 								<IconButton
 									size="small"
-									onClick={(e) => e.stopPropagation()}
+									onClick={(e) => {
+										e.stopPropagation();
+										onIconClick?.();
+									}}
 									sx={{ padding: 0.5, "&:hover": { backgroundColor: hoverBg } }}
 								>
 									{icon}
@@ -3158,6 +3195,16 @@ const FoldersLayout = () => {
 							</Tooltip>
 						</Stack>
 					);
+					// Credencial PJN rechazada: gana sobre revoked/reserved/list_removed/pending (no
+					// sobre pending_selection/failed — ver getPjnBindingState). El ícono lleva al perfil.
+					if (pjnState === "cred_error") {
+						return renderPrivacyRow(
+							pjnCredErrorCopy(folder),
+							<Warning2 size={16} variant="Bold" color={STALE_AMBER} />,
+							"warning.lighter",
+							() => navigate(PJN_PROFILE_PATH),
+						);
+					}
 					if (isPjnRevoked) {
 						return renderPrivacyRow(PJN_BINDING_COPY.revoked, <Lock1 size={16} variant="Bold" color={STALE_AMBER} />, "warning.lighter");
 					}
@@ -3577,8 +3624,8 @@ const FoldersLayout = () => {
 									title={
 										getScbaBindingState(folder, { credError: scbaCredError.hasError }) === "cred_error"
 											? scbaCredError.errorMessage || SCBA_BINDING_COPY.cred_error
-											: getPjnBindingState(folder, { credError: pjnCredError.hasError }) === "cred_error"
-											? pjnCredError.errorMessage || PJN_BINDING_COPY.cred_error
+											: getPjnBindingState(folder, { credError: pjnCredError.requiresAction }) === "cred_error"
+											? pjnCredErrorCopy(folder)
 											: folder.pjn === true
 											? "Causa vinculada a PJN"
 											: folder.mev === true
@@ -3618,7 +3665,7 @@ const FoldersLayout = () => {
 											>
 												<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
 											</IconButton>
-										) : getPjnBindingState(folder, { credError: pjnCredError.hasError }) === "cred_error" ? (
+										) : getPjnBindingState(folder, { credError: pjnCredError.requiresAction }) === "cred_error" ? (
 											<IconButton
 												size="small"
 												onClick={(e) => {
@@ -4062,12 +4109,12 @@ const FoldersLayout = () => {
 			canDelete,
 			verifyingFolderIds,
 			handleVerifyFolder,
-			// Cred-error hooks: la columna Carátula usa pjnCredError.hasError /
+			// Cred-error hooks: la columna Carátula usa pjnCredError.requiresAction /
 			// scbaCredError.hasError para mostrar el ícono ámbar Warning2. Sin estas
 			// deps, el useMemo retorna columnas con closure viejo y el ícono solo se
 			// actualiza al desmontar/montar (navegar a otra ruta y volver).
 			scbaCredError.hasError,
-			pjnCredError.hasError,
+			pjnCredError.requiresAction,
 		],
 	);
 

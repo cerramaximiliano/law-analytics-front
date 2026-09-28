@@ -6,15 +6,18 @@
  * (F10, 2026-09-06): "Asociación fallida" / "Causa inválida" / gate failed, o
  * "reservada" en rojo en la lista y "con acceso" en verde en el detalle.
  *
- * Prioridad (de más a menos dominante): revoked > reserved_covered > reserved >
- * pending_selection > list_removed > failed > pending > cred_error > ok. El gate
- * del detalle usa el mismo orden.
+ * Prioridad entre los estados propios de la carpeta (de más a menos dominante):
+ * revoked > reserved_covered > reserved > pending_selection > list_removed >
+ * failed > pending > ok. El gate del detalle usa el mismo orden.
  *
  * `cred_error` (F14, 2026-09-06) no sale de la carpeta sino de la credencial PJN
- * del usuario (`usePjnCredentialError`): la lista ya lo mostraba y la fila/detalle
- * decían "Vinculado con PJN" en verde. Solo aplica a carpetas de Mis Causas
- * (source pjn-login) cuando ningún estado propio de la carpeta manda — la causa
- * pública sigue actualizándose por scraping, lo que se pausa es Mis Causas.
+ * del usuario (`usePjnCredentialError`). Desde 2026-09-28 es transversal: cuando
+ * el portal rechazó la contraseña de forma confirmada, aplica a TODAS las carpetas
+ * PJN del usuario (no solo a las de Mis Causas) y gana sobre revoked / reserved /
+ * list_removed / pending, pero cede ante pending_selection y failed (esos tienen
+ * una acción propia más urgente). El copy distingue pública (se sigue
+ * actualizando por scraping, se avisan sus novedades) de reservada (no se puede
+ * actualizar sin credencial) — ver `pjnCredErrorCopy`.
  */
 
 export type PjnBindingState =
@@ -79,8 +82,18 @@ export interface PjnBindingOpts {
 
 export const PJN_PROFILE_PATH = "/apps/profiles/account/pjn";
 
+/**
+ * Causa que depende de la credencial para actualizarse: reservada por el
+ * tribunal (privada) o sin cobertura de la credencial. Las demás son públicas y
+ * las sigue actualizando el scraping aunque la credencial esté rechazada.
+ */
+export const isPjnCredDependent = (f: PjnFolderLike): boolean => f.causaIsPrivate === true || f.causaCredentialCovered === false;
+
 export function getPjnBindingState(f: PjnFolderLike | null | undefined, opts: PjnBindingOpts = {}): PjnBindingState | null {
 	if (!f || f.pjn !== true) return null;
+	// Credencial rechazada: transversal a todas las carpetas PJN del usuario.
+	// Cede solo ante los estados con acción propia (elegir expediente / fallida).
+	if (opts.credError && f.causaAssociationStatus !== "pending_selection" && !isPjnFailed(f) && !isPjnPending(f)) return "cred_error";
 	if (isPjnRevoked(f)) return "revoked";
 	if (isPjnReservedCovered(f)) return "reserved_covered";
 	if (isPjnPrivateRestricted(f)) return "reserved";
@@ -88,7 +101,6 @@ export function getPjnBindingState(f: PjnFolderLike | null | undefined, opts: Pj
 	if (isPjnListRemoved(f)) return "list_removed";
 	if (isPjnFailed(f)) return "failed";
 	if (isPjnPending(f)) return "pending";
-	if (opts.credError && isPjnFromMisCausas(f)) return "cred_error";
 	return "ok";
 }
 
@@ -101,9 +113,27 @@ export const PJN_BINDING_LABEL: Record<PjnBindingState, string> = {
 	pending_selection: "PJN — Seleccionar expediente",
 	failed: "PJN — Asociación fallida",
 	pending: "PJN — Pendiente de verificación",
-	cred_error: "PJN — Sincronización pausada",
+	cred_error: "PJN — Credencial requiere acción",
 	ok: "Vinculado con PJN",
 };
+
+/** Credencial rechazada, causa pública: sigue actualizándose por scraping. */
+export const PJN_CRED_ERROR_PUBLIC_COPY =
+	"El portal rechazó tu credencial PJN. Esta causa es pública: se sigue actualizando y te avisamos sus novedades. Actualizá la contraseña en Integraciones → PJN para recuperar el acceso a tus causas reservadas.";
+
+/** Credencial rechazada, causa reservada: no se puede actualizar sin credencial. */
+export const PJN_CRED_ERROR_RESERVED_COPY =
+	"El portal rechazó tu credencial PJN y esta causa es reservada: no se puede actualizar hasta que renueves la contraseña en Integraciones → PJN.";
+
+/** Banner (lista de carpetas y detalle) mientras la credencial requiera acción. */
+export const PJN_CRED_ERROR_BANNER_COPY =
+	"Tu credencial PJN requiere acción: el portal rechazó tu contraseña. Te seguimos avisando las novedades de tus causas públicas; las reservadas no se actualizan hasta que la renueves.";
+
+/** Frase que agrega la nota de estado (Integraciones → PJN) cuando la credencial requiere acción. */
+export const PJN_CRED_ERROR_NOTICE_SUFFIX =
+	"Te seguimos avisando las novedades de tus causas públicas; las reservadas no se actualizan hasta que la renueves.";
+export const PJN_CRED_ERROR_NOTICE_SUFFIX_ACTION =
+	"Te seguimos avisando las novedades de tus causas públicas; las reservadas no se actualizan hasta que resuelvas la acción pendiente.";
 
 /** Texto largo (tooltip / gate). Misma redacción en las tres vistas. */
 export const PJN_BINDING_COPY: Record<PjnBindingState, string> = {
@@ -116,8 +146,7 @@ export const PJN_BINDING_COPY: Record<PjnBindingState, string> = {
 	pending_selection: "Se encontraron múltiples expedientes — hacé clic para seleccionar.",
 	failed: "No se pudo vincular la causa — verificá los datos ingresados.",
 	pending: "Pendiente de verificación — el sistema todavía no confirmó la causa en el Poder Judicial.",
-	cred_error:
-		"PJN — Sincronización pausada: el portal rechazó tus credenciales. Actualizá tu contraseña desde Integraciones → PJN para reanudar la sincronización.",
+	cred_error: PJN_CRED_ERROR_BANNER_COPY,
 	ok: "Causa válida",
 };
 
@@ -126,6 +155,10 @@ export const pjnFailedCopy = (f: PjnFolderLike): string =>
 	f.causaAssociationError && f.causaAssociationError !== "Error desconocido"
 		? `No se pudo vincular la causa — ${f.causaAssociationError}`
 		: PJN_BINDING_COPY.failed;
+
+/** Tooltip de "cred_error" según la carpeta: pública (sigue) o reservada (no se actualiza). */
+export const pjnCredErrorCopy = (f: PjnFolderLike): string =>
+	isPjnCredDependent(f) ? PJN_CRED_ERROR_RESERVED_COPY : PJN_CRED_ERROR_PUBLIC_COPY;
 
 // ==============================|| CREDENCIAL ||============================== //
 
@@ -201,12 +234,21 @@ export const isPjnConnected = (d: PjnCredentialStatusLike | null | undefined): b
 export function pjnStatusNotice(d: PjnCredentialStatusLike | null | undefined): string | null {
 	const reason = getPjnStatusReason(d);
 	switch (reason) {
+		// Credencial que requiere acción (2026-09-28): las notificaciones NO se
+		// suspenden — las causas públicas siguen; las reservadas esperan la contraseña.
 		case "credential_invalid":
-			return d?.enabled === false
-				? "El portal del PJN rechazó tu contraseña varias veces y la sincronización de Mis Causas quedó pausada. Actualizá tu contraseña acá para reanudarla."
-				: "Contraseña del PJN incorrecta. Si la cambiaste en el portal, actualizala acá para reanudar la sincronización.";
+			return (
+				(d?.enabled === false
+					? "El portal del PJN rechazó tu contraseña varias veces y la sincronización de Mis Causas quedó pausada. Actualizá tu contraseña acá para reanudarla."
+					: "Contraseña del PJN incorrecta. Si la cambiaste en el portal, actualizala acá para reanudar la sincronización.") +
+				" " +
+				PJN_CRED_ERROR_NOTICE_SUFFIX
+			);
 		case "required_action":
-			return "El portal del PJN te pide completar una acción en tu cuenta (cambio de contraseña obligatorio, 2FA o verificación de email). Resolvela ingresando al portal y volvé a intentar la sincronización.";
+			return (
+				"El portal del PJN te pide completar una acción en tu cuenta (cambio de contraseña obligatorio, 2FA o verificación de email). Resolvela ingresando al portal y volvé a intentar la sincronización. " +
+				PJN_CRED_ERROR_NOTICE_SUFFIX_ACTION
+			);
 		case "rejection_pending": {
 			const p = d?.rejectionProgress;
 			const progress = p && p.required > 1 ? ` (${p.count} de ${p.required} rechazos antes de pausar)` : "";

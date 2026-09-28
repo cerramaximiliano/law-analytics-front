@@ -25,13 +25,14 @@ import { dispatch } from "store";
 import { getFolderById, reverifyFolderById, ReverifyResult } from "store/reducers/folder";
 import { formatFolderName } from "utils/formatFolderName";
 import { MEV_CRED_MISSING_ON_FAILED, MEV_PROFILE_PATH, isMevCredMissing } from "utils/mevCredential";
+import { PJN_CRED_ERROR_RESERVED_COPY, PJN_PROFILE_PATH } from "utils/pjnBindingState";
 
 // components reutilizados
 import AlertFolderDelete from "./AlertFolderDelete";
 import CausaSelector from "./CausaSelector";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 
-export type VerificationGate = "pending" | "pending_selection" | "failed" | "invalid" | "reserved" | "reserved_revoked";
+export type VerificationGate = "pending" | "pending_selection" | "failed" | "invalid" | "reserved" | "reserved_revoked" | "cred_error";
 
 interface PendingVerificationViewProps {
 	folder: any;
@@ -101,6 +102,15 @@ const gateMeta: Record<
 			"El tribunal reservó esta causa y ya no figura entre las asignadas a tu credencial del Poder Judicial. Si creés que es un error, verificá el estado de tu credencial o consultá en el tribunal; el acceso se restablece solo si la causa vuelve a aparecer en tu listado de Mis Causas.",
 		toneColor: "amber",
 		icon: Lock1,
+	},
+	// Credencial PJN rechazada (2026-09-28) sobre una causa reservada: el motivo es
+	// la contraseña, no el tribunal. Las públicas no pasan por este gate.
+	cred_error: {
+		label: "Credencial requiere acción",
+		title: "El portal rechazó tu credencial PJN",
+		description: PJN_CRED_ERROR_RESERVED_COPY,
+		toneColor: "amber",
+		icon: Warning2,
 	},
 };
 
@@ -603,6 +613,36 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 											{gate === "reserved"
 												? "La reserva la dispone el tribunal, no Law Analytics. Mientras esté vigente, el contenido solo es accesible mediante una credencial autorizada."
 												: "El sistema revisa a diario si la causa reaparece en el listado de tu credencial; si vuelve, el acceso se restablece automáticamente."}
+										</Typography>
+									</Box>
+								</>
+							) : gate === "cred_error" ? (
+								<>
+									<ActionCard
+										toneHex={STALE_AMBER}
+										icon={<Warning2 size={18} variant="Bulk" color={STALE_AMBER} />}
+										title="Actualizar credencial PJN"
+										description="Cargá la contraseña nueva del portal en Integraciones → PJN. En la próxima sincronización recuperás el acceso a las causas reservadas asignadas a tu credencial."
+										ctaLabel="Actualizar credencial PJN"
+										ctaLoading={false}
+										onClick={() => navigate(PJN_PROFILE_PATH)}
+										isDark={isDark}
+									/>
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "flex-start",
+											gap: 0.875,
+											px: 1.25,
+											py: 1.25,
+											borderRadius: 1.25,
+											border: `1px dashed ${alpha(theme.palette.text.primary, isDark ? 0.18 : 0.14)}`,
+											bgcolor: alpha(theme.palette.text.primary, isDark ? 0.03 : 0.02),
+										}}
+									>
+										<InfoCircle size={14} variant="Bulk" color={theme.palette.text.secondary} style={{ marginTop: 2, flexShrink: 0 }} />
+										<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1.5, textWrap: "pretty" }}>
+											Tus causas públicas siguen actualizándose y te avisamos sus novedades; solo las reservadas esperan la credencial.
 										</Typography>
 									</Box>
 								</>

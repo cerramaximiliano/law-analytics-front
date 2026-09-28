@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router";
 import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
+	Alert,
+	Button,
 	Skeleton,
 	Box,
 	Tab,
@@ -40,7 +42,15 @@ import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { formatFolderName } from "utils/formatFolderName";
 import { MEV_CRED_LABEL, MEV_CRED_MESSAGE, MEV_PROFILE_PATH, isMevCredLoginFailure, mevCredIssue } from "utils/mevCredential";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
-import { getPjnBindingState, PJN_BINDING_LABEL, PJN_BINDING_COPY, PJN_PROFILE_PATH, pjnFailedCopy } from "utils/pjnBindingState";
+import {
+	getPjnBindingState,
+	PJN_BINDING_LABEL,
+	PJN_BINDING_COPY,
+	PJN_CRED_ERROR_BANNER_COPY,
+	PJN_PROFILE_PATH,
+	pjnCredErrorCopy,
+	pjnFailedCopy,
+} from "utils/pjnBindingState";
 import { getScbaBindingState, SCBA_BINDING_LABEL, SCBA_BINDING_COPY, SCBA_PROFILE_PATH } from "utils/scbaBindingState";
 
 // Components
@@ -431,7 +441,7 @@ const Details = () => {
 	// Cred PJN del user en error: misma señal que usa la lista (F14). Es por user, no por folder.
 	const pjnCredError = usePjnCredentialError();
 	// Estado PJN: predicados y copy compartidos con la lista y la fila expandida (F10).
-	const pjnState = getPjnBindingState(folder, { credError: pjnCredError.hasError });
+	const pjnState = getPjnBindingState(folder, { credError: pjnCredError.requiresAction });
 	const isListRemovedMev = isMevFromMisCausas && folder?.listRemoved === true && folder?.listRemovedSource === "mev";
 
 	const isDark = theme.palette.mode === "dark";
@@ -493,7 +503,7 @@ const Details = () => {
 						: pjnState === "failed"
 						? pjnFailedCopy(folder)
 						: pjnState === "cred_error"
-						? pjnCredError.errorMessage || PJN_BINDING_COPY.cred_error
+						? pjnCredErrorCopy(folder)
 						: PJN_BINDING_COPY[pjnState],
 				// Cred rechazada: el pill lleva al perfil, como el de MEV (F14).
 				onClick: pjnState === "cred_error" ? () => navigate(PJN_PROFILE_PATH) : undefined,
@@ -869,6 +879,11 @@ const Details = () => {
 		if (!isAutoFolder) return null;
 
 		if (folder.causaAssociationStatus === "pending_selection") return "pending_selection";
+		// Credencial PJN rechazada (2026-09-28) sobre una causa sin cobertura: el
+		// motivo real es la contraseña, no la reserva → gate propio con CTA al
+		// perfil. Las públicas no se bloquean (siguen actualizándose por scraping).
+		// `pjnState` ya respeta la prioridad (cede ante pending_selection/failed).
+		if (pjnState === "cred_error" && folder.causaCredentialCovered === false) return "cred_error";
 		// Causa reservada (Fase D): el backend ya niega el contenido (403
 		// CAUSA_RESERVED); acá mostramos el gate correcto. Prevalece sobre
 		// failed/invalid — los flags viejos pueden decir "inválida" pero el
@@ -885,7 +900,7 @@ const Details = () => {
 		if (folder.causaAssociationStatus === "failed" || (folder.causaVerified === true && folder.causaIsValid === false)) return "failed";
 		if (folder.causaVerified !== true) return "pending";
 		return null;
-	}, [folder, id, isLoader]);
+	}, [folder, id, isLoader, pjnState]);
 
 	// Gate de carpeta archivada — prioridad sobre el gate de verificación: es el
 	// estado dominante y bloquea el detalle completo (solo se muestra el aviso
@@ -1061,6 +1076,29 @@ const Details = () => {
 			)}
 
 			{/* Mobile Drawer for Navigation - Removed: Now using icon tabs */}
+
+			{/* Credencial PJN rechazada (2026-09-28): los avisos siguen para las causas
+			    públicas; las reservadas esperan la contraseña nueva. CTA al perfil. */}
+			{folder?.pjn === true && pjnCredError.requiresAction && (
+				<Alert
+					severity="warning"
+					icon={<Warning2 variant="Bold" />}
+					action={
+						<Button
+							color="warning"
+							size="small"
+							variant="outlined"
+							onClick={() => navigate(PJN_PROFILE_PATH)}
+							sx={{ textTransform: "none", whiteSpace: "nowrap", fontWeight: 600 }}
+						>
+							Actualizar credencial
+						</Button>
+					}
+					sx={{ mb: 1.5, alignItems: "center" }}
+				>
+					<Typography variant="body2">{PJN_CRED_ERROR_BANNER_COPY}</Typography>
+				</Alert>
+			)}
 
 			<MainCard
 				content={false}

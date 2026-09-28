@@ -10,7 +10,14 @@ import CausaSelector from "./CausaSelector";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import useSubscription from "hooks/useSubscription";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
-import { getPjnBindingState, PJN_BINDING_LABEL, PJN_BINDING_COPY, PJN_PROFILE_PATH, pjnFailedCopy } from "utils/pjnBindingState";
+import {
+	getPjnBindingState,
+	PJN_BINDING_LABEL,
+	PJN_BINDING_COPY,
+	PJN_PROFILE_PATH,
+	pjnCredErrorCopy,
+	pjnFailedCopy,
+} from "utils/pjnBindingState";
 import { getScbaBindingState, SCBA_BINDING_LABEL, SCBA_BINDING_COPY, SCBA_PROFILE_PATH } from "utils/scbaBindingState";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 import { usePjnCredentialError } from "hooks/usePjnCredentialError";
@@ -73,7 +80,7 @@ const FolderView = memo(({ data }: any) => {
 	// Cred PJN del user en error: misma señal que usa la lista (F14). Es por user, no por folder.
 	const pjnCredError = usePjnCredentialError();
 	// Estado PJN: predicados y copy compartidos con la lista y el detalle (F10).
-	const pjnState = getPjnBindingState(data, { credError: pjnCredError.hasError });
+	const pjnState = getPjnBindingState(data, { credError: pjnCredError.requiresAction });
 
 	// Map status → brand-aligned accent
 	const getStatusAccent = (status: string) => {
@@ -396,7 +403,7 @@ const FolderView = memo(({ data }: any) => {
 				// Igual que "MEV — Credencial…": el pill lo dice en ámbar y lleva al perfil. No se
 				// muestra el badge de verificación: la causa en sí es válida, lo pausado es Mis Causas.
 				return (
-					<Tooltip title={pjnCredError.errorMessage || PJN_BINDING_COPY.cred_error}>
+					<Tooltip title={pjnCredErrorCopy(data)}>
 						<Box sx={{ display: "inline-flex" }}>
 							<BindingPill
 								label={label}

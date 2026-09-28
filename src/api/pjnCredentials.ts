@@ -58,6 +58,10 @@ export interface PjnCredentialsStatus {
 	explicitRejections?: number;
 	/** Motivo derivado por el hub (pjnCredentialStatusService); el front lo traduce con pjnStatusNotice. */
 	statusReason?: PjnStatusReason | null;
+	// Espejo usuarios.pjnCredentialState (2026-09-28): credencial que requiere acción.
+	requiresAction?: boolean;
+	requiresActionSince?: string | null;
+	pjnCredentialState?: { requiresAction?: boolean; reason?: string | null; since?: string | null } | null;
 	rejectionProgress?: { count: number; required: number } | null;
 	syncStatus: "pending" | "in_progress" | "completed" | "error" | "never_synced";
 	lastSync: string | null;

@@ -1,5 +1,6 @@
 import React from "react";
 import { useState, useEffect, useRef } from "react";
+import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
 import {
@@ -38,13 +39,18 @@ import { dispatch } from "store";
 import { useTeam } from "contexts/TeamContext";
 import { ROLE_CONFIG } from "types/teams";
 
-import { BRAND_BLUE } from "themes/dashboardTokens";
+import { BRAND_BLUE, STALE_AMBER } from "themes/dashboardTokens";
+import { usePjnCredentialError } from "hooks/usePjnCredentialError";
+import { PJN_PROFILE_PATH } from "utils/pjnBindingState";
 
 // ==============================|| USER PROFILE - SETTINGS ||============================== //
 
 const TabSettings = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
+	// Credencial PJN que requiere acción (cache singleton compartido con la lista de
+	// carpetas): solo muestra el chip bajo "Movimientos judiciales" — no toca las preferencias.
+	const pjnCredError = usePjnCredentialError();
 
 	const { isTeamMode, activeTeam, userRole, isOwner, isAdmin } = useTeam();
 	const canEditSettings = !isTeamMode || isOwner || isAdmin;
@@ -877,6 +883,29 @@ const TabSettings = () => {
 									<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 										Cómo querés recibir los avisos de movimientos nuevos en tus causas
 									</Typography>
+									{/* Credencial PJN rechazada (2026-09-28): los avisos siguen para las causas
+									    públicas; el chip lleva a renovar la contraseña. El switch no cambia. */}
+									{pjnCredError.requiresAction && (
+										<Chip
+											component={RouterLink}
+											to={PJN_PROFILE_PATH}
+											clickable
+											size="small"
+											icon={<Warning2 size={12} variant="Bulk" color={STALE_AMBER} />}
+											label="Tu credencial PJN requiere acción: las causas reservadas no se actualizan hasta que la renueves"
+											sx={{
+												mt: 0.75,
+												height: "auto",
+												maxWidth: "100%",
+												bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
+												border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+												color: STALE_AMBER,
+												"& .MuiChip-label": { fontSize: "0.68rem", fontWeight: 600, whiteSpace: "normal", py: 0.375 },
+												"& .MuiChip-icon": { ml: 0.75 },
+												"&:hover": { bgcolor: alpha(STALE_AMBER, isDark ? 0.22 : 0.14) },
+											}}
+										/>
+									)}
 								</Box>
 								<Switch
 									size="small"

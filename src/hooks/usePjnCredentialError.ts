@@ -12,13 +12,34 @@ import { getPjnStatusReason, isPjnCredentialBroken, pjnStatusNotice, PjnStatusRe
  * Espejo de useScbaCredentialError. Mantener simétrico — si se modifica algo
  * acá, replicar allá.
  */
-type CacheValue = { hasError: boolean; errorMessage: string; cuil: string; statusReason: PjnStatusReason | null };
+type CacheValue = {
+	hasError: boolean;
+	errorMessage: string;
+	cuil: string;
+	statusReason: PjnStatusReason | null;
+	/**
+	 * La credencial requiere acción del usuario (el portal rechazó la contraseña
+	 * de forma confirmada). Espejo `pjnCredentialState` del hub (verdad en
+	 * pjn-credentials); un server viejo no lo manda y se aproxima con
+	 * `statusReason` ∈ {credential_invalid, required_action}. 2026-09-28.
+	 */
+	requiresAction: boolean;
+	/** Desde cuándo (ISO) requiere acción; null si no se sabe. */
+	requiresActionSince: string | null;
+};
 let cache: CacheValue | null = null;
 let cacheTs = 0;
 let pendingFetch: Promise<CacheValue> | null = null;
 
 const CACHE_TTL_MS = 30000;
-const EMPTY: CacheValue = { hasError: false, errorMessage: "", cuil: "", statusReason: null };
+const EMPTY: CacheValue = {
+	hasError: false,
+	errorMessage: "",
+	cuil: "",
+	statusReason: null,
+	requiresAction: false,
+	requiresActionSince: null,
+};
 
 async function fetchOnce(): Promise<CacheValue> {
 	if (pendingFetch) return pendingFetch;
@@ -34,7 +55,15 @@ async function fetchOnce(): Promise<CacheValue> {
 			const statusReason = getPjnStatusReason(data);
 			const errorMessage = pjnStatusNotice(data) || data?.lastError?.message || "";
 			const cuil = data?.cuil || "";
-			cache = { hasError, errorMessage, cuil, statusReason };
+			// `requiresAction` / `requiresActionSince` los expone el hub desde
+			// usuarios.pjnCredentialState (getCredentialsStatus; también viene el
+			// objeto `pjnCredentialState`). Si no vienen (server viejo), fallback al
+			// statusReason.
+			const mirrorObj = data?.pjnCredentialState;
+			const mirrored = typeof data?.requiresAction === "boolean" || (mirrorObj && typeof mirrorObj.requiresAction === "boolean");
+			const requiresAction = mirrored ? data?.requiresAction === true || mirrorObj?.requiresAction === true : hasError;
+			const requiresActionSince = requiresAction ? data?.requiresActionSince || mirrorObj?.since || data?.credentialInvalidAt || null : null;
+			cache = { hasError, errorMessage, cuil, statusReason, requiresAction, requiresActionSince };
 			cacheTs = Date.now();
 			pendingFetch = null;
 			return cache;
