@@ -14,8 +14,9 @@
  * del usuario (`usePjnCredentialError`). Desde 2026-09-28 es transversal: cuando
  * el portal rechazó la contraseña de forma confirmada, aplica a TODAS las carpetas
  * PJN del usuario (no solo a las de Mis Causas) y gana sobre revoked / reserved /
- * list_removed / pending, pero cede ante pending_selection y failed (esos tienen
- * una acción propia más urgente). El copy distingue pública (se sigue
+ * list_removed, pero cede ante pending_selection, failed y pending (esos tienen
+ * una acción propia más urgente, y una carpeta no verificada no puede decir
+ * "se sigue actualizando"). El copy distingue pública (se sigue
  * actualizando por scraping, se avisan sus novedades) de reservada (no se puede
  * actualizar sin credencial) — ver `pjnCredErrorCopy`.
  */
