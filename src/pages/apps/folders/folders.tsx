@@ -102,6 +102,7 @@ import {
 	ArrowDown2,
 	ArrowRight2,
 } from "iconsax-react";
+import PjnCredErrorBanner from "sections/apps/folders/PjnCredErrorBanner";
 import { RelacionesIcon, SinVerCount } from "sections/apps/folders/FolderNovedadesIndicators";
 
 // types
@@ -143,14 +144,7 @@ import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
 import { ResourceUsageBar } from "sections/widget/chart/ResourceUsageWidget";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER, LIVE_PULSE_KEYFRAMES } from "themes/dashboardTokens";
-import {
-	getPjnBindingState,
-	PJN_BINDING_COPY,
-	PJN_CRED_ERROR_BANNER_COPY,
-	pjnCredErrorCopy,
-	pjnFailedCopy,
-	PJN_PROFILE_PATH,
-} from "utils/pjnBindingState";
+import { getPjnBindingState, PJN_BINDING_COPY, pjnCredErrorCopy, pjnFailedCopy, PJN_PROFILE_PATH } from "utils/pjnBindingState";
 import { getScbaBindingState, SCBA_BINDING_COPY, SCBA_PROFILE_PATH } from "utils/scbaBindingState";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 import { usePjnCredentialError } from "hooks/usePjnCredentialError";
@@ -1372,33 +1366,14 @@ function ReactTable({
 
 					{/* Credencial PJN rechazada (2026-09-28): no se suspenden los avisos — las
 					    causas públicas siguen; las reservadas esperan la contraseña nueva. */}
-					{pjnCredError.requiresAction && (
-						<Alert
-							severity="warning"
-							icon={<Warning2 variant="Bold" />}
-							action={
-								<Button
-									color="warning"
-									size="small"
-									variant="outlined"
-									onClick={() => navigate(PJN_PROFILE_PATH)}
-									sx={{ textTransform: "none", whiteSpace: "nowrap", fontWeight: 600 }}
-								>
-									Actualizar credencial
-								</Button>
-							}
-							sx={{ alignItems: "center" }}
-						>
-							<Typography variant="body2">{PJN_CRED_ERROR_BANNER_COPY}</Typography>
-						</Alert>
-					)}
+					{pjnCredError.requiresAction && <PjnCredErrorBanner to={PJN_PROFILE_PATH} />}
 				</Stack>
 			)}
 
 			{/* Vista condicional: cards en mobile, tabla en desktop */}
 			{matchDownSM ? (
 				/* ── MOBILE: Cards verticales ─────────────────────────────────────── */
-				<Stack spacing={1.5} sx={{ px: 2, pb: 2 }}>
+				<Stack spacing={1} sx={{ px: 1, pb: 1.5 }}>
 					{page.map((row) => {
 						prepareRow(row);
 						const folder = row.original as any;
@@ -1575,18 +1550,25 @@ function ReactTable({
 									transition: "border-color 0.15s, background-color 0.15s",
 								}}
 							>
-								{/* Header de la card: carátula + badges */}
-								<CardContent sx={{ pb: 1, "&:last-child": { pb: 1 } }}>
-									<Stack spacing={0.75}>
-										{/* Fila: carátula + chips de fuente y estado */}
-										<Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
+								{/* Mobile (2026-09-29): carátula a todo el ancho (2 líneas) con la fuente a la
+								    izquierda; fuero/jurisdicción + estado; último movimiento + "sin ver" + ⛓
+								    en una sola fila. "Parte" solo si está definida. */}
+								<CardContent sx={{ p: 1.5, pb: 1, "&:last-child": { pb: 1 } }}>
+									<Stack spacing={0.5}>
+										<Stack direction="row" alignItems="flex-start" spacing={1}>
+											{sourceBadge && <Box sx={{ pt: 0.25, flexShrink: 0 }}>{sourceBadge}</Box>}
 											<Typography
 												variant="subtitle2"
 												fontWeight={600}
 												sx={{
 													flex: 1,
+													minWidth: 0,
 													lineHeight: 1.3,
 													wordBreak: "break-word",
+													display: "-webkit-box",
+													WebkitLineClamp: 2,
+													WebkitBoxOrient: "vertical",
+													overflow: "hidden",
 													cursor: disableRowNavigation ? "default" : "pointer",
 												}}
 												onClick={
@@ -1598,12 +1580,8 @@ function ReactTable({
 														  }
 												}
 											>
-												{folder.folderName ? formatFolderName(folder.folderName, 60) : "Sin nombre"}
+												{folder.folderName ? formatFolderName(folder.folderName, 90) : "Sin nombre"}
 											</Typography>
-											<Stack direction="row" spacing={0.5} alignItems="center" flexShrink={0}>
-												{sourceBadge}
-												{statusChip}
-											</Stack>
 										</Stack>
 
 										{/* Metadata preview — blur en modo preview para indicar que los
@@ -1614,61 +1592,53 @@ function ReactTable({
 													? {
 															display: "flex",
 															flexDirection: "column",
-															gap: 0.75,
+															gap: 0.5,
 															filter: "blur(2.5px)",
 															opacity: 0.55,
 															userSelect: "none",
 															pointerEvents: "none",
 													  }
-													: { display: "flex", flexDirection: "column", gap: 0.75 }
+													: { display: "flex", flexDirection: "column", gap: 0.5 }
 											}
 										>
-											{/* Fuero y Jurisdicción */}
-											{(folder.folderFuero || folder.folderJuris?.label) && (
-												<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-													{folder.folderFuero && (
-														<Typography variant="caption" color="text.secondary">
-															{folder.folderFuero}
-														</Typography>
-													)}
-													{folder.folderFuero && folder.folderJuris?.label && (
-														<Typography variant="caption" color="text.secondary">
-															·
-														</Typography>
-													)}
-													{folder.folderJuris?.label && (
-														<Typography variant="caption" color="text.secondary">
-															{folder.folderJuris.label}
-														</Typography>
-													)}
-												</Stack>
-											)}
+											<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+												<Typography variant="caption" color="text.secondary" noWrap sx={{ minWidth: 0 }}>
+													{[folder.folderFuero, folder.folderJuris?.label].filter(Boolean).join(" · ") || "—"}
+												</Typography>
+												{statusChip && <Box sx={{ flexShrink: 0 }}>{statusChip}</Box>}
+											</Stack>
 
-											{/* Parte */}
-											{folder.orderStatus && (
+											{folder.orderStatus && folder.orderStatus !== "Sin definir" && (
 												<Typography variant="caption" color="text.secondary">
 													Parte: <strong>{folder.orderStatus}</strong>
 												</Typography>
 											)}
 
-											{/* Fechas */}
-											<Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
-												{initDateStr && (
-													<Typography variant="caption" color="text.secondary">
-														Inicio: {initDateStr}
-													</Typography>
-												)}
-												{lastMovStr && (
-													<Typography variant="caption" color="text.secondary" sx={{ display: "inline-flex", alignItems: "center" }}>
-														Últ. mov.: {lastMovStr}
-														<SinVerCount count={folder.unseenCount} />
-													</Typography>
-												)}
+											<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+												<Typography
+													variant="caption"
+													color="text.secondary"
+													sx={{ display: "inline-flex", alignItems: "center", minWidth: 0 }}
+													noWrap
+												>
+													{lastMovStr ? (
+														<>
+															Últ. mov.: {lastMovStr}
+															<SinVerCount count={folder.unseenCount} ocultos={folder.unseenOcultos} />
+														</>
+													) : initDateStr ? (
+														`Inicio: ${initDateStr}`
+													) : (
+														"Sin movimientos"
+													)}
+												</Typography>
 												{folder.relaciones && (
-													<RelacionesIcon
-														relaciones={folder.relaciones}
-														onClick={() => navigate(`/apps/folders/details/${folder._id}?tab=relaciones`)}
-													/>
+													<Box sx={{ flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+														<RelacionesIcon
+															relaciones={folder.relaciones}
+															onClick={() => navigate(`/apps/folders/details/${folder._id}?tab=relaciones`)}
+														/>
+													</Box>
 												)}
 											</Stack>
 										</Box>
@@ -1678,7 +1648,7 @@ function ReactTable({
 								<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) }} />
 
 								{/* Footer: acciones — delega en la Cell "Acciones" ya preparada */}
-								<CardActions sx={{ px: 1, py: 0.5, justifyContent: "flex-end" }} onClick={(e) => e.stopPropagation()}>
+								<CardActions sx={{ px: 1, py: 0.25, justifyContent: "flex-end" }} onClick={(e) => e.stopPropagation()}>
 									{row.cells.find((c) => (c.column as any).Header === "Acciones")?.render("Cell")}
 								</CardActions>
 							</Card>
@@ -3826,7 +3796,7 @@ const FoldersLayout = () => {
 				accessor: "lastMovementDate",
 				Cell: ({ value, row }: { value: any; row: any }) => {
 					if (!value) return <span>-</span>;
-					const sinVer = <SinVerCount count={row.original.unseenCount} />;
+					const sinVer = <SinVerCount count={row.original.unseenCount} ocultos={row.original.unseenOcultos} />;
 
 					// Formatear la fecha de formato ISO a DD/MM/YYYY (conservar UTC)
 					try {

@@ -103,6 +103,7 @@ export type FolderData = {
 	causaAssociationStatus?: string; // Estado de asociación (success, pending, pending_selection, failed)
 	/** PJN: movimientos del espejo vistos por primera vez desde la última visita a Actividad (lo calcula el hub en el listado). */
 	unseenCount?: number;
+	unseenOcultos?: number; // plan free: nuevos fuera de los 5 visibles (upgrade)
 	/** Última visita a la pestaña Actividad (POST /api/folders/:id/visto). */
 	lastViewedAt?: string | null;
 	/** PJN: resumen de relaciones para el ícono de la lista (acumulación, acumuladas, incidentes). */

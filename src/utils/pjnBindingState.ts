@@ -132,6 +132,10 @@ export const PJN_CRED_ERROR_RESERVED_COPY =
 export const PJN_CRED_ERROR_BANNER_COPY =
 	"Tu credencial PJN requiere acción: el portal rechazó tu contraseña. Te seguimos avisando las novedades de tus causas públicas; las reservadas no se actualizan hasta que la renueves.";
 
+/** Versión corta del banner para pantallas chicas. */
+export const PJN_CRED_ERROR_BANNER_SHORT_COPY =
+	"Tu credencial PJN requiere acción. Las causas públicas siguen al día; las reservadas esperan tu contraseña nueva.";
+
 /** Frase que agrega la nota de estado (Integraciones → PJN) cuando la credencial requiere acción. */
 export const PJN_CRED_ERROR_NOTICE_SUFFIX =
 	"Te seguimos avisando las novedades de tus causas públicas; las reservadas no se actualizan hasta que la renueves.";

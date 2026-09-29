@@ -3,8 +3,6 @@ import { useParams, useNavigate } from "react-router";
 import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
-	Alert,
-	Button,
 	Skeleton,
 	Box,
 	Tab,
@@ -47,7 +45,6 @@ import {
 	getPjnBindingState,
 	PJN_BINDING_LABEL,
 	PJN_BINDING_COPY,
-	PJN_CRED_ERROR_BANNER_COPY,
 	PJN_PROFILE_PATH,
 	formatPjnAccessCutoff,
 	pjnCredErrorCopy,
@@ -63,6 +60,7 @@ import FolderDataImproved from "./components/FolderDataImproved";
 import FolderPreJudDataImproved from "./components/FolderPreJudDataImproved";
 import FolderJudDataImproved from "./components/FolderJudDataImproved";
 import ActivityTables from "./components/ActivityTables";
+import PjnCredErrorBanner from "sections/apps/folders/PjnCredErrorBanner";
 import ExpedientesRelacionadosTab from "./components/ExpedientesRelacionadosTab";
 import { marcarFolderVisto } from "store/reducers/folder";
 import HistorialTab from "./components/HistorialTab";
@@ -1115,26 +1113,7 @@ const Details = () => {
 
 			{/* Credencial PJN rechazada (2026-09-28): los avisos siguen para las causas
 			    públicas; las reservadas esperan la contraseña nueva. CTA al perfil. */}
-			{folder?.pjn === true && pjnCredError.requiresAction && (
-				<Alert
-					severity="warning"
-					icon={<Warning2 variant="Bold" />}
-					action={
-						<Button
-							color="warning"
-							size="small"
-							variant="outlined"
-							onClick={() => navigate(PJN_PROFILE_PATH)}
-							sx={{ textTransform: "none", whiteSpace: "nowrap", fontWeight: 600 }}
-						>
-							Actualizar credencial
-						</Button>
-					}
-					sx={{ mb: 1.5, alignItems: "center" }}
-				>
-					<Typography variant="body2">{PJN_CRED_ERROR_BANNER_COPY}</Typography>
-				</Alert>
-			)}
+			{folder?.pjn === true && pjnCredError.requiresAction && <PjnCredErrorBanner to={PJN_PROFILE_PATH} sx={{ mb: 1.5 }} />}
 
 			<MainCard
 				content={false}
