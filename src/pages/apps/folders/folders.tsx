@@ -35,7 +35,6 @@ import {
 	FormControl,
 	Select,
 	SelectChangeEvent,
-	CardActions,
 	CircularProgress,
 } from "@mui/material";
 
@@ -273,6 +272,144 @@ interface ReactTableProps extends Props {
 	uniqueDepartamentos?: string[];
 	handleDeleteSelected?: (selectedRows: any[]) => void;
 	onBarWidthMeasured?: (width: number) => void;
+}
+
+/**
+ * Ícono del portal de la carpeta con el estado de vinculación superpuesto (ok / atención).
+ * Compartido por la card mobile y la celda Carátula del desktop (2026-09-29).
+ */
+function FolderSourceBadge({
+	folder,
+	pjnCredErrorActive,
+	scbaCredErrorActive,
+}: {
+	folder: any;
+	pjnCredErrorActive: boolean;
+	scbaCredErrorActive: boolean;
+}) {
+	const theme = useTheme();
+	// Badge de fuente (PJN / MEV / EJE / SCBA / PJ Salta / Catamarca / Mendoza) —
+	// ícono del portal (mismo logo que judicialPowerSelection.tsx /
+	// LinkToJudicialPower.tsx) con el estado de vinculación superpuesto
+	// abajo a la derecha, igual patrón que el verifyIcon de BindingPill
+	// (FolderView.tsx). Reemplaza el chip de texto anterior — "PJ CATAMARCA"
+	// o "PJ MENDOZA" competían por espacio con el nombre de la carpeta en
+	// esta misma fila del header de la card.
+	const sourceKind = folder.pjn
+		? "pjn"
+		: folder.mev
+		? "mev"
+		: folder.eje
+		? "eje"
+		: folder.scba
+		? "scba"
+		: folder.pjsalta
+		? "pjsalta"
+		: folder.pjcatamarca
+		? "pjcatamarca"
+		: folder.pjmendoza
+		? "pjmendoza"
+		: null;
+	const sourceMeta: { label: string; logo: string; bg: string } | null = !sourceKind
+		? null
+		: sourceKind === "pjn"
+		? { label: "PJN", logo: PJN_LOGO_URL, bg: "#222E43" }
+		: sourceKind === "scba" || sourceKind === "mev"
+		? { label: sourceKind === "scba" ? "SCBA" : "MEV", logo: logoPJBuenosAires, bg: "#f8f8f8" }
+		: sourceKind === "eje"
+		? { label: "EJE", logo: EJE_LOGO_URL, bg: "#ffffff" }
+		: sourceKind === "pjsalta"
+		? { label: "PJ Salta", logo: PJSALTA_LOGO_URL, bg: "#ffffff" }
+		: sourceKind === "pjcatamarca"
+		? { label: "PJ Catamarca", logo: logoPJCatamarca, bg: "#ffffff" }
+		: { label: "PJ Mendoza", logo: logoPJMendoza, bg: "#ffffff" };
+	// Estado superpuesto — señal simplificada (ok / atención) para un
+	// vistazo rápido en la card colapsada; los matices completos por
+	// jurisdicción (revoked, reserved, pending_selection, etc.) siguen
+	// viviendo en la fila expandida (FolderView.tsx renderBinding).
+	const sourceStatus: { accent: string; tooltip: string; kind: "ok" | "warn" } | null = !sourceKind
+		? null
+		: sourceKind === "pjn"
+		? (() => {
+				const state = getPjnBindingState(folder, { credError: pjnCredErrorActive });
+				if (state === "ok") return { accent: LIVE_GREEN, tooltip: PJN_BINDING_COPY.ok, kind: "ok" as const };
+				// Credencial rechazada: copy por carpeta (pública sigue / reservada no).
+				if (state === "cred_error") return { accent: STALE_AMBER, tooltip: pjnCredErrorCopy(folder), kind: "warn" as const };
+				if (state === "reserved" || state === "failed")
+					return {
+						accent: theme.palette.error.main,
+						tooltip: pjnFailedCopy(folder) || PJN_BINDING_COPY.reserved,
+						kind: "warn" as const,
+					};
+				return { accent: STALE_AMBER, tooltip: (state && PJN_BINDING_COPY[state]) || "Requiere atención", kind: "warn" as const };
+		  })()
+		: sourceKind === "scba"
+		? (() => {
+				const state = getScbaBindingState(folder, { credError: scbaCredErrorActive });
+				return state === "ok"
+					? { accent: LIVE_GREEN, tooltip: SCBA_BINDING_COPY.ok, kind: "ok" as const }
+					: { accent: STALE_AMBER, tooltip: (state && SCBA_BINDING_COPY[state]) || "Requiere atención", kind: "warn" as const };
+		  })()
+		: sourceKind === "mev"
+		? (() => {
+				const issue = mevCredIssue(folder);
+				return issue
+					? { accent: STALE_AMBER, tooltip: "Requiere atención", kind: "warn" as const }
+					: { accent: LIVE_GREEN, tooltip: "Vinculado con MEV", kind: "ok" as const };
+		  })()
+		: folder.causaAssociationStatus === "pending_selection"
+		? { accent: STALE_AMBER, tooltip: "Elegí el expediente correcto", kind: "warn" as const }
+		: folder.listRemoved
+		? { accent: STALE_AMBER, tooltip: "El portal ya no encuentra esta causa", kind: "warn" as const }
+		: folder.causaVerified === false && folder.causaIsValid === false
+		? { accent: theme.palette.error.main, tooltip: "Vinculación fallida", kind: "warn" as const }
+		: { accent: LIVE_GREEN, tooltip: `Vinculado con ${sourceMeta?.label}`, kind: "ok" as const };
+	return sourceMeta ? (
+		<Tooltip title={sourceStatus ? `${sourceMeta.label} — ${sourceStatus.tooltip}` : sourceMeta.label}>
+			<Box sx={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
+				<Box
+					sx={{
+						width: 24,
+						height: 24,
+						borderRadius: "50%",
+						overflow: "hidden",
+						bgcolor: sourceMeta.bg,
+						border: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.32 : 0.2)}`,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						flexShrink: 0,
+					}}
+				>
+					<Box component="img" src={sourceMeta.logo} alt={sourceMeta.label} sx={{ width: "72%", height: "72%", objectFit: "contain" }} />
+				</Box>
+				{sourceStatus && (
+					<Box
+						aria-hidden
+						sx={{
+							position: "absolute",
+							bottom: -3,
+							right: -3,
+							width: 14,
+							height: 14,
+							borderRadius: "50%",
+							bgcolor: sourceStatus.accent,
+							border: `1.5px solid ${theme.palette.background.paper}`,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+						}}
+					>
+						{sourceStatus.kind === "ok" ? (
+							<TickCircle size={9} variant="Bold" color="#fff" />
+						) : (
+							<Warning2 size={9} variant="Bold" color="#fff" />
+						)}
+					</Box>
+				)}
+			</Box>
+		</Tooltip>
+	) : null;
 }
 
 function ReactTable({
@@ -1373,7 +1510,7 @@ function ReactTable({
 			{/* Vista condicional: cards en mobile, tabla en desktop */}
 			{matchDownSM ? (
 				/* ── MOBILE: Cards verticales ─────────────────────────────────────── */
-				<Stack spacing={1} sx={{ px: 1, pb: 1.5 }}>
+				<Stack spacing={1} sx={{ px: 0, pb: 1.5 }}>
 					{page.map((row) => {
 						prepareRow(row);
 						const folder = row.original as any;
@@ -1382,133 +1519,13 @@ function ReactTable({
 						// Chip de estado — replica el patrón brand-aware del desktop.
 						const statusChip = folder.status ? <StatusPill status={folder.status} /> : null;
 
-						// Badge de fuente (PJN / MEV / EJE / SCBA / PJ Salta / Catamarca / Mendoza) —
-						// ícono del portal (mismo logo que judicialPowerSelection.tsx /
-						// LinkToJudicialPower.tsx) con el estado de vinculación superpuesto
-						// abajo a la derecha, igual patrón que el verifyIcon de BindingPill
-						// (FolderView.tsx). Reemplaza el chip de texto anterior — "PJ CATAMARCA"
-						// o "PJ MENDOZA" competían por espacio con el nombre de la carpeta en
-						// esta misma fila del header de la card.
-						const sourceKind = folder.pjn
-							? "pjn"
-							: folder.mev
-							? "mev"
-							: folder.eje
-							? "eje"
-							: folder.scba
-							? "scba"
-							: folder.pjsalta
-							? "pjsalta"
-							: folder.pjcatamarca
-							? "pjcatamarca"
-							: folder.pjmendoza
-							? "pjmendoza"
-							: null;
-						const sourceMeta: { label: string; logo: string; bg: string } | null = !sourceKind
-							? null
-							: sourceKind === "pjn"
-							? { label: "PJN", logo: PJN_LOGO_URL, bg: "#222E43" }
-							: sourceKind === "scba" || sourceKind === "mev"
-							? { label: sourceKind === "scba" ? "SCBA" : "MEV", logo: logoPJBuenosAires, bg: "#f8f8f8" }
-							: sourceKind === "eje"
-							? { label: "EJE", logo: EJE_LOGO_URL, bg: "#ffffff" }
-							: sourceKind === "pjsalta"
-							? { label: "PJ Salta", logo: PJSALTA_LOGO_URL, bg: "#ffffff" }
-							: sourceKind === "pjcatamarca"
-							? { label: "PJ Catamarca", logo: logoPJCatamarca, bg: "#ffffff" }
-							: { label: "PJ Mendoza", logo: logoPJMendoza, bg: "#ffffff" };
-						// Estado superpuesto — señal simplificada (ok / atención) para un
-						// vistazo rápido en la card colapsada; los matices completos por
-						// jurisdicción (revoked, reserved, pending_selection, etc.) siguen
-						// viviendo en la fila expandida (FolderView.tsx renderBinding).
-						const sourceStatus: { accent: string; tooltip: string; kind: "ok" | "warn" } | null = !sourceKind
-							? null
-							: sourceKind === "pjn"
-							? (() => {
-									const state = getPjnBindingState(folder, { credError: pjnCredError.requiresAction });
-									if (state === "ok") return { accent: LIVE_GREEN, tooltip: PJN_BINDING_COPY.ok, kind: "ok" as const };
-									// Credencial rechazada: copy por carpeta (pública sigue / reservada no).
-									if (state === "cred_error") return { accent: STALE_AMBER, tooltip: pjnCredErrorCopy(folder), kind: "warn" as const };
-									if (state === "reserved" || state === "failed")
-										return {
-											accent: theme.palette.error.main,
-											tooltip: pjnFailedCopy(folder) || PJN_BINDING_COPY.reserved,
-											kind: "warn" as const,
-										};
-									return { accent: STALE_AMBER, tooltip: (state && PJN_BINDING_COPY[state]) || "Requiere atención", kind: "warn" as const };
-							  })()
-							: sourceKind === "scba"
-							? (() => {
-									const state = getScbaBindingState(folder, { credError: scbaCredError.hasError });
-									return state === "ok"
-										? { accent: LIVE_GREEN, tooltip: SCBA_BINDING_COPY.ok, kind: "ok" as const }
-										: { accent: STALE_AMBER, tooltip: (state && SCBA_BINDING_COPY[state]) || "Requiere atención", kind: "warn" as const };
-							  })()
-							: sourceKind === "mev"
-							? (() => {
-									const issue = mevCredIssue(folder);
-									return issue
-										? { accent: STALE_AMBER, tooltip: "Requiere atención", kind: "warn" as const }
-										: { accent: LIVE_GREEN, tooltip: "Vinculado con MEV", kind: "ok" as const };
-							  })()
-							: folder.causaAssociationStatus === "pending_selection"
-							? { accent: STALE_AMBER, tooltip: "Elegí el expediente correcto", kind: "warn" as const }
-							: folder.listRemoved
-							? { accent: STALE_AMBER, tooltip: "El portal ya no encuentra esta causa", kind: "warn" as const }
-							: folder.causaVerified === false && folder.causaIsValid === false
-							? { accent: theme.palette.error.main, tooltip: "Vinculación fallida", kind: "warn" as const }
-							: { accent: LIVE_GREEN, tooltip: `Vinculado con ${sourceMeta?.label}`, kind: "ok" as const };
-						const sourceBadge = sourceMeta ? (
-							<Tooltip title={sourceStatus ? `${sourceMeta.label} — ${sourceStatus.tooltip}` : sourceMeta.label}>
-								<Box sx={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
-									<Box
-										sx={{
-											width: 24,
-											height: 24,
-											borderRadius: "50%",
-											overflow: "hidden",
-											bgcolor: sourceMeta.bg,
-											border: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.32 : 0.2)}`,
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "center",
-											flexShrink: 0,
-										}}
-									>
-										<Box
-											component="img"
-											src={sourceMeta.logo}
-											alt={sourceMeta.label}
-											sx={{ width: "72%", height: "72%", objectFit: "contain" }}
-										/>
-									</Box>
-									{sourceStatus && (
-										<Box
-											aria-hidden
-											sx={{
-												position: "absolute",
-												bottom: -3,
-												right: -3,
-												width: 14,
-												height: 14,
-												borderRadius: "50%",
-												bgcolor: sourceStatus.accent,
-												border: `1.5px solid ${theme.palette.background.paper}`,
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-											}}
-										>
-											{sourceStatus.kind === "ok" ? (
-												<TickCircle size={9} variant="Bold" color="#fff" />
-											) : (
-												<Warning2 size={9} variant="Bold" color="#fff" />
-											)}
-										</Box>
-									)}
-								</Box>
-							</Tooltip>
-						) : null;
+						const sourceBadge = (
+							<FolderSourceBadge
+								folder={folder}
+								pjnCredErrorActive={!!pjnCredError.requiresAction}
+								scbaCredErrorActive={!!scbaCredError.hasError}
+							/>
+						);
 
 						// Último movimiento formateado
 						const lastMovStr = folder.lastMovementDate
@@ -1614,43 +1631,34 @@ function ReactTable({
 												</Typography>
 											)}
 
+											{/* Último movimiento ("sin ver" y ⛓ debajo) + acciones a la derecha: una sola
+											    fila en vez del pie separado. */}
 											<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
-												<Typography
-													variant="caption"
-													color="text.secondary"
-													sx={{ display: "inline-flex", alignItems: "center", minWidth: 0 }}
-													noWrap
-												>
-													{lastMovStr ? (
-														<>
-															Últ. mov.: {lastMovStr}
+												<Stack spacing={0.25} sx={{ minWidth: 0 }}>
+													<Typography variant="caption" color="text.secondary" noWrap>
+														{lastMovStr ? `Últ. mov.: ${lastMovStr}` : initDateStr ? `Inicio: ${initDateStr}` : "Sin movimientos"}
+													</Typography>
+													{((folder.unseenCount || 0) > 0 || (folder.unseenOcultos || 0) > 0 || folder.relaciones) && (
+														<Stack direction="row" alignItems="center" sx={{ ml: -0.75, minHeight: 22 }}>
 															<SinVerCount count={folder.unseenCount} ocultos={folder.unseenOcultos} />
-														</>
-													) : initDateStr ? (
-														`Inicio: ${initDateStr}`
-													) : (
-														"Sin movimientos"
+															{folder.relaciones && (
+																<Box sx={{ ml: 0.5 }} onClick={(e) => e.stopPropagation()}>
+																	<RelacionesIcon
+																		relaciones={folder.relaciones}
+																		onClick={() => navigate(`/apps/folders/details/${folder._id}?tab=relaciones`)}
+																	/>
+																</Box>
+															)}
+														</Stack>
 													)}
-												</Typography>
-												{folder.relaciones && (
-													<Box sx={{ flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
-														<RelacionesIcon
-															relaciones={folder.relaciones}
-															onClick={() => navigate(`/apps/folders/details/${folder._id}?tab=relaciones`)}
-														/>
-													</Box>
-												)}
+												</Stack>
+												<Box sx={{ flexShrink: 0, mr: -0.75, "& .MuiIconButton-root": { p: 0.5 } }} onClick={(e) => e.stopPropagation()}>
+													{row.cells.find((c) => (c.column as any).Header === "Acciones")?.render("Cell")}
+												</Box>
 											</Stack>
 										</Box>
 									</Stack>
 								</CardContent>
-
-								<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) }} />
-
-								{/* Footer: acciones — delega en la Cell "Acciones" ya preparada */}
-								<CardActions sx={{ px: 1, py: 0.25, justifyContent: "flex-end" }} onClick={(e) => e.stopPropagation()}>
-									{row.cells.find((c) => (c.column as any).Header === "Acciones")?.render("Cell")}
-								</CardActions>
 							</Card>
 						);
 					})}
@@ -3640,33 +3648,33 @@ const FoldersLayout = () => {
 												height: 18,
 											}}
 										>
-											{getScbaBindingState(folder, { credError: scbaCredError.hasError }) === "cred_error" ? (
-												// Cred SCBA rechazada/expirada: el ícono lleva a donde se resuelve
-												// (Integraciones → SCBA), igual que el pill de la fila expandida (S15).
-												<IconButton
-													size="small"
-													onClick={(e) => {
-														e.stopPropagation();
-														navigate(SCBA_PROFILE_PATH);
-													}}
-													sx={{ padding: 0, "&:hover": { backgroundColor: "warning.lighter" } }}
-												>
-													<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
-												</IconButton>
-											) : getPjnBindingState(folder, { credError: pjnCredError.requiresAction }) === "cred_error" ? (
-												<IconButton
-													size="small"
-													onClick={(e) => {
-														e.stopPropagation();
-														navigate(PJN_PROFILE_PATH);
-													}}
-													sx={{ padding: 0, "&:hover": { backgroundColor: "warning.lighter" } }}
-												>
-													<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
-												</IconButton>
-											) : (
-												<TickCircle size={16} variant="Bold" color={BRAND_BLUE} />
-											)}
+											{
+												getScbaBindingState(folder, { credError: scbaCredError.hasError }) === "cred_error" ? (
+													// Cred SCBA rechazada/expirada: el ícono lleva a donde se resuelve
+													// (Integraciones → SCBA), igual que el pill de la fila expandida (S15).
+													<IconButton
+														size="small"
+														onClick={(e) => {
+															e.stopPropagation();
+															navigate(SCBA_PROFILE_PATH);
+														}}
+														sx={{ padding: 0, "&:hover": { backgroundColor: "warning.lighter" } }}
+													>
+														<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
+													</IconButton>
+												) : getPjnBindingState(folder, { credError: pjnCredError.requiresAction }) === "cred_error" ? (
+													<IconButton
+														size="small"
+														onClick={(e) => {
+															e.stopPropagation();
+															navigate(PJN_PROFILE_PATH);
+														}}
+														sx={{ padding: 0, "&:hover": { backgroundColor: "warning.lighter" } }}
+													>
+														<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
+													</IconButton>
+												) : null /* ok: lo muestra el tilde del ícono de la fuente (FolderSourceBadge) */
+											}
 										</Box>
 									</Tooltip>
 								</Stack>
@@ -3691,11 +3699,18 @@ const FoldersLayout = () => {
 						);
 					})();
 					const rel = row.original.relaciones;
-					if (!rel) return base;
+					// Ícono del portal con el estado superpuesto, igual que la card mobile (2026-09-29).
 					return (
-						<Stack direction="row" alignItems="center" spacing={0.5} width="100%">
+						<Stack direction="row" alignItems="center" spacing={1} width="100%">
+							<FolderSourceBadge
+								folder={row.original}
+								pjnCredErrorActive={!!pjnCredError.requiresAction}
+								scbaCredErrorActive={!!scbaCredError.hasError}
+							/>
 							<Box sx={{ flex: 1, minWidth: 0 }}>{base}</Box>
-							<RelacionesIcon relaciones={rel} onClick={() => navigate(`/apps/folders/details/${row.original._id}?tab=relaciones`)} />
+							{rel && (
+								<RelacionesIcon relaciones={rel} onClick={() => navigate(`/apps/folders/details/${row.original._id}?tab=relaciones`)} />
+							)}
 						</Stack>
 					);
 				},
@@ -4320,7 +4335,11 @@ const FoldersLayout = () => {
 					</Stack>
 				</Box>
 
-				<MainCard content={false}>
+				{/* Mobile: sin borde ni fondo propio — las cards ya enmarcan cada carpeta (evita el doble marco). */}
+				<MainCard
+					content={false}
+					sx={{ border: { xs: "none", sm: "1px solid" }, borderColor: "divider", bgcolor: { xs: "transparent", sm: "background.paper" } }}
+				>
 					<DowngradeGracePeriodAlert />
 
 					{/* Microhint de onboarding */}

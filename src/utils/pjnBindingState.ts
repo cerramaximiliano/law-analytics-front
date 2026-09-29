@@ -134,7 +134,7 @@ export const PJN_CRED_ERROR_BANNER_COPY =
 
 /** Versión corta del banner para pantallas chicas. */
 export const PJN_CRED_ERROR_BANNER_SHORT_COPY =
-	"Tu credencial PJN requiere acción. Las causas públicas siguen al día; las reservadas esperan tu contraseña nueva.";
+	"Tu credencial PJN requiere acción.";
 
 /** Frase que agrega la nota de estado (Integraciones → PJN) cuando la credencial requiere acción. */
 export const PJN_CRED_ERROR_NOTICE_SUFFIX =
