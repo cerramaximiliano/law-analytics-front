@@ -101,6 +101,12 @@ export type FolderData = {
 	causaIsValid?: boolean; // Indica si la causa es válida
 	causaUpdateEnabled?: boolean; // Indica si las actualizaciones están habilitadas
 	causaAssociationStatus?: string; // Estado de asociación (success, pending, pending_selection, failed)
+	/** PJN: movimientos del espejo vistos por primera vez desde la última visita a Actividad (lo calcula el hub en el listado). */
+	unseenCount?: number;
+	/** Última visita a la pestaña Actividad (POST /api/folders/:id/visto). */
+	lastViewedAt?: string | null;
+	/** PJN: resumen de relaciones para el ícono de la lista (acumulación, acumuladas, incidentes). */
+	relaciones?: { tipo: "acumulada" | "relacionada"; texto: string; total: number } | null;
 	/** @deprecated usar listRemoved + listRemovedSource='pjn'. Se mantiene temporalmente por compat. */
 	pjnNotFound?: boolean;
 	/** Carpeta archivada: no aparece en el listado principal pero sigue accesible por URL directa. */

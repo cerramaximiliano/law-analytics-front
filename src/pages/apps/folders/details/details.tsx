@@ -32,6 +32,7 @@ import {
 	Clock,
 	Warning2,
 	Lock1,
+	Link21,
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
@@ -62,7 +63,8 @@ import FolderDataImproved from "./components/FolderDataImproved";
 import FolderPreJudDataImproved from "./components/FolderPreJudDataImproved";
 import FolderJudDataImproved from "./components/FolderJudDataImproved";
 import ActivityTables from "./components/ActivityTables";
-import PjnVinculadosSection from "./components/PjnVinculadosSection";
+import ExpedientesRelacionadosTab from "./components/ExpedientesRelacionadosTab";
+import { marcarFolderVisto } from "store/reducers/folder";
 import HistorialTab from "./components/HistorialTab";
 import LinkToJudicialPower from "sections/apps/folders/LinkToJudicialPower";
 import UnlinkFolderDialog from "sections/apps/folders/UnlinkFolderDialog";
@@ -86,6 +88,7 @@ import ArchivedFolderView from "sections/apps/folders/ArchivedFolderView";
 interface StateType {
 	folder: {
 		folder: any;
+		folders?: any[];
 		isLoader: boolean;
 	};
 	contacts: {
@@ -155,6 +158,10 @@ const Details = () => {
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
 	const [tabValue, setTabValue] = useState(0);
+	// Abrir Actividad = ver los movimientos: resetea el "N sin ver" del listado.
+	useEffect(() => {
+		if (tabValue === 1 && id) dispatch(marcarFolderVisto(id));
+	}, [tabValue, id]);
 	const [folderNotFound, setFolderNotFound] = useState(false);
 	const [searchParams] = useSearchParams();
 	// const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false); // Removed: Using icon tabs instead
@@ -267,6 +274,8 @@ const Details = () => {
 	useEffect(() => {
 		if (searchParams.get("movement") || searchParams.get("tab") === "activity") {
 			setTabValue(1);
+		} else if (searchParams.get("tab") === "relaciones") {
+			setTabValue(5);
 		}
 	}, [searchParams]);
 
@@ -390,7 +399,11 @@ const Details = () => {
 		icon: React.ReactElement;
 		shortLabel: string;
 		ariaLabel: string;
+		badge?: number;
 	}
+
+	// Cantidad de relaciones (del resumen que el listado trae por carpeta) para el badge de la pestaña.
+	const relacionesTotal = useSelector((state: StateType) => state.folder.folders?.find((f: any) => f._id === id)?.relaciones?.total || 0);
 
 	const tabItems = useMemo<TabItem[]>(
 		() => [
@@ -429,8 +442,21 @@ const Details = () => {
 				shortLabel: "Historial",
 				ariaLabel: "Historial de Cambios",
 			},
+			// Al final para no correr los índices (hay deep-links que fuerzan setTabValue(1)).
+			...(folder?.pjn
+				? [
+						{
+							value: 5,
+							label: "Expedientes relacionados",
+							icon: <Link21 size="20" />,
+							shortLabel: "Relac.",
+							ariaLabel: "Expedientes relacionados",
+							badge: relacionesTotal || undefined,
+						},
+				  ]
+				: []),
 		],
-		[],
+		[folder?.pjn, relacionesTotal],
 	);
 
 	// Flags de causa removida del listado origen (afectan el styling del chip).
@@ -1227,7 +1253,30 @@ const Details = () => {
 										return (
 											<Tab
 												key={tab.value}
-												label={isTablet ? tab.shortLabel : tab.label}
+												label={
+													tab.badge ? (
+														<Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.75 }}>
+															{isTablet ? tab.shortLabel : tab.label}
+															<Box
+																component="span"
+																sx={{
+																	bgcolor: "primary.main",
+																	color: "#fff",
+																	borderRadius: "9px",
+																	fontSize: "0.68rem",
+																	px: 0.75,
+																	lineHeight: "16px",
+																}}
+															>
+																{tab.badge}
+															</Box>
+														</Box>
+													) : isTablet ? (
+														tab.shortLabel
+													) : (
+														tab.label
+													)
+												}
 												icon={React.cloneElement(tab.icon, {
 													size: isTablet ? 16 : 18,
 													variant: active ? "Bulk" : "Linear",
@@ -1331,7 +1380,6 @@ const Details = () => {
 					{/* Tab 2: Actividad */}
 					<TabPanel value={tabValue} index={1}>
 						<ActivityTables folderName={folder?.folderName} accessCutoffAt={folder?.causaAccessCutoffAt ?? null} />
-						<PjnVinculadosSection folder={folder} />
 					</TabPanel>
 
 					{/* Tab 3: Gestión */}
@@ -1347,6 +1395,11 @@ const Details = () => {
 					{/* Tab 5: Historial */}
 					<TabPanel value={tabValue} index={4}>
 						{id && <HistorialTab folderId={id} />}
+					</TabPanel>
+
+					{/* Tab 6: Expedientes relacionados (PJN) */}
+					<TabPanel value={tabValue} index={5}>
+						{folder?.pjn && <ExpedientesRelacionadosTab folder={folder} />}
 					</TabPanel>
 				</Box>
 

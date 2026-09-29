@@ -102,6 +102,7 @@ import {
 	ArrowDown2,
 	ArrowRight2,
 } from "iconsax-react";
+import { RelacionesIcon, SinVerCount } from "sections/apps/folders/FolderNovedadesIndicators";
 
 // types
 import { dispatch, useSelector } from "store";
@@ -1658,9 +1659,16 @@ function ReactTable({
 													</Typography>
 												)}
 												{lastMovStr && (
-													<Typography variant="caption" color="text.secondary">
+													<Typography variant="caption" color="text.secondary" sx={{ display: "inline-flex", alignItems: "center" }}>
 														Últ. mov.: {lastMovStr}
+														<SinVerCount count={folder.unseenCount} />
 													</Typography>
+												)}
+												{folder.relaciones && (
+													<RelacionesIcon
+														relaciones={folder.relaciones}
+														onClick={() => navigate(`/apps/folders/details/${folder._id}?tab=relaciones`)}
+													/>
 												)}
 											</Stack>
 										</Box>
@@ -3031,55 +3039,145 @@ const FoldersLayout = () => {
 				Header: "Carátula",
 				accessor: "folderName",
 				minWidth: 180,
+				// ⛓ Expedientes relacionados (acumulación / acumuladas / incidentes) a la derecha de la
+				// celda existente, sin tocar sus ramas de estado PJN.
 				Cell: ({ row }: { row: any }) => {
-					const folder = row.original;
-					const value = folder.folderName;
+					const base = (() => {
+						const folder = row.original;
+						const value = folder.folderName;
 
-					// Solo mostrar indicadores visuales si es una causa sincronizada automáticamente
-					const showStatusIndicators =
-						folder.pjn === true ||
-						folder.mev === true ||
-						folder.eje === true ||
-						folder.scba === true ||
-						folder.pjsalta === true ||
-						folder.pjcatamarca === true ||
-						folder.pjmendoza === true;
+						// Solo mostrar indicadores visuales si es una causa sincronizada automáticamente
+						const showStatusIndicators =
+							folder.pjn === true ||
+							folder.mev === true ||
+							folder.eje === true ||
+							folder.scba === true ||
+							folder.pjsalta === true ||
+							folder.pjcatamarca === true ||
+							folder.pjmendoza === true;
 
-					// Carpeta desvinculada (conserva `previousSyncSource`, ningún flag de
-					// fuente activo). Va ANTES del early-return de abajo: la desvinculación
-					// apaga todos los flags, así que si se evaluara después nunca se
-					// alcanzaría y la fila sería indistinguible de una carpeta manual (el
-					// detalle y la fila expandida sí la muestran). Mismo patrón que la cred
-					// SCBA/PJN rechazada: carátula + ícono ámbar con tooltip. La acción va
-					// a donde se resuelve: la carpeta (MEV/EJE/IOL, se re-vincula por
-					// número) o Integraciones (PJN/SCBA).
-					const isUnlinked = !!folder.previousSyncSource && !showStatusIndicators;
-					if (isUnlinked) {
-						const src = folder.previousSyncSource as string;
-						const SOURCE_NAMES: Record<string, string> = {
-							pjn: "PJN",
-							scba: "SCBA",
-							mev: "MEV",
-							eje: "EJE",
-							pjsalta: "PJ Salta",
-							pjcatamarca: "PJ Catamarca",
-							pjmendoza: "PJ Mendoza",
-						};
-						const sourceName = SOURCE_NAMES[src] || src.toUpperCase();
-						const relinkable = ["eje", "mev", "pjsalta", "pjcatamarca", "pjmendoza"].includes(src);
-						// SCBA: copy y destino compartidos (S15). PJN/otros: la cuenta se
-						// administra en Integraciones (el tab ya no se llama "Cuentas Judiciales").
-						const tooltip = relinkable
-							? `Desvinculada de ${sourceName} — conserva todos sus datos pero ya no se sincroniza. Hacé clic para volver a vincularla desde la carpeta.`
-							: src === "scba"
-							? SCBA_BINDING_COPY.unlinked
-							: `Sincronización pausada (era ${sourceName}) — conserva el histórico pero no recibe actualizaciones. Para reanudar, vinculá tu cuenta desde Integraciones.`;
-						const unlinkedTarget = relinkable
-							? `/apps/folders/details/${folder._id}`
-							: src === "scba"
-							? SCBA_PROFILE_PATH
-							: "/apps/profiles/account/pjn";
-						return (
+						// Carpeta desvinculada (conserva `previousSyncSource`, ningún flag de
+						// fuente activo). Va ANTES del early-return de abajo: la desvinculación
+						// apaga todos los flags, así que si se evaluara después nunca se
+						// alcanzaría y la fila sería indistinguible de una carpeta manual (el
+						// detalle y la fila expandida sí la muestran). Mismo patrón que la cred
+						// SCBA/PJN rechazada: carátula + ícono ámbar con tooltip. La acción va
+						// a donde se resuelve: la carpeta (MEV/EJE/IOL, se re-vincula por
+						// número) o Integraciones (PJN/SCBA).
+						const isUnlinked = !!folder.previousSyncSource && !showStatusIndicators;
+						if (isUnlinked) {
+							const src = folder.previousSyncSource as string;
+							const SOURCE_NAMES: Record<string, string> = {
+								pjn: "PJN",
+								scba: "SCBA",
+								mev: "MEV",
+								eje: "EJE",
+								pjsalta: "PJ Salta",
+								pjcatamarca: "PJ Catamarca",
+								pjmendoza: "PJ Mendoza",
+							};
+							const sourceName = SOURCE_NAMES[src] || src.toUpperCase();
+							const relinkable = ["eje", "mev", "pjsalta", "pjcatamarca", "pjmendoza"].includes(src);
+							// SCBA: copy y destino compartidos (S15). PJN/otros: la cuenta se
+							// administra en Integraciones (el tab ya no se llama "Cuentas Judiciales").
+							const tooltip = relinkable
+								? `Desvinculada de ${sourceName} — conserva todos sus datos pero ya no se sincroniza. Hacé clic para volver a vincularla desde la carpeta.`
+								: src === "scba"
+								? SCBA_BINDING_COPY.unlinked
+								: `Sincronización pausada (era ${sourceName}) — conserva el histórico pero no recibe actualizaciones. Para reanudar, vinculá tu cuenta desde Integraciones.`;
+							const unlinkedTarget = relinkable
+								? `/apps/folders/details/${folder._id}`
+								: src === "scba"
+								? SCBA_PROFILE_PATH
+								: "/apps/profiles/account/pjn";
+							return (
+								<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
+									<Tooltip title={value || ""}>
+										<span
+											style={{
+												display: "-webkit-box",
+												WebkitLineClamp: 2,
+												WebkitBoxOrient: "vertical",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												flex: 1,
+											}}
+										>
+											{formatFolderName(value, 50)}
+										</span>
+									</Tooltip>
+									<Tooltip title={tooltip}>
+										<IconButton
+											size="small"
+											onClick={(e) => {
+												e.stopPropagation();
+												navigate(unlinkedTarget);
+											}}
+											sx={{ padding: 0.5, "&:hover": { backgroundColor: "warning.lighter" } }}
+										>
+											<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
+										</IconButton>
+									</Tooltip>
+								</Stack>
+							);
+						}
+
+						// Si no se deben mostrar indicadores, solo mostrar el nombre
+						if (!showStatusIndicators) {
+							return (
+								<Tooltip title={value || ""}>
+									<span
+										style={{
+											display: "-webkit-box",
+											WebkitLineClamp: 2,
+											WebkitBoxOrient: "vertical",
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+										}}
+									>
+										{formatFolderName(value, 50)}
+									</span>
+								</Tooltip>
+							);
+						}
+
+						// La causa fue removida del listado del portal origen.
+						// Soporta el flag nuevo (listRemoved + listRemovedSource) y el legacy
+						// (pjnNotFound) durante la transición.
+						// IMPORTANTE: el tracking de "Mis Causas" sólo aplica a causas
+						// agregadas por los workers de login (source = *-login). Las causas
+						// individuales (manual / agregadas vía pjn-workers, etc.) no
+						// participan del listado y nunca deben mostrar este aviso aunque
+						// el flag esté seteado.
+						const isFromMisCausas =
+							(folder.pjn === true && folder.source === "pjn-login") ||
+							(folder.scba === true && folder.source === "scba-login") ||
+							(folder.mev === true && folder.source === "mev-login");
+						// IOL-8: para PJ Salta/Catamarca/Mendoza no hay "Mis Causas" — el updater
+						// marca listRemoved cuando el portal repite "no encontrado".
+						const isIolListRemoved =
+							(folder.pjsalta === true || folder.pjcatamarca === true || folder.pjmendoza === true) &&
+							folder.listRemoved === true &&
+							["pjsalta", "pjcatamarca", "pjmendoza"].includes(folder.listRemovedSource || "");
+						const isListRemoved =
+							isIolListRemoved ||
+							(isFromMisCausas && (folder.listRemoved === true || (folder.pjn === true && folder.pjnNotFound === true)));
+						// Privacidad PJN (F2, 2026-08-25). Tres situaciones que antes la lista no
+						// distinguía (solo el detalle):
+						//  - revocada: carpeta de Mis Causas (pjn-login) cuya credencial ya no cubre
+						//    la causa reservada → el detalle bloquea (403 CAUSA_RESERVED).
+						//  - reservada con acceso: causa privada pero cubierta por la credencial
+						//    del usuario → ve todo; solo se le avisa que es reservada.
+						//  - reservada sin acceso: causa individual (no pjn-login) marcada privada
+						//    por el privacy-checker o sin cobertura → consulta pública restringida.
+						// Predicados y copy compartidos con la fila expandida y el detalle (F10).
+						// Misma señal de credencial que la card mobile y el ícono de la celda (2026-09-28):
+						// antes la fila se calculaba sin `credError` y podía mostrar otro estado.
+						const pjnState = getPjnBindingState(folder, { credError: pjnCredError.requiresAction });
+						const isPjnRevoked = pjnState === "revoked";
+						const isPjnReservedCovered = pjnState === "reserved_covered";
+						const isPjnPrivateRestricted = pjnState === "reserved";
+						const renderPrivacyRow = (tooltip: string, icon: React.ReactNode, hoverBg: string, onIconClick?: () => void) => (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 								<Tooltip title={value || ""}>
 									<span
@@ -3100,372 +3198,336 @@ const FoldersLayout = () => {
 										size="small"
 										onClick={(e) => {
 											e.stopPropagation();
-											navigate(unlinkedTarget);
+											onIconClick?.();
 										}}
-										sx={{ padding: 0.5, "&:hover": { backgroundColor: "warning.lighter" } }}
+										sx={{ padding: 0.5, "&:hover": { backgroundColor: hoverBg } }}
 									>
-										<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
+										{icon}
 									</IconButton>
 								</Tooltip>
 							</Stack>
 						);
-					}
-
-					// Si no se deben mostrar indicadores, solo mostrar el nombre
-					if (!showStatusIndicators) {
-						return (
-							<Tooltip title={value || ""}>
-								<span
-									style={{
-										display: "-webkit-box",
-										WebkitLineClamp: 2,
-										WebkitBoxOrient: "vertical",
-										overflow: "hidden",
-										textOverflow: "ellipsis",
-									}}
-								>
-									{formatFolderName(value, 50)}
-								</span>
-							</Tooltip>
-						);
-					}
-
-					// La causa fue removida del listado del portal origen.
-					// Soporta el flag nuevo (listRemoved + listRemovedSource) y el legacy
-					// (pjnNotFound) durante la transición.
-					// IMPORTANTE: el tracking de "Mis Causas" sólo aplica a causas
-					// agregadas por los workers de login (source = *-login). Las causas
-					// individuales (manual / agregadas vía pjn-workers, etc.) no
-					// participan del listado y nunca deben mostrar este aviso aunque
-					// el flag esté seteado.
-					const isFromMisCausas =
-						(folder.pjn === true && folder.source === "pjn-login") ||
-						(folder.scba === true && folder.source === "scba-login") ||
-						(folder.mev === true && folder.source === "mev-login");
-					// IOL-8: para PJ Salta/Catamarca/Mendoza no hay "Mis Causas" — el updater
-					// marca listRemoved cuando el portal repite "no encontrado".
-					const isIolListRemoved =
-						(folder.pjsalta === true || folder.pjcatamarca === true || folder.pjmendoza === true) &&
-						folder.listRemoved === true &&
-						["pjsalta", "pjcatamarca", "pjmendoza"].includes(folder.listRemovedSource || "");
-					const isListRemoved =
-						isIolListRemoved || (isFromMisCausas && (folder.listRemoved === true || (folder.pjn === true && folder.pjnNotFound === true)));
-					// Privacidad PJN (F2, 2026-08-25). Tres situaciones que antes la lista no
-					// distinguía (solo el detalle):
-					//  - revocada: carpeta de Mis Causas (pjn-login) cuya credencial ya no cubre
-					//    la causa reservada → el detalle bloquea (403 CAUSA_RESERVED).
-					//  - reservada con acceso: causa privada pero cubierta por la credencial
-					//    del usuario → ve todo; solo se le avisa que es reservada.
-					//  - reservada sin acceso: causa individual (no pjn-login) marcada privada
-					//    por el privacy-checker o sin cobertura → consulta pública restringida.
-					// Predicados y copy compartidos con la fila expandida y el detalle (F10).
-					// Misma señal de credencial que la card mobile y el ícono de la celda (2026-09-28):
-					// antes la fila se calculaba sin `credError` y podía mostrar otro estado.
-					const pjnState = getPjnBindingState(folder, { credError: pjnCredError.requiresAction });
-					const isPjnRevoked = pjnState === "revoked";
-					const isPjnReservedCovered = pjnState === "reserved_covered";
-					const isPjnPrivateRestricted = pjnState === "reserved";
-					const renderPrivacyRow = (tooltip: string, icon: React.ReactNode, hoverBg: string, onIconClick?: () => void) => (
-						<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-							<Tooltip title={value || ""}>
-								<span
-									style={{
-										display: "-webkit-box",
-										WebkitLineClamp: 2,
-										WebkitBoxOrient: "vertical",
-										overflow: "hidden",
-										textOverflow: "ellipsis",
-										flex: 1,
-									}}
-								>
-									{formatFolderName(value, 50)}
-								</span>
-							</Tooltip>
-							<Tooltip title={tooltip}>
-								<IconButton
-									size="small"
-									onClick={(e) => {
-										e.stopPropagation();
-										onIconClick?.();
-									}}
-									sx={{ padding: 0.5, "&:hover": { backgroundColor: hoverBg } }}
-								>
-									{icon}
-								</IconButton>
-							</Tooltip>
-						</Stack>
-					);
-					// Credencial PJN rechazada: gana sobre revoked/reserved/list_removed/pending (no
-					// sobre pending_selection/failed — ver getPjnBindingState). El ícono lleva al perfil.
-					if (pjnState === "cred_error") {
-						return renderPrivacyRow(
-							pjnCredErrorCopy(folder),
-							<Warning2 size={16} variant="Bold" color={STALE_AMBER} />,
-							"warning.lighter",
-							() => navigate(PJN_PROFILE_PATH),
-						);
-					}
-					if (isPjnRevoked) {
-						return renderPrivacyRow(PJN_BINDING_COPY.revoked, <Lock1 size={16} variant="Bold" color={STALE_AMBER} />, "warning.lighter");
-					}
-					if (isPjnReservedCovered) {
-						return renderPrivacyRow(
-							PJN_BINDING_COPY.reserved_covered,
-							<Lock1 size={16} variant="Bold" color={LIVE_GREEN} />,
-							"success.lighter",
-						);
-					}
-					if (isPjnPrivateRestricted) {
-						return renderPrivacyRow(PJN_BINDING_COPY.reserved, <Warning2 size={16} variant="Bold" color="#EF4444" />, "error.lighter");
-					}
-					// T20: `pending_selection` se evalúa ANTES que `listRemoved`, igual
-					// que en la fila expandida (FolderView.tsx). Antes el orden era el
-					// inverso acá, así que la misma carpeta mostraba un estado en la
-					// lista y otro al expandirla. Gana el estado accionable: si el
-					// usuario puede elegir expediente, eso es lo que tiene que ver;
-					// un `listRemoved` sobre un pivote es información vieja.
-					if (isListRemoved && folder.causaAssociationStatus !== "pending_selection") {
-						const IOL_NAMES: Record<string, string> = { pjsalta: "PJ Salta", pjcatamarca: "PJ Catamarca", pjmendoza: "PJ Mendoza" };
-						const source = folder.listRemovedSource ? folder.listRemovedSource.toUpperCase() : "PJN";
-						const tooltipCopy = isIolListRemoved
-							? `El expediente dejó de aparecer en el portal del ${
-									IOL_NAMES[folder.listRemovedSource || ""] || source
-							  } en las últimas actualizaciones. Puede haber sido archivado, reservado o movido de organismo.`
-							: source === "PJN"
-							? PJN_BINDING_COPY.list_removed
-							: source === "SCBA"
-							? SCBA_BINDING_COPY.list_removed
-							: `Esta causa ya no aparece en tu lista de Mis Causas del portal ${source}. Puede haber sido archivada o desvinculada por el tribunal.`;
-						return (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<Tooltip title={value || ""}>
-									<span
-										style={{
-											display: "-webkit-box",
-											WebkitLineClamp: 2,
-											WebkitBoxOrient: "vertical",
-											overflow: "hidden",
-											textOverflow: "ellipsis",
-											flex: 1,
-										}}
-									>
-										{formatFolderName(value, 50)}
-									</span>
-								</Tooltip>
-								<Tooltip title={tooltipCopy}>
-									<IconButton
-										size="small"
-										onClick={(e) => e.stopPropagation()}
-										sx={{
-											padding: 0.5,
-											"&:hover": {
-												backgroundColor: "warning.lighter",
-											},
-										}}
-									>
-										<Warning2 size={16} variant="Bold" color="#F59E0B" />
-									</IconButton>
-								</Tooltip>
-							</Stack>
-						);
-					}
-
-					// Si hay selección pendiente de múltiples causas, mostrar chip de seleccionar
-					if (folder.causaAssociationStatus === "pending_selection") {
-						// La celda mostraba solo el chip: en la tabla de atención se perdía qué
-						// se había buscado y cuántos candidatos había, y había que entrar al
-						// detalle para enterarse. 2026-08-26.
-						const candidatos = Array.isArray(folder.pendingCausaIds) ? folder.pendingCausaIds.length : 0;
-						const buscado = folder.searchTerm || folder.judFolder?.numberJudFolder || folder.judFolder?.cuij;
-						return (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={0.5}>
-								<Stack spacing={0.25} sx={{ minWidth: 0 }}>
-									<Box
-										onClick={(e) => {
-											e.stopPropagation();
-											setCausaSelectorFolder({ id: folder._id, name: folder.folderName || folder.searchTerm || "" });
-											setCausaSelectorOpen(true);
-										}}
-										sx={{
-											display: "inline-flex",
-											alignItems: "center",
-											gap: 0.625,
-											px: 0.875,
-											py: 0.25,
-											borderRadius: 0.75,
-											bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
-											border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
-											cursor: "pointer",
-											transition: "background-color 0.15s ease, border-color 0.15s ease",
-											"&:hover": {
-												bgcolor: alpha(STALE_AMBER, isDark ? 0.22 : 0.14),
-												borderColor: alpha(STALE_AMBER, isDark ? 0.42 : 0.32),
-											},
-										}}
-									>
-										<Warning2 size={12} variant="Bulk" color={STALE_AMBER} />
-										<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
-											Seleccionar expediente
-										</Typography>
-									</Box>
-									{(buscado || candidatos > 0) && (
-										<Typography
-											noWrap
-											sx={{ fontSize: "0.66rem", color: "text.secondary", lineHeight: 1.3 }}
-											title={buscado ? `Buscaste ${buscado}` : undefined}
+						// Credencial PJN rechazada: gana sobre revoked/reserved/list_removed/pending (no
+						// sobre pending_selection/failed — ver getPjnBindingState). El ícono lleva al perfil.
+						if (pjnState === "cred_error") {
+							return renderPrivacyRow(
+								pjnCredErrorCopy(folder),
+								<Warning2 size={16} variant="Bold" color={STALE_AMBER} />,
+								"warning.lighter",
+								() => navigate(PJN_PROFILE_PATH),
+							);
+						}
+						if (isPjnRevoked) {
+							return renderPrivacyRow(PJN_BINDING_COPY.revoked, <Lock1 size={16} variant="Bold" color={STALE_AMBER} />, "warning.lighter");
+						}
+						if (isPjnReservedCovered) {
+							return renderPrivacyRow(
+								PJN_BINDING_COPY.reserved_covered,
+								<Lock1 size={16} variant="Bold" color={LIVE_GREEN} />,
+								"success.lighter",
+							);
+						}
+						if (isPjnPrivateRestricted) {
+							return renderPrivacyRow(PJN_BINDING_COPY.reserved, <Warning2 size={16} variant="Bold" color="#EF4444" />, "error.lighter");
+						}
+						// T20: `pending_selection` se evalúa ANTES que `listRemoved`, igual
+						// que en la fila expandida (FolderView.tsx). Antes el orden era el
+						// inverso acá, así que la misma carpeta mostraba un estado en la
+						// lista y otro al expandirla. Gana el estado accionable: si el
+						// usuario puede elegir expediente, eso es lo que tiene que ver;
+						// un `listRemoved` sobre un pivote es información vieja.
+						if (isListRemoved && folder.causaAssociationStatus !== "pending_selection") {
+							const IOL_NAMES: Record<string, string> = { pjsalta: "PJ Salta", pjcatamarca: "PJ Catamarca", pjmendoza: "PJ Mendoza" };
+							const source = folder.listRemovedSource ? folder.listRemovedSource.toUpperCase() : "PJN";
+							const tooltipCopy = isIolListRemoved
+								? `El expediente dejó de aparecer en el portal del ${
+										IOL_NAMES[folder.listRemovedSource || ""] || source
+								  } en las últimas actualizaciones. Puede haber sido archivado, reservado o movido de organismo.`
+								: source === "PJN"
+								? PJN_BINDING_COPY.list_removed
+								: source === "SCBA"
+								? SCBA_BINDING_COPY.list_removed
+								: `Esta causa ya no aparece en tu lista de Mis Causas del portal ${source}. Puede haber sido archivada o desvinculada por el tribunal.`;
+							return (
+								<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
+									<Tooltip title={value || ""}>
+										<span
+											style={{
+												display: "-webkit-box",
+												WebkitLineClamp: 2,
+												WebkitBoxOrient: "vertical",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												flex: 1,
+											}}
 										>
-											{buscado ? `Buscaste ${buscado}` : ""}
-											{buscado && candidatos > 0 ? " · " : ""}
-											{candidatos > 0
-												? folder.tooManyResults
-													? `${candidatos} de ${folder.searchTotalResults ?? "muchos"} coincidencias`
-													: `${candidatos} coincidencia${candidatos === 1 ? "" : "s"}`
-												: ""}
-										</Typography>
-									)}
+											{formatFolderName(value, 50)}
+										</span>
+									</Tooltip>
+									<Tooltip title={tooltipCopy}>
+										<IconButton
+											size="small"
+											onClick={(e) => e.stopPropagation()}
+											sx={{
+												padding: 0.5,
+												"&:hover": {
+													backgroundColor: "warning.lighter",
+												},
+											}}
+										>
+											<Warning2 size={16} variant="Bold" color="#F59E0B" />
+										</IconButton>
+									</Tooltip>
 								</Stack>
-								<Tooltip
-									title={
-										folder.tooManyResults
-											? `La búsqueda devolvió ${
-													folder.searchTotalResults ?? "demasiados"
-											  } expedientes: se muestran los primeros ${candidatos}. Conviene refinar el número.`
-											: "Se encontraron múltiples expedientes - Haz clic para seleccionar"
-									}
-								>
-									<IconButton
-										size="small"
-										onClick={(e) => {
-											e.stopPropagation();
-											setCausaSelectorFolder({ id: folder._id, name: folder.folderName || folder.searchTerm || "" });
-											setCausaSelectorOpen(true);
-										}}
-										sx={{
-											padding: 0.5,
-											"&:hover": {
-												backgroundColor: "warning.lighter",
-											},
-										}}
-									>
-										<Warning2 size={16} variant="Bold" color="#F59E0B" />
-									</IconButton>
-								</Tooltip>
-							</Stack>
-						);
-					}
+							);
+						}
 
-					// Si la asociación falló, mostrar chip de error. verified+inválida es el mismo
-					// estado (F7/F10: antes mostraba "Causa inválida" con otro copy más abajo).
-					// Excepción MEV: si la credencial falló el login (invalid/expired/disabled) el
-					// worker deja la carpeta en failed, pero la causa de fondo es la credencial → el
-					// chip ámbar de credencial (más abajo) gana sobre "Asociación fallida".
-					if (
-						(folder.causaAssociationStatus === "failed" || (folder.causaVerified === true && folder.causaIsValid === false)) &&
-						!isMevCredLoginFailure(folder)
-					) {
-						return (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={0.5}>
-								<Stack spacing={0.25} sx={{ minWidth: 0 }}>
-									<Box
-										sx={{
-											display: "inline-flex",
-											alignItems: "center",
-											gap: 0.625,
-											px: 0.875,
-											py: 0.25,
-											borderRadius: 0.75,
-											bgcolor: alpha(theme.palette.error.main, isDark ? 0.16 : 0.1),
-											border: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.32 : 0.22)}`,
-										}}
-									>
-										<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: theme.palette.error.main }} />
-										<Typography
-											sx={{ fontSize: "0.68rem", fontWeight: 600, color: theme.palette.error.main, letterSpacing: "0.01em", lineHeight: 1 }}
+						// Si hay selección pendiente de múltiples causas, mostrar chip de seleccionar
+						if (folder.causaAssociationStatus === "pending_selection") {
+							// La celda mostraba solo el chip: en la tabla de atención se perdía qué
+							// se había buscado y cuántos candidatos había, y había que entrar al
+							// detalle para enterarse. 2026-08-26.
+							const candidatos = Array.isArray(folder.pendingCausaIds) ? folder.pendingCausaIds.length : 0;
+							const buscado = folder.searchTerm || folder.judFolder?.numberJudFolder || folder.judFolder?.cuij;
+							return (
+								<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={0.5}>
+									<Stack spacing={0.25} sx={{ minWidth: 0 }}>
+										<Box
+											onClick={(e) => {
+												e.stopPropagation();
+												setCausaSelectorFolder({ id: folder._id, name: folder.folderName || folder.searchTerm || "" });
+												setCausaSelectorOpen(true);
+											}}
+											sx={{
+												display: "inline-flex",
+												alignItems: "center",
+												gap: 0.625,
+												px: 0.875,
+												py: 0.25,
+												borderRadius: 0.75,
+												bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
+												border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+												cursor: "pointer",
+												transition: "background-color 0.15s ease, border-color 0.15s ease",
+												"&:hover": {
+													bgcolor: alpha(STALE_AMBER, isDark ? 0.22 : 0.14),
+													borderColor: alpha(STALE_AMBER, isDark ? 0.42 : 0.32),
+												},
+											}}
 										>
-											Asociación fallida
-										</Typography>
-									</Box>
-									{/* Sin esto había que entrar al detalle para saber qué se había buscado. */}
-									{(folder.searchTerm || folder.judFolder?.numberJudFolder) && (
-										<Typography noWrap sx={{ fontSize: "0.66rem", color: "text.secondary", lineHeight: 1.3 }}>
-											Buscaste {folder.searchTerm || folder.judFolder?.numberJudFolder}
-										</Typography>
-									)}
-									{/* MV17: causa fallida + sin credencial MEV → mostrar la relación (sin credencial no se re-verifica). */}
-									{isMevCredMissing(folder) && (
-										<Typography
-											noWrap
+											<Warning2 size={12} variant="Bulk" color={STALE_AMBER} />
+											<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
+												Seleccionar expediente
+											</Typography>
+										</Box>
+										{(buscado || candidatos > 0) && (
+											<Typography
+												noWrap
+												sx={{ fontSize: "0.66rem", color: "text.secondary", lineHeight: 1.3 }}
+												title={buscado ? `Buscaste ${buscado}` : undefined}
+											>
+												{buscado ? `Buscaste ${buscado}` : ""}
+												{buscado && candidatos > 0 ? " · " : ""}
+												{candidatos > 0
+													? folder.tooManyResults
+														? `${candidatos} de ${folder.searchTotalResults ?? "muchos"} coincidencias`
+														: `${candidatos} coincidencia${candidatos === 1 ? "" : "s"}`
+													: ""}
+											</Typography>
+										)}
+									</Stack>
+									<Tooltip
+										title={
+											folder.tooManyResults
+												? `La búsqueda devolvió ${
+														folder.searchTotalResults ?? "demasiados"
+												  } expedientes: se muestran los primeros ${candidatos}. Conviene refinar el número.`
+												: "Se encontraron múltiples expedientes - Haz clic para seleccionar"
+										}
+									>
+										<IconButton
+											size="small"
+											onClick={(e) => {
+												e.stopPropagation();
+												setCausaSelectorFolder({ id: folder._id, name: folder.folderName || folder.searchTerm || "" });
+												setCausaSelectorOpen(true);
+											}}
+											sx={{
+												padding: 0.5,
+												"&:hover": {
+													backgroundColor: "warning.lighter",
+												},
+											}}
+										>
+											<Warning2 size={16} variant="Bold" color="#F59E0B" />
+										</IconButton>
+									</Tooltip>
+								</Stack>
+							);
+						}
+
+						// Si la asociación falló, mostrar chip de error. verified+inválida es el mismo
+						// estado (F7/F10: antes mostraba "Causa inválida" con otro copy más abajo).
+						// Excepción MEV: si la credencial falló el login (invalid/expired/disabled) el
+						// worker deja la carpeta en failed, pero la causa de fondo es la credencial → el
+						// chip ámbar de credencial (más abajo) gana sobre "Asociación fallida".
+						if (
+							(folder.causaAssociationStatus === "failed" || (folder.causaVerified === true && folder.causaIsValid === false)) &&
+							!isMevCredLoginFailure(folder)
+						) {
+							return (
+								<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={0.5}>
+									<Stack spacing={0.25} sx={{ minWidth: 0 }}>
+										<Box
+											sx={{
+												display: "inline-flex",
+												alignItems: "center",
+												gap: 0.625,
+												px: 0.875,
+												py: 0.25,
+												borderRadius: 0.75,
+												bgcolor: alpha(theme.palette.error.main, isDark ? 0.16 : 0.1),
+												border: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.32 : 0.22)}`,
+											}}
+										>
+											<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: theme.palette.error.main }} />
+											<Typography
+												sx={{
+													fontSize: "0.68rem",
+													fontWeight: 600,
+													color: theme.palette.error.main,
+													letterSpacing: "0.01em",
+													lineHeight: 1,
+												}}
+											>
+												Asociación fallida
+											</Typography>
+										</Box>
+										{/* Sin esto había que entrar al detalle para saber qué se había buscado. */}
+										{(folder.searchTerm || folder.judFolder?.numberJudFolder) && (
+											<Typography noWrap sx={{ fontSize: "0.66rem", color: "text.secondary", lineHeight: 1.3 }}>
+												Buscaste {folder.searchTerm || folder.judFolder?.numberJudFolder}
+											</Typography>
+										)}
+										{/* MV17: causa fallida + sin credencial MEV → mostrar la relación (sin credencial no se re-verifica). */}
+										{isMevCredMissing(folder) && (
+											<Typography
+												noWrap
+												onClick={(e) => {
+													e.stopPropagation();
+													navigate(MEV_PROFILE_PATH);
+												}}
+												sx={{ fontSize: "0.66rem", color: STALE_AMBER, lineHeight: 1.3, cursor: "pointer", fontWeight: 600 }}
+											>
+												Sin credencial MEV — cargala para volver a verificar
+											</Typography>
+										)}
+									</Stack>
+									{/* El motivo real lo devuelve el portal y vive en `causaAssociationError`;
+								    hasta ahora el tooltip decía siempre lo mismo. */}
+									<Tooltip
+										title={isMevCredMissing(folder) ? `${pjnFailedCopy(folder)} ${MEV_CRED_MISSING_ON_FAILED}` : pjnFailedCopy(folder)}
+									>
+										<Box
+											sx={{
+												display: "inline-flex",
+												alignItems: "center",
+												justifyContent: "center",
+												width: 18,
+												height: 18,
+											}}
+										>
+											<CloseCircle size={16} variant="Bold" color="#EF4444" />
+										</Box>
+									</Tooltip>
+								</Stack>
+							);
+						}
+
+						// MEV: problema con la credencial del usuario → warning (en vez del tilde/pendiente).
+						// La causa no se scrapea hasta que el usuario corrija/cargue su credencial.
+						const credIssue = mevCredIssue(folder);
+						if (credIssue) {
+							const credMsg = MEV_CRED_MESSAGE[credIssue];
+							const credLabel = MEV_CRED_LABEL[credIssue];
+							// M11: el chip no reemplaza la carátula — el usuario tiene que saber qué carpeta es
+							// sin expandir. Si el worker dejó el nombre placeholder ("Causa inválida o no
+							// accesible") mostramos lo que se buscó, como en la rama de asociación fallida.
+							const caratula = value && value !== INVALID_FOLDER_NAME ? value : null;
+							const searched = folder.searchTerm || folder.judFolder?.numberJudFolder;
+							return (
+								<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={0.5}>
+									<Stack spacing={0.375} sx={{ minWidth: 0 }}>
+										{caratula ? (
+											<Tooltip title={caratula}>
+												<span
+													style={{
+														display: "-webkit-box",
+														WebkitLineClamp: 2,
+														WebkitBoxOrient: "vertical",
+														overflow: "hidden",
+														textOverflow: "ellipsis",
+													}}
+												>
+													{formatFolderName(caratula, 50)}
+												</span>
+											</Tooltip>
+										) : searched ? (
+											<Typography noWrap sx={{ fontSize: "0.66rem", color: "text.secondary", lineHeight: 1.3 }}>
+												Buscaste {searched}
+											</Typography>
+										) : null}
+										<Box
 											onClick={(e) => {
 												e.stopPropagation();
 												navigate(MEV_PROFILE_PATH);
 											}}
-											sx={{ fontSize: "0.66rem", color: STALE_AMBER, lineHeight: 1.3, cursor: "pointer", fontWeight: 600 }}
+											sx={{
+												alignSelf: "flex-start",
+												display: "inline-flex",
+												alignItems: "center",
+												gap: 0.625,
+												px: 0.875,
+												py: 0.25,
+												borderRadius: 0.75,
+												bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
+												border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+												cursor: "pointer",
+												"&:hover": { bgcolor: alpha(STALE_AMBER, isDark ? 0.22 : 0.14) },
+											}}
 										>
-											Sin credencial MEV — cargala para volver a verificar
-										</Typography>
-									)}
+											<Warning2 size={12} variant="Bulk" color={STALE_AMBER} />
+											<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
+												{credLabel}
+											</Typography>
+										</Box>
+									</Stack>
+									<Tooltip title={credMsg}>
+										<IconButton
+											size="small"
+											onClick={(e) => {
+												e.stopPropagation();
+												navigate(MEV_PROFILE_PATH);
+											}}
+											sx={{ padding: 0.5, "&:hover": { backgroundColor: "warning.lighter" } }}
+										>
+											<Warning2 size={16} variant="Bold" color="#F59E0B" />
+										</IconButton>
+									</Tooltip>
 								</Stack>
-								{/* El motivo real lo devuelve el portal y vive en `causaAssociationError`;
-								    hasta ahora el tooltip decía siempre lo mismo. */}
-								<Tooltip
-									title={isMevCredMissing(folder) ? `${pjnFailedCopy(folder)} ${MEV_CRED_MISSING_ON_FAILED}` : pjnFailedCopy(folder)}
-								>
-									<Box
-										sx={{
-											display: "inline-flex",
-											alignItems: "center",
-											justifyContent: "center",
-											width: 18,
-											height: 18,
-										}}
-									>
-										<CloseCircle size={16} variant="Bold" color="#EF4444" />
-									</Box>
-								</Tooltip>
-							</Stack>
-						);
-					}
+							);
+						}
 
-					// MEV: problema con la credencial del usuario → warning (en vez del tilde/pendiente).
-					// La causa no se scrapea hasta que el usuario corrija/cargue su credencial.
-					const credIssue = mevCredIssue(folder);
-					if (credIssue) {
-						const credMsg = MEV_CRED_MESSAGE[credIssue];
-						const credLabel = MEV_CRED_LABEL[credIssue];
-						// M11: el chip no reemplaza la carátula — el usuario tiene que saber qué carpeta es
-						// sin expandir. Si el worker dejó el nombre placeholder ("Causa inválida o no
-						// accesible") mostramos lo que se buscó, como en la rama de asociación fallida.
-						const caratula = value && value !== INVALID_FOLDER_NAME ? value : null;
-						const searched = folder.searchTerm || folder.judFolder?.numberJudFolder;
-						return (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={0.5}>
-								<Stack spacing={0.375} sx={{ minWidth: 0 }}>
-									{caratula ? (
-										<Tooltip title={caratula}>
-											<span
-												style={{
-													display: "-webkit-box",
-													WebkitLineClamp: 2,
-													WebkitBoxOrient: "vertical",
-													overflow: "hidden",
-													textOverflow: "ellipsis",
-												}}
-											>
-												{formatFolderName(caratula, 50)}
-											</span>
-										</Tooltip>
-									) : searched ? (
-										<Typography noWrap sx={{ fontSize: "0.66rem", color: "text.secondary", lineHeight: 1.3 }}>
-											Buscaste {searched}
-										</Typography>
-									) : null}
+						// Si causaVerified es false o no está verificado (pendiente), mostrar chip de pendiente con botón de actualización
+						if (
+							folder.causaVerified === false ||
+							(folder.causaVerified !== true &&
+								(folder.pjn || folder.mev || folder.eje || folder.scba || folder.pjsalta || folder.pjcatamarca || folder.pjmendoza))
+						) {
+							return (
+								<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 									<Box
-										onClick={(e) => {
-											e.stopPropagation();
-											navigate(MEV_PROFILE_PATH);
-										}}
 										sx={{
-											alignSelf: "flex-start",
 											display: "inline-flex",
 											alignItems: "center",
 											gap: 0.625,
@@ -3474,232 +3536,197 @@ const FoldersLayout = () => {
 											borderRadius: 0.75,
 											bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
 											border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
-											cursor: "pointer",
-											"&:hover": { bgcolor: alpha(STALE_AMBER, isDark ? 0.22 : 0.14) },
 										}}
 									>
-										<Warning2 size={12} variant="Bulk" color={STALE_AMBER} />
+										<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: STALE_AMBER }} />
 										<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
-											{credLabel}
+											Pendiente de verificación
 										</Typography>
 									</Box>
+									<Tooltip title={verifyingFolderIds.has(folder._id) ? "Verificando…" : "Actualizar estado de verificación"}>
+										<span>
+											<IconButton
+												size="small"
+												disabled={verifyingFolderIds.has(folder._id)}
+												onClick={(e) => {
+													e.stopPropagation();
+													handleVerifyFolder(folder._id);
+												}}
+												sx={{
+													padding: 0.5,
+													"&:hover": {
+														backgroundColor: "warning.lighter",
+													},
+												}}
+											>
+												{verifyingFolderIds.has(folder._id) ? (
+													<CircularProgress size={14} thickness={5} sx={{ color: STALE_AMBER }} />
+												) : (
+													<Refresh size={16} />
+												)}
+											</IconButton>
+										</span>
+									</Tooltip>
 								</Stack>
-								<Tooltip title={credMsg}>
-									<IconButton
-										size="small"
-										onClick={(e) => {
-											e.stopPropagation();
-											navigate(MEV_PROFILE_PATH);
-										}}
-										sx={{ padding: 0.5, "&:hover": { backgroundColor: "warning.lighter" } }}
-									>
-										<Warning2 size={16} variant="Bold" color="#F59E0B" />
-									</IconButton>
-								</Tooltip>
-							</Stack>
-						);
-					}
+							);
+						}
 
-					// Si causaVerified es false o no está verificado (pendiente), mostrar chip de pendiente con botón de actualización
-					if (
-						folder.causaVerified === false ||
-						(folder.causaVerified !== true &&
-							(folder.pjn || folder.mev || folder.eje || folder.scba || folder.pjsalta || folder.pjcatamarca || folder.pjmendoza))
-					) {
-						return (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<Box
-									sx={{
-										display: "inline-flex",
-										alignItems: "center",
-										gap: 0.625,
-										px: 0.875,
-										py: 0.25,
-										borderRadius: 0.75,
-										bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
-										border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
-									}}
-								>
-									<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: STALE_AMBER }} />
-									<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
-										Pendiente de verificación
-									</Typography>
-								</Box>
-								<Tooltip title={verifyingFolderIds.has(folder._id) ? "Verificando…" : "Actualizar estado de verificación"}>
-									<span>
-										<IconButton
-											size="small"
-											disabled={verifyingFolderIds.has(folder._id)}
-											onClick={(e) => {
-												e.stopPropagation();
-												handleVerifyFolder(folder._id);
-											}}
-											sx={{
-												padding: 0.5,
-												"&:hover": {
-													backgroundColor: "warning.lighter",
-												},
-											}}
-										>
-											{verifyingFolderIds.has(folder._id) ? (
-												<CircularProgress size={14} thickness={5} sx={{ color: STALE_AMBER }} />
-											) : (
-												<Refresh size={16} />
-											)}
-										</IconButton>
-									</span>
-								</Tooltip>
-							</Stack>
-						);
-					}
-
-					// Mantener compatibilidad con el valor "Pendiente" anterior
-					if (value === "Pendiente") {
-						return (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<Box
-									sx={{
-										display: "inline-flex",
-										alignItems: "center",
-										gap: 0.625,
-										px: 0.875,
-										py: 0.25,
-										borderRadius: 0.75,
-										bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
-										border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
-									}}
-								>
-									<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: STALE_AMBER }} />
-									<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
-										Pendiente de verificación
-									</Typography>
-								</Box>
-								<Tooltip title={verifyingFolderIds.has(folder._id) ? "Verificando…" : "Actualizar estado de verificación"}>
-									<span>
-										<IconButton
-											size="small"
-											disabled={verifyingFolderIds.has(folder._id)}
-											onClick={(e) => {
-												e.stopPropagation();
-												handleVerifyFolder(folder._id);
-											}}
-											sx={{
-												padding: 0.5,
-												"&:hover": {
-													backgroundColor: "warning.lighter",
-												},
-											}}
-										>
-											{verifyingFolderIds.has(folder._id) ? (
-												<CircularProgress size={14} thickness={5} sx={{ color: STALE_AMBER }} />
-											) : (
-												<Refresh size={16} />
-											)}
-										</IconButton>
-									</span>
-								</Tooltip>
-							</Stack>
-						);
-					}
-
-					// Si causaVerified es true y causaIsValid es true, mostrar nombre con badge verde
-					if (folder.causaVerified === true && folder.causaIsValid === true) {
-						return (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<Tooltip title={value || ""}>
-									<span
-										style={{
-											display: "-webkit-box",
-											WebkitLineClamp: 2,
-											WebkitBoxOrient: "vertical",
-											overflow: "hidden",
-											textOverflow: "ellipsis",
-											flex: 1,
-										}}
-									>
-										{formatFolderName(value, 50)}
-									</span>
-								</Tooltip>
-								<Tooltip
-									title={
-										getScbaBindingState(folder, { credError: scbaCredError.hasError }) === "cred_error"
-											? scbaCredError.errorMessage || SCBA_BINDING_COPY.cred_error
-											: getPjnBindingState(folder, { credError: pjnCredError.requiresAction }) === "cred_error"
-											? pjnCredErrorCopy(folder)
-											: folder.pjn === true
-											? "Causa vinculada a PJN"
-											: folder.mev === true
-											? "Causa vinculada a MEV"
-											: folder.eje === true
-											? "Causa vinculada a EJE"
-											: folder.scba === true
-											? SCBA_BINDING_COPY.ok
-											: folder.pjsalta === true
-											? "Causa vinculada a PJ Salta"
-											: folder.pjcatamarca === true
-											? "Causa vinculada a PJ Catamarca"
-											: folder.pjmendoza === true
-											? "Causa vinculada a PJ Mendoza"
-											: "Causa vinculada"
-									}
-								>
+						// Mantener compatibilidad con el valor "Pendiente" anterior
+						if (value === "Pendiente") {
+							return (
+								<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 									<Box
 										sx={{
 											display: "inline-flex",
 											alignItems: "center",
-											justifyContent: "center",
-											width: 18,
-											height: 18,
+											gap: 0.625,
+											px: 0.875,
+											py: 0.25,
+											borderRadius: 0.75,
+											bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
+											border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
 										}}
 									>
-										{getScbaBindingState(folder, { credError: scbaCredError.hasError }) === "cred_error" ? (
-											// Cred SCBA rechazada/expirada: el ícono lleva a donde se resuelve
-											// (Integraciones → SCBA), igual que el pill de la fila expandida (S15).
-											<IconButton
-												size="small"
-												onClick={(e) => {
-													e.stopPropagation();
-													navigate(SCBA_PROFILE_PATH);
-												}}
-												sx={{ padding: 0, "&:hover": { backgroundColor: "warning.lighter" } }}
-											>
-												<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
-											</IconButton>
-										) : getPjnBindingState(folder, { credError: pjnCredError.requiresAction }) === "cred_error" ? (
-											<IconButton
-												size="small"
-												onClick={(e) => {
-													e.stopPropagation();
-													navigate(PJN_PROFILE_PATH);
-												}}
-												sx={{ padding: 0, "&:hover": { backgroundColor: "warning.lighter" } }}
-											>
-												<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
-											</IconButton>
-										) : (
-											<TickCircle size={16} variant="Bold" color={BRAND_BLUE} />
-										)}
+										<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: STALE_AMBER }} />
+										<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
+											Pendiente de verificación
+										</Typography>
 									</Box>
-								</Tooltip>
-							</Stack>
-						);
-					}
+									<Tooltip title={verifyingFolderIds.has(folder._id) ? "Verificando…" : "Actualizar estado de verificación"}>
+										<span>
+											<IconButton
+												size="small"
+												disabled={verifyingFolderIds.has(folder._id)}
+												onClick={(e) => {
+													e.stopPropagation();
+													handleVerifyFolder(folder._id);
+												}}
+												sx={{
+													padding: 0.5,
+													"&:hover": {
+														backgroundColor: "warning.lighter",
+													},
+												}}
+											>
+												{verifyingFolderIds.has(folder._id) ? (
+													<CircularProgress size={14} thickness={5} sx={{ color: STALE_AMBER }} />
+												) : (
+													<Refresh size={16} />
+												)}
+											</IconButton>
+										</span>
+									</Tooltip>
+								</Stack>
+							);
+						}
 
-					// En todos los demás casos, mostrar solo el nombre del folder
+						// Si causaVerified es true y causaIsValid es true, mostrar nombre con badge verde
+						if (folder.causaVerified === true && folder.causaIsValid === true) {
+							return (
+								<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
+									<Tooltip title={value || ""}>
+										<span
+											style={{
+												display: "-webkit-box",
+												WebkitLineClamp: 2,
+												WebkitBoxOrient: "vertical",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												flex: 1,
+											}}
+										>
+											{formatFolderName(value, 50)}
+										</span>
+									</Tooltip>
+									<Tooltip
+										title={
+											getScbaBindingState(folder, { credError: scbaCredError.hasError }) === "cred_error"
+												? scbaCredError.errorMessage || SCBA_BINDING_COPY.cred_error
+												: getPjnBindingState(folder, { credError: pjnCredError.requiresAction }) === "cred_error"
+												? pjnCredErrorCopy(folder)
+												: folder.pjn === true
+												? "Causa vinculada a PJN"
+												: folder.mev === true
+												? "Causa vinculada a MEV"
+												: folder.eje === true
+												? "Causa vinculada a EJE"
+												: folder.scba === true
+												? SCBA_BINDING_COPY.ok
+												: folder.pjsalta === true
+												? "Causa vinculada a PJ Salta"
+												: folder.pjcatamarca === true
+												? "Causa vinculada a PJ Catamarca"
+												: folder.pjmendoza === true
+												? "Causa vinculada a PJ Mendoza"
+												: "Causa vinculada"
+										}
+									>
+										<Box
+											sx={{
+												display: "inline-flex",
+												alignItems: "center",
+												justifyContent: "center",
+												width: 18,
+												height: 18,
+											}}
+										>
+											{getScbaBindingState(folder, { credError: scbaCredError.hasError }) === "cred_error" ? (
+												// Cred SCBA rechazada/expirada: el ícono lleva a donde se resuelve
+												// (Integraciones → SCBA), igual que el pill de la fila expandida (S15).
+												<IconButton
+													size="small"
+													onClick={(e) => {
+														e.stopPropagation();
+														navigate(SCBA_PROFILE_PATH);
+													}}
+													sx={{ padding: 0, "&:hover": { backgroundColor: "warning.lighter" } }}
+												>
+													<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
+												</IconButton>
+											) : getPjnBindingState(folder, { credError: pjnCredError.requiresAction }) === "cred_error" ? (
+												<IconButton
+													size="small"
+													onClick={(e) => {
+														e.stopPropagation();
+														navigate(PJN_PROFILE_PATH);
+													}}
+													sx={{ padding: 0, "&:hover": { backgroundColor: "warning.lighter" } }}
+												>
+													<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
+												</IconButton>
+											) : (
+												<TickCircle size={16} variant="Bold" color={BRAND_BLUE} />
+											)}
+										</Box>
+									</Tooltip>
+								</Stack>
+							);
+						}
+
+						// En todos los demás casos, mostrar solo el nombre del folder
+						return (
+							<Tooltip title={value || ""}>
+								<span
+									style={{
+										display: "-webkit-box",
+										WebkitLineClamp: 2,
+										WebkitBoxOrient: "vertical",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+									}}
+								>
+									{formatFolderName(value, 50)}
+								</span>
+							</Tooltip>
+						);
+					})();
+					const rel = row.original.relaciones;
+					if (!rel) return base;
 					return (
-						<Tooltip title={value || ""}>
-							<span
-								style={{
-									display: "-webkit-box",
-									WebkitLineClamp: 2,
-									WebkitBoxOrient: "vertical",
-									overflow: "hidden",
-									textOverflow: "ellipsis",
-								}}
-							>
-								{formatFolderName(value, 50)}
-							</span>
-						</Tooltip>
+						<Stack direction="row" alignItems="center" spacing={0.5} width="100%">
+							<Box sx={{ flex: 1, minWidth: 0 }}>{base}</Box>
+							<RelacionesIcon relaciones={rel} onClick={() => navigate(`/apps/folders/details/${row.original._id}?tab=relaciones`)} />
+						</Stack>
 					);
 				},
 			},
@@ -3797,8 +3824,9 @@ const FoldersLayout = () => {
 			{
 				Header: "Último Movimiento",
 				accessor: "lastMovementDate",
-				Cell: ({ value }: { value: any }) => {
+				Cell: ({ value, row }: { value: any; row: any }) => {
 					if (!value) return <span>-</span>;
+					const sinVer = <SinVerCount count={row.original.unseenCount} />;
 
 					// Formatear la fecha de formato ISO a DD/MM/YYYY (conservar UTC)
 					try {
@@ -3841,11 +3869,17 @@ const FoldersLayout = () => {
 												{formattedDate}
 											</Typography>
 										</Tooltip>
+										{sinVer}
 									</Stack>
 								);
 							}
 
-							return <span>{formattedDate}</span>;
+							return (
+								<Stack direction="row" alignItems="center" flexWrap="wrap">
+									<span style={row.original.unseenCount > 0 ? { fontWeight: 600 } : undefined}>{formattedDate}</span>
+									{sinVer}
+								</Stack>
+							);
 						} else {
 							return <span>-</span>;
 						}

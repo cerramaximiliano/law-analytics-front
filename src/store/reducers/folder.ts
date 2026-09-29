@@ -24,6 +24,7 @@ const RESET_FOLDERS_STATE = "RESET_FOLDERS_STATE";
 const SET_SELECTED_FOLDERS = "SET_SELECTED_FOLDERS";
 const SET_FOLDER_SORT = "SET_FOLDER_SORT";
 const UPSERT_FOLDER = "UPSERT_FOLDER";
+const MARK_FOLDER_SEEN = "MARK_FOLDER_SEEN";
 
 // Initial state
 const initialFolderState: FolderState = {
@@ -73,6 +74,13 @@ const folder = (state = initialFolderState, action: any) => {
 				isLoader: false,
 			};
 		}
+		case MARK_FOLDER_SEEN:
+			return {
+				...state,
+				folders: state.folders.map((f: FolderData) =>
+					f._id === action.payload._id ? { ...f, unseenCount: 0, lastViewedAt: action.payload.lastViewedAt } : f,
+				),
+			};
 		case GET_FOLDERS_BY_USER:
 			return {
 				...state,
@@ -214,6 +222,16 @@ const folder = (state = initialFolderState, action: any) => {
 };
 
 // Action creators
+
+// El usuario abrió la pestaña Actividad: resetea el "N sin ver" del listado (best-effort).
+export const marcarFolderVisto = (folderId: string) => async (dispatch: Dispatch) => {
+	try {
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/folders/${folderId}/visto`);
+		dispatch({ type: MARK_FOLDER_SEEN, payload: { _id: folderId, lastViewedAt: response.data?.lastViewedAt || new Date().toISOString() } });
+	} catch {
+		/* sin efecto visible */
+	}
+};
 
 export const addFolder = (folderData: FolderData, options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch) => {
 	try {
