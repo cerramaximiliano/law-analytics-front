@@ -62,6 +62,7 @@ import FolderDataImproved from "./components/FolderDataImproved";
 import FolderPreJudDataImproved from "./components/FolderPreJudDataImproved";
 import FolderJudDataImproved from "./components/FolderJudDataImproved";
 import ActivityTables from "./components/ActivityTables";
+import PjnVinculadosSection from "./components/PjnVinculadosSection";
 import HistorialTab from "./components/HistorialTab";
 import LinkToJudicialPower from "sections/apps/folders/LinkToJudicialPower";
 import UnlinkFolderDialog from "sections/apps/folders/UnlinkFolderDialog";
@@ -1330,6 +1331,7 @@ const Details = () => {
 					{/* Tab 2: Actividad */}
 					<TabPanel value={tabValue} index={1}>
 						<ActivityTables folderName={folder?.folderName} accessCutoffAt={folder?.causaAccessCutoffAt ?? null} />
+						<PjnVinculadosSection folder={folder} />
 					</TabPanel>
 
 					{/* Tab 3: Gestión */}
