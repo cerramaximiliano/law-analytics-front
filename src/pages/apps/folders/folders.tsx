@@ -1636,7 +1636,7 @@ function ReactTable({
 											<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
 												<Stack spacing={0.25} sx={{ minWidth: 0 }}>
 													<Typography variant="caption" color="text.secondary" noWrap>
-														{lastMovStr ? `Últ. mov.: ${lastMovStr}` : initDateStr ? `Inicio: ${initDateStr}` : "Sin movimientos"}
+														{lastMovStr ? `Últ. mov. ${lastMovStr}` : initDateStr ? `Inicio ${initDateStr}` : "Sin movimientos"}
 													</Typography>
 													{((folder.unseenCount || 0) > 0 || (folder.unseenOcultos || 0) > 0 || folder.relaciones) && (
 														<Stack direction="row" alignItems="center" sx={{ ml: -0.75, minHeight: 22 }}>
@@ -1652,7 +1652,17 @@ function ReactTable({
 														</Stack>
 													)}
 												</Stack>
-												<Box sx={{ flexShrink: 0, mr: -0.75, "& .MuiIconButton-root": { p: 0.5 } }} onClick={(e) => e.stopPropagation()}>
+												<Box
+													sx={{
+														flexShrink: 0,
+														mr: -0.5,
+														"& .MuiStack-root": { gap: 0 },
+														"& .MuiStack-root > :not(style) ~ :not(style)": { ml: 0 },
+														"& .MuiIconButton-root": { p: 0.5, width: 28, height: 28 },
+														"& .MuiIconButton-root svg": { width: 16, height: 16 },
+													}}
+													onClick={(e) => e.stopPropagation()}
+												>
 													{row.cells.find((c) => (c.column as any).Header === "Acciones")?.render("Cell")}
 												</Box>
 											</Stack>
