@@ -81,6 +81,10 @@ import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 // Types
 interface ActivityTablesProps {
 	folderName?: string;
+	// Corte de acceso PJN (folder.causaAccessCutoffAt, 2026-09-28): fallback del
+	// aviso "Mostrando movimientos hasta el …" del viewer PJN cuando el listado
+	// del hub no trae accessCutoffAt.
+	accessCutoffAt?: string | null;
 }
 
 type TabValue = "movements" | "notifications" | "calendar" | "combined";
@@ -93,7 +97,7 @@ interface TabConfig {
 	description: string;
 }
 
-const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
+const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutoffAt = null }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -1452,6 +1456,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														dateFrom={pjnDateFrom}
 														dateTo={pjnDateTo}
 														causaLastSyncDate={movementsData.causaLastSyncDate}
+														accessCutoffAt={accessCutoffAt}
 													/>
 												) : (
 													<MovementsTable
@@ -2017,6 +2022,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														dateFrom={pjnDateFrom}
 														dateTo={pjnDateTo}
 														causaLastSyncDate={movementsData.causaLastSyncDate}
+														accessCutoffAt={accessCutoffAt}
 													/>
 												) : (
 													<MovementsTable

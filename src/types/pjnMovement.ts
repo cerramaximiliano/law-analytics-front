@@ -46,6 +46,11 @@ export interface PjnMovementsListResponse {
 	// 'outside_plan' (existe pero fuera de la ventana free), 'not_found'.
 	locateStatus?: "ok" | "outside_plan" | "not_found";
 	locatedPage?: number | null;
+	// Corte de acceso (2026-09-28): la credencial PJN del usuario cubría esta
+	// causa reservada y cayó. El hub sirve solo los movimientos con
+	// firstSeenAt <= accessCutoffAt (los que su credencial alcanzó a traer) y
+	// manda la fecha para el aviso "Mostrando movimientos hasta el …".
+	accessCutoffAt?: string | null;
 }
 
 export interface PjnMovementsListParams {

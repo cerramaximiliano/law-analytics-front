@@ -48,6 +48,7 @@ import {
 	PJN_BINDING_COPY,
 	PJN_CRED_ERROR_BANNER_COPY,
 	PJN_PROFILE_PATH,
+	formatPjnAccessCutoff,
 	pjnCredErrorCopy,
 	pjnFailedCopy,
 } from "utils/pjnBindingState";
@@ -879,16 +880,24 @@ const Details = () => {
 		if (!isAutoFolder) return null;
 
 		if (folder.causaAssociationStatus === "pending_selection") return "pending_selection";
+		// Corte de acceso (2026-09-28): la credencial del usuario cubría esta causa
+		// reservada y cayó. El hub ya no responde 403: sirve los movimientos que su
+		// credencial alcanzó a traer (firstSeenAt <= cutoff). Sin gate — el detalle
+		// se muestra con el pill y el viewer avisa "Mostrando movimientos hasta el …".
+		// Mismo predicado que el hub (accessCutoffForFolder): la fecha tiene que parsear;
+		// si no, el hub responde 403 y acá corresponde el gate, no el viewer con error.
+		const hasAccessCutoff =
+			folder.pjn === true && folder.causaCredentialCovered === false && !!formatPjnAccessCutoff(folder.causaAccessCutoffAt);
 		// Credencial PJN rechazada (2026-09-28) sobre una causa sin cobertura: el
 		// motivo real es la contraseña, no la reserva → gate propio con CTA al
 		// perfil. Las públicas no se bloquean (siguen actualizándose por scraping).
 		// `pjnState` ya respeta la prioridad (cede ante pending_selection/failed).
-		if (pjnState === "cred_error" && folder.causaCredentialCovered === false) return "cred_error";
+		if (pjnState === "cred_error" && folder.causaCredentialCovered === false && !hasAccessCutoff) return "cred_error";
 		// Causa reservada (Fase D): el backend ya niega el contenido (403
 		// CAUSA_RESERVED); acá mostramos el gate correcto. Prevalece sobre
 		// failed/invalid — los flags viejos pueden decir "inválida" pero el
 		// motivo real es la reserva del tribunal.
-		if (folder.pjn === true && folder.causaCredentialCovered === false) {
+		if (folder.pjn === true && folder.causaCredentialCovered === false && !hasAccessCutoff) {
 			return folder.source === "pjn-login" ? "reserved_revoked" : "reserved";
 		}
 		// MEV con login fallido (invalid/expired/disabled): el worker dejó failed /
@@ -1320,7 +1329,7 @@ const Details = () => {
 
 					{/* Tab 2: Actividad */}
 					<TabPanel value={tabValue} index={1}>
-						<ActivityTables folderName={folder?.folderName} />
+						<ActivityTables folderName={folder?.folderName} accessCutoffAt={folder?.causaAccessCutoffAt ?? null} />
 					</TabPanel>
 
 					{/* Tab 3: Gestión */}

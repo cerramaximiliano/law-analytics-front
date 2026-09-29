@@ -37,6 +37,8 @@ export interface PjnFolderLike {
 	source?: string;
 	causaIsPrivate?: boolean;
 	causaCredentialCovered?: boolean;
+	/** Corte de acceso: la credencial cubría la causa reservada y cayó (ver Folder.causaAccessCutoffAt). */
+	causaAccessCutoffAt?: string | null;
 	listRemoved?: boolean;
 	listRemovedSource?: string | null;
 	pjnNotFound?: boolean;
@@ -157,9 +159,47 @@ export const pjnFailedCopy = (f: PjnFolderLike): string =>
 		? `No se pudo vincular la causa — ${f.causaAssociationError}`
 		: PJN_BINDING_COPY.failed;
 
-/** Tooltip de "cred_error" según la carpeta: pública (sigue) o reservada (no se actualiza). */
-export const pjnCredErrorCopy = (f: PjnFolderLike): string =>
-	isPjnCredDependent(f) ? PJN_CRED_ERROR_RESERVED_COPY : PJN_CRED_ERROR_PUBLIC_COPY;
+// ==============================|| CORTE DE ACCESO (2026-09-28) ||============================== //
+
+/**
+ * Fecha del corte en dd/mm/aaaa (huso del navegador: el cutoff es un instante
+ * real — cuándo cayó la credencial —, no una fecha-calendario a medianoche UTC
+ * como las de los movimientos). Null si no hay cutoff o no parsea.
+ */
+export function formatPjnAccessCutoff(cutoff: string | Date | null | undefined): string | null {
+	if (!cutoff) return null;
+	const d = cutoff instanceof Date ? cutoff : new Date(cutoff);
+	if (Number.isNaN(d.getTime())) return null;
+	return d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+/** CTA del aviso de corte (viewer de movimientos) — lleva a PJN_PROFILE_PATH. */
+export const PJN_ACCESS_CUTOFF_CTA_LABEL = "Actualizar credencial";
+
+/**
+ * Aviso arriba de la lista de movimientos cuando el hub sirve solo hasta el
+ * corte: "Mostrando movimientos hasta el {fecha}: renová tu credencial PJN para
+ * ver los nuevos". Null si no hay cutoff válido (no se muestra nada).
+ */
+export function pjnAccessCutoffNoticeCopy(cutoff: string | Date | null | undefined): string | null {
+	const fecha = formatPjnAccessCutoff(cutoff);
+	return fecha ? `Mostrando movimientos hasta el ${fecha}: renová tu credencial PJN para ver los nuevos.` : null;
+}
+
+/** Credencial rechazada, causa reservada CON corte: ve lo que su credencial trajo hasta esa fecha. */
+export const pjnCredErrorReservedCutoffCopy = (fecha: string): string =>
+	`El portal rechazó tu credencial PJN y esta causa es reservada: ves lo actualizado hasta el ${fecha}. No se actualiza ni te avisamos novedades hasta que renueves la contraseña en Integraciones → PJN.`;
+
+/**
+ * Tooltip de "cred_error" según la carpeta: pública (sigue) o reservada (no se
+ * actualiza). Si la reservada tiene corte de acceso, menciona hasta qué fecha
+ * ve movimientos.
+ */
+export const pjnCredErrorCopy = (f: PjnFolderLike): string => {
+	if (!isPjnCredDependent(f)) return PJN_CRED_ERROR_PUBLIC_COPY;
+	const fecha = formatPjnAccessCutoff(f.causaAccessCutoffAt);
+	return fecha ? pjnCredErrorReservedCutoffCopy(fecha) : PJN_CRED_ERROR_RESERVED_COPY;
+};
 
 // ==============================|| CREDENCIAL ||============================== //
 

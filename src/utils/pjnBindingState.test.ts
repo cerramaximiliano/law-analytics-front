@@ -8,7 +8,10 @@ import {
 	PJN_CRED_ERROR_RESERVED_COPY,
 	PJN_CRED_ERROR_NOTICE_SUFFIX,
 	PJN_CRED_ERROR_NOTICE_SUFFIX_ACTION,
+	formatPjnAccessCutoff,
+	pjnAccessCutoffNoticeCopy,
 	pjnCredErrorCopy,
+	pjnCredErrorReservedCutoffCopy,
 	pjnStatusNotice,
 } from "./pjnBindingState";
 
@@ -73,6 +76,37 @@ describe("pjnCredErrorCopy — pública vs reservada", () => {
 		expect(pjnCredErrorCopy({ ...publica, causaIsPrivate: true, causaCredentialCovered: true })).toBe(PJN_CRED_ERROR_RESERVED_COPY);
 		expect(pjnCredErrorCopy({ ...misCausas, causaCredentialCovered: false })).toBe(PJN_CRED_ERROR_RESERVED_COPY);
 		expect(PJN_CRED_ERROR_RESERVED_COPY).toContain("no se puede actualizar");
+	});
+
+	it("reservada con corte de acceso: menciona hasta qué fecha ve movimientos", () => {
+		// Mediodía UTC: la fecha es la misma en cualquier huso entre UTC-12 y UTC+11.
+		const conCorte = { ...misCausas, causaCredentialCovered: false, causaAccessCutoffAt: "2026-05-11T12:00:00.000Z" };
+		expect(pjnCredErrorCopy(conCorte)).toBe(pjnCredErrorReservedCutoffCopy("11/05/2026"));
+		expect(pjnCredErrorCopy(conCorte)).toContain("ves lo actualizado hasta el 11/05/2026");
+		// Pública con corte (no debería pasar, el cutoff es de reservadas): sigue el copy público.
+		expect(pjnCredErrorCopy({ ...publica, causaAccessCutoffAt: "2026-05-11T12:00:00.000Z" })).toBe(PJN_CRED_ERROR_PUBLIC_COPY);
+		// Cutoff inválido/nulo: copy reservado sin fecha.
+		expect(pjnCredErrorCopy({ ...conCorte, causaAccessCutoffAt: null })).toBe(PJN_CRED_ERROR_RESERVED_COPY);
+		expect(pjnCredErrorCopy({ ...conCorte, causaAccessCutoffAt: "no-es-fecha" })).toBe(PJN_CRED_ERROR_RESERVED_COPY);
+	});
+});
+
+describe("corte de acceso — aviso del viewer de movimientos (2026-09-28)", () => {
+	it("formatPjnAccessCutoff: dd/mm/aaaa, null si no hay o no parsea", () => {
+		expect(formatPjnAccessCutoff("2026-07-04T12:00:00.000Z")).toBe("04/07/2026");
+		expect(formatPjnAccessCutoff(new Date("2026-05-11T12:00:00.000Z"))).toBe("11/05/2026");
+		expect(formatPjnAccessCutoff(null)).toBeNull();
+		expect(formatPjnAccessCutoff(undefined)).toBeNull();
+		expect(formatPjnAccessCutoff("")).toBeNull();
+		expect(formatPjnAccessCutoff("no-es-fecha")).toBeNull();
+	});
+
+	it("pjnAccessCutoffNoticeCopy: copy con la fecha; null sin cutoff", () => {
+		expect(pjnAccessCutoffNoticeCopy("2026-07-04T12:00:00.000Z")).toBe(
+			"Mostrando movimientos hasta el 04/07/2026: renová tu credencial PJN para ver los nuevos.",
+		);
+		expect(pjnAccessCutoffNoticeCopy(null)).toBeNull();
+		expect(pjnAccessCutoffNoticeCopy("no-es-fecha")).toBeNull();
 	});
 });
 

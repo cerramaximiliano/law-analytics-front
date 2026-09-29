@@ -140,6 +140,13 @@ export type FolderData = {
 	// isPrivate:true): true = el usuario tiene credencial vigente que la cubre;
 	// false = gate 'reserved'; ausente = causa pública.
 	causaCredentialCovered?: boolean;
+	// Corte de acceso (2026-09-28): la credencial del usuario cubría esta causa
+	// reservada y cayó (requiere acción). Desde entonces el hub sirve solo los
+	// movimientos que su credencial alcanzó a traer (firstSeenAt <= cutoff) en vez
+	// de 403 CAUSA_RESERVED; el detalle no se bloquea y muestra un aviso con la
+	// fecha. Se quita cuando la carpeta vuelve a estar cubierta. Ausente para
+	// carpetas que nunca tuvieron cobertura (siguen con gate 'reserved').
+	causaAccessCutoffAt?: string | null;
 	causaPrivateDetectedAt?: string;
 };
 

@@ -54,6 +54,11 @@ export interface PjnAccess {
 	availableMovements?: number;
 	totalMovements?: number; // Total de movimientos en la causa
 	previewCount?: number; // Cantidad de movimientos de preview mostrados (para usuarios free)
+	// Corte de acceso por caída de credencial (2026-09-28): el hub sirvió solo los
+	// movimientos hasta esta fecha (ISO). Ausente/null sin corte.
+	accessCutoffAt?: string | null;
+	// 'CAUSA_RESERVED' cuando la causa es reservada sin credencial que la cubra.
+	code?: string;
 }
 
 // Mismo shape que PjnAccess — el server devuelve idéntico contrato para SCBA.

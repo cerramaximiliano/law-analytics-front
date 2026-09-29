@@ -5,8 +5,10 @@
 // nada existente. Si el folder no es PJN, no se renderiza.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
 	Box,
+	Button,
 	Chip,
 	Dialog,
 	IconButton,
@@ -38,6 +40,7 @@ import { getEventsById } from "store/reducers/events";
 import { openSnackbar } from "store/reducers/snackbar";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import { getPjnMovementsByFolder, setPjnMovementReadStatus } from "services/pjnMovementsService";
+import { PJN_ACCESS_CUTOFF_CTA_LABEL, PJN_PROFILE_PATH, pjnAccessCutoffNoticeCopy } from "utils/pjnBindingState";
 import type { PjnMovementPdfStatus, PjnMovementsListResponse } from "types/pjnMovement";
 import type { Note } from "types/note";
 import type { TaskType } from "types/task";
@@ -73,6 +76,11 @@ interface Props {
 	// Última sincronización de la causa — se muestra en la línea de info densa
 	// (reemplaza al banner FolderSyncStatus para PJN).
 	causaLastSyncDate?: string | null;
+	// Corte de acceso (2026-09-28): la credencial PJN del usuario cubría esta
+	// causa reservada y cayó. El hub sirve solo los movimientos que esa credencial
+	// alcanzó a traer y manda `accessCutoffAt` en el listado; este prop
+	// (folder.causaAccessCutoffAt) es el fallback si la respuesta no lo trae.
+	accessCutoffAt?: string | null;
 }
 
 const QUICK_ACTION_TO_PANEL_TAB = {
@@ -139,7 +147,9 @@ const PjnMovementsViewerSection = ({
 	dateTo = "",
 	linkedOnly = false,
 	causaLastSyncDate = null,
+	accessCutoffAt = null,
 }: Props) => {
+	const navigate = useNavigate();
 	const [page, setPage] = useState(1);
 	const [limit] = useState(20);
 	const [search, setSearch] = useState("");
@@ -484,6 +494,10 @@ const PjnMovementsViewerSection = ({
 
 	const causaTypeLabel = data?.causa?.causaType ? CAUSA_TYPE_LABELS[data.causa.causaType] || data.causa.causaType : null;
 
+	// Aviso de corte de acceso: prioridad al `accessCutoffAt` del listado (es el
+	// que aplicó el hub para filtrar); fallback al de la carpeta.
+	const accessCutoffNotice = pjnAccessCutoffNoticeCopy(data?.accessCutoffAt ?? accessCutoffAt);
+
 	return (
 		<Box>
 			{/* Línea de info densa: reemplaza al CardHeader "Expediente PJN" + el banner
@@ -507,7 +521,9 @@ const PjnMovementsViewerSection = ({
 						{causaTypeLabel ? ` · ${causaTypeLabel}` : ""}
 					</Typography>
 				)}
-				{causaLastSyncDate && (
+				{/* Con corte de acceso no se muestra "sincronizado hace X": la sync la
+				    hizo otra credencial y contradiría el aviso "hasta el …". */}
+				{causaLastSyncDate && !accessCutoffNotice && (
 					<Tooltip title={dayjs(causaLastSyncDate).format("DD/MM/YYYY HH:mm")}>
 						<Stack direction="row" spacing={0.5} alignItems="center">
 							<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "success.main" }} />
@@ -523,6 +539,28 @@ const PjnMovementsViewerSection = ({
 				{/* Banner de upgrade (plan free): componente UNIFICADO — mismo diseño y
 				    copy que la tabla clásica y la Vista combinada. */}
 				{requiresUpgrade && <MovementsUpgradeBanner previewCount={movements.length} totalMovements={total} unlockSuffix=" y los PDF" />}
+
+				{/* Corte de acceso (2026-09-28): la credencial que cubría esta causa
+				    reservada cayó; se ven los movimientos que trajo hasta esa fecha. */}
+				{accessCutoffNotice && (
+					<Alert
+						severity="warning"
+						action={
+							<Button
+								color="warning"
+								size="small"
+								variant="outlined"
+								onClick={() => navigate(PJN_PROFILE_PATH)}
+								sx={{ textTransform: "none", whiteSpace: "nowrap", fontWeight: 600 }}
+							>
+								{PJN_ACCESS_CUTOFF_CTA_LABEL}
+							</Button>
+						}
+						sx={{ mb: 2, alignItems: "center" }}
+					>
+						{accessCutoffNotice}
+					</Alert>
+				)}
 
 				{error && (
 					<Alert severity="error" sx={{ mb: 2 }}>
