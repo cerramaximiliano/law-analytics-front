@@ -89,7 +89,6 @@ import {
 	Box1,
 	InfoCircle,
 	DocumentDownload,
-	TickCircle,
 	Refresh,
 	CloseCircle,
 	More,
@@ -376,9 +375,23 @@ function FolderSourceBadge({
 	if (!sourceMeta) return null;
 
 	const logo = mobile ? 32 : 28;
-	const dot = mobile ? 18 : 16;
-	const glyph = mobile ? 12 : 10;
-	const GlyphIcon = sourceStatus?.glyph === "ok" ? TickCircle : sourceStatus?.glyph === "lock" ? Lock1 : Warning2;
+	const dot = mobile ? 20 : 18;
+	const glyph = mobile ? 12 : 11;
+	// Glifos de trazo simple: a este tamaño los íconos rellenos (TickCircle/Warning2 Bold) se
+	// leen como una mancha blanca. El candado sí se distingue relleno.
+	const glyphEl =
+		sourceStatus?.glyph === "lock" ? (
+			<Lock1 size={glyph} variant="Bold" color="#fff" />
+		) : sourceStatus?.glyph === "ok" ? (
+			<svg width={glyph} height={glyph} viewBox="0 0 12 12" aria-hidden>
+				<path d="M2.6 6.3l2.2 2.2 4.6-4.9" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+			</svg>
+		) : (
+			<svg width={glyph} height={glyph} viewBox="0 0 12 12" aria-hidden>
+				<path d="M6 2.4v4.4" stroke="#fff" strokeWidth={2.2} strokeLinecap="round" />
+				<circle cx="6" cy="9.4" r="1.2" fill="#fff" />
+			</svg>
+		);
 	const accion = sourceStatus?.to ? (mobile ? " · Tocá para resolverlo" : " · Clic para resolverlo") : "";
 	const titulo = sourceStatus ? `${sourceMeta.label} — ${sourceStatus.tooltip}${accion}` : sourceMeta.label;
 	return (
@@ -434,7 +447,7 @@ function FolderSourceBadge({
 								justifyContent: "center",
 							}}
 						>
-							<GlyphIcon size={glyph} variant="Bold" color="#fff" />
+							{glyphEl}
 						</Box>
 					)}
 				</Box>
