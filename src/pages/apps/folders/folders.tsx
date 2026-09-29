@@ -4282,7 +4282,12 @@ const FoldersLayout = () => {
 				{/* Mobile: sin borde ni fondo propio — las cards ya enmarcan cada carpeta (evita el doble marco). */}
 				<MainCard
 					content={false}
-					sx={{ border: { xs: "none", sm: "1px solid" }, borderColor: "divider", bgcolor: { xs: "transparent", sm: "background.paper" } }}
+					sx={{
+						// Solo el ancho: el shorthand "1px solid" en la media query reseteaba el color del
+						// borde al del texto (recuadro casi negro en desktop).
+						borderWidth: { xs: 0, sm: "1px" },
+						bgcolor: { xs: "transparent", sm: "background.paper" },
+					}}
 				>
 					<DowngradeGracePeriodAlert />
 
