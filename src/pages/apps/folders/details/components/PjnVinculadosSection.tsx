@@ -5,12 +5,17 @@
  * público que pjn-workers captura al verificar el principal (parte 2 del servicio de
  * incidentes, 2026-09-29). Cada fila trae su estado para este usuario: seguida (tiene
  * carpeta → link), reservada (solo con credencial), retirada (ya no figura) o disponible
- * (la acción "Seguir" llega en la parte 3).
+ * ("Seguir": POST /api/folders con expedientIncidente — pasa por el tope del plan y el
+ * guard de duplicados n/y/k; pjn-workers lo verifica y lo lee entrando por la fila).
+ *
+ * En la carpeta de un incidente muestra el breadcrumb "Incidente k de n/y" hacia la
+ * carpeta del principal (si el usuario la tiene).
  */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
 	Box,
+	Button,
 	Chip,
 	CircularProgress,
 	Link,
@@ -28,6 +33,10 @@ import { Hierarchy } from "iconsax-react";
 import dayjs from "utils/dayjs-config";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import { getPjnVinculadosByFolder } from "services/pjnVinculadosService";
+import { dispatch } from "store";
+import { addFolder } from "store/reducers/folder";
+import { openSnackbar } from "store/reducers/snackbar";
+import { useTeam } from "contexts/TeamContext";
 import type { PjnVinculadoRow, PjnVinculadosResponse, PjnVinculadoState } from "types/pjnVinculados";
 import type { FolderData } from "types/folder";
 
@@ -43,7 +52,11 @@ const STATE_META: Record<PjnVinculadoState, { label: string; color: string; tool
 		tooltip: "El tribunal reservó este incidente: solo puede verlo quien lo tenga asignado en su credencial PJN.",
 	},
 	retirada: { label: "Ya no figura", color: "#9e9e9e", tooltip: "Dejó de aparecer en la pestaña Vinculados del portal." },
-	disponible: { label: "Disponible", color: BRAND_BLUE, tooltip: "Figura en el portal. Pronto vas a poder seguirlo desde acá." },
+	disponible: {
+		label: "Disponible",
+		color: BRAND_BLUE,
+		tooltip: "Figura en el portal. Al seguirlo se crea una carpeta (cuenta en el límite de tu plan) y se actualiza como cualquier causa.",
+	},
 };
 
 const fecha = (iso: string | null) => (iso ? dayjs(iso).format("DD/MM/YYYY") : "—");
@@ -56,36 +69,105 @@ export default function PjnVinculadosSection({ folder }: Props) {
 	const [data, setData] = useState<PjnVinculadosResponse["data"] | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [siguiendo, setSiguiendo] = useState<string | null>(null);
+	// Mismo contexto que el alta normal (AddFolder): en modo equipo la carpeta es del owner.
+	const { getUserIdForResource, getTeamIdForResource, getRequestHeaders } = useTeam();
 
-	useEffect(() => {
-		if (!aplica || !folderId) return;
-		let cancel = false;
-		setLoading(true);
-		setError(null);
-		getPjnVinculadosByFolder(folderId)
-			.then((r) => {
-				if (!cancel) setData(r.data);
-			})
-			.catch(() => {
-				if (!cancel) setError("No se pudieron cargar los expedientes vinculados.");
-			})
-			.finally(() => {
-				if (!cancel) setLoading(false);
-			});
-		return () => {
-			cancel = true;
-		};
-	}, [aplica, folderId]);
+	const cargar = useCallback(
+		(silencioso = false) => {
+			if (!aplica || !folderId) return () => undefined;
+			let cancel = false;
+			if (!silencioso) setLoading(true);
+			setError(null);
+			getPjnVinculadosByFolder(folderId)
+				.then((r) => {
+					if (!cancel) setData(r.data);
+				})
+				.catch(() => {
+					if (!cancel) setError("No se pudieron cargar los expedientes vinculados.");
+				})
+				.finally(() => {
+					if (!cancel) setLoading(false);
+				});
+			return () => {
+				cancel = true;
+			};
+		},
+		[aplica, folderId],
+	);
 
-	// Carpetas sin causa PJN, de incidentes o de fueros sin pestaña: la sección no se muestra.
+	useEffect(() => cargar(), [cargar]);
+
+	const seguir = async (r: PjnVinculadoRow) => {
+		if (!data?.principal || !data.alta?.pjnCode) return;
+		setSiguiendo(r.incidente);
+		const { number, year } = data.principal;
+		const res = await dispatch(
+			addFolder(
+				{
+					folderName: r.caratula || `Incidente ${number}/${year}/${r.incidente}`,
+					materia: "Sin definir",
+					orderStatus: "Sin definir",
+					status: "Nueva",
+					description: `Incidente ${r.incidente} de ${number}/${year} seguido desde Expedientes vinculados`,
+					folderFuero: data.alta.folderFuero || undefined,
+					pjnCode: data.alta.pjnCode,
+					pjn: true,
+					source: "auto",
+					expedientNumber: String(number),
+					expedientYear: String(year),
+					expedientIncidente: r.incidente,
+					userId: getUserIdForResource(),
+					...(getTeamIdForResource() ? { groupId: getTeamIdForResource() } : {}),
+				} as any,
+				{ headers: getRequestHeaders() },
+			) as any,
+		);
+		setSiguiendo(null);
+		if (res?.success) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: `Seguís el incidente /${r.incidente}. Lo verificamos en la próxima pasada.`,
+					variant: "alert",
+					alert: { color: "success" },
+					close: true,
+				}),
+			);
+			cargar(true);
+		} else {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: res?.message || "No se pudo seguir el incidente.",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+		}
+	};
+
 	if (!aplica) return null;
-	if (
-		data &&
-		(data.reason === "es_incidente" ||
-			data.reason === "sin_causa_pjn" ||
-			data.reason === "fuero_sin_vinculados" ||
-			data.reason === "causa_no_encontrada")
-	)
+	// Carpeta de un incidente: breadcrumb hacia el principal.
+	if (data && data.reason === "es_incidente" && data.principal) {
+		const p = data.principal;
+		return (
+			<Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 2 }}>
+				<Hierarchy size={16} variant="Bulk" color={BRAND_BLUE} />
+				<Typography variant="body2" color="text.secondary">
+					Incidente /{p.incidente} de {p.fuero} {p.number}/{p.year}
+				</Typography>
+				{p.folderId && (
+					<Link component="button" variant="body2" onClick={() => navigate(`/apps/folders/details/${p.folderId}`)} sx={{ fontWeight: 600 }}>
+						{p.folderArchived ? "Ir al principal (archivada)" : "Ir al principal"}
+					</Link>
+				)}
+			</Stack>
+		);
+	}
+	// Carpetas sin causa PJN o de fueros sin pestaña: la sección no se muestra.
+	if (data && (data.reason === "sin_causa_pjn" || data.reason === "fuero_sin_vinculados" || data.reason === "causa_no_encontrada"))
 		return null;
 
 	const rows: PjnVinculadoRow[] = data?.vinculados ?? [];
@@ -181,6 +263,17 @@ export default function PjnVinculadosSection({ folder }: Props) {
 														sx={{ height: 20, fontSize: "0.68rem", fontWeight: 600, color: m.color, bgcolor: alpha(m.color, 0.12) }}
 													/>
 												</Tooltip>
+												{r.state === "disponible" && data?.alta?.pjnCode && (
+													<Button
+														size="small"
+														variant="outlined"
+														disabled={siguiendo !== null}
+														onClick={() => seguir(r)}
+														sx={{ py: 0, minWidth: 0, fontSize: "0.72rem", fontWeight: 600 }}
+													>
+														{siguiendo === r.incidente ? <CircularProgress size={12} /> : "Seguir"}
+													</Button>
+												)}
 												{r.state === "seguida" && r.folderId && (
 													<Link
 														component="button"

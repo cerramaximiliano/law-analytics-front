@@ -29,7 +29,16 @@ export interface PjnVinculadosMeta {
 export interface PjnVinculadosResponse {
 	success: boolean;
 	data: {
-		principal: { number: number; year: number; fuero: string; caratula?: string | null; incidente?: string } | null;
+		principal: {
+			number: number;
+			year: number;
+			fuero: string;
+			caratula?: string | null;
+			incidente?: string;
+			folderId?: string | null; // carpeta del usuario sobre el principal (breadcrumb, reason es_incidente)
+			folderArchived?: boolean | null;
+		} | null;
+		alta?: { pjnCode: string | null; folderFuero: string | null }; // datos para "Seguir"
 		meta: PjnVinculadosMeta | null;
 		vinculados: PjnVinculadoRow[];
 		reason?: "sin_causa_pjn" | "fuero_sin_vinculados" | "causa_no_encontrada" | "es_incidente";
