@@ -1531,7 +1531,7 @@ function ReactTable({
 						const lastMovStr = folder.lastMovementDate
 							? (() => {
 									try {
-										return dayjs.utc(folder.lastMovementDate).format("DD/MM/YYYY");
+										return dayjs.utc(folder.lastMovementDate).format("DD/MM/YY");
 									} catch {
 										return null;
 									}
@@ -1542,7 +1542,7 @@ function ReactTable({
 						const initDateStr = folder.initialDateFolder
 							? (() => {
 									try {
-										return dayjs.utc(folder.initialDateFolder).format("DD/MM/YYYY");
+										return dayjs.utc(folder.initialDateFolder).format("DD/MM/YY");
 									} catch {
 										return null;
 									}
@@ -1655,15 +1655,13 @@ function ReactTable({
 												<Box
 													sx={{
 														flexShrink: 0,
-														mr: -0.5,
+														mr: -1,
 														"& .MuiStack-root": { gap: 0 },
 														"& .MuiStack-root > :not(style) ~ :not(style)": { ml: 0 },
-														"& .MuiIconButton-root": { p: 0.5, width: 28, height: 28 },
-														"& .MuiIconButton-root svg": { width: 16, height: 16 },
 													}}
 													onClick={(e) => e.stopPropagation()}
 												>
-													{row.cells.find((c) => (c.column as any).Header === "Acciones")?.render("Cell")}
+													{row.cells.find((c) => (c.column as any).Header === "Acciones")?.render("Cell", { compact: true })}
 												</Box>
 											</Stack>
 										</Box>
@@ -3966,7 +3964,7 @@ const FoldersLayout = () => {
 				Header: "Acciones",
 				className: "cell-center",
 				disableSortBy: true,
-				Cell: ({ row }: any) => {
+				Cell: ({ row, compact }: any) => {
 					const folder = row.original;
 					const isAutoFolder =
 						folder.pjn || folder.mev || folder.eje || folder.scba || folder.pjsalta || folder.pjcatamarca || folder.pjmendoza;
@@ -4061,18 +4059,21 @@ const FoldersLayout = () => {
 
 					return (
 						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0.25}>
-							{/* "Abrir" estándar para causas verificadas. */}
-							<Tooltip title={getTooltipText("Abrir")}>
-								<span>
-									<IconButton
-										size="small"
-										sx={actionIconSx}
-										onClick={(e) => handleRowAction(e, () => navigate(`../details/${row.values._id}`))}
-									>
-										<Maximize variant="Bulk" size={18} />
-									</IconButton>
-								</span>
-							</Tooltip>
+							{/* "Abrir" estándar para causas verificadas. En la card mobile (compact) no va:
+							    tocar la card ya abre la carpeta y el área táctil de 44 px no deja lugar. */}
+							{!compact && (
+								<Tooltip title={getTooltipText("Abrir")}>
+									<span>
+										<IconButton
+											size="small"
+											sx={actionIconSx}
+											onClick={(e) => handleRowAction(e, () => navigate(`../details/${row.values._id}`))}
+										>
+											<Maximize variant="Bulk" size={18} />
+										</IconButton>
+									</span>
+								</Tooltip>
+							)}
 							{canUpdate && (
 								<Tooltip title={getTooltipText("Editar")}>
 									<span>
