@@ -22,6 +22,7 @@ import {
 	TableRow,
 	Tooltip,
 	useMediaQuery,
+	ButtonBase,
 	Skeleton,
 	Snackbar,
 	Alert,
@@ -275,8 +276,15 @@ interface ReactTableProps extends Props {
 }
 
 /**
- * Ícono del portal de la carpeta con el estado de vinculación superpuesto (ok / atención).
- * Compartido por la card mobile y la celda Carátula del desktop (2026-09-29).
+ * Ícono del portal de la carpeta con el estado de vinculación superpuesto. Compartido por la card
+ * mobile y la celda Carátula del desktop (2026-09-29) y ÚNICA señal de estado de la fila: los
+ * íconos sueltos que antes iban a la derecha de la carátula (credencial rechazada, reservada,
+ * revocada, fuera del listado, credencial MEV) se quitaron por redundantes; su tooltip y su
+ * acción viven acá.
+ *
+ * Tamaño (accesibilidad): logo 28 px en desktop / 32 px en mobile; indicador 16/18 px con glifo
+ * propio por estado (tilde, advertencia, candado) para no depender solo del color. En mobile el
+ * área táctil es de 44 px (mínimo del theme para IconButton) y el tooltip abre al tocar.
  */
 function FolderSourceBadge({
 	folder,
@@ -288,13 +296,8 @@ function FolderSourceBadge({
 	scbaCredErrorActive: boolean;
 }) {
 	const theme = useTheme();
-	// Badge de fuente (PJN / MEV / EJE / SCBA / PJ Salta / Catamarca / Mendoza) —
-	// ícono del portal (mismo logo que judicialPowerSelection.tsx /
-	// LinkToJudicialPower.tsx) con el estado de vinculación superpuesto
-	// abajo a la derecha, igual patrón que el verifyIcon de BindingPill
-	// (FolderView.tsx). Reemplaza el chip de texto anterior — "PJ CATAMARCA"
-	// o "PJ MENDOZA" competían por espacio con el nombre de la carpeta en
-	// esta misma fila del header de la card.
+	const navigate = useNavigate();
+	const mobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const sourceKind = folder.pjn
 		? "pjn"
 		: folder.mev
@@ -323,93 +326,121 @@ function FolderSourceBadge({
 		: sourceKind === "pjcatamarca"
 		? { label: "PJ Catamarca", logo: logoPJCatamarca, bg: "#ffffff" }
 		: { label: "PJ Mendoza", logo: logoPJMendoza, bg: "#ffffff" };
-	// Estado superpuesto — señal simplificada (ok / atención) para un
-	// vistazo rápido en la card colapsada; los matices completos por
-	// jurisdicción (revoked, reserved, pending_selection, etc.) siguen
-	// viviendo en la fila expandida (FolderView.tsx renderBinding).
-	const sourceStatus: { accent: string; tooltip: string; kind: "ok" | "warn" } | null = !sourceKind
+	type Glyph = "ok" | "warn" | "lock";
+	type Status = { accent: string; tooltip: string; glyph: Glyph; to?: string };
+	const st = (accent: string, tooltip: string, glyph: Glyph, to?: string): Status => ({ accent, tooltip, glyph, to });
+	const RED = theme.palette.error.main;
+	const sourceStatus: Status | null = !sourceKind
 		? null
 		: sourceKind === "pjn"
 		? (() => {
 				const state = getPjnBindingState(folder, { credError: pjnCredErrorActive });
-				if (state === "ok") return { accent: LIVE_GREEN, tooltip: PJN_BINDING_COPY.ok, kind: "ok" as const };
-				// Credencial rechazada: copy por carpeta (pública sigue / reservada no).
-				if (state === "cred_error") return { accent: STALE_AMBER, tooltip: pjnCredErrorCopy(folder), kind: "warn" as const };
-				if (state === "reserved" || state === "failed")
-					return {
-						accent: theme.palette.error.main,
-						tooltip: pjnFailedCopy(folder) || PJN_BINDING_COPY.reserved,
-						kind: "warn" as const,
-					};
-				return { accent: STALE_AMBER, tooltip: (state && PJN_BINDING_COPY[state]) || "Requiere atención", kind: "warn" as const };
+				if (state === "ok") return st(LIVE_GREEN, PJN_BINDING_COPY.ok, "ok");
+				// Credencial rechazada: copy por carpeta (pública sigue / reservada no); lleva al perfil.
+				if (state === "cred_error") return st(STALE_AMBER, pjnCredErrorCopy(folder), "warn", PJN_PROFILE_PATH);
+				if (state === "reserved_covered") return st(LIVE_GREEN, PJN_BINDING_COPY.reserved_covered, "lock");
+				if (state === "revoked") return st(STALE_AMBER, PJN_BINDING_COPY.revoked, "lock");
+				if (state === "reserved") return st(RED, PJN_BINDING_COPY.reserved, "warn");
+				if (state === "failed") return st(RED, pjnFailedCopy(folder) || "Vinculación fallida", "warn");
+				return st(STALE_AMBER, (state && PJN_BINDING_COPY[state]) || "Requiere atención", "warn");
 		  })()
 		: sourceKind === "scba"
 		? (() => {
 				const state = getScbaBindingState(folder, { credError: scbaCredErrorActive });
-				return state === "ok"
-					? { accent: LIVE_GREEN, tooltip: SCBA_BINDING_COPY.ok, kind: "ok" as const }
-					: { accent: STALE_AMBER, tooltip: (state && SCBA_BINDING_COPY[state]) || "Requiere atención", kind: "warn" as const };
+				if (state === "ok") return st(LIVE_GREEN, SCBA_BINDING_COPY.ok, "ok");
+				return st(
+					STALE_AMBER,
+					(state && SCBA_BINDING_COPY[state]) || "Requiere atención",
+					"warn",
+					state === "cred_error" ? SCBA_PROFILE_PATH : undefined,
+				);
 		  })()
 		: sourceKind === "mev"
 		? (() => {
 				const issue = mevCredIssue(folder);
 				return issue
-					? { accent: STALE_AMBER, tooltip: "Requiere atención", kind: "warn" as const }
-					: { accent: LIVE_GREEN, tooltip: "Vinculado con MEV", kind: "ok" as const };
+					? st(STALE_AMBER, MEV_CRED_MESSAGE[issue] || "Requiere atención", "warn", MEV_PROFILE_PATH)
+					: st(LIVE_GREEN, "Vinculado con MEV", "ok");
 		  })()
 		: folder.causaAssociationStatus === "pending_selection"
-		? { accent: STALE_AMBER, tooltip: "Elegí el expediente correcto", kind: "warn" as const }
+		? st(STALE_AMBER, "Elegí el expediente correcto", "warn")
 		: folder.listRemoved
-		? { accent: STALE_AMBER, tooltip: "El portal ya no encuentra esta causa", kind: "warn" as const }
+		? st(
+				STALE_AMBER,
+				`El expediente dejó de aparecer en el portal del ${sourceMeta?.label}. Puede haber sido archivado, reservado o movido de organismo.`,
+				"warn",
+		  )
 		: folder.causaVerified === false && folder.causaIsValid === false
-		? { accent: theme.palette.error.main, tooltip: "Vinculación fallida", kind: "warn" as const }
-		: { accent: LIVE_GREEN, tooltip: `Vinculado con ${sourceMeta?.label}`, kind: "ok" as const };
-	return sourceMeta ? (
-		<Tooltip title={sourceStatus ? `${sourceMeta.label} — ${sourceStatus.tooltip}` : sourceMeta.label}>
-			<Box sx={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
-				<Box
-					sx={{
-						width: 24,
-						height: 24,
-						borderRadius: "50%",
-						overflow: "hidden",
-						bgcolor: sourceMeta.bg,
-						border: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.32 : 0.2)}`,
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						flexShrink: 0,
-					}}
-				>
-					<Box component="img" src={sourceMeta.logo} alt={sourceMeta.label} sx={{ width: "72%", height: "72%", objectFit: "contain" }} />
-				</Box>
-				{sourceStatus && (
+		? st(RED, "Vinculación fallida", "warn")
+		: st(LIVE_GREEN, `Vinculado con ${sourceMeta?.label}`, "ok");
+	if (!sourceMeta) return null;
+
+	const logo = mobile ? 32 : 28;
+	const dot = mobile ? 18 : 16;
+	const glyph = mobile ? 12 : 10;
+	const GlyphIcon = sourceStatus?.glyph === "ok" ? TickCircle : sourceStatus?.glyph === "lock" ? Lock1 : Warning2;
+	const accion = sourceStatus?.to ? (mobile ? " · Tocá para resolverlo" : " · Clic para resolverlo") : "";
+	const titulo = sourceStatus ? `${sourceMeta.label} — ${sourceStatus.tooltip}${accion}` : sourceMeta.label;
+	return (
+		<Tooltip title={titulo} enterTouchDelay={0} leaveTouchDelay={5000}>
+			<ButtonBase
+				aria-label={titulo}
+				onClick={(e) => {
+					e.stopPropagation();
+					if (sourceStatus?.to) navigate(sourceStatus.to);
+				}}
+				sx={{
+					position: "relative",
+					flexShrink: 0,
+					borderRadius: "50%",
+					// Área táctil: 44 px en mobile (WCAG 2.5.5 / mínimo del theme), 32 px en desktop.
+					minWidth: mobile ? 44 : 32,
+					minHeight: mobile ? 44 : 32,
+					m: mobile ? -0.75 : -0.25,
+					cursor: sourceStatus?.to ? "pointer" : "default",
+					"&:focus-visible": { outline: `2px solid ${BRAND_BLUE}`, outlineOffset: 1 },
+				}}
+			>
+				<Box sx={{ position: "relative", display: "inline-flex" }}>
 					<Box
-						aria-hidden
 						sx={{
-							position: "absolute",
-							bottom: -3,
-							right: -3,
-							width: 14,
-							height: 14,
+							width: logo,
+							height: logo,
 							borderRadius: "50%",
-							bgcolor: sourceStatus.accent,
-							border: `1.5px solid ${theme.palette.background.paper}`,
+							overflow: "hidden",
+							bgcolor: sourceMeta.bg,
+							border: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.4 : 0.25)}`,
 							display: "flex",
 							alignItems: "center",
 							justifyContent: "center",
 						}}
 					>
-						{sourceStatus.kind === "ok" ? (
-							<TickCircle size={9} variant="Bold" color="#fff" />
-						) : (
-							<Warning2 size={9} variant="Bold" color="#fff" />
-						)}
+						<Box component="img" src={sourceMeta.logo} alt="" sx={{ width: "74%", height: "74%", objectFit: "contain" }} />
 					</Box>
-				)}
-			</Box>
+					{sourceStatus && (
+						<Box
+							aria-hidden
+							sx={{
+								position: "absolute",
+								bottom: -3,
+								right: -4,
+								width: dot,
+								height: dot,
+								borderRadius: "50%",
+								bgcolor: sourceStatus.accent,
+								border: `2px solid ${theme.palette.background.paper}`,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+							}}
+						>
+							<GlyphIcon size={glyph} variant="Bold" color="#fff" />
+						</Box>
+					)}
+				</Box>
+			</ButtonBase>
 		</Tooltip>
-	) : null;
+	);
 }
 
 function ReactTable({
@@ -3163,35 +3194,23 @@ const FoldersLayout = () => {
 						const isPjnRevoked = pjnState === "revoked";
 						const isPjnReservedCovered = pjnState === "reserved_covered";
 						const isPjnPrivateRestricted = pjnState === "reserved";
-						const renderPrivacyRow = (tooltip: string, icon: React.ReactNode, hoverBg: string, onIconClick?: () => void) => (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<Tooltip title={value || ""}>
-									<span
-										style={{
-											display: "-webkit-box",
-											WebkitLineClamp: 2,
-											WebkitBoxOrient: "vertical",
-											overflow: "hidden",
-											textOverflow: "ellipsis",
-											flex: 1,
-										}}
-									>
-										{formatFolderName(value, 50)}
-									</span>
-								</Tooltip>
-								<Tooltip title={tooltip}>
-									<IconButton
-										size="small"
-										onClick={(e) => {
-											e.stopPropagation();
-											onIconClick?.();
-										}}
-										sx={{ padding: 0.5, "&:hover": { backgroundColor: hoverBg } }}
-									>
-										{icon}
-									</IconButton>
-								</Tooltip>
-							</Stack>
+						// El estado (tooltip + acción) lo muestra el ícono de la fuente (FolderSourceBadge) a la
+						// izquierda; acá solo la carátula. Firma conservada para no tocar las ramas.
+						// eslint-disable-next-line @typescript-eslint/no-unused-vars
+						const renderPrivacyRow = (_tooltip: string, _icon: React.ReactNode, _hoverBg: string, _onIconClick?: () => void) => (
+							<Tooltip title={value || ""}>
+								<span
+									style={{
+										display: "-webkit-box",
+										WebkitLineClamp: 2,
+										WebkitBoxOrient: "vertical",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+									}}
+								>
+									{formatFolderName(value, 50)}
+								</span>
+							</Tooltip>
 						);
 						// Credencial PJN rechazada: gana sobre revoked/reserved/list_removed/pending (no
 						// sobre pending_selection/failed — ver getPjnBindingState). El ícono lleva al perfil.
@@ -3223,17 +3242,6 @@ const FoldersLayout = () => {
 						// usuario puede elegir expediente, eso es lo que tiene que ver;
 						// un `listRemoved` sobre un pivote es información vieja.
 						if (isListRemoved && folder.causaAssociationStatus !== "pending_selection") {
-							const IOL_NAMES: Record<string, string> = { pjsalta: "PJ Salta", pjcatamarca: "PJ Catamarca", pjmendoza: "PJ Mendoza" };
-							const source = folder.listRemovedSource ? folder.listRemovedSource.toUpperCase() : "PJN";
-							const tooltipCopy = isIolListRemoved
-								? `El expediente dejó de aparecer en el portal del ${
-										IOL_NAMES[folder.listRemovedSource || ""] || source
-								  } en las últimas actualizaciones. Puede haber sido archivado, reservado o movido de organismo.`
-								: source === "PJN"
-								? PJN_BINDING_COPY.list_removed
-								: source === "SCBA"
-								? SCBA_BINDING_COPY.list_removed
-								: `Esta causa ya no aparece en tu lista de Mis Causas del portal ${source}. Puede haber sido archivada o desvinculada por el tribunal.`;
 							return (
 								<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 									<Tooltip title={value || ""}>
@@ -3249,20 +3257,6 @@ const FoldersLayout = () => {
 										>
 											{formatFolderName(value, 50)}
 										</span>
-									</Tooltip>
-									<Tooltip title={tooltipCopy}>
-										<IconButton
-											size="small"
-											onClick={(e) => e.stopPropagation()}
-											sx={{
-												padding: 0.5,
-												"&:hover": {
-													backgroundColor: "warning.lighter",
-												},
-											}}
-										>
-											<Warning2 size={16} variant="Bold" color="#F59E0B" />
-										</IconButton>
 									</Tooltip>
 								</Stack>
 							);
@@ -3434,7 +3428,6 @@ const FoldersLayout = () => {
 						// La causa no se scrapea hasta que el usuario corrija/cargue su credencial.
 						const credIssue = mevCredIssue(folder);
 						if (credIssue) {
-							const credMsg = MEV_CRED_MESSAGE[credIssue];
 							const credLabel = MEV_CRED_LABEL[credIssue];
 							// M11: el chip no reemplaza la carátula — el usuario tiene que saber qué carpeta es
 							// sin expandir. Si el worker dejó el nombre placeholder ("Causa inválida o no
@@ -3488,18 +3481,6 @@ const FoldersLayout = () => {
 											</Typography>
 										</Box>
 									</Stack>
-									<Tooltip title={credMsg}>
-										<IconButton
-											size="small"
-											onClick={(e) => {
-												e.stopPropagation();
-												navigate(MEV_PROFILE_PATH);
-											}}
-											sx={{ padding: 0.5, "&:hover": { backgroundColor: "warning.lighter" } }}
-										>
-											<Warning2 size={16} variant="Bold" color="#F59E0B" />
-										</IconButton>
-									</Tooltip>
 								</Stack>
 							);
 						}
@@ -3623,67 +3604,6 @@ const FoldersLayout = () => {
 										>
 											{formatFolderName(value, 50)}
 										</span>
-									</Tooltip>
-									<Tooltip
-										title={
-											getScbaBindingState(folder, { credError: scbaCredError.hasError }) === "cred_error"
-												? scbaCredError.errorMessage || SCBA_BINDING_COPY.cred_error
-												: getPjnBindingState(folder, { credError: pjnCredError.requiresAction }) === "cred_error"
-												? pjnCredErrorCopy(folder)
-												: folder.pjn === true
-												? "Causa vinculada a PJN"
-												: folder.mev === true
-												? "Causa vinculada a MEV"
-												: folder.eje === true
-												? "Causa vinculada a EJE"
-												: folder.scba === true
-												? SCBA_BINDING_COPY.ok
-												: folder.pjsalta === true
-												? "Causa vinculada a PJ Salta"
-												: folder.pjcatamarca === true
-												? "Causa vinculada a PJ Catamarca"
-												: folder.pjmendoza === true
-												? "Causa vinculada a PJ Mendoza"
-												: "Causa vinculada"
-										}
-									>
-										<Box
-											sx={{
-												display: "inline-flex",
-												alignItems: "center",
-												justifyContent: "center",
-												width: 18,
-												height: 18,
-											}}
-										>
-											{
-												getScbaBindingState(folder, { credError: scbaCredError.hasError }) === "cred_error" ? (
-													// Cred SCBA rechazada/expirada: el ícono lleva a donde se resuelve
-													// (Integraciones → SCBA), igual que el pill de la fila expandida (S15).
-													<IconButton
-														size="small"
-														onClick={(e) => {
-															e.stopPropagation();
-															navigate(SCBA_PROFILE_PATH);
-														}}
-														sx={{ padding: 0, "&:hover": { backgroundColor: "warning.lighter" } }}
-													>
-														<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
-													</IconButton>
-												) : getPjnBindingState(folder, { credError: pjnCredError.requiresAction }) === "cred_error" ? (
-													<IconButton
-														size="small"
-														onClick={(e) => {
-															e.stopPropagation();
-															navigate(PJN_PROFILE_PATH);
-														}}
-														sx={{ padding: 0, "&:hover": { backgroundColor: "warning.lighter" } }}
-													>
-														<Warning2 size={16} variant="Bold" color={STALE_AMBER} />
-													</IconButton>
-												) : null /* ok: lo muestra el tilde del ícono de la fuente (FolderSourceBadge) */
-											}
-										</Box>
 									</Tooltip>
 								</Stack>
 							);
