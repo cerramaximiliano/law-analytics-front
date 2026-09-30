@@ -88,7 +88,6 @@ import {
 	InfoCircle,
 	DocumentDownload,
 	Refresh,
-	CloseCircle,
 	More,
 	SearchStatus1,
 	Folder2,
@@ -355,9 +354,14 @@ function FolderSourceBadge({
 		: sourceKind === "mev"
 		? (() => {
 				const issue = mevCredIssue(folder);
-				return issue
-					? st(STALE_AMBER, MEV_CRED_MESSAGE[issue] || "Requiere atención", "warn", MEV_PROFILE_PATH)
-					: st(LIVE_GREEN, "Vinculado con MEV", "ok");
+				if (issue) return st(STALE_AMBER, MEV_CRED_MESSAGE[issue] || "Requiere atención", "warn", MEV_PROFILE_PATH);
+				if (folder.causaAssociationStatus === "failed" || (folder.causaVerified === true && folder.causaIsValid === false))
+					return st(
+						RED,
+						folder.causaAssociationError ? `Vinculación fallida: ${folder.causaAssociationError}` : "Vinculación fallida",
+						"warn",
+					);
+				return st(LIVE_GREEN, "Vinculado con MEV", "ok");
 		  })()
 		: folder.causaAssociationStatus === "pending_selection"
 		? st(STALE_AMBER, "Elegí el expediente correcto", "warn")
@@ -367,8 +371,10 @@ function FolderSourceBadge({
 				`El expediente dejó de aparecer en el portal del ${sourceMeta?.label}. Puede haber sido archivado, reservado o movido de organismo.`,
 				"warn",
 		  )
-		: folder.causaVerified === false && folder.causaIsValid === false
-		? st(RED, "Vinculación fallida", "warn")
+		: folder.causaAssociationStatus === "failed" || (folder.causaVerified === true && folder.causaIsValid === false)
+		? st(RED, folder.causaAssociationError ? `Vinculación fallida: ${folder.causaAssociationError}` : "Vinculación fallida", "warn")
+		: folder.causaVerified !== true
+		? st(STALE_AMBER, "Verificando la causa en el portal", "warn")
 		: st(LIVE_GREEN, `Vinculado con ${sourceMeta?.label}`, "ok");
 	if (!sourceMeta) return null;
 
@@ -3324,32 +3330,6 @@ const FoldersLayout = () => {
 											</Typography>
 										)}
 									</Stack>
-									<Tooltip
-										title={
-											folder.tooManyResults
-												? `La búsqueda devolvió ${
-														folder.searchTotalResults ?? "demasiados"
-												  } expedientes: se muestran los primeros ${candidatos}. Conviene refinar el número.`
-												: "Se encontraron múltiples expedientes - Haz clic para seleccionar"
-										}
-									>
-										<IconButton
-											size="small"
-											onClick={(e) => {
-												e.stopPropagation();
-												setCausaSelectorFolder({ id: folder._id, name: folder.folderName || folder.searchTerm || "" });
-												setCausaSelectorOpen(true);
-											}}
-											sx={{
-												padding: 0.5,
-												"&:hover": {
-													backgroundColor: "warning.lighter",
-												},
-											}}
-										>
-											<Warning2 size={16} variant="Bold" color="#F59E0B" />
-										</IconButton>
-									</Tooltip>
 								</Stack>
 							);
 						}
@@ -3366,31 +3346,38 @@ const FoldersLayout = () => {
 							return (
 								<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={0.5}>
 									<Stack spacing={0.25} sx={{ minWidth: 0 }}>
-										<Box
-											sx={{
-												display: "inline-flex",
-												alignItems: "center",
-												gap: 0.625,
-												px: 0.875,
-												py: 0.25,
-												borderRadius: 0.75,
-												bgcolor: alpha(theme.palette.error.main, isDark ? 0.16 : 0.1),
-												border: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.32 : 0.22)}`,
-											}}
+										{/* El motivo real (causaAssociationError) va en el tooltip del chip: el ícono rojo
+										    de la derecha era redundante con el de la fuente (2026-09-30). */}
+										<Tooltip
+											title={isMevCredMissing(folder) ? `${pjnFailedCopy(folder)} ${MEV_CRED_MISSING_ON_FAILED}` : pjnFailedCopy(folder)}
 										>
-											<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: theme.palette.error.main }} />
-											<Typography
+											<Box
 												sx={{
-													fontSize: "0.68rem",
-													fontWeight: 600,
-													color: theme.palette.error.main,
-													letterSpacing: "0.01em",
-													lineHeight: 1,
+													alignSelf: "flex-start",
+													display: "inline-flex",
+													alignItems: "center",
+													gap: 0.625,
+													px: 0.875,
+													py: 0.25,
+													borderRadius: 0.75,
+													bgcolor: alpha(theme.palette.error.main, isDark ? 0.16 : 0.1),
+													border: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.32 : 0.22)}`,
 												}}
 											>
-												Asociación fallida
-											</Typography>
-										</Box>
+												<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: theme.palette.error.main }} />
+												<Typography
+													sx={{
+														fontSize: "0.68rem",
+														fontWeight: 600,
+														color: theme.palette.error.main,
+														letterSpacing: "0.01em",
+														lineHeight: 1,
+													}}
+												>
+													Asociación fallida
+												</Typography>
+											</Box>
+										</Tooltip>
 										{/* Sin esto había que entrar al detalle para saber qué se había buscado. */}
 										{(folder.searchTerm || folder.judFolder?.numberJudFolder) && (
 											<Typography noWrap sx={{ fontSize: "0.66rem", color: "text.secondary", lineHeight: 1.3 }}>
@@ -3411,23 +3398,6 @@ const FoldersLayout = () => {
 											</Typography>
 										)}
 									</Stack>
-									{/* El motivo real lo devuelve el portal y vive en `causaAssociationError`;
-								    hasta ahora el tooltip decía siempre lo mismo. */}
-									<Tooltip
-										title={isMevCredMissing(folder) ? `${pjnFailedCopy(folder)} ${MEV_CRED_MISSING_ON_FAILED}` : pjnFailedCopy(folder)}
-									>
-										<Box
-											sx={{
-												display: "inline-flex",
-												alignItems: "center",
-												justifyContent: "center",
-												width: 18,
-												height: 18,
-											}}
-										>
-											<CloseCircle size={16} variant="Bold" color="#EF4444" />
-										</Box>
-									</Tooltip>
 								</Stack>
 							);
 						}
