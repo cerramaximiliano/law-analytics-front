@@ -3607,7 +3607,7 @@ const FoldersLayout = () => {
 					const rel = row.original.relaciones;
 					// Ícono del portal con el estado superpuesto, igual que la card mobile (2026-09-29).
 					return (
-						<Stack direction="row" alignItems="center" spacing={1} width="100%" sx={{ minWidth: 240 }}>
+						<Stack direction="row" alignItems="center" spacing={1} width="100%" sx={{ minWidth: 160 }}>
 							<FolderSourceBadge
 								folder={row.original}
 								pjnCredErrorActive={!!pjnCredError.requiresAction}
