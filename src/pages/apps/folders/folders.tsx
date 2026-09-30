@@ -9,7 +9,6 @@ import {
 	Card,
 	CardActionArea,
 	CardContent,
-	Chip,
 	Dialog,
 	DialogContent,
 	DialogTitle,
@@ -45,7 +44,6 @@ import { useFilters, useExpanded, useGlobalFilter, useRowSelect, useSortBy, useT
 import MainCard from "components/MainCard";
 import ScrollX from "components/ScrollX";
 import IconButton from "components/@extended/IconButton";
-import Avatar from "components/@extended/Avatar";
 import { PopupTransition } from "components/@extended/Transitions";
 import { IndeterminateCheckbox, HeaderSort, SortingSelect, TablePagination } from "components/third-party/ReactTable";
 import { CSVLink } from "react-csv";
@@ -2166,8 +2164,6 @@ const FoldersLayout = () => {
 	const [fueroFilter, setFueroFilter] = useState<string>("all");
 	const [departamentoFilter, setDepartamentoFilter] = useState<string>("all");
 
-	// Estado para alinear la barra de carpetas con los botones de la toolbar
-	const [barWidth, setBarWidth] = useState<number | undefined>(undefined);
 	// Estado para pre-seleccionar paso y valores al abrir AddFolder desde los badges
 	const [addFolderInitialStep, setAddFolderInitialStep] = useState<number | undefined>(undefined);
 	const [addFolderInitialFormValues, setAddFolderInitialFormValues] = useState<
@@ -2175,7 +2171,6 @@ const FoldersLayout = () => {
 	>(undefined);
 
 	// Referencias
-	const mountedRef = useRef(false);
 	const loadingRef = useRef(false);
 	const pendingTableRef = useRef<HTMLDivElement>(null);
 
@@ -4349,7 +4344,6 @@ const FoldersLayout = () => {
 								departamentoFilter={departamentoFilter}
 								onDepartamentoFilterChange={handleDepartamentoFilterChange}
 								uniqueDepartamentos={uniqueDepartamentos}
-								onBarWidthMeasured={setBarWidth}
 							/>
 						</ScrollX>
 					</Box>
