@@ -11,6 +11,7 @@ import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
 import { LEGAL_LAST_UPDATED } from "config/legalDates";
 import LegalPageTOC, { TocItem } from "components/legal/LegalPageTOC";
+import LegalEntityBlock from "components/legal/LegalEntityBlock";
 
 // ============================== TOKENS ============================== //
 // Mantener en sync con sections/landing/Planes.tsx
@@ -396,6 +397,8 @@ const PrivacyPolicy = () => {
 								</Link>
 								.
 							</Typography>
+
+							<LegalEntityBlock title="Responsable del tratamiento de datos" />
 						</MainCard>
 					</Grid>
 				</Grid>

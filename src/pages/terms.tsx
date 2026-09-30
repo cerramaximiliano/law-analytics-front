@@ -13,6 +13,7 @@ import PageBackground from "components/PageBackground";
 import LegalDocumentViewerAllPlans from "pages/extra-pages/price/LegalDocumentViewerAllPlans";
 import { LEGAL_LAST_UPDATED } from "config/legalDates";
 import LegalPageTOC, { TocItem } from "components/legal/LegalPageTOC";
+import LegalEntityBlock from "components/legal/LegalEntityBlock";
 
 // ============================== TOKENS ============================== //
 // Mantener en sync con sections/landing/Planes.tsx
@@ -30,7 +31,6 @@ function TabPanel(props: TabPanelProps) {
 	if (value === index) {
 		visited.current = true;
 	}
-
 
 	return (
 		<div role="tabpanel" hidden={value !== index} id={`terms-tabpanel-${index}`} aria-labelledby={`terms-tab-${index}`} {...other}>
@@ -85,7 +85,6 @@ const TermsPage = () => {
 			}
 		}
 	};
-
 
 	const breadcrumbItems = [{ title: "Inicio", to: "/" }, { title: "Términos y Condiciones" }];
 
@@ -238,6 +237,8 @@ const TermsPage = () => {
 								</Link>
 								.
 							</Typography>
+
+							<LegalEntityBlock />
 						</MainCard>
 					</Grid>
 				</Grid>

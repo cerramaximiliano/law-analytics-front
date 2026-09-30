@@ -228,13 +228,15 @@ const FooterBlock = ({ isFull }: showProps) => {
 			>
 				<Container>
 					<Grid container spacing={2} alignItems="center" justifyContent="space-between">
-						<Grid item xs={"auto"} sm={8}>
-							<Typography>
-								© Desarrollado por{" "}
-								<Link href="https://www.rumba-dev.com/" underline="none">
-									{" "}
-									RUMBA
-								</Link>
+						<Grid item xs={12} sm={8}>
+							{/* Identificación del titular del servicio. Dice quién opera lawanalytics.app
+							    (razón social, domicilio y teléfono), no quién lo programó: es el dato que
+							    buscan los procesos de verificación de empresa y los usuarios. */}
+							<Typography variant="body2">
+								© {new Date().getFullYear()} Law||Analytics — un servicio de <strong>RUMBA LLC</strong>
+							</Typography>
+							<Typography variant="caption" color="text.secondary">
+								20 Penn Mart Shopping Ctr, PMB 576, New Castle, DE 19720, Estados Unidos · +1 302 613 4370
 							</Typography>
 						</Grid>
 						<Grid item xs={"auto"} sm={4}>
