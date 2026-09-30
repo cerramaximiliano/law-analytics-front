@@ -239,7 +239,17 @@ export default function PjnVinculadosSection({ folder }: Props) {
 						</TableHead>
 						<TableBody>
 							{rows.map((r) => {
-								const m = STATE_META[r.state];
+								// Seguida por la credencial (la carpeta la creó la sincronización de Relacionados) vs
+								// seguida por el usuario con "Seguir" (2026-09-30).
+								const m =
+									r.state === "seguida" && r.folderSource === "pjn-login"
+										? {
+												label: "En tu lista del PJN",
+												color: LIVE_GREEN,
+												tooltip:
+													"Este incidente está en tu listado de causas relacionadas del PJN: la carpeta se creó sola al sincronizar tu credencial.",
+										  }
+										: STATE_META[r.state];
 								const atenuada = r.state === "retirada";
 								return (
 									<TableRow key={r.incidente} sx={{ opacity: atenuada ? 0.55 : 1 }}>
