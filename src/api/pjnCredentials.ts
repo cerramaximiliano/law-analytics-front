@@ -184,6 +184,15 @@ class PjnCredentialsService {
 	/**
 	 * Obtiene el estado de las credenciales PJN del usuario
 	 */
+	/** Cierra el aviso "credencial requiere acción" para la caída actual (todas las carpetas o una). */
+	async dismissCredentialBanner(
+		scope: "global" | "folder",
+		folderId?: string,
+	): Promise<{ success: boolean; bannerDismiss?: { global: boolean; folderIds: string[] } }> {
+		const response = await axios.post(`${BASE_URL}/api/pjn-credentials/banner-dismiss`, { scope, folderId }, { withCredentials: true });
+		return response.data;
+	}
+
 	async getCredentialsStatus(): Promise<GetCredentialsStatusResponse> {
 		try {
 			const response = await axios.get(`${BASE_URL}/api/pjn-credentials`, {

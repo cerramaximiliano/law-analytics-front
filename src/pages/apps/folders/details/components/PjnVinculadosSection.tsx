@@ -214,7 +214,9 @@ export default function PjnVinculadosSection({ folder }: Props) {
 			)}
 			{!loading && !error && data && !meta && (
 				<Typography variant="body2" color="text.secondary">
-					Todavía no leímos la pestaña Vinculados de este expediente. Se completa en la próxima verificación.
+					{(data as any)?.sinLectura === "credencial"
+						? "No tenemos registrados expedientes vinculados de esta causa. En las causas que llegan por tu credencial PJN todavía no leemos la pestaña Vinculados del portal."
+						: "Todavía no leímos la pestaña Vinculados de este expediente. Se completa en la próxima verificación."}
 				</Typography>
 			)}
 			{!loading && !error && meta && rows.length === 0 && (

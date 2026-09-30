@@ -1113,7 +1113,7 @@ const Details = () => {
 
 			{/* Credencial PJN rechazada (2026-09-28): los avisos siguen para las causas
 			    públicas; las reservadas esperan la contraseña nueva. CTA al perfil. */}
-			{folder?.pjn === true && pjnCredError.requiresAction && <PjnCredErrorBanner to={PJN_PROFILE_PATH} sx={{ mb: 1.5 }} />}
+			{folder?.pjn === true && pjnCredError.requiresAction && <PjnCredErrorBanner to={PJN_PROFILE_PATH} folderId={id} sx={{ mb: 1.5 }} />}
 
 			<MainCard
 				content={false}

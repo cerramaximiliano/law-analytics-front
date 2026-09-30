@@ -26,6 +26,8 @@ type CacheValue = {
 	requiresAction: boolean;
 	/** Desde cuándo (ISO) requiere acción; null si no se sabe. */
 	requiresActionSince: string | null;
+	/** Aviso cerrado por el usuario para esta caída (todas las carpetas o algunas); null = mostrar. */
+	bannerDismiss: { global: boolean; folderIds: string[] } | null;
 };
 let cache: CacheValue | null = null;
 let cacheTs = 0;
@@ -39,7 +41,10 @@ const EMPTY: CacheValue = {
 	statusReason: null,
 	requiresAction: false,
 	requiresActionSince: null,
+	bannerDismiss: null,
 };
+// Suscriptores montados: el cierre del aviso actualiza a todos sin refetch.
+const listeners = new Set<(v: CacheValue) => void>();
 
 async function fetchOnce(): Promise<CacheValue> {
 	if (pendingFetch) return pendingFetch;
@@ -62,8 +67,14 @@ async function fetchOnce(): Promise<CacheValue> {
 			const mirrorObj = data?.pjnCredentialState;
 			const mirrored = typeof data?.requiresAction === "boolean" || (mirrorObj && typeof mirrorObj.requiresAction === "boolean");
 			const requiresAction = mirrored ? data?.requiresAction === true || mirrorObj?.requiresAction === true : hasError;
-			const requiresActionSince = requiresAction ? data?.requiresActionSince || mirrorObj?.since || data?.credentialInvalidAt || null : null;
-			cache = { hasError, errorMessage, cuil, statusReason, requiresAction, requiresActionSince };
+			const requiresActionSince = requiresAction
+				? data?.requiresActionSince || mirrorObj?.since || data?.credentialInvalidAt || null
+				: null;
+			const bannerDismiss =
+				requiresAction && data?.bannerDismiss
+					? { global: data.bannerDismiss.global === true, folderIds: data.bannerDismiss.folderIds || [] }
+					: null;
+			cache = { hasError, errorMessage, cuil, statusReason, requiresAction, requiresActionSince, bannerDismiss };
 			cacheTs = Date.now();
 			pendingFetch = null;
 			return cache;
@@ -80,6 +91,31 @@ async function fetchOnce(): Promise<CacheValue> {
  * Llamar desde `GlobalSyncErrorListener` cuando llega un WS de error PJN, o
  * desde la página de PJN tras link/unlink.
  */
+/**
+ * Cierra el aviso de credencial (persistido en el hub, atado a la caída actual) y actualiza a
+ * todos los componentes montados.
+ */
+export async function dismissPjnCredBanner(scope: "global" | "folder", folderId?: string): Promise<boolean> {
+	try {
+		const r = await pjnCredentialsService.dismissCredentialBanner(scope, folderId);
+		if (!r?.success) return false;
+		const base = cache ?? EMPTY;
+		cache = { ...base, bannerDismiss: r.bannerDismiss ?? { global: scope === "global", folderIds: folderId ? [folderId] : [] } };
+		cacheTs = Date.now();
+		listeners.forEach((fn) => fn(cache as CacheValue));
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/** ¿El usuario cerró el aviso para esta carpeta (o para todas)? */
+export function pjnCredBannerCerrado(state: CacheValue, folderId?: string): boolean {
+	const d = state.bannerDismiss;
+	if (!d) return false;
+	return d.global || (!!folderId && d.folderIds.includes(folderId));
+}
+
 export function invalidatePjnCredentialErrorCache() {
 	cache = null;
 	cacheTs = 0;
@@ -105,6 +141,13 @@ export function usePjnCredentialError() {
 				s.pjnSync?.credentialsChangedAt ?? ""
 			}`,
 	);
+
+	useEffect(() => {
+		listeners.add(setState);
+		return () => {
+			listeners.delete(setState);
+		};
+	}, []);
 
 	useEffect(() => {
 		let cancelled = false;
