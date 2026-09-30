@@ -52,7 +52,9 @@ interface ResourceUsageWidgetProps {
 
 // Estado funcional de la pill — define la afordancia y el indicador visual.
 //   "connected"    → la cuenta está sincronizada (PJN/SCBA). Check verde.
-//   "disconnected" → la cuenta es conectable pero no está conectada (PJN/SCBA sin login). Dot ámbar.
+//   "disconnected" → la cuenta es conectable pero no está conectada (PJN/SCBA sin login). Ícono "+"
+//                    neutro como los atajos (2026-09-30): no conectar no es una alerta; el ámbar
+//                    queda solo para `attention` (cuenta conectada que requiere acción).
 //   "shortcut"     → no hay concepto de cuenta para esta jurisdicción (EJE/CABA);
 //                    la pill es un atajo para cargar una causa individual. Ícono "+".
 //   "loading"      → estado de carga inicial de credenciales.
@@ -99,7 +101,7 @@ const JurisdictionPill = ({ logoSrc, alt, logoBg, label, tooltip, state, onClick
 	// Indicador a la derecha — distingue funcionalmente las pills:
 	//   connected: tilde verde (cuenta sincronizada)
 	//   attention: warning ámbar (credencial rechazada/expirada, requiere acción)
-	//   disconnected: dot ámbar (cuenta conectable, falta login)
+	//   disconnected: ícono "+" brand, igual que shortcut (no conectada ≠ alerta)
 	//   shortcut: ícono "+" brand (no es cuenta, es atajo para agregar causa)
 	//   loading: dot neutro animado
 	const indicator = (() => {
@@ -109,22 +111,7 @@ const JurisdictionPill = ({ logoSrc, alt, logoBg, label, tooltip, state, onClick
 		if (state === "attention") {
 			return <Warning2 size={14} variant="Bold" color={theme.palette.warning.main} />;
 		}
-		if (state === "disconnected") {
-			return (
-				<Box
-					aria-hidden
-					sx={{
-						width: 7,
-						height: 7,
-						borderRadius: "50%",
-						bgcolor: theme.palette.warning.main,
-						opacity: 0.85,
-						flexShrink: 0,
-					}}
-				/>
-			);
-		}
-		if (state === "shortcut") {
+		if (state === "shortcut" || state === "disconnected") {
 			return (
 				<Box
 					sx={{
