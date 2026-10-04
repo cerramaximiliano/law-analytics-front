@@ -12,7 +12,7 @@ import axios from "axios";
 import ragAxios from "utils/ragAxios";
 import secureStorage from "services/secureStorage";
 
-export type ExpedienteChatReason = "grant" | "plan" | "disabled" | "beta_closed" | "plan_required";
+export type ExpedienteChatReason = "grant" | "plan" | "team_plan" | "disabled" | "beta_closed" | "plan_required";
 
 export interface ExpedienteChatAccess {
 	allowed: boolean;
@@ -119,7 +119,9 @@ export async function sendExpedienteChatMessage(params: SendMessageParams): Prom
 			code = body?.code;
 			if (code === "EXPEDIENTE_CHAT_NOT_ALLOWED") message = "El chat con IA no está disponible para tu cuenta.";
 			else if (code === "CAUSA_NOT_ALLOWED") message = "Esta causa no está disponible para el chat.";
-			else if (response.status === 429) message = "Llegaste al límite de consultas. Probá de nuevo más tarde.";
+			else if (code === "CHAT_MONTHLY_LIMIT")
+				message = `Alcanzaste el límite mensual de ${body?.limit ?? ""} consultas del chat.`.replace("  ", " ");
+			else if (response.status === 429) message = "Estás enviando consultas muy rápido. Probá de nuevo en un momento.";
 		} catch (_err) {
 			// cuerpo no JSON: queda el mensaje genérico
 		}
