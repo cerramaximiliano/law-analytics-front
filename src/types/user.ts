@@ -105,6 +105,7 @@ export interface Subscription {
 		vinculateFolders?: boolean;
 		booking?: boolean;
 		movements?: boolean;
+		expediente_export?: boolean;
 		[key: string]: boolean | undefined; // Permitir propiedades dinámicas
 	};
 	// Nuevas propiedades con descripciones

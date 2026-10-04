@@ -99,6 +99,7 @@ import {
 	ArrowRight2,
 } from "iconsax-react";
 import PjnCredErrorBanner from "sections/apps/folders/PjnCredErrorBanner";
+import ExpedienteExportDialog from "sections/apps/folders/ExpedienteExportDialog";
 import { RelacionesIcon, SinVerCount } from "sections/apps/folders/FolderNovedadesIndicators";
 
 // types
@@ -2137,6 +2138,8 @@ const FoldersLayout = () => {
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [menuRowId, setMenuRowId] = useState<string | null>(null);
 	const [menuFolderData, setMenuFolderData] = useState<any>(null);
+	// Descarga del expediente PJN completo en PDF (menú de la fila)
+	const [expedienteExportFolder, setExpedienteExportFolder] = useState<{ id: string; name: string } | null>(null);
 	const [calculatorModalOpen, setCalculatorModalOpen] = useState(false);
 	const [selectedFolderIdForCalculator, setSelectedFolderIdForCalculator] = useState<string>("");
 	const [taskModalOpen, setTaskModalOpen] = useState(false);
@@ -4479,6 +4482,22 @@ const FoldersLayout = () => {
 							</ListItemIcon>
 							<ListItemText>{expandedRowId === menuRowId ? "Cerrar detalles" : "Ver detalles"}</ListItemText>
 						</MenuItem>
+						{menuFolderData?.pjn === true && (
+							<MenuItem
+								onClick={(e) => {
+									e.stopPropagation();
+									if (menuFolderData && menuFolderData._id) {
+										setExpedienteExportFolder({ id: menuFolderData._id, name: menuFolderData.folderName || "" });
+									}
+									handleMenuClose();
+								}}
+							>
+								<ListItemIcon>
+									<DocumentDownload variant="Bulk" size={18} />
+								</ListItemIcon>
+								<ListItemText>Descargar expediente (PDF)</ListItemText>
+							</MenuItem>
+						)}
 						{canCreate && (
 							<>
 								<MenuItem
@@ -4880,6 +4899,14 @@ const FoldersLayout = () => {
 
 					{/* Modal mis modelos */}
 					<PickModelDialog open={pickModelOpen} onClose={() => setPickModelOpen(false)} folderId={selectedFolderForDoc?.id ?? null} />
+
+					{/* Descarga del expediente PJN completo */}
+					<ExpedienteExportDialog
+						open={Boolean(expedienteExportFolder)}
+						onClose={() => setExpedienteExportFolder(null)}
+						folderId={expedienteExportFolder?.id ?? null}
+						folderName={expedienteExportFolder?.name}
+					/>
 
 					{/* Modal de límite de recursos */}
 					<LimitErrorModal
