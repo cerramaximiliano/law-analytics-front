@@ -10,6 +10,9 @@ export interface ExpedienteExportEstimate {
 	documentos: number;
 	bytes: number;
 	tomos: number;
+	// Fechas del primer y último documento que entran en la descarga.
+	desdeFecha?: string | null;
+	hastaFecha?: string | null;
 }
 
 export interface ExpedienteExportTomo {
@@ -27,6 +30,8 @@ export interface ExpedienteExportJob {
 	status: ExpedienteExportStatus;
 	order: ExpedienteExportOrder;
 	progress: { done: number; total: number };
+	// Foto de la causa al generar: hastaFecha dice hasta qué fecha llega este PDF.
+	snapshot?: { movimientos: number; documentos: number; bytes: number; desdeFecha?: string | null; hastaFecha?: string | null };
 	omitidos: number;
 	error?: string;
 	createdAt: string;
