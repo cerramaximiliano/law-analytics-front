@@ -80,7 +80,6 @@ import {
 	FolderOpen,
 	FolderAdd,
 	Edit,
-	Eye,
 	Trash,
 	Maximize,
 	Archive,
@@ -100,6 +99,7 @@ import {
 } from "iconsax-react";
 import PjnCredErrorBanner from "sections/apps/folders/PjnCredErrorBanner";
 import ExpedienteExportDialog from "sections/apps/folders/ExpedienteExportDialog";
+import FolderActionsMenu, { FolderCreateKind } from "sections/apps/folders/FolderActionsMenu";
 import { RelacionesIcon, SinVerCount } from "sections/apps/folders/FolderNovedadesIndicators";
 
 // types
@@ -120,13 +120,7 @@ import { useTeam } from "contexts/TeamContext";
 import { Folder, Props } from "types/folders";
 import dayjs from "utils/dayjs-config";
 import {
-	Calculator as CalculatorIcon,
-	TaskSquare,
-	Moneys,
 	DocumentText,
-	Profile2User,
-	TableDocument,
-	Calendar,
 	DocumentText1,
 	NoteText,
 } from "iconsax-react";
@@ -4444,169 +4438,50 @@ const FoldersLayout = () => {
 					)}
 
 					{/* Menu de acciones (compartido por todas las filas) */}
-					<Menu
+					<FolderActionsMenu
 						anchorEl={anchorEl}
 						open={Boolean(anchorEl && menuRowId)}
 						onClose={handleMenuClose}
-						anchorOrigin={{
-							vertical: "bottom",
-							horizontal: "center",
+						folder={menuFolderData}
+						detailsExpanded={expandedRowId === menuRowId}
+						canCreate={canCreate}
+						onToggleDetails={() => {
+							const rowId = menuRowId;
+							handleMenuClose();
+							if (rowId) handleToggleExpanded(rowId);
 						}}
-						transformOrigin={{
-							vertical: "top",
-							horizontal: "center",
+						onOpenFolder={() => {
+							const id = menuFolderData?._id;
+							handleMenuClose();
+							if (id) navigate(`../details/${id}`);
 						}}
-						slotProps={{
-							paper: {
-								sx: {
-									minWidth: 180,
-								},
-							},
+						onDownloadExpediente={() => {
+							if (menuFolderData?._id) {
+								setExpedienteExportFolder({ id: menuFolderData._id, name: menuFolderData.folderName || "" });
+							}
+							handleMenuClose();
 						}}
-					>
-						<MenuItem
-							onClick={(e) => {
-								e.stopPropagation();
-								handleMenuClose();
-								if (menuRowId) {
-									handleToggleExpanded(menuRowId);
-								}
-							}}
-						>
-							<ListItemIcon>
-								{expandedRowId === menuRowId ? (
-									<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} size={18} />
-								) : (
-									<Eye variant="Bulk" size={18} />
-								)}
-							</ListItemIcon>
-							<ListItemText>{expandedRowId === menuRowId ? "Cerrar detalles" : "Ver detalles"}</ListItemText>
-						</MenuItem>
-						{menuFolderData?.pjn === true && (
-							<MenuItem
-								onClick={(e) => {
-									e.stopPropagation();
-									if (menuFolderData && menuFolderData._id) {
-										setExpedienteExportFolder({ id: menuFolderData._id, name: menuFolderData.folderName || "" });
-									}
-									handleMenuClose();
-								}}
-							>
-								<ListItemIcon>
-									<DocumentDownload variant="Bulk" size={18} />
-								</ListItemIcon>
-								<ListItemText>Descargar expediente (PDF)</ListItemText>
-							</MenuItem>
-						)}
-						{canCreate && (
-							<>
-								<MenuItem
-									onClick={(e) => {
-										e.stopPropagation();
-										if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-											handleOpenDocChooser(menuFolderData._id, menuFolderData.folderName);
-										}
-									}}
-								>
-									<ListItemIcon>
-										<DocumentText1 variant="Bulk" size={18} />
-									</ListItemIcon>
-									<ListItemText>Crear Documento</ListItemText>
-								</MenuItem>
-								<MenuItem
-									onClick={(e) => {
-										e.stopPropagation();
-										if (menuFolderData && menuFolderData._id) {
-											handleOpenCalculatorModal(menuFolderData._id);
-										}
-									}}
-								>
-									<ListItemIcon>
-										<CalculatorIcon variant="Bulk" size={18} />
-									</ListItemIcon>
-									<ListItemText>Crear Cálculo</ListItemText>
-								</MenuItem>
-								<MenuItem
-									onClick={(e) => {
-										e.stopPropagation();
-										if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-											handleOpenTaskModal(menuFolderData._id, menuFolderData.folderName);
-										}
-									}}
-								>
-									<ListItemIcon>
-										<TaskSquare variant="Bulk" size={18} />
-									</ListItemIcon>
-									<ListItemText>Crear Tarea</ListItemText>
-								</MenuItem>
-								<MenuItem
-									onClick={(e) => {
-										e.stopPropagation();
-										if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-											handleOpenNoteModal(menuFolderData._id, menuFolderData.folderName);
-										}
-									}}
-								>
-									<ListItemIcon>
-										<DocumentText variant="Bulk" size={18} />
-									</ListItemIcon>
-									<ListItemText>Crear Nota</ListItemText>
-								</MenuItem>
-								<MenuItem
-									onClick={(e) => {
-										e.stopPropagation();
-										if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-											handleOpenContactModal(menuFolderData._id, menuFolderData.folderName);
-										}
-									}}
-								>
-									<ListItemIcon>
-										<Profile2User variant="Bulk" size={18} />
-									</ListItemIcon>
-									<ListItemText>Crear Contacto</ListItemText>
-								</MenuItem>
-								<MenuItem
-									onClick={(e) => {
-										e.stopPropagation();
-										if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-											handleOpenMovementModal(menuFolderData._id, menuFolderData.folderName);
-										}
-									}}
-								>
-									<ListItemIcon>
-										<TableDocument variant="Bulk" size={18} />
-									</ListItemIcon>
-									<ListItemText>Crear Movimiento</ListItemText>
-								</MenuItem>
-								<MenuItem
-									onClick={(e) => {
-										e.stopPropagation();
-										if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-											handleOpenEventModal(menuFolderData._id, menuFolderData.folderName);
-										}
-									}}
-								>
-									<ListItemIcon>
-										<Calendar variant="Bulk" size={18} />
-									</ListItemIcon>
-									<ListItemText>Crear Evento</ListItemText>
-								</MenuItem>
-								<MenuItem
-									onClick={(e) => {
-										e.stopPropagation();
-										if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-											handleOpenCalcDataModal(menuFolderData._id, menuFolderData.folderName);
-										}
-									}}
-								>
-									<ListItemIcon>
-										<Moneys variant="Bulk" size={18} />
-									</ListItemIcon>
-									<ListItemText>Crear Oferta/Reclamo</ListItemText>
-								</MenuItem>
-							</>
-						)}
-					</Menu>
+						onChatExpediente={() => {
+							const id = menuFolderData?._id;
+							handleMenuClose();
+							if (id) navigate(`../details/${id}?tab=chat`);
+						}}
+						onCreate={(kind: FolderCreateKind) => {
+							const id = menuFolderData?._id;
+							const name = menuFolderData?.folderName;
+							if (!id) return;
+							// Cada handler cierra el menú; el cálculo es el único que no necesita el nombre.
+							if (kind === "calculo") return handleOpenCalculatorModal(id);
+							if (!name) return;
+							if (kind === "documento") handleOpenDocChooser(id, name);
+							else if (kind === "tarea") handleOpenTaskModal(id, name);
+							else if (kind === "nota") handleOpenNoteModal(id, name);
+							else if (kind === "contacto") handleOpenContactModal(id, name);
+							else if (kind === "movimiento") handleOpenMovementModal(id, name);
+							else if (kind === "evento") handleOpenEventModal(id, name);
+							else if (kind === "oferta") handleOpenCalcDataModal(id, name);
+						}}
+					/>
 
 					<AlertFolderDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} onDelete={async () => {}} />
 					{add && (
