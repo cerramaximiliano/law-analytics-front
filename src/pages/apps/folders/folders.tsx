@@ -139,6 +139,7 @@ import { getPjnBindingState, PJN_BINDING_COPY, pjnCredErrorCopy, pjnFailedCopy, 
 import { getScbaBindingState, SCBA_BINDING_COPY, SCBA_PROFILE_PATH } from "utils/scbaBindingState";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 import { usePjnCredentialError } from "hooks/usePjnCredentialError";
+import { useExpedienteChatAccess } from "hooks/useExpedienteChatAccess";
 // Logos de portal reutilizados de judicialPowerSelection.tsx / LinkToJudicialPower.tsx —
 // mismo asset para PJN / EJE / PJ Salta (URLs de Cloudinary) y los archivos locales
 // para SCBA+MEV (comparten el logo de Buenos Aires) / PJ Catamarca / PJ Mendoza.
@@ -2134,6 +2135,8 @@ const FoldersLayout = () => {
 	const [menuFolderData, setMenuFolderData] = useState<any>(null);
 	// Descarga del expediente PJN completo en PDF (menú de la fila)
 	const [expedienteExportFolder, setExpedienteExportFolder] = useState<{ id: string; name: string } | null>(null);
+	// Chat con IA sobre el expediente: el renglón del menú solo aparece con acceso
+	const chatAccess = useExpedienteChatAccess();
 	const [calculatorModalOpen, setCalculatorModalOpen] = useState(false);
 	const [selectedFolderIdForCalculator, setSelectedFolderIdForCalculator] = useState<string>("");
 	const [taskModalOpen, setTaskModalOpen] = useState(false);
@@ -4445,6 +4448,7 @@ const FoldersLayout = () => {
 						folder={menuFolderData}
 						detailsExpanded={expandedRowId === menuRowId}
 						canCreate={canCreate}
+						chatEnabled={chatAccess.allowed}
 						onToggleDetails={() => {
 							const rowId = menuRowId;
 							handleMenuClose();

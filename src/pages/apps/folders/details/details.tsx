@@ -31,6 +31,7 @@ import {
 	Warning2,
 	Lock1,
 	Link21,
+	MessageText1,
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
@@ -62,6 +63,8 @@ import FolderJudDataImproved from "./components/FolderJudDataImproved";
 import ActivityTables from "./components/ActivityTables";
 import PjnCredErrorBanner from "sections/apps/folders/PjnCredErrorBanner";
 import ExpedientesRelacionadosTab from "./components/ExpedientesRelacionadosTab";
+import FolderChatTab from "./components/FolderChatTab";
+import { useExpedienteChatAccess } from "hooks/useExpedienteChatAccess";
 import { marcarFolderVisto } from "store/reducers/folder";
 import HistorialTab from "./components/HistorialTab";
 import LinkToJudicialPower from "sections/apps/folders/LinkToJudicialPower";
@@ -156,6 +159,9 @@ const Details = () => {
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
 	const [tabValue, setTabValue] = useState(0);
+	// Chat con IA sobre el expediente (feature expediente_chat): la pestaña solo
+	// existe para carpetas PJN de usuarios con acceso.
+	const chatAccess = useExpedienteChatAccess();
 	// Abrir Actividad = ver los movimientos: resetea el "N sin ver" del listado.
 	useEffect(() => {
 		if (tabValue === 1 && id) dispatch(marcarFolderVisto(id));
@@ -274,8 +280,11 @@ const Details = () => {
 			setTabValue(1);
 		} else if (searchParams.get("tab") === "relaciones") {
 			setTabValue(5);
+		} else if (searchParams.get("tab") === "chat" && chatAccess.allowed) {
+			// Espera a que el acceso esté resuelto: sin acceso la pestaña no existe.
+			setTabValue(6);
 		}
-	}, [searchParams]);
+	}, [searchParams, chatAccess.allowed]);
 
 	// Handle folder not found - redirect after showing message
 	useEffect(() => {
@@ -453,8 +462,19 @@ const Details = () => {
 						},
 				  ]
 				: []),
+			...(folder?.pjn && chatAccess.allowed
+				? [
+						{
+							value: 6,
+							label: "Chat IA",
+							icon: <MessageText1 size="20" />,
+							shortLabel: "Chat IA",
+							ariaLabel: "Chat con IA sobre el expediente",
+						},
+				  ]
+				: []),
 		],
-		[folder?.pjn, relacionesTotal],
+		[folder?.pjn, relacionesTotal, chatAccess.allowed],
 	);
 
 	// Flags de causa removida del listado origen (afectan el styling del chip).
@@ -1379,6 +1399,11 @@ const Details = () => {
 					{/* Tab 6: Expedientes relacionados (PJN) */}
 					<TabPanel value={tabValue} index={5}>
 						{folder?.pjn && <ExpedientesRelacionadosTab folder={folder} />}
+					</TabPanel>
+
+					{/* Tab 7: Chat con IA sobre el expediente (PJN, usuarios con acceso) */}
+					<TabPanel value={tabValue} index={6}>
+						{folder?.pjn && chatAccess.allowed && tabValue === 6 && <FolderChatTab folder={folder} />}
 					</TabPanel>
 				</Box>
 

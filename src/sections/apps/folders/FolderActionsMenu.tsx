@@ -23,7 +23,7 @@ import { BRAND_BLUE } from "themes/dashboardTokens";
 //
 // Menú "Más acciones" de cada fila del listado de carpetas. Tres zonas:
 //   1. Expediente (solo carpetas PJN): descarga del expediente completo y,
-//      cuando se active, el chat con IA.
+//      para los usuarios con acceso (feature expediente_chat), el chat con IA.
 //   2. Ver detalles (expande la fila) y, en móvil, Abrir carpeta (la tarjeta
 //      compacta no tiene ese botón).
 //   3. Crear en esta carpeta: grilla de dos columnas.
@@ -34,12 +34,6 @@ import { BRAND_BLUE } from "themes/dashboardTokens";
 // El menú solo se abre en carpetas verificadas (el botón "Más acciones" está
 // deshabilitado en pendientes y con error), así que acá no hay estado
 // "causa sin verificar".
-
-// Chat con IA sobre el expediente: el RAG por causa está desactivado (ver
-// la-infra-docs/runbooks/rag-por-causa-desactivado.md). El renglón queda
-// diseñado y apagado; al relanzarlo, pasar a true y crear la tab "chat" en el
-// detalle de la carpeta (hoy ?tab=chat no existe).
-export const EXPEDIENTE_CHAT_ENABLED = false;
 
 export type FolderCreateKind = "documento" | "calculo" | "tarea" | "nota" | "contacto" | "movimiento" | "evento" | "oferta";
 
@@ -61,6 +55,9 @@ interface FolderActionsMenuProps {
 	folder: { _id?: string; folderName?: string; pjn?: boolean } | null;
 	detailsExpanded: boolean;
 	canCreate: boolean;
+	// Acceso del usuario al chat con IA (useExpedienteChatAccess): sin acceso,
+	// el renglón "Consultar con IA" no se muestra.
+	chatEnabled: boolean;
 	onToggleDetails: () => void;
 	onOpenFolder: () => void;
 	onDownloadExpediente: () => void;
@@ -75,6 +72,7 @@ const FolderActionsMenu: React.FC<FolderActionsMenuProps> = ({
 	folder,
 	detailsExpanded,
 	canCreate,
+	chatEnabled,
 	onToggleDetails,
 	onOpenFolder,
 	onDownloadExpediente,
@@ -207,7 +205,7 @@ const FolderActionsMenu: React.FC<FolderActionsMenuProps> = ({
 							false,
 							"folder-download-expediente",
 						)}
-						{EXPEDIENTE_CHAT_ENABLED && (
+						{chatEnabled && (
 							<>
 								<Box sx={{ height: "1px", bgcolor: border, mx: 1.25 }} />
 								{expedienteRow(
