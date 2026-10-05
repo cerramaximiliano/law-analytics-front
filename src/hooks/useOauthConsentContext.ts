@@ -89,7 +89,9 @@ export function useOauthConsentContext(challenge: string | null): OauthConsentCo
 				const code = err.response?.data?.error || "request_failed";
 				const message =
 					code === "provider_disabled"
-						? "Esta integración está deshabilitada temporalmente. Podés seguir usando Law||Analytics normalmente; volvé a intentar la conexión más tarde."
+						? // El hub explica el motivo (beta cerrada o mantenimiento) en error_description.
+						  err.response?.data?.error_description ||
+						  "Esta integración no está disponible por el momento. Podés seguir usando Law||Analytics normalmente."
 						: err.response?.data?.error_description ||
 						  (err.response?.status === 410
 								? "El enlace de autorización expiró. Reintentá desde la aplicación."

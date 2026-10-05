@@ -159,7 +159,7 @@ const OauthConsentPage = () => {
 					<Grid item xs={12}>
 						<Alert severity={providerDisabled ? "warning" : "error"}>
 							<Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-								{providerDisabled ? "Integración no disponible por el momento" : "No se puede continuar"}
+								{providerDisabled ? "Integración no disponible para tu cuenta" : "No se puede continuar"}
 							</Typography>
 							<Typography variant="body2">{contextState.message}</Typography>
 						</Alert>
