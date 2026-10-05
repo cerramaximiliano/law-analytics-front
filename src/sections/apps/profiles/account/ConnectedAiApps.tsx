@@ -23,6 +23,8 @@ import { Link1, ShieldTick, Trash, Warning2 } from "iconsax-react";
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
 import ChatGptLogo from "components/icons/ChatGptLogo";
 import { deriveAiProvider } from "utils/mcpLegal";
+import useMcpAccess from "hooks/useMcpAccess";
+import McpConnectGuide from "sections/apps/profiles/account/McpConnectGuide";
 
 interface ConnectedApp {
 	client_id: string;
@@ -102,6 +104,7 @@ const ConnectedAiApps = () => {
 	const [confirmTarget, setConfirmTarget] = useState<ConnectedApp | null>(null);
 	const [isRevoking, setIsRevoking] = useState(false);
 	const [actionError, setActionError] = useState<string | null>(null);
+	const { access, loading: accessLoading } = useMcpAccess();
 
 	const loadApps = useCallback(async () => {
 		setState({ status: "loading" });
@@ -135,6 +138,8 @@ const ConnectedAiApps = () => {
 
 	return (
 		<Stack spacing={1.5}>
+			<McpConnectGuide access={access} loading={accessLoading} />
+
 			{actionError && <Alert severity="error">{actionError}</Alert>}
 
 			{state.status === "loading" && (
@@ -161,12 +166,9 @@ const ConnectedAiApps = () => {
 					<Link1 size={36} color="#9e9e9e" variant="Bulk" />
 					<Typography sx={{ mt: 1.5, fontWeight: 600 }}>Todavía no conectaste ningún asistente</Typography>
 					<Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: 440, mx: "auto" }}>
-						Cuando un asistente de IA como Claude.ai o ChatGPT te pida acceso a tu cuenta, aparecerá acá para que puedas verlo y
-						revocarlo cuando quieras.
+						Cuando autorices un asistente de IA como Claude.ai o ChatGPT, aparecerá acá para que puedas verlo y revocarlo cuando
+						quieras.
 					</Typography>
-					<Button variant="outlined" color="primary" size="small" sx={{ mt: 2, textTransform: "none" }} href="/integraciones/conectores-ai">
-						Cómo conectar Claude.ai
-					</Button>
 				</Box>
 			)}
 

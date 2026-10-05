@@ -54,6 +54,8 @@ import LogoSection from "components/logo";
 import FadeInWhenVisible from "sections/landing/Animation";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 import { usePublicIntegrations } from "hooks/usePublicIntegrations";
+import useMcpAccess from "hooks/useMcpAccess";
+import McpConnectGuide from "sections/apps/profiles/account/McpConnectGuide";
 
 // tracking
 import { pushGTMEvent } from "utils/gtm";
@@ -227,8 +229,36 @@ const ChatGptLandingPage = () => {
 	// mostramos pantalla de "no disponible" en vez de la landing completa.
 	// Durante el fetch inicial (sin cache) mostramos un esqueleto neutro
 	// para evitar flash de la landing en deshabilitado.
-	if (integrationsLoading) {
+	// Beta por grant: con el switch público apagado, un usuario con acceso beta
+	// igual puede conectar (misma regla que el consent OAuth).
+	const { access: mcpAccess, loading: mcpAccessLoading } = useMcpAccess();
+	const betaAccess = !!mcpAccess?.providers.chatgpt.available;
+
+	if (integrationsLoading || mcpAccessLoading) {
 		return <Box sx={{ bgcolor: "background.default", minHeight: "100vh" }} />;
+	}
+
+	if (!chatGptEnabled && betaAccess) {
+		return (
+			<Box sx={{ bgcolor: "background.default", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+				<Container maxWidth="sm">
+					<Stack spacing={3} sx={{ py: 8 }}>
+						<Stack spacing={1} alignItems="center" sx={{ textAlign: "center" }}>
+							<Typography variant="h3" sx={{ fontWeight: 700 }}>
+								Tenés acceso beta a ChatGPT
+							</Typography>
+							<Typography color="text.secondary">
+								La integración todavía no está abierta al público, pero tu cuenta está habilitada para usarla.
+							</Typography>
+						</Stack>
+						<McpConnectGuide access={mcpAccess} />
+						<Button variant="outlined" href="/apps/profiles/account/pjn?view=ia" sx={{ alignSelf: "center", textTransform: "none" }}>
+							Ver mis asistentes conectados
+						</Button>
+					</Stack>
+				</Container>
+			</Box>
+		);
 	}
 
 	if (!chatGptEnabled) {
