@@ -66,6 +66,43 @@ export interface ExpedienteChatCitation {
 	sourceUrl?: string | null;
 }
 
+// ---- Conversaciones guardadas ----
+// Cada conversación es del usuario que la creó y de UNA causa. La RAG API
+// revalida el acceso a la causa al listarlas y al abrirlas.
+
+export interface ExpedienteChatConversation {
+	_id: string;
+	title: string;
+	messagesCount: number;
+	lastMessageAt?: string | null;
+	createdAt?: string;
+}
+
+export interface ExpedienteChatStoredMessage {
+	_id: string;
+	role: "user" | "assistant";
+	content: string;
+	citations?: ExpedienteChatCitation[];
+	createdAt?: string;
+}
+
+export async function listExpedienteChatConversations(causaId: string): Promise<ExpedienteChatConversation[]> {
+	// skipPlanLimitEvent: un 403 acá no debe abrir el modal global de planes.
+	const response = await ragAxios.get("/rag/chat/conversations", { params: { causaId, limit: 50 }, skipPlanLimitEvent: true } as any);
+	return Array.isArray(response.data?.data) ? response.data.data : [];
+}
+
+export async function getExpedienteChatConversation(conversationId: string): Promise<ExpedienteChatStoredMessage[]> {
+	const response = await ragAxios.get(`/rag/chat/conversations/${conversationId}`);
+	const messages = response.data?.data?.messages;
+	return Array.isArray(messages) ? messages : [];
+}
+
+// Archiva la conversación: deja de listarse, no se borra de la base.
+export async function archiveExpedienteChatConversation(conversationId: string): Promise<void> {
+	await ragAxios.delete(`/rag/chat/conversations/${conversationId}`);
+}
+
 export interface SendMessageParams {
 	causaId: string;
 	causaType?: string;
