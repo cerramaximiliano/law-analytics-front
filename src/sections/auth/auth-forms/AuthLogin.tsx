@@ -1,5 +1,5 @@
 import { useState, SyntheticEvent } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 
 // material-ui
 import {
@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 
 // third-party
+import axios from "axios";
 import * as Yup from "yup";
 import { Formik } from "formik";
 import { safeFormikBlur } from "utils/formikSafeBlur";
@@ -52,6 +53,7 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 
 	const { isLoggedIn, login } = useAuth();
 	const scriptedRef = useScriptRef();
+	const navigate = useNavigate();
 
 	const [showPassword, setShowPassword] = useState(false);
 	const handleClickShowPassword = () => {
@@ -141,6 +143,32 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 								setReactivateCreds({ email: values.email, password: values.password });
 								setSubmitting(false);
 								if (onLoadingChange) onLoadingChange(false);
+								return;
+							}
+
+							// Cuenta sin verificar → en vez de un aviso sin salida, mandar un código nuevo
+							// y llevar a la pantalla de verificación (la misma del registro).
+							if (err?.response?.data?.error?.code === "ACCOUNT_UNVERIFIED") {
+								let reenviado = true;
+								try {
+									await axios.post(`${import.meta.env.VITE_BASE_URL}/api/auth/resend-code`, { email: values.email });
+								} catch {
+									reenviado = false;
+								}
+								dispatch(
+									openSnackbar({
+										open: true,
+										message: reenviado
+											? "Tu cuenta todavía no está verificada. Te enviamos un código nuevo a tu correo."
+											: "Tu cuenta todavía no está verificada. Ingresá el código que te enviamos o pedí uno nuevo.",
+										variant: "alert",
+										alert: { color: "info" },
+										close: false,
+									}),
+								);
+								setSubmitting(false);
+								if (onLoadingChange) onLoadingChange(false);
+								navigate(`/code-verification?email=${encodeURIComponent(values.email)}&mode=register`);
 								return;
 							}
 
