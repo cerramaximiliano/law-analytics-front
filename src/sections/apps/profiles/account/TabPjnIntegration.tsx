@@ -22,6 +22,7 @@ import PjnAccountConnect from "sections/apps/folders/step-components/PjnAccountC
 import ScbaAccountConnect from "sections/apps/folders/step-components/ScbaAccountConnect";
 import MevAccountConnect from "sections/apps/profiles/account/MevAccountConnect";
 import ConnectedAiApps from "sections/apps/profiles/account/ConnectedAiApps";
+import AiSparklesIcon from "components/icons/AiSparklesIcon";
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
 import ChatGptLogo from "components/icons/ChatGptLogo";
 import ApiService from "store/reducers/ApiService";
@@ -515,7 +516,7 @@ const TabPjnIntegration = () => {
 							eyebrow="Integración · Asistentes de IA"
 							title="Asistentes conectados"
 							subtitle="Asistentes de IA (Claude.ai, ChatGPT) que autorizaste a consultar tu cuenta en modo solo lectura. Podés revocar el acceso cuando quieras."
-							icon={<ClaudeAiLogo size={16} />}
+							icon={<AiSparklesIcon size={18} animated={false} sx={{ stroke: "currentColor" }} />}
 						>
 							<ConnectedAiApps />
 						</SectionCard>
