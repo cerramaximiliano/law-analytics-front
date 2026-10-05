@@ -20,6 +20,10 @@ import axiosInstance from "utils/axios";
 
 import { Link1, ShieldTick, Trash, Warning2 } from "iconsax-react";
 
+import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
+import ChatGptLogo from "components/icons/ChatGptLogo";
+import { deriveAiProvider } from "utils/mcpLegal";
+
 interface ConnectedApp {
 	client_id: string;
 	name: string;
@@ -56,6 +60,42 @@ function formatGrantedAt(iso: string | null): string {
 	if (!d.isValid()) return "Fecha no disponible";
 	return d.format("DD MMM YYYY · HH:mm");
 }
+
+// Logo del asistente: los mismos componentes de marca que usa la landing
+// (Claude en #D97757, ChatGPT según el tema). Los clients DCR no traen logo_uri.
+const AppLogo = ({ app }: { app: ConnectedApp }) => {
+	const provider = deriveAiProvider(app.name, app.vendor, app.vendor_url);
+	const frameSx = {
+		width: 44,
+		height: 44,
+		borderRadius: "50%",
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		flexShrink: 0,
+		bgcolor: "background.paper",
+		border: (theme: any) => `1px solid ${theme.palette.divider}`,
+	};
+	if (provider === "anthropic") {
+		return (
+			<Box sx={frameSx}>
+				<ClaudeAiLogo size={24} />
+			</Box>
+		);
+	}
+	if (provider === "openai") {
+		return (
+			<Box sx={frameSx}>
+				<ChatGptLogo size={24} />
+			</Box>
+		);
+	}
+	return (
+		<Avatar src={app.logo_url || undefined} alt={app.name} sx={{ width: 44, height: 44, bgcolor: "primary.lighter" }}>
+			{!app.logo_url && app.name.charAt(0)}
+		</Avatar>
+	);
+};
 
 const ConnectedAiApps = () => {
 	const [state, setState] = useState<LoadState>({ status: "loading" });
@@ -137,9 +177,7 @@ const ConnectedAiApps = () => {
 						sx={{ p: 1.5, borderRadius: 1.25, border: (theme) => `1px solid ${theme.palette.divider}` }}
 					>
 						<Stack direction="row" spacing={1.5} alignItems="center">
-							<Avatar src={app.logo_url || undefined} alt={app.name} sx={{ width: 44, height: 44, bgcolor: "primary.lighter" }}>
-								{!app.logo_url && app.name.charAt(0)}
-							</Avatar>
+							<AppLogo app={app} />
 							<Box sx={{ flex: 1, minWidth: 0 }}>
 								<Stack direction="row" spacing={0.75} alignItems="center">
 									<Typography sx={{ fontWeight: 600 }}>{app.name}</Typography>

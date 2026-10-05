@@ -13,7 +13,7 @@ import {
 	Typography,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { Buildings2, Cpu, InfoCircle, Link1, People } from "iconsax-react";
+import { Buildings2, InfoCircle, Link1, People } from "iconsax-react";
 import { enqueueSnackbar } from "notistack";
 
 // project-imports
@@ -22,6 +22,8 @@ import PjnAccountConnect from "sections/apps/folders/step-components/PjnAccountC
 import ScbaAccountConnect from "sections/apps/folders/step-components/ScbaAccountConnect";
 import MevAccountConnect from "sections/apps/profiles/account/MevAccountConnect";
 import ConnectedAiApps from "sections/apps/profiles/account/ConnectedAiApps";
+import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
+import ChatGptLogo from "components/icons/ChatGptLogo";
 import ApiService from "store/reducers/ApiService";
 import pjnCredentialsService from "api/pjnCredentials";
 import { dispatch } from "store";
@@ -342,7 +344,10 @@ const TabPjnIntegration = () => {
 					</ToggleButton>
 					<ToggleButton value="ia" sx={toggleButtonSx}>
 						<Stack direction="row" alignItems="center" spacing={1}>
-							<Cpu size={15} variant="Bulk" />
+							<Stack direction="row" alignItems="center" spacing={0.5}>
+								<ClaudeAiLogo size={15} />
+								<ChatGptLogo size={15} />
+							</Stack>
 							<span>Asistentes de IA (Claude, ChatGPT)</span>
 						</Stack>
 					</ToggleButton>
@@ -510,7 +515,7 @@ const TabPjnIntegration = () => {
 							eyebrow="Integración · Asistentes de IA"
 							title="Asistentes conectados"
 							subtitle="Asistentes de IA (Claude.ai, ChatGPT) que autorizaste a consultar tu cuenta en modo solo lectura. Podés revocar el acceso cuando quieras."
-							icon={<Cpu size={16} variant="Bulk" />}
+							icon={<ClaudeAiLogo size={16} />}
 						>
 							<ConnectedAiApps />
 						</SectionCard>
