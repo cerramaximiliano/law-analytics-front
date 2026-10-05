@@ -14,10 +14,10 @@ import {
 	useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { Add, Archive, MessageText1, Send2 } from "iconsax-react";
+import { Add, MessageText1, Send2, Trash } from "iconsax-react";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import {
-	archiveExpedienteChatConversation,
+	deleteExpedienteChatConversation,
 	ExpedienteChatCitation,
 	ExpedienteChatConversation,
 	ExpedienteChatError,
@@ -45,7 +45,7 @@ import dayjs from "utils/dayjs-config";
 //
 // Conversaciones: cada una es del usuario y de esta causa. Al entrar se abre
 // la más reciente; la lista (panel lateral en escritorio, selector en móvil)
-// permite retomar otra, empezar una nueva o archivarla. La RAG API usa los
+// permite retomar otra, empezar una nueva o eliminarla (borrado definitivo). La RAG API usa los
 // mensajes anteriores como contexto al continuar una conversación.
 
 const POLL_MS = 20000;
@@ -77,8 +77,8 @@ const FolderChatTab: React.FC<FolderChatTabProps> = ({ folder }) => {
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const [loadingConversation, setLoadingConversation] = useState(false);
 	const [historyError, setHistoryError] = useState<string | null>(null);
-	// Archivar pide confirmación en el mismo botón (dos clics).
-	const [confirmArchiveId, setConfirmArchiveId] = useState<string | null>(null);
+	// Eliminar es definitivo: pide confirmación en el mismo botón (dos clics).
+	const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 	const conversationRef = useRef<string | null>(null);
 	// Descarta la respuesta de una carga de historial que quedó vieja.
 	const loadSeqRef = useRef(0);
@@ -130,7 +130,7 @@ const FolderChatTab: React.FC<FolderChatTabProps> = ({ folder }) => {
 		const seq = ++loadSeqRef.current;
 		abortRef.current?.abort();
 		setSending(false);
-		setConfirmArchiveId(null);
+		setConfirmDeleteId(null);
 		setHistoryError(null);
 		setActiveId(conversationId);
 		conversationRef.current = conversationId;
@@ -152,7 +152,7 @@ const FolderChatTab: React.FC<FolderChatTabProps> = ({ folder }) => {
 		loadSeqRef.current++;
 		abortRef.current?.abort();
 		setSending(false);
-		setConfirmArchiveId(null);
+		setConfirmDeleteId(null);
 		setHistoryError(null);
 		setLoadingConversation(false);
 		setActiveId(null);
@@ -177,22 +177,22 @@ const FolderChatTab: React.FC<FolderChatTabProps> = ({ folder }) => {
 		};
 	}, [indexReady, refreshConversations, openConversation]);
 
-	const handleArchive = useCallback(
+	const handleDelete = useCallback(
 		async (conversationId: string) => {
-			if (confirmArchiveId !== conversationId) {
-				setConfirmArchiveId(conversationId);
+			if (confirmDeleteId !== conversationId) {
+				setConfirmDeleteId(conversationId);
 				return;
 			}
-			setConfirmArchiveId(null);
+			setConfirmDeleteId(null);
 			try {
-				await archiveExpedienteChatConversation(conversationId);
+				await deleteExpedienteChatConversation(conversationId);
 				setConversations((prev) => prev.filter((c) => c._id !== conversationId));
 				if (activeId === conversationId) startNewConversation();
 			} catch (_err) {
-				setHistoryError("No pudimos archivar la conversación.");
+				setHistoryError("No pudimos eliminar la conversación.");
 			}
 		},
-		[confirmArchiveId, activeId, startNewConversation],
+		[confirmDeleteId, activeId, startNewConversation],
 	);
 
 	const handleSend = useCallback(async () => {
@@ -459,11 +459,11 @@ const FolderChatTab: React.FC<FolderChatTabProps> = ({ folder }) => {
 					</TextField>
 					{activeId && (
 						<Button
-							onClick={() => handleArchive(activeId)}
-							color={confirmArchiveId === activeId ? "error" : "secondary"}
+							onClick={() => handleDelete(activeId)}
+							color={confirmDeleteId === activeId ? "error" : "secondary"}
 							sx={{ textTransform: "none", flexShrink: 0 }}
 						>
-							{confirmArchiveId === activeId ? "¿Archivar?" : "Archivar"}
+							{confirmDeleteId === activeId ? "¿Eliminar?" : "Eliminar"}
 						</Button>
 					)}
 				</Stack>
@@ -508,23 +508,23 @@ const FolderChatTab: React.FC<FolderChatTabProps> = ({ folder }) => {
 										{c.messagesCount ? ` · ${c.messagesCount} mensajes` : ""}
 									</Typography>
 								</ButtonBase>
-								{confirmArchiveId === c._id ? (
+								{confirmDeleteId === c._id ? (
 									<Button
 										size="small"
 										color="error"
-										onClick={() => handleArchive(c._id)}
-										onBlur={() => setConfirmArchiveId(null)}
+										onClick={() => handleDelete(c._id)}
+										onBlur={() => setConfirmDeleteId(null)}
 										sx={{ textTransform: "none", minWidth: 0, mr: 0.5, fontSize: "0.72rem" }}
 									>
-										¿Archivar?
+										¿Eliminar?
 									</Button>
 								) : (
 									<ButtonBase
-										onClick={() => handleArchive(c._id)}
-										aria-label={`Archivar la conversación ${conversationLabel(c)}`}
+										onClick={() => handleDelete(c._id)}
+										aria-label={`Eliminar la conversación ${conversationLabel(c)}`}
 										sx={{ p: 0.75, mr: 0.25, borderRadius: 1, color: "text.secondary", "&:hover": { color: "error.main" } }}
 									>
-										<Archive size={16} />
+										<Trash size={16} />
 									</ButtonBase>
 								)}
 							</Stack>

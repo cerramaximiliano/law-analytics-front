@@ -30,6 +30,7 @@ import type {
 } from "types/expedienteExport";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import dayjs from "utils/dayjs-config";
+import { markExportDialogClosed, markExportDialogOpen, trackExport, untrackExport } from "utils/expedienteExportTracker";
 
 // ==============================|| DESCARGA DEL EXPEDIENTE COMPLETO (PJN) ||============================== //
 //
@@ -88,12 +89,29 @@ const ExpedienteExportDialog: React.FC<ExpedienteExportDialogProps> = ({ open, o
 	const [showForm, setShowForm] = useState(false);
 	const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	const applyResponse = useCallback((res: ExpedienteExportResponse) => {
-		if (res.estimate) setEstimate(res.estimate);
-		setJob(res.job ?? null);
-		setUpgrade(res.requiresUpgrade ? { requiredPlans: res.requiredPlans || [] } : null);
-		setAccessCutoffAt(res.accessCutoffAt ?? null);
-	}, []);
+	const applyResponse = useCallback(
+		(res: ExpedienteExportResponse) => {
+			if (res.estimate) setEstimate(res.estimate);
+			setJob(res.job ?? null);
+			// Seguimiento para el aviso global: se registra mientras el job está en
+			// curso y se quita al verlo terminar acá (ya está a la vista).
+			if (folderId) {
+				const active = res.job?.status === "queued" || res.job?.status === "processing";
+				if (active && res.job) trackExport(folderId, folderName || "", res.job._id);
+				else untrackExport(folderId);
+			}
+			setUpgrade(res.requiresUpgrade ? { requiredPlans: res.requiredPlans || [] } : null);
+			setAccessCutoffAt(res.accessCutoffAt ?? null);
+		},
+		[folderId, folderName],
+	);
+
+	// Con el modal abierto el progreso está a la vista: el aviso global no corre.
+	useEffect(() => {
+		if (!open || !folderId) return;
+		markExportDialogOpen(folderId);
+		return () => markExportDialogClosed(folderId);
+	}, [open, folderId]);
 
 	const errorMessage = (err: unknown): string => {
 		if (axios.isAxiosError(err) && err.response?.data?.message) return err.response.data.message;
@@ -359,7 +377,8 @@ const ExpedienteExportDialog: React.FC<ExpedienteExportDialogProps> = ({ open, o
 										/>
 									</RadioGroup>
 									<Typography sx={hintSx}>
-										Armarlo puede llevar unos minutos. Podés cerrar esta ventana y volver después: el archivo queda disponible por 48 horas.
+										Armarlo puede llevar unos minutos. Podés cerrar esta ventana: te avisamos cuando esté listo y el archivo queda
+										disponible por 48 horas.
 									</Typography>
 								</>
 							)}
@@ -375,7 +394,7 @@ const ExpedienteExportDialog: React.FC<ExpedienteExportDialogProps> = ({ open, o
 								value={pct}
 								sx={{ borderRadius: 1, bgcolor: alpha(BRAND_BLUE, 0.12), "& .MuiLinearProgress-bar": { bgcolor: BRAND_BLUE } }}
 							/>
-							<Typography sx={hintSx}>Podés cerrar esta ventana y volver después desde el menú de la carpeta.</Typography>
+							<Typography sx={hintSx}>Podés cerrar esta ventana: te avisamos cuando esté listo.</Typography>
 						</Stack>
 					)}
 

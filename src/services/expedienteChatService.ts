@@ -98,9 +98,10 @@ export async function getExpedienteChatConversation(conversationId: string): Pro
 	return Array.isArray(messages) ? messages : [];
 }
 
-// Archiva la conversación: deja de listarse, no se borra de la base.
-export async function archiveExpedienteChatConversation(conversationId: string): Promise<void> {
-	await ragAxios.delete(`/rag/chat/conversations/${conversationId}`);
+// Elimina la conversación y sus mensajes de forma definitiva. Lo consumido
+// del tope mensual no se devuelve.
+export async function deleteExpedienteChatConversation(conversationId: string): Promise<void> {
+	await ragAxios.delete(`/rag/chat/conversations/${conversationId}/permanent`);
 }
 
 export interface SendMessageParams {

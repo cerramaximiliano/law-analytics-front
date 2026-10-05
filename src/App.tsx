@@ -14,6 +14,7 @@ import Notistack from "components/third-party/Notistack";
 import SearchModal from "components/search/SearchModal";
 import SEOProvider from "components/SEO/SEOProvider";
 import GlobalSyncErrorListener from "components/GlobalSyncErrorListener";
+import GlobalExpedienteExportListener from "components/GlobalExpedienteExportListener";
 
 import { dispatch } from "store";
 import { fetchMenu } from "store/reducers/menu";
@@ -77,6 +78,7 @@ const App = () => {
 									<WebSocketProvider>
 										<Notistack>
 											<GlobalSyncErrorListener />
+											<GlobalExpedienteExportListener />
 											<Routes />
 											<Snackbar />
 											<SearchModal />

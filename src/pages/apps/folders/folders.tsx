@@ -98,7 +98,7 @@ import {
 	ArrowRight2,
 } from "iconsax-react";
 import PjnCredErrorBanner from "sections/apps/folders/PjnCredErrorBanner";
-import ExpedienteExportDialog from "sections/apps/folders/ExpedienteExportDialog";
+import { openExpedienteExport } from "utils/expedienteExportTracker";
 import FolderActionsMenu, { FolderCreateKind } from "sections/apps/folders/FolderActionsMenu";
 import { RelacionesIcon, SinVerCount } from "sections/apps/folders/FolderNovedadesIndicators";
 
@@ -2133,8 +2133,6 @@ const FoldersLayout = () => {
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [menuRowId, setMenuRowId] = useState<string | null>(null);
 	const [menuFolderData, setMenuFolderData] = useState<any>(null);
-	// Descarga del expediente PJN completo en PDF (menú de la fila)
-	const [expedienteExportFolder, setExpedienteExportFolder] = useState<{ id: string; name: string } | null>(null);
 	// Chat con IA sobre el expediente: el renglón del menú solo aparece con acceso
 	const chatAccess = useExpedienteChatAccess();
 	const [calculatorModalOpen, setCalculatorModalOpen] = useState(false);
@@ -4461,7 +4459,8 @@ const FoldersLayout = () => {
 						}}
 						onDownloadExpediente={() => {
 							if (menuFolderData?._id) {
-								setExpedienteExportFolder({ id: menuFolderData._id, name: menuFolderData.folderName || "" });
+								// El modal lo monta GlobalExpedienteExportListener (uno solo para toda la app).
+								openExpedienteExport(menuFolderData._id, menuFolderData.folderName || "");
 							}
 							handleMenuClose();
 						}}
@@ -4778,14 +4777,6 @@ const FoldersLayout = () => {
 
 					{/* Modal mis modelos */}
 					<PickModelDialog open={pickModelOpen} onClose={() => setPickModelOpen(false)} folderId={selectedFolderForDoc?.id ?? null} />
-
-					{/* Descarga del expediente PJN completo */}
-					<ExpedienteExportDialog
-						open={Boolean(expedienteExportFolder)}
-						onClose={() => setExpedienteExportFolder(null)}
-						folderId={expedienteExportFolder?.id ?? null}
-						folderName={expedienteExportFolder?.name}
-					/>
 
 					{/* Modal de límite de recursos */}
 					<LimitErrorModal

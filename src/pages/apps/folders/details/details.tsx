@@ -13,6 +13,7 @@ import {
 	ToggleButton,
 	ToggleButtonGroup,
 	Tooltip,
+	Button,
 	useMediaQuery,
 } from "@mui/material";
 import {
@@ -32,6 +33,7 @@ import {
 	Lock1,
 	Link21,
 	MessageText1,
+	DocumentDownload,
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
@@ -64,6 +66,7 @@ import ActivityTables from "./components/ActivityTables";
 import PjnCredErrorBanner from "sections/apps/folders/PjnCredErrorBanner";
 import ExpedientesRelacionadosTab from "./components/ExpedientesRelacionadosTab";
 import FolderChatTab from "./components/FolderChatTab";
+import { openExpedienteExport } from "utils/expedienteExportTracker";
 import { useExpedienteChatAccess } from "hooks/useExpedienteChatAccess";
 import { marcarFolderVisto } from "store/reducers/folder";
 import HistorialTab from "./components/HistorialTab";
@@ -1361,6 +1364,21 @@ const Details = () => {
 									</ToggleButtonGroup>
 								)}
 								{renderJudicialLink}
+								{/* Descarga del expediente completo (PJN con causa verificada y válida) */}
+								{folder?.pjn && folder?.causaVerified === true && folder?.causaIsValid !== false && id && (
+									<Tooltip title="Descargar el expediente completo en PDF">
+										<Button
+											size="small"
+											variant="outlined"
+											startIcon={<DocumentDownload size={16} variant="Bulk" />}
+											onClick={() => openExpedienteExport(id, folder.folderName)}
+											data-testid="folder-detail-download-expediente"
+											sx={{ textTransform: "none", fontWeight: 600, borderRadius: 1.25, whiteSpace: "nowrap", flexShrink: 0 }}
+										>
+											Descargar expediente
+										</Button>
+									</Tooltip>
+								)}
 							</Box>
 						</Box>
 					</Box>
