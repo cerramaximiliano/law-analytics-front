@@ -236,7 +236,7 @@ const FAQS: Faq[] = [
 		category: "integraciones",
 		question: "¿Es seguro? ¿Qué ve exactamente Claude sobre mis datos?",
 		answer:
-			"Sí. Usa OAuth 2.1 estándar (mismo protocolo que login con Google). Claude solo puede invocar tools de lectura — no puede modificar, eliminar ni compartir nada. Cada consulta es explícita: vos le pedís a Claude qué buscar y solo eso ve. Tu base completa NUNCA se le envía. Podés revocar el acceso en cualquier momento.",
+			"Sí. Usa OAuth 2.1 estándar (mismo protocolo que login con Google). Claude solo puede invocar tools de lectura — no puede crear, modificar ni eliminar nada en tu cuenta. Ve solo lo que obtiene en cada consulta para responderte, de tus carpetas y las de tus equipos (de las archivadas, solo carátula, fuero y jurisdicción); tu base completa nunca se le envía. Lo que recibe lo procesa Anthropic, fuera de la Argentina, según su propia política de privacidad. Podés revocar el acceso en cualquier momento.",
 	},
 	{
 		id: "int3",
@@ -250,14 +250,14 @@ const FAQS: Faq[] = [
 		category: "integraciones",
 		question: "¿Qué cosas puedo pedirle a Claude sobre mis causas?",
 		answer:
-			"Buscar folders por nombre del demandante/demandado, listar tus causas activas, ver detalle completo de un folder con sus movimientos, tareas, notas, eventos, cálculos, contactos y escritos. También consultar jurisprudencia (búsqueda semántica sobre ~80 mil sentencias judiciales) y hacer preguntas sobre el contenido de un expediente específico via RAG.",
+			"Buscar folders por nombre del demandante/demandado, listar tus causas activas, ver detalle completo de un folder con sus movimientos (y el texto de las actuaciones cuando está disponible), tareas, notas, eventos, cálculos, contactos, modelos, documentos y seguimientos postales. También consultar jurisprudencia: búsqueda semántica sobre ~80 mil sentencias judiciales, preguntas sobre ellas y su texto completo.",
 	},
 	{
 		id: "int5",
 		category: "integraciones",
 		question: "¿Cómo revoco el acceso si quiero desconectarlo?",
 		answer:
-			"Dos formas: (1) En Claude.ai → Settings → Connectors → Law Analytics → Disconnect. (2) En tu cuenta de Law||Analytics → Perfil → Integraciones → Asistentes de IA → Revocar. Cualquiera de las dos revoca el token al instante.",
+			"Dos formas: (1) En tu cuenta de Law||Analytics → Perfil → Integraciones → Asistentes de IA → Revocar: corta el acceso en el momento. (2) En Claude.ai → Settings → Connectors → Law Analytics → Disconnect: quita el conector de Claude.ai; para revocar también la autorización en Law||Analytics, usá la opción (1).",
 	},
 	{
 		id: "int6",

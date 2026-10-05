@@ -147,11 +147,11 @@ interface FaqItem {
 const FAQ: FaqItem[] = [
 	{
 		q: "¿Es seguro? ¿ChatGPT accede a mis datos sin filtro?",
-		a: "ChatGPT sólo puede invocar tools de lectura — no puede modificar, eliminar ni compartir nada. Cada tool call valida que vos sos el dueño del folder consultado (no podés acceder a folders de otros users). La autorización es OAuth 2.1 estándar y podés revocarla en cualquier momento.",
+		a: "ChatGPT sólo puede invocar tools de lectura — no puede crear, modificar ni eliminar nada en tu cuenta. Cada consulta se limita a tus carpetas y a las de los equipos de los que sos miembro: nunca accede a datos de otros usuarios. La autorización es OAuth 2.1 estándar y podés revocarla en cualquier momento.",
 	},
 	{
 		q: "¿Qué ve exactamente ChatGPT sobre mis causas?",
-		a: "Sólo lo que le pidas. Las tools devuelven datos puntuales — buscar folders por texto, traer detalle de un folder específico (con su causa linkeada, movimientos, tareas, notas, etc.). ChatGPT NO recibe un dump completo de tu base. Cada query es explícita y queda en logs.",
+		a: "Sólo lo que le pidas. Las tools devuelven datos puntuales — buscar folders por texto, traer detalle de un folder específico (con su causa linkeada, movimientos, tareas, notas, etc.). ChatGPT nunca recibe una copia completa de tu cuenta: obtiene, consulta por consulta, solo lo que necesita para responderte, y eso lo procesa OpenAI según sus propias políticas. En nuestras métricas de uso registramos qué herramienta se usó y cuándo, sin los términos de búsqueda ni el contenido devuelto.",
 	},
 	{
 		q: "¿Qué pasa con mis carpetas archivadas?",
@@ -159,11 +159,11 @@ const FAQ: FaqItem[] = [
 	},
 	{
 		q: "¿Cómo revoco el acceso?",
-		a: "Dos formas: (1) En ChatGPT → Settings → Apps & Connectors → Law Analytics → Disconnect. (2) En lawanalytics.app → Perfil → Integraciones → Asistentes de IA → Desconectar. Ambas revocan el token inmediatamente.",
+		a: "Dos formas: (1) En lawanalytics.app → Perfil → Integraciones → Asistentes de IA → Revocar: corta el acceso en el momento. (2) En ChatGPT → Settings → Apps & Connectors → Law Analytics → Disconnect: quita el conector de ChatGPT; para revocar también la autorización en Law||Analytics, usá la opción (1).",
 	},
 	{
 		q: "¿Qué información puede consultar?",
-		a: "Todo en modo lectura y solo de tus propias carpetas: carpetas (búsqueda, listado y detalle con la causa vinculada), movimientos, tareas, notas, eventos y agenda, calculadoras, contactos, modelos, documentos y seguimientos postales. Además, jurisprudencia: búsqueda de sentencias judiciales, preguntas sobre ellas y acceso a su texto.",
+		a: "Todo en modo lectura, de tus carpetas y de las de los equipos de los que sos miembro: carpetas (búsqueda, listado y detalle con la causa vinculada), movimientos, tareas, notas, eventos y agenda, calculadoras, contactos, modelos, documentos y seguimientos postales. Además, jurisprudencia: búsqueda de sentencias judiciales, preguntas sobre ellas y acceso a su texto.",
 	},
 	{
 		q: "¿Funciona con Claude.ai también?",
@@ -184,7 +184,7 @@ const FAQ: FaqItem[] = [
 	},
 	{
 		q: "¿Mis datos salen del país?",
-		a: "Las tools del MCP corren en nuestra infraestructura. ChatGPT (OpenAI) procesa los datos que vos le pasás en el chat — eso queda regido por la política de privacidad de OpenAI. No enviamos tu base completa a ningún lado, solo respondemos lo que cada query individual pide.",
+		a: "Sí. Lo que ChatGPT consulta a través del conector lo procesa OpenAI en servidores fuera de la Argentina (entre otros, en Estados Unidos), según su propia política de privacidad; al autorizar el conector das tu consentimiento expreso para esa transferencia (Ley 25.326, art. 12). Nuestra propia infraestructura también está alojada en proveedores de nube con servidores fuera del país. Nunca enviamos tu base completa: solo respondemos lo que cada consulta pide.",
 		link: { href: PRIVACY_CONNECTORS_URL, label: "Ver la Política de Privacidad — Conectores de IA" },
 	},
 ];
@@ -457,7 +457,7 @@ const ChatGptLandingPage = () => {
 									Sólo lectura
 								</Typography>
 								<Typography variant="body2" color="text.secondary">
-									ChatGPT no puede modificar, eliminar ni compartir tus datos.
+									El conector no puede crear, modificar ni eliminar nada en tu cuenta.
 								</Typography>
 							</Stack>
 						</Grid>

@@ -62,7 +62,7 @@ interface AcceptResponse {
 const SCOPE_LABELS: Record<string, string> = {
 	openid: "Saber tu identidad básica (email, nombre)",
 	offline_access: "Mantener la sesión activa entre conversaciones (sin pedirte autorización cada vez)",
-	"mcp:access": `Consultar la información de tu cuenta: ${MCP_SHARED_DATA_TEXT}`,
+	"mcp:access": `Consultar, en modo de solo lectura, la información de tu cuenta y de tus equipos: ${MCP_SHARED_DATA_TEXT}`,
 };
 
 function describeScope(scope: string): string {
@@ -320,7 +320,8 @@ const OauthConsentPage = () => {
 									<Link href={privacyUrl} target="_blank" rel="noopener noreferrer">
 										Política de Privacidad (sección Conectores de IA)
 									</Link>{" "}
-									y entiendo que la información que {clientLabel} consulte será procesada por {providerLabel} según sus propias políticas.
+									y consiento que la información que {clientLabel} consulte sea transferida a {providerLabel} y procesada según sus propias
+									políticas, incluso fuera de la Argentina.
 								</Typography>
 							}
 						/>

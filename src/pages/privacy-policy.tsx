@@ -15,6 +15,7 @@ import PageBackground from "components/PageBackground";
 import { LEGAL_LAST_UPDATED } from "config/legalDates";
 import LegalPageTOC, { TocItem } from "components/legal/LegalPageTOC";
 import LegalEntityBlock from "components/legal/LegalEntityBlock";
+import LegalMarkdown, { LegalInline } from "components/legal/LegalMarkdown";
 import ApiService, { LegalDocument, LegalDocumentSection, PRIVACY_CONNECTORS_ANCHOR } from "store/reducers/ApiService";
 
 // ============================== TOKENS ============================== //
@@ -160,7 +161,7 @@ const PrivacyPolicy = () => {
 		</Typography>
 	);
 
-	const subHeading = (text: string) => (
+	const subHeading = (text: React.ReactNode) => (
 		<Typography
 			variant="h4"
 			sx={{
@@ -197,30 +198,17 @@ const PrivacyPolicy = () => {
 		</Box>
 	);
 
-	// Contenido de una sección: bloques separados por línea en blanco; un bloque
-	// cuyas líneas empiezan con "- " o "• " se dibuja como lista.
-	const renderSectionContent = (content: string) =>
-		(content || "")
-			.split(/\n\s*\n/)
-			.map((block) => block.trim())
-			.filter(Boolean)
-			.map((block, i) => {
-				const lines = block.split("\n").map((l) => l.trim());
-				if (lines.every((l) => /^[-•]\s+/.test(l))) {
-					return <Box key={i}>{bulletList(lines.map((l) => l.replace(/^[-•]\s+/, "")))}</Box>;
-				}
-				return (
-					<Typography key={i} paragraph sx={{ ...bodySx, whiteSpace: "pre-line" }}>
-						{block}
-					</Typography>
-				);
-			});
+	// Contenido de una sección: Markdown liviano (metadata.contentFormat) con
+	// render seguro, sin HTML (components/legal/LegalMarkdown).
+	const renderSectionContent = (content: string) => (
+		<LegalMarkdown content={content || ""} bodySx={bodySx} linkSx={linkSx} renderHeading={subHeading} renderList={bulletList} />
+	);
 
 	const renderDynamic = (d: LegalDocument) => (
 		<>
 			{d.introduction && (
 				<Typography paragraph sx={{ ...bodySx, whiteSpace: "pre-line" }}>
-					{d.introduction}
+					<LegalInline text={d.introduction} linkSx={linkSx} />
 				</Typography>
 			)}
 			{renderedSections.map(({ id, section }) => (
@@ -232,7 +220,7 @@ const PrivacyPolicy = () => {
 			<Divider sx={{ my: 4, borderColor: alpha(theme.palette.divider, 0.6) }} />
 			{d.conclusion && (
 				<Typography paragraph sx={{ ...bodySx, whiteSpace: "pre-line" }}>
-					{d.conclusion}
+					<LegalInline text={d.conclusion} linkSx={linkSx} />
 				</Typography>
 			)}
 			<Typography paragraph sx={{ ...bodySx, color: theme.palette.text.secondary, fontSize: "0.85rem" }}>
@@ -447,9 +435,18 @@ const PrivacyPolicy = () => {
 										<Box component="strong" sx={{ fontWeight: 600 }}>
 											Importante:
 										</Box>{" "}
-										Los tokens de autenticación de Google se almacenan únicamente en su navegador web (sessionStorage) y nunca se envían ni
-										almacenan en nuestros servidores. Los eventos importados desde Google Calendar se almacenan en nuestra base de datos con
-										un identificador especial (googleCalendarId) que permite mantener la sincronización.{" "}
+										Cuando usted conecta Google Calendar, el token de acceso de corta duración que emite Google se usa desde su navegador
+										web y no se guarda en nuestros servidores. Si además activa la{" "}
+										<Box component="strong" sx={{ fontWeight: 600 }}>
+											sincronización automática
+										</Box>
+										, Google nos entrega un token de actualización (<em>refresh token</em>) que guardamos{" "}
+										<Box component="strong" sx={{ fontWeight: 600 }}>
+											cifrado
+										</Box>{" "}
+										en nuestros servidores, asociado a su cuenta, con el único fin de mantener su calendario sincronizado aunque usted no
+										tenga la aplicación abierta. Los eventos importados desde Google Calendar se almacenan en nuestra base de datos con un
+										identificador especial (googleCalendarId) que permite mantener la sincronización.{" "}
 										<Box component="strong" sx={{ fontWeight: 600 }}>
 											Estos datos no se utilizan para análisis de terceros, publicidad, perfilado ni se comparten con ninguna entidad
 											externa.
@@ -473,17 +470,17 @@ const PrivacyPolicy = () => {
 										aplicación. Al desvincular:
 									</Typography>
 									{bulletList([
-										"Se revocan inmediatamente todos los permisos de acceso a Google Calendar",
+										"Law||Analytics deja de acceder a su Google Calendar",
 										"Se eliminan automáticamente todos los eventos importados desde Google Calendar de nuestra base de datos en un plazo máximo de 30 días",
-										"Se eliminan los tokens de autenticación de su navegador",
+										"Se eliminan los tokens de autenticación de su navegador y, si había activado la sincronización automática, el token guardado en nuestros servidores",
 										"Los eventos creados localmente en Law||Analytics permanecen intactos",
 									])}
 									<Typography paragraph sx={bodySx}>
-										Para revocar el acceso de Law||Analytics a su cuenta de Google, también puede hacerlo directamente desde su{" "}
+										Para revocar el permiso que otorgó a Law||Analytics en su cuenta de Google, puede hacerlo directamente desde su{" "}
 										<Link href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" sx={linkSx}>
 											configuración de permisos de Google
 										</Link>
-										.
+										; si lo revoca allí, la sincronización automática se desactiva.
 									</Typography>
 
 									{sectionHeading("Publicidad y públicos similares", "publicidad")}

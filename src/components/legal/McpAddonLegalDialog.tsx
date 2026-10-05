@@ -81,11 +81,11 @@ const McpAddonLegalDialog = ({
 
 					<Typography variant="body2">
 						El conector permite que asistentes de IA como Claude.ai o ChatGPT consulten, en modo de solo lectura y solo después de que vos
-						lo autorices desde cada asistente, la información de tu cuenta: {MCP_SHARED_DATA_TEXT}.
+						lo autorices desde cada asistente, la información de tu cuenta y de tus equipos: {MCP_SHARED_DATA_TEXT}.
 					</Typography>
 					<Typography variant="body2">
-						Lo que el asistente consulte se envía a su proveedor (Anthropic u OpenAI), que lo procesa según sus propias políticas. Podés
-						revocar el acceso en cualquier momento desde Perfil → Integraciones → Asistentes de IA.
+						Lo que el asistente consulte se envía a su proveedor (Anthropic u OpenAI), que lo procesa según sus propias políticas, incluso
+						fuera de la Argentina. Podés revocar el acceso en cualquier momento desde Perfil → Integraciones → Asistentes de IA.
 					</Typography>
 
 					<FormControlLabel
@@ -105,7 +105,8 @@ const McpAddonLegalDialog = ({
 								<Link href={privacyUrl} target="_blank" rel="noopener noreferrer">
 									Política de Privacidad (sección Conectores de IA)
 								</Link>{" "}
-								y entiendo que la información que el asistente consulte será procesada por su proveedor según sus propias políticas.
+								y entiendo que la información que el asistente consulte será procesada por su proveedor según sus propias políticas, incluso
+								fuera de la Argentina.
 							</Typography>
 						}
 					/>
