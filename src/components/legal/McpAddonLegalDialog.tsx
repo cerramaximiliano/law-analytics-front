@@ -85,7 +85,7 @@ const McpAddonLegalDialog = ({
 					</Typography>
 					<Typography variant="body2">
 						Lo que el asistente consulte se envía a su proveedor (Anthropic u OpenAI), que lo procesa según sus propias políticas. Podés
-						revocar el acceso en cualquier momento desde tu menú de perfil → Apps conectadas (IA).
+						revocar el acceso en cualquier momento desde Perfil → Integraciones → Asistentes de IA.
 					</Typography>
 
 					<FormControlLabel

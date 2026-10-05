@@ -361,7 +361,7 @@ const OauthConsentPage = () => {
 
 				<Grid item xs={12}>
 					<Typography variant="caption" color="text.secondary" sx={{ display: "block", textAlign: "center" }}>
-						Podés revocar este acceso en cualquier momento desde tu menú de perfil → Apps conectadas (IA).
+						Podés revocar este acceso en cualquier momento desde Perfil → Integraciones → Asistentes de IA.
 					</Typography>
 				</Grid>
 			</Grid>

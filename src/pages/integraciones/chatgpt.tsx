@@ -157,7 +157,7 @@ const FAQ: FaqItem[] = [
 	},
 	{
 		q: "¿Cómo revoco el acceso?",
-		a: "Dos formas: (1) En ChatGPT → Settings → Apps & Connectors → Law Analytics → Disconnect. (2) En lawanalytics.app → menú de perfil → Apps conectadas (IA) → Desconectar. Ambas revocan el token inmediatamente.",
+		a: "Dos formas: (1) En ChatGPT → Settings → Apps & Connectors → Law Analytics → Disconnect. (2) En lawanalytics.app → Perfil → Integraciones → Asistentes de IA → Desconectar. Ambas revocan el token inmediatamente.",
 	},
 	{
 		q: "¿Qué información puede consultar?",

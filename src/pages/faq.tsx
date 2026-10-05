@@ -257,7 +257,7 @@ const FAQS: Faq[] = [
 		category: "integraciones",
 		question: "¿Cómo revoco el acceso si quiero desconectarlo?",
 		answer:
-			"Dos formas: (1) En Claude.ai → Settings → Connectors → Law Analytics → Disconnect. (2) En tu cuenta de Law||Analytics → Configuración → Apps conectadas → Desconectar. Cualquiera de las dos revoca el token al instante.",
+			"Dos formas: (1) En Claude.ai → Settings → Connectors → Law Analytics → Disconnect. (2) En tu cuenta de Law||Analytics → Perfil → Integraciones → Asistentes de IA → Revocar. Cualquiera de las dos revoca el token al instante.",
 	},
 	{
 		id: "int6",
