@@ -21,6 +21,9 @@ import MainCard from "components/MainCard";
 import PjnAccountConnect from "sections/apps/folders/step-components/PjnAccountConnect";
 import ScbaAccountConnect from "sections/apps/folders/step-components/ScbaAccountConnect";
 import MevAccountConnect from "sections/apps/profiles/account/MevAccountConnect";
+import ConnectedAiApps from "sections/apps/profiles/account/ConnectedAiApps";
+import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
+import ChatGptLogo from "components/icons/ChatGptLogo";
 import ApiService from "store/reducers/ApiService";
 import pjnCredentialsService from "api/pjnCredentials";
 import { dispatch } from "store";
@@ -46,8 +49,8 @@ const TabPjnIntegration = () => {
 	// integración correcta sin que el user tenga que clickear el toggle. Default
 	// 'pjn' si no hay param o el valor no es válido. Diseñado para extender a
 	// nuevas integraciones (MEV, EJE, etc.): sumar valor al union + ToggleButton.
-	type IntegrationView = "pjn" | "scba" | "mev";
-	const parseView = (v: string | null): IntegrationView => (v === "scba" ? "scba" : v === "mev" ? "mev" : "pjn");
+	type IntegrationView = "pjn" | "scba" | "mev" | "ia";
+	const parseView = (v: string | null): IntegrationView => (v === "scba" ? "scba" : v === "mev" ? "mev" : v === "ia" ? "ia" : "pjn");
 	const [searchParams, setSearchParams] = useSearchParams();
 	const initialView: IntegrationView = parseView(searchParams.get("view"));
 	const [view, setView] = useState<IntegrationView>(initialView);
@@ -339,6 +342,15 @@ const TabPjnIntegration = () => {
 							<ViewStatusDot status={isMevConnected} />
 						</Stack>
 					</ToggleButton>
+					<ToggleButton value="ia" sx={toggleButtonSx}>
+						<Stack direction="row" alignItems="center" spacing={1}>
+							<Stack direction="row" alignItems="center" spacing={0.5}>
+								<ClaudeAiLogo size={15} />
+								<ChatGptLogo size={15} />
+							</Stack>
+							<span>Asistentes de IA (Claude, ChatGPT)</span>
+						</Stack>
+					</ToggleButton>
 				</ToggleButtonGroup>
 			</Box>
 
@@ -493,6 +505,19 @@ const TabPjnIntegration = () => {
 							rightSlot={isScbaConnected !== null ? <StatusPill status={isScbaConnected} /> : undefined}
 						>
 							<ScbaAccountConnect onConnectionStatusChange={(connected) => setIsScbaConnected(connected)} />
+						</SectionCard>
+					</Grid>
+				</Grid>
+			) : view === "ia" ? (
+				<Grid container spacing={2.5}>
+					<Grid item xs={12} md={8}>
+						<SectionCard
+							eyebrow="Integración · Asistentes de IA"
+							title="Asistentes conectados"
+							subtitle="Asistentes de IA (Claude.ai, ChatGPT) que autorizaste a consultar tu cuenta en modo solo lectura. Podés revocar el acceso cuando quieras."
+							icon={<ClaudeAiLogo size={16} />}
+						>
+							<ConnectedAiApps />
 						</SectionCard>
 					</Grid>
 				</Grid>

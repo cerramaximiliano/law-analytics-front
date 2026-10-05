@@ -48,7 +48,11 @@ const PLAN_DISPLAY: Record<string, string> = {
  * con paths distintos en distintos entornos.
  */
 const UPGRADE_URL = import.meta.env.VITE_UPGRADE_URL || "/plans";
-const ADDON_SUBSCRIBE_URL = import.meta.env.VITE_MCP_ADDON_SUBSCRIBE_URL || "/settings/billing";
+// "/settings/billing" no existe como ruta: el CTA del add-on (con el diálogo de
+// aceptación legal de la Etapa P) vive en /plans.
+const ADDON_SUBSCRIBE_URL = import.meta.env.VITE_MCP_ADDON_SUBSCRIBE_URL || "/plans";
+// Pago fallido del add-on → gestión de la suscripción (método de pago / portal de Stripe).
+const BILLING_URL = "/apps/profiles/account/subscription";
 
 function getCopyForReason(reason: string, plan: string | null): ReasonCopy {
 	const planDisplay = plan ? PLAN_DISPLAY[plan] || plan : "Gratis";
@@ -80,7 +84,7 @@ function getCopyForReason(reason: string, plan: string | null): ReasonCopy {
 				title: "Pago pendiente en tu add-on",
 				body: "El pago de MCP Access falló. Actualizá tu método de pago para reactivar la conexión.",
 				ctaText: "Actualizar facturación",
-				ctaHref: ADDON_SUBSCRIBE_URL,
+				ctaHref: BILLING_URL,
 				ctaIcon: <Card size={18} />,
 			};
 		default:

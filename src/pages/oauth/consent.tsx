@@ -31,6 +31,7 @@ import {
 	Divider,
 	FormControlLabel,
 	Grid,
+	Link,
 	List,
 	ListItem,
 	ListItemIcon,
@@ -45,6 +46,7 @@ import OauthClientBanner from "sections/oauth/OauthClientBanner";
 import axiosInstance from "utils/axios";
 import { useOauthConsentContext } from "hooks/useOauthConsentContext";
 import { trackOauthConsentAccept, trackOauthConsentReject, trackOauthConsentView } from "utils/gtm";
+import { MCP_SHARED_DATA_TEXT, PRIVACY_CONNECTORS_URL, aiProviderLabel, deriveAiProvider } from "utils/mcpLegal";
 
 import { TickCircle } from "iconsax-react";
 
@@ -60,7 +62,7 @@ interface AcceptResponse {
 const SCOPE_LABELS: Record<string, string> = {
 	openid: "Saber tu identidad básica (email, nombre)",
 	offline_access: "Mantener la sesión activa entre conversaciones (sin pedirte autorización cada vez)",
-	"mcp:access": "Acceder a tus causas, movimientos, calendario y datos del plan",
+	"mcp:access": `Consultar la información de tu cuenta: ${MCP_SHARED_DATA_TEXT}`,
 };
 
 function describeScope(scope: string): string {
@@ -91,6 +93,17 @@ const OauthConsentPage = () => {
 	const [globalError, setGlobalError] = useState<string | null>(null);
 	const [remember, setRemember] = useState(true);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [policyAccepted, setPolicyAccepted] = useState(false);
+	const [policyOutdated, setPolicyOutdated] = useState(false);
+
+	// C-LEGAL-API: si hay política activa, la aceptación es obligatoria. Pre-marcada
+	// si el user ya aceptó exactamente esta versión.
+	const legal = contextState.status === "ready" ? contextState.context.legal ?? null : null;
+	const privacyVersion = legal?.privacy_version || null;
+	const previouslyAccepted = !!privacyVersion && legal?.previously_accepted_version === privacyVersion;
+	useEffect(() => {
+		if (previouslyAccepted) setPolicyAccepted(true);
+	}, [previouslyAccepted]);
 
 	const clientId = contextState.status === "ready" ? contextState.context.client.client_id : null;
 	const clientName = contextState.status === "ready" ? contextState.context.client.name : null;
@@ -134,6 +147,9 @@ const OauthConsentPage = () => {
 	}
 
 	if (contextState.status === "error") {
+		// 403 provider_disabled (C-TOGGLES): el admin apagó la integración de este
+		// proveedor. No es un error del user → aviso, no error.
+		const providerDisabled = contextState.code === "provider_disabled";
 		return (
 			<AuthWrapper>
 				<Grid container spacing={3}>
@@ -141,9 +157,9 @@ const OauthConsentPage = () => {
 						<Logo to="/" />
 					</Grid>
 					<Grid item xs={12}>
-						<Alert severity="error">
+						<Alert severity={providerDisabled ? "warning" : "error"}>
 							<Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-								No se puede continuar
+								{providerDisabled ? "Integración no disponible para tu cuenta" : "No se puede continuar"}
 							</Typography>
 							<Typography variant="body2">{contextState.message}</Typography>
 						</Alert>
@@ -168,18 +184,41 @@ const OauthConsentPage = () => {
 	const ctx = contextState.context;
 	const userDisplay = ctx.user?.name || ctx.user?.email || "Tu cuenta";
 
+	// Proveedor del asistente para el texto de aceptación (Anthropic / OpenAI / genérico).
+	const providerLabel = aiProviderLabel(
+		deriveAiProvider(ctx.client.provider, ...(ctx.client.redirect_uris || []), ctx.client.vendor, ctx.client.vendor_url, ctx.client.name),
+	);
+	const clientLabel = clientName || "la aplicación";
+	const privacyUrl = legal?.privacy_url || PRIVACY_CONNECTORS_URL;
+	const acceptBlocked = !!privacyVersion && !policyAccepted;
+
 	const handleAccept = async () => {
+		if (acceptBlocked) return;
 		setGlobalError(null);
+		setPolicyOutdated(false);
 		setIsSubmitting(true);
 		try {
 			const res = await axiosInstance.post<AcceptResponse>("/api/oauth/consent/accept", {
 				consent_challenge: challenge,
 				granted_scopes: ctx.requested_scope,
 				remember,
+				...(privacyVersion ? { accepted_policy_version: privacyVersion } : {}),
 			});
 			trackOauthConsentAccept(clientId || undefined, ctx.requested_scope);
 			window.location.href = res.data.redirect_to;
 		} catch (err: any) {
+			// 400 policy_acceptance_required: la versión aceptada no coincide con la
+			// vigente (se publicó una nueva mientras tanto). El challenge NO se rechazó:
+			// recargar trae la versión nueva y el user puede aceptar de nuevo.
+			if (err.response?.status === 400 && err.response?.data?.error === "policy_acceptance_required") {
+				setPolicyAccepted(false);
+				setPolicyOutdated(true);
+				setGlobalError(
+					"La Política de Privacidad se actualizó mientras autorizabas. Recargá la página para ver la versión vigente y volvé a aceptarla.",
+				);
+				setIsSubmitting(false);
+				return;
+			}
 			const msg = err.response?.data?.error_description || "No se pudo completar la autorización. Intentá de nuevo.";
 			setGlobalError(msg);
 			setIsSubmitting(false);
@@ -262,9 +301,46 @@ const OauthConsentPage = () => {
 					/>
 				</Grid>
 
+				{privacyVersion && (
+					<Grid item xs={12}>
+						<FormControlLabel
+							sx={{ alignItems: "flex-start" }}
+							control={
+								<Checkbox
+									checked={policyAccepted}
+									onChange={(e) => setPolicyAccepted(e.target.checked)}
+									disabled={isSubmitting}
+									sx={{ pt: 0.5 }}
+									inputProps={{ "aria-required": true }}
+								/>
+							}
+							label={
+								<Typography variant="body2">
+									Leí y acepto la{" "}
+									<Link href={privacyUrl} target="_blank" rel="noopener noreferrer">
+										Política de Privacidad (sección Conectores de IA)
+									</Link>{" "}
+									y entiendo que la información que {clientLabel} consulte será procesada por {providerLabel} según sus propias políticas.
+								</Typography>
+							}
+						/>
+					</Grid>
+				)}
+
 				{globalError && (
 					<Grid item xs={12}>
-						<Alert severity="error">{globalError}</Alert>
+						<Alert
+							severity="error"
+							action={
+								policyOutdated ? (
+									<Button color="inherit" size="small" onClick={() => window.location.reload()}>
+										Recargar
+									</Button>
+								) : undefined
+							}
+						>
+							{globalError}
+						</Alert>
 					</Grid>
 				)}
 
@@ -277,7 +353,7 @@ const OauthConsentPage = () => {
 						<Button variant="outlined" color="secondary" onClick={handleReject} disabled={isSubmitting} size="large">
 							Rechazar
 						</Button>
-						<Button variant="contained" color="primary" onClick={handleAccept} disabled={isSubmitting} size="large">
+						<Button variant="contained" color="primary" onClick={handleAccept} disabled={isSubmitting || acceptBlocked} size="large">
 							{isSubmitting ? "Procesando..." : "Autorizar"}
 						</Button>
 					</Stack>
@@ -285,7 +361,7 @@ const OauthConsentPage = () => {
 
 				<Grid item xs={12}>
 					<Typography variant="caption" color="text.secondary" sx={{ display: "block", textAlign: "center" }}>
-						Podés revocar este acceso en cualquier momento desde Configuración → Apps conectadas.
+						Podés revocar este acceso en cualquier momento desde Perfil → Integraciones → Asistentes de IA.
 					</Typography>
 				</Grid>
 			</Grid>

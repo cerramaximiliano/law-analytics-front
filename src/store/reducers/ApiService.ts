@@ -481,6 +481,23 @@ export interface LegalDocumentSection {
 	content: string;
 	order: number;
 	visibleFor: string[];
+	/** Ancla opcional de la sección (p. ej. "conectores-ia"). Si falta, la UI la deriva del título. */
+	anchor?: string;
+	slug?: string;
+}
+
+// ===============================
+// Aceptación legal (C-LEGAL-API — Etapa P)
+// ===============================
+
+export const LEGAL_ACCEPTANCE_REQUIRED = "LEGAL_ACCEPTANCE_REQUIRED";
+export const PRIVACY_CONNECTORS_ANCHOR = "conectores-ia";
+export const PRIVACY_CONNECTORS_URL = `/privacy-policy#${PRIVACY_CONNECTORS_ANCHOR}`;
+
+export interface LegalVersions {
+	/** Versión activa de la política de privacidad, o null si no hay documento activo (no se exige aceptación). */
+	privacy: string | null;
+	privacyUrl: string;
 }
 
 export interface LegalDocumentCompanyDetails {
@@ -935,17 +952,33 @@ class ApiService {
 	 * El backend hace stripe.subscriptions.update + el webhook de la-subscriptions
 	 * sincroniza el campo addons[] cuando llega (~1-2s después).
 	 */
-	static async addAddon(addonKey: AddonKey): Promise<{
+	static async addAddon(
+		addonKey: AddonKey,
+		acceptedPolicyVersion?: string | null,
+	): Promise<{
 		success: boolean;
 		alreadyActive?: boolean;
 		pendingWebhookSync?: boolean;
 		addon?: { key: AddonKey; status: string; stripePriceId: string; currentPeriodEnd: string | null };
 		message?: string;
+		/** "LEGAL_ACCEPTANCE_REQUIRED" cuando el hub exige aceptar la política vigente (C-LEGAL-API). */
+		code?: string;
 	}> {
 		try {
-			const response = await axios.post(`${API_BASE_URL}/api/subscriptions/addons/checkout`, { addonKey }, { withCredentials: true });
+			const body: { addonKey: AddonKey; acceptedPolicyVersion?: string } = { addonKey };
+			if (acceptedPolicyVersion) body.acceptedPolicyVersion = acceptedPolicyVersion;
+			const response = await axios.post(`${API_BASE_URL}/api/subscriptions/addons/checkout`, body, { withCredentials: true });
 			return response.data;
 		} catch (error) {
+			// 400 LEGAL_ACCEPTANCE_REQUIRED: no es un error "real" — la UI tiene que
+			// (re)abrir el diálogo de aceptación con la versión vigente.
+			if (axios.isAxiosError(error) && error.response?.data?.code === LEGAL_ACCEPTANCE_REQUIRED) {
+				return {
+					success: false,
+					code: LEGAL_ACCEPTANCE_REQUIRED,
+					message: error.response.data.message || "Tenés que aceptar la Política de Privacidad vigente.",
+				};
+			}
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -1371,6 +1404,42 @@ class ApiService {
 	 */
 	static async getBillingTerms(planId?: string): Promise<ApiResponse<LegalDocument>> {
 		return this.getLegalDocument("billing", planId);
+	}
+
+	/**
+	 * Política de privacidad activa desde `LegalDocument` (P2). Devuelve null si no
+	 * hay documento activo (404) o ante cualquier error: la página cae al JSX estático.
+	 */
+	static async getPrivacyDocument(): Promise<LegalDocument | null> {
+		try {
+			const response = await axios.get<ApiResponse<LegalDocument>>(`${API_BASE_URL}/api/legal/privacy`, {
+				withCredentials: true,
+				timeout: 6000,
+			});
+			const doc = (response.data as any)?.document as LegalDocument | undefined;
+			if (!response.data?.success || !doc || doc.documentType !== "privacy" || doc.isActive === false) return null;
+			if (!Array.isArray(doc.sections) || doc.sections.length === 0) return null;
+			return doc;
+		} catch {
+			return null;
+		}
+	}
+
+	/**
+	 * Versiones vigentes de documentos que requieren aceptación (C-LEGAL-API).
+	 * `privacy: null` = no hay documento activo → no se exige aceptación.
+	 * Ante error de red devuelve null: el hub igual valida y responde 400 si hace falta.
+	 */
+	static async getLegalVersions(): Promise<LegalVersions> {
+		try {
+			const response = await axios.get<LegalVersions>(`${API_BASE_URL}/api/legal/versions`, { withCredentials: true, timeout: 6000 });
+			return {
+				privacy: typeof response.data?.privacy === "string" && response.data.privacy ? response.data.privacy : null,
+				privacyUrl: response.data?.privacyUrl || PRIVACY_CONNECTORS_URL,
+			};
+		} catch {
+			return { privacy: null, privacyUrl: PRIVACY_CONNECTORS_URL };
+		}
 	}
 
 	/**
