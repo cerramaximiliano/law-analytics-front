@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { List, ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
 
 // assets
-import { Card, Logout, Profile, Setting2, TableDocument, MessageQuestion } from "iconsax-react";
+import { Card, Cpu, Logout, Profile, Setting2, TableDocument, MessageQuestion } from "iconsax-react";
 
 // project-imports
 import { FEEDBACK_OPEN_EVENT } from "components/feedback/FeedbackWidget";
@@ -75,6 +75,16 @@ const ProfileTab = ({ handleLogout, handleClose }: Props) => {
 					<Card variant="Bulk" size={18} />
 				</ListItemIcon>
 				<ListItemText primary="Suscripción" />
+			</ListItemButton>
+
+			<ListItemButton
+				selected={selectedIndex === 8}
+				onClick={(event: MouseEvent<HTMLDivElement>) => handleListItemClick(event, 8, "/settings/connected-apps")}
+			>
+				<ListItemIcon>
+					<Cpu variant="Bulk" size={18} />
+				</ListItemIcon>
+				<ListItemText primary="Apps conectadas (IA)" />
 			</ListItemButton>
 
 			<ListItemButton

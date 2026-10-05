@@ -1,6 +1,9 @@
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
+
 // material-ui
 import { useTheme, alpha } from "@mui/material/styles";
-import { Box, Container, Grid, Typography, Divider, Link } from "@mui/material";
+import { Box, CircularProgress, Container, Grid, Typography, Divider, Link } from "@mui/material";
 
 // third-party
 import { motion } from "framer-motion";
@@ -12,6 +15,7 @@ import PageBackground from "components/PageBackground";
 import { LEGAL_LAST_UPDATED } from "config/legalDates";
 import LegalPageTOC, { TocItem } from "components/legal/LegalPageTOC";
 import LegalEntityBlock from "components/legal/LegalEntityBlock";
+import ApiService, { LegalDocument, LegalDocumentSection, PRIVACY_CONNECTORS_ANCHOR } from "store/reducers/ApiService";
 
 // ============================== TOKENS ============================== //
 // Mantener en sync con sections/landing/Planes.tsx
@@ -31,9 +35,93 @@ const PRIVACY_TOC_ITEMS: TocItem[] = [
 	{ id: "cambios-politica", label: "Cambios en la política de privacidad" },
 ];
 
+// ============================== DOCUMENTO DINÁMICO (P2) ============================== //
+// La política se sirve desde `LegalDocument` (GET /api/legal/privacy) cuando hay
+// una versión activa; si no (404 / error), la página cae al JSX estático de abajo.
+
+const slugify = (text: string): string =>
+	text
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "")
+		.slice(0, 64) || "seccion";
+
+// Ancla por sección. La sección de conectores de IA SIEMPRE es `#conectores-ia`
+// (la enlazan el diálogo del add-on, el consentimiento OAuth y las landings).
+const anchorForSection = (section: LegalDocumentSection): string => {
+	const explicit = (section.anchor || section.slug || "").trim();
+	if (explicit) return explicit;
+	if (/conectores?\s+de\s+(ia|inteligencia artificial)|\bmcp\b/i.test(section.title)) return PRIVACY_CONNECTORS_ANCHOR;
+	return slugify(section.title);
+};
+
+interface RenderedSection {
+	id: string;
+	section: LegalDocumentSection;
+}
+
+const buildRenderedSections = (doc: LegalDocument): RenderedSection[] => {
+	const used = new Set<string>();
+	return [...doc.sections]
+		.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+		.map((section) => {
+			let id = anchorForSection(section);
+			let n = 2;
+			while (used.has(id)) id = `${anchorForSection(section)}-${n++}`;
+			used.add(id);
+			return { id, section };
+		});
+};
+
+const formatEffectiveDate = (value: string | Date | undefined): string | null => {
+	if (!value) return null;
+	const date = typeof value === "string" ? new Date(value) : value;
+	if (Number.isNaN(date.getTime())) return null;
+	return new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(date);
+};
+
 const PrivacyPolicy = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
+	const location = useLocation();
+
+	const [doc, setDoc] = useState<LegalDocument | null>(null);
+	const [loadingDoc, setLoadingDoc] = useState(true);
+
+	useEffect(() => {
+		let cancelled = false;
+		ApiService.getPrivacyDocument()
+			.then((d) => {
+				if (!cancelled) setDoc(d);
+			})
+			.finally(() => {
+				if (!cancelled) setLoadingDoc(false);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	const renderedSections = useMemo(() => (doc ? buildRenderedSections(doc) : []), [doc]);
+	const tocItems: TocItem[] = useMemo(
+		() => (doc ? renderedSections.map(({ id, section }) => ({ id, label: section.title })) : PRIVACY_TOC_ITEMS),
+		[doc, renderedSections],
+	);
+	const effectiveDateLabel = doc ? formatEffectiveDate(doc.effectiveDate) : null;
+
+	// Scroll al ancla del hash (p. ej. /privacy-policy#conectores-ia) una vez que
+	// el contenido (dinámico o estático) está montado.
+	useEffect(() => {
+		if (loadingDoc || !location.hash) return;
+		const id = decodeURIComponent(location.hash.slice(1));
+		const t = window.setTimeout(() => {
+			const el = document.getElementById(id);
+			if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+		}, 50);
+		return () => window.clearTimeout(t);
+	}, [loadingDoc, location.hash, doc]);
 
 	const breadcrumbItems = [{ title: "Inicio", to: "/" }, { title: "Política de Privacidad" }];
 
@@ -58,6 +146,7 @@ const PrivacyPolicy = () => {
 			id={id}
 			variant="h3"
 			sx={{
+				scrollMarginTop: { xs: 88, md: 104 },
 				mt: 5,
 				mb: 1.5,
 				fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.625rem" },
@@ -108,6 +197,52 @@ const PrivacyPolicy = () => {
 		</Box>
 	);
 
+	// Contenido de una sección: bloques separados por línea en blanco; un bloque
+	// cuyas líneas empiezan con "- " o "• " se dibuja como lista.
+	const renderSectionContent = (content: string) =>
+		(content || "")
+			.split(/\n\s*\n/)
+			.map((block) => block.trim())
+			.filter(Boolean)
+			.map((block, i) => {
+				const lines = block.split("\n").map((l) => l.trim());
+				if (lines.every((l) => /^[-•]\s+/.test(l))) {
+					return <Box key={i}>{bulletList(lines.map((l) => l.replace(/^[-•]\s+/, "")))}</Box>;
+				}
+				return (
+					<Typography key={i} paragraph sx={{ ...bodySx, whiteSpace: "pre-line" }}>
+						{block}
+					</Typography>
+				);
+			});
+
+	const renderDynamic = (d: LegalDocument) => (
+		<>
+			{d.introduction && (
+				<Typography paragraph sx={{ ...bodySx, whiteSpace: "pre-line" }}>
+					{d.introduction}
+				</Typography>
+			)}
+			{renderedSections.map(({ id, section }) => (
+				<Box key={id} component="section" aria-labelledby={id}>
+					{sectionHeading(section.title, id)}
+					{renderSectionContent(section.content)}
+				</Box>
+			))}
+			<Divider sx={{ my: 4, borderColor: alpha(theme.palette.divider, 0.6) }} />
+			{d.conclusion && (
+				<Typography paragraph sx={{ ...bodySx, whiteSpace: "pre-line" }}>
+					{d.conclusion}
+				</Typography>
+			)}
+			<Typography paragraph sx={{ ...bodySx, color: theme.palette.text.secondary, fontSize: "0.85rem" }}>
+				Versión {d.version}
+				{effectiveDateLabel ? ` — vigente desde el ${effectiveDateLabel}` : ""}.
+			</Typography>
+			<LegalEntityBlock title="Responsable del tratamiento de datos" />
+		</>
+	);
+
 	return (
 		<Box component="section" sx={{ pt: { xs: 10, md: 14 }, pb: { xs: 6, md: 10 }, position: "relative", overflow: "hidden" }}>
 			<PageBackground variant="light" />
@@ -150,7 +285,8 @@ const PrivacyPolicy = () => {
 										letterSpacing: "0.01em",
 									}}
 								>
-									Última actualización: {LEGAL_LAST_UPDATED}
+									Última actualización: {doc ? effectiveDateLabel ?? LEGAL_LAST_UPDATED : LEGAL_LAST_UPDATED}
+									{doc?.version ? ` · Versión ${doc.version}` : ""}
 								</Typography>
 							</motion.div>
 						</Box>
@@ -158,247 +294,259 @@ const PrivacyPolicy = () => {
 
 					{/* Mobile TOC — rendered above the card, only visible on xs/sm */}
 					<Grid item xs={12} sx={{ display: { xs: "block", md: "none" } }}>
-						<LegalPageTOC items={PRIVACY_TOC_ITEMS} ariaLabel="Índice de Política de Privacidad" />
+						<LegalPageTOC items={tocItems} ariaLabel="Índice de Política de Privacidad" />
 					</Grid>
 
 					{/* Desktop TOC sidebar */}
 					<Grid item md={3} sx={{ display: { xs: "none", md: "block" } }}>
-						<LegalPageTOC items={PRIVACY_TOC_ITEMS} ariaLabel="Índice de Política de Privacidad" />
+						<LegalPageTOC items={tocItems} ariaLabel="Índice de Política de Privacidad" />
 					</Grid>
 
 					<Grid item xs={12} md={9}>
 						<MainCard sx={{ overflow: "hidden" }}>
-							<Typography paragraph sx={bodySx}>
-								La presente Política de Privacidad establece los términos en que Law||Analytics usa y protege la información que es
-								proporcionada por sus usuarios al momento de utilizar su sitio web y aplicación. Estamos comprometidos con la seguridad de
-								los datos de nuestros usuarios. Cuando le pedimos completar campos de información personal con la cual usted pueda ser
-								identificado, lo hacemos asegurando que solo se empleará de acuerdo con los términos de este documento.
-							</Typography>
-
-							{sectionHeading("Información que recopilamos", "informacion-recopilamos")}
-							<Typography paragraph sx={bodySx}>
-								Nuestro sitio web y aplicación podrán recoger información personal, por ejemplo:
-							</Typography>
-							{bulletList([
-								"Nombre y apellidos",
-								"Información de contacto, incluyendo dirección de correo electrónico",
-								"Información demográfica como preferencias e intereses",
-								"Otra información relevante para encuestas y ofertas",
-								"Datos específicos relacionados con su práctica legal",
-							])}
-
-							{sectionHeading("Uso de la información recogida", "uso-informacion")}
-							<Typography paragraph sx={bodySx}>
-								Nuestro sitio web y aplicación emplean la información con el fin de proporcionar el mejor servicio posible, particularmente
-								para:
-							</Typography>
-							{bulletList([
-								"Personalizar la experiencia del usuario y responder mejor a sus necesidades individuales",
-								"Mejorar nuestros productos y servicios",
-								"Procesar transacciones",
-								"Enviar correos electrónicos periódicos con información relevante a su práctica jurídica (estas comunicaciones no utilizan datos obtenidos a través de APIs de Google)",
-								"Administrar promociones, encuestas u otras características del sitio, sin utilizar datos obtenidos desde Google Calendar",
-							])}
-
-							{sectionHeading("Cookies", "cookies")}
-							<Typography paragraph sx={bodySx}>
-								Una cookie se refiere a un fichero que es enviado con la finalidad de solicitar permiso para almacenarse en su ordenador. Al
-								aceptar, dicho fichero se crea y la cookie sirve entonces para tener información respecto al tráfico web, y también facilita
-								las futuras visitas a una web recurrente. Para más información sobre nuestro uso de cookies, por favor consulte nuestra{" "}
-								<Link href="/cookies-policy" sx={linkSx}>
-									Política de Cookies
-								</Link>
-								.
-							</Typography>
-
-							{sectionHeading("Seguridad", "seguridad")}
-							<Typography paragraph sx={bodySx}>
-								Law||Analytics se compromete a proteger su información personal. Utilizamos sistemas seguros para la protección de la
-								información y la actualizamos constantemente para asegurarnos de que no exista ningún acceso no autorizado.
-							</Typography>
-
-							{sectionHeading("Integración con Google Calendar", "integracion-google-calendar")}
-							<Typography paragraph sx={bodySx}>
-								Law||Analytics ofrece integración opcional con Google Calendar para mejorar la gestión de eventos y audiencias legales. Esta
-								integración es completamente voluntaria y puede ser activada o desactivada en cualquier momento por el usuario.
-							</Typography>
-
-							{subHeading("Permisos de Google Calendar")}
-							<Typography paragraph sx={bodySx}>
-								Cuando usted conecta su cuenta de Google Calendar, solicitamos los siguientes permisos específicos:
-							</Typography>
-							{bulletList([
+							{loadingDoc ? (
+								<Box sx={{ display: "flex", justifyContent: "center", py: 8 }} aria-busy="true">
+									<CircularProgress size={28} />
+								</Box>
+							) : doc ? (
+								renderDynamic(doc)
+							) : (
 								<>
-									<Box component="strong" sx={{ fontWeight: 600 }}>
-										Ver y editar eventos en sus calendarios
-									</Box>{" "}
-									(https://www.googleapis.com/auth/calendar.events): permite crear, actualizar y eliminar eventos (audiencias, vencimientos
-									y reuniones) entre Law||Analytics y Google Calendar.
-								</>,
-								<>
-									<Box component="strong" sx={{ fontWeight: 600 }}>
-										Ver calendarios y eventos
-									</Box>{" "}
-									(https://www.googleapis.com/auth/calendar.readonly): permite leer y mostrar sus calendarios y eventos de Google Calendar
-									dentro de Law||Analytics; no crea, edita ni elimina eventos ni modifica permisos.
-								</>,
-							])}
+									<Typography paragraph sx={bodySx}>
+										La presente Política de Privacidad establece los términos en que Law||Analytics usa y protege la información que es
+										proporcionada por sus usuarios al momento de utilizar su sitio web y aplicación. Estamos comprometidos con la seguridad
+										de los datos de nuestros usuarios. Cuando le pedimos completar campos de información personal con la cual usted pueda
+										ser identificado, lo hacemos asegurando que solo se empleará de acuerdo con los términos de este documento.
+									</Typography>
 
-							{subHeading("Cumplimiento de la política de Google (“Limited Use”)")}
-							<Typography paragraph sx={bodySx}>
-								Cumplimos con la <em>Google API Services User Data Policy (Limited Use)</em>. Los datos obtenidos mediante los scopes de
-								Google se utilizan exclusivamente para proporcionar o mejorar funciones visibles al usuario dentro de Law||Analytics.{" "}
-								<Box component="strong" sx={{ fontWeight: 600 }}>
-									No vendemos
-								</Box>{" "}
-								ni{" "}
-								<Box component="strong" sx={{ fontWeight: 600 }}>
-									transferimos
-								</Box>{" "}
-								datos de Google a terceros; solo podemos compartirlos con proveedores que actúan como encargados de tratamiento
-								(procesadores) para operar el servicio (p. ej., infraestructura de hosting, correo transaccional, monitoreo y registro),
-								bajo contrato, con acceso limitado y sin reutilización para fines propios. No usamos datos de Google para publicidad,
-								marketing, perfilado ni investigación de mercado. Puede consultar más información en{" "}
-								<Link
-									href="https://developers.google.com/terms/api-services-user-data-policy"
-									target="_blank"
-									rel="noopener noreferrer"
-									sx={linkSx}
-								>
-									esta política de Google
-								</Link>
-								.
-							</Typography>
+									{sectionHeading("Información que recopilamos", "informacion-recopilamos")}
+									<Typography paragraph sx={bodySx}>
+										Nuestro sitio web y aplicación podrán recoger información personal, por ejemplo:
+									</Typography>
+									{bulletList([
+										"Nombre y apellidos",
+										"Información de contacto, incluyendo dirección de correo electrónico",
+										"Información demográfica como preferencias e intereses",
+										"Otra información relevante para encuestas y ofertas",
+										"Datos específicos relacionados con su práctica legal",
+									])}
 
-							{subHeading("Uso de los datos de Google Calendar — no se comparten con terceros")}
-							<Typography
-								paragraph
-								sx={{
-									...bodySx,
-									fontWeight: 600,
-									p: 2,
-									bgcolor: alpha(BRAND_BLUE, 0.06),
-									borderLeft: `3px solid ${BRAND_BLUE}`,
-									borderRadius: 0.5,
-									maxWidth: "none",
-								}}
-							>
-								IMPORTANTE: Los datos de Google Calendar NUNCA se comparten, venden, ceden o transfieren a terceros fuera de los proveedores
-								que actúan como procesadores para operar el servicio. Estos datos se utilizan EXCLUSIVAMENTE dentro de Law||Analytics para
-								proporcionar la funcionalidad de sincronización de calendario.
-							</Typography>
-							<Typography paragraph sx={bodySx}>
-								Los datos obtenidos de Google Calendar se utilizan únicamente para:
-							</Typography>
-							{bulletList([
-								"Importar eventos de Google Calendar a su calendario de Law||Analytics",
-								"Crear eventos en Google Calendar desde Law||Analytics (audiencias, vencimientos, reuniones)",
-								"Mantener sincronizados los eventos entre ambas plataformas",
-								"Actualizar o eliminar eventos cuando se modifican en cualquiera de las plataformas",
-							])}
+									{sectionHeading("Uso de la información recogida", "uso-informacion")}
+									<Typography paragraph sx={bodySx}>
+										Nuestro sitio web y aplicación emplean la información con el fin de proporcionar el mejor servicio posible,
+										particularmente para:
+									</Typography>
+									{bulletList([
+										"Personalizar la experiencia del usuario y responder mejor a sus necesidades individuales",
+										"Mejorar nuestros productos y servicios",
+										"Procesar transacciones",
+										"Enviar correos electrónicos periódicos con información relevante a su práctica jurídica (estas comunicaciones no utilizan datos obtenidos a través de APIs de Google)",
+										"Administrar promociones, encuestas u otras características del sitio, sin utilizar datos obtenidos desde Google Calendar",
+									])}
 
-							{subHeading("Almacenamiento y seguridad de datos de Google")}
-							<Typography paragraph sx={bodySx}>
-								<Box component="strong" sx={{ fontWeight: 600 }}>
-									Importante:
-								</Box>{" "}
-								Los tokens de autenticación de Google se almacenan únicamente en su navegador web (sessionStorage) y nunca se envían ni
-								almacenan en nuestros servidores. Los eventos importados desde Google Calendar se almacenan en nuestra base de datos con un
-								identificador especial (googleCalendarId) que permite mantener la sincronización.{" "}
-								<Box component="strong" sx={{ fontWeight: 600 }}>
-									Estos datos no se utilizan para análisis de terceros, publicidad, perfilado ni se comparten con ninguna entidad externa.
-								</Box>{" "}
-								Aplicamos cifrado en tránsito y en reposo, y el acceso humano está limitado a casos de soporte, seguridad o cumplimiento
-								legal, bajo controles y registro de acceso.
-							</Typography>
-							<Typography paragraph sx={bodySx}>
-								Solo almacenamos la siguiente información de eventos de Google Calendar:
-							</Typography>
-							{bulletList([
-								"Título del evento",
-								"Descripción del evento",
-								"Fecha y hora de inicio y fin",
-								"ID único del evento en Google Calendar (para sincronización)",
-							])}
+									{sectionHeading("Cookies", "cookies")}
+									<Typography paragraph sx={bodySx}>
+										Una cookie se refiere a un fichero que es enviado con la finalidad de solicitar permiso para almacenarse en su
+										ordenador. Al aceptar, dicho fichero se crea y la cookie sirve entonces para tener información respecto al tráfico web,
+										y también facilita las futuras visitas a una web recurrente. Para más información sobre nuestro uso de cookies, por
+										favor consulte nuestra{" "}
+										<Link href="/cookies-policy" sx={linkSx}>
+											Política de Cookies
+										</Link>
+										.
+									</Typography>
 
-							{subHeading("Desvinculación y eliminación de datos de Google")}
-							<Typography paragraph sx={bodySx}>
-								Usted puede desvincular su cuenta de Google Calendar en cualquier momento desde la sección de calendario de la aplicación.
-								Al desvincular:
-							</Typography>
-							{bulletList([
-								"Se revocan inmediatamente todos los permisos de acceso a Google Calendar",
-								"Se eliminan automáticamente todos los eventos importados desde Google Calendar de nuestra base de datos en un plazo máximo de 30 días",
-								"Se eliminan los tokens de autenticación de su navegador",
-								"Los eventos creados localmente en Law||Analytics permanecen intactos",
-							])}
-							<Typography paragraph sx={bodySx}>
-								Para revocar el acceso de Law||Analytics a su cuenta de Google, también puede hacerlo directamente desde su{" "}
-								<Link href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" sx={linkSx}>
-									configuración de permisos de Google
-								</Link>
-								.
-							</Typography>
+									{sectionHeading("Seguridad", "seguridad")}
+									<Typography paragraph sx={bodySx}>
+										Law||Analytics se compromete a proteger su información personal. Utilizamos sistemas seguros para la protección de la
+										información y la actualizamos constantemente para asegurarnos de que no exista ningún acceso no autorizado.
+									</Typography>
 
-							{sectionHeading("Publicidad y públicos similares", "publicidad")}
-							<Typography paragraph sx={bodySx}>
-								Para dar a conocer Law||Analytics a otros profesionales, podemos usar la dirección de correo electrónico de nuestros
-								usuarios como referencia para que plataformas publicitarias (por ejemplo, Meta, que opera Facebook e Instagram) construyan
-								un &ldquo;público similar&rdquo;: un conjunto de personas con características parecidas a las de quienes ya usan la
-								aplicación. Vigente desde el 22 de septiembre de 2026.
-							</Typography>
-							<Typography paragraph sx={bodySx}>
-								Cómo funciona: antes de enviarla, la dirección de correo se transforma con una función de cifrado irreversible (SHA-256). La
-								plataforma solo la usa para cotejarla con sus propios registros y descartarla después; no recibe su nombre, sus causas, sus
-								datos de facturación ni ninguna otra información de su cuenta, y no la utiliza para mostrarle anuncios a usted ni para
-								contactarlo.
-							</Typography>
-							<Typography paragraph sx={bodySx}>
-								Usted puede oponerse en cualquier momento y sin costo desde Configuración &rarr; Notificaciones &rarr; &ldquo;Públicos
-								similares en anuncios&rdquo;, o con el enlace incluido en el correo en el que le informamos este cambio. Si se opone, su
-								dirección deja de incluirse en las listas siguientes; esto no afecta el uso de la aplicación ni el resto de sus
-								comunicaciones. Los datos obtenidos a través de la integración con Google Calendar nunca se utilizan para este fin.
-							</Typography>
+									{sectionHeading("Integración con Google Calendar", "integracion-google-calendar")}
+									<Typography paragraph sx={bodySx}>
+										Law||Analytics ofrece integración opcional con Google Calendar para mejorar la gestión de eventos y audiencias legales.
+										Esta integración es completamente voluntaria y puede ser activada o desactivada en cualquier momento por el usuario.
+									</Typography>
 
-							{sectionHeading("Enlaces a terceros", "enlaces-terceros")}
-							<Typography paragraph sx={bodySx}>
-								Este sitio web puede contener enlaces a otros sitios que pudieran ser de su interés. Una vez que usted hace clic en estos
-								enlaces y abandona nuestra página, ya no tenemos control sobre el sitio al que es redirigido y, por lo tanto, no somos
-								responsables de los términos o privacidad ni de la protección de sus datos en esos otros sitios terceros.
-							</Typography>
+									{subHeading("Permisos de Google Calendar")}
+									<Typography paragraph sx={bodySx}>
+										Cuando usted conecta su cuenta de Google Calendar, solicitamos los siguientes permisos específicos:
+									</Typography>
+									{bulletList([
+										<>
+											<Box component="strong" sx={{ fontWeight: 600 }}>
+												Ver y editar eventos en sus calendarios
+											</Box>{" "}
+											(https://www.googleapis.com/auth/calendar.events): permite crear, actualizar y eliminar eventos (audiencias,
+											vencimientos y reuniones) entre Law||Analytics y Google Calendar.
+										</>,
+										<>
+											<Box component="strong" sx={{ fontWeight: 600 }}>
+												Ver calendarios y eventos
+											</Box>{" "}
+											(https://www.googleapis.com/auth/calendar.readonly): permite leer y mostrar sus calendarios y eventos de Google
+											Calendar dentro de Law||Analytics; no crea, edita ni elimina eventos ni modifica permisos.
+										</>,
+									])}
 
-							{sectionHeading("Control de su información personal", "control-informacion")}
-							<Typography paragraph sx={bodySx}>
-								En cualquier momento usted puede restringir la recopilación o el uso de la información personal que es proporcionada a
-								nuestro sitio web. Puede acceder a su información personal almacenada en su cuenta para corregirla o eliminarla.
-							</Typography>
-							<Typography paragraph sx={bodySx}>
-								Law||Analytics no venderá ni transferirá información personal ni datos obtenidos desde Google a terceros, salvo a
-								proveedores que actúan como encargados de tratamiento para operar el servicio, bajo contrato y sin reutilización para fines
-								propios, o cuando sea requerido por ley o por una orden judicial válida. Esto incluye específicamente los datos obtenidos a
-								través de la integración con Google Calendar, que se mantienen estrictamente confidenciales y se utilizan únicamente para
-								proporcionar la sincronización de calendario dentro de nuestra aplicación.
-							</Typography>
+									{subHeading("Cumplimiento de la política de Google (“Limited Use”)")}
+									<Typography paragraph sx={bodySx}>
+										Cumplimos con la <em>Google API Services User Data Policy (Limited Use)</em>. Los datos obtenidos mediante los scopes de
+										Google se utilizan exclusivamente para proporcionar o mejorar funciones visibles al usuario dentro de Law||Analytics.{" "}
+										<Box component="strong" sx={{ fontWeight: 600 }}>
+											No vendemos
+										</Box>{" "}
+										ni{" "}
+										<Box component="strong" sx={{ fontWeight: 600 }}>
+											transferimos
+										</Box>{" "}
+										datos de Google a terceros; solo podemos compartirlos con proveedores que actúan como encargados de tratamiento
+										(procesadores) para operar el servicio (p. ej., infraestructura de hosting, correo transaccional, monitoreo y registro),
+										bajo contrato, con acceso limitado y sin reutilización para fines propios. No usamos datos de Google para publicidad,
+										marketing, perfilado ni investigación de mercado. Puede consultar más información en{" "}
+										<Link
+											href="https://developers.google.com/terms/api-services-user-data-policy"
+											target="_blank"
+											rel="noopener noreferrer"
+											sx={linkSx}
+										>
+											esta política de Google
+										</Link>
+										.
+									</Typography>
 
-							{sectionHeading("Cambios en la Política de Privacidad", "cambios-politica")}
-							<Typography paragraph sx={bodySx}>
-								Law||Analytics se reserva el derecho de cambiar los términos de la presente Política de Privacidad en cualquier momento. Le
-								notificaremos cualquier cambio significativo en la forma en que tratamos su información personal enviando un aviso a la
-								dirección de correo electrónico principal especificada en su cuenta o colocando un aviso prominente en nuestro sitio.
-							</Typography>
+									{subHeading("Uso de los datos de Google Calendar — no se comparten con terceros")}
+									<Typography
+										paragraph
+										sx={{
+											...bodySx,
+											fontWeight: 600,
+											p: 2,
+											bgcolor: alpha(BRAND_BLUE, 0.06),
+											borderLeft: `3px solid ${BRAND_BLUE}`,
+											borderRadius: 0.5,
+											maxWidth: "none",
+										}}
+									>
+										IMPORTANTE: Los datos de Google Calendar NUNCA se comparten, venden, ceden o transfieren a terceros fuera de los
+										proveedores que actúan como procesadores para operar el servicio. Estos datos se utilizan EXCLUSIVAMENTE dentro de
+										Law||Analytics para proporcionar la funcionalidad de sincronización de calendario.
+									</Typography>
+									<Typography paragraph sx={bodySx}>
+										Los datos obtenidos de Google Calendar se utilizan únicamente para:
+									</Typography>
+									{bulletList([
+										"Importar eventos de Google Calendar a su calendario de Law||Analytics",
+										"Crear eventos en Google Calendar desde Law||Analytics (audiencias, vencimientos, reuniones)",
+										"Mantener sincronizados los eventos entre ambas plataformas",
+										"Actualizar o eliminar eventos cuando se modifican en cualquiera de las plataformas",
+									])}
 
-							<Divider sx={{ my: 4, borderColor: alpha(theme.palette.divider, 0.6) }} />
+									{subHeading("Almacenamiento y seguridad de datos de Google")}
+									<Typography paragraph sx={bodySx}>
+										<Box component="strong" sx={{ fontWeight: 600 }}>
+											Importante:
+										</Box>{" "}
+										Los tokens de autenticación de Google se almacenan únicamente en su navegador web (sessionStorage) y nunca se envían ni
+										almacenan en nuestros servidores. Los eventos importados desde Google Calendar se almacenan en nuestra base de datos con
+										un identificador especial (googleCalendarId) que permite mantener la sincronización.{" "}
+										<Box component="strong" sx={{ fontWeight: 600 }}>
+											Estos datos no se utilizan para análisis de terceros, publicidad, perfilado ni se comparten con ninguna entidad
+											externa.
+										</Box>{" "}
+										Aplicamos cifrado en tránsito y en reposo, y el acceso humano está limitado a casos de soporte, seguridad o cumplimiento
+										legal, bajo controles y registro de acceso.
+									</Typography>
+									<Typography paragraph sx={bodySx}>
+										Solo almacenamos la siguiente información de eventos de Google Calendar:
+									</Typography>
+									{bulletList([
+										"Título del evento",
+										"Descripción del evento",
+										"Fecha y hora de inicio y fin",
+										"ID único del evento en Google Calendar (para sincronización)",
+									])}
 
-							<Typography paragraph sx={bodySx}>
-								Si tiene alguna pregunta sobre esta Política de Privacidad, puede contactarnos a través de nuestro formulario de contacto o
-								por correo electrónico a{" "}
-								<Link href="mailto:soporte@lawanalytics.app" sx={linkSx}>
-									soporte@lawanalytics.app
-								</Link>
-								.
-							</Typography>
+									{subHeading("Desvinculación y eliminación de datos de Google")}
+									<Typography paragraph sx={bodySx}>
+										Usted puede desvincular su cuenta de Google Calendar en cualquier momento desde la sección de calendario de la
+										aplicación. Al desvincular:
+									</Typography>
+									{bulletList([
+										"Se revocan inmediatamente todos los permisos de acceso a Google Calendar",
+										"Se eliminan automáticamente todos los eventos importados desde Google Calendar de nuestra base de datos en un plazo máximo de 30 días",
+										"Se eliminan los tokens de autenticación de su navegador",
+										"Los eventos creados localmente en Law||Analytics permanecen intactos",
+									])}
+									<Typography paragraph sx={bodySx}>
+										Para revocar el acceso de Law||Analytics a su cuenta de Google, también puede hacerlo directamente desde su{" "}
+										<Link href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" sx={linkSx}>
+											configuración de permisos de Google
+										</Link>
+										.
+									</Typography>
 
-							<LegalEntityBlock title="Responsable del tratamiento de datos" />
+									{sectionHeading("Publicidad y públicos similares", "publicidad")}
+									<Typography paragraph sx={bodySx}>
+										Para dar a conocer Law||Analytics a otros profesionales, podemos usar la dirección de correo electrónico de nuestros
+										usuarios como referencia para que plataformas publicitarias (por ejemplo, Meta, que opera Facebook e Instagram)
+										construyan un &ldquo;público similar&rdquo;: un conjunto de personas con características parecidas a las de quienes ya
+										usan la aplicación. Vigente desde el 22 de septiembre de 2026.
+									</Typography>
+									<Typography paragraph sx={bodySx}>
+										Cómo funciona: antes de enviarla, la dirección de correo se transforma con una función de cifrado irreversible
+										(SHA-256). La plataforma solo la usa para cotejarla con sus propios registros y descartarla después; no recibe su
+										nombre, sus causas, sus datos de facturación ni ninguna otra información de su cuenta, y no la utiliza para mostrarle
+										anuncios a usted ni para contactarlo.
+									</Typography>
+									<Typography paragraph sx={bodySx}>
+										Usted puede oponerse en cualquier momento y sin costo desde Configuración &rarr; Notificaciones &rarr; &ldquo;Públicos
+										similares en anuncios&rdquo;, o con el enlace incluido en el correo en el que le informamos este cambio. Si se opone, su
+										dirección deja de incluirse en las listas siguientes; esto no afecta el uso de la aplicación ni el resto de sus
+										comunicaciones. Los datos obtenidos a través de la integración con Google Calendar nunca se utilizan para este fin.
+									</Typography>
+
+									{sectionHeading("Enlaces a terceros", "enlaces-terceros")}
+									<Typography paragraph sx={bodySx}>
+										Este sitio web puede contener enlaces a otros sitios que pudieran ser de su interés. Una vez que usted hace clic en
+										estos enlaces y abandona nuestra página, ya no tenemos control sobre el sitio al que es redirigido y, por lo tanto, no
+										somos responsables de los términos o privacidad ni de la protección de sus datos en esos otros sitios terceros.
+									</Typography>
+
+									{sectionHeading("Control de su información personal", "control-informacion")}
+									<Typography paragraph sx={bodySx}>
+										En cualquier momento usted puede restringir la recopilación o el uso de la información personal que es proporcionada a
+										nuestro sitio web. Puede acceder a su información personal almacenada en su cuenta para corregirla o eliminarla.
+									</Typography>
+									<Typography paragraph sx={bodySx}>
+										Law||Analytics no venderá ni transferirá información personal ni datos obtenidos desde Google a terceros, salvo a
+										proveedores que actúan como encargados de tratamiento para operar el servicio, bajo contrato y sin reutilización para
+										fines propios, o cuando sea requerido por ley o por una orden judicial válida. Esto incluye específicamente los datos
+										obtenidos a través de la integración con Google Calendar, que se mantienen estrictamente confidenciales y se utilizan
+										únicamente para proporcionar la sincronización de calendario dentro de nuestra aplicación.
+									</Typography>
+
+									{sectionHeading("Cambios en la Política de Privacidad", "cambios-politica")}
+									<Typography paragraph sx={bodySx}>
+										Law||Analytics se reserva el derecho de cambiar los términos de la presente Política de Privacidad en cualquier momento.
+										Le notificaremos cualquier cambio significativo en la forma en que tratamos su información personal enviando un aviso a
+										la dirección de correo electrónico principal especificada en su cuenta o colocando un aviso prominente en nuestro sitio.
+									</Typography>
+
+									<Divider sx={{ my: 4, borderColor: alpha(theme.palette.divider, 0.6) }} />
+
+									<Typography paragraph sx={bodySx}>
+										Si tiene alguna pregunta sobre esta Política de Privacidad, puede contactarnos a través de nuestro formulario de
+										contacto o por correo electrónico a{" "}
+										<Link href="mailto:soporte@lawanalytics.app" sx={linkSx}>
+											soporte@lawanalytics.app
+										</Link>
+										.
+									</Typography>
+
+									<LegalEntityBlock title="Responsable del tratamiento de datos" />
+								</>
+							)}
 						</MainCard>
 					</Grid>
 				</Grid>

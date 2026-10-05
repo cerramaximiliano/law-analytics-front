@@ -28,6 +28,7 @@ import {
 	Grid,
 	Stack,
 	Typography,
+	Link,
 	useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -56,6 +57,7 @@ import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 
 // tracking
 import { pushGTMEvent } from "utils/gtm";
+import { PRIVACY_CONNECTORS_URL } from "utils/mcpLegal";
 
 const BRAND_BLUE = "#3A7BFF";
 
@@ -129,13 +131,15 @@ const STEPS: Step[] = [
 	{
 		num: 4,
 		title: "Autorizá la conexión con tu cuenta",
-		body: "ChatGPT te va a redirigir a lawanalytics.app/oauth/login. Loguéate con tu cuenta habitual, revisá los permisos en la pantalla de consent, y aceptá. Listo: las 12 tools de Law||Analytics quedan disponibles en cualquier chat de ChatGPT.",
+		body: "ChatGPT te va a redirigir a lawanalytics.app/oauth/login. Loguéate con tu cuenta habitual, revisá los permisos en la pantalla de consent, y aceptá. Listo: las herramientas de Law||Analytics quedan disponibles en cualquier chat de ChatGPT.",
 	},
 ];
 
 interface FaqItem {
 	q: string;
 	a: string;
+	/** Link opcional al final de la respuesta (p. ej. a la política de privacidad). */
+	link?: { href: string; label: string };
 }
 
 const FAQ: FaqItem[] = [
@@ -148,16 +152,21 @@ const FAQ: FaqItem[] = [
 		a: "Sólo lo que le pidas. Las tools devuelven datos puntuales — buscar folders por texto, traer detalle de un folder específico (con su causa linkeada, movimientos, tareas, notas, etc.). ChatGPT NO recibe un dump completo de tu base. Cada query es explícita y queda en logs.",
 	},
 	{
-		q: "¿Cómo revoco el acceso?",
-		a: "Dos formas: (1) En ChatGPT → Settings → Apps & Connectors → Law Analytics → Disconnect. (2) En lawanalytics.app → Configuración → Apps conectadas → Desconectar. Ambas revocan el token inmediatamente.",
+		q: "¿Qué pasa con mis carpetas archivadas?",
+		a: "De las carpetas archivadas ChatGPT solo ve la carátula, el fuero y la jurisdicción. Para que pueda consultar el resto (movimientos, tareas, documentos, etc.) tenés que desarchivarla desde la app de Law||Analytics, sujeto al cupo de carpetas activas de tu plan.",
 	},
 	{
-		q: "¿Qué tools están disponibles?",
-		a: "12 tools cubriendo: búsqueda de folders, listado paginado, detalle completo (folder + causa + movimientos + counts), drill-downs por colección (movimientos, tareas, notas, eventos, cálculos, contactos, escritos), búsqueda semántica de sentencias judiciales (~80 mil), y consulta RAG sobre el contenido de un expediente específico.",
+		q: "¿Cómo revoco el acceso?",
+		a: "Dos formas: (1) En ChatGPT → Settings → Apps & Connectors → Law Analytics → Disconnect. (2) En lawanalytics.app → menú de perfil → Apps conectadas (IA) → Desconectar. Ambas revocan el token inmediatamente.",
+	},
+	{
+		q: "¿Qué información puede consultar?",
+		a: "Todo en modo lectura y solo de tus propias carpetas: carpetas (búsqueda, listado y detalle con la causa vinculada), movimientos, tareas, notas, eventos y agenda, calculadoras, contactos, modelos, documentos y seguimientos postales. Además, jurisprudencia: búsqueda de sentencias judiciales, preguntas sobre ellas y acceso a su texto.",
 	},
 	{
 		q: "¿Funciona con Claude.ai también?",
 		a: "Sí — el mismo addon mcp_access habilita Claude.ai y ChatGPT. El protocolo MCP es un estándar abierto. Si querés conectar Claude.ai, mirá /integraciones/conectores-ai. Cuando otros clientes (Gemini, Copilot, etc.) habiliten MCP los iremos sumando.",
+		link: { href: "/integraciones/conectores-ai", label: "Ver cómo conectar Claude.ai" },
 	},
 	{
 		q: "¿Qué plan de ChatGPT necesito?",
@@ -174,6 +183,7 @@ const FAQ: FaqItem[] = [
 	{
 		q: "¿Mis datos salen del país?",
 		a: "Las tools del MCP corren en nuestra infraestructura. ChatGPT (OpenAI) procesa los datos que vos le pasás en el chat — eso queda regido por la política de privacidad de OpenAI. No enviamos tu base completa a ningún lado, solo respondemos lo que cada query individual pide.",
+		link: { href: PRIVACY_CONNECTORS_URL, label: "Ver la Política de Privacidad — Conectores de IA" },
 	},
 ];
 
@@ -232,7 +242,7 @@ const ChatGptLandingPage = () => {
 						</Typography>
 						<Typography color="text.secondary">
 							{maintenanceMessage ||
-								"La integración con Claude.ai no está disponible en este momento. Volvé a intentar más tarde."}
+								"La integración con ChatGPT no está disponible en este momento. Volvé a intentar más tarde."}
 						</Typography>
 						<Button variant="contained" href="/" sx={{ mt: 2 }}>
 							Volver al inicio
@@ -312,7 +322,7 @@ const ChatGptLandingPage = () => {
 						Qué podés hacer
 					</Typography>
 					<Typography variant="body1" color="text.secondary" sx={{ textAlign: "center", mb: 4 }}>
-						Estos son ejemplos reales de lo que podés pedirle a Claude desde cualquier chat:
+						Estos son ejemplos reales de lo que podés pedirle a ChatGPT desde cualquier chat:
 					</Typography>
 					<Grid container spacing={2}>
 						{USE_CASES.map((uc, i) => (
@@ -417,7 +427,7 @@ const ChatGptLandingPage = () => {
 									Sólo lectura
 								</Typography>
 								<Typography variant="body2" color="text.secondary">
-									Claude no puede modificar, eliminar ni compartir tus datos.
+									ChatGPT no puede modificar, eliminar ni compartir tus datos.
 								</Typography>
 							</Stack>
 						</Grid>
@@ -428,11 +438,18 @@ const ChatGptLandingPage = () => {
 									Revocable al instante
 								</Typography>
 								<Typography variant="body2" color="text.secondary">
-									Cancelás desde Claude.ai o desde tu cuenta de Law||Analytics.
+									Cancelás desde ChatGPT o desde tu cuenta de Law||Analytics.
 								</Typography>
 							</Stack>
 						</Grid>
 					</Grid>
+					<Typography variant="body2" color="text.secondary" sx={{ mt: 4, textAlign: "center" }}>
+						Cómo tratamos la información que consultan los asistentes de IA:{" "}
+						<Link href={PRIVACY_CONNECTORS_URL} underline="hover" sx={{ fontWeight: 500 }}>
+							Política de Privacidad — Conectores de IA
+						</Link>
+						.
+					</Typography>
 				</Box>
 				</FadeInWhenVisible>
 
@@ -470,6 +487,14 @@ const ChatGptLandingPage = () => {
 								<AccordionDetails>
 									<Typography variant="body2" color="text.secondary" sx={{ pl: 4.5 }}>
 										{item.a}
+										{item.link && (
+											<>
+												{" "}
+												<Link href={item.link.href} underline="hover" sx={{ fontWeight: 500 }}>
+													{item.link.label}
+												</Link>
+											</>
+										)}
 									</Typography>
 								</AccordionDetails>
 							</Accordion>

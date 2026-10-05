@@ -14,7 +14,8 @@ import { ArrowRight2 } from "iconsax-react";
 
 // project-imports
 import PlanCard from "components/cards/PlanCard";
-import ApiService, { Plan } from "store/reducers/ApiService";
+import ApiService, { LEGAL_ACCEPTANCE_REQUIRED, Plan, PRIVACY_CONNECTORS_URL } from "store/reducers/ApiService";
+import McpAddonLegalDialog from "components/legal/McpAddonLegalDialog";
 import { PLANES_RESPALDO } from "data/planesRespaldo";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
@@ -91,6 +92,47 @@ const Plans = () => {
 	const [plans, setPlans] = useState<Plan[]>(PLANES_RESPALDO);
 	const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
 	const [addonBusy, setAddonBusy] = useState(false);
+	// Diálogo de aceptación legal del add-on (C-LEGAL-API). Solo se abre si el hub
+	// informa una política de privacidad activa; si no, el flujo es el de siempre.
+	const [legalDialog, setLegalDialog] = useState<{ version: string; privacyUrl: string; error: string | null } | null>(null);
+
+	const showAddonError = (message: string) =>
+		dispatch(openSnackbar({ open: true, message, variant: "alert", alert: { color: "error" }, close: true }));
+
+	// Checkout real del add-on. `acceptedPolicyVersion` viaja solo si hubo aceptación.
+	const purchaseMcpAddon = async (acceptedPolicyVersion: string | null) => {
+		try {
+			setAddonBusy(true);
+			const res = await ApiService.addAddon("mcp_access", acceptedPolicyVersion);
+			if (res.code === LEGAL_ACCEPTANCE_REQUIRED) {
+				// La política vigente cambió (o el front no la conocía): pedir aceptación
+				// de la versión actual antes de cobrar.
+				const versions = await ApiService.getLegalVersions();
+				if (versions.privacy) {
+					setLegalDialog({
+						version: versions.privacy,
+						privacyUrl: versions.privacyUrl,
+						error: acceptedPolicyVersion ? "La Política de Privacidad se actualizó. Revisala y volvé a aceptarla para continuar." : null,
+					});
+				} else {
+					showAddonError(res.message || "No se pudo verificar la aceptación de la Política de Privacidad. Intentá de nuevo.");
+				}
+				return;
+			}
+			if (res.success) {
+				setLegalDialog(null);
+				const msg = res.alreadyActive ? "El conector MCP ya estaba activo." : "Conector MCP agregado a tu suscripción. Procesando…";
+				dispatch(openSnackbar({ open: true, message: msg, variant: "alert", alert: { color: "success" }, close: false }));
+				// Redirigir a la página de integración después del éxito.
+				setTimeout(() => navigate(AI_INTEGRATION_PATH), 1500);
+			}
+		} catch (err) {
+			const message = err instanceof Error ? err.message : "Error al agregar el addon";
+			showAddonError(message);
+		} finally {
+			setAddonBusy(false);
+		}
+	};
 
 	// CTA contextual del banner MCP:
 	// - Anónimo                       → "Iniciar sesión" → /login?source=mcp-banner
@@ -126,22 +168,15 @@ const Plans = () => {
 			return;
 		}
 
-		// Paid sin addon → checkout real.
-		try {
-			setAddonBusy(true);
-			const res = await ApiService.addAddon("mcp_access");
-			if (res.success) {
-				const msg = res.alreadyActive ? "El conector MCP ya estaba activo." : "Conector MCP agregado a tu suscripción. Procesando…";
-				dispatch(openSnackbar({ open: true, message: msg, variant: "alert", alert: { color: "success" }, close: false }));
-				// Redirigir a la página de integración después del éxito.
-				setTimeout(() => navigate(AI_INTEGRATION_PATH), 1500);
-			}
-		} catch (err) {
-			const message = err instanceof Error ? err.message : "Error al agregar el addon";
-			dispatch(openSnackbar({ open: true, message, variant: "alert", alert: { color: "error" }, close: true }));
-		} finally {
-			setAddonBusy(false);
+		// Paid sin addon → si hay política activa, diálogo de aceptación; si no, checkout directo.
+		setAddonBusy(true);
+		const versions = await ApiService.getLegalVersions();
+		setAddonBusy(false);
+		if (versions.privacy) {
+			setLegalDialog({ version: versions.privacy, privacyUrl: versions.privacyUrl || PRIVACY_CONNECTORS_URL, error: null });
+			return;
 		}
+		await purchaseMcpAddon(null);
 	};
 
 	const mcpCtaLabel = !isLoggedIn
@@ -366,6 +401,19 @@ const Plans = () => {
 					</Box>
 				)}
 			</Container>
+
+			{legalDialog && (
+				<McpAddonLegalDialog
+					open
+					policyVersion={legalDialog.version}
+					privacyUrl={legalDialog.privacyUrl}
+					priceLabel={mcpPriceLabel}
+					busy={addonBusy}
+					error={legalDialog.error}
+					onCancel={() => setLegalDialog(null)}
+					onConfirm={(version) => purchaseMcpAddon(version)}
+				/>
+			)}
 		</Box>
 	);
 };

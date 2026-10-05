@@ -16,6 +16,17 @@ export interface EnrichedClient {
 	verified: boolean;
 	logo_url: string | null;
 	vendor_url: string | null;
+	/** Opcional (C-TOGGLES): proveedor derivado por el hub — "claude" | "chatgpt" | "other". */
+	provider?: string | null;
+	/** Opcional: redirect URIs del cliente, si el hub las expone. */
+	redirect_uris?: string[] | null;
+}
+
+/** Bloque legal del context (C-LEGAL-API). `privacy_version: null` = no se exige aceptación. */
+export interface OauthConsentLegal {
+	privacy_version: string | null;
+	privacy_url?: string | null;
+	previously_accepted_version: string | null;
 }
 
 export interface OauthUserInfo {
@@ -40,6 +51,8 @@ export interface OauthConsentContext {
 	requested_access_token_audience: string[];
 	plan_check: PlanCheckResult;
 	skip: boolean;
+	/** Ausente en hubs previos a la Etapa P → se trata como "sin exigencia". */
+	legal?: OauthConsentLegal | null;
 }
 
 export type OauthConsentContextState =
@@ -75,12 +88,14 @@ export function useOauthConsentContext(challenge: string | null): OauthConsentCo
 				if (cancelled) return;
 				const code = err.response?.data?.error || "request_failed";
 				const message =
-					err.response?.data?.error_description ||
-					(err.response?.status === 410
-						? "El enlace de autorización expiró. Reintentá desde la aplicación."
-						: err.response?.status === 400
-							? "El enlace de autorización es inválido o ya fue usado."
-							: "No se pudo cargar la solicitud de autorización. Intentá de nuevo en un momento.");
+					code === "provider_disabled"
+						? "Esta integración está deshabilitada temporalmente. Podés seguir usando Law||Analytics normalmente; volvé a intentar la conexión más tarde."
+						: err.response?.data?.error_description ||
+						  (err.response?.status === 410
+								? "El enlace de autorización expiró. Reintentá desde la aplicación."
+								: err.response?.status === 400
+								? "El enlace de autorización es inválido o ya fue usado."
+								: "No se pudo cargar la solicitud de autorización. Intentá de nuevo en un momento.");
 				setState({ status: "error", code, message });
 			});
 

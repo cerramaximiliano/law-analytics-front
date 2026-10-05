@@ -160,9 +160,7 @@ const ConnectedAppsPage = () => {
 								variant="outlined"
 								color="primary"
 								sx={{ mt: 3 }}
-								href="https://docs.lawanalytics.app/integraciones/claude-ai"
-								target="_blank"
-								rel="noopener"
+								href="/integraciones/conectores-ai"
 							>
 								Cómo conectar Claude.ai
 							</Button>
