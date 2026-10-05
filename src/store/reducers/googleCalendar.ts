@@ -461,6 +461,16 @@ export const disconnectGoogleCalendar = () => async (dispatch: any, getState: an
 
 		// Luego, desconectar de Google
 		await (await servicioGoogle()).signOut();
+
+		// Si el usuario había activado la sincronización automática, el hub guarda
+		// un refresh token cifrado: desvincular también lo borra (la Política de
+		// Privacidad lo promete). Best-effort: si no había autorización offline, el
+		// DELETE es un no-op; si falla, no frena la desconexión.
+		try {
+			await (await import("services/googleCalendarAutoSync")).revokeAutoSync();
+		} catch (revokeError) {
+			console.error("No se pudo revocar la sincronización automática de Google Calendar:", revokeError);
+		}
 		dispatch(resetState());
 
 		// Actualizar estado en el backend
