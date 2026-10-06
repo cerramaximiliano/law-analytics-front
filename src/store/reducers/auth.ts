@@ -571,7 +571,10 @@ export const fetchPaymentHistory = () => async (dispatch: any, getState: () => R
 		console.log("📋 [fetchPaymentHistory] Respuesta de /api/subscriptions/payments:", response.data);
 
 		if (response.data && response.data.success) {
-			const payments = response.data.data?.payments || response.data.payments || [];
+			// El hub responde `{ success, paymentHistory, customer }` (subscriptionController.getPaymentHistory).
+			// Hasta 2026-08 /me traía el historial y esto nunca se leía; desde que /me lo manda vacío,
+			// leer solo `payments` dejaba "Sin facturas todavía" con facturas pagadas.
+			const payments = response.data.paymentHistory || response.data.data?.payments || response.data.payments || [];
 			const customer = response.data.data?.customer || response.data.customer || null;
 
 			// Actualizar el estado con el historial de pagos
