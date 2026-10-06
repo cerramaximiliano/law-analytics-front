@@ -32,6 +32,10 @@ export interface OauthConsentLegal {
 export interface OauthUserInfo {
 	email: string;
 	name: string;
+	/** Plan real de la suscripción (el plan_check.plan puede ser "manual_grant"). */
+	subscription_plan?: "free" | "standard" | "pro" | "premium" | string;
+	/** Cómo accede al conector: por su plan + add-on, o por grant beta. */
+	access_via?: "plan" | "beta_grant";
 }
 
 export interface PlanCheckResult {

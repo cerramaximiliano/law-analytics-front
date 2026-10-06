@@ -75,6 +75,7 @@ function describeScope(scope: string): string {
  */
 const PLAN_DISPLAY_NAMES: Record<string, string> = {
 	standard: "Estándar",
+	pro: "Pro",
 	premium: "Premium",
 	free: "Gratis",
 };
@@ -255,6 +256,7 @@ const OauthConsentPage = () => {
 						clientName={clientName}
 						logoUrl={logoUrl}
 						verified={verified}
+						providerHints={[ctx.client.provider, ...(ctx.client.redirect_uris || []), ctx.client.vendor]}
 						action={`quiere conectarse a tu cuenta de lawanalytics`}
 					/>
 				</Grid>
@@ -265,10 +267,19 @@ const OauthConsentPage = () => {
 							Ingresaste como
 						</Typography>
 						<Typography variant="subtitle2">{userDisplay}</Typography>
-						{planCheck.plan && (
+						{ctx.user?.email && ctx.user.email !== userDisplay && (
+							<Typography variant="body2" color="text.secondary" sx={{ display: "block" }}>
+								{ctx.user.email}
+							</Typography>
+						)}
+						{(ctx.user?.subscription_plan || planCheck.plan) && (
 							<Typography variant="caption" color="text.secondary">
-								Plan: {describePlan(planCheck.plan)}
-								{planCheck.addon_status === "active" && " · MCP Access activo"}
+								Plan: {describePlan(ctx.user?.subscription_plan || planCheck.plan)}
+								{ctx.user?.access_via === "beta_grant"
+									? " · Acceso beta a conectores de IA"
+									: planCheck.addon_status === "active"
+										? " · Conector de IA activo"
+										: ""}
 							</Typography>
 						)}
 					</Box>
