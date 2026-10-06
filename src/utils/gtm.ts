@@ -350,6 +350,53 @@ export const trackOauthUpgradeView = (reason: string, plan?: string): void => {
 };
 
 // =============================================================================
+// Add-on "Conectores de IA" (mcp_access) — alta / baja
+// =============================================================================
+//
+// Complementan a los eventos ya mapeados en la-ads (`mcp_plans_cta_click`,
+// `mcp_landing_cta_click`), que se siguen emitiendo igual. Nuevos (sin etiqueta
+// GTM todavía — documentar en la-ads tracking-map § Conector MCP):
+//   - mcp_addon_cta_click      CTA del add-on fuera de /plans y las landings
+//                              (cuenta → suscripción, integraciones → asistentes)
+//   - mcp_addon_dialog_open    se abrió el diálogo de confirmación del alta
+//   - mcp_addon_purchase       alta confirmada por el hub (conversión)
+//   - mcp_addon_purchase_error el alta falló (tarjeta, SCA, plan…)
+//   - mcp_addon_cancel         baja confirmada
+
+export type McpAddonCtaLocation =
+	| "plans_page"
+	| "account_subscription"
+	| "integrations_ia"
+	| "landing_conectores"
+	| "landing_chatgpt"
+	| string;
+
+export const trackMcpAddonCtaClick = (ctaLocation: McpAddonCtaLocation, ctaKind: string, userState: string): void => {
+	pushGTMEvent("mcp_addon_cta_click", { cta_location: ctaLocation, cta_kind: ctaKind, user_state: userState });
+};
+
+export const trackMcpAddonDialogOpen = (ctaLocation: McpAddonCtaLocation, policyRequired: boolean): void => {
+	pushGTMEvent("mcp_addon_dialog_open", { cta_location: ctaLocation, policy_required: policyRequired });
+};
+
+export const trackMcpAddonPurchase = (
+	ctaLocation: McpAddonCtaLocation,
+	outcome: "active" | "already_active" | "payment_pending",
+	value: number | null,
+	currency: string,
+): void => {
+	pushGTMEvent("mcp_addon_purchase", { cta_location: ctaLocation, outcome, value: value ?? undefined, currency: currency.toUpperCase() });
+};
+
+export const trackMcpAddonPurchaseError = (ctaLocation: McpAddonCtaLocation, errorCode: string): void => {
+	pushGTMEvent("mcp_addon_purchase_error", { cta_location: ctaLocation, error_code: errorCode });
+};
+
+export const trackMcpAddonCancel = (ctaLocation: McpAddonCtaLocation): void => {
+	pushGTMEvent("mcp_addon_cancel", { cta_location: ctaLocation });
+};
+
+// =============================================================================
 // Vista pública de documentos de movimientos (/m/:token)
 //
 // El user llega desde el link "Ver documento" del email de movimientos nuevos,

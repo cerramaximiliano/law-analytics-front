@@ -2,6 +2,7 @@ import axios from "axios";
 import { StripeCustomersResponse } from "../../types/stripe-subscription";
 import { StripeCustomerHistory } from "../../types/stripe-history";
 import { Subscription as UserSubscription } from "../../types/user";
+import { MCP_ADDON_STATUS_PATH } from "../../types/mcpAddon";
 
 const API_BASE_URL = import.meta.env.VITE_BASE_URL; // Ajusta esto según tu configuración
 
@@ -132,6 +133,53 @@ export interface PublicAddon {
 }
 
 export const DEFAULT_PUBLIC_ADDONS: PublicAddon[] = [];
+
+/** Resultado de `ApiService.addAddon` (POST /api/subscriptions/addons/checkout). */
+export interface AddAddonResult {
+	success: boolean;
+	alreadyActive?: boolean;
+	pendingWebhookSync?: boolean;
+	addon?: { key: AddonKey; status: string; stripePriceId?: string; currentPeriodEnd: string | null };
+	message?: string;
+	/**
+	 * Código de negocio cuando `success:false`:
+	 *  - LEGAL_ACCEPTANCE_REQUIRED (400): aceptar la política vigente.
+	 *  - CARD_DECLINED (402): la tarjeta rechazó el cobro.
+	 *  - REQUIRES_ACTION (402 o 200): el banco pide autenticación (SCA / 3DS).
+	 *  - PAID_PLAN_REQUIRED / NO_PAID_SUBSCRIPTION (409): falta plan pago.
+	 *  - INVALID_ADDON, ADDON_PRICE_MISSING, …
+	 */
+	code?: string;
+	/** Con REQUIRES_ACTION: client_secret del PaymentIntent para confirmar con Stripe.js. */
+	clientSecret?: string | null;
+	/** Con REQUIRES_ACTION: clave publicable de Stripe para cargar Stripe.js (el front no la tiene en su env). */
+	publishableKey?: string | null;
+	/** Con REQUIRES_ACTION o pago fallido: página de factura de Stripe donde se completa el pago (no requiere Stripe.js). */
+	hostedInvoiceUrl?: string | null;
+}
+
+export interface RemoveAddonResult {
+	success: boolean;
+	message?: string;
+	/** Si la baja es a fin de período: fecha en que se quita (ISO). null = se quitó en el momento. */
+	cancelAt?: string | null;
+}
+
+export const ADDON_REQUIRES_ACTION = "REQUIRES_ACTION";
+
+/** Acepta tanto `code: "REQUIRES_ACTION"` como `requires_action: true` / `status: "requires_action"` y snake_case. */
+export function normalizeAddAddonResponse(data: any): AddAddonResult {
+	const d = data && typeof data === "object" ? data : {};
+	const requiresAction = d.code === ADDON_REQUIRES_ACTION || d.requires_action === true || d.status === "requires_action";
+	return {
+		...d,
+		success: d.success === true && !requiresAction,
+		code: requiresAction ? ADDON_REQUIRES_ACTION : d.code,
+		clientSecret: d.clientSecret || d.client_secret || null,
+		publishableKey: d.publishableKey || d.publishable_key || null,
+		hostedInvoiceUrl: d.hostedInvoiceUrl || d.hosted_invoice_url || null,
+	};
+}
 
 export type PublicPlansResponse = ApiResponse<Plan[]> & { integrations?: PublicIntegrations; addons?: PublicAddon[] };
 
@@ -949,51 +997,58 @@ class ApiService {
 
 	/**
 	 * Agregar addon a la subscription paga del user.
-	 * El backend hace stripe.subscriptions.update + el webhook de la-subscriptions
-	 * sincroniza el campo addons[] cuando llega (~1-2s después).
+	 * El backend hace stripe.subscriptions.update + sincroniza addons[] en el momento
+	 * (y el webhook de Stripe lo vuelve a sincronizar).
+	 *
+	 * Nunca tira por errores "de negocio": los devuelve con `success:false` + `code`
+	 * para que la UI muestre el mensaje correcto (ver `AddAddonResult`). Solo tira
+	 * ante errores de red / 5xx sin cuerpo.
 	 */
-	static async addAddon(
-		addonKey: AddonKey,
-		acceptedPolicyVersion?: string | null,
-	): Promise<{
-		success: boolean;
-		alreadyActive?: boolean;
-		pendingWebhookSync?: boolean;
-		addon?: { key: AddonKey; status: string; stripePriceId: string; currentPeriodEnd: string | null };
-		message?: string;
-		/** "LEGAL_ACCEPTANCE_REQUIRED" cuando el hub exige aceptar la política vigente (C-LEGAL-API). */
-		code?: string;
-	}> {
+	static async addAddon(addonKey: AddonKey, acceptedPolicyVersion?: string | null): Promise<AddAddonResult> {
 		try {
 			const body: { addonKey: AddonKey; acceptedPolicyVersion?: string } = { addonKey };
 			if (acceptedPolicyVersion) body.acceptedPolicyVersion = acceptedPolicyVersion;
 			const response = await axios.post(`${API_BASE_URL}/api/subscriptions/addons/checkout`, body, { withCredentials: true });
-			return response.data;
+			return normalizeAddAddonResponse(response.data);
 		} catch (error) {
-			// 400 LEGAL_ACCEPTANCE_REQUIRED: no es un error "real" — la UI tiene que
-			// (re)abrir el diálogo de aceptación con la versión vigente.
-			if (axios.isAxiosError(error) && error.response?.data?.code === LEGAL_ACCEPTANCE_REQUIRED) {
-				return {
-					success: false,
-					code: LEGAL_ACCEPTANCE_REQUIRED,
-					message: error.response.data.message || "Tenés que aceptar la Política de Privacidad vigente.",
-				};
+			// 400 LEGAL_ACCEPTANCE_REQUIRED, 402 CARD_DECLINED / REQUIRES_ACTION, 409 PAID_PLAN_REQUIRED…:
+			// no son errores "reales" — la UI decide qué mostrar según `code`.
+			if (axios.isAxiosError(error) && error.response?.data && typeof error.response.data === "object") {
+				const data = error.response.data as Record<string, any>;
+				if (data.code || data.requires_action || data.status === "requires_action") {
+					return normalizeAddAddonResponse({ ...data, success: false });
+				}
 			}
 			throw this.handleAxiosError(error);
 		}
 	}
 
 	/**
-	 * Remover un addon de la subscription. Stripe prorratea automáticamente.
+	 * Quitar un addon de la subscription. Hoy el hub lo borra en el momento (Stripe
+	 * prorratea); si en el futuro pasa a "fin de período", devuelve `cancelAt`.
 	 */
-	static async removeAddon(addonKey: AddonKey): Promise<{ success: boolean; message?: string }> {
+	static async removeAddon(addonKey: AddonKey): Promise<RemoveAddonResult> {
 		try {
 			const response = await axios.delete(`${API_BASE_URL}/api/subscriptions/addons/${addonKey}`, {
 				withCredentials: true,
 			});
-			return response.data;
+			return { ...response.data, cancelAt: response.data?.cancelAt || response.data?.cancel_at || null };
 		} catch (error) {
 			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * GET consolidado del add-on (contrato en types/mcpAddon.ts). Devuelve el cuerpo crudo;
+	 * `useMcpAddon` lo normaliza y, si el hub responde 404 (endpoint aún no deployado),
+	 * cae al armado con los endpoints viejos.
+	 */
+	static async getMcpAddonStatus(): Promise<{ ok: true; data: unknown } | { ok: false; status: number | null }> {
+		try {
+			const response = await axios.get(`${API_BASE_URL}${MCP_ADDON_STATUS_PATH}`, { withCredentials: true, timeout: 8000 });
+			return { ok: true, data: response.data };
+		} catch (error) {
+			return { ok: false, status: axios.isAxiosError(error) ? error.response?.status ?? null : null };
 		}
 	}
 
