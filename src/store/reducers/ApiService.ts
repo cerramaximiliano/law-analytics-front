@@ -1392,10 +1392,7 @@ class ApiService {
 	 */
 	static async cancelScheduledDowngrade(): Promise<any> {
 		try {
-			const response = await axios.post("/api/subscriptions/cancel-downgrade", {
-				withCredentials: true,
-			});
-			console.log(response.data);
+			const response = await axios.post(`${API_BASE_URL}/api/subscriptions/cancel-downgrade`, {}, { withCredentials: true });
 			return response.data;
 		} catch (error: any) {
 			return {
@@ -1412,13 +1409,7 @@ class ApiService {
 	 */
 	static async changeImmediate(planId: string): Promise<any> {
 		try {
-			const response = await axios.post(
-				"/api/subscriptions/change-immediate",
-				{ planId },
-				{
-					withCredentials: true,
-				},
-			);
+			const response = await axios.post(`${API_BASE_URL}/api/subscriptions/change-immediate`, { planId }, { withCredentials: true });
 			return response.data;
 		} catch (error: any) {
 			return {
@@ -1437,7 +1428,7 @@ class ApiService {
 	 */
 	static async scheduleChange(planId: string): Promise<any> {
 		try {
-			const response = await axios.post("/api/subscriptions/schedule-change", { planId }, { withCredentials: true });
+			const response = await axios.post(`${API_BASE_URL}/api/subscriptions/schedule-change`, { planId }, { withCredentials: true });
 			return response.data;
 		} catch (error: any) {
 			return {
