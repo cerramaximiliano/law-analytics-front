@@ -56,6 +56,7 @@ function statusTone(addon: McpAddonStatus | null, theme: Theme): Tone | null {
 	if (addon.status === "incomplete") return { color: STALE_AMBER, label: "Cobro incompleto" };
 	if (addon.status === "canceling") {
 		const d = formatAddonDate(addon.endsAt);
+		if (addon.cancellationSource === "addon") return { color: STALE_AMBER, label: d ? `Activo hasta el ${d}` : "Baja programada" };
 		return { color: theme.palette.text.secondary, label: d ? `Se cancela el ${d}` : "Se cancela" };
 	}
 	if (addon.access.via === "beta_grant") return { color: BRAND_BLUE, label: "Acceso beta" };
@@ -83,6 +84,13 @@ function statusDetail(addon: McpAddonStatus | null, cta: McpCtaKind): { icon: JS
 		};
 	if (addon.status === "canceling") {
 		const d = formatAddonDate(addon.endsAt);
+		if (addon.cancellationSource === "addon")
+			return {
+				icon: <InfoCircle size={16} variant="Bulk" />,
+				text: d
+					? `Diste de baja el add-on: seguís con acceso hasta el ${d} y no se cobra el próximo período. Podés reactivarlo antes sin costo.`
+					: "Diste de baja el add-on: seguís con acceso hasta el fin del período y no se cobra el próximo. Podés reactivarlo antes sin costo.",
+			};
 		return {
 			icon: <InfoCircle size={16} variant="Bulk" />,
 			text: d
@@ -176,7 +184,7 @@ const McpAddonCard = ({ variant, location, onUpgradeClick, onBetaRequest }: Prop
 	const { isLoggedIn } = useAuth();
 	const { addon, loading } = useMcpAddon();
 	const { addons: publicAddons } = usePublicAddons();
-	const { startPurchase, startCancel, openBillingPortal, busy, dialogs } = useMcpAddonActions({ location });
+	const { startPurchase, startCancel, reactivate, openBillingPortal, busy, dialogs } = useMcpAddonActions({ location });
 
 	const publicAddon = publicAddons.find((a) => a.key === "mcp_access") || null;
 	const price =
@@ -262,6 +270,7 @@ const McpAddonCard = ({ variant, location, onUpgradeClick, onBetaRequest }: Prop
 			!(cta === "reactivate" && location === "account_subscription") &&
 			(cta !== "beta_request" || !!onBetaRequest));
 	const canCancel = !!addon?.canRemove;
+	const canReactivate = !!addon?.canReactivate;
 
 	const primaryButton = showPrimary && (
 		<Button
@@ -293,6 +302,17 @@ const McpAddonCard = ({ variant, location, onUpgradeClick, onBetaRequest }: Prop
 			{canCancel && variant === "panel" && location === "account_subscription" && (
 				<Button color="error" onClick={startCancel} disabled={busy} sx={{ textTransform: "none", fontWeight: 600 }}>
 					Quitar add-on
+				</Button>
+			)}
+			{canReactivate && variant === "panel" && (
+				<Button
+					variant="outlined"
+					onClick={reactivate}
+					disabled={busy}
+					startIcon={busy ? <CircularProgress size={14} color="inherit" /> : undefined}
+					sx={{ textTransform: "none", fontWeight: 600 }}
+				>
+					Reactivar add-on
 				</Button>
 			)}
 		</>

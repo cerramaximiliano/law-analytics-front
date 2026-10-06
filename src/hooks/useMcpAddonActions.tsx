@@ -3,9 +3,10 @@
  *
  * Un único flujo para todas las pantallas (/plans, cuenta → suscripción, integraciones →
  * asistentes de IA, landings): confirmación con precio + checkbox de política (P4),
- * checkout (errores 402/409 del hub, sin cargo), re-lectura del GET y baja inmediata con confirmación.
+ * checkout (errores 402/409 del hub, sin cargo), re-lectura del GET, baja a fin de período con
+ * confirmación (misma política que la suscripción) y reactivación antes de esa fecha (sin cobro).
  *
- *   const { startPurchase, startCancel, busy, dialogs } = useMcpAddonActions({ location: "plans_page" });
+ *   const { startPurchase, startCancel, reactivate, busy, dialogs } = useMcpAddonActions({ location: "plans_page" });
  *   ...
  *   {dialogs}
  */
@@ -24,9 +25,10 @@ import {
 	trackMcpAddonDialogOpen,
 	trackMcpAddonPurchase,
 	trackMcpAddonPurchaseError,
+	trackMcpAddonReactivate,
 	type McpAddonCtaLocation,
 } from "utils/gtm";
-import { MCP_ADDON_NAME } from "utils/mcpAddonState";
+import { formatAddonDate, MCP_ADDON_NAME } from "utils/mcpAddonState";
 import { formatMonthlyPrice } from "utils/mcpBannerCopy";
 
 export const MCP_INTEGRATIONS_PATH = "/apps/profiles/account/pjn?view=ia";
@@ -220,17 +222,55 @@ const useMcpAddonActions = ({ location, onActivated }: Options) => {
 		setBusy(true);
 		try {
 			const res = await ApiService.removeAddon("mcp_access");
-			if (!res.success) throw new Error(res.message || "No pudimos quitar el add-on.");
+			if (!res.success) {
+				throw new Error(
+					res.code === "SUBSCRIPTION_CANCELING"
+						? "Tu suscripción ya está programada para cancelarse: el add-on termina con ella."
+						: res.message || "No pudimos dar de baja el add-on.",
+				);
+			}
 			trackMcpAddonCancel(location);
 			setCancelDialog(null);
 			await refresh();
-			snackbar(`Quitamos ${MCP_ADDON_NAME}. Tus asistentes ya no pueden consultar tu cuenta.`, "info");
+			const until = formatAddonDate(res.endsAt || addon?.nextBillingDate || null);
+			snackbar(
+				until
+					? `Listo: ${MCP_ADDON_NAME} sigue activo hasta el ${until} y no se renueva. Podés reactivarlo antes de esa fecha.`
+					: `Listo: ${MCP_ADDON_NAME} sigue activo hasta el fin del período y no se renueva.`,
+				"info",
+			);
 		} catch (err) {
-			setCancelDialog({ error: err instanceof Error ? err.message : "No pudimos quitar el add-on. Intentá de nuevo." });
+			setCancelDialog({ error: err instanceof Error ? err.message : "No pudimos dar de baja el add-on. Intentá de nuevo." });
 		} finally {
 			setBusy(false);
 		}
 	};
+
+	/** Deshace la baja programada (sin cobro: el período en curso ya está pago). */
+	const reactivate = useCallback(async () => {
+		setBusy(true);
+		try {
+			const res = await ApiService.reactivateAddon("mcp_access");
+			if (!res.success) {
+				if (res.code === "SUBSCRIPTION_CANCELING") {
+					snackbar("Tu suscripción está programada para cancelarse. Reactivala primero desde Suscripción.", "warning");
+				} else if (res.code === "ADDON_NOT_ACTIVE") {
+					snackbar(`${MCP_ADDON_NAME} ya terminó. Podés volver a contratarlo.`, "warning");
+				} else {
+					snackbar(res.message || `No pudimos reactivar ${MCP_ADDON_NAME}. Intentá de nuevo.`, "error");
+				}
+				await refresh();
+				return;
+			}
+			trackMcpAddonReactivate(location);
+			await refresh();
+			snackbar(`Reactivaste ${MCP_ADDON_NAME}: se renueva junto con tu plan.`, "success");
+		} catch (err) {
+			snackbar(err instanceof Error ? err.message : `No pudimos reactivar ${MCP_ADDON_NAME}. Intentá de nuevo.`, "error");
+		} finally {
+			setBusy(false);
+		}
+	}, [location, refresh, snackbar]);
 
 	const dialogs = (
 		<>
@@ -253,6 +293,7 @@ const useMcpAddonActions = ({ location, onActivated }: Options) => {
 					busy={busy}
 					error={cancelDialog.error}
 					keepsBetaAccess={addon?.access.via === "beta_grant"}
+					accessUntil={addon?.nextBillingDate || null}
 					onCancel={() => setCancelDialog(null)}
 					onConfirm={confirmCancel}
 				/>
@@ -260,7 +301,7 @@ const useMcpAddonActions = ({ location, onActivated }: Options) => {
 		</>
 	);
 
-	return { startPurchase, startCancel, openBillingPortal, busy, dialogs };
+	return { startPurchase, startCancel, reactivate, openBillingPortal, busy, dialogs };
 };
 
 export default useMcpAddonActions;

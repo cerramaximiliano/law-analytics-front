@@ -161,8 +161,32 @@ export interface AddAddonResult {
 	privacyUrl?: string | null;
 }
 
+/**
+ * DELETE /api/subscriptions/addons/:key — baja programada a fin de período (misma política
+ * que la suscripción): `status: "canceling"`, acceso hasta `endsAt`, sin crédito.
+ * `success:false` + code: SUBSCRIPTION_CANCELING (la suscripción ya termina: el add-on se va
+ * con ella), ADDON_NOT_ACTIVE, NO_SUBSCRIPTION.
+ */
 export interface RemoveAddonResult {
 	success: boolean;
+	status?: "canceling";
+	endsAt?: string | null;
+	alreadyScheduled?: boolean;
+	code?: string;
+	message?: string;
+}
+
+/**
+ * POST /api/subscriptions/addons/:key/reactivate — deshace la baja programada (sin cobro).
+ * `reactivated:false` + code NOT_CANCELING si no había baja. `success:false` + code:
+ * ADDON_NOT_ACTIVE (ya terminó: contratarlo de nuevo), SUBSCRIPTION_CANCELING (reactivar
+ * primero la suscripción), NO_SUBSCRIPTION.
+ */
+export interface ReactivateAddonResult {
+	success: boolean;
+	status?: "active";
+	reactivated?: boolean;
+	code?: string;
 	message?: string;
 }
 
@@ -1007,8 +1031,8 @@ class ApiService {
 	}
 
 	/**
-	 * Quitar un addon de la subscription. Baja inmediata: el hub borra el item de Stripe
-	 * con crédito prorrateado y revoca el acceso de los asistentes.
+	 * Dar de baja un addon: se programa su fin al cierre del período actual (sin crédito; el
+	 * acceso sigue hasta `endsAt`, cuando el hub revoca). Errores de negocio → `success:false` + code.
 	 */
 	static async removeAddon(addonKey: AddonKey): Promise<RemoveAddonResult> {
 		try {
@@ -1017,6 +1041,24 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
+			if (axios.isAxiosError(error) && error.response?.data && typeof error.response.data === "object") {
+				const data = error.response.data as Record<string, any>;
+				if (data.code) return { ...data, success: false } as RemoveAddonResult;
+			}
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/** Reactivar un addon con baja programada (antes de `endsAt`, sin cobro). */
+	static async reactivateAddon(addonKey: AddonKey): Promise<ReactivateAddonResult> {
+		try {
+			const response = await axios.post(`${API_BASE_URL}/api/subscriptions/addons/${addonKey}/reactivate`, {}, { withCredentials: true });
+			return response.data;
+		} catch (error) {
+			if (axios.isAxiosError(error) && error.response?.data && typeof error.response.data === "object") {
+				const data = error.response.data as Record<string, any>;
+				if (data.code) return { ...data, success: false } as ReactivateAddonResult;
+			}
 			throw this.handleAxiosError(error);
 		}
 	}

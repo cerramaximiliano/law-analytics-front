@@ -116,6 +116,38 @@ describe("normalizeMcpAddonStatus (contrato real del hub)", () => {
 		expect(resolveMcpCta(incomplete, true)).toBe("fix_payment");
 	});
 
+	it("baja programada del add-on → canceling reactivable, sin quitar, con acceso hasta endsAt", () => {
+		const s = normalizeMcpAddonStatus(
+			hub({
+				status: "canceling",
+				purchasable: false,
+				canRemove: false,
+				canReactivate: true,
+				cancellationSource: "addon",
+				endsAt: "2026-11-06T12:00:00Z",
+			}),
+		)!;
+		expect(s).toMatchObject({
+			status: "canceling",
+			cancellationSource: "addon",
+			canReactivate: true,
+			canRemove: false,
+			endsAt: "2026-11-06T12:00:00.000Z",
+			access: { allowed: true, via: "addon", reason: null },
+		});
+		expect(resolveMcpCta(s, true)).toBe("connect");
+		expect(mcpUserState(s, true)).toBe("has_addon");
+	});
+
+	it("canceling por la suscripción (o hub viejo sin cancellationSource) → no reactivable desde el add-on", () => {
+		const bySub = normalizeMcpAddonStatus(hub({ status: "canceling", cancellationSource: "subscription", canReactivate: false }))!;
+		expect(bySub).toMatchObject({ cancellationSource: "subscription", canReactivate: false });
+		const legacy = normalizeMcpAddonStatus(hub({ status: "canceling", canReactivate: true }))!;
+		expect(legacy).toMatchObject({ cancellationSource: "subscription", canReactivate: false });
+		const active = normalizeMcpAddonStatus(hub({ status: "active", canReactivate: true, cancellationSource: "addon" }))!;
+		expect(active).toMatchObject({ cancellationSource: null, canReactivate: false });
+	});
+
 	it("motivos de elegibilidad → CTA", () => {
 		const cta = (eligibilityReason: string, plan = "standard") =>
 			resolveMcpCta(normalizeMcpAddonStatus(hub({ eligible: false, eligibilityReason, plan, purchasable: false }))!, true);
@@ -194,7 +226,36 @@ describe("deriveMcpAddonFallback (hub sin el GET consolidado)", () => {
 		expect(active).toMatchObject({ status: "active", nextBillingDate: "2026-11-06T12:00:00.000Z", canRemove: true });
 		expect(resolveMcpCta(active, true)).toBe("connect");
 		const canceling = deriveMcpAddonFallback(input({ subscription: { ...sub, cancelAtPeriodEnd: true }, access: access(true, "ok") }));
-		expect(canceling).toMatchObject({ status: "canceling", endsAt: "2026-11-06T12:00:00.000Z", canRemove: false });
+		expect(canceling).toMatchObject({
+			status: "canceling",
+			endsAt: "2026-11-06T12:00:00.000Z",
+			canRemove: false,
+			cancellationSource: "subscription",
+			canReactivate: false,
+		});
+	});
+
+	it("baja programada del add-on (addons[].cancelAtPeriodEnd) → canceling reactivable con endsAt = cancelAt", () => {
+		const s = deriveMcpAddonFallback(
+			input({
+				subscription: {
+					plan: "standard",
+					status: "active",
+					currentPeriodEnd: "2026-11-06T12:00:00.000Z",
+					addons: [{ key: "mcp_access", status: "active", cancelAtPeriodEnd: true, cancelAt: "2026-11-07T00:00:00.000Z" }],
+				},
+				access: access(true, "ok"),
+			}),
+		);
+		expect(s).toMatchObject({
+			status: "canceling",
+			cancellationSource: "addon",
+			canReactivate: true,
+			canRemove: false,
+			nextBillingDate: null,
+			endsAt: "2026-11-07T00:00:00.000Z",
+		});
+		expect(resolveMcpCta(s, true)).toBe("connect");
 	});
 
 	it("suscripción past_due → no se vende (subscription_inactive), como el hub", () => {

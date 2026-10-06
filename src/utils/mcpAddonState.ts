@@ -13,6 +13,7 @@ import {
 	MCP_ADDON_KEY,
 	type McpAddonAvailabilityReason,
 	type McpAddonBillingStatus,
+	type McpAddonCancellationSource,
 	type McpAddonEligibilityReason,
 	type McpAddonStatus,
 } from "types/mcpAddon";
@@ -88,6 +89,9 @@ export function normalizeMcpAddonStatus(raw: unknown, opts: { isTeamMember?: boo
 	// El add-on lo contrata el titular: un miembro de equipo no compra desde su cuenta.
 	if (opts.isTeamMember && status === "none") eligibilityReason = "team_member";
 	const legal = a.legal && typeof a.legal === "object" ? a.legal : null;
+	// Hub previo a la baja programada: canceling solo podía venir de la suscripción.
+	const cancellationSource: McpAddonCancellationSource =
+		status !== "canceling" ? null : a.cancellationSource === "addon" ? "addon" : "subscription";
 
 	return {
 		key: MCP_ADDON_KEY,
@@ -105,7 +109,9 @@ export function normalizeMcpAddonStatus(raw: unknown, opts: { isTeamMember?: boo
 		maintenanceMessage: typeof a.maintenanceMessage === "string" && a.maintenanceMessage ? a.maintenanceMessage : null,
 		adminBypass: a.adminBypass === true,
 		purchasable: a.purchasable === true && eligibilityReason === null,
-		canRemove: a.canRemove === true,
+		canRemove: a.canRemove === true && status !== "canceling",
+		canReactivate: status === "canceling" && cancellationSource === "addon" && a.canReactivate === true,
+		cancellationSource,
 		nextBillingDate: toIso(a.nextBillingDate),
 		endsAt: toIso(a.endsAt),
 		hasManualGrant,
@@ -131,7 +137,14 @@ export interface SubscriptionLike {
 	accountStatus?: string | null;
 	cancelAtPeriodEnd?: boolean | null;
 	currentPeriodEnd?: string | Date | null;
-	addons?: Array<{ key?: string; status?: string; currentPeriodEnd?: string | Date | null }> | null;
+	addons?: Array<{
+		key?: string;
+		status?: string;
+		currentPeriodEnd?: string | Date | null;
+		/** Baja programada del add-on (hub: addons[].cancelAtPeriodEnd / cancelAt). */
+		cancelAtPeriodEnd?: boolean | null;
+		cancelAt?: string | Date | null;
+	}> | null;
 }
 
 export interface FallbackInput {
@@ -153,14 +166,26 @@ export function deriveMcpAddonFallback(input: FallbackInput): McpAddonStatus {
 	const addon = (subscription?.addons || []).find((a) => a?.key === MCP_ADDON_KEY && a.status !== "canceled") || null;
 
 	let status: McpAddonBillingStatus = "none";
+	let cancellationSource: McpAddonCancellationSource = null;
 	if (addon) {
-		if (subscription?.cancelAtPeriodEnd) status = "canceling";
-		else if (addon.status === "past_due") status = "past_due";
+		if (subscription?.cancelAtPeriodEnd) {
+			status = "canceling";
+			cancellationSource = "subscription";
+		} else if (addon.cancelAtPeriodEnd) {
+			status = "canceling";
+			cancellationSource = "addon";
+		} else if (addon.status === "past_due") status = "past_due";
 		else if (addon.status === "incomplete") status = "incomplete";
 		else status = "active";
 	}
 
 	const periodEnd = toIso(addon?.currentPeriodEnd) || toIso(subscription?.currentPeriodEnd);
+	const endsAt =
+		status !== "canceling"
+			? null
+			: cancellationSource === "addon"
+			? toIso(addon?.cancelAt) || periodEnd
+			: toIso(subscription?.currentPeriodEnd) || periodEnd;
 	const maintenance = !!access && !!(access.providers.claude.reason === "maintenance" || access.providers.chatgpt.reason === "maintenance");
 	const anyPublic = access ? access.providers.claude.publicEnabled || access.providers.chatgpt.publicEnabled : input.publicIntegrationsOpen;
 	const availabilityReason: McpAddonAvailabilityReason = maintenance ? "maintenance" : anyPublic ? null : "not_public";
@@ -200,8 +225,10 @@ export function deriveMcpAddonFallback(input: FallbackInput): McpAddonStatus {
 		adminBypass: false,
 		purchasable: status === "none" && eligibilityReason === null && publicAvailable && priceAmount !== null,
 		canRemove: status !== "none" && status !== "canceling",
+		canReactivate: cancellationSource === "addon",
+		cancellationSource,
 		nextBillingDate: status === "active" || status === "past_due" ? periodEnd : null,
-		endsAt: status === "canceling" ? periodEnd : null,
+		endsAt,
 		hasManualGrant,
 		legal: null,
 		access: accessInfo,

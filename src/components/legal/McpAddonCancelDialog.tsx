@@ -1,13 +1,14 @@
 /**
- * Confirmación de la baja del add-on "Conectores de IA". La baja es inmediata con
- * crédito prorrateado (hub `removeAddon`): explica que se desconectan los asistentes
- * (el hub revoca consents y tokens activos al quitarlo).
+ * Confirmación de la baja del add-on "Conectores de IA". Misma política que la
+ * suscripción (hub `removeAddon`): se programa para el fin del período pago, sin
+ * reintegro; los asistentes siguen conectados hasta esa fecha (ahí el hub revoca
+ * consents y tokens) y se puede reactivar antes sin cargo.
  */
 
 import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from "@mui/material";
 import { Warning2 } from "iconsax-react";
 
-import { MCP_ADDON_NAME } from "utils/mcpAddonState";
+import { formatAddonDate, MCP_ADDON_NAME } from "utils/mcpAddonState";
 
 interface Props {
 	open: boolean;
@@ -15,11 +16,22 @@ interface Props {
 	error?: string | null;
 	/** Acceso por grant beta: aunque quite el add-on, sigue conectado. */
 	keepsBetaAccess?: boolean;
+	/** Fin del período pago (ISO): hasta ahí sigue el acceso. Es el próximo cobro del add-on. */
+	accessUntil?: string | null;
 	onCancel: () => void;
 	onConfirm: () => void;
 }
 
-const McpAddonCancelDialog = ({ open, busy = false, error = null, keepsBetaAccess = false, onCancel, onConfirm }: Props) => {
+const McpAddonCancelDialog = ({
+	open,
+	busy = false,
+	error = null,
+	keepsBetaAccess = false,
+	accessUntil = null,
+	onCancel,
+	onConfirm,
+}: Props) => {
+	const until = formatAddonDate(accessUntil);
 	return (
 		<Dialog open={open} onClose={busy ? undefined : onCancel} maxWidth="xs" fullWidth aria-labelledby="mcp-addon-cancel-title">
 			<DialogTitle id="mcp-addon-cancel-title" sx={{ fontWeight: 600 }}>
@@ -32,14 +44,16 @@ const McpAddonCancelDialog = ({ open, busy = false, error = null, keepsBetaAcces
 							<Warning2 size={20} variant="Bulk" />
 						</Box>
 						<Typography variant="body2">
-							{keepsBetaAccess
-								? "Tu cuenta tiene acceso beta, así que tus asistentes van a seguir conectados aunque quites el add-on."
-								: "La baja es inmediata: Claude.ai, ChatGPT y cualquier otro asistente que hayas autorizado se desconectan en el momento y dejan de poder consultar tu cuenta."}
+							{until
+								? `Seguís teniendo acceso hasta el ${until}; no se cobra el próximo período.`
+								: "Seguís teniendo acceso hasta el final del período que ya pagaste; no se cobra el próximo período."}
 						</Typography>
 					</Stack>
 					<Typography variant="body2" color="text.secondary">
-						La parte del mes que no usaste queda como crédito prorrateado en tu próxima factura. Si lo volvés a activar, vas a tener que
-						autorizar cada asistente de nuevo.
+						{keepsBetaAccess
+							? "Tu cuenta tiene acceso beta, así que tus asistentes van a seguir conectados también después de esa fecha."
+							: "Ese día Claude.ai, ChatGPT y cualquier otro asistente que hayas autorizado se desconectan. No hay reintegro por el período en curso."}{" "}
+						Hasta entonces podés reactivarlo sin costo.
 					</Typography>
 					{error && <Alert severity="error">{error}</Alert>}
 				</Stack>
@@ -56,7 +70,7 @@ const McpAddonCancelDialog = ({ open, busy = false, error = null, keepsBetaAcces
 					startIcon={busy ? <CircularProgress size={16} color="inherit" /> : undefined}
 					sx={{ textTransform: "none" }}
 				>
-					{busy ? "Quitando…" : "Quitar add-on"}
+					{busy ? "Procesando…" : "Dar de baja"}
 				</Button>
 			</DialogActions>
 		</Dialog>

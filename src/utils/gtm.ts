@@ -361,7 +361,8 @@ export const trackOauthUpgradeView = (reason: string, plan?: string): void => {
 //   - mcp_addon_dialog_open    se abrió el diálogo de confirmación del alta
 //   - mcp_addon_purchase       alta confirmada por el hub (conversión)
 //   - mcp_addon_purchase_error el alta falló (error_code = code del hub: CARD_DECLINED, PAYMENT_REQUIRES_ACTION, …)
-//   - mcp_addon_cancel         baja confirmada
+//   - mcp_addon_cancel         baja programada (fin de período) confirmada
+//   - mcp_addon_reactivate     baja programada deshecha antes del fin del período
 
 export type McpAddonCtaLocation =
 	| "plans_page"
@@ -394,6 +395,10 @@ export const trackMcpAddonPurchaseError = (ctaLocation: McpAddonCtaLocation, err
 
 export const trackMcpAddonCancel = (ctaLocation: McpAddonCtaLocation): void => {
 	pushGTMEvent("mcp_addon_cancel", { cta_location: ctaLocation });
+};
+
+export const trackMcpAddonReactivate = (ctaLocation: McpAddonCtaLocation): void => {
+	pushGTMEvent("mcp_addon_reactivate", { cta_location: ctaLocation });
 };
 
 // =============================================================================

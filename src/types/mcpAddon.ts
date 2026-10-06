@@ -7,7 +7,12 @@
  *
  *   GET    /api/subscriptions/addons/mcp_access     → 200 { success: true, addon: HubMcpAddonStatus }
  *   POST   /api/subscriptions/addons/checkout       { addonKey, acceptedPolicyVersion? }
- *   DELETE /api/subscriptions/addons/mcp_access     (baja inmediata, crédito prorrateado)
+ *   DELETE /api/subscriptions/addons/mcp_access     baja programada a fin de período (misma política que la
+ *                                                   suscripción: sin crédito, acceso hasta `endsAt`)
+ *                                                   → 200 { success, status: "canceling", endsAt }
+ *   POST   /api/subscriptions/addons/mcp_access/reactivate   deshace la baja antes de `endsAt`, sin cobro
+ *                                                   → 200 { success, status: "active", reactivated }
+ *   (POST /checkout sobre un add-on en canceling también lo reactiva sin cobrar.)
  *
  * Mientras el GET no exista (404, el front puede salir antes que el hub) o falle,
  * `useMcpAddon` arma el mismo modelo con `/api/connected-apps/access` + la suscripción
@@ -31,8 +36,15 @@ export type McpAddonBillingStatus =
 	| "past_due"
 	/** El cobro inicial no se completó. */
 	| "incomplete"
-	/** La suscripción se cancela al fin del período y el add-on se va con ella (`endsAt`). */
+	/**
+	 * Termina al fin del período (`endsAt`), con acceso hasta entonces: baja programada del
+	 * add-on (`cancellationSource: "addon"`, reactivable) o la suscripción entera se cancela
+	 * y el add-on se va con ella (`"subscription"`).
+	 */
 	| "canceling";
+
+/** Por qué está en `canceling` (null en cualquier otro estado). */
+export type McpAddonCancellationSource = null | "addon" | "subscription";
 
 /** Por qué no puede contratarlo (null = puede). Los tres primeros son del hub; `team_member` lo agrega el front. */
 export type McpAddonEligibilityReason = null | "paid_plan_required" | "subscription_inactive" | "subscription_canceling" | "team_member";
@@ -74,6 +86,9 @@ export interface HubMcpAddonStatus {
 	adminBypass: boolean;
 	purchasable: boolean;
 	canRemove: boolean;
+	/** canceling por baja del add-on → POST /addons/:key/reactivate. */
+	canReactivate?: boolean;
+	cancellationSource?: McpAddonCancellationSource;
 	nextBillingDate: string | null;
 	endsAt: string | null;
 	hasManualGrant: boolean;
@@ -103,10 +118,15 @@ export interface McpAddonStatus {
 	adminBypass: boolean;
 	/** status none && elegible && (venta abierta || adminBypass) && con precio. */
 	purchasable: boolean;
+	/** false en canceling. */
 	canRemove: boolean;
+	/** Baja programada del add-on que se puede deshacer antes de `endsAt` (sin cobro). */
+	canReactivate: boolean;
+	/** Por qué está en canceling. */
+	cancellationSource: McpAddonCancellationSource;
 	/** Próximo cobro (active / past_due). */
 	nextBillingDate: string | null;
-	/** Fecha en que se va (canceling). */
+	/** Fecha en que se va (canceling): fin del período pago, acceso hasta entonces. */
 	endsAt: string | null;
 	/** Grant beta manual (acceso sin pagar). */
 	hasManualGrant: boolean;
