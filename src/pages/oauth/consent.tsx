@@ -116,11 +116,13 @@ const OauthConsentPage = () => {
 	useEffect(() => {
 		if (contextState.status === "ready" && !contextState.context.plan_check.allowed) {
 			const reason = contextState.context.plan_check.reason || "unknown";
-			const plan = contextState.context.plan_check.plan || "";
+			// Con grant beta el plan_check.plan es "manual_grant": mostrar el plan real de la suscripción.
+			const plan = contextState.context.user?.subscription_plan || contextState.context.plan_check.plan || "";
+			const subscriptionStatus = contextState.context.plan_check.subscription_status;
 			navigate(
-				`/oauth/upgrade-required?reason=${encodeURIComponent(reason)}&plan=${encodeURIComponent(
-					plan,
-				)}&consent_challenge=${encodeURIComponent(challenge || "")}`,
+				`/oauth/upgrade-required?reason=${encodeURIComponent(reason)}&plan=${encodeURIComponent(plan)}${
+					subscriptionStatus ? `&subscription_status=${encodeURIComponent(subscriptionStatus)}` : ""
+				}&consent_challenge=${encodeURIComponent(challenge || "")}`,
 				{ replace: true },
 			);
 		}

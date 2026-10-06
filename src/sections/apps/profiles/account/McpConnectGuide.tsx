@@ -14,10 +14,13 @@ import { Copy, TickCircle } from "iconsax-react";
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
 import ChatGptLogo from "components/icons/ChatGptLogo";
 import type { McpAccess } from "hooks/useMcpAccess";
+import { MCP_ADDON_PLANS_URL } from "utils/mcpAddonState";
 
 interface Props {
 	access: McpAccess | null;
 	loading?: boolean;
+	/** No mostrar el aviso de plan/add-on (la pantalla ya muestra la tarjeta del add-on con su CTA). */
+	hidePlanNotice?: boolean;
 }
 
 const CopyableUrl = ({ url }: { url: string }) => {
@@ -48,7 +51,7 @@ const CopyableUrl = ({ url }: { url: string }) => {
 	);
 };
 
-const McpConnectGuide = ({ access, loading }: Props) => {
+const McpConnectGuide = ({ access, loading, hidePlanNotice = false }: Props) => {
 	if (loading || !access) return null;
 
 	const { claude, chatgpt } = access.providers;
@@ -60,6 +63,7 @@ const McpConnectGuide = ({ access, loading }: Props) => {
 	}
 
 	if (!access.plan.allowed) {
+		if (hidePlanNotice) return null;
 		return (
 			<Alert
 				severity="warning"

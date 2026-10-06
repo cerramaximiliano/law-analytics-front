@@ -1,33 +1,26 @@
 import { useEffect, useState } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 
 // material-ui
 import { useTheme, alpha } from "@mui/material/styles";
-import { Box, Button, Chip, Container, Grid, Stack, Typography } from "@mui/material";
+import { Box, Container, Grid, Typography } from "@mui/material";
 
 // third-party
 import { motion } from "framer-motion";
 
-// icons
-import { ArrowRight2 } from "iconsax-react";
-
 // project-imports
 import PlanCard from "components/cards/PlanCard";
-import ApiService, { LEGAL_ACCEPTANCE_REQUIRED, Plan, PRIVACY_CONNECTORS_URL } from "store/reducers/ApiService";
-import McpAddonLegalDialog from "components/legal/McpAddonLegalDialog";
+import ApiService, { Plan } from "store/reducers/ApiService";
 import { PLANES_RESPALDO } from "data/planesRespaldo";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
-import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
-import ChatGptLogo from "components/icons/ChatGptLogo";
+import McpAddonCard from "sections/mcp/McpAddonCard";
 import { usePublicIntegrations } from "hooks/usePublicIntegrations";
-import { usePublicAddons } from "hooks/usePublicAddons";
-import useAuth from "hooks/useAuth";
-import useSubscription from "hooks/useSubscription";
+import useMcpAddon from "hooks/useMcpAddon";
 import { cleanPlanDisplayName, getCurrentEnvironment } from "utils/planPricingUtils";
 import { pushGTMEvent } from "utils/gtm";
-import { getAiBannerCopy, formatMonthlyPrice, AI_INTEGRATION_PATH, type AiClient } from "utils/mcpBannerCopy";
+import { MCP_ADDON_ANCHOR, MCP_ADDON_NAME } from "utils/mcpAddonState";
 import { openSnackbar } from "store/reducers/snackbar";
 
 // ============================== TOKENS ============================== //
@@ -61,28 +54,18 @@ const trackPlanCTA = (planId: string) => {
 const Plans = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
-	const navigate = useNavigate();
 	const dispatch = useDispatch();
+	const { hash } = useLocation();
 	const { integrations } = usePublicIntegrations();
-	const { addons } = usePublicAddons();
-	const { isLoggedIn } = useAuth();
-	const { subscription } = useSubscription();
+	const { addon } = useMcpAddon();
 
-	// Banners MCP visibles si CUALQUIERA de las dos integraciones AI está enabled.
-	// Renderizamos UNA card por cliente AI activo (Claude.ai, ChatGPT) en
-	// Grid 6/6 — cada card es independiente con su logo + copy específicos.
-	const showMcpBanner = integrations.claudeAi.enabled || integrations.chatGpt.enabled;
-	// El addon mcp_access es el único hoy; se busca por key + available para
-	// que si el backend lo flippea a unavailable mid-session, el banner desaparece.
-	const mcpAddon = addons.find((a) => a.key === "mcp_access" && a.available) || null;
-	const mcpPriceLabel = mcpAddon ? formatMonthlyPrice(mcpAddon.priceMonthly, mcpAddon.currency) : null;
-
-	// Estado de la subscription del user — null/undefined si anónimo.
-	const userPlan = (subscription as any)?.plan as "free" | "standard" | "premium" | undefined;
-	const userHasAddon = !!((subscription as any)?.addons || []).find(
-		(a: { key?: string; status?: string }) => a?.key === "mcp_access" && a?.status === "active",
-	);
-	const userPlanIsPaid = userPlan === "standard" || userPlan === "premium";
+	// Tarjeta del add-on "Conectores de IA" (mcp_access, cubre Claude.ai y ChatGPT):
+	// visible con la integración abierta al público, o si el usuario ya lo tiene
+	// (o tiene acceso beta) aunque la venta esté cerrada.
+	const showMcpAddon =
+		integrations.claudeAi.enabled ||
+		integrations.chatGpt.enabled ||
+		(!!addon && (addon.status !== "none" || addon.access.via === "beta_grant"));
 
 	// Las tarjetas se dibujan desde el primer momento con el respaldo estático y
 	// se actualizan en sitio cuando responde la API (mismo criterio que la sección
@@ -91,103 +74,27 @@ const Plans = () => {
 	// quien llegaba desde un precio del anuncio veía una página sin precios.
 	const [plans, setPlans] = useState<Plan[]>(PLANES_RESPALDO);
 	const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
-	const [addonBusy, setAddonBusy] = useState(false);
-	// Diálogo de aceptación legal del add-on (C-LEGAL-API). Solo se abre si el hub
-	// informa una política de privacidad activa; si no, el flujo es el de siempre.
-	const [legalDialog, setLegalDialog] = useState<{ version: string; privacyUrl: string; error: string | null } | null>(null);
 
-	const showAddonError = (message: string) =>
-		dispatch(openSnackbar({ open: true, message, variant: "alert", alert: { color: "error" }, close: true }));
-
-	// Checkout real del add-on. `acceptedPolicyVersion` viaja solo si hubo aceptación.
-	const purchaseMcpAddon = async (acceptedPolicyVersion: string | null) => {
-		try {
-			setAddonBusy(true);
-			const res = await ApiService.addAddon("mcp_access", acceptedPolicyVersion);
-			if (res.code === LEGAL_ACCEPTANCE_REQUIRED) {
-				// La política vigente cambió (o el front no la conocía): pedir aceptación
-				// de la versión actual antes de cobrar.
-				const versions = await ApiService.getLegalVersions();
-				if (versions.privacy) {
-					setLegalDialog({
-						version: versions.privacy,
-						privacyUrl: versions.privacyUrl,
-						error: acceptedPolicyVersion ? "La Política de Privacidad se actualizó. Revisala y volvé a aceptarla para continuar." : null,
-					});
-				} else {
-					showAddonError(res.message || "No se pudo verificar la aceptación de la Política de Privacidad. Intentá de nuevo.");
-				}
-				return;
-			}
-			if (res.success) {
-				setLegalDialog(null);
-				const msg = res.alreadyActive ? "El conector MCP ya estaba activo." : "Conector MCP agregado a tu suscripción. Procesando…";
-				dispatch(openSnackbar({ open: true, message: msg, variant: "alert", alert: { color: "success" }, close: false }));
-				// Redirigir a la página de integración después del éxito.
-				setTimeout(() => navigate(AI_INTEGRATION_PATH), 1500);
-			}
-		} catch (err) {
-			const message = err instanceof Error ? err.message : "Error al agregar el addon";
-			showAddonError(message);
-		} finally {
-			setAddonBusy(false);
-		}
+	// Plan gratuito → subir al grid de planes (sin redirect, ya estás en /plans).
+	const handleMcpUpgrade = () => {
+		window.scrollTo({ top: 0, behavior: "smooth" });
+		dispatch(
+			openSnackbar({
+				open: true,
+				message: `Elegí un plan Estándar, Pro o Premium para sumar ${MCP_ADDON_NAME}.`,
+				variant: "alert",
+				alert: { color: "info" },
+				close: true,
+			}),
+		);
 	};
 
-	// CTA contextual del banner MCP:
-	// - Anónimo                       → "Iniciar sesión" → /login?source=mcp-banner
-	// - Free                          → "Mejorar plan"   → scroll a top de planes
-	// - Paid sin addon                → "Agregar"        → POST addAddon
-	// - Con addon active              → "Conectar"       → /integraciones/conectores-ai
-	const handleMcpCtaClick = async () => {
-		pushGTMEvent("mcp_plans_cta_click", {
-			cta_location: "plans_page",
-			user_state: !isLoggedIn ? "anonymous" : userHasAddon ? "has_addon" : userPlanIsPaid ? "paid_no_addon" : "free",
-		});
-
-		if (!isLoggedIn) {
-			navigate("/login?source=mcp-banner");
-			return;
-		}
-		if (userHasAddon) {
-			navigate(AI_INTEGRATION_PATH);
-			return;
-		}
-		if (!userPlanIsPaid) {
-			// Free → scroll arriba al grid de planes (sin redirect, ya estás en /plans).
-			window.scrollTo({ top: 0, behavior: "smooth" });
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Necesitás un plan Estándar, Pro o Premium para agregar el conector MCP.",
-					variant: "alert",
-					alert: { color: "info" },
-					close: true,
-				}),
-			);
-			return;
-		}
-
-		// Paid sin addon → si hay política activa, diálogo de aceptación; si no, checkout directo.
-		setAddonBusy(true);
-		const versions = await ApiService.getLegalVersions();
-		setAddonBusy(false);
-		if (versions.privacy) {
-			setLegalDialog({ version: versions.privacy, privacyUrl: versions.privacyUrl || PRIVACY_CONNECTORS_URL, error: null });
-			return;
-		}
-		await purchaseMcpAddon(null);
-	};
-
-	const mcpCtaLabel = !isLoggedIn
-		? "Iniciar sesión para agregar"
-		: userHasAddon
-		? "Conectar Claude.ai / ChatGPT"
-		: !userPlanIsPaid
-		? "Mejorar plan para agregar"
-		: addonBusy
-		? "Procesando…"
-		: "Agregar conector MCP";
+	// Deep link /plans#conectores-ia: bajar a la tarjeta del add-on cuando se monta.
+	useEffect(() => {
+		if (hash !== `#${MCP_ADDON_ANCHOR}` || !showMcpAddon) return;
+		const t = setTimeout(() => document.getElementById(MCP_ADDON_ANCHOR)?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
+		return () => clearTimeout(t);
+	}, [hash, showMcpAddon]);
 
 	const breadcrumbItems = [{ title: "Inicio", to: "/" }, { title: "Planes y Precios" }];
 
@@ -322,98 +229,15 @@ const Plans = () => {
 					})}
 				</Grid>
 
-				{/* Cards MCP — addon mcp_access (Phase 9 — billing real).
-				    Una card SEPARADA por cliente AI activo (Claude.ai, ChatGPT).
-				    Cuando ambos están enabled, se renderean lado a lado en
-				    Grid 6/6 con el mismo peso visual. CTA contextual compartido
-				    (el addon mcp_access cubre ambos clientes). NO va a /register
-				    → no impacta Funnel 1. Tracking: mcp_plans_cta_click con user_state. */}
-				{showMcpBanner && (
-					<Box sx={{ mt: 6 }}>
-						<Grid container spacing={3} alignItems="stretch">
-							{(["claudeAi", "chatGpt"] as AiClient[])
-								.filter((c) => integrations[c].enabled)
-								.map((client, idx, arr) => {
-									const copy = getAiBannerCopy(client);
-									const md = arr.length > 1 ? 6 : 12;
-									return (
-										<Grid item xs={12} md={md} key={client}>
-											<Box
-												component={motion.div}
-												initial={{ opacity: 0, y: 20 }}
-												animate={{ opacity: 1, y: 0 }}
-												transition={{ duration: 0.4, delay: 0.3 + idx * 0.1 }}
-												sx={{
-													height: "100%",
-													p: { xs: 3, md: 4 },
-													borderRadius: 3,
-													border: `1px solid ${alpha(BRAND_BLUE, 0.2)}`,
-													bgcolor: alpha(BRAND_BLUE, 0.04),
-													display: "flex",
-													flexDirection: "column",
-												}}
-											>
-												<Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-													{client === "claudeAi" ? <ClaudeAiLogo size={40} /> : <ChatGptLogo size={40} />}
-													<Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap" }}>
-														<Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-															{copy.displayName}
-														</Typography>
-														<Chip
-															label="Add-on"
-															size="small"
-															sx={{
-																fontWeight: 600,
-																letterSpacing: 0.5,
-																bgcolor: alpha(BRAND_BLUE, 0.12),
-																color: BRAND_BLUE,
-															}}
-														/>
-													</Stack>
-												</Stack>
-
-												<Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1 }}>
-													{copy.description}
-													{!userHasAddon && " Aditivo a planes Estándar, Pro y Premium."}
-												</Typography>
-
-												{mcpPriceLabel && !userHasAddon && (
-													<Typography variant="body1" sx={{ fontWeight: 700, mb: 2, color: BRAND_BLUE }}>
-														{mcpPriceLabel}
-													</Typography>
-												)}
-
-												<Button
-													variant={userHasAddon ? "outlined" : "contained"}
-													color="primary"
-													onClick={handleMcpCtaClick}
-													disabled={addonBusy}
-													endIcon={<ArrowRight2 size={16} />}
-													fullWidth
-												>
-													{mcpCtaLabel}
-												</Button>
-											</Box>
-										</Grid>
-									);
-								})}
-						</Grid>
+				{/* Add-on "Conectores de IA" — una tarjeta para ambos asistentes (el add-on
+				    mcp_access cubre Claude.ai y ChatGPT). NO va a /register salvo para anónimos
+				    (source=mcp_addon). Tracking: mcp_plans_cta_click con user_state (la-ads). */}
+				{showMcpAddon && (
+					<Box id={MCP_ADDON_ANCHOR} sx={{ mt: { xs: 5, md: 7 }, scrollMarginTop: 96 }}>
+						<McpAddonCard variant="plans" location="plans_page" onUpgradeClick={handleMcpUpgrade} />
 					</Box>
 				)}
 			</Container>
-
-			{legalDialog && (
-				<McpAddonLegalDialog
-					open
-					policyVersion={legalDialog.version}
-					privacyUrl={legalDialog.privacyUrl}
-					priceLabel={mcpPriceLabel}
-					busy={addonBusy}
-					error={legalDialog.error}
-					onCancel={() => setLegalDialog(null)}
-					onConfirm={(version) => purchaseMcpAddon(version)}
-				/>
-			)}
 		</Box>
 	);
 };

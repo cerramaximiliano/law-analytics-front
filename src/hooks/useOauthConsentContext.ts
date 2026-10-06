@@ -45,6 +45,8 @@ export interface PlanCheckResult {
 	addon_status?: string;
 	upgrade_url?: string;
 	addon_subscribe_url?: string;
+	/** Con reason "subscription_inactive": status de Stripe (unpaid, canceled, …). */
+	subscription_status?: string;
 	current_period_end?: string;
 }
 

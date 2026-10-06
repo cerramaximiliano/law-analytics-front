@@ -39,6 +39,10 @@ import dayjs from "utils/dayjs-config";
 import { useTeam } from "contexts/TeamContext";
 import { ROLE_CONFIG } from "types/teams";
 import ResourceUsageWidget from "sections/widget/chart/ResourceUsageWidget";
+import McpAddonCard from "sections/mcp/McpAddonCard";
+import McpSectionShell from "sections/mcp/McpSectionShell";
+import AiSparklesIcon from "components/icons/AiSparklesIcon";
+import useMcpAddon from "hooks/useMcpAddon";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // ==============================|| ACCOUNT PROFILE - SUBSCRIPTION ||============================== //
@@ -66,6 +70,9 @@ const TabSubscription = () => {
 	const isTeamMember = isTeamMode && !isOwner;
 
 	const subscription = useSelector((state: RootState) => state.auth.subscription);
+	// Add-on "Conectores de IA": visible si se vende (integración abierta) o si ya lo tiene / tiene acceso beta.
+	const { addon: mcpAddon } = useMcpAddon();
+	const showMcpAddon = !!mcpAddon && (mcpAddon.publicOpen || mcpAddon.status !== "none" || mcpAddon.access.via === "beta_grant");
 	const payments = useSelector(selectPaymentHistory) || [];
 	const userEmail = useSelector((state: RootState) => state.auth.user?.email || state.auth.email || "");
 
@@ -1513,6 +1520,20 @@ const TabSubscription = () => {
 						</Stack>
 					</Box>
 				</SectionCard>
+				</Grid>
+			)}
+
+			{/* Add-on Conectores de IA (mcp_access) */}
+			{showMcpAddon && (
+				<Grid item xs={12}>
+					<McpSectionShell
+						eyebrow="Add-on"
+						title="Conectores de IA"
+						subtitle="Claude.ai y ChatGPT consultan tu cuenta en modo solo lectura"
+						icon={<AiSparklesIcon size={18} animated={false} sx={{ stroke: "currentColor" }} />}
+					>
+						<McpAddonCard variant="panel" location="account_subscription" />
+					</McpSectionShell>
 				</Grid>
 			)}
 

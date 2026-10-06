@@ -3,13 +3,17 @@
  * habilita MCP. Redirigida automáticamente desde /oauth/consent.
  *
  * Recibe por query string:
- *  - `reason` — uno de: plan_too_low | addon_missing | addon_past_due
- *  - `plan` — plan actual del user (standard/premium/free), para mostrar contexto
- *  - `consent_challenge` — el challenge OAuth pendiente, para poder rejectarlo
- *    si el user clickea "Cancelar"
+ *  - `reason` — razón del plan check (ver utils/mcpUpgradeReasons.ts: plan_too_low,
+ *    no_subscription, addon_missing, addon_past_due, addon_status_invalid,
+ *    subscription_inactive, account_suspended, user_inactive, beta_grant_required, maintenance)
+ *  - `plan` — plan actual del user (free/standard/pro/premium), para mostrar contexto
+ *  - `subscription_status` — opcional, status de Stripe con subscription_inactive
+ *  - `consent_challenge` — el challenge OAuth pendiente, para rechazarlo si el user
+ *    clickea "Cancelar" o retomarlo después de activar el add-on
  *
- * Cada `reason` muestra copy + CTA distintos. Track `oauth_upgrade_view` con
- * reason como dimensión — señal valiosa de upsell potencial.
+ * Con `addon_missing` el add-on se activa acá mismo (diálogo con precio + política) y,
+ * si hay challenge, se vuelve al consent para terminar la autorización sin reiniciarla
+ * desde el asistente. Track `oauth_upgrade_view` con reason como dimensión.
  */
 
 import { useEffect, useState } from "react";
@@ -21,94 +25,50 @@ import AuthWrapper from "sections/auth/AuthWrapper";
 import Logo from "components/logo";
 import axiosInstance from "utils/axios";
 import { trackOauthConsentReject, trackOauthUpgradeView } from "utils/gtm";
+import useMcpAddonActions from "hooks/useMcpAddonActions";
+import { getUpgradeReasonCopy, type UpgradeReasonCopy } from "utils/mcpUpgradeReasons";
 
-import { ArrowUp2, Card, Crown, Lock1, Refresh2 } from "iconsax-react";
+import { ArrowUp2, Card, Crown, InfoCircle, Lock1 } from "iconsax-react";
 
 interface RejectResponse {
 	redirect_to: string;
 }
 
-interface ReasonCopy {
-	icon: JSX.Element;
-	title: string;
-	body: string;
-	ctaText: string;
-	ctaHref: string;
-	ctaIcon: JSX.Element;
-}
-
-const PLAN_DISPLAY: Record<string, string> = {
-	free: "Gratis",
-	standard: "Estándar",
-	premium: "Premium",
+const TONE_ICON: Record<UpgradeReasonCopy["tone"], { icon: (size: number) => JSX.Element }> = {
+	upgrade: { icon: (size) => <Crown size={size} color="#ed6c02" variant="Bulk" /> },
+	addon: { icon: (size) => <ArrowUp2 size={size} color="#3A7BFF" variant="Bulk" /> },
+	payment: { icon: (size) => <Card size={size} color="#d32f2f" variant="Bulk" /> },
+	blocked: { icon: (size) => <Lock1 size={size} color="#757575" variant="Bulk" /> },
+	info: { icon: (size) => <InfoCircle size={size} color="#3A7BFF" variant="Bulk" /> },
 };
-
-/**
- * URLs CTA por defecto — overridables por env vars si el front se deploya
- * con paths distintos en distintos entornos.
- */
-const UPGRADE_URL = import.meta.env.VITE_UPGRADE_URL || "/plans";
-// "/settings/billing" no existe como ruta: el CTA del add-on (con el diálogo de
-// aceptación legal de la Etapa P) vive en /plans.
-const ADDON_SUBSCRIBE_URL = import.meta.env.VITE_MCP_ADDON_SUBSCRIBE_URL || "/plans";
-// Pago fallido del add-on → gestión de la suscripción (método de pago / portal de Stripe).
-const BILLING_URL = "/apps/profiles/account/subscription";
-
-function getCopyForReason(reason: string, plan: string | null): ReasonCopy {
-	const planDisplay = plan ? PLAN_DISPLAY[plan] || plan : "Gratis";
-
-	switch (reason) {
-		case "plan_too_low":
-		case "no_subscription":
-			return {
-				icon: <Lock1 size={48} color="#ed6c02" variant="Bulk" />,
-				title: "MCP requiere un plan superior",
-				body: `La integración con asistentes de IA (Claude.ai, ChatGPT, etc.) está disponible para planes Estándar y Premium. Tu plan actual: ${planDisplay}.`,
-				ctaText: "Ver planes",
-				ctaHref: UPGRADE_URL,
-				ctaIcon: <Crown size={18} />,
-			};
-		case "addon_missing":
-			return {
-				icon: <ArrowUp2 size={48} color="#1976d2" variant="Bulk" />,
-				title: "Activá MCP Access para conectar",
-				body: `Tu plan ${planDisplay} permite agregar MCP Access como add-on opcional. Una vez activado, podés conectar Claude.ai, ChatGPT y otras IAs compatibles a tu cuenta.`,
-				ctaText: "Activar MCP Access",
-				ctaHref: ADDON_SUBSCRIBE_URL,
-				ctaIcon: <ArrowUp2 size={18} />,
-			};
-		case "addon_past_due":
-		case "addon_status_invalid":
-			return {
-				icon: <Lock1 size={48} color="#d32f2f" variant="Bulk" />,
-				title: "Pago pendiente en tu add-on",
-				body: "El pago de MCP Access falló. Actualizá tu método de pago para reactivar la conexión.",
-				ctaText: "Actualizar facturación",
-				ctaHref: BILLING_URL,
-				ctaIcon: <Card size={18} />,
-			};
-		default:
-			return {
-				icon: <Lock1 size={48} color="#757575" variant="Bulk" />,
-				title: "No podemos completar la autorización",
-				body: "Tu cuenta no cumple los requisitos para conectar esta aplicación. Contactá a soporte si pensás que es un error.",
-				ctaText: "Ver planes",
-				ctaHref: UPGRADE_URL,
-				ctaIcon: <Refresh2 size={18} />,
-			};
-	}
-}
 
 const OauthUpgradeRequiredPage = () => {
 	const [searchParams] = useSearchParams();
 	const reason = searchParams.get("reason") || "unknown";
 	const plan = searchParams.get("plan");
+	const subscriptionStatus = searchParams.get("subscription_status");
 	const challenge = searchParams.get("consent_challenge");
 
 	const [isCancelling, setIsCancelling] = useState(false);
 	const [globalError, setGlobalError] = useState<string | null>(null);
 
-	const copy = getCopyForReason(reason, plan);
+	const copy = getUpgradeReasonCopy(reason, plan, subscriptionStatus);
+
+	// Alta del add-on acá mismo; al terminar, retomar el consent pendiente.
+	const { startPurchase, openBillingPortal, busy, dialogs } = useMcpAddonActions({
+		location: "oauth_upgrade_required",
+		onActivated: () => {
+			window.location.href = challenge
+				? `/oauth/consent?consent_challenge=${encodeURIComponent(challenge)}`
+				: "/apps/profiles/account/pjn?view=ia";
+		},
+	});
+
+	const handleCta = () => {
+		if (copy.action.kind === "activate_addon") startPurchase();
+		else if (copy.action.kind === "billing") openBillingPortal();
+		else window.location.href = copy.action.href;
+	};
 
 	useEffect(() => {
 		trackOauthUpgradeView(reason, plan || undefined);
@@ -156,8 +116,10 @@ const OauthUpgradeRequiredPage = () => {
 				<Grid item xs={12}>
 					<Box sx={{ textAlign: "center", py: 2 }}>
 						<Stack alignItems="center" spacing={2}>
-							{copy.icon}
-							<Typography variant="h4">{copy.title}</Typography>
+							{TONE_ICON[copy.tone].icon(48)}
+							<Typography variant="h4" sx={{ textWrap: "balance" }}>
+								{copy.title}
+							</Typography>
 							<Typography variant="body1" color="text.secondary" sx={{ maxWidth: 480 }}>
 								{copy.body}
 							</Typography>
@@ -176,15 +138,15 @@ const OauthUpgradeRequiredPage = () => {
 						<Button variant="outlined" color="secondary" onClick={handleCancel} disabled={isCancelling} size="large">
 							{isCancelling ? "Cancelando..." : "Cancelar"}
 						</Button>
-						<Button variant="contained" color="primary" size="large" href={copy.ctaHref} startIcon={copy.ctaIcon}>
-							{copy.ctaText}
+						<Button variant="contained" color="primary" size="large" onClick={handleCta} disabled={busy || isCancelling}>
+							{busy ? "Procesando…" : copy.ctaText}
 						</Button>
 					</Stack>
 				</Grid>
 
 				<Grid item xs={12}>
 					<Typography variant="caption" color="text.secondary" sx={{ display: "block", textAlign: "center" }}>
-						Necesitás ayuda?{" "}
+						¿Necesitás ayuda?{" "}
 						<a href="mailto:soporte@lawanalytics.app" style={{ color: "inherit" }}>
 							Contactá a soporte
 						</a>
@@ -192,6 +154,7 @@ const OauthUpgradeRequiredPage = () => {
 					</Typography>
 				</Grid>
 			</Grid>
+			{dialogs}
 		</AuthWrapper>
 	);
 };

@@ -21,8 +21,7 @@ import MainCard from "components/MainCard";
 import PjnAccountConnect from "sections/apps/folders/step-components/PjnAccountConnect";
 import ScbaAccountConnect from "sections/apps/folders/step-components/ScbaAccountConnect";
 import MevAccountConnect from "sections/apps/profiles/account/MevAccountConnect";
-import ConnectedAiApps from "sections/apps/profiles/account/ConnectedAiApps";
-import AiSparklesIcon from "components/icons/AiSparklesIcon";
+import AiAssistantsView from "sections/mcp/AiAssistantsView";
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
 import ChatGptLogo from "components/icons/ChatGptLogo";
 import ApiService from "store/reducers/ApiService";
@@ -510,18 +509,7 @@ const TabPjnIntegration = () => {
 					</Grid>
 				</Grid>
 			) : view === "ia" ? (
-				<Grid container spacing={2.5}>
-					<Grid item xs={12} md={8}>
-						<SectionCard
-							eyebrow="Integración · Asistentes de IA"
-							title="Asistentes conectados"
-							subtitle="Asistentes de IA (Claude.ai, ChatGPT) que autorizaste a consultar tu cuenta en modo solo lectura. Podés revocar el acceso cuando quieras."
-							icon={<AiSparklesIcon size={18} animated={false} sx={{ stroke: "currentColor" }} />}
-						>
-							<ConnectedAiApps />
-						</SectionCard>
-					</Grid>
-				</Grid>
+				<AiAssistantsView />
 			) : (
 				<Grid container spacing={2.5}>
 					<Grid item xs={12} md={6}>

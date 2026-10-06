@@ -99,7 +99,12 @@ const AppLogo = ({ app }: { app: ConnectedApp }) => {
 	);
 };
 
-const ConnectedAiApps = () => {
+interface ConnectedAiAppsProps {
+	/** Ocultar el aviso de plan/add-on de la guía (la vista ya muestra la tarjeta del add-on). */
+	hidePlanNotice?: boolean;
+}
+
+const ConnectedAiApps = ({ hidePlanNotice = false }: ConnectedAiAppsProps) => {
 	const [state, setState] = useState<LoadState>({ status: "loading" });
 	const [confirmTarget, setConfirmTarget] = useState<ConnectedApp | null>(null);
 	const [isRevoking, setIsRevoking] = useState(false);
@@ -138,7 +143,7 @@ const ConnectedAiApps = () => {
 
 	return (
 		<Stack spacing={1.5}>
-			<McpConnectGuide access={access} loading={accessLoading} />
+			<McpConnectGuide access={access} loading={accessLoading} hidePlanNotice={hidePlanNotice} />
 
 			{actionError && <Alert severity="error">{actionError}</Alert>}
 
@@ -203,7 +208,7 @@ const ConnectedAiApps = () => {
 									))}
 								</Stack>
 							</Box>
-							<IconButton color="error" onClick={() => setConfirmTarget(app)} aria-label="Revocar acceso">
+							<IconButton color="error" onClick={() => setConfirmTarget(app)} aria-label={`Desconectar ${app.name}`}>
 								<Trash size={20} />
 							</IconButton>
 						</Stack>
@@ -212,15 +217,19 @@ const ConnectedAiApps = () => {
 
 			{state.status === "ready" && state.apps.length > 0 && (
 				<Typography variant="caption" color="text.secondary">
-					Al revocar, el asistente pierde el acceso en el momento. Para volver a usarlo vas a tener que autorizarlo de nuevo.
+					Al desconectarlo, el asistente pierde el acceso en el momento. Para volver a usarlo vas a tener que autorizarlo de nuevo.
 				</Typography>
 			)}
 
 			<ConfirmDialog
 				open={!!confirmTarget}
-				title="Revocar acceso"
-				content={confirmTarget ? `¿Confirmás que querés revocar el acceso de ${confirmTarget.name} a tu cuenta? Esta acción es inmediata.` : ""}
-				confirmText="Revocar"
+				title="Desconectar asistente"
+				content={
+					confirmTarget
+						? `${confirmTarget.name} deja de poder consultar tu cuenta en el momento. Para volver a usarlo vas a tener que autorizarlo de nuevo desde el asistente.`
+						: ""
+				}
+				confirmText="Desconectar"
 				confirmColor="error"
 				onConfirm={handleRevoke}
 				onCancel={() => setConfirmTarget(null)}

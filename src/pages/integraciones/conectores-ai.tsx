@@ -6,7 +6,8 @@
  *
  * Tracking GTM:
  *  - mcp_landing_view              al montar (con flags claude_enabled, chatgpt_enabled)
- *  - mcp_landing_cta_click         al click en CTA (hero / footer)
+ *  - mcp_landing_cta_click         al click en CTA (hero / footer / unavailable_beta_request) + cta_kind
+ *  - mcp_landing_view { page_variant: "beta_access" }  pantalla de acceso beta (switch apagado + grant)
  *  - mcp_landing_faq_open          al abrir un item del FAQ
  */
 
@@ -55,6 +56,7 @@ import FadeInWhenVisible from "sections/landing/Animation";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 import useMcpAccess from "hooks/useMcpAccess";
+import useMcpLandingCta from "hooks/useMcpLandingCta";
 import McpConnectGuide from "sections/apps/profiles/account/McpConnectGuide";
 
 // tracking
@@ -114,11 +116,11 @@ interface Step {
 	body: string;
 }
 
-const STEPS: Step[] = [
+const buildSteps = (priceLabel: string | null): Step[] => [
 	{
 		num: 1,
-		title: "Pedí acceso beta",
-		body: "Esta integración está en beta cerrada — te activamos el acceso manualmente. Hacé click en 'Solicitar acceso' al final de la página o escribinos a soporte@lawanalytics.app.",
+		title: "Activá el add-on Conectores de IA",
+		body: `Se suma a tu plan Estándar, Pro o Premium${priceLabel ? ` por ${priceLabel}` : ""}. Lo activás desde esta página, desde Planes o desde tu cuenta (Perfil → Suscripción), y lo podés quitar cuando quieras.`,
 	},
 	{
 		num: 2,
@@ -133,7 +135,7 @@ const STEPS: Step[] = [
 	{
 		num: 4,
 		title: "Autorizá la conexión con tu cuenta",
-		body: "Claude.ai te va a redirigir a lawanalytics.app/oauth/login. Loguéate con tu cuenta habitual, revisá los permisos en la pantalla de consent, y aceptá. Listo: las herramientas de Law||Analytics quedan disponibles en cualquier chat de Claude.",
+		body: "Claude.ai te va a redirigir a lawanalytics.app/oauth/login. Iniciá sesión con tu cuenta habitual, revisá los permisos en la pantalla de autorización y aceptá. Listo: las herramientas de Law||Analytics quedan disponibles en cualquier chat de Claude.",
 	},
 ];
 
@@ -171,7 +173,7 @@ const FAQ: FaqItem[] = [
 	},
 	{
 		q: "¿Tiene costo extra?",
-		a: "Es un add-on opcional sobre planes Estándar, Pro y Premium. Lo agregás desde la página de planes — Stripe prorratea automáticamente sobre tu ciclo de billing. Lo podés cancelar cuando quieras.",
+		a: "Sí: es el add-on Conectores de IA, opcional sobre los planes Estándar, Pro y Premium. Lo activás desde esta página, desde Planes o desde tu cuenta; el primer cobro es proporcional a lo que queda de tu período y después se cobra junto con tu plan. Lo podés quitar cuando quieras (al quitarlo, los asistentes se desconectan).",
 	},
 	{
 		q: "Conecté pero Claude.ai dice que no encuentra herramientas",
@@ -209,15 +211,6 @@ const ClaudeAiLandingPage = () => {
 			? "Conectá Claude.ai a tu cuenta de Law||Analytics"
 			: "Conectá ChatGPT a tu cuenta de Law||Analytics";
 
-	// CTA label: cuando ambos AI están enabled hablamos genérico.
-	const heroCtaLabel = anyBeta
-		? "Solicitar acceso beta"
-		: bothAiEnabled
-			? "Conectar conector AI"
-			: claudeAiEnabled
-				? "Conectar Claude.ai"
-				: "Conectar ChatGPT";
-
 	const [openFaq, setOpenFaq] = useState<number | null>(null);
 
 	useEffect(() => {
@@ -238,10 +231,10 @@ const ClaudeAiLandingPage = () => {
 
 	const [supportOpen, setSupportOpen] = useState(false);
 
-	const handleCtaClick = (location: string) => {
-		pushGTMEvent("mcp_landing_cta_click", { cta_location: location });
-		setSupportOpen(true);
-	};
+	// CTA según el estado del visitante (anónimo / gratis / pago sin add-on / con acceso / beta).
+	const cta = useMcpLandingCta({ onBetaRequest: () => setSupportOpen(true) });
+	const handleCtaClick = (location: string) => cta.onClick(location);
+	const steps = buildSteps(cta.priceLabel);
 
 	// Gating: si la integración está deshabilitada en IntegrationsConfig
 	// mostramos pantalla de "no disponible" en vez de la landing completa.
@@ -251,12 +244,27 @@ const ClaudeAiLandingPage = () => {
 	// igual puede conectar (misma regla que el consent OAuth).
 	const { access: mcpAccess, loading: mcpAccessLoading } = useMcpAccess();
 	const betaAccess = !!mcpAccess?.providers.claude.available;
+	const showBetaAccess = !integrationsLoading && !mcpAccessLoading && !anyAiEnabled && betaAccess;
+	useEffect(() => {
+		if (showBetaAccess) pushGTMEvent("mcp_landing_view", { page_variant: "beta_access" });
+	}, [showBetaAccess]);
+
+	const supportModal = (
+		<SupportModal
+			open={supportOpen}
+			onClose={() => setSupportOpen(false)}
+			defaultSubject={BETA_REQUEST_SUBJECT}
+			defaultPriority="low"
+			lockedHeader={BETA_REQUEST_LOCKED_HEADER}
+			variant="landing"
+		/>
+	);
 
 	if (integrationsLoading || mcpAccessLoading) {
 		return <Box sx={{ bgcolor: "background.default", minHeight: "100vh" }} />;
 	}
 
-	if (!anyAiEnabled && betaAccess) {
+	if (showBetaAccess) {
 		return (
 			<Box sx={{ bgcolor: "background.default", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
 				<Container maxWidth="sm">
@@ -292,11 +300,26 @@ const ClaudeAiLandingPage = () => {
 							{maintenanceMessage ||
 								"La integración con Claude.ai no está disponible en este momento. Volvé a intentar más tarde."}
 						</Typography>
-						<Button variant="contained" href="/" sx={{ mt: 2 }}>
-							Volver al inicio
-						</Button>
+						<Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 2, width: { xs: "100%", sm: "auto" } }}>
+							{!maintenanceMessage && (
+								<Button
+									variant="contained"
+									startIcon={<Message size={18} />}
+									onClick={() => {
+										pushGTMEvent("mcp_landing_cta_click", { cta_location: "unavailable_beta_request", cta_kind: "beta_request" });
+										setSupportOpen(true);
+									}}
+								>
+									Solicitar acceso a la beta
+								</Button>
+							)}
+							<Button variant={maintenanceMessage ? "contained" : "outlined"} href="/">
+								Volver al inicio
+							</Button>
+						</Stack>
 					</Stack>
 				</Container>
+				{supportModal}
 			</Box>
 		);
 	}
@@ -330,7 +353,7 @@ const ClaudeAiLandingPage = () => {
 						<AiClientsLogos integrations={integrations} size={64} spacing={2} />
 					</Box>
 					<Chip
-						label={anyBeta ? "BETA CERRADA" : "DISPONIBLE"}
+						label={anyBeta ? "BETA" : "DISPONIBLE"}
 						color={anyBeta ? "primary" : "success"}
 						size="small"
 						sx={{ fontWeight: 700, letterSpacing: 1, mb: 1 }}
@@ -350,10 +373,11 @@ const ClaudeAiLandingPage = () => {
 							variant="contained"
 							size="large"
 							onClick={() => handleCtaClick("hero")}
+							disabled={cta.disabled}
 							endIcon={<ArrowRight2 size={20} />}
 							sx={{ minWidth: 220 }}
 						>
-							{heroCtaLabel}
+							{cta.label}
 						</Button>
 						<Button
 							variant="outlined"
@@ -418,7 +442,7 @@ const ClaudeAiLandingPage = () => {
 						4 pasos. Demora menos de 2 minutos.
 					</Typography>
 					<Stack spacing={2}>
-						{STEPS.map((s) => (
+						{steps.map((s) => (
 							<Card key={s.num} variant="outlined">
 								<CardContent>
 									<Stack direction="row" spacing={3} alignItems="flex-start">
@@ -563,41 +587,37 @@ const ClaudeAiLandingPage = () => {
 				<FadeInWhenVisible>
 				<Box sx={{ textAlign: "center", py: 6 }}>
 					<Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>
-						Listo para probarlo
+						{cta.kind === "connect" ? "Ya podés conectarlo" : "Listo para probarlo"}
 					</Typography>
 					<Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 540, mx: "auto" }}>
-						Estamos onboarding manualmente a un grupo chico de estudios jurídicos. Escribinos y te
-						activamos el acceso.
+						{cta.kind === "beta_request"
+							? "Estamos sumando de a poco a un grupo chico de estudios jurídicos. Escribinos y te activamos el acceso."
+							: "Activá el add-on y conectá tu asistente en menos de dos minutos. Podés quitarlo cuando quieras."}
 					</Typography>
 					<Stack direction={{ xs: "column", sm: "row" }} spacing={2} justifyContent="center">
 						<Button
 							variant="contained"
 							size="large"
 							onClick={() => handleCtaClick("footer")}
-							startIcon={<Message size={20} />}
+							disabled={cta.disabled}
+							startIcon={cta.kind === "beta_request" ? <Message size={20} /> : undefined}
+							endIcon={cta.kind === "beta_request" ? undefined : <ArrowRight2 size={20} />}
 							sx={{ minWidth: 240 }}
 						>
-							{heroCtaLabel}
+							{cta.label}
 						</Button>
 					</Stack>
-					<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 3 }}>
-						Tenés que tener una cuenta activa en lawanalytics.app + plan Pro/Team en {bothAiEnabled ? "Claude.ai o ChatGPT" : claudeAiEnabled ? "Claude.ai" : "ChatGPT"}.
+					<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 3, maxWidth: 560, mx: "auto" }}>
+						{cta.footnote} Además necesitás un plan de {bothAiEnabled ? "Claude.ai o ChatGPT" : claudeAiEnabled ? "Claude.ai" : "ChatGPT"} que
+						permita conectores personalizados.
 					</Typography>
 				</Box>
 				</FadeInWhenVisible>
 			</Container>
 
-			{/* SupportModal — usado para "Solicitar acceso beta". Se pre-setea con
-			    subject + lockedHeader del contexto del request; el user solo aporta
-			    su email (si está anónimo) y opcionalmente agrega contexto extra. */}
-			<SupportModal
-				open={supportOpen}
-				onClose={() => setSupportOpen(false)}
-				defaultSubject={BETA_REQUEST_SUBJECT}
-				defaultPriority="low"
-				lockedHeader={BETA_REQUEST_LOCKED_HEADER}
-				variant="landing"
-			/>
+			{/* SupportModal — "Solicitar acceso beta" (beta cerrada). Diálogos del alta del add-on. */}
+			{supportModal}
+			{cta.dialogs}
 		</Box>
 	);
 };
