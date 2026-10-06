@@ -1,7 +1,7 @@
 /**
  * useMcpAddon — estado del add-on "Conectores de IA" (mcp_access) para el usuario logueado.
  *
- * 1. Intenta el GET consolidado del hub (contrato en types/mcpAddon.ts).
+ * 1. Intenta el GET consolidado del hub `GET /api/subscriptions/addons/mcp_access` (contrato en types/mcpAddon.ts).
  * 2. Si no existe todavía (404) o falla, arma el mismo shape con lo que ya hay:
  *    `/api/connected-apps/access` + la suscripción propia del store + los addons públicos
  *    (precio). Así la UI funciona antes y después de que el backend publique el endpoint.
@@ -25,7 +25,9 @@ import axiosInstance from "utils/axios";
 import { deriveMcpAddonFallback, normalizeMcpAddonStatus, type SubscriptionLike } from "utils/mcpAddonState";
 import type { McpAddonStatus } from "types/mcpAddon";
 
-type Snapshot = { kind: "consolidated"; data: McpAddonStatus } | { kind: "fallback"; access: McpAccess | null };
+// `raw` = cuerpo del GET consolidado, ya validado; se normaliza en el render para aplicar
+// datos del store (miembro de equipo, precio público).
+type Snapshot = { kind: "consolidated"; raw: unknown } | { kind: "fallback"; access: McpAccess | null };
 
 // ── caché compartida a nivel módulo ──
 let snapshot: Snapshot | null = null;
@@ -39,8 +41,7 @@ async function loadSnapshot(): Promise<Snapshot> {
 	if (!consolidatedMissing) {
 		const res = await ApiService.getMcpAddonStatus();
 		if (res.ok) {
-			const data = normalizeMcpAddonStatus(res.data);
-			if (data) return { kind: "consolidated", data };
+			if (normalizeMcpAddonStatus(res.data)) return { kind: "consolidated", raw: res.data };
 		} else if (res.status === 404) {
 			consolidatedMissing = true;
 		}
@@ -129,14 +130,13 @@ const useMcpAddon = (): UseMcpAddonResult => {
 	const addon = useMemo<McpAddonStatus | null>(() => {
 		if (!current) return null;
 		if (current.kind === "consolidated") {
-			// El precio puede venir null si el hub no pudo leer Stripe: completamos con el público.
-			if (current.data.price.amount == null && publicAddon?.priceMonthly != null) {
-				return {
-					...current.data,
-					price: { amount: publicAddon.priceMonthly, currency: publicAddon.currency, interval: publicAddon.interval },
-				};
+			// El precio llega null si el hub no pudo leer Stripe: para mostrarlo usamos el
+			// público, pero `purchasable` queda como lo dice el hub (sin precio no vende).
+			const data = normalizeMcpAddonStatus(current.raw, { isTeamMember: !!isTeamSubscription });
+			if (data && data.price.amount == null && publicAddon?.priceMonthly != null) {
+				return { ...data, price: { amount: publicAddon.priceMonthly, currency: publicAddon.currency, interval: publicAddon.interval } };
 			}
-			return current.data;
+			return data;
 		}
 		return deriveMcpAddonFallback({
 			publicAddon,

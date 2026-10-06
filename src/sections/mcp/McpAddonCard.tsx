@@ -18,7 +18,7 @@ import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
 import ChatGptLogo from "components/icons/ChatGptLogo";
 import useAuth from "hooks/useAuth";
 import useMcpAddon from "hooks/useMcpAddon";
-import useMcpAddonActions, { MCP_INTEGRATIONS_PATH } from "hooks/useMcpAddonActions";
+import useMcpAddonActions, { MCP_INTEGRATIONS_PATH, MCP_SUBSCRIPTION_PATH } from "hooks/useMcpAddonActions";
 import { usePublicAddons } from "hooks/usePublicAddons";
 import { pushGTMEvent, trackMcpAddonCtaClick, type McpAddonCtaLocation } from "utils/gtm";
 import {
@@ -53,30 +53,41 @@ function statusTone(addon: McpAddonStatus | null, theme: Theme): Tone | null {
 	if (!addon) return null;
 	if (addon.status === "active") return { color: LIVE_GREEN, label: "Activo" };
 	if (addon.status === "past_due") return { color: STALE_AMBER, label: "Pago pendiente" };
+	if (addon.status === "incomplete") return { color: STALE_AMBER, label: "Cobro incompleto" };
 	if (addon.status === "canceling") {
-		const d = formatAddonDate(addon.cancelAt);
+		const d = formatAddonDate(addon.endsAt);
 		return { color: theme.palette.text.secondary, label: d ? `Se cancela el ${d}` : "Se cancela" };
 	}
 	if (addon.access.via === "beta_grant") return { color: BRAND_BLUE, label: "Acceso beta" };
-	if (!addon.publicOpen) return { color: theme.palette.text.secondary, label: "Beta cerrada" };
+	if (addon.availabilityReason === "maintenance") return { color: STALE_AMBER, label: "En mantenimiento" };
+	if (!addon.publicAvailable)
+		return { color: theme.palette.text.secondary, label: addon.adminBypass ? "Venta cerrada · admin" : "Beta cerrada" };
 	return null;
 }
 
 /** Línea de contexto debajo del precio / estado. */
 function statusDetail(addon: McpAddonStatus | null, cta: McpCtaKind): { icon: JSX.Element; text: string; color?: string } | null {
 	if (!addon) return null;
-	const next = formatAddonDate(addon.nextChargeAt);
+	const next = formatAddonDate(addon.nextBillingDate);
 	if (addon.status === "past_due")
 		return {
 			icon: <Warning2 size={16} variant="Bulk" />,
 			text: "No pudimos cobrar el último pago. Seguís con acceso mientras se reintenta el cobro; actualizá tu medio de pago para no perderlo.",
 			color: STALE_AMBER,
 		};
+	if (addon.status === "incomplete")
+		return {
+			icon: <Warning2 size={16} variant="Bulk" />,
+			text: "El primer cobro del add-on no se completó. Actualizá tu medio de pago para activarlo.",
+			color: STALE_AMBER,
+		};
 	if (addon.status === "canceling") {
-		const d = formatAddonDate(addon.cancelAt);
+		const d = formatAddonDate(addon.endsAt);
 		return {
 			icon: <InfoCircle size={16} variant="Bulk" />,
-			text: d ? `Seguís con acceso hasta el ${d}; después los asistentes se desconectan.` : "Se quita al final del período.",
+			text: d
+				? `Tu suscripción se cancela el ${d} y el add-on se va con ella. Hasta entonces seguís con acceso.`
+				: "Tu suscripción se cancela al final del período y el add-on se va con ella.",
 		};
 	}
 	if (addon.status === "active")
@@ -92,16 +103,18 @@ function statusDetail(addon: McpAddonStatus | null, cta: McpCtaKind): { icon: JS
 		case "upgrade":
 			return {
 				icon: <Lock1 size={16} variant="Bulk" />,
-				text: `Disponible con los planes Estándar, Pro y Premium. Tu plan actual: ${planLabel(addon.eligibility.currentPlan)}.`,
+				text: `Disponible con los planes Estándar, Pro y Premium. Tu plan actual: ${planLabel(addon.plan)}.`,
 			};
 		case "fix_payment":
 			return {
 				icon: <Warning2 size={16} variant="Bulk" />,
-				text:
-					addon.eligibility.reason === "account_suspended"
-						? "Tu cuenta está suspendida por falta de pago. Regularizá el pago para activar el add-on."
-						: "Tu suscripción está inactiva. Actualizá el pago para poder activar el add-on.",
+				text: "Tu suscripción tiene un pago pendiente o no está activa. Actualizá el pago para poder activar el add-on.",
 				color: STALE_AMBER,
+			};
+		case "reactivate":
+			return {
+				icon: <InfoCircle size={16} variant="Bulk" />,
+				text: "Tu suscripción está programada para cancelarse. Reactivala para poder sumar el add-on.",
 			};
 		case "team":
 			return {
@@ -114,14 +127,21 @@ function statusDetail(addon: McpAddonStatus | null, cta: McpCtaKind): { icon: JS
 				text: "Estamos en beta cerrada con un grupo de estudios. Muy pronto vas a poder activarlo desde acá.",
 			};
 		case "unavailable":
-			return addon.access.reason === "maintenance"
-				? {
-						icon: <Warning2 size={16} variant="Bulk" />,
-						text: "La conexión con asistentes está en mantenimiento. Volvé a intentar en un rato.",
-						color: STALE_AMBER,
-				  }
-				: null;
+			if (addon.availabilityReason === "maintenance")
+				return {
+					icon: <Warning2 size={16} variant="Bulk" />,
+					text: addon.maintenanceMessage || "La conexión con asistentes está en mantenimiento. Volvé a intentar en un rato.",
+					color: STALE_AMBER,
+				};
+			if (addon.status === "none" && addon.eligible && addon.price.amount == null)
+				return { icon: <InfoCircle size={16} variant="Bulk" />, text: "No pudimos obtener el precio. Probá de nuevo en unos minutos." };
+			return null;
 		default:
+			if (addon.adminBypass && addon.status === "none")
+				return {
+					icon: <InfoCircle size={16} variant="Bulk" />,
+					text: "La venta está cerrada al público; como admin podés contratarlo igual.",
+				};
 			return null;
 	}
 }
@@ -190,6 +210,9 @@ const McpAddonCard = ({ variant, location, onUpgradeClick, onBetaRequest }: Prop
 			case "fix_payment":
 				openBillingPortal();
 				return;
+			case "reactivate":
+				navigate(MCP_SUBSCRIPTION_PATH);
+				return;
 			case "connect":
 			case "unavailable":
 				navigate(MCP_INTEGRATIONS_PATH);
@@ -235,8 +258,10 @@ const McpAddonCard = ({ variant, location, onUpgradeClick, onBetaRequest }: Prop
 		pastDue ||
 		(!(variant === "panel" && location === "integrations_ia" && cta === "connect") &&
 			cta !== "team" &&
+			// En Suscripción el botón "Reactivar" ya está en la tarjeta del plan.
+			!(cta === "reactivate" && location === "account_subscription") &&
 			(cta !== "beta_request" || !!onBetaRequest));
-	const canCancel = hasAddon && addon?.status !== "canceling";
+	const canCancel = !!addon?.canRemove;
 
 	const primaryButton = showPrimary && (
 		<Button
@@ -261,7 +286,7 @@ const McpAddonCard = ({ variant, location, onUpgradeClick, onBetaRequest }: Prop
 				</Button>
 			)}
 			{hasAddon && variant === "panel" && location === "integrations_ia" && (
-				<Button onClick={() => navigate("/apps/profiles/account/subscription")} sx={{ textTransform: "none", fontWeight: 600 }}>
+				<Button onClick={() => navigate(MCP_SUBSCRIPTION_PATH)} sx={{ textTransform: "none", fontWeight: 600 }}>
 					Gestionar en Suscripción
 				</Button>
 			)}

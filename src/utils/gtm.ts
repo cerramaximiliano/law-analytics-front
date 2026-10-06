@@ -360,7 +360,7 @@ export const trackOauthUpgradeView = (reason: string, plan?: string): void => {
 //                              (cuenta → suscripción, integraciones → asistentes)
 //   - mcp_addon_dialog_open    se abrió el diálogo de confirmación del alta
 //   - mcp_addon_purchase       alta confirmada por el hub (conversión)
-//   - mcp_addon_purchase_error el alta falló (tarjeta, SCA, plan…)
+//   - mcp_addon_purchase_error el alta falló (error_code = code del hub: CARD_DECLINED, PAYMENT_REQUIRES_ACTION, …)
 //   - mcp_addon_cancel         baja confirmada
 
 export type McpAddonCtaLocation =

@@ -65,7 +65,7 @@ const Plans = () => {
 	const showMcpAddon =
 		integrations.claudeAi.enabled ||
 		integrations.chatGpt.enabled ||
-		(!!addon && (addon.status !== "none" || addon.access.via === "beta_grant"));
+		(!!addon && (addon.status !== "none" || addon.hasManualGrant || addon.adminBypass));
 
 	// Las tarjetas se dibujan desde el primer momento con el respaldo estático y
 	// se actualizan en sitio cuando responde la API (mismo criterio que la sección

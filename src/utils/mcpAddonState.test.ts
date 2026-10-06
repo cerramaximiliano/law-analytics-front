@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { McpAccess } from "hooks/useMcpAccess";
-import { normalizeAddAddonResponse, type PublicAddon } from "store/reducers/ApiService";
+import type { PublicAddon } from "store/reducers/ApiService";
 import { deriveMcpAddonFallback, mcpUserState, normalizeMcpAddonStatus, resolveMcpCta, type FallbackInput } from "./mcpAddonState";
 import { getUpgradeReasonCopy } from "./mcpUpgradeReasons";
 
@@ -40,62 +40,170 @@ const input = (over: Partial<FallbackInput>): FallbackInput => ({
 	...over,
 });
 
-describe("deriveMcpAddonFallback", () => {
-	it("pago sin add-on → elegible, status none, CTA activar", () => {
-		const s = deriveMcpAddonFallback(input({}));
-		expect(s.status).toBe("none");
-		expect(s.eligibility).toMatchObject({ eligible: true, reason: null, currentPlan: "standard" });
-		expect(s.price).toEqual({ amount: 10, currency: "usd", interval: "month" });
+/** Respuesta real del hub (`getAddonStatusForUser`, branch fix/mcp-addon-purchase). */
+const hub = (over: Record<string, unknown> = {}) => ({
+	success: true,
+	addon: {
+		key: "mcp_access",
+		displayName: "Conector de IA",
+		description: null,
+		price: { amount: 10, currency: "usd", interval: "month" },
+		requiredPlans: ["standard", "premium"],
+		status: "none",
+		plan: "standard",
+		subscriptionStatus: "active",
+		eligible: true,
+		eligibilityReason: null,
+		publicAvailable: true,
+		availabilityReason: null,
+		maintenanceMessage: null,
+		adminBypass: false,
+		purchasable: true,
+		canRemove: false,
+		nextBillingDate: null,
+		endsAt: null,
+		hasManualGrant: false,
+		legal: {
+			privacyVersion: "2026-10",
+			privacyUrl: "/privacy-policy#conectores-ia",
+			previouslyAcceptedVersion: null,
+			acceptanceRequired: true,
+		},
+		...over,
+	},
+});
+
+describe("normalizeMcpAddonStatus (contrato real del hub)", () => {
+	it("pago sin add-on → purchasable, CTA activar, legal y mcpUrl fija", () => {
+		const s = normalizeMcpAddonStatus(hub())!;
+		expect(s).toMatchObject({
+			status: "none",
+			plan: "standard",
+			eligible: true,
+			purchasable: true,
+			price: { amount: 10, currency: "usd", interval: "month" },
+			legal: { privacyVersion: "2026-10", acceptanceRequired: true },
+			mcpUrl: "https://mcp.lawanalytics.app/mcp",
+			access: { allowed: false, via: null, reason: "addon_missing" },
+		});
 		expect(resolveMcpCta(s, true)).toBe("activate");
 		expect(mcpUserState(s, true)).toBe("paid_no_addon");
 	});
 
-	it("plan gratuito → plan_too_low y CTA mejorar plan", () => {
+	it("acepta el objeto sin envoltorio", () => {
+		expect(normalizeMcpAddonStatus(hub().addon)).toEqual(normalizeMcpAddonStatus(hub()));
+	});
+
+	it("activo → acceso por add-on y próximo cobro", () => {
+		const s = normalizeMcpAddonStatus(
+			hub({ status: "active", purchasable: false, canRemove: true, nextBillingDate: "2026-11-06T12:00:00.000Z" }),
+		)!;
+		expect(s.access).toEqual({ allowed: true, via: "addon", reason: null });
+		expect(s.nextBillingDate).toBe("2026-11-06T12:00:00.000Z");
+		expect(s.canRemove).toBe(true);
+		expect(resolveMcpCta(s, true)).toBe("connect");
+		expect(mcpUserState(s, true)).toBe("has_addon");
+	});
+
+	it("canceling conserva el acceso hasta endsAt; incomplete pide actualizar el pago", () => {
+		const canceling = normalizeMcpAddonStatus(
+			hub({ status: "canceling", endsAt: "2026-11-06T12:00:00Z", eligible: false, eligibilityReason: "subscription_canceling" }),
+		)!;
+		expect(canceling.endsAt).toBe("2026-11-06T12:00:00.000Z");
+		expect(resolveMcpCta(canceling, true)).toBe("connect");
+		const incomplete = normalizeMcpAddonStatus(hub({ status: "incomplete", purchasable: false }))!;
+		expect(incomplete.access.allowed).toBe(false);
+		expect(resolveMcpCta(incomplete, true)).toBe("fix_payment");
+	});
+
+	it("motivos de elegibilidad → CTA", () => {
+		const cta = (eligibilityReason: string, plan = "standard") =>
+			resolveMcpCta(normalizeMcpAddonStatus(hub({ eligible: false, eligibilityReason, plan, purchasable: false }))!, true);
+		expect(cta("paid_plan_required", "free")).toBe("upgrade");
+		expect(cta("subscription_inactive")).toBe("fix_payment");
+		expect(cta("subscription_canceling")).toBe("reactivate");
+	});
+
+	it("venta cerrada: beta_request sin grant, connect con grant, activar con adminBypass", () => {
+		const closed = { publicAvailable: false, availabilityReason: "not_public", purchasable: false };
+		expect(resolveMcpCta(normalizeMcpAddonStatus(hub(closed))!, true)).toBe("beta_request");
+		const grant = normalizeMcpAddonStatus(hub({ ...closed, hasManualGrant: true, plan: "free" }))!;
+		expect(grant.access).toEqual({ allowed: true, via: "beta_grant", reason: null });
+		expect(resolveMcpCta(grant, true)).toBe("connect");
+		expect(resolveMcpCta(normalizeMcpAddonStatus(hub({ ...closed, adminBypass: true, purchasable: true }))!, true)).toBe("activate");
+	});
+
+	it("mantenimiento corta a todos (también con grant)", () => {
+		const s = normalizeMcpAddonStatus(
+			hub({
+				publicAvailable: false,
+				availabilityReason: "maintenance",
+				maintenanceMessage: "Volvemos 18 h",
+				hasManualGrant: true,
+				purchasable: false,
+			}),
+		)!;
+		expect(s.access.allowed).toBe(false);
+		expect(s.maintenanceMessage).toBe("Volvemos 18 h");
+		expect(resolveMcpCta(s, true)).toBe("unavailable");
+	});
+
+	it("sin precio → no se ofrece la compra", () => {
+		const s = normalizeMcpAddonStatus(hub({ price: null, purchasable: false }))!;
+		expect(s.price.amount).toBeNull();
+		expect(resolveMcpCta(s, true)).toBe("unavailable");
+	});
+
+	it("miembro de equipo sin add-on → team", () => {
+		const s = normalizeMcpAddonStatus(hub(), { isTeamMember: true })!;
+		expect(s.eligibilityReason).toBe("team_member");
+		expect(s.purchasable).toBe(false);
+		expect(resolveMcpCta(s, true)).toBe("team");
+	});
+
+	it("rechaza respuestas sin el shape mínimo (→ fallback)", () => {
+		expect(normalizeMcpAddonStatus(null)).toBeNull();
+		expect(normalizeMcpAddonStatus({ success: true })).toBeNull();
+		expect(normalizeMcpAddonStatus({ status: "weird", eligible: true })).toBeNull();
+		expect(normalizeMcpAddonStatus({ status: "none" })).toBeNull();
+	});
+});
+
+describe("deriveMcpAddonFallback (hub sin el GET consolidado)", () => {
+	it("pago sin add-on → elegible y comprable, sin legal (se consulta aparte)", () => {
+		const s = deriveMcpAddonFallback(input({}));
+		expect(s).toMatchObject({ status: "none", eligible: true, purchasable: true, legal: null, plan: "standard" });
+		expect(resolveMcpCta(s, true)).toBe("activate");
+	});
+
+	it("plan gratuito → paid_plan_required", () => {
 		const s = deriveMcpAddonFallback(input({ subscription: { plan: "free", status: "active" }, access: access(false, "plan_too_low") }));
-		expect(s.eligibility.reason).toBe("plan_too_low");
+		expect(s.eligibilityReason).toBe("paid_plan_required");
 		expect(resolveMcpCta(s, true)).toBe("upgrade");
 		expect(mcpUserState(s, true)).toBe("free");
 	});
 
-	it("add-on activo → connect; con cancelAtPeriodEnd → canceling con fecha", () => {
+	it("add-on activo y suscripción cancelándose → canceling con endsAt", () => {
 		const sub = {
 			plan: "premium",
 			status: "active",
-			currentPeriodEnd: "2026-11-06T00:00:00.000Z",
+			currentPeriodEnd: "2026-11-06T12:00:00.000Z",
 			addons: [{ key: "mcp_access", status: "active" }],
 		};
 		const active = deriveMcpAddonFallback(input({ subscription: sub, access: access(true, "ok") }));
-		expect(active.status).toBe("active");
-		expect(active.nextChargeAt).toBe("2026-11-06T00:00:00.000Z");
-		expect(active.access).toEqual({ allowed: true, via: "addon", reason: null });
+		expect(active).toMatchObject({ status: "active", nextBillingDate: "2026-11-06T12:00:00.000Z", canRemove: true });
 		expect(resolveMcpCta(active, true)).toBe("connect");
-		expect(mcpUserState(active, true)).toBe("has_addon");
-
 		const canceling = deriveMcpAddonFallback(input({ subscription: { ...sub, cancelAtPeriodEnd: true }, access: access(true, "ok") }));
-		expect(canceling.status).toBe("canceling");
-		expect(canceling.cancelAt).toBe("2026-11-06T00:00:00.000Z");
+		expect(canceling).toMatchObject({ status: "canceling", endsAt: "2026-11-06T12:00:00.000Z", canRemove: false });
 	});
 
-	it("suscripción past_due con add-on → past_due (sigue con acceso, gracia C-BILLING)", () => {
-		const s = deriveMcpAddonFallback(
-			input({
-				subscription: { plan: "standard", status: "past_due", addons: [{ key: "mcp_access", status: "active" }] },
-				access: access(true, "ok"),
-			}),
-		);
-		expect(s.status).toBe("past_due");
-		expect(resolveMcpCta(s, true)).toBe("connect");
-	});
-
-	it("suscripción unpaid → subscription_inactive y CTA actualizar pago", () => {
-		const s = deriveMcpAddonFallback(
-			input({ subscription: { plan: "standard", status: "unpaid" }, access: access(false, "subscription_inactive") }),
-		);
-		expect(s.eligibility.reason).toBe("subscription_inactive");
+	it("suscripción past_due → no se vende (subscription_inactive), como el hub", () => {
+		const s = deriveMcpAddonFallback(input({ subscription: { plan: "standard", status: "past_due" } }));
+		expect(s.eligibilityReason).toBe("subscription_inactive");
 		expect(resolveMcpCta(s, true)).toBe("fix_payment");
 	});
 
-	it("grant beta con switches apagados → acceso por beta_grant, no se vende", () => {
+	it("grant beta con switches apagados → acceso beta, venta cerrada", () => {
 		const s = deriveMcpAddonFallback(
 			input({
 				subscription: { plan: "free" },
@@ -103,30 +211,20 @@ describe("deriveMcpAddonFallback", () => {
 				publicIntegrationsOpen: false,
 			}),
 		);
-		expect(s.publicOpen).toBe(false);
+		expect(s).toMatchObject({ publicAvailable: false, availabilityReason: "not_public", hasManualGrant: true });
 		expect(s.access.via).toBe("beta_grant");
 		expect(resolveMcpCta(s, true)).toBe("connect");
 	});
 
-	it("beta cerrada sin grant (plan pago) → not_for_sale y motivo beta_grant_required", () => {
+	it("beta cerrada sin grant → beta_request", () => {
 		const prov = provider({ available: false, reason: "beta_grant_required", publicEnabled: false });
 		const s = deriveMcpAddonFallback(input({ access: access(false, "addon_missing", prov), publicIntegrationsOpen: false }));
-		expect(s.eligibility.reason).toBe("not_for_sale");
-		expect(s.access.reason).toBe("beta_grant_required");
+		expect(s.purchasable).toBe(false);
 		expect(resolveMcpCta(s, true)).toBe("beta_request");
 	});
 
 	it("miembro de equipo → team", () => {
-		const s = deriveMcpAddonFallback(input({ isTeamMember: true }));
-		expect(resolveMcpCta(s, true)).toBe("team");
-	});
-
-	it("sin /access usa el estado del add-on de la suscripción", () => {
-		const s = deriveMcpAddonFallback(
-			input({ access: null, subscription: { plan: "standard", status: "active", addons: [{ key: "mcp_access", status: "active" }] } }),
-		);
-		expect(s.access.allowed).toBe(true);
-		expect(s.mcpUrl).toBe("https://mcp.lawanalytics.app/mcp");
+		expect(resolveMcpCta(deriveMcpAddonFallback(input({ isTeamMember: true })), true)).toBe("team");
 	});
 });
 
@@ -135,62 +233,6 @@ describe("resolveMcpCta", () => {
 		expect(resolveMcpCta(null, false)).toBe("register");
 		expect(resolveMcpCta(null, true)).toBe("unavailable");
 		expect(mcpUserState(null, false)).toBe("anonymous");
-	});
-});
-
-describe("normalizeMcpAddonStatus", () => {
-	it("acepta { addon } o el objeto pelado y completa defaults", () => {
-		const raw = {
-			status: "active",
-			price: { amount: 12.5, currency: "USD" },
-			eligibility: { eligible: true },
-			access: { allowed: true, via: "addon" },
-			publicOpen: true,
-			nextChargeAt: "2026-11-06T00:00:00Z",
-		};
-		const a = normalizeMcpAddonStatus({ success: true, addon: raw });
-		const b = normalizeMcpAddonStatus(raw);
-		expect(a).toEqual(b);
-		expect(a).toMatchObject({
-			status: "active",
-			price: { amount: 12.5, currency: "usd", interval: "month" },
-			cancelBehavior: "immediate",
-			mcpUrl: "https://mcp.lawanalytics.app/mcp",
-			eligibility: { eligible: true, reason: null, requiredPlans: ["standard", "pro", "premium"] },
-		});
-	});
-
-	it("rechaza respuestas sin el shape mínimo (→ fallback)", () => {
-		expect(normalizeMcpAddonStatus(null)).toBeNull();
-		expect(normalizeMcpAddonStatus({ success: true })).toBeNull();
-		expect(normalizeMcpAddonStatus({ status: "weird", eligibility: {} })).toBeNull();
-		expect(normalizeMcpAddonStatus({ status: "none" })).toBeNull();
-	});
-
-	it("no elegible sin reason → plan_too_low", () => {
-		expect(normalizeMcpAddonStatus({ status: "none", eligibility: { eligible: false } })?.eligibility.reason).toBe("plan_too_low");
-	});
-});
-
-describe("normalizeAddAddonResponse", () => {
-	it("detecta requires_action en sus variantes", () => {
-		expect(normalizeAddAddonResponse({ success: true, requires_action: true, client_secret: "pi_x", publishable_key: "pk" })).toMatchObject(
-			{
-				success: false,
-				code: "REQUIRES_ACTION",
-				clientSecret: "pi_x",
-				publishableKey: "pk",
-			},
-		);
-		expect(normalizeAddAddonResponse({ status: "requires_action", hosted_invoice_url: "https://inv" })).toMatchObject({
-			code: "REQUIRES_ACTION",
-			hostedInvoiceUrl: "https://inv",
-		});
-	});
-
-	it("respeta éxito y códigos de negocio", () => {
-		expect(normalizeAddAddonResponse({ success: true, addon: { key: "mcp_access", status: "active" } }).success).toBe(true);
-		expect(normalizeAddAddonResponse({ success: false, code: "CARD_DECLINED" }).code).toBe("CARD_DECLINED");
 	});
 });
 

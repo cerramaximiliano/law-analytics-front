@@ -1,92 +1,122 @@
 /**
  * Contrato del add-on "Conectores de IA" (`mcp_access`) entre el front y el hub.
  *
- * ENDPOINT CONSOLIDADO (lo expone law-analytics-server; ver MCP_ADDON_STATUS_PATH):
+ * Fuente autoritativa: law-analytics-server `controllers/subscriptionController.js`
+ * (`getAddonStatus`, `addAddon`, `removeAddon`) y `services/mcpAddonStatusService.js`
+ * (branch `fix/mcp-addon-purchase`, con tests).
  *
- *   GET /api/subscriptions/addons/mcp_access/status   (cookie de sesión)
- *   200 → { success: true, addon: McpAddonStatus }      // también se acepta McpAddonStatus "pelado"
+ *   GET    /api/subscriptions/addons/mcp_access     → 200 { success: true, addon: HubMcpAddonStatus }
+ *   POST   /api/subscriptions/addons/checkout       { addonKey, acceptedPolicyVersion? }
+ *   DELETE /api/subscriptions/addons/mcp_access     (baja inmediata, crédito prorrateado)
  *
- * Mientras el endpoint no exista (404) o falle, `useMcpAddon` arma el mismo shape
- * con lo que ya hay: addons públicos (precio), la suscripción del store
- * (`/api/subscriptions/current`) y `/api/connected-apps/access` (plan check +
- * switches + grant beta). Ver `deriveMcpAddonFallback` en utils/mcpAddonState.ts.
- *
- * Alta / baja (ya existen en el hub):
- *   POST   /api/subscriptions/addons/checkout  { addonKey, acceptedPolicyVersion? }
- *   DELETE /api/subscriptions/addons/mcp_access
- * Ver `AddAddonResult` / `RemoveAddonResult` en store/reducers/ApiService.ts para las
- * respuestas que el front entiende (incluido `requires_action` para SCA).
+ * Mientras el GET no exista (404, el front puede salir antes que el hub) o falle,
+ * `useMcpAddon` arma el mismo modelo con `/api/connected-apps/access` + la suscripción
+ * del store + los addons públicos (ver `deriveMcpAddonFallback`).
  */
 
 export const MCP_ADDON_KEY = "mcp_access" as const;
 
-/** Estado de facturación del add-on, visto por el usuario. */
+/** GET consolidado (respuesta cruda del hub). */
+export const MCP_ADDON_STATUS_PATH = `/api/subscriptions/addons/${MCP_ADDON_KEY}`;
+
+/** El hub no devuelve la URL del conector: es fija. */
+export const DEFAULT_MCP_URL = "https://mcp.lawanalytics.app/mcp";
+
 export type McpAddonBillingStatus =
-	/** No lo tiene (nunca lo agregó o ya se quitó). */
+	/** No contratado. */
 	| "none"
-	/** Activo y al día. */
+	/** Contratado y al día. */
 	| "active"
-	/** Stripe está reintentando el cobro: sigue funcionando (gracia, C-BILLING) pero hay que actualizar el pago. */
+	/** Cobro fallido, Stripe reintenta: mantiene el acceso (C-BILLING) pero hay que actualizar el pago. */
 	| "past_due"
-	/** Sigue activo hasta `cancelAt`; después se quita solo. */
+	/** El cobro inicial no se completó. */
+	| "incomplete"
+	/** La suscripción se cancela al fin del período y el add-on se va con ella (`endsAt`). */
 	| "canceling";
 
-/** Por qué el usuario NO puede contratar el add-on (null = puede). Alineado con `featureAccessService.Reason`. */
-export type McpAddonIneligibleReason =
-	| null
-	/** Plan gratuito (o sin plan pago): hay que mejorar el plan primero. */
-	| "plan_too_low"
-	| "no_subscription"
-	/** Suscripción de Stripe en unpaid/canceled/incomplete…: hay que regularizar el pago. */
-	| "subscription_inactive"
-	/** Cuenta suspendida por falta de pago (dunning). */
-	| "account_suspended"
-	/** Miembro de un equipo: el add-on lo contrata el titular de la suscripción. */
-	| "team_member"
-	/** El add-on no se vende todavía (beta cerrada). */
-	| "not_for_sale";
+/** Por qué no puede contratarlo (null = puede). Los tres primeros son del hub; `team_member` lo agrega el front. */
+export type McpAddonEligibilityReason = null | "paid_plan_required" | "subscription_inactive" | "subscription_canceling" | "team_member";
+
+/** Por qué la venta está cerrada (switch C-TOGGLES). */
+export type McpAddonAvailabilityReason = null | "not_public" | "maintenance" | "config_unavailable";
 
 export interface McpAddonPrice {
-	/** Monto mensual en unidades de la moneda (no centavos). null si Stripe no lo devolvió. */
+	/** Monto mensual en unidades de la moneda (no centavos). */
 	amount: number | null;
 	/** ISO 4217 en minúscula: "usd", "ars". */
 	currency: string;
 	interval: "month" | "year" | string;
 }
 
-export interface McpAddonStatus {
-	key: typeof MCP_ADDON_KEY;
-	price: McpAddonPrice;
-	status: McpAddonBillingStatus;
-	/** Próximo cobro del add-on (fin del período actual). ISO o null. */
-	nextChargeAt: string | null;
-	/** Con status "canceling": fecha en que se quita. ISO o null. */
-	cancelAt: string | null;
-	/** Cómo se comporta la baja hoy: "immediate" (se quita en el momento, prorrateo) o "period_end". */
-	cancelBehavior: "immediate" | "period_end";
-	eligibility: {
-		eligible: boolean;
-		reason: McpAddonIneligibleReason;
-		/** Planes que permiten contratarlo, p. ej. ["standard","pro","premium"]. */
-		requiredPlans: string[];
-		/** Plan actual del usuario ("free" | "standard" | "pro" | "premium"). */
-		currentPlan: string | null;
-	};
-	/** La integración está abierta al público (algún switch de proveedor encendido). false = beta cerrada. */
-	publicOpen: boolean;
-	/** Acceso efectivo hoy (lo que respondería el consent OAuth). */
-	access: {
-		allowed: boolean;
-		/** "addon" = por plan + add-on; "beta_grant" = grant manual; null = sin acceso. */
-		via: "addon" | "beta_grant" | null;
-		/** Motivo de featureAccessService cuando no hay acceso (plan_too_low, addon_missing, subscription_inactive…). */
-		reason: string | null;
-	};
-	/** URL del conector para pegar en Claude.ai / ChatGPT. */
-	mcpUrl: string;
+export interface McpAddonLegal {
+	privacyVersion: string | null;
+	privacyUrl: string;
+	previouslyAcceptedVersion: string | null;
+	/** true = el checkout exige `acceptedPolicyVersion === privacyVersion`. */
+	acceptanceRequired: boolean;
 }
 
-/** Path del GET consolidado. Centralizado acá para cambiarlo en un solo lugar si el hub lo publica en otra ruta. */
-export const MCP_ADDON_STATUS_PATH = `/api/subscriptions/addons/${MCP_ADDON_KEY}/status`;
+/** Respuesta del hub (`addon` del GET). */
+export interface HubMcpAddonStatus {
+	key: string;
+	displayName?: string;
+	description?: string | null;
+	price: { amount: number; currency: string; interval: string } | null;
+	requiredPlans?: string[];
+	status: McpAddonBillingStatus;
+	plan: string;
+	subscriptionStatus: string | null;
+	eligible: boolean;
+	eligibilityReason: Exclude<McpAddonEligibilityReason, "team_member">;
+	publicAvailable: boolean;
+	availabilityReason: McpAddonAvailabilityReason;
+	maintenanceMessage: string | null;
+	adminBypass: boolean;
+	purchasable: boolean;
+	canRemove: boolean;
+	nextBillingDate: string | null;
+	endsAt: string | null;
+	hasManualGrant: boolean;
+	legal: McpAddonLegal;
+}
 
-export const DEFAULT_MCP_URL = "https://mcp.lawanalytics.app/mcp";
+/**
+ * Modelo que usa la UI: la respuesta del hub normalizada (o derivada en el fallback)
+ * más `access` (acceso efectivo, derivado en el front) y `mcpUrl`.
+ */
+export interface McpAddonStatus {
+	key: typeof MCP_ADDON_KEY;
+	/** Precio; `amount: null` si Stripe no lo devolvió (el hub manda `price: null`). */
+	price: McpAddonPrice;
+	status: McpAddonBillingStatus;
+	/** Plan actual: "free" | "standard" | "pro" | "premium". */
+	plan: string;
+	subscriptionStatus: string | null;
+	eligible: boolean;
+	eligibilityReason: McpAddonEligibilityReason;
+	requiredPlans: string[];
+	/** Venta abierta (algún switch de proveedor encendido y sin mantenimiento). false = beta cerrada. */
+	publicAvailable: boolean;
+	availabilityReason: McpAddonAvailabilityReason;
+	maintenanceMessage: string | null;
+	/** Admin de plataforma con la venta cerrada: puede comprar igual. */
+	adminBypass: boolean;
+	/** status none && elegible && (venta abierta || adminBypass) && con precio. */
+	purchasable: boolean;
+	canRemove: boolean;
+	/** Próximo cobro (active / past_due). */
+	nextBillingDate: string | null;
+	/** Fecha en que se va (canceling). */
+	endsAt: string | null;
+	/** Grant beta manual (acceso sin pagar). */
+	hasManualGrant: boolean;
+	/** null en el fallback: se consulta /api/legal/versions al abrir el diálogo. */
+	legal: McpAddonLegal | null;
+	/** Acceso efectivo hoy (derivado en el front). */
+	access: {
+		allowed: boolean;
+		via: "addon" | "beta_grant" | null;
+		reason: string | null;
+	};
+	mcpUrl: string;
+}

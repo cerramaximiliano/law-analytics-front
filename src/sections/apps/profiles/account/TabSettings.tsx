@@ -72,7 +72,7 @@ const TabSubscription = () => {
 	const subscription = useSelector((state: RootState) => state.auth.subscription);
 	// Add-on "Conectores de IA": visible si se vende (integración abierta) o si ya lo tiene / tiene acceso beta.
 	const { addon: mcpAddon } = useMcpAddon();
-	const showMcpAddon = !!mcpAddon && (mcpAddon.publicOpen || mcpAddon.status !== "none" || mcpAddon.access.via === "beta_grant");
+	const showMcpAddon = !!mcpAddon && (mcpAddon.publicAvailable || mcpAddon.adminBypass || mcpAddon.status !== "none" || mcpAddon.hasManualGrant);
 	const payments = useSelector(selectPaymentHistory) || [];
 	const userEmail = useSelector((state: RootState) => state.auth.user?.email || state.auth.email || "");
 

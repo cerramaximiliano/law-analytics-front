@@ -7,6 +7,7 @@
  *   pago sin add-on      → "Activar Conectores de IA" → diálogo de alta acá mismo
  *   con acceso           → "Conectar mi asistente"   → Integraciones → Asistentes de IA
  *   suscripción impaga   → "Actualizar el pago"      → portal de Stripe
+ *   suscripción cancelándose → "Reactivar mi suscripción" → Cuenta → Suscripción
  *   beta cerrada         → "Solicitar acceso beta"   → modal de soporte (onBetaRequest)
  *
  * Tracking: sigue emitiendo `mcp_landing_cta_click` (la-ads tracking-map) con `cta_location`
@@ -17,7 +18,7 @@ import { useNavigate } from "react-router-dom";
 
 import useAuth from "hooks/useAuth";
 import useMcpAddon from "hooks/useMcpAddon";
-import useMcpAddonActions, { MCP_INTEGRATIONS_PATH } from "hooks/useMcpAddonActions";
+import useMcpAddonActions, { MCP_INTEGRATIONS_PATH, MCP_SUBSCRIPTION_PATH } from "hooks/useMcpAddonActions";
 import { usePublicAddons } from "hooks/usePublicAddons";
 import { pushGTMEvent } from "utils/gtm";
 import { MCP_CTA_LABELS, resolveMcpCta, type McpCtaKind } from "utils/mcpAddonState";
@@ -72,6 +73,9 @@ const useMcpLandingCta = ({ pageVariant, onBetaRequest }: Options) => {
 				return;
 			case "fix_payment":
 				openBillingPortal();
+				return;
+			case "reactivate":
+				navigate(MCP_SUBSCRIPTION_PATH);
 				return;
 			case "beta_request":
 				onBetaRequest();

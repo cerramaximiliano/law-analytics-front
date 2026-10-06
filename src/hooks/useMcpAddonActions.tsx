@@ -3,7 +3,7 @@
  *
  * Un único flujo para todas las pantallas (/plans, cuenta → suscripción, integraciones →
  * asistentes de IA, landings): confirmación con precio + checkbox de política (P4),
- * checkout, autenticación del banco (SCA), tarjeta rechazada, y baja con confirmación.
+ * checkout (errores 402/409 del hub, sin cargo), re-lectura del GET y baja inmediata con confirmación.
  *
  *   const { startPurchase, startCancel, busy, dialogs } = useMcpAddonActions({ location: "plans_page" });
  *   ...
@@ -17,12 +17,7 @@ import { useNavigate } from "react-router-dom";
 import McpAddonLegalDialog, { type McpAddonDialogError } from "components/legal/McpAddonLegalDialog";
 import McpAddonCancelDialog from "components/legal/McpAddonCancelDialog";
 import useMcpAddon from "hooks/useMcpAddon";
-import ApiService, {
-	ADDON_REQUIRES_ACTION,
-	LEGAL_ACCEPTANCE_REQUIRED,
-	PRIVACY_CONNECTORS_URL,
-	type AddAddonResult,
-} from "store/reducers/ApiService";
+import ApiService, { LEGAL_ACCEPTANCE_REQUIRED, PRIVACY_CONNECTORS_URL, type AddAddonResult } from "store/reducers/ApiService";
 import { openSnackbar } from "store/reducers/snackbar";
 import {
 	trackMcpAddonCancel,
@@ -31,12 +26,18 @@ import {
 	trackMcpAddonPurchaseError,
 	type McpAddonCtaLocation,
 } from "utils/gtm";
-import { MCP_ADDON_NAME, formatAddonDate } from "utils/mcpAddonState";
+import { MCP_ADDON_NAME } from "utils/mcpAddonState";
 import { formatMonthlyPrice } from "utils/mcpBannerCopy";
-import { confirmAddonPayment } from "utils/stripeConfirm";
 
 export const MCP_INTEGRATIONS_PATH = "/apps/profiles/account/pjn?view=ia";
-const SUBSCRIPTION_PATH = "/apps/profiles/account/subscription";
+export const MCP_SUBSCRIPTION_PATH = "/apps/profiles/account/subscription";
+const SUBSCRIPTION_PATH = MCP_SUBSCRIPTION_PATH;
+
+/** Copy de los 402 del checkout (`error_if_incomplete`: nunca hay cargo ni add-on a medias). */
+const PAYMENT_FAILED_MESSAGES: Record<string, string> = {
+	PAYMENT_REQUIRES_ACTION: "Tu banco pidió verificar el pago y no se pudo completar. No se realizó ningún cargo.",
+	CARD_DECLINED: "La tarjeta fue rechazada. No se realizó ningún cargo.",
+};
 
 interface Options {
 	location: McpAddonCtaLocation;
@@ -114,8 +115,10 @@ const useMcpAddonActions = ({ location, onActivated }: Options) => {
 		trackMcpAddonPurchaseError(location, res.code || "unknown");
 		switch (res.code) {
 			case LEGAL_ACCEPTANCE_REQUIRED: {
-				// La política vigente cambió (o el front no la conocía): pedir la versión actual antes de cobrar.
-				const versions = await ApiService.getLegalVersions();
+				// La política vigente cambió (o el front no la conocía): el 400 trae la versión actual.
+				const versions = res.privacyVersion
+					? { privacy: res.privacyVersion, privacyUrl: res.privacyUrl || PRIVACY_CONNECTORS_URL }
+					: await ApiService.getLegalVersions();
 				setPurchaseDialog({
 					version: versions.privacy,
 					privacyUrl: versions.privacyUrl || PRIVACY_CONNECTORS_URL,
@@ -128,38 +131,38 @@ const useMcpAddonActions = ({ location, onActivated }: Options) => {
 				});
 				return;
 			}
-			case ADDON_REQUIRES_ACTION: {
-				const outcome = await confirmAddonPayment(res);
-				if (outcome.ok === true) {
-					await finishActivated("active");
-				} else if (outcome.ok === "redirected") {
-					setDialogError({
-						severity: "info",
-						message: "Tu banco pide confirmar el pago. Completalo en la pestaña de Stripe que abrimos y después tocá «Ya pagué».",
-						action: {
-							label: "Ya pagué",
-							onClick: async () => {
-								await refresh();
-								setPurchaseDialog(null);
-							},
-						},
-					});
-				} else {
-					setDialogError({
-						severity: "error",
-						message: outcome.message,
-						action: { label: "Actualizar medio de pago", onClick: openBillingPortal },
-					});
-				}
-				return;
-			}
+			case "PAYMENT_REQUIRES_ACTION":
 			case "CARD_DECLINED":
+				// El mensaje de Stripe viene en inglés: usamos el nuestro.
 				setDialogError({
 					severity: "error",
-					// El mensaje de Stripe viene en inglés: no lo mostramos.
-					message: "Tu tarjeta rechazó el cobro. Actualizá el medio de pago y probá de nuevo.",
-					action: { label: "Actualizar medio de pago", onClick: openBillingPortal },
+					message: `${PAYMENT_FAILED_MESSAGES[res.code]} Actualizá tu medio de pago en el portal de facturación e intentá de nuevo.`,
+					action: { label: "Abrir portal de pago", onClick: openBillingPortal },
 				});
+				return;
+			case "SUBSCRIPTION_NOT_ACTIVE":
+				setDialogError({
+					severity: "warning",
+					message: "Tu suscripción tiene un pago pendiente o no está activa. Regularizá el pago antes de agregar el add-on.",
+					action: { label: "Actualizar el pago", onClick: openBillingPortal },
+				});
+				return;
+			case "SUBSCRIPTION_CANCELING":
+				setDialogError({
+					severity: "warning",
+					message: "Tu suscripción está programada para cancelarse. Reactivala antes de agregar el add-on.",
+					action: { label: "Reactivar mi suscripción", onClick: () => navigate(SUBSCRIPTION_PATH) },
+				});
+				return;
+			case "ADDON_NOT_AVAILABLE":
+				setDialogError({
+					severity: "info",
+					message:
+						res.reason === "maintenance"
+							? "La conexión con asistentes de IA está en mantenimiento. Probá de nuevo en un rato."
+							: "El add-on todavía no está disponible para contratar.",
+				});
+				await refresh();
 				return;
 			case "PAID_PLAN_REQUIRED":
 			case "NO_PAID_SUBSCRIPTION":
@@ -190,14 +193,26 @@ const useMcpAddonActions = ({ location, onActivated }: Options) => {
 		}
 	};
 
-	/** Abre el diálogo de alta (pide antes la versión vigente de la política). */
+	/**
+	 * Abre el diálogo de alta. La versión de la política sale de `legal` del GET consolidado;
+	 * sin él (fallback) se consulta /api/legal/versions.
+	 */
 	const startPurchase = useCallback(async () => {
-		setBusy(true);
-		const versions = await ApiService.getLegalVersions();
-		setBusy(false);
-		trackMcpAddonDialogOpen(location, !!versions.privacy);
-		setPurchaseDialog({ version: versions.privacy, privacyUrl: versions.privacyUrl || PRIVACY_CONNECTORS_URL, error: null });
-	}, [location]);
+		let version: string | null;
+		let privacyUrl: string;
+		if (addon?.legal) {
+			version = addon.legal.acceptanceRequired ? addon.legal.privacyVersion : null;
+			privacyUrl = addon.legal.privacyUrl || PRIVACY_CONNECTORS_URL;
+		} else {
+			setBusy(true);
+			const versions = await ApiService.getLegalVersions();
+			setBusy(false);
+			version = versions.privacy;
+			privacyUrl = versions.privacyUrl || PRIVACY_CONNECTORS_URL;
+		}
+		trackMcpAddonDialogOpen(location, !!version);
+		setPurchaseDialog({ version, privacyUrl, error: null });
+	}, [addon, location]);
 
 	const startCancel = useCallback(() => setCancelDialog({ error: null }), []);
 
@@ -209,13 +224,7 @@ const useMcpAddonActions = ({ location, onActivated }: Options) => {
 			trackMcpAddonCancel(location);
 			setCancelDialog(null);
 			await refresh();
-			const until = formatAddonDate(res.cancelAt || null);
-			snackbar(
-				until
-					? `${MCP_ADDON_NAME} sigue activo hasta el ${until}.`
-					: `Quitamos ${MCP_ADDON_NAME}. Tus asistentes ya no pueden consultar tu cuenta.`,
-				"info",
-			);
+			snackbar(`Quitamos ${MCP_ADDON_NAME}. Tus asistentes ya no pueden consultar tu cuenta.`, "info");
 		} catch (err) {
 			setCancelDialog({ error: err instanceof Error ? err.message : "No pudimos quitar el add-on. Intentá de nuevo." });
 		} finally {
@@ -231,7 +240,7 @@ const useMcpAddonActions = ({ location, onActivated }: Options) => {
 					policyVersion={purchaseDialog.version}
 					privacyUrl={purchaseDialog.privacyUrl}
 					priceLabel={priceLabel}
-					currentPlan={addon?.eligibility.currentPlan}
+					currentPlan={addon?.plan}
 					busy={busy}
 					error={purchaseDialog.error}
 					onCancel={() => setPurchaseDialog(null)}
@@ -243,8 +252,6 @@ const useMcpAddonActions = ({ location, onActivated }: Options) => {
 					open
 					busy={busy}
 					error={cancelDialog.error}
-					cancelBehavior={addon?.cancelBehavior || "immediate"}
-					periodEndLabel={formatAddonDate(addon?.nextChargeAt || null)}
 					keepsBetaAccess={addon?.access.via === "beta_grant"}
 					onCancel={() => setCancelDialog(null)}
 					onConfirm={confirmCancel}

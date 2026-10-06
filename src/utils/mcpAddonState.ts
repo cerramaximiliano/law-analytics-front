@@ -11,8 +11,9 @@ import type { PublicAddon } from "store/reducers/ApiService";
 import {
 	DEFAULT_MCP_URL,
 	MCP_ADDON_KEY,
+	type McpAddonAvailabilityReason,
 	type McpAddonBillingStatus,
-	type McpAddonIneligibleReason,
+	type McpAddonEligibilityReason,
 	type McpAddonStatus,
 } from "types/mcpAddon";
 
@@ -30,11 +31,96 @@ export const MCP_ADDON_BENEFITS: string[] = [
 	"Solo lectura: el asistente no puede crear, modificar ni borrar nada",
 ];
 
-const BLOCKING_SUBSCRIPTION_STATUSES = new Set(["unpaid", "canceled", "incomplete", "incomplete_expired", "paused"]);
-const BILLING_STATUSES: McpAddonBillingStatus[] = ["none", "active", "past_due", "canceling"];
+/** Estados de Stripe en los que el hub vende el add-on (mcpAddonStatusService.SELLABLE_SUBSCRIPTION_STATUSES). */
+const SELLABLE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing"]);
+const BILLING_STATUSES: McpAddonBillingStatus[] = ["none", "active", "past_due", "incomplete", "canceling"];
+const ELIGIBILITY_REASONS = new Set(["paid_plan_required", "subscription_inactive", "subscription_canceling"]);
+const AVAILABILITY_REASONS = new Set(["not_public", "maintenance", "config_unavailable"]);
+/** Estados del add-on con acceso (past_due en gracia, canceling hasta endsAt). */
+const ACCESS_STATUSES = new Set<McpAddonBillingStatus>(["active", "past_due", "canceling"]);
 
 const PLAN_LABELS: Record<string, string> = { free: "Gratis", standard: "Estándar", pro: "Pro", premium: "Premium" };
 export const planLabel = (plan: string | null | undefined): string => (plan ? PLAN_LABELS[plan] || plan : "Gratis");
+
+const toIso = (d: unknown): string | null => {
+	if (!d || (typeof d !== "string" && !(d instanceof Date))) return null;
+	const date = d instanceof Date ? d : new Date(d);
+	return Number.isNaN(date.getTime()) ? null : date.toISOString();
+};
+
+/**
+ * Acceso efectivo derivado del GET consolidado (que no lo trae): mismo criterio que el
+ * consent — mantenimiento corta a todos; con la venta cerrada (beta) solo el grant;
+ * abierta, el grant o un add-on con acceso.
+ */
+export function deriveAccess(a: {
+	status: McpAddonBillingStatus;
+	hasManualGrant: boolean;
+	publicAvailable: boolean;
+	availabilityReason: McpAddonAvailabilityReason;
+}): McpAddonStatus["access"] {
+	if (a.availabilityReason === "maintenance") return { allowed: false, via: null, reason: "maintenance" };
+	if (a.hasManualGrant) return { allowed: true, via: "beta_grant", reason: null };
+	if (!a.publicAvailable) return { allowed: false, via: null, reason: "beta_grant_required" };
+	if (ACCESS_STATUSES.has(a.status)) return { allowed: true, via: "addon", reason: null };
+	return { allowed: false, via: null, reason: a.status === "incomplete" ? "addon_status_invalid" : "addon_missing" };
+}
+
+// ───────────────────────── Normalización del GET consolidado ─────────────────────────
+
+/** Valida y completa `{ success, addon }` del hub. null si no tiene el shape mínimo (→ fallback). */
+export function normalizeMcpAddonStatus(raw: unknown, opts: { isTeamMember?: boolean } = {}): McpAddonStatus | null {
+	if (!raw || typeof raw !== "object") return null;
+	const body = raw as Record<string, any>;
+	const a = (body.addon && typeof body.addon === "object" ? body.addon : body) as Record<string, any>;
+	if (!BILLING_STATUSES.includes(a.status) || typeof a.eligible !== "boolean") return null;
+
+	const price = a.price && typeof a.price === "object" && typeof a.price.amount === "number" ? a.price : null;
+	const status = a.status as McpAddonBillingStatus;
+	const publicAvailable = a.publicAvailable === true;
+	const availabilityReason: McpAddonAvailabilityReason = AVAILABILITY_REASONS.has(a.availabilityReason) ? a.availabilityReason : null;
+	const hasManualGrant = a.hasManualGrant === true;
+	let eligibilityReason: McpAddonEligibilityReason = a.eligible
+		? null
+		: ELIGIBILITY_REASONS.has(a.eligibilityReason)
+		? a.eligibilityReason
+		: "paid_plan_required";
+	// El add-on lo contrata el titular: un miembro de equipo no compra desde su cuenta.
+	if (opts.isTeamMember && status === "none") eligibilityReason = "team_member";
+	const legal = a.legal && typeof a.legal === "object" ? a.legal : null;
+
+	return {
+		key: MCP_ADDON_KEY,
+		price: price
+			? { amount: price.amount, currency: String(price.currency || "usd").toLowerCase(), interval: price.interval || "month" }
+			: { amount: null, currency: "usd", interval: "month" },
+		status,
+		plan: typeof a.plan === "string" ? a.plan : "free",
+		subscriptionStatus: typeof a.subscriptionStatus === "string" ? a.subscriptionStatus : null,
+		eligible: eligibilityReason === null,
+		eligibilityReason,
+		requiredPlans: Array.isArray(a.requiredPlans) && a.requiredPlans.length ? a.requiredPlans : MCP_ADDON_REQUIRED_PLANS,
+		publicAvailable,
+		availabilityReason,
+		maintenanceMessage: typeof a.maintenanceMessage === "string" && a.maintenanceMessage ? a.maintenanceMessage : null,
+		adminBypass: a.adminBypass === true,
+		purchasable: a.purchasable === true && eligibilityReason === null,
+		canRemove: a.canRemove === true,
+		nextBillingDate: toIso(a.nextBillingDate),
+		endsAt: toIso(a.endsAt),
+		hasManualGrant,
+		legal: legal
+			? {
+					privacyVersion: typeof legal.privacyVersion === "string" && legal.privacyVersion ? legal.privacyVersion : null,
+					privacyUrl: typeof legal.privacyUrl === "string" && legal.privacyUrl ? legal.privacyUrl : "/privacy-policy#conectores-ia",
+					previouslyAcceptedVersion: typeof legal.previouslyAcceptedVersion === "string" ? legal.previouslyAcceptedVersion : null,
+					acceptanceRequired: legal.acceptanceRequired === true,
+			  }
+			: null,
+		access: deriveAccess({ status, hasManualGrant, publicAvailable, availabilityReason }),
+		mcpUrl: DEFAULT_MCP_URL,
+	};
+}
 
 // ───────────────────────── Fallback (sin endpoint consolidado) ─────────────────────────
 
@@ -60,103 +146,66 @@ export interface FallbackInput {
 	publicIntegrationsOpen: boolean;
 }
 
-const toIso = (d: string | Date | null | undefined): string | null => {
-	if (!d) return null;
-	const date = d instanceof Date ? d : new Date(d);
-	return Number.isNaN(date.getTime()) ? null : date.toISOString();
-};
-
+/** Arma el modelo con los endpoints viejos, replicando las reglas de mcpAddonStatusService. */
 export function deriveMcpAddonFallback(input: FallbackInput): McpAddonStatus {
 	const { publicAddon, subscription, isTeamMember, access } = input;
 	const plan = subscription?.plan || "free";
-	const addon = (subscription?.addons || []).find((a) => a?.key === MCP_ADDON_KEY) || null;
+	const addon = (subscription?.addons || []).find((a) => a?.key === MCP_ADDON_KEY && a.status !== "canceled") || null;
 
 	let status: McpAddonBillingStatus = "none";
-	if (addon?.status === "active") {
-		status = subscription?.cancelAtPeriodEnd ? "canceling" : subscription?.status === "past_due" ? "past_due" : "active";
-	} else if (addon?.status === "past_due" || addon?.status === "incomplete") {
-		status = "past_due";
+	if (addon) {
+		if (subscription?.cancelAtPeriodEnd) status = "canceling";
+		else if (addon.status === "past_due") status = "past_due";
+		else if (addon.status === "incomplete") status = "incomplete";
+		else status = "active";
 	}
 
 	const periodEnd = toIso(addon?.currentPeriodEnd) || toIso(subscription?.currentPeriodEnd);
-	const publicOpen = access
-		? access.providers.claude.publicEnabled || access.providers.chatgpt.publicEnabled
-		: input.publicIntegrationsOpen;
+	const maintenance = !!access && !!(access.providers.claude.reason === "maintenance" || access.providers.chatgpt.reason === "maintenance");
+	const anyPublic = access ? access.providers.claude.publicEnabled || access.providers.chatgpt.publicEnabled : input.publicIntegrationsOpen;
+	const availabilityReason: McpAddonAvailabilityReason = maintenance ? "maintenance" : anyPublic ? null : "not_public";
+	const publicAvailable = availabilityReason === null;
 
-	const planReason = access?.plan.reason || null;
-	let reason: McpAddonIneligibleReason = null;
-	if (isTeamMember) reason = "team_member";
-	else if (!MCP_ADDON_REQUIRED_PLANS.includes(plan)) reason = "plan_too_low";
-	else if (planReason === "account_suspended" || subscription?.accountStatus === "suspended") reason = "account_suspended";
-	else if (planReason === "subscription_inactive" || BLOCKING_SUBSCRIPTION_STATUSES.has(subscription?.status || ""))
-		reason = "subscription_inactive";
-	else if (status === "none" && (!publicOpen || (publicAddon !== null && !publicAddon.available))) reason = "not_for_sale";
+	let eligibilityReason: McpAddonEligibilityReason = null;
+	if (isTeamMember && status === "none") eligibilityReason = "team_member";
+	else if (!MCP_ADDON_REQUIRED_PLANS.includes(plan)) eligibilityReason = "paid_plan_required";
+	else if (subscription?.status && !SELLABLE_SUBSCRIPTION_STATUSES.has(subscription.status)) eligibilityReason = "subscription_inactive";
+	else if (subscription?.cancelAtPeriodEnd) eligibilityReason = "subscription_canceling";
 
+	const priceAmount = publicAddon?.priceMonthly ?? null;
+	const hasManualGrant = access?.plan.reason === "manual_grant";
 	const anyProvider = !!access && (access.providers.claude.available || access.providers.chatgpt.available);
-	const allowed = access ? anyProvider && access.plan.allowed : status !== "none";
-	const via: McpAddonStatus["access"]["via"] = !allowed ? null : planReason === "manual_grant" ? "beta_grant" : "addon";
-	const providerReason = access && !anyProvider ? access.providers.claude.reason || access.providers.chatgpt.reason : null;
+	const accessInfo: McpAddonStatus["access"] = access
+		? anyProvider && access.plan.allowed
+			? { allowed: true, via: hasManualGrant ? "beta_grant" : "addon", reason: null }
+			: {
+					allowed: false,
+					via: null,
+					reason: !anyProvider ? access.providers.claude.reason || access.providers.chatgpt.reason : access.plan.reason,
+			  }
+		: deriveAccess({ status, hasManualGrant: false, publicAvailable, availabilityReason });
 
 	return {
 		key: MCP_ADDON_KEY,
-		price: {
-			amount: publicAddon?.priceMonthly ?? null,
-			currency: publicAddon?.currency || "usd",
-			interval: publicAddon?.interval || "month",
-		},
+		price: { amount: priceAmount, currency: publicAddon?.currency || "usd", interval: publicAddon?.interval || "month" },
 		status,
-		nextChargeAt: status === "active" || status === "past_due" ? periodEnd : null,
-		cancelAt: status === "canceling" ? periodEnd : null,
-		// El hub hoy borra el item de Stripe en el momento (subscriptionItems.del con prorrateo).
-		cancelBehavior: "immediate",
-		eligibility: {
-			eligible: reason === null,
-			reason,
-			requiredPlans: publicAddon?.requiredPlans?.length ? publicAddon.requiredPlans : MCP_ADDON_REQUIRED_PLANS,
-			currentPlan: subscription ? plan : null,
-		},
-		publicOpen,
-		access: { allowed, via, reason: allowed ? null : providerReason || planReason },
+		plan,
+		subscriptionStatus: subscription?.status || null,
+		eligible: eligibilityReason === null,
+		eligibilityReason,
+		requiredPlans: publicAddon?.requiredPlans?.length ? publicAddon.requiredPlans : MCP_ADDON_REQUIRED_PLANS,
+		publicAvailable,
+		availabilityReason,
+		maintenanceMessage: maintenance ? access?.providers.claude.message || access?.providers.chatgpt.message || null : null,
+		adminBypass: false,
+		purchasable: status === "none" && eligibilityReason === null && publicAvailable && priceAmount !== null,
+		canRemove: status !== "none" && status !== "canceling",
+		nextBillingDate: status === "active" || status === "past_due" ? periodEnd : null,
+		endsAt: status === "canceling" ? periodEnd : null,
+		hasManualGrant,
+		legal: null,
+		access: accessInfo,
 		mcpUrl: access?.mcpUrl || DEFAULT_MCP_URL,
-	};
-}
-
-// ───────────────────────── Normalización del endpoint consolidado ─────────────────────────
-
-/** Valida y completa la respuesta del GET consolidado. null si no tiene el shape mínimo (→ fallback). */
-export function normalizeMcpAddonStatus(raw: unknown): McpAddonStatus | null {
-	if (!raw || typeof raw !== "object") return null;
-	const body = raw as Record<string, any>;
-	const a = (body.addon && typeof body.addon === "object" ? body.addon : body) as Record<string, any>;
-	if (!BILLING_STATUSES.includes(a.status) || !a.eligibility || typeof a.eligibility !== "object") return null;
-
-	const price = a.price && typeof a.price === "object" ? a.price : {};
-	const eligibility = a.eligibility;
-	const access = a.access && typeof a.access === "object" ? a.access : {};
-	return {
-		key: MCP_ADDON_KEY,
-		price: {
-			amount: typeof price.amount === "number" ? price.amount : null,
-			currency: typeof price.currency === "string" ? price.currency.toLowerCase() : "usd",
-			interval: typeof price.interval === "string" ? price.interval : "month",
-		},
-		status: a.status,
-		nextChargeAt: toIso(a.nextChargeAt),
-		cancelAt: toIso(a.cancelAt),
-		cancelBehavior: a.cancelBehavior === "period_end" ? "period_end" : "immediate",
-		eligibility: {
-			eligible: eligibility.eligible === true,
-			reason: eligibility.eligible === true ? null : eligibility.reason || "plan_too_low",
-			requiredPlans: Array.isArray(eligibility.requiredPlans) ? eligibility.requiredPlans : MCP_ADDON_REQUIRED_PLANS,
-			currentPlan: typeof eligibility.currentPlan === "string" ? eligibility.currentPlan : null,
-		},
-		publicOpen: a.publicOpen === true,
-		access: {
-			allowed: access.allowed === true,
-			via: access.via === "addon" || access.via === "beta_grant" ? access.via : null,
-			reason: typeof access.reason === "string" ? access.reason : null,
-		},
-		mcpUrl: typeof a.mcpUrl === "string" && a.mcpUrl ? a.mcpUrl : DEFAULT_MCP_URL,
 	};
 }
 
@@ -171,32 +220,35 @@ export type McpCtaKind =
 	| "activate"
 	/** Ya tiene acceso (add-on o grant beta): ir a la guía de conexión. */
 	| "connect"
-	/** Suscripción impaga o cuenta suspendida: actualizar el pago. */
+	/** Suscripción con pago pendiente / inactiva o add-on incompleto: actualizar el pago. */
 	| "fix_payment"
+	/** Suscripción programada para cancelarse: reactivarla antes de sumar el add-on. */
+	| "reactivate"
 	/** Miembro de equipo: lo contrata el titular. */
 	| "team"
 	/** Beta cerrada sin grant: pedir acceso. */
 	| "beta_request"
-	/** Tiene el add-on pero hoy no puede usarlo (mantenimiento) o todavía no sabemos el estado. */
+	/** Mantenimiento, sin precio o todavía sin estado. */
 	| "unavailable";
 
 export function resolveMcpCta(state: McpAddonStatus | null, isLoggedIn: boolean): McpCtaKind {
 	if (!isLoggedIn) return "register";
 	if (!state) return "unavailable";
 	if (state.access.allowed) return "connect";
-	switch (state.eligibility.reason) {
-		case "subscription_inactive":
-		case "account_suspended":
-			return "fix_payment";
+	if (state.availabilityReason === "maintenance") return "unavailable";
+	if (state.status !== "none") return state.status === "incomplete" || state.status === "past_due" ? "fix_payment" : "unavailable";
+	switch (state.eligibilityReason) {
 		case "team_member":
 			return "team";
-		case "plan_too_low":
-		case "no_subscription":
+		case "paid_plan_required":
 			return "upgrade";
-		case "not_for_sale":
-			return "beta_request";
+		case "subscription_inactive":
+			return "fix_payment";
+		case "subscription_canceling":
+			return "reactivate";
 		default:
-			return state.status === "none" ? "activate" : "unavailable";
+			if (!state.publicAvailable && !state.adminBypass) return "beta_request";
+			return state.purchasable ? "activate" : "unavailable";
 	}
 }
 
@@ -207,6 +259,7 @@ export const MCP_CTA_LABELS: Record<McpCtaKind, string> = {
 	activate: `Activar ${MCP_ADDON_NAME}`,
 	connect: "Conectar mi asistente",
 	fix_payment: "Actualizar el pago",
+	reactivate: "Reactivar mi suscripción",
 	team: "Lo activa el titular del equipo",
 	beta_request: "Solicitar acceso beta",
 	unavailable: "Ver estado",
@@ -219,7 +272,7 @@ export const MCP_CTA_LABELS: Record<McpCtaKind, string> = {
 export function mcpUserState(state: McpAddonStatus | null, isLoggedIn: boolean): "anonymous" | "free" | "paid_no_addon" | "has_addon" {
 	if (!isLoggedIn) return "anonymous";
 	if (state && (state.status !== "none" || state.access.allowed)) return "has_addon";
-	if (state && MCP_ADDON_REQUIRED_PLANS.includes(state.eligibility.currentPlan || "")) return "paid_no_addon";
+	if (state && MCP_ADDON_REQUIRED_PLANS.includes(state.plan)) return "paid_no_addon";
 	return "free";
 }
 

@@ -142,43 +142,28 @@ export interface AddAddonResult {
 	addon?: { key: AddonKey; status: string; stripePriceId?: string; currentPeriodEnd: string | null };
 	message?: string;
 	/**
-	 * Código de negocio cuando `success:false`:
-	 *  - LEGAL_ACCEPTANCE_REQUIRED (400): aceptar la política vigente.
-	 *  - CARD_DECLINED (402): la tarjeta rechazó el cobro.
-	 *  - REQUIRES_ACTION (402 o 200): el banco pide autenticación (SCA / 3DS).
-	 *  - PAID_PLAN_REQUIRED / NO_PAID_SUBSCRIPTION (409): falta plan pago.
+	 * Código de negocio cuando `success:false` (hub `addAddon`):
+	 *  - 400 LEGAL_ACCEPTANCE_REQUIRED (+ privacyVersion, privacyUrl): aceptar la política vigente.
+	 *  - 402 CARD_DECLINED / PAYMENT_REQUIRES_ACTION: el cobro del prorrateo falló o el banco pidió
+	 *    verificación (3DS). El hub usa `error_if_incomplete`: NO se agrega el add-on ni se cobra nada.
+	 *  - 409 ADDON_NOT_AVAILABLE (+ reason: not_public|maintenance|config_unavailable),
+	 *    SUBSCRIPTION_NOT_ACTIVE (+ subscriptionStatus), SUBSCRIPTION_CANCELING,
+	 *    PAID_PLAN_REQUIRED, NO_PAID_SUBSCRIPTION.
 	 *  - INVALID_ADDON, ADDON_PRICE_MISSING, …
 	 */
 	code?: string;
-	/** Con REQUIRES_ACTION: client_secret del PaymentIntent para confirmar con Stripe.js. */
-	clientSecret?: string | null;
-	/** Con REQUIRES_ACTION: clave publicable de Stripe para cargar Stripe.js (el front no la tiene en su env). */
-	publishableKey?: string | null;
-	/** Con REQUIRES_ACTION o pago fallido: página de factura de Stripe donde se completa el pago (no requiere Stripe.js). */
-	hostedInvoiceUrl?: string | null;
+	/** Con ADDON_NOT_AVAILABLE. */
+	reason?: string | null;
+	/** Con SUBSCRIPTION_NOT_ACTIVE. */
+	subscriptionStatus?: string | null;
+	/** Con LEGAL_ACCEPTANCE_REQUIRED. */
+	privacyVersion?: string | null;
+	privacyUrl?: string | null;
 }
 
 export interface RemoveAddonResult {
 	success: boolean;
 	message?: string;
-	/** Si la baja es a fin de período: fecha en que se quita (ISO). null = se quitó en el momento. */
-	cancelAt?: string | null;
-}
-
-export const ADDON_REQUIRES_ACTION = "REQUIRES_ACTION";
-
-/** Acepta tanto `code: "REQUIRES_ACTION"` como `requires_action: true` / `status: "requires_action"` y snake_case. */
-export function normalizeAddAddonResponse(data: any): AddAddonResult {
-	const d = data && typeof data === "object" ? data : {};
-	const requiresAction = d.code === ADDON_REQUIRES_ACTION || d.requires_action === true || d.status === "requires_action";
-	return {
-		...d,
-		success: d.success === true && !requiresAction,
-		code: requiresAction ? ADDON_REQUIRES_ACTION : d.code,
-		clientSecret: d.clientSecret || d.client_secret || null,
-		publishableKey: d.publishableKey || d.publishable_key || null,
-		hostedInvoiceUrl: d.hostedInvoiceUrl || d.hosted_invoice_url || null,
-	};
 }
 
 export type PublicPlansResponse = ApiResponse<Plan[]> & { integrations?: PublicIntegrations; addons?: PublicAddon[] };
@@ -1009,30 +994,28 @@ class ApiService {
 			const body: { addonKey: AddonKey; acceptedPolicyVersion?: string } = { addonKey };
 			if (acceptedPolicyVersion) body.acceptedPolicyVersion = acceptedPolicyVersion;
 			const response = await axios.post(`${API_BASE_URL}/api/subscriptions/addons/checkout`, body, { withCredentials: true });
-			return normalizeAddAddonResponse(response.data);
+			return response.data;
 		} catch (error) {
-			// 400 LEGAL_ACCEPTANCE_REQUIRED, 402 CARD_DECLINED / REQUIRES_ACTION, 409 PAID_PLAN_REQUIRED…:
+			// 400 LEGAL_ACCEPTANCE_REQUIRED, 402 CARD_DECLINED / PAYMENT_REQUIRES_ACTION, 409 …:
 			// no son errores "reales" — la UI decide qué mostrar según `code`.
 			if (axios.isAxiosError(error) && error.response?.data && typeof error.response.data === "object") {
 				const data = error.response.data as Record<string, any>;
-				if (data.code || data.requires_action || data.status === "requires_action") {
-					return normalizeAddAddonResponse({ ...data, success: false });
-				}
+				if (data.code) return { ...data, success: false } as AddAddonResult;
 			}
 			throw this.handleAxiosError(error);
 		}
 	}
 
 	/**
-	 * Quitar un addon de la subscription. Hoy el hub lo borra en el momento (Stripe
-	 * prorratea); si en el futuro pasa a "fin de período", devuelve `cancelAt`.
+	 * Quitar un addon de la subscription. Baja inmediata: el hub borra el item de Stripe
+	 * con crédito prorrateado y revoca el acceso de los asistentes.
 	 */
 	static async removeAddon(addonKey: AddonKey): Promise<RemoveAddonResult> {
 		try {
 			const response = await axios.delete(`${API_BASE_URL}/api/subscriptions/addons/${addonKey}`, {
 				withCredentials: true,
 			});
-			return { ...response.data, cancelAt: response.data?.cancelAt || response.data?.cancel_at || null };
+			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);
 		}
