@@ -388,7 +388,7 @@ export function useTeamsFeature() {
 		}
 
 		// Method 3: Fallback - teams is enabled for standard and premium plans
-		if (plan === "standard" || plan === "premium") {
+		if (plan === "standard" || plan === "pro" || plan === "premium") {
 			return true;
 		}
 
@@ -409,6 +409,7 @@ export function useTeamsFeature() {
 		// Method 2: Fallback based on plan
 		const plan = subscription.plan?.toLowerCase();
 		if (plan === "premium") return 10;
+		if (plan === "pro") return 5;
 		if (plan === "standard") return 5;
 		return 0;
 	}, [subscription]);
@@ -418,6 +419,7 @@ export function useTeamsFeature() {
 		if (!subscription?.plan) return "Gratuito";
 		const plan = subscription.plan.toLowerCase();
 		if (plan === "premium") return "Premium";
+		if (plan === "pro") return "Pro";
 		if (plan === "standard") return "Estándar";
 		return "Gratuito";
 	}, [subscription]);

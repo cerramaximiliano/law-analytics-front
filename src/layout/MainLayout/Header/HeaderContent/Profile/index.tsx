@@ -27,9 +27,10 @@ import { AuthProps } from "types/auth";
 // `state.auth.subscription.plan` (lowercase, tipado en types/user.ts:63). El
 // `user.subscription` string es un campo legado que algunos flows usan en
 // uppercase, así que normalizamos a lowercase y aceptamos ambas fuentes.
-const PLAN_LABELS: Record<string, { label: string; tier: "free" | "standard" | "premium" }> = {
+const PLAN_LABELS: Record<string, { label: string; tier: "free" | "standard" | "pro" | "premium" }> = {
 	free: { label: "Gratuito", tier: "free" },
 	standard: { label: "Estándar", tier: "standard" },
+	pro: { label: "Pro", tier: "pro" },
 	premium: { label: "Premium", tier: "premium" },
 };
 

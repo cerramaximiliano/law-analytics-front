@@ -33,6 +33,7 @@ import PlanCard from "components/cards/PlanCard";
 import ApiService, { Plan, ResourceLimit, PlanFeature } from "store/reducers/ApiService";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
+import { fetchCurrentSubscription } from "store/reducers/auth";
 import TabLegalDocuments from "./TabPanel";
 import { getPlanPricing, getBillingPeriodText, getCurrentEnvironment, cleanPlanDisplayName } from "utils/planPricingUtils";
 import { useTeam } from "contexts/TeamContext";
@@ -63,7 +64,10 @@ const Pricing = () => {
 		plan: string;
 		cancelAtPeriodEnd?: boolean;
 		currentPeriodEnd?: string;
+		// Cambio de plan programado a fin de período (POST /schedule-change)
+		scheduledPlanChange?: { targetPlan: string; effectiveDate?: string } | null;
 	} | null>(null);
+	const [cancelingScheduledChange, setCancelingScheduledChange] = useState(false);
 	const isDevelopment = getCurrentEnvironment() === "development";
 	// Estado para el diálogo de documentos legales
 	const [legalDocsDialogOpen, setLegalDocsDialogOpen] = useState(false);
@@ -80,7 +84,15 @@ const Pricing = () => {
 	const [reactivating, setReactivating] = useState(false);
 
 	// Función helper para actualizar el estado de la suscripción sin recargar la página
-	const updateSubscriptionState = (newPlanId: string, subscriptionData?: { cancelAtPeriodEnd?: boolean; currentPeriodEnd?: string }) => {
+	const updateSubscriptionState = (
+		newPlanId: string,
+		subscriptionData?: {
+			cancelAtPeriodEnd?: boolean;
+			currentPeriodEnd?: string;
+			// undefined = conservar; null = limpiar
+			scheduledPlanChange?: { targetPlan: string; effectiveDate?: string } | null;
+		},
+	) => {
 		// Actualizar el plan actual
 		setCurrentPlanId(newPlanId);
 
@@ -89,7 +101,47 @@ const Pricing = () => {
 			plan: newPlanId,
 			cancelAtPeriodEnd: subscriptionData?.cancelAtPeriodEnd ?? prev?.cancelAtPeriodEnd ?? false,
 			currentPeriodEnd: subscriptionData?.currentPeriodEnd ?? prev?.currentPeriodEnd,
+			scheduledPlanChange:
+				subscriptionData?.scheduledPlanChange === undefined ? prev?.scheduledPlanChange ?? null : subscriptionData.scheduledPlanChange,
 		}));
+	};
+
+	// El header, los límites y el banner de gracia leen Redux (auth.subscription):
+	// tras un cambio de plan hay que refrescarlo o siguen mostrando el plan viejo.
+	const refreshReduxSubscription = () => {
+		dispatch(fetchCurrentSubscription(true) as any);
+	};
+
+	// Revertir un cambio de plan programado (la suscripción sigue activa en el plan actual)
+	const handleCancelScheduledChange = async () => {
+		try {
+			setCancelingScheduledChange(true);
+			const response = await ApiService.cancelScheduledPlanChange();
+			if (!response?.success) throw new Error(response?.message || "No se pudo cancelar el cambio de plan programado");
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: response.message || "Cambio de plan programado cancelado. Tu plan actual se renovará normalmente.",
+					variant: "alert",
+					alert: { color: "success" },
+					close: false,
+				}),
+			);
+			if (currentPlanId) updateSubscriptionState(currentPlanId, { scheduledPlanChange: null });
+			refreshReduxSubscription();
+		} catch (err: any) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: err?.message || "Error al cancelar el cambio de plan programado",
+					variant: "alert",
+					alert: { color: "error" },
+					close: false,
+				}),
+			);
+		} finally {
+			setCancelingScheduledChange(false);
+		}
 	};
 
 	// Obtener los planes al cargar el componente
@@ -114,6 +166,7 @@ const Pricing = () => {
 							plan: string;
 							cancelAtPeriodEnd?: boolean;
 							currentPeriodEnd?: string;
+							scheduledPlanChange?: { targetPlan: string; effectiveDate?: string } | null;
 						};
 					};
 
@@ -243,8 +296,21 @@ const Pricing = () => {
 					setTargetPlanId(planId);
 					setOptionsDialogOpen(true);
 				}
+			} else if (response.success && response.alreadyScheduled) {
+				// Downgrade ya programado a ese mismo plan: informar, nada que hacer
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: response.message || "Ya tenés programado el cambio a ese plan.",
+						variant: "alert",
+						alert: {
+							color: "info",
+						},
+						close: false,
+					}),
+				);
 			} else if (response.success) {
-				// Respuesta exitosa sin URL ni sessionId - puede ser un cambio de plan con prorrateo
+				// Respuesta exitosa sin URL ni sessionId - cambio de plan inmediato (upgrade con prorrateo)
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -262,7 +328,9 @@ const Pricing = () => {
 					updateSubscriptionState(response.newPlan, {
 						cancelAtPeriodEnd: response.subscription?.cancelAtPeriodEnd ?? false,
 						currentPeriodEnd: response.subscription?.currentPeriodEnd,
+						scheduledPlanChange: null, // el cambio inmediato libera cualquier schedule previo
 					});
+					refreshReduxSubscription();
 				}
 			} else {
 				// Respuesta no exitosa
@@ -527,19 +595,27 @@ const Pricing = () => {
 						cancelAtPeriodEnd: false,
 						currentPeriodEnd: response.currentPeriodEnd,
 					});
-				} else if (selectedOption === "immediate_change" && response.newPlan) {
-					// Cambio inmediato - actualizar al nuevo plan
-					updateSubscriptionState(response.newPlan, {
-						cancelAtPeriodEnd: response.subscription?.cancelAtPeriodEnd ?? false,
-						currentPeriodEnd: response.subscription?.currentPeriodEnd,
+				} else if (selectedOption === "immediate_change" && (response.newPlan || response.plan)) {
+					// Cambio inmediato - actualizar al nuevo plan (el service devuelve `plan`; `newPlan` es alias)
+					updateSubscriptionState(response.newPlan || response.plan, {
+						cancelAtPeriodEnd: false,
+						currentPeriodEnd: response.nextRenewal || response.subscription?.currentPeriodEnd,
+						scheduledPlanChange: null,
 					});
 				} else if (selectedOption === "change_after_current" && currentPlanId) {
-					// Cambio programado - el plan actual sigue igual pero está programado para cambiar
+					// Cambio programado: el plan actual sigue vigente hasta effectiveDate y después
+					// pasa a futurePlan. NO es una cancelación (antes se marcaba cancelAtPeriodEnd
+					// y la UI mostraba "Cancelado / Reactivar"). Si la suscripción estaba en baja,
+					// el backend la reactivó (response.reactivated) y lo dice en el mensaje.
 					updateSubscriptionState(currentPlanId, {
-						cancelAtPeriodEnd: true,
-						currentPeriodEnd: response.currentPeriodEnd,
+						cancelAtPeriodEnd: false,
+						currentPeriodEnd: response.effectiveDate || response.currentPeriodEnd,
+						scheduledPlanChange: response.futurePlan
+							? { targetPlan: response.futurePlan, effectiveDate: response.effectiveDate }
+							: undefined,
 					});
 				}
+				refreshReduxSubscription();
 			} else {
 				throw new Error(response.message || "Error al procesar la solicitud");
 			}
@@ -1322,6 +1398,14 @@ const Pricing = () => {
 					// Estados derivados para configurar el CTA del PlanCard.
 					const isInactive = !plan.isActive;
 					const isReactivable = isCurrentPlan && isAlreadyCanceled && currentPlanId !== "free";
+					// Cambio de plan programado a fin de período (downgrade entre planes pagos)
+					const scheduledChange = currentSubscription?.scheduledPlanChange || null;
+					const isScheduledTarget = !!scheduledChange && plan.planId === scheduledChange.targetPlan && !isCurrentPlan;
+					const scheduledDateLabel = scheduledChange?.effectiveDate
+						? new Date(scheduledChange.effectiveDate).toLocaleDateString("es-AR")
+						: currentSubscription?.currentPeriodEnd
+						? new Date(currentSubscription.currentPeriodEnd).toLocaleDateString("es-AR")
+						: null;
 					const ctaLabel = isInactive
 						? "No disponible"
 						: reactivating
@@ -1330,6 +1414,10 @@ const Pricing = () => {
 						? "Reactivar suscripción"
 						: isCurrentPlan
 						? "Plan actual"
+						: cancelingScheduledChange && isScheduledTarget
+						? "Cancelando..."
+						: isScheduledTarget
+						? "Cancelar cambio programado"
 						: loadingPlanId === plan.planId
 						? "Procesando..."
 						: isDowngradeToFree
@@ -1338,7 +1426,7 @@ const Pricing = () => {
 
 					const ctaColor: "primary" | "success" | "error" | "secondary" = isReactivable
 						? "success"
-						: isDowngradeToFree
+						: isDowngradeToFree || isScheduledTarget
 						? "error"
 						: isCurrentPlan
 						? "primary"
@@ -1348,6 +1436,7 @@ const Pricing = () => {
 						isInactive ||
 						loadingPlanId !== null ||
 						reactivating ||
+						cancelingScheduledChange ||
 						(isCurrentPlan && !isAlreadyCanceled) ||
 						(plan.planId === "free" &&
 							isAlreadyCanceled &&
@@ -1355,9 +1444,11 @@ const Pricing = () => {
 							(currentPlanId === "standard" || currentPlanId === "pro" || currentPlanId === "premium"));
 
 					const handleCtaClick = () => {
-						if (plan.isActive && !loadingPlanId && !reactivating) {
+						if (plan.isActive && !loadingPlanId && !reactivating && !cancelingScheduledChange) {
 							if (isReactivable) {
 								handleReactivateSubscription();
+							} else if (isScheduledTarget) {
+								handleCancelScheduledChange();
 							} else if (isDowngradeToFree) {
 								setCancelDialogOpen(true);
 							} else if (!isCurrentPlan) {
@@ -1368,11 +1459,24 @@ const Pricing = () => {
 						}
 					};
 
-					// Mensaje contextual (cancelación) que va debajo del título.
+					// Mensaje contextual (cancelación / cambio programado) que va debajo del título.
 					let contextMessage:
 						| { text: string; tone?: "success" | "error" | "warning" | "info" }
 						| undefined;
-					if (
+					if (isScheduledTarget) {
+						contextMessage = {
+							text: scheduledDateLabel ? `Pasarás a este plan el ${scheduledDateLabel}` : "Cambio programado al finalizar tu período actual",
+							tone: "info",
+						};
+					} else if (isCurrentPlan && scheduledChange && !isAlreadyCanceled) {
+						const targetLabel = plans.find((p) => p.planId === scheduledChange.targetPlan)?.displayName || scheduledChange.targetPlan;
+						contextMessage = {
+							text: scheduledDateLabel
+								? `Cambiarás a ${cleanPlanDisplayName(targetLabel)} el ${scheduledDateLabel}`
+								: `Cambiarás a ${cleanPlanDisplayName(targetLabel)} al finalizar el período`,
+							tone: "info",
+						};
+					} else if (
 						plan.planId === "free" &&
 						isAlreadyCanceled &&
 						currentPlanId !== "free" &&

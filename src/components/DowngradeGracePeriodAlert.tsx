@@ -34,6 +34,8 @@ const DowngradeGracePeriodAlert: React.FC = () => {
 		switch (plan) {
 			case "premium":
 				return "Premium";
+			case "pro":
+				return "Pro";
 			case "standard":
 				return "Estándar";
 			case "free":

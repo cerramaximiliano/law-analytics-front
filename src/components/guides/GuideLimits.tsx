@@ -456,7 +456,7 @@ const GracePeriodContent = () => {
 									1. Cambio a plan inferior (Downgrade)
 								</Typography>
 								<Typography variant="body2" color="text.secondary">
-									Tienes 30 días para ajustar tus elementos al nuevo límite
+									Tienes 15 días para ajustar tus elementos al nuevo límite
 								</Typography>
 							</Box>
 							<Box>
@@ -494,7 +494,7 @@ const GracePeriodContent = () => {
 					</Box>
 					<Box>
 						<Typography variant="body2" color="text.secondary">
-							Durante el período de gracia (30 días):
+							Durante el período de gracia (15 días):
 						</Typography>
 						<Typography variant="body2" color="success.main">
 							✅ Puedes seguir usando tus 100 carpetas

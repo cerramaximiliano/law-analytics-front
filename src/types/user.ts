@@ -60,7 +60,7 @@ export interface Subscription {
 	stripeCustomerId: string;
 	stripeSubscriptionId?: string;
 	stripePriceId?: string;
-	plan: "free" | "standard" | "premium";
+	plan: "free" | "standard" | "pro" | "premium";
 	status: "active" | "canceled" | "past_due" | "trialing" | "incomplete" | "unpaid" | "incomplete_expired";
 	addons?: Array<{
 		key: "mcp_access";
@@ -131,14 +131,13 @@ export interface Subscription {
 			description: string;
 		};
 	};
-	pendingPlanChange?: {
-		planId: string;
-		effectiveDate: Date;
-	};
+	// Cambio de plan programado a fin de período (POST /schedule-change). El
+	// backend lo guarda con targetPlan canónico y lo limpia cuando Stripe lo
+	// aplica. (El viejo `pendingPlanChange` nunca existió en el backend.)
 	scheduledPlanChange?: {
 		targetPlan: string;
-		effectiveDate: Date;
-		notified: boolean;
+		effectiveDate: Date | string;
+		notified?: boolean;
 	};
 	downgradeGracePeriod?: {
 		previousPlan: string;

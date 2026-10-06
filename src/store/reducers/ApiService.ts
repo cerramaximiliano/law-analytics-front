@@ -1403,6 +1403,24 @@ class ApiService {
 	}
 
 	/**
+	 * Cancela un cambio de plan programado (schedulePlanChange) antes de que se
+	 * aplique. La suscripción sigue activa y se renueva en el plan actual.
+	 * @returns {Promise<Object>} Resultado de la operación
+	 */
+	static async cancelScheduledPlanChange(): Promise<any> {
+		try {
+			const response = await axios.post(`${API_BASE_URL}/api/subscriptions/cancel-scheduled-change`, {}, { withCredentials: true });
+			return response.data;
+		} catch (error: any) {
+			return {
+				success: false,
+				code: error.response?.data?.code,
+				message: error.response?.data?.message || "Error al cancelar el cambio de plan programado",
+			};
+		}
+	}
+
+	/**
 	 * Cambia inmediatamente a un nuevo plan
 	 * @param {string} planId - ID del nuevo plan
 	 * @returns {Promise<Object>} Resultado de la operación

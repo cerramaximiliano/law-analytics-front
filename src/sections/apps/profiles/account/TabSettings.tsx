@@ -85,6 +85,8 @@ const TabSubscription = () => {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [nextPlan, setNextPlan] = useState<string | null>(null);
+	const [nextPlanDate, setNextPlanDate] = useState<Date | null>(null);
+	const [cancelChangeLoading, setCancelChangeLoading] = useState(false);
 	const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 	const [cancelLoading, setCancelLoading] = useState(false);
 	const [reactivateLoading, setReactivateLoading] = useState(false);
@@ -109,9 +111,7 @@ const TabSubscription = () => {
 			setLoading(true);
 			setError(null);
 			const subscriptionData = await dispatch(fetchCurrentSubscription(forceRefresh) as any);
-			if (subscriptionData && subscriptionData.pendingPlanChange) {
-				setNextPlan(getStripeValue(subscriptionData.pendingPlanChange.planId));
-			}
+			applyScheduledChange(subscriptionData);
 		} catch (err: any) {
 			if (err.response?.status !== 401) setError("Error al cargar los datos de suscripción");
 		} finally {
@@ -233,8 +233,44 @@ const TabSubscription = () => {
 	}, []);
 
 	useEffect(() => {
-		if (subscription?.pendingPlanChange) setNextPlan(getStripeValue(subscription.pendingPlanChange.planId));
+		applyScheduledChange(subscription);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [subscription]);
+
+	// Cambio de plan programado (POST /schedule-change): el backend lo expone en
+	// subscription.scheduledPlanChange con targetPlan canónico y lo limpia al aplicarse.
+	function applyScheduledChange(sub: any) {
+		const sched = sub?.scheduledPlanChange;
+		if (sched?.targetPlan) {
+			setNextPlan(String(sched.targetPlan));
+			setNextPlanDate(sched.effectiveDate ? new Date(sched.effectiveDate) : null);
+		} else {
+			setNextPlan(null);
+			setNextPlanDate(null);
+		}
+	}
+
+	const handleCancelScheduledChange = async () => {
+		try {
+			setCancelChangeLoading(true);
+			const response = await ApiService.cancelScheduledPlanChange();
+			if (!response?.success) throw new Error(response?.message || "No se pudo cancelar el cambio de plan programado");
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: response.message || "Cambio de plan programado cancelado. Tu plan actual se renovará normalmente.",
+					variant: "alert",
+					alert: { color: "success" },
+					close: false,
+				}),
+			);
+			await dispatch(fetchCurrentSubscription(true) as any);
+		} catch (err: any) {
+			setError(err.message || "Error al cancelar el cambio de plan programado");
+		} finally {
+			setCancelChangeLoading(false);
+		}
+	};
 
 	useEffect(() => {
 		if (subscription && !payments.length) loadPaymentHistory();
@@ -265,6 +301,8 @@ const TabSubscription = () => {
 				return "Plan Gratuito";
 			case "standard":
 				return "Plan Estándar";
+			case "pro":
+				return "Plan Pro";
 			case "premium":
 				return "Plan Premium";
 			default:
@@ -272,12 +310,15 @@ const TabSubscription = () => {
 		}
 	};
 
+	// Límites de referencia por plan (mismos valores que scripts/initializePlanConfigs.js del hub).
 	const getPlanLimits = (planId: string) => {
 		switch (planId) {
 			case "free":
 				return { folders: 5, calculators: 3, contacts: 10, storage: 50 };
 			case "standard":
 				return { folders: 50, calculators: 20, contacts: 100, storage: 1024 };
+			case "pro":
+				return { folders: 200, calculators: 100, contacts: 500, storage: 150 };
 			case "premium":
 				return { folders: 999999, calculators: 999999, contacts: 999999, storage: 10240 };
 			default:
@@ -389,24 +430,26 @@ const TabSubscription = () => {
 		const formattedDate = formatDate(expiryDate);
 		const processedAt = subscription?.downgradeGracePeriod?.processedAt;
 		const autoArchiveScheduled = subscription?.downgradeGracePeriod?.autoArchiveScheduled;
+		// Plan destino de la gracia: free en una cancelación, standard/pro en un downgrade entre pagos.
+		const targetLabel = getPlanName(subscription?.downgradeGracePeriod?.targetPlan || "free").replace(/^Plan /, "plan ");
 
 		switch (status) {
 			case "future":
-				return `Tras el cambio de plan, tenés hasta el ${formattedDate} para archivar el contenido que exceda los límites del plan gratuito.`;
+				return `Tras el cambio de plan, tenés hasta el ${formattedDate} para archivar el contenido que exceda los límites del ${targetLabel}.`;
 			case "today":
 				if (processedAt && !autoArchiveScheduled) {
 					const processedDate = dayjs(processedAt).format("D [de] MMMM [de] YYYY [a las] HH:mm");
-					return `El archivado automático del contenido que excedía los límites del plan gratuito se realizó el ${processedDate}.`;
+					return `El archivado automático del contenido que excedía los límites del ${targetLabel} se realizó el ${processedDate}.`;
 				}
-				return `Hoy es el último día para archivar el contenido que exceda los límites del plan gratuito. El sistema archivará automáticamente el contenido excedente al finalizar el día.`;
+				return `Hoy es el último día para archivar el contenido que exceda los límites del ${targetLabel}. El sistema archivará automáticamente el contenido excedente al finalizar el día.`;
 			case "past":
 				if (processedAt) {
 					const processedDate = dayjs(processedAt).format("D [de] MMMM [de] YYYY [a las] HH:mm");
-					return `El período de gracia finalizó el ${formattedDate}. El contenido que excedía los límites del plan gratuito fue archivado automáticamente el ${processedDate}.`;
+					return `El período de gracia finalizó el ${formattedDate}. El contenido que excedía los límites del ${targetLabel} fue archivado automáticamente el ${processedDate}.`;
 				}
-				return `El período de gracia finalizó el ${formattedDate}. El contenido que excedía los límites del plan gratuito ha sido archivado automáticamente.`;
+				return `El período de gracia finalizó el ${formattedDate}. El contenido que excedía los límites del ${targetLabel} ha sido archivado automáticamente.`;
 			default:
-				return `Tras el cambio de plan, tenés hasta el ${formattedDate} para archivar el contenido que exceda los límites del plan gratuito.`;
+				return `Tras el cambio de plan, tenés hasta el ${formattedDate} para archivar el contenido que exceda los límites del ${targetLabel}.`;
 		}
 	};
 
@@ -424,7 +467,9 @@ const TabSubscription = () => {
 		const { downgradeGracePeriod } = subscription;
 		if (downgradeGracePeriod.expiresAt && new Date(downgradeGracePeriod.expiresAt) <= new Date()) return false;
 		if (!downgradeGracePeriod.previousPlan) return false;
-		if (subscription.plan !== downgradeGracePeriod.previousPlan && subscription.plan !== "free") return false;
+		// Tras un downgrade entre pagos el plan vigente es el destino (≠ previousPlan):
+		// la gracia sigue activa. El backend la borra en un upgrade, así que no hace
+		// falta inferir su vigencia comparando planes.
 		return true;
 	};
 
@@ -1026,11 +1071,23 @@ const TabSubscription = () => {
 										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
 									}}
 								>
-									<Stack direction="row" spacing={0.75} alignItems="center">
-										<InfoCircle size={14} variant="Bulk" color={BRAND_BLUE} />
-										<Typography sx={{ fontSize: "0.8rem", color: "text.primary", fontWeight: 500, letterSpacing: "-0.005em" }}>
-											Cambiarás al {getPlanName(nextPlan)} en la próxima renovación.
-										</Typography>
+									<Stack direction="row" spacing={0.75} alignItems="center" justifyContent="space-between" flexWrap="wrap" useFlexGap>
+										<Stack direction="row" spacing={0.75} alignItems="center">
+											<InfoCircle size={14} variant="Bulk" color={BRAND_BLUE} />
+											<Typography sx={{ fontSize: "0.8rem", color: "text.primary", fontWeight: 500, letterSpacing: "-0.005em" }}>
+												Cambiarás al {getPlanName(nextPlan)}
+												{nextPlanDate ? ` el ${formatDate(nextPlanDate)}` : " en la próxima renovación"}.
+											</Typography>
+										</Stack>
+										<Button
+											size="small"
+											onClick={handleCancelScheduledChange}
+											disabled={cancelChangeLoading}
+											startIcon={cancelChangeLoading ? <CircularProgress size={12} color="inherit" /> : undefined}
+											sx={{ fontSize: "0.72rem", textTransform: "none", py: 0 }}
+										>
+											Cancelar cambio
+										</Button>
 									</Stack>
 								</Box>
 							)}

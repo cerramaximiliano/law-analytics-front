@@ -282,7 +282,7 @@ export const LimitsContent = () => {
 							</Box>
 							<Box display="flex" alignItems="center">
 								<ArrowRight2 size={18} style={{ marginRight: "8px", color: theme.palette.info.main }} />
-								<Typography variant="body2">Típicamente dura entre 7 y 30 días</Typography>
+								<Typography variant="body2">Dura 15 días desde que se aplica el cambio de plan</Typography>
 							</Box>
 						</Stack>
 					</Paper>
@@ -293,7 +293,7 @@ export const LimitsContent = () => {
 							Si cambias de Premium (500 carpetas) a Standard (50 carpetas) y tienes 100 carpetas activas:
 						</Typography>
 						<ul style={{ marginTop: "8px" }}>
-							<li>Tienes 30 días de gracia para archivar 50 carpetas</li>
+							<li>Tienes 15 días de gracia para archivar 50 carpetas</li>
 							<li>Puedes seguir usando tus 100 carpetas durante este tiempo</li>
 							<li>Recibes recordatorios diarios del estado</li>
 						</ul>
