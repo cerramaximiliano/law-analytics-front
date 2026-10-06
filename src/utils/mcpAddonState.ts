@@ -236,6 +236,18 @@ export function deriveMcpAddonFallback(input: FallbackInput): McpAddonStatus {
 	};
 }
 
+// ───────────────────────── Visibilidad ─────────────────────────
+
+/**
+ * Si la tarjeta del add-on se muestra para un usuario logueado: venta abierta, o ya lo
+ * tiene (en cualquier estado), o tiene acceso beta, o es admin con la venta cerrada
+ * (puede contratarlo igual). Misma regla en /plans, Cuenta → Suscripción e Integraciones.
+ */
+export function isMcpAddonVisible(addon: McpAddonStatus | null): boolean {
+	if (!addon) return false;
+	return addon.publicAvailable || addon.status !== "none" || addon.hasManualGrant || addon.adminBypass;
+}
+
 // ───────────────────────── CTA ─────────────────────────
 
 export type McpCtaKind =

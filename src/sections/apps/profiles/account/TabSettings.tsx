@@ -43,6 +43,7 @@ import McpAddonCard from "sections/mcp/McpAddonCard";
 import McpSectionShell from "sections/mcp/McpSectionShell";
 import AiSparklesIcon from "components/icons/AiSparklesIcon";
 import useMcpAddon from "hooks/useMcpAddon";
+import { MCP_ADDON_NAME, isMcpAddonVisible } from "utils/mcpAddonState";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // ==============================|| ACCOUNT PROFILE - SUBSCRIPTION ||============================== //
@@ -70,9 +71,14 @@ const TabSubscription = () => {
 	const isTeamMember = isTeamMode && !isOwner;
 
 	const subscription = useSelector((state: RootState) => state.auth.subscription);
-	// Add-on "Conectores de IA": visible si se vende (integración abierta) o si ya lo tiene / tiene acceso beta.
-	const { addon: mcpAddon } = useMcpAddon();
-	const showMcpAddon = !!mcpAddon && (mcpAddon.publicAvailable || mcpAddon.adminBypass || mcpAddon.status !== "none" || mcpAddon.hasManualGrant);
+	// Add-on "Conectores de IA": visible si se vende (integración abierta), si ya lo tiene / tiene acceso
+	// beta, o si es admin con la venta cerrada. Se refresca al cancelar o reactivar la suscripción: el hub
+	// lo pasa a canceling (cancellationSource "subscription") y vuelve con ella.
+	const { addon: mcpAddon, refresh: refreshMcpAddon } = useMcpAddon();
+	const showMcpAddon = isMcpAddonVisible(mcpAddon);
+	// Para el diálogo de cancelación: el add-on se va con la suscripción.
+	const mcpAddonGoesWithSubscription = !!mcpAddon && mcpAddon.status !== "none";
+	const mcpAddonOwnCancelPending = !!mcpAddon && mcpAddon.status === "canceling" && mcpAddon.cancellationSource === "addon";
 	const payments = useSelector(selectPaymentHistory) || [];
 	const userEmail = useSelector((state: RootState) => state.auth.user?.email || state.auth.email || "");
 
@@ -310,6 +316,7 @@ const TabSubscription = () => {
 				} else {
 					await fetchSubscription();
 				}
+				if (mcpAddonGoesWithSubscription) refreshMcpAddon().catch(() => undefined);
 			} else {
 				setError("No se pudo cancelar la suscripción");
 				setTimeout(() => setError(null), 5000);
@@ -345,6 +352,7 @@ const TabSubscription = () => {
 				} else {
 					await fetchSubscription();
 				}
+				if (mcpAddonGoesWithSubscription) refreshMcpAddon().catch(() => undefined);
 			} else {
 				setError("No se pudo reactivar la suscripción: " + (response.message || "Error desconocido"));
 				setTimeout(() => setError(null), 5000);
@@ -1939,6 +1947,16 @@ const TabSubscription = () => {
 										<Box sx={{ width: 4, height: 4, mt: "8px", borderRadius: "50%", bgcolor: BRAND_BLUE, flexShrink: 0 }} />
 										<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em" }}>
 											Tendrás un período de gracia de 15 días para archivar contenido
+										</Typography>
+									</Stack>
+								)}
+								{mcpAddonGoesWithSubscription && (
+									<Stack direction="row" spacing={1} alignItems="flex-start">
+										<Box sx={{ width: 4, height: 4, mt: "8px", borderRadius: "50%", bgcolor: BRAND_BLUE, flexShrink: 0 }} />
+										<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+											{mcpAddonOwnCancelPending
+												? `La baja que programaste del add-on ${MCP_ADDON_NAME} queda sin efecto: el add-on se va junto con la suscripción en esa fecha y no vas a poder reactivarlo por separado hasta reactivar la suscripción.`
+												: `El add-on ${MCP_ADDON_NAME} se cancela junto con la suscripción en esa fecha. Si después la reactivás, el add-on vuelve con ella.`}
 										</Typography>
 									</Stack>
 								)}

@@ -57,7 +57,11 @@ function statusTone(addon: McpAddonStatus | null, theme: Theme): Tone | null {
 	if (addon.status === "canceling") {
 		const d = formatAddonDate(addon.endsAt);
 		if (addon.cancellationSource === "addon") return { color: STALE_AMBER, label: d ? `Activo hasta el ${d}` : "Baja programada" };
-		return { color: theme.palette.text.secondary, label: d ? `Se cancela el ${d}` : "Se cancela" };
+		// Se va con la suscripción: no es reactivable por separado (canReactivate false).
+		return {
+			color: theme.palette.text.secondary,
+			label: d ? `Se cancela el ${d} junto con tu suscripción` : "Se cancela junto con tu suscripción",
+		};
 	}
 	if (addon.access.via === "beta_grant") return { color: BRAND_BLUE, label: "Acceso beta" };
 	if (addon.availabilityReason === "maintenance") return { color: STALE_AMBER, label: "En mantenimiento" };
@@ -93,9 +97,11 @@ function statusDetail(addon: McpAddonStatus | null, cta: McpCtaKind): { icon: JS
 			};
 		return {
 			icon: <InfoCircle size={16} variant="Bulk" />,
-			text: d
-				? `Tu suscripción se cancela el ${d} y el add-on se va con ella. Hasta entonces seguís con acceso.`
-				: "Tu suscripción se cancela al final del período y el add-on se va con ella.",
+			text: `${
+				d
+					? `Tu suscripción se cancela el ${d} y el add-on se va con ella. Hasta entonces seguís con acceso.`
+					: "Tu suscripción se cancela al final del período y el add-on se va con ella."
+			} Para conservarlo, primero reactivá tu suscripción: el add-on vuelve con ella.`,
 		};
 	}
 	if (addon.status === "active")

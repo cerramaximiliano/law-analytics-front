@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import type { McpAccess } from "hooks/useMcpAccess";
 import type { PublicAddon } from "store/reducers/ApiService";
-import { deriveMcpAddonFallback, mcpUserState, normalizeMcpAddonStatus, resolveMcpCta, type FallbackInput } from "./mcpAddonState";
+import {
+	deriveMcpAddonFallback,
+	isMcpAddonVisible,
+	mcpUserState,
+	normalizeMcpAddonStatus,
+	resolveMcpCta,
+	type FallbackInput,
+} from "./mcpAddonState";
 import { getUpgradeReasonCopy } from "./mcpUpgradeReasons";
 
 const publicAddon: PublicAddon = {
@@ -140,8 +147,25 @@ describe("normalizeMcpAddonStatus (contrato real del hub)", () => {
 	});
 
 	it("canceling por la suscripción (o hub viejo sin cancellationSource) → no reactivable desde el add-on", () => {
-		const bySub = normalizeMcpAddonStatus(hub({ status: "canceling", cancellationSource: "subscription", canReactivate: false }))!;
-		expect(bySub).toMatchObject({ cancellationSource: "subscription", canReactivate: false });
+		const bySub = normalizeMcpAddonStatus(
+			hub({
+				status: "canceling",
+				cancellationSource: "subscription",
+				canReactivate: false,
+				canRemove: false,
+				endsAt: "2026-11-06T12:00:00Z",
+			}),
+		)!;
+		expect(bySub).toMatchObject({
+			cancellationSource: "subscription",
+			canReactivate: false,
+			canRemove: false,
+			endsAt: "2026-11-06T12:00:00.000Z",
+		});
+		// Aunque el hub mande canReactivate: true, con source "subscription" no se ofrece reactivar el add-on.
+		expect(
+			normalizeMcpAddonStatus(hub({ status: "canceling", cancellationSource: "subscription", canReactivate: true }))!.canReactivate,
+		).toBe(false);
 		const legacy = normalizeMcpAddonStatus(hub({ status: "canceling", canReactivate: true }))!;
 		expect(legacy).toMatchObject({ cancellationSource: "subscription", canReactivate: false });
 		const active = normalizeMcpAddonStatus(hub({ status: "active", canReactivate: true, cancellationSource: "addon" }))!;
@@ -286,6 +310,24 @@ describe("deriveMcpAddonFallback (hub sin el GET consolidado)", () => {
 
 	it("miembro de equipo → team", () => {
 		expect(resolveMcpCta(deriveMcpAddonFallback(input({ isTeamMember: true })), true)).toBe("team");
+	});
+});
+
+describe("isMcpAddonVisible", () => {
+	it("sin estado → oculto; venta abierta → visible", () => {
+		expect(isMcpAddonVisible(null)).toBe(false);
+		expect(isMcpAddonVisible(normalizeMcpAddonStatus(hub())!)).toBe(true);
+	});
+
+	it("venta cerrada: oculto sin nada, visible si lo tiene, con grant o como admin", () => {
+		const closed = { publicAvailable: false, availabilityReason: "not_public", purchasable: false };
+		expect(isMcpAddonVisible(normalizeMcpAddonStatus(hub(closed))!)).toBe(false);
+		expect(isMcpAddonVisible(normalizeMcpAddonStatus(hub({ ...closed, status: "active" }))!)).toBe(true);
+		expect(isMcpAddonVisible(normalizeMcpAddonStatus(hub({ ...closed, status: "canceling", cancellationSource: "subscription" }))!)).toBe(
+			true,
+		);
+		expect(isMcpAddonVisible(normalizeMcpAddonStatus(hub({ ...closed, hasManualGrant: true }))!)).toBe(true);
+		expect(isMcpAddonVisible(normalizeMcpAddonStatus(hub({ ...closed, adminBypass: true, purchasable: true }))!)).toBe(true);
 	});
 });
 

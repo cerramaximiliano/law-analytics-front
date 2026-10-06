@@ -20,7 +20,7 @@ import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 import useMcpAddon from "hooks/useMcpAddon";
 import { cleanPlanDisplayName, getCurrentEnvironment } from "utils/planPricingUtils";
 import { pushGTMEvent } from "utils/gtm";
-import { MCP_ADDON_ANCHOR, MCP_ADDON_NAME } from "utils/mcpAddonState";
+import { MCP_ADDON_ANCHOR, MCP_ADDON_NAME, isMcpAddonVisible } from "utils/mcpAddonState";
 import { openSnackbar } from "store/reducers/snackbar";
 
 // ============================== TOKENS ============================== //
@@ -60,12 +60,12 @@ const Plans = () => {
 	const { addon } = useMcpAddon();
 
 	// Tarjeta del add-on "Conectores de IA" (mcp_access, cubre Claude.ai y ChatGPT):
-	// visible con la integración abierta al público, o si el usuario ya lo tiene
-	// (o tiene acceso beta) aunque la venta esté cerrada.
-	const showMcpAddon =
-		integrations.claudeAi.enabled ||
-		integrations.chatGpt.enabled ||
-		(!!addon && (addon.status !== "none" || addon.hasManualGrant || addon.adminBypass));
+	// visible con la integración abierta al público (también para anónimos), o si el
+	// usuario ya lo tiene, tiene acceso beta o es admin (venta cerrada, puede comprar
+	// igual) — isMcpAddonVisible, misma regla que Cuenta → Suscripción. Ojo: si /me
+	// falla al cargar (hub reiniciando), la SPA queda como anónima y con la venta
+	// cerrada la tarjeta no aparece aunque la sesión exista.
+	const showMcpAddon = integrations.claudeAi.enabled || integrations.chatGpt.enabled || isMcpAddonVisible(addon);
 
 	// Las tarjetas se dibujan desde el primer momento con el respaldo estático y
 	// se actualizan en sitio cuando responde la API (mismo criterio que la sección
