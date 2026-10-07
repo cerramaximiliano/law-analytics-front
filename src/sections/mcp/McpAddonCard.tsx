@@ -2,7 +2,8 @@
  * Tarjeta del add-on "Conectores de IA" (mcp_access). Una sola pieza para todas las
  * superficies, así el valor, el precio, el estado y los CTA dicen lo mismo en todos lados:
  *
- *  - variant="plans"  → /plans, debajo de las tarjetas de planes (también para anónimos).
+ *  - variant="plans"  → /plans, debajo de las tarjetas de planes (también para anónimos), y
+ *                       /suscripciones/tables (location="pricing_tables": suma baja/reactivación).
  *  - variant="panel"  → dentro de una SectionCard: Cuenta → Suscripción e
  *                       Integraciones → Asistentes de IA.
  *
@@ -305,12 +306,12 @@ const McpAddonCard = ({ variant, location, onUpgradeClick, onBetaRequest }: Prop
 					Gestionar en Suscripción
 				</Button>
 			)}
-			{canCancel && variant === "panel" && location === "account_subscription" && (
+			{canCancel && ((variant === "panel" && location === "account_subscription") || location === "pricing_tables") && (
 				<Button color="error" onClick={startCancel} disabled={busy} sx={{ textTransform: "none", fontWeight: 600 }}>
 					Quitar add-on
 				</Button>
 			)}
-			{canReactivate && variant === "panel" && (
+			{canReactivate && (variant === "panel" || location === "pricing_tables") && (
 				<Button
 					variant="outlined"
 					onClick={reactivate}

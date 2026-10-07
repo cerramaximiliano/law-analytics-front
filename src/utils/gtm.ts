@@ -360,7 +360,8 @@ export const trackOauthUpgradeView = (reason: string, plan?: string): void => {
 // `mcp_landing_cta_click`), que se siguen emitiendo igual. Nuevos (sin etiqueta
 // GTM todavía — documentar en la-ads tracking-map § Conector MCP):
 //   - mcp_addon_cta_click      CTA del add-on fuera de /plans y las landings
-//                              (cuenta → suscripción, integraciones → asistentes)
+//                              (cuenta → suscripción, integraciones → asistentes,
+//                              suscripciones/tables → cta_location "pricing_tables")
 //   - mcp_addon_dialog_open    se abrió el diálogo de confirmación del alta
 //   - mcp_addon_purchase       alta confirmada por el hub (conversión)
 //   - mcp_addon_purchase_error el alta falló (error_code = code del hub: CARD_DECLINED, PAYMENT_REQUIRES_ACTION, …)
@@ -371,6 +372,7 @@ export type McpAddonCtaLocation =
 	| "plans_page"
 	| "account_subscription"
 	| "integrations_ia"
+	| "pricing_tables"
 	| "landing_conectores"
 	| "landing_chatgpt"
 	| string;

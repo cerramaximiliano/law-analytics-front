@@ -39,6 +39,10 @@ import { getPlanPricing, getBillingPeriodText, getCurrentEnvironment, cleanPlanD
 import { useTeam } from "contexts/TeamContext";
 import { ROLE_CONFIG } from "types/teams";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
+import PricingTablesMcpAddon from "sections/mcp/PricingTablesMcpAddon";
+
+// id de la grilla de planes: destino del CTA "Mejorar mi plan" del add-on.
+const PLANS_GRID_ID = "planes-grilla";
 
 // ==============================|| PRICING ||============================== //
 
@@ -111,6 +115,12 @@ const Pricing = () => {
 
 	// El header, los límites y el banner de gracia leen Redux (auth.subscription):
 	// tras un cambio de plan hay que refrescarlo o siguen mostrando el plan viejo.
+	// Huella de la suscripción para la tarjeta del add-on: si cambia (cambio de plan, baja o
+	// cambio programado exitoso), la tarjeta vuelve a pedir el estado del add-on.
+	const mcpSubscriptionKey = currentPlanId
+		? [currentPlanId, currentSubscription?.cancelAtPeriodEnd ? "1" : "0", currentSubscription?.scheduledPlanChange?.targetPlan ?? ""].join("|")
+		: null;
+
 	const refreshReduxSubscription = () => {
 		// Best-effort: un fallo de red acá no debe romper el flujo que ya terminó bien.
 		Promise.resolve(dispatch(fetchCurrentSubscription(true) as any)).catch(() => {});
@@ -1399,7 +1409,7 @@ const Pricing = () => {
 				</Box>
 			)}
 
-			<Grid container spacing={3} alignItems="stretch">
+			<Grid container spacing={3} alignItems="stretch" id={PLANS_GRID_ID} sx={{ scrollMarginTop: 96 }}>
 				{plans.map((plan) => {
 					// Determinar si este es el plan activo del usuario
 					const isCurrentPlan = currentPlanId === plan.planId;
@@ -1631,6 +1641,9 @@ const Pricing = () => {
 					.
 				</Typography>
 			</Box>
+
+			{/* Add-on "Conectores de IA" (misma tarjeta y regla de visibilidad que /plans) */}
+			<PricingTablesMcpAddon gridAnchorId={PLANS_GRID_ID} subscriptionKey={mcpSubscriptionKey} />
 
 			{/* Diálogo para mostrar los documentos legales */}
 			<Dialog
