@@ -17,6 +17,7 @@ import { AuthProps, ServerContextType, UserProfile, LoginResponse, RegisterRespo
 import { Subscription } from "../types/user";
 import { Payment } from "store/reducers/ApiService";
 import { fetchUserStats } from "store/reducers/userStats";
+import { setProductAnalyticsAuth } from "utils/productAnalytics";
 import { AppDispatch } from "store";
 import secureStorage from "services/secureStorage";
 import { getAttributionPayload, resolveInternalSource } from "utils/attribution";
@@ -61,6 +62,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	useEffect(() => {
 		axios.defaults.withCredentials = true;
 	}, []);
+
+	// Chequea la conexión previa con Google Calendar sin bloquear ni romper el flujo
+	// de login/inicialización (un fallo acá no debe deslogear a nadie).
+	const checkGoogleCalendarInBackground = (preloaded?: Promise<typeof import("store/reducers/googleCalendar") | null>) => {
+		(preloaded ?? import("store/reducers/googleCalendar").catch(() => null))
+			.then((mod) => {
+				if (mod) reduxDispatch(mod.checkGoogleCalendarConnection());
+			})
+			.catch(() => {});
+	};
 
 	// Procesar la cola de peticiones pendientes
 	const processRequestQueue = useCallback(async () => {
@@ -187,9 +198,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 					reduxDispatch(fetchUserStats());
 
-					// Verificar conexión previa con Google Calendar
-					const { checkGoogleCalendarConnection } = await import("store/reducers/googleCalendar");
-					reduxDispatch(checkGoogleCalendarConnection());
+					// Verificar conexión previa con Google Calendar (sin bloquear el resto del login)
+					checkGoogleCalendarInBackground();
 
 					showSnackbar("¡Inicio de sesión con Google exitoso!", "success");
 
@@ -213,9 +223,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		}
 	};
 
+	// Analítica de producto: solo con usuario autenticado (ver utils/productAnalytics)
+	useEffect(() => {
+		if (state.isInitialized) setProductAnalyticsAuth(state.isLoggedIn);
+	}, [state.isInitialized, state.isLoggedIn]);
+
 	// Inicialización de la autenticación
 	useEffect(() => {
 		const init = async (): Promise<void> => {
+			// El chunk del reducer de Google Calendar se baja en paralelo con /auth/me.
+			const googleCalendarModule = import("store/reducers/googleCalendar").catch(() => null);
 			try {
 				// Verificar la sesión actual con el token en cookies
 				const response = await axios.get<{
@@ -252,9 +269,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 				reduxDispatch(fetchUserStats());
 
-				// Verificar conexión previa con Google Calendar
-				const { checkGoogleCalendarConnection } = await import("store/reducers/googleCalendar");
-				reduxDispatch(checkGoogleCalendarConnection());
+				// Verificar conexión previa con Google Calendar, en paralelo con las stats
+				// (el chunk ya se está bajando desde que arrancó /auth/me).
+				checkGoogleCalendarInBackground(googleCalendarModule);
 			} catch (error) {
 				// No redirigir al login, solo inicializar el estado como logged out
 				// Solo mostrar errores que no sean 401 para evitar ruido en los logs durante el registro
@@ -651,9 +668,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					// Cargar estadísticas de usuario si es necesario
 					reduxDispatch(fetchUserStats());
 
-					// Verificar conexión previa con Google Calendar
-					const { checkGoogleCalendarConnection } = await import("store/reducers/googleCalendar");
-					reduxDispatch(checkGoogleCalendarConnection());
+					// Verificar conexión previa con Google Calendar (sin bloquear el resto del login)
+					checkGoogleCalendarInBackground();
 				}
 
 				setNeedsVerification(false);

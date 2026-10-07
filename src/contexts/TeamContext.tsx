@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useCallback, useEffect, useMemo, ReactNode } from "react";
 import { useDispatch, useSelector } from "store";
 import { Team, TeamRole, TeamAction, canRolePerformAction, OwnerSubscription } from "types/teams";
+import { writeTeamHint } from "utils/teamHint";
 import { getUserTeams, setActiveTeam as setActiveTeamAction, clearActiveTeam, getTeamById } from "store/reducers/teams";
 
 // Types for the context
@@ -249,6 +250,12 @@ export function TeamProvider({ children }: TeamProviderProps) {
 		}
 		return {};
 	}, [activeTeam]);
+
+	// Recordar si el usuario tiene equipos (permite al dashboard no esperar a los equipos
+	// cuando nunca tuvo uno).
+	useEffect(() => {
+		if (isInitialized && currentUserId) writeTeamHint(currentUserId, teams.length > 0);
+	}, [isInitialized, currentUserId, teams.length]);
 
 	// Initialize teams on mount
 	useEffect(() => {

@@ -25,7 +25,6 @@ import WelcomeBanner from "sections/dashboard/default/WelcomeBanner";
 import FirstSyncBanner from "sections/dashboard/default/FirstSyncBanner";
 import { useSelector, dispatch } from "store";
 import { getUnifiedStats } from "store/reducers/unifiedStats";
-import { fetchUserStats } from "store/reducers/userStats";
 import { DashboardStats } from "types/unified-stats";
 import ApiService, { OnboardingSignals, OnboardingStatus } from "store/reducers/ApiService";
 import { BRAND_BLUE } from "themes/dashboardTokens";
@@ -33,6 +32,8 @@ import { BRAND_BLUE } from "themes/dashboardTokens";
 // hooks
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffectiveUser } from "hooks/useEffectiveUser";
+import { useTeam } from "contexts/TeamContext";
+import { readTeamHint } from "utils/teamHint";
 import { useUpcomingDeadlines } from "hooks/useUpcomingDeadlines";
 
 // Key para sessionStorage (evitar multiples incrementos por sesion)
@@ -81,6 +82,8 @@ const DashboardDefault = () => {
 
 	// Get effective user for team-aware data fetching
 	const { effectiveUserId, isReady: isTeamReady } = useEffectiveUser();
+	const { isInitialized: isTeamsInitialized } = useTeam();
+	const lastFetchedUserId = useSelector((state) => state.unifiedStats.lastFetchedUserId);
 
 	// Fuente de verdad EN VIVO de los vencimientos — compartida con el widget de
 	// lista y la card de Vencimientos 7/15/30. La KPI "Próximos vencimientos" de
@@ -226,20 +229,24 @@ const DashboardDefault = () => {
 	}, [personalUserId]);
 
 	// Cargar datos del dashboard usando el store unificado
-	// Usa effectiveUserId (owner's userId en modo equipo) para mostrar datos del equipo
+	// Usa effectiveUserId (owner's userId en modo equipo) para mostrar datos del equipo.
+	// Si el usuario nunca tuvo equipos (pista local "none" o sin pista en cuentas nuevas
+	// que aún no cargaron sus equipos), no se espera a `getUserTeams`: se piden ya los
+	// datos personales en paralelo. Si luego resulta tener equipo, effectiveUserId cambia
+	// y se vuelve a pedir con el userId correcto (lastFetchedUserId !== effectiveUserId).
+	// Con pista "teams" se espera al equipo como antes (evita mostrar datos personales).
 	useEffect(() => {
-		if (effectiveUserId && isTeamReady && !isInitialized) {
+		if (!effectiveUserId) return;
+		const teamHint = readTeamHint(personalUserId);
+		const optimistic = !isTeamReady && !isTeamsInitialized && teamHint !== "teams";
+		if (!isTeamReady && !optimistic) return;
+		if (!isInitialized || lastFetchedUserId !== effectiveUserId) {
 			dispatch(getUnifiedStats(effectiveUserId, "dashboard,folders"));
 		}
-	}, [effectiveUserId, isTeamReady, isInitialized]);
+	}, [effectiveUserId, isTeamReady, isTeamsInitialized, isInitialized, lastFetchedUserId, personalUserId]);
 
-	// Cargar datos de userStats para el widget de almacenamiento
-	// Nota: userStats es personal, no del equipo
-	useEffect(() => {
-		if (personalUserId) {
-			dispatch(fetchUserStats());
-		}
-	}, [personalUserId]);
+	// userStats (widget de almacenamiento) ya se pide una sola vez en ServerContext al
+	// iniciar sesión / validar la sesión; antes se repetía acá.
 
 	// Manejar errores
 	useEffect(() => {
