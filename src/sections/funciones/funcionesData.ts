@@ -58,12 +58,12 @@ export const FUNCIONES: Funcion[] = [
 			"Vinculás el expediente una vez y la app consulta el portal todos los días. Cada movimiento nuevo llega a la carpeta de esa causa, con el documento adjunto cuando el juzgado lo publica.",
 		icono: FolderOpen,
 		puntos: [
-			"PJN, MEV y SCBA, EJE, más Salta, Catamarca y Mendoza",
+			"PJN, Provincia de Buenos Aires (MEV y SCBA), Ciudad (EJE), Salta, Catamarca y Mendoza",
 			"Resumen diario por email y aviso en la app con cada movimiento nuevo",
 			"El escrito y la cédula quedan guardados en la carpeta",
 		],
 		datos: [
-			{ valor: "7", etiqueta: "jurisdicciones sincronizadas" },
+			{ valor: "6", etiqueta: "jurisdicciones sincronizadas" },
 			{ valor: "Diario", etiqueta: "chequeo de movimientos nuevos" },
 		],
 	},
@@ -236,7 +236,7 @@ export const FUNCIONES: Funcion[] = [
 
 /** Cifras del encabezado. Se mantienen conservadoras y verificables. */
 export const CIFRAS: DatoBloque[] = [
-	{ valor: "7", etiqueta: "jurisdicciones sincronizadas" },
+	{ valor: "6", etiqueta: "jurisdicciones sincronizadas" },
 	{ valor: "+15.000", etiqueta: "sentencias publicadas" },
 	{ valor: "2 min", etiqueta: "de la cuenta nueva a la primera causa" },
 ];
