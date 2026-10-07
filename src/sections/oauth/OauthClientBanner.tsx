@@ -44,7 +44,12 @@ const OauthClientBanner = ({
 }: OauthClientBannerProps) => {
 	const displayName = clientName || "Una aplicación";
 	const provider = deriveAiProvider(...providerHints, clientName);
-	const brandLogo = !logoUrl && provider === "anthropic" ? <ClaudeAiLogo size={26} /> : !logoUrl && provider === "openai" ? <ChatGptLogo size={26} /> : null;
+	// Proveedor conocido → logo de marca SIEMPRE (mismo criterio que
+	// ConnectedAiApps). Antes se priorizaba `logoUrl`, y el hub manda para los
+	// clientes verificados un path relativo a SU host (`/assets/oauth-clients/
+	// claude.svg`) que en lawanalytics.app da 404: el consent quedaba sin logo
+	// mientras el login (sin logo_uri en el DCR) sí lo mostraba.
+	const brandLogo = provider === "anthropic" ? <ClaudeAiLogo size={26} /> : provider === "openai" ? <ChatGptLogo size={26} /> : null;
 
 	return (
 		<Stack spacing={1.5} sx={{ mb: 2 }}>
