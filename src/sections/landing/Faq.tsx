@@ -47,7 +47,7 @@ const FAQS: FaqItem[] = [
 		id: "integrations",
 		question: "¿Con qué jurisdicciones se integra?",
 		answer:
-			"Actualmente PJN (Poder Judicial de la Nación), MEV (Provincia de Buenos Aires) y EJE (Ciudad de Buenos Aires) están en producción. SECLO se integra próximamente. Podés solicitar otras jurisdicciones desde el formulario de contacto.",
+			"Hoy están en producción seis jurisdicciones: PJN (Poder Judicial de la Nación: Civil, Seguridad Social y Trabajo), Provincia de Buenos Aires (MEV y SCBA), Ciudad de Buenos Aires (EJE), Salta, Catamarca y Mendoza. SECLO se integra próximamente. Podés solicitar otras jurisdicciones desde el formulario de contacto.",
 	},
 	{
 		id: "data-deletion",

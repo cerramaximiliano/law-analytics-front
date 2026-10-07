@@ -58,8 +58,8 @@ export const FUNCIONES: Funcion[] = [
 			"Vinculás el expediente una vez y la app consulta el portal todos los días. Cada movimiento nuevo llega a la carpeta de esa causa, con el documento adjunto cuando el juzgado lo publica.",
 		icono: FolderOpen,
 		puntos: [
-			"PJN, MEV y EJE, más Salta, Catamarca y Mendoza",
-			"Aviso por email y en la app apenas aparece el movimiento",
+			"PJN, Provincia de Buenos Aires (MEV y SCBA), Ciudad (EJE), Salta, Catamarca y Mendoza",
+			"Resumen diario por email y aviso en la app con cada movimiento nuevo",
 			"El escrito y la cédula quedan guardados en la carpeta",
 		],
 		datos: [
