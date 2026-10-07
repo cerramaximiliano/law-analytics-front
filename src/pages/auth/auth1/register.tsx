@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useGoogleLogin, CredentialResponse } from "@react-oauth/google";
+import type { CredentialResponse } from "@react-oauth/google";
+import { useDeferredGoogleLogin } from "hooks/useDeferredGoogleLogin";
 
 // material-ui
 import { useTheme, alpha, Theme } from "@mui/material/styles";
@@ -419,13 +420,12 @@ const Register = () => {
 		}
 	};
 
-	const googleLogin = useGoogleLogin({
+	const { login: googleLogin, warm: warmGoogle } = useDeferredGoogleLogin({
 		onSuccess: handleGoogleSuccess,
 		onError: () => {
 			setError("Error al iniciar sesión con Google. Intentá nuevamente.");
 			setIsLoading(false);
 		},
-		flow: "implicit",
 	});
 
 	const handleGoogleClick = () => {
@@ -651,6 +651,7 @@ const Register = () => {
 											>
 												<CustomGoogleButton
 													onClick={handleGoogleClick}
+													onWarm={warmGoogle}
 													disabled={isLoading}
 													showLoader={isLoading}
 													text="Registrate con Google"

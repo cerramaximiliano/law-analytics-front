@@ -56,6 +56,8 @@ interface CustomGoogleButtonProps {
 	customHeight?: string;
 	showLoader?: boolean;
 	sx?: SxProps<Theme>;
+	/** Se llama al enfocar / acercar el puntero / tocar: permite precargar el cliente de Google. */
+	onWarm?: () => void;
 }
 
 const CustomGoogleButton = ({
@@ -66,6 +68,7 @@ const CustomGoogleButton = ({
 	customHeight,
 	showLoader = false,
 	sx,
+	onWarm,
 }: CustomGoogleButtonProps) => {
 	return (
 		<AnimateButton type="scale">
@@ -86,6 +89,9 @@ const CustomGoogleButton = ({
 					)
 				}
 				onClick={onClick}
+				onPointerEnter={onWarm}
+				onFocus={onWarm}
+				onTouchStart={onWarm}
 				disabled={disabled}
 				fullWidth={fullWidth}
 				size="large"

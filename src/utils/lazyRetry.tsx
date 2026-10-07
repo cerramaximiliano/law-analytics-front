@@ -305,3 +305,28 @@ export const preloadCriticalRoutes = () => {
 		});
 	}, 5000);
 };
+
+// Quien llega a /register, /login o /code-verification casi siempre termina en el
+// dashboard (el registro y la verificación redirigen ahí). Con el formulario ya
+// usable, se baja el chunk del dashboard en tiempo ocioso para que la primera pantalla
+// después del login no espere la red (antes recién se precargaba a los 5 s y solo en
+// rutas privadas). `MainLayout` va en el paquete principal (import estático en
+// MainRoutes), así que no hace falta pedirlo aparte.
+const RUTAS_PRE_DASHBOARD = /^\/(register|login|code-verification)(\/|$)/;
+let dashboardPrecargado = false;
+
+export const preloadDashboardFromAuthRoutes = (ruta: string = typeof window !== "undefined" ? window.location.pathname : "") => {
+	if (dashboardPrecargado || typeof window === "undefined" || !RUTAS_PRE_DASHBOARD.test(ruta)) return;
+	dashboardPrecargado = true;
+	const cargar = () => {
+		import("pages/dashboard/default").catch(() => {
+			// Ignorar errores de precarga
+		});
+	};
+	const programar = () => {
+		if ("requestIdleCallback" in window) (window as any).requestIdleCallback(cargar, { timeout: 4000 });
+		else setTimeout(cargar, 2500);
+	};
+	if (document.readyState === "complete") programar();
+	else window.addEventListener("load", programar, { once: true });
+};

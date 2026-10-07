@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { useGoogleLogin, CredentialResponse } from "@react-oauth/google";
+import type { CredentialResponse } from "@react-oauth/google";
+import { useDeferredGoogleLogin } from "hooks/useDeferredGoogleLogin";
 import { useState } from "react";
 // material-ui
 import { Grid, Stack, Alert, Typography, Box, Button, CircularProgress } from "@mui/material";
@@ -74,13 +75,12 @@ const Login = () => {
 	};
 
 	// Hook para iniciar sesión con Google
-	const googleLogin = useGoogleLogin({
+	const { login: googleLogin, warm: warmGoogle } = useDeferredGoogleLogin({
 		onSuccess: handleGoogleSuccess,
 		onError: () => {
 			setError("Error al iniciar sesión con Google. Intenta nuevamente.");
 			setIsLoading(false);
 		},
-		flow: "implicit",
 		scope: "email profile",
 	});
 
@@ -188,6 +188,7 @@ const Login = () => {
 							/* Botón personalizado que llama a googleLogin.login() */
 							<CustomGoogleButton
 								onClick={() => googleLogin()}
+								onWarm={warmGoogle}
 								disabled={isLoading || isEmailLoading}
 								text={isLoading ? "Iniciando sesión..." : "Iniciar sesión con Google"}
 								fullWidth

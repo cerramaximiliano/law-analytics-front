@@ -22,7 +22,8 @@ import { captureAttribution } from "utils/attribution";
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { useLocation } from "react-router-dom";
-import { necesitaGoogleSignIn } from "utils/lazyRetry";
+import { necesitaGoogleSignIn, preloadDashboardFromAuthRoutes } from "utils/lazyRetry";
+import { gsiDeferralRoutes, rearmGsiDeferral, releaseGsi } from "utils/gsiDeferral";
 
 // auth-provider
 import { AuthProvider } from "contexts/ServerContext";
@@ -39,6 +40,13 @@ if (!googleClientId) {
 // Google. En el resto, los hijos van tal cual y el cliente gsi no se descarga.
 const ProveedorGoogle = ({ children }: { children: React.ReactNode }) => {
 	const { pathname } = useLocation();
+	// En /login y /register el script de Google se retiene hasta la primera interacción
+	// (utils/gsiDeferral); al salir de esas rutas se suelta para el resto de la app.
+	useEffect(() => {
+		preloadDashboardFromAuthRoutes(pathname);
+		if (gsiDeferralRoutes.test(pathname)) rearmGsiDeferral();
+		else releaseGsi();
+	}, [pathname]);
 	if (!necesitaGoogleSignIn(pathname)) return <>{children}</>;
 	return <GoogleOAuthProvider clientId={googleClientId}>{children}</GoogleOAuthProvider>;
 };
