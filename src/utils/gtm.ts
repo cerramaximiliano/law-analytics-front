@@ -291,8 +291,11 @@ export const trackOauthLoginView = (clientId?: string, clientName?: string): voi
 	});
 };
 
-/** Submit del form de login OAuth (email/pwd o Google) */
-export const trackOauthLoginSubmit = (method: "email" | "google", clientId?: string): void => {
+/** Método de login OAuth: credenciales, Google o sesión recordada de Hydra ("Continuar como"). */
+export type OauthLoginMethod = "email" | "google" | "remembered";
+
+/** Submit del form de login OAuth (email/pwd, Google o "Continuar como") */
+export const trackOauthLoginSubmit = (method: OauthLoginMethod, clientId?: string): void => {
 	pushGTMEvent(GTMEvents.OAUTH_LOGIN_SUBMIT, {
 		method,
 		client_id: clientId || null,
@@ -300,7 +303,7 @@ export const trackOauthLoginSubmit = (method: "email" | "google", clientId?: str
 };
 
 /** Login OAuth exitoso — Hydra acceptLoginRequest devolvió redirect_to */
-export const trackOauthLoginSuccess = (method: "email" | "google", clientId?: string): void => {
+export const trackOauthLoginSuccess = (method: OauthLoginMethod, clientId?: string): void => {
 	pushGTMEvent(GTMEvents.OAUTH_LOGIN_SUCCESS, {
 		method,
 		client_id: clientId || null,
@@ -308,7 +311,7 @@ export const trackOauthLoginSuccess = (method: "email" | "google", clientId?: st
 };
 
 /** Error en login OAuth (credenciales inválidas, Hydra error, etc.) */
-export const trackOauthLoginError = (errorType: string, method?: "email" | "google", clientId?: string): void => {
+export const trackOauthLoginError = (errorType: string, method?: OauthLoginMethod, clientId?: string): void => {
 	pushGTMEvent(GTMEvents.OAUTH_LOGIN_ERROR, {
 		error_type: errorType,
 		method: method || null,

@@ -12,6 +12,13 @@
  *     `redirect_to` con la URL a la que el browser tiene que ir para continuar
  *     el flow OAuth.
  *
+ * Sesión recordada (context.skip + remembered): Hydra ya conoce al usuario por
+ * su cookie (login anterior con remember). Se ofrece "Continuar como <email>"
+ * (POST /api/oauth/login/accept-remembered, sin credenciales) y "Usar otra
+ * cuenta" (navega a switch_account_url = request original con prompt=login).
+ * Mostrar el form igual y aceptar con otra cuenta hacía que Hydra reiniciara el
+ * flujo y pidiera el login dos veces (incidente 2026-10-07).
+ *
  * NO usa useAuth().login ni loginWithGoogle del ServerContext — esos crean una
  * sesión del hub (cookie JWT) que NO queremos acá. El OAuth flow emite su propio
  * token via Hydra al final del consent.
@@ -62,6 +69,30 @@ import { Eye, EyeSlash } from "iconsax-react";
 
 interface AcceptResponse {
 	redirect_to: string;
+	/** El hub detectó que se ingresó con otra cuenta que la recordada: Hydra va a pedir el login de nuevo. */
+	account_switch?: boolean;
+	error_description?: string;
+}
+
+/** Aviso que sobrevive a la redirección por Hydra (misma pestaña) cuando hubo cambio de cuenta. */
+export const OAUTH_LOGIN_NOTICE_KEY = "la_oauth_login_notice";
+
+function readPendingNotice(): string | null {
+	try {
+		const value = window.sessionStorage.getItem(OAUTH_LOGIN_NOTICE_KEY);
+		if (value) window.sessionStorage.removeItem(OAUTH_LOGIN_NOTICE_KEY);
+		return value || null;
+	} catch {
+		return null;
+	}
+}
+
+function storePendingNotice(message: string): void {
+	try {
+		window.sessionStorage.setItem(OAUTH_LOGIN_NOTICE_KEY, message);
+	} catch {
+		/* sessionStorage no disponible: el usuario ve el form sin aviso */
+	}
 }
 
 interface ErrorResponse {
@@ -81,6 +112,10 @@ const OauthLoginPage = () => {
 	const [globalError, setGlobalError] = useState<string | null>(null);
 	const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 	const [isEmailLoading, setIsEmailLoading] = useState(false);
+	const [isRememberedLoading, setIsRememberedLoading] = useState(false);
+	// "Usar otra cuenta" sin switch_account_url (hub viejo) → mostrar el form igual.
+	const [useOtherAccount, setUseOtherAccount] = useState(false);
+	const [notice] = useState<string | null>(() => readPendingNotice());
 
 	const handleClickShowPassword = () => setShowPassword(!showPassword);
 	const handleMouseDownPassword = (event: SyntheticEvent) => event.preventDefault();
@@ -88,6 +123,15 @@ const OauthLoginPage = () => {
 	const clientId = contextState.status === "ready" ? contextState.context.client.client_id : null;
 	const clientName = contextState.status === "ready" ? contextState.context.client.client_name : null;
 	const logoUri = contextState.status === "ready" ? contextState.context.client.logo_uri || null : null;
+	const remembered = contextState.status === "ready" && contextState.context.skip ? contextState.context.remembered || null : null;
+	const switchAccountUrl = contextState.status === "ready" ? contextState.context.switch_account_url || null : null;
+
+	// Navegación a Hydra. Si el hub avisa cambio de cuenta (Hydra va a pedir el
+	// login otra vez), se deja el aviso para la próxima carga de esta página.
+	const continueTo = (data: AcceptResponse) => {
+		if (data.account_switch && data.error_description) storePendingNotice(data.error_description);
+		window.location.href = data.redirect_to;
+	};
 
 	// Track view una sola vez cuando el context queda ready.
 	// useEffect evita el anti-pattern de setState durante render.
@@ -98,7 +142,7 @@ const OauthLoginPage = () => {
 	}, [contextState.status, clientId, clientName]);
 
 	// Mapeo de error codes → mensajes amigables + tracking
-	const handleAcceptError = (err: any, method: "email" | "google") => {
+	const handleAcceptError = (err: any, method: "email" | "google" | "remembered") => {
 		const data = (err.response?.data as ErrorResponse) || {};
 		const code = data.error || "request_failed";
 		let msg = data.error_description || "Error al iniciar sesión. Intentá de nuevo.";
@@ -113,6 +157,40 @@ const OauthLoginPage = () => {
 		setGlobalError(msg);
 	};
 
+	// "Continuar como <email>": el subject lo pone el hub desde el challenge.
+	const submitRemembered = async () => {
+		setGlobalError(null);
+		setIsRememberedLoading(true);
+		trackOauthLoginSubmit("remembered", clientId || undefined);
+		try {
+			const res = await axiosInstance.post<AcceptResponse>("/api/oauth/login/accept-remembered", {
+				login_challenge: challenge,
+			});
+			trackOauthLoginSuccess("remembered", clientId || undefined);
+			continueTo(res.data);
+		} catch (err: any) {
+			const code = err.response?.data?.error;
+			if (code === "not_remembered" || code === "account_inactive") {
+				// La sesión recordada ya no sirve: pedir credenciales.
+				trackOauthLoginError(code, "remembered", clientId || undefined);
+				setUseOtherAccount(true);
+				if (code === "account_inactive") setGlobalError(err.response?.data?.error_description || null);
+			} else {
+				handleAcceptError(err, "remembered");
+			}
+		} finally {
+			setIsRememberedLoading(false);
+		}
+	};
+
+	const switchAccount = () => {
+		if (switchAccountUrl) {
+			window.location.href = switchAccountUrl;
+			return;
+		}
+		setUseOtherAccount(true);
+	};
+
 	const submitGoogle = async (tokenResponse: any) => {
 		setGlobalError(null);
 		setIsGoogleLoading(true);
@@ -124,7 +202,7 @@ const OauthLoginPage = () => {
 				remember: true,
 			});
 			trackOauthLoginSuccess("google", clientId || undefined);
-			window.location.href = res.data.redirect_to;
+			continueTo(res.data);
 		} catch (err: any) {
 			handleAcceptError(err, "google");
 		} finally {
@@ -173,12 +251,22 @@ const OauthLoginPage = () => {
 							<Typography variant="body2">{contextState.message}</Typography>
 						</Alert>
 					</Grid>
+					{contextState.redirectTo && (
+						<Grid item xs={12}>
+							{/* challenge_used (410): recarga/back tras un login OK. Hydra nos da la
+							    request original para reiniciar la autorización con un click. */}
+							<Button fullWidth size="large" variant="contained" href={contextState.redirectTo}>
+								Reiniciar la conexión
+							</Button>
+						</Grid>
+					)}
 				</Grid>
 			</AuthWrapper>
 		);
 	}
 
-	const isAnyLoading = isGoogleLoading || isEmailLoading;
+	const isAnyLoading = isGoogleLoading || isEmailLoading || isRememberedLoading;
+	const showRemembered = !!remembered && !useOtherAccount;
 
 	return (
 		<AuthWrapper>
@@ -205,8 +293,14 @@ const OauthLoginPage = () => {
 						/>
 					</Grid>
 
+					{notice && (
+						<Grid item xs={12}>
+							<Alert severity="info">{notice}</Alert>
+						</Grid>
+					)}
+
 					<Grid item xs={12}>
-						<Typography variant="h3">Ingresá a tu cuenta</Typography>
+						<Typography variant="h3">{showRemembered ? "Continuar con tu cuenta" : "Ingresá a tu cuenta"}</Typography>
 					</Grid>
 
 					{globalError && (
@@ -215,134 +309,187 @@ const OauthLoginPage = () => {
 						</Grid>
 					)}
 
-					<Grid item xs={12}>
-						<Formik
-							initialValues={{ email: "", password: "" }}
-							validationSchema={Yup.object().shape({
-								email: Yup.string().email("Debe ser un e-mail válido").max(255).required("El e-mail es requerido"),
-								password: Yup.string().max(255).required("La contraseña es requerida"),
-							})}
-							onSubmit={async (values, { setSubmitting }) => {
-								setGlobalError(null);
-								setIsEmailLoading(true);
-								trackOauthLoginSubmit("email", clientId || undefined);
-								try {
-									const res = await axiosInstance.post<AcceptResponse>("/api/oauth/login/accept", {
-										login_challenge: challenge,
-										email: values.email,
-										password: values.password,
-										remember: true,
-									});
-									trackOauthLoginSuccess("email", clientId || undefined);
-									window.location.href = res.data.redirect_to;
-								} catch (err: any) {
-									handleAcceptError(err, "email");
-									setSubmitting(false);
-									setIsEmailLoading(false);
-								}
-							}}
-						>
-							{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
-								<form noValidate onSubmit={handleSubmit}>
-									<Grid container spacing={3}>
-										<Grid item xs={12}>
-											<Stack spacing={1}>
-												<InputLabel htmlFor="email-oauth-login">E-mail</InputLabel>
-												<OutlinedInput
-													id="email-oauth-login"
-													type="email"
-													value={values.email}
-													name="email"
-													onBlur={safeFormikBlur(handleBlur)}
-													onChange={handleChange}
-													placeholder="tu@email.com"
-													fullWidth
-													error={Boolean(touched.email && errors.email)}
-													disabled={isAnyLoading}
-												/>
-												{touched.email && errors.email && <FormHelperText error>{errors.email}</FormHelperText>}
-											</Stack>
-										</Grid>
+					{showRemembered && remembered && (
+						<>
+							<Grid item xs={12}>
+								<Box sx={{ bgcolor: "background.default", p: 2, borderRadius: 1 }}>
+									<Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+										Sesión recordada en este navegador
+									</Typography>
+									<Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+										{remembered.name}
+									</Typography>
+									{remembered.name !== remembered.email && (
+										<Typography variant="body2" color="text.secondary">
+											{remembered.email}
+										</Typography>
+									)}
+								</Box>
+							</Grid>
+							<Grid item xs={12}>
+								<Button
+									disableElevation
+									disabled={isAnyLoading}
+									fullWidth
+									size="large"
+									variant="contained"
+									color="primary"
+									onClick={submitRemembered}
+								>
+									{isRememberedLoading ? "Continuando..." : `Continuar como ${remembered.name}`}
+								</Button>
+							</Grid>
+							<Grid item xs={12}>
+								<Stack direction="row" justifyContent="center">
+									<Link
+										component="button"
+										type="button"
+										variant="body2"
+										onClick={switchAccount}
+										disabled={isAnyLoading}
+										sx={{ pointerEvents: isAnyLoading ? "none" : "auto" }}
+									>
+										Usar otra cuenta
+									</Link>
+								</Stack>
+							</Grid>
+						</>
+					)}
 
-										<Grid item xs={12}>
-											<Stack spacing={1}>
-												<InputLabel htmlFor="password-oauth-login">Contraseña</InputLabel>
-												<OutlinedInput
-													id="password-oauth-login"
-													type={showPassword ? "text" : "password"}
-													value={values.password}
-													name="password"
-													onBlur={safeFormikBlur(handleBlur)}
-													onChange={handleChange}
-													placeholder="Tu contraseña"
-													fullWidth
-													error={Boolean(touched.password && errors.password)}
-													disabled={isAnyLoading}
-													endAdornment={
-														<InputAdornment position="end">
-															<IconButton
-																aria-label="toggle password visibility"
-																onClick={handleClickShowPassword}
-																onMouseDown={handleMouseDownPassword}
-																edge="end"
-																color="secondary"
-															>
-																{showPassword ? <Eye size={20} /> : <EyeSlash size={20} />}
-															</IconButton>
-														</InputAdornment>
-													}
-												/>
-												{touched.password && errors.password && <FormHelperText error>{errors.password}</FormHelperText>}
-											</Stack>
-										</Grid>
+					{!showRemembered && (
+						<Grid item xs={12}>
+							<Formik
+								initialValues={{ email: "", password: "" }}
+								validationSchema={Yup.object().shape({
+									email: Yup.string().email("Debe ser un e-mail válido").max(255).required("El e-mail es requerido"),
+									password: Yup.string().max(255).required("La contraseña es requerida"),
+								})}
+								onSubmit={async (values, { setSubmitting }) => {
+									setGlobalError(null);
+									setIsEmailLoading(true);
+									trackOauthLoginSubmit("email", clientId || undefined);
+									try {
+										const res = await axiosInstance.post<AcceptResponse>("/api/oauth/login/accept", {
+											login_challenge: challenge,
+											email: values.email,
+											password: values.password,
+											remember: true,
+										});
+										trackOauthLoginSuccess("email", clientId || undefined);
+										continueTo(res.data);
+									} catch (err: any) {
+										handleAcceptError(err, "email");
+										setSubmitting(false);
+										setIsEmailLoading(false);
+									}
+								}}
+							>
+								{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
+									<form noValidate onSubmit={handleSubmit}>
+										<Grid container spacing={3}>
+											<Grid item xs={12}>
+												<Stack spacing={1}>
+													<InputLabel htmlFor="email-oauth-login">E-mail</InputLabel>
+													<OutlinedInput
+														id="email-oauth-login"
+														type="email"
+														value={values.email}
+														name="email"
+														onBlur={safeFormikBlur(handleBlur)}
+														onChange={handleChange}
+														placeholder="tu@email.com"
+														fullWidth
+														error={Boolean(touched.email && errors.email)}
+														disabled={isAnyLoading}
+													/>
+													{touched.email && errors.email && <FormHelperText error>{errors.email}</FormHelperText>}
+												</Stack>
+											</Grid>
 
-										<Grid item xs={12}>
-											<Stack direction="row" justifyContent="flex-end">
-												<Link
-													component={RouterLink}
-													to="/forgot-password"
-													variant="body2"
-													sx={{ pointerEvents: isAnyLoading ? "none" : "auto" }}
+											<Grid item xs={12}>
+												<Stack spacing={1}>
+													<InputLabel htmlFor="password-oauth-login">Contraseña</InputLabel>
+													<OutlinedInput
+														id="password-oauth-login"
+														type={showPassword ? "text" : "password"}
+														value={values.password}
+														name="password"
+														onBlur={safeFormikBlur(handleBlur)}
+														onChange={handleChange}
+														placeholder="Tu contraseña"
+														fullWidth
+														error={Boolean(touched.password && errors.password)}
+														disabled={isAnyLoading}
+														endAdornment={
+															<InputAdornment position="end">
+																<IconButton
+																	aria-label="toggle password visibility"
+																	onClick={handleClickShowPassword}
+																	onMouseDown={handleMouseDownPassword}
+																	edge="end"
+																	color="secondary"
+																>
+																	{showPassword ? <Eye size={20} /> : <EyeSlash size={20} />}
+																</IconButton>
+															</InputAdornment>
+														}
+													/>
+													{touched.password && errors.password && <FormHelperText error>{errors.password}</FormHelperText>}
+												</Stack>
+											</Grid>
+
+											<Grid item xs={12}>
+												<Stack direction="row" justifyContent="flex-end">
+													<Link
+														component={RouterLink}
+														to="/forgot-password"
+														variant="body2"
+														sx={{ pointerEvents: isAnyLoading ? "none" : "auto" }}
+													>
+														¿Olvidaste tu contraseña?
+													</Link>
+												</Stack>
+											</Grid>
+
+											<Grid item xs={12}>
+												<Button
+													disableElevation
+													disabled={isSubmitting || isAnyLoading}
+													fullWidth
+													size="large"
+													type="submit"
+													variant="contained"
+													color="primary"
 												>
-													¿Olvidaste tu contraseña?
-												</Link>
-											</Stack>
+													{isEmailLoading ? "Ingresando..." : "Ingresar y continuar"}
+												</Button>
+											</Grid>
 										</Grid>
+									</form>
+								)}
+							</Formik>
+						</Grid>
+					)}
 
-										<Grid item xs={12}>
-											<Button
-												disableElevation
-												disabled={isSubmitting || isAnyLoading}
-												fullWidth
-												size="large"
-												type="submit"
-												variant="contained"
-												color="primary"
-											>
-												{isEmailLoading ? "Ingresando..." : "Ingresar y continuar"}
-											</Button>
-										</Grid>
-									</Grid>
-								</form>
-							)}
-						</Formik>
-					</Grid>
+					{!showRemembered && (
+						<>
+							<Grid item xs={12}>
+								<AuthDivider>
+									<Typography variant="body1">O</Typography>
+								</AuthDivider>
+							</Grid>
 
-					<Grid item xs={12}>
-						<AuthDivider>
-							<Typography variant="body1">O</Typography>
-						</AuthDivider>
-					</Grid>
-
-					<Grid item xs={12}>
-						<CustomGoogleButton
-							onClick={() => googleLogin()}
-							disabled={isAnyLoading}
-							text={isGoogleLoading ? "Ingresando con Google..." : "Continuar con Google"}
-							fullWidth
-							showLoader={isGoogleLoading}
-						/>
-					</Grid>
+							<Grid item xs={12}>
+								<CustomGoogleButton
+									onClick={() => googleLogin()}
+									disabled={isAnyLoading}
+									text={isGoogleLoading ? "Ingresando con Google..." : "Continuar con Google"}
+									fullWidth
+									showLoader={isGoogleLoading}
+								/>
+							</Grid>
+						</>
+					)}
 
 					<Grid item xs={12}>
 						<Typography variant="caption" color="text.secondary" sx={{ display: "block", textAlign: "center" }}>

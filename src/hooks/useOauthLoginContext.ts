@@ -15,16 +15,32 @@ export interface OauthClient {
 	logo_uri?: string | null;
 }
 
+/** Usuario de la sesión recordada de Hydra (cookie de un login anterior con "remember"). */
+export interface OauthRememberedUser {
+	email: string;
+	name: string;
+}
+
 export interface OauthLoginContext {
 	client: OauthClient;
 	requested_scope: string[];
+	/** true = Hydra ya conoce al usuario (sesión recordada): ofrecer "Continuar como". */
 	skip: boolean;
 	subject: string | null;
+	remembered?: OauthRememberedUser | null;
+	/** Request original con prompt=login: fuerza un login nuevo ("Usar otra cuenta"). */
+	switch_account_url?: string | null;
 }
 
 export type OauthLoginContextState =
 	| { status: "loading" }
-	| { status: "error"; code: string; message: string }
+	| {
+			status: "error";
+			code: string;
+			message: string;
+			/** `challenge_used` (410): URL para reiniciar la solicitud de autorización. */
+			redirectTo?: string | null;
+	  }
 	| { status: "ready"; context: OauthLoginContext };
 
 export function useOauthLoginContext(challenge: string | null): OauthLoginContextState {
@@ -59,9 +75,10 @@ export function useOauthLoginContext(challenge: string | null): OauthLoginContex
 					(err.response?.status === 410
 						? "El enlace de autorización expiró. Reintentá desde la aplicación."
 						: err.response?.status === 400
-							? "El enlace de autorización es inválido o ya fue usado."
-							: "No se pudo cargar la solicitud de autorización. Intentá de nuevo en un momento.");
-				setState({ status: "error", code, message });
+						? "El enlace de autorización es inválido o ya fue usado."
+						: "No se pudo cargar la solicitud de autorización. Intentá de nuevo en un momento.");
+				const redirectTo = typeof err.response?.data?.redirect_to === "string" ? err.response.data.redirect_to : null;
+				setState({ status: "error", code, message, redirectTo });
 			});
 
 		return () => {
