@@ -57,6 +57,12 @@ export interface McpAddonLegalDialogProps {
 	error?: McpAddonDialogError | string | null;
 	onCancel: () => void;
 	onConfirm: (acceptedPolicyVersion: string | null) => void;
+	/**
+	 * Alta del add-on JUNTO con un plan (un solo Stripe Checkout, usuario sin plan pago):
+	 * cambia el copy del cobro (no hay prorrateo ni medio de pago guardado: se paga en
+	 * Stripe) y el botón pasa a "Continuar al pago".
+	 */
+	planCheckout?: { planName: string; totalLabel: string | null } | null;
 }
 
 const McpAddonLegalDialog = ({
@@ -69,6 +75,7 @@ const McpAddonLegalDialog = ({
 	error = null,
 	onCancel,
 	onConfirm,
+	planCheckout = null,
 }: McpAddonLegalDialogProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
@@ -148,13 +155,31 @@ const McpAddonLegalDialog = ({
 									{priceLabel}
 								</Typography>
 								<Typography variant="body2" color="text.secondary">
-									{currentPlan ? `se suma a tu plan ${planLabel(currentPlan)}` : "se suma a tu plan"}
+									{planCheckout
+										? `junto con el plan ${planCheckout.planName}`
+										: currentPlan
+										? `se suma a tu plan ${planLabel(currentPlan)}`
+										: "se suma a tu plan"}
 								</Typography>
 							</Stack>
-							<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
-								Hoy se cobra la parte proporcional al período en curso con tu medio de pago guardado; después, junto con tu plan. Podés
-								quitarlo cuando quieras.
-							</Typography>
+							{planCheckout ? (
+								<>
+									{planCheckout.totalLabel && (
+										<Typography variant="body2" sx={{ mt: 0.75, fontWeight: 600 }} data-testid="mcp-addon-plan-total">
+											{planCheckout.totalLabel}
+										</Typography>
+									)}
+									<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+										Pagás el plan y el conector juntos en la página segura de Stripe y se renuevan juntos cada mes. Podés quitar el conector
+										cuando quieras sin cambiar de plan.
+									</Typography>
+								</>
+							) : (
+								<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+									Hoy se cobra la parte proporcional al período en curso con tu medio de pago guardado; después, junto con tu plan. Podés
+									quitarlo cuando quieras.
+								</Typography>
+							)}
 						</Box>
 					)}
 
@@ -237,7 +262,13 @@ const McpAddonLegalDialog = ({
 					startIcon={busy ? <CircularProgress size={16} color="inherit" /> : undefined}
 					sx={{ textTransform: "none", width: { xs: "100%", sm: "auto" } }}
 				>
-					{busy ? "Procesando…" : priceLabel ? `Activar por ${priceLabel}` : `Activar ${MCP_ADDON_NAME}`}
+					{busy
+						? "Procesando…"
+						: planCheckout
+						? "Continuar al pago"
+						: priceLabel
+						? `Activar por ${priceLabel}`
+						: `Activar ${MCP_ADDON_NAME}`}
 				</Button>
 			</DialogActions>
 		</Dialog>

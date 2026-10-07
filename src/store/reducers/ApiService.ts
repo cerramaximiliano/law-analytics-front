@@ -1288,6 +1288,13 @@ class ApiService {
 		successUrl: string,
 		cancelUrl: string,
 		discountCode?: string,
+		/**
+		 * Add-ons contratados en el mismo checkout (solo alta, usuario sin plan pago):
+		 * `{ addons: ["mcp_access"], acceptedPolicyVersion }`. Rechazos propios: 400
+		 * LEGAL_ACCEPTANCE_REQUIRED (+ privacyVersion/privacyUrl), 409 ADDON_NOT_AVAILABLE
+		 * (+ reason), 409 ADDON_USE_ADDON_FLOW (ya tiene plan pago), 409 ADDON_PRICE_MISMATCH.
+		 */
+		addonOptions?: { addons: string[]; acceptedPolicyVersion?: string | null },
 	): Promise<ApiResponse<{ sessionId?: string; url?: string }> & Record<string, any>> {
 		try {
 			const response = await axios.post<ApiResponse<{ sessionId?: string; url?: string }>>(
@@ -1297,6 +1304,10 @@ class ApiService {
 					successUrl,
 					cancelUrl,
 					...(discountCode && { discountCode }),
+					...(addonOptions?.addons?.length && {
+						addons: addonOptions.addons,
+						...(addonOptions.acceptedPolicyVersion && { acceptedPolicyVersion: addonOptions.acceptedPolicyVersion }),
+					}),
 				},
 				{ withCredentials: true },
 			);
@@ -1314,6 +1325,10 @@ class ApiService {
 				code: data.code,
 				message: data.message || this.handleAxiosError(error).message,
 				teamCheck: data.teamCheck,
+				// Checkout con add-on: política vigente (400) y motivo de venta cerrada (409).
+				privacyVersion: data.privacyVersion,
+				privacyUrl: data.privacyUrl,
+				reason: data.reason,
 			} as any;
 		}
 	}

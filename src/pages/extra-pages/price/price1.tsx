@@ -40,6 +40,9 @@ import { useTeam } from "contexts/TeamContext";
 import { ROLE_CONFIG } from "types/teams";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import PricingTablesMcpAddon from "sections/mcp/PricingTablesMcpAddon";
+import PlanCheckoutAddonOption from "sections/mcp/PlanCheckoutAddonOption";
+import usePlanCheckoutAddon, { type PlanCheckoutAddonOptions } from "hooks/usePlanCheckoutAddon";
+import { isAddonCompatiblePlan, PLAN_CHECKOUT_ADDON_CODES, planShortName } from "utils/planCheckoutAddon";
 
 // id de la grilla de planes: destino del CTA "Mejorar mi plan" del add-on.
 const PLANS_GRID_ID = "planes-grilla";
@@ -89,6 +92,10 @@ const Pricing = () => {
 	const [cancelLoading, setCancelLoading] = useState(false);
 	// Estado para manejar la reactivación de suscripción
 	const [reactivating, setReactivating] = useState(false);
+	// Plan + add-on "Conectores de IA" en un solo checkout: solo para el ALTA (sin plan
+	// pago). Con plan pago el add-on se suma desde su tarjeta y los CTAs de cambio de
+	// plan no cambian.
+	const addonCheckout = usePlanCheckoutAddon();
 
 	// Función helper para actualizar el estado de la suscripción sin recargar la página
 	const updateSubscriptionState = (
@@ -203,7 +210,7 @@ const Pricing = () => {
 		fetchPlans();
 	}, []);
 
-	const handleSubscribe = async (planId: string, discountCode?: string) => {
+	const handleSubscribe = async (planId: string, discountCode?: string, addonOptions?: PlanCheckoutAddonOptions) => {
 		try {
 			setLoadingPlanId(planId); // Activar loading para este plan
 
@@ -221,7 +228,13 @@ const Pricing = () => {
 			}
 
 			// Asegúrate de que la respuesta se reciba como cualquier tipo para acceder a sus propiedades
-			const response = (await ApiService.subscribeToPlan(planId, successUrl, errorUrl, discountCode)) as any;
+			const response = (await ApiService.subscribeToPlan(planId, successUrl, errorUrl, discountCode, addonOptions)) as any;
+
+			// Rechazos propios del add-on (política, venta cerrada…): los resuelve
+			// usePlanCheckoutAddon en su diálogo, sin snackbar ni checkout fallido.
+			if (addonOptions && response?.success === false && response.code && PLAN_CHECKOUT_ADDON_CODES.has(response.code)) {
+				return response;
+			}
 
 			// Si devuelve opciones, mostrar el diálogo
 			if (response.success && response.options && response.options.length > 0) {
@@ -389,6 +402,7 @@ const Pricing = () => {
 				// Redireccionar a la página de error
 				window.location.href = errorUrl;
 			}
+			return response;
 		} catch (error) {
 			// handleAxiosError ya extrae error.response.data.message — preservar
 			// el mensaje específico (ej. "Ya has usado este código..." cuando el
@@ -1487,6 +1501,13 @@ const Pricing = () => {
 							currentPlanId !== "free" &&
 							(currentPlanId === "standard" || currentPlanId === "pro" || currentPlanId === "premium"));
 
+					// Checkbox del add-on: plan pago, usuario sin plan pago y no miembro de equipo.
+					const userHasPaidPlan = currentPlanId === "standard" || currentPlanId === "pro" || currentPlanId === "premium";
+					const offerAddonHere =
+						addonCheckout.offer && !isTeamMember && !userHasPaidPlan && !isCurrentPlan && !isInactive && isAddonCompatiblePlan(plan.planId);
+					const addonPlanName = planShortName(plan.displayName);
+					const addonPlanPrice = pricing.billingPeriod === "monthly" ? pricing.basePrice : null;
+
 					const handleCtaClick = () => {
 						if (plan.isActive && !loadingPlanId && !reactivating && !cancelingScheduledChange) {
 							if (isReactivable) {
@@ -1498,7 +1519,17 @@ const Pricing = () => {
 							} else if (!isCurrentPlan) {
 								const discountCode =
 									plan.activeDiscounts && plan.activeDiscounts.length > 0 ? plan.activeDiscounts[0].code : undefined;
-								handleSubscribe(plan.planId, discountCode);
+								if (offerAddonHere) {
+									addonCheckout.begin({
+										planId: plan.planId,
+										planName: addonPlanName,
+										planPrice: addonPlanPrice,
+										planCurrency: pricing.currency,
+										proceed: (addonOptions) => handleSubscribe(plan.planId, discountCode, addonOptions),
+									});
+								} else {
+									handleSubscribe(plan.planId, discountCode);
+								}
 							}
 						}
 					};
@@ -1552,6 +1583,19 @@ const Pricing = () => {
 								contextMessage={contextMessage}
 								showInactiveOverlay={isInactive}
 								dataTestId={`sub-plan-card-${plan.planId}`}
+								beforeCta={
+									offerAddonHere ? (
+										<PlanCheckoutAddonOption
+											planId={plan.planId}
+											checked={addonCheckout.isSelected(plan.planId)}
+											onChange={(checked) => addonCheckout.setSelected(plan.planId, checked)}
+											addonPrice={addonCheckout.addonPrice.amount}
+											addonCurrency={addonCheckout.addonPrice.currency}
+											totalLabel={addonCheckout.totalFor(addonPlanName, addonPlanPrice, pricing.currency)}
+											disabled={loadingPlanId !== null}
+										/>
+									) : undefined
+								}
 								cta={{
 									label: ctaLabel,
 									onClick: handleCtaClick,
@@ -1644,6 +1688,7 @@ const Pricing = () => {
 
 			{/* Add-on "Conectores de IA" (misma tarjeta y regla de visibilidad que /plans) */}
 			<PricingTablesMcpAddon gridAnchorId={PLANS_GRID_ID} subscriptionKey={mcpSubscriptionKey} />
+			{addonCheckout.dialogs}
 
 			{/* Diálogo para mostrar los documentos legales */}
 			<Dialog

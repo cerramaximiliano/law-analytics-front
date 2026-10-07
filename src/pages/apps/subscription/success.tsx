@@ -33,6 +33,10 @@ import { openSnackbar } from "store/reducers/snackbar";
 import { fetchUserStats } from "store/reducers/userStats";
 import { updateUser, fetchCurrentSubscription } from "store/reducers/auth";
 import ApiService from "store/reducers/ApiService";
+import { MCP_INTEGRATIONS_PATH } from "hooks/useMcpAddonActions";
+import { trackMcpAddonPurchase } from "utils/gtm";
+import { MCP_ADDON_NAME } from "utils/mcpAddonState";
+import { PLAN_CHECKOUT_CTA_LOCATION } from "utils/planCheckoutAddon";
 
 // assets
 import {
@@ -91,6 +95,21 @@ const SubscriptionSuccess = () => {
 	const searchParams = new URLSearchParams(window.location.search);
 	const planId = searchParams.get("plan");
 	const sessionId = searchParams.get("session_id");
+	// Plan + add-on en el mismo checkout: el hub agrega `addons=mcp_access` a la URL de éxito.
+	const withMcpAddon = (searchParams.get("addons") || "").split(",").includes("mcp_access");
+
+	// Conversión del add-on contratado junto con el plan (una vez por sesión de Stripe).
+	useEffect(() => {
+		if (!withMcpAddon) return;
+		const key = `mcp_addon_purchase_tracked:${sessionId || "no-session"}`;
+		try {
+			if (window.sessionStorage.getItem(key)) return;
+			window.sessionStorage.setItem(key, "1");
+		} catch {
+			// sin sessionStorage: se trackea igual
+		}
+		trackMcpAddonPurchase(PLAN_CHECKOUT_CTA_LOCATION, "active", null, "usd");
+	}, [withMcpAddon, sessionId]);
 
 	useEffect(() => {
 		// Mostrar notificación de éxito
@@ -345,6 +364,29 @@ const SubscriptionSuccess = () => {
 												💡 Tu suscripción está activa y todos los beneficios ya están disponibles en tu cuenta.
 											</Typography>
 										</Paper>
+
+										{withMcpAddon && (
+											<Paper
+												elevation={0}
+												data-testid="sub-success-mcp-addon"
+												sx={{
+													p: 2,
+													mt: 1.5,
+													border: `1px solid ${theme.palette.primary.light}`,
+													borderRadius: 2,
+													width: "100%",
+												}}
+											>
+												<Stack direction={matchDownSM ? "column" : "row"} spacing={1.5} alignItems={matchDownSM ? "stretch" : "center"} justifyContent="space-between">
+													<Typography variant="body2" sx={{ fontWeight: 500 }}>
+														También activaste {MCP_ADDON_NAME}. Conectá Claude.ai o ChatGPT con tu cuenta.
+													</Typography>
+													<Button component={RouterLink} to={MCP_INTEGRATIONS_PATH} variant="outlined" size="small" sx={{ whiteSpace: "nowrap", textTransform: "none" }}>
+														Conectar mi asistente
+													</Button>
+												</Stack>
+											</Paper>
+										)}
 
 										{/* Lista de características */}
 										<Fade in={showFeatures} timeout={2000}>

@@ -22,6 +22,10 @@ import { cleanPlanDisplayName, getCurrentEnvironment } from "utils/planPricingUt
 import { pushGTMEvent } from "utils/gtm";
 import { MCP_ADDON_ANCHOR, MCP_ADDON_NAME, isMcpAddonVisible } from "utils/mcpAddonState";
 import { openSnackbar } from "store/reducers/snackbar";
+import PlanCheckoutAddonOption from "sections/mcp/PlanCheckoutAddonOption";
+import usePlanCheckoutAddon, { type PlanCheckoutAddonOptions } from "hooks/usePlanCheckoutAddon";
+import { getPlanPricing } from "utils/planPricingUtils";
+import { isAddonCompatiblePlan, PLAN_CHECKOUT_ADDON_CODES, planShortName } from "utils/planCheckoutAddon";
 
 // ============================== TOKENS ============================== //
 // Compartidos con PlanCard. Mantener en sync con sections/landing/Planes.tsx.
@@ -74,6 +78,46 @@ const Plans = () => {
 	// quien llegaba desde un precio del anuncio veía una página sin precios.
 	const [plans, setPlans] = useState<Plan[]>(PLANES_RESPALDO);
 	const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
+
+	// Plan + add-on "Conectores de IA" en un solo checkout (logueado y SIN plan pago, con
+	// el add-on a la venta): los planes pagos muestran el checkbox y su CTA abre el
+	// checkout directo (con o sin add-on). El resto de los usuarios sigue yendo al
+	// registro como siempre (los de plan pago cambian de plan desde /suscripciones/tables).
+	const addonCheckout = usePlanCheckoutAddon();
+
+	const snackbar = (message: string, color: "success" | "error" | "warning" | "info") =>
+		dispatch(openSnackbar({ open: true, message, variant: "alert", alert: { color }, close: true }));
+
+	/** POST /api/subscriptions/checkout (alta) y redirección a Stripe. Devuelve la respuesta. */
+	const startPlanCheckout = async (plan: Plan, addonOptions?: PlanCheckoutAddonOptions) => {
+		setLoadingPlanId(plan.planId);
+		try {
+			const discountCode = plan.activeDiscounts && plan.activeDiscounts.length > 0 ? plan.activeDiscounts[0].code : undefined;
+			const res = (await ApiService.subscribeToPlan(
+				plan.planId,
+				`${window.location.origin}/apps/subscription/success`,
+				`${window.location.origin}/plans`,
+				discountCode,
+				addonOptions,
+			)) as any;
+			if (res?.success && res.url) {
+				window.location.href = res.url;
+				return res;
+			}
+			if (res?.success) {
+				// Sin url: el hub detectó una suscripción viva (desincronización) u otra respuesta informativa.
+				snackbar(res.message || "Revisá tu suscripción desde Cuenta → Suscripción.", "info");
+				return res;
+			}
+			if (addonOptions && res?.code && PLAN_CHECKOUT_ADDON_CODES.has(res.code)) return res; // lo resuelve el diálogo
+			const isBusinessRejection = typeof res?.statusCode === "number" && res.statusCode >= 400 && res.statusCode < 500;
+			snackbar(res?.message || "No se pudo iniciar el pago.", isBusinessRejection ? "warning" : "error");
+			if (!isBusinessRejection) ApiService.reportFailedCheckout(plan.planId, res?.message || "Respuesta no exitosa al iniciar el checkout");
+			return res;
+		} finally {
+			setLoadingPlanId(null);
+		}
+	};
 
 	// Plan gratuito → subir al grid de planes (sin redirect, ya estás en /plans).
 	const handleMcpUpgrade = () => {
@@ -203,6 +247,51 @@ const Plans = () => {
 				<Grid container spacing={3} alignItems="stretch" justifyContent="center">
 					{plans.map((plan, idx) => {
 						const highlighted = isHighlightedPlan(plan.planId);
+						const offerAddonHere = addonCheckout.offer && plan.isActive && isAddonCompatiblePlan(plan.planId);
+						const pricing = offerAddonHere ? getPlanPricing(plan) : null;
+						const addonPlanName = planShortName(plan.displayName);
+						const addonPlanPrice = pricing && pricing.billingPeriod === "monthly" ? pricing.basePrice : null;
+						if (offerAddonHere) {
+							return (
+								<Grid item xs={12} sm={6} md={4} key={plan.planId}>
+									<PlanCard
+										plan={plan}
+										highlighted={highlighted}
+										animationIdx={idx}
+										dataTestId={`plans-card-${plan.planId}`}
+										beforeCta={
+											<PlanCheckoutAddonOption
+												planId={plan.planId}
+												checked={addonCheckout.isSelected(plan.planId)}
+												onChange={(checked) => addonCheckout.setSelected(plan.planId, checked)}
+												addonPrice={addonCheckout.addonPrice.amount}
+												addonCurrency={addonCheckout.addonPrice.currency}
+												totalLabel={addonCheckout.totalFor(addonPlanName, addonPlanPrice, pricing?.currency)}
+												disabled={loadingPlanId !== null}
+											/>
+										}
+										cta={{
+											label: loadingPlanId === plan.planId ? "Procesando..." : "Suscribirme",
+											disabled: loadingPlanId !== null || addonCheckout.busy,
+											loading: loadingPlanId === plan.planId,
+											onClick: () => {
+												trackPlanCTA(plan.planId);
+												addonCheckout.begin({
+													planId: plan.planId,
+													planName: addonPlanName,
+													planPrice: addonPlanPrice,
+													planCurrency: pricing?.currency,
+													proceed: (addonOptions) => startPlanCheckout(plan, addonOptions),
+												});
+											},
+											variant: highlighted ? "contained" : "outlined",
+											color: "primary",
+											dataTestId: `plans-cta-${plan.planId}`,
+										}}
+									/>
+								</Grid>
+							);
+						}
 						return (
 							<Grid item xs={12} sm={6} md={4} key={plan.planId}>
 								<PlanCard
@@ -237,6 +326,7 @@ const Plans = () => {
 						<McpAddonCard variant="plans" location="plans_page" onUpgradeClick={handleMcpUpgrade} />
 					</Box>
 				)}
+				{addonCheckout.dialogs}
 			</Container>
 		</Box>
 	);
