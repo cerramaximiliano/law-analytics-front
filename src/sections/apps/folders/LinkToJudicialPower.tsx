@@ -32,6 +32,7 @@ import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import PjnGuardedButton from "components/PjnGuardedButton";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
+import { trackActivity } from "utils/productAnalytics";
 
 interface LinkToJudicialPowerProps {
 	openLink: boolean;
@@ -166,6 +167,8 @@ const LinkToJudicialPower = ({
 		setError("");
 
 		try {
+			const linkJurisdiction = selectedPower === "nacional" ? "nacional" : String(selectedPower || "otra");
+			trackActivity("causa_link_start", { jurisdiction: linkJurisdiction });
 			const result = await dispatch(
 				linkFolderToCausa(folderId, {
 					pjnCode: jurisdiction,
@@ -177,6 +180,7 @@ const LinkToJudicialPower = ({
 			);
 
 			if (result.success) {
+				trackActivity("causa_link_success", { jurisdiction: linkJurisdiction });
 				setLoading(false);
 				setSuccess(true);
 
@@ -195,10 +199,12 @@ const LinkToJudicialPower = ({
 					onCancelLink();
 				}, 1500);
 			} else {
+				trackActivity("causa_link_error", { jurisdiction: linkJurisdiction, error_code: (result as any).code || "link_failed" });
 				setLoading(false);
 				setError(result.message || "Error al vincular la causa");
 			}
 		} catch (err) {
+			trackActivity("causa_link_error", { jurisdiction: selectedPower ? String(selectedPower) : "otra", error_code: "exception" });
 			setLoading(false);
 			setError("Ocurrió un error inesperado");
 		}

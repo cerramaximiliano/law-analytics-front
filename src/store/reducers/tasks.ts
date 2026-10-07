@@ -1,6 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { Dispatch } from "redux";
 import { TaskType, TaskState } from "types/task";
+import { trackActivity, inferSource } from "utils/productAnalytics";
 
 // Action types
 const SET_LOADING = "tasks/SET_LOADING";
@@ -137,6 +138,7 @@ export const addTask = (data: Omit<TaskType, "_id">, options?: { headers?: Recor
 			type: ADD_TASK,
 			payload: response.data,
 		});
+		trackActivity("task_create", { source: inferSource() });
 		return { success: true, task: response.data };
 	} catch (error: unknown) {
 		const errorMessage =

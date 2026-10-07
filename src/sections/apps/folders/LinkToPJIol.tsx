@@ -28,6 +28,7 @@ import LinkChangesNotice from "./LinkChangesNotice";
 import logoPJCatamarca from "assets/images/logos/logo_pj_catamarca.png";
 import logoPJMendoza from "assets/images/logos/logo_pj_mendoza.png";
 import ejeWorkersService from "api/workersEje";
+import { trackActivity } from "utils/productAnalytics";
 
 // Mismos assets que el wizard de alta (judicialPowerSelection.tsx) y la landing.
 const LOGO_SALTA =
@@ -190,9 +191,11 @@ const LinkToPJIol = ({ open, onCancel, onBack, folderId, folderName, folder, por
 			// El hub distingue el portal por un flag booleano, igual que pjn/mev/eje.
 			linkData[cfg.flag] = true;
 
+			trackActivity("causa_link_start", { jurisdiction: portal });
 			const result: any = await dispatch(linkFolderToCausa(folderId, linkData));
 
 			if (result.success) {
+				trackActivity("causa_link_success", { jurisdiction: portal });
 				setLoading(false);
 				setSuccess(true);
 
@@ -210,10 +213,12 @@ const LinkToPJIol = ({ open, onCancel, onBack, folderId, folderName, folder, por
 					onCancel();
 				}, 1500);
 			} else {
+				trackActivity("causa_link_error", { jurisdiction: portal, error_code: result.code || result.status || "link_failed" });
 				setError(result.message || "Error al vincular la causa. Por favor intente nuevamente.");
 				setLoading(false);
 			}
 		} catch (err) {
+			trackActivity("causa_link_error", { jurisdiction: portal, error_code: "exception" });
 			setError("Error inesperado al vincular la causa. Por favor intente nuevamente.");
 			setLoading(false);
 		}

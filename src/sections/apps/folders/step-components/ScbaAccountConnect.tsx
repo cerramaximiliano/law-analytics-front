@@ -56,6 +56,7 @@ import { useScbaSiteStatus } from "hooks/useScbaSiteStatus";
 import { scbaSiteStatusUpdated } from "store/reducers/scbaSiteStatus";
 import ScbaMaintenanceAlert from "components/ScbaMaintenanceAlert";
 import { getScbaStatusReason, isScbaConnected, isScbaDisabledByAdmin, isScbaRetryDeferred, scbaStatusNotice } from "utils/scbaBindingState";
+import { trackActivity } from "utils/productAnalytics";
 
 interface ScbaAccountConnectProps {
 	onConnectionSuccess?: () => void;
@@ -358,6 +359,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 			setIsSubmitting(true);
 
 			try {
+				trackActivity("causa_link_start", { jurisdiction: "scba", type: "account" });
 				const response = await scbaCredentialsService.linkCredentials(username.trim(), password);
 
 				// Bloqueo por portal caído: sincronizamos el slice (mostrar banner) y
@@ -376,6 +378,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 				}
 
 				if (response.success) {
+					trackActivity("causa_link_success", { jurisdiction: "scba", type: "account" });
 					enqueueSnackbar(response.message || "Cuenta SCBA vinculada correctamente", {
 						variant: "success",
 						anchorOrigin: { vertical: "bottom", horizontal: "right" },
@@ -423,6 +426,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 					if (onConnectionSuccess) onConnectionSuccess();
 					return true;
 				} else {
+					trackActivity("causa_link_error", { jurisdiction: "scba", type: "account", error_code: response.code || "link_failed" });
 					enqueueSnackbar(response.error || "Error al vincular cuenta SCBA", {
 						variant: "error",
 						anchorOrigin: { vertical: "bottom", horizontal: "right" },
@@ -432,6 +436,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 					return false;
 				}
 			} catch {
+				trackActivity("causa_link_error", { jurisdiction: "scba", type: "account", error_code: "exception" });
 				enqueueSnackbar("Error de conexión. Intente nuevamente.", {
 					variant: "error",
 					anchorOrigin: { vertical: "bottom", horizontal: "right" },

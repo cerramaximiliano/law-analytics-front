@@ -88,6 +88,7 @@ import GestionTabImproved from "./alternatives/GestionTabImproved";
 import FolderRecursosTab from "./components/FolderRecursosTab";
 import PendingVerificationView, { VerificationGate } from "sections/apps/folders/PendingVerificationView";
 import ArchivedFolderView from "sections/apps/folders/ArchivedFolderView";
+import { trackActivity } from "utils/productAnalytics";
 
 interface StateType {
 	folder: {
@@ -398,6 +399,17 @@ const Details = () => {
 		setTabValue(newValue);
 		// Mobile drawer removed - no longer needed with icon tabs
 	}, []);
+
+	// Analítica: vista del detalle de carpeta (una vez por carpeta y pestaña; sin ids ni datos).
+	const lastDetailViewKey = useRef<string>("");
+	useEffect(() => {
+		if (!folder?._id || folder._id !== id) return;
+		const key = `${folder._id}:${tabValue}`;
+		if (lastDetailViewKey.current === key) return;
+		lastDetailViewKey.current = key;
+		const tabNames = ["general", "actividad", "gestion", "recursos", "historial"];
+		trackActivity("folder_detail_view", { tab: tabNames[tabValue] ?? String(tabValue) });
+	}, [folder?._id, id, tabValue]);
 
 	// Drawer functions removed: Using icon tabs instead
 

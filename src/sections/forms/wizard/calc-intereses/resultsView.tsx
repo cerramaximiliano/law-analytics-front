@@ -30,6 +30,7 @@ import { useTeam } from "contexts/TeamContext";
 //third party
 import dayjs from "utils/dayjs-config";
 import axios from "axios";
+import { trackActivity } from "utils/productAnalytics";
 
 // Tipos
 interface ResultItem {
@@ -104,6 +105,11 @@ interface InterestSegment {
 }
 
 const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, onSave, currentUser, folderId, folderName, groupId }) => {
+	// Analítica: mostrar el resultado equivale a una corrida de la calculadora
+	React.useEffect(() => {
+		trackActivity("calculator_run", { type: "intereses" });
+	}, []);
+
 	const [isSaved, setIsSaved] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 	const [showTasasModal, setShowTasasModal] = useState(false);

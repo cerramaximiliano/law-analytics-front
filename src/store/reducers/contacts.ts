@@ -3,6 +3,7 @@ import { Dispatch } from "redux";
 // Types for the actions and state
 import { Contact, ContactState, Action } from "types/contact";
 import { incrementUserStat, updateUserStorage } from "./userStats";
+import { trackActivity, inferSource } from "utils/productAnalytics";
 // action types
 const ADD_CONTACT = "ADD_CONTACT";
 const GET_CONTACTS_BY_USER = "GET_CONTACTS_BY_USER";
@@ -172,6 +173,7 @@ export const addContact = (contactData: Contact, options?: { headers?: Record<st
 			});
 			// Incrementar contador de contacts en userStats
 			dispatch(incrementUserStat("contacts", 1));
+			trackActivity("contact_create", { source: inferSource() });
 			return { success: true, contact: response.data.contact };
 		} else {
 			return { success: false };

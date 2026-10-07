@@ -34,6 +34,7 @@ import LinkChangesNotice from "./LinkChangesNotice";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 import mevWorkersService, { NavigationCode } from "api/workersMev";
 import mevCredentialsService from "api/mevCredentials";
+import { trackActivity } from "utils/productAnalytics";
 
 interface LinkToPJBuenosAiresProps {
 	open: boolean;
@@ -367,6 +368,7 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 			}
 
 			// Llamar a la acción del store para vincular la causa
+			trackActivity("causa_link_start", { jurisdiction: "buenosaires" });
 			const result = await dispatch(
 				linkFolderToPJBA(folderId, {
 					number: expedientNumber,
@@ -377,6 +379,7 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 			);
 
 			if (result.success) {
+				trackActivity("causa_link_success", { jurisdiction: "buenosaires" });
 				setLoading(false);
 				setSuccess(true);
 
@@ -405,6 +408,7 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 					onCancel();
 				}, 1500);
 			} else {
+				trackActivity("causa_link_error", { jurisdiction: "buenosaires", error_code: result.code || "link_failed" });
 				if (result.code === "MEV_CREDENTIAL_REQUIRED") {
 					// El backend no encontró credencial de cuenta habilitada: mostrar los campos.
 					setCredState("missing");
@@ -415,6 +419,7 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 				setLoading(false);
 			}
 		} catch (err) {
+			trackActivity("causa_link_error", { jurisdiction: "buenosaires", error_code: "exception" });
 			setError("Error inesperado al vincular la causa. Por favor intente nuevamente.");
 			setLoading(false);
 		}

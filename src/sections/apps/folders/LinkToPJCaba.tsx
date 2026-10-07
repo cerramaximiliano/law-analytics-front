@@ -26,6 +26,7 @@ import { linkFolderToEJE } from "store/reducers/folder";
 import OverwriteNotice from "./OverwriteNotice";
 import LinkChangesNotice from "./LinkChangesNotice";
 import ejeWorkersService from "api/workersEje";
+import { trackActivity } from "utils/productAnalytics";
 
 const LOGO_EJE = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
 
@@ -167,9 +168,11 @@ const LinkToPJCaba = ({ open, onCancel, onBack, folderId, folderName, folder }: 
 					? { cuij, overwrite: overwriteData }
 					: { number: expedientNumber, year: expedientYear, overwrite: overwriteData };
 
+			trackActivity("causa_link_start", { jurisdiction: "caba" });
 			const result = await dispatch(linkFolderToEJE(folderId, linkData));
 
 			if (result.success) {
+				trackActivity("causa_link_success", { jurisdiction: "caba" });
 				setLoading(false);
 				setSuccess(true);
 
@@ -187,10 +190,12 @@ const LinkToPJCaba = ({ open, onCancel, onBack, folderId, folderName, folder }: 
 					onCancel();
 				}, 1500);
 			} else {
+				trackActivity("causa_link_error", { jurisdiction: "caba", error_code: (result as any).code || "link_failed" });
 				setError(result.message || "Error al vincular la causa. Por favor intente nuevamente.");
 				setLoading(false);
 			}
 		} catch (err) {
+			trackActivity("causa_link_error", { jurisdiction: "caba", error_code: "exception" });
 			setError("Error inesperado al vincular la causa. Por favor intente nuevamente.");
 			setLoading(false);
 		}

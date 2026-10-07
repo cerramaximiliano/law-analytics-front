@@ -4,6 +4,7 @@ import { Dispatch } from "redux";
 // Types for the actions and state
 import { Event, EventState, Action } from "types/events";
 import { invalidateUpcomingDeadlinesCache } from "hooks/useUpcomingDeadlines";
+import { trackActivity, inferSource } from "utils/productAnalytics";
 
 // action types
 const ADD_EVENT = "ADD_EVENT";
@@ -107,6 +108,7 @@ export const addEvent = (eventData: Event, options?: { headers?: Record<string, 
 
 		if (response.data && response.data.event) {
 			invalidateUpcomingDeadlinesCache();
+			trackActivity("calendar_event_create", { source: inferSource() });
 			dispatch({
 				type: ADD_EVENT,
 				payload: response.data.event,

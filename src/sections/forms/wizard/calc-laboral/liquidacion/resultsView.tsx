@@ -9,6 +9,7 @@ import liquidacionFormModel from "./formModel/liquidacionFormModel";
 import dayjs from "utils/dayjs-config";
 import { enqueueSnackbar } from "notistack";
 import { useTeam } from "contexts/TeamContext";
+import { trackActivity } from "utils/productAnalytics";
 
 // Tipos
 interface ResultItem {
@@ -26,6 +27,11 @@ interface ResultsViewProps {
 }
 
 const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, folderName }) => {
+	// Analítica: mostrar el resultado equivale a una corrida de la calculadora
+	React.useEffect(() => {
+		trackActivity("calculator_run", { type: "laboral_liquidacion" });
+	}, []);
+
 	const [linkModalOpen, setLinkModalOpen] = useState(false);
 	const [isSaved, setIsSaved] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);

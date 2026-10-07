@@ -43,6 +43,7 @@ import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import PjnGuardedButton from "components/PjnGuardedButton";
 import pjnCredentialsService, { PjnCredentialsStatus, UnlinkImpact } from "api/pjnCredentials";
 import { useTeam } from "contexts/TeamContext";
+import { trackActivity } from "utils/productAnalytics";
 
 interface PjnAccountConnectProps {
 	onConnectionSuccess?: () => void;
@@ -398,9 +399,11 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 			setIsSubmitting(true);
 
 			try {
+				trackActivity("causa_link_start", { jurisdiction: "pjn", type: "account" });
 				const response = await pjnCredentialsService.linkCredentials(cuil, password);
 
 				if (response.success) {
+					trackActivity("causa_link_success", { jurisdiction: "pjn", type: "account" });
 					// Dispatch ANTES de setHasCredentials para evitar flash de "Cuenta conectada"
 					// Si hay un render entre estos dos calls, pjnSync.isActive=true toma prioridad
 					// force=true: acción explícita del usuario, ignora el grace period del reducer.
@@ -441,6 +444,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 					}
 					return true;
 				} else {
+					trackActivity("causa_link_error", { jurisdiction: "pjn", type: "account", error_code: (response as any).code || "link_failed" });
 					enqueueSnackbar(response.error || "Error al vincular cuenta", {
 						variant: "error",
 						anchorOrigin: { vertical: "bottom", horizontal: "right" },
@@ -450,6 +454,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 					return false;
 				}
 			} catch (error) {
+				trackActivity("causa_link_error", { jurisdiction: "pjn", type: "account", error_code: "exception" });
 				enqueueSnackbar("Error de conexión. Intente nuevamente.", {
 					variant: "error",
 					anchorOrigin: { vertical: "bottom", horizontal: "right" },

@@ -61,6 +61,7 @@ import PjnAccessAlert from "components/shared/PjnAccessAlert";
 import ScrollX from "components/ScrollX";
 import { useTeam } from "contexts/TeamContext";
 import { getMovementIcon, getMovementColor, parseDate, formatDate } from "../utils/movementUtils";
+import { trackActivity } from "utils/productAnalytics";
 
 interface MovementsTableProps {
 	movements: Movement[];
@@ -504,6 +505,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	// externa o sin texto siguen en el PDFViewer legacy.
 	const openMovementDocument = (movement: Movement) => {
 		const isTextDoc = movement.documentType === "text";
+		trackActivity("movement_open", { source: isTextDoc ? "folder_text" : "folder_pdf" });
 		if (isTextDoc) {
 			setTextViewerMovement(movement);
 			setSelectedMovementId(movement._id || "");

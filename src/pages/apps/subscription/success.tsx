@@ -53,6 +53,7 @@ import {
 	Calendar,
 } from "iconsax-react";
 import target from "assets/images/analytics/target.svg";
+import { trackActivity } from "utils/productAnalytics";
 
 // Helper para mapear iconos
 const getIconComponent = (iconName: string) => {
@@ -110,6 +111,18 @@ const SubscriptionSuccess = () => {
 		}
 		trackMcpAddonPurchase(PLAN_CHECKOUT_CTA_LOCATION, "active", null, "usd");
 	}, [withMcpAddon, sessionId]);
+
+	// Conversión de la suscripción (una vez por sesión de Stripe).
+	useEffect(() => {
+		const key = `subscription_success_tracked:${sessionId || "no-session"}`;
+		try {
+			if (window.sessionStorage.getItem(key)) return;
+			window.sessionStorage.setItem(key, "1");
+		} catch {
+			// sin sessionStorage: se trackea igual
+		}
+		trackActivity("subscription_success", { plan: planId || undefined, mode: withMcpAddon ? "plan_addon" : "plan" });
+	}, [planId, sessionId, withMcpAddon]);
 
 	useEffect(() => {
 		// Mostrar notificación de éxito

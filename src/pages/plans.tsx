@@ -26,6 +26,7 @@ import PlanCheckoutAddonOption from "sections/mcp/PlanCheckoutAddonOption";
 import usePlanCheckoutAddon, { type PlanCheckoutAddonOptions } from "hooks/usePlanCheckoutAddon";
 import { getPlanPricing } from "utils/planPricingUtils";
 import { isAddonCompatiblePlan, PLAN_CHECKOUT_ADDON_CODES, planShortName } from "utils/planCheckoutAddon";
+import { trackActivity } from "utils/productAnalytics";
 
 // ============================== TOKENS ============================== //
 // Compartidos con PlanCard. Mantener en sync con sections/landing/Planes.tsx.
@@ -91,6 +92,7 @@ const Plans = () => {
 	/** POST /api/subscriptions/checkout (alta) y redirección a Stripe. Devuelve la respuesta. */
 	const startPlanCheckout = async (plan: Plan, addonOptions?: PlanCheckoutAddonOptions) => {
 		setLoadingPlanId(plan.planId);
+		trackActivity("subscription_checkout_start", { plan: plan.planId, mode: addonOptions ? "plan_addon" : "plan" });
 		try {
 			const discountCode = plan.activeDiscounts && plan.activeDiscounts.length > 0 ? plan.activeDiscounts[0].code : undefined;
 			const res = (await ApiService.subscribeToPlan(

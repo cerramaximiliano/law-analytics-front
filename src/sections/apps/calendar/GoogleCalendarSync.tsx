@@ -28,6 +28,7 @@ import { getAutoSyncStatus, getAutoSyncAuthUrl, AutoSyncStatus } from "services/
 import { Event } from "types/events";
 import { PopupTransition } from "components/@extended/Transitions";
 import Avatar2 from "components/@extended/Avatar";
+import { trackActivity } from "utils/productAnalytics";
 
 interface GoogleCalendarSyncProps {
 	localEvents: Event[];
@@ -87,6 +88,7 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 	const handleActivateAutoSync = async () => {
 		setActivatingAutoSync(true);
 		try {
+			trackActivity("google_calendar_sync", { status: "autosync_start" });
 			const url = await getAutoSyncAuthUrl(window.location.pathname);
 			window.location.href = url;
 		} catch (error) {
@@ -199,7 +201,9 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 
 	const handleConnect = async () => {
 		try {
+			trackActivity("google_calendar_sync", { status: "connect_start" });
 			const profile = await dispatch(connectGoogleCalendar());
+			trackActivity("google_calendar_sync", { status: profile ? "connect_success" : "connect_failed" });
 			// Los eventos se importan automáticamente en connectGoogleCalendar
 			// Si el perfil se obtuvo exitosamente, la importación ya se realizó
 			if (profile) {
@@ -207,6 +211,7 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 			}
 		} catch (error) {
 			// El error ya se maneja en el reducer
+			trackActivity("google_calendar_sync", { status: "connect_error" });
 			console.error("Error al conectar:", error);
 		}
 	};
@@ -227,10 +232,12 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 	const handleSync = async () => {
 		try {
 			const result = await dispatch(syncWithGoogleCalendar(localEvents));
+			trackActivity("google_calendar_sync", { status: "sync_success", count: result?.imported?.length ?? 0 });
 			if (result && result.imported && result.imported.length > 0 && onEventsImported) {
 				await onEventsImported(result.imported);
 			}
 		} catch (error) {
+			trackActivity("google_calendar_sync", { status: "sync_error" });
 			console.error("Error durante la sincronización:", error);
 		}
 	};

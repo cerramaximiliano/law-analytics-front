@@ -25,6 +25,7 @@ import { createPostalTracking, updatePostalTracking, uploadAttachment } from "st
 import { getFoldersByUserId } from "store/reducers/folder";
 import { Add } from "iconsax-react";
 import { PostalTrackingType } from "types/postal-tracking";
+import { trackActivity, inferSource } from "utils/productAnalytics";
 
 const VALID_CODE_IDS = [
 	"CC",
@@ -156,6 +157,12 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
 				}
 
 				if (result.success) {
+					if (isCreating) {
+						trackActivity("postal_tracking_add", {
+							source: inferSource(),
+							type: values.codeId ? String(values.codeId).slice(0, 10) : undefined,
+						});
+					}
 					// Subir adjunto si hay archivo seleccionado
 					const uploadId = isCreating ? (result as { success: boolean; id: string }).id : tracking?._id;
 					if (attachmentFile && uploadId) {

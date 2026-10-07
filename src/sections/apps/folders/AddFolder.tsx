@@ -41,6 +41,7 @@ import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import dayjs from "utils/dayjs-config";
 import folderData from "data/folder.json";
 import { useTeam } from "contexts/TeamContext";
+import { trackActivity } from "utils/productAnalytics";
 
 const getInitialValues = (
 	folder: FormikValues | null,
@@ -397,6 +398,10 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 			dispatch(fetchPjnSiteStatus());
 			// Si estamos creando, verificar límites
 			if (isCreating) {
+				trackActivity("folder_create_start", {
+					mode: initialFormValues?.entryMethod === "automatic" ? "link" : "manual",
+					jurisdiction: initialFormValues?.judicialPower,
+				});
 				// Resetear valores con overrides (entryMethod, judicialPower) para que steps sea correcto
 				const freshValues = getInitialValues(null, initialFormValues);
 				setInitialValues(freshValues);
@@ -552,6 +557,12 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 			}
 
 			if (results && results.success) {
+				if (mode === "add") {
+					trackActivity("folder_create_complete", {
+						mode: values.entryMethod === "automatic" ? "link" : "manual",
+						jurisdiction: values.judicialPower,
+					});
+				}
 				enqueueSnackbar(`Éxito al ${message} la carpeta`, {
 					variant: "success",
 					anchorOrigin: { vertical: "bottom", horizontal: "right" },
