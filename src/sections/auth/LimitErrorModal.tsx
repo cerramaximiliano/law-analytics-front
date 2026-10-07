@@ -56,6 +56,7 @@ interface LimitErrorModalProps {
 const PLAN_LABELS: Record<string, string> = {
 	free: "Gratuito",
 	standard: "Estándar",
+	pro: "Pro",
 	premium: "Premium",
 };
 

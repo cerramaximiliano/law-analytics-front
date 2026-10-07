@@ -68,6 +68,9 @@ const Pricing = () => {
 		scheduledPlanChange?: { targetPlan: string; effectiveDate?: string } | null;
 	} | null>(null);
 	const [cancelingScheduledChange, setCancelingScheduledChange] = useState(false);
+	// Loader del diálogo de opciones. NO reusar `loading` (carga inicial): con él la
+	// página entera volvía al skeleton y el diálogo se desmontaba mientras procesaba.
+	const [optionLoading, setOptionLoading] = useState(false);
 	const isDevelopment = getCurrentEnvironment() === "development";
 	// Estado para el diálogo de documentos legales
 	const [legalDocsDialogOpen, setLegalDocsDialogOpen] = useState(false);
@@ -109,7 +112,8 @@ const Pricing = () => {
 	// El header, los límites y el banner de gracia leen Redux (auth.subscription):
 	// tras un cambio de plan hay que refrescarlo o siguen mostrando el plan viejo.
 	const refreshReduxSubscription = () => {
-		dispatch(fetchCurrentSubscription(true) as any);
+		// Best-effort: un fallo de red acá no debe romper el flujo que ya terminó bien.
+		Promise.resolve(dispatch(fetchCurrentSubscription(true) as any)).catch(() => {});
 	};
 
 	// Revertir un cambio de plan programado (la suscripción sigue activa en el plan actual)
@@ -213,6 +217,7 @@ const Pricing = () => {
 			if (response.success && response.options && response.options.length > 0) {
 				setDowngradeOptions(response.options);
 				setTargetPlanId(planId);
+				setSelectedOption("");
 				setOptionsDialogOpen(true);
 				return;
 			}
@@ -294,6 +299,7 @@ const Pricing = () => {
 				if (response.options && response.options.length > 0) {
 					setDowngradeOptions(response.options);
 					setTargetPlanId(planId);
+					setSelectedOption("");
 					setOptionsDialogOpen(true);
 				}
 			} else if (response.success && response.alreadyScheduled) {
@@ -327,7 +333,7 @@ const Pricing = () => {
 				if (response.newPlan) {
 					updateSubscriptionState(response.newPlan, {
 						cancelAtPeriodEnd: response.subscription?.cancelAtPeriodEnd ?? false,
-						currentPeriodEnd: response.subscription?.currentPeriodEnd,
+						currentPeriodEnd: response.nextRenewal || response.subscription?.currentPeriodEnd,
 						scheduledPlanChange: null, // el cambio inmediato libera cualquier schedule previo
 					});
 					refreshReduxSubscription();
@@ -409,8 +415,11 @@ const Pricing = () => {
 					updateSubscriptionState(currentPlanId, {
 						cancelAtPeriodEnd: true,
 						currentPeriodEnd: response.currentPeriodEnd,
+						// La cancelación libera cualquier cambio de plan programado (backend)
+						scheduledPlanChange: null,
 					});
 				}
+				refreshReduxSubscription();
 			} else {
 				// Cerrar el diálogo
 				setCancelDialogOpen(false);
@@ -490,13 +499,14 @@ const Pricing = () => {
 					}),
 				);
 
-				// Actualizar el estado para quitar la marca de cancelación
+				// Actualizar el estado para quitar la marca de cancelación (el backend devuelve nextRenewal)
 				if (currentPlanId) {
 					updateSubscriptionState(currentPlanId, {
 						cancelAtPeriodEnd: false,
-						currentPeriodEnd: response.currentPeriodEnd,
+						currentPeriodEnd: response.nextRenewal || response.currentPeriodEnd,
 					});
 				}
+				refreshReduxSubscription();
 			} else {
 				// Mostrar error
 				dispatch(
@@ -550,8 +560,8 @@ const Pricing = () => {
 			return;
 		}
 
-		// Mostrar loader mientras se procesa
-		setLoading(true);
+		// Mostrar loader en el diálogo mientras se procesa
+		setOptionLoading(true);
 
 		try {
 			let response;
@@ -590,10 +600,10 @@ const Pricing = () => {
 
 				// Actualizar el estado según la opción seleccionada
 				if (selectedOption === "cancel_downgrade" && currentPlanId) {
-					// Reactivar suscripción - quitar marca de cancelación
+					// Reactivar suscripción - quitar marca de cancelación (el backend devuelve nextRenewal)
 					updateSubscriptionState(currentPlanId, {
 						cancelAtPeriodEnd: false,
-						currentPeriodEnd: response.currentPeriodEnd,
+						currentPeriodEnd: response.nextRenewal || response.currentPeriodEnd,
 					});
 				} else if (selectedOption === "immediate_change" && (response.newPlan || response.plan)) {
 					// Cambio inmediato - actualizar al nuevo plan (el service devuelve `plan`; `newPlan` es alias)
@@ -633,7 +643,7 @@ const Pricing = () => {
 				}),
 			);
 		} finally {
-			setLoading(false);
+			setOptionLoading(false);
 		}
 	};
 
@@ -1399,7 +1409,9 @@ const Pricing = () => {
 					const isInactive = !plan.isActive;
 					const isReactivable = isCurrentPlan && isAlreadyCanceled && currentPlanId !== "free";
 					// Cambio de plan programado a fin de período (downgrade entre planes pagos)
-					const scheduledChange = currentSubscription?.scheduledPlanChange || null;
+					// Solo cuenta si tiene destino: Mongoose materializa el subdocumento como
+					// `{ notified: false }` aunque no haya ningún cambio programado.
+					const scheduledChange = currentSubscription?.scheduledPlanChange?.targetPlan ? currentSubscription.scheduledPlanChange : null;
 					const isScheduledTarget = !!scheduledChange && plan.planId === scheduledChange.targetPlan && !isCurrentPlan;
 					const scheduledDateLabel = scheduledChange?.effectiveDate
 						? new Date(scheduledChange.effectiveDate).toLocaleDateString("es-AR")
@@ -1748,18 +1760,18 @@ const Pricing = () => {
 					</FormControl>
 				</DialogContent>
 				<DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
-					<Button onClick={() => setOptionsDialogOpen(false)} disabled={loading} sx={ghostBtnSx}>
+					<Button onClick={() => setOptionsDialogOpen(false)} disabled={optionLoading} sx={ghostBtnSx}>
 						Cancelar
 					</Button>
 					<Button
 						variant="contained"
 						onClick={handleOptionConfirm}
-						disabled={!selectedOption || loading}
+						disabled={!selectedOption || optionLoading}
 						data-testid="sub-options-confirm-btn"
-						startIcon={loading ? <CircularProgress size={14} color="inherit" /> : undefined}
+						startIcon={optionLoading ? <CircularProgress size={14} color="inherit" /> : undefined}
 						sx={brandPrimarySx}
 					>
-						{loading ? "Procesando..." : "Confirmar selección"}
+						{optionLoading ? "Procesando..." : "Confirmar selección"}
 					</Button>
 				</DialogActions>
 			</Dialog>

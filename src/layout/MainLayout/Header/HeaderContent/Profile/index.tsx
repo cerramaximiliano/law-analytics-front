@@ -181,7 +181,7 @@ const ProfilePage = () => {
 																				color: PREMIUM_GOLD,
 																				border: `1px solid ${alpha(PREMIUM_GOLD, isDark ? 0.36 : 0.22)}`,
 																		  }
-																		: plan.tier === "standard"
+																		: plan.tier === "standard" || plan.tier === "pro"
 																		? {
 																				bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
 																				color: BRAND_BLUE,

@@ -483,10 +483,16 @@ const TabSubscription = () => {
 		if (subscription.status === "past_due" || subscription.status === "unpaid") {
 			gracePeriodType = "payment_failed";
 			targetPlan = subscription.plan;
+		} else if (subscription.cancelAtPeriodEnd === true && subscription.currentPeriodEnd && new Date(subscription.currentPeriodEnd) > new Date()) {
+			// Baja programada todavía vigente: el plan NO cambió. La gracia que el backend
+			// ya creó (expiresAt = fin de período + N días) arranca cuando termine el período.
+			gracePeriodType = "cancellation";
+			expiryDate = subscription.downgradeGracePeriod?.expiresAt || subscription.currentPeriodEnd;
+			targetPlan = "free";
 		} else if (subscription.downgradeGracePeriod?.expiresAt && new Date(subscription.downgradeGracePeriod.expiresAt) > new Date()) {
 			gracePeriodType = "downgrade";
 			expiryDate = subscription.downgradeGracePeriod.expiresAt;
-			previousPlan = (subscription.downgradeGracePeriod.previousPlan as "free" | "standard" | "premium") || subscription.plan;
+			previousPlan = (subscription.downgradeGracePeriod.previousPlan as typeof subscription.plan) || subscription.plan;
 			targetPlan = subscription.downgradeGracePeriod.targetPlan || "free";
 		} else if (subscription.cancelAtPeriodEnd === true) {
 			gracePeriodType = "cancellation";
@@ -826,7 +832,7 @@ const TabSubscription = () => {
 
 	if (isTeamMember && activeTeam) {
 		const roleConfig = userRole ? ROLE_CONFIG[userRole as keyof typeof ROLE_CONFIG] : null;
-		const planDisplayNames: Record<string, string> = { free: "Gratuito", standard: "Estándar", premium: "Premium" };
+		const planDisplayNames: Record<string, string> = { free: "Gratuito", standard: "Estándar", pro: "Pro", premium: "Premium" };
 		const ownerPlanName = ownerSubscription?.planName
 			? planDisplayNames[ownerSubscription.planName.toLowerCase()] || ownerSubscription.planName
 			: "No disponible";
@@ -1351,13 +1357,20 @@ const TabSubscription = () => {
 								<Warning2 size={16} variant="Bulk" color={STALE_AMBER} style={{ marginTop: 2, flexShrink: 0 }} />
 								<Stack spacing={0.5}>
 									<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
-										{gracePeriodInfo.willDowngradeToFreePlan
+										{gracePeriodInfo.gracePeriodType === "payment_failed"
+											? `Tu último pago no pudo procesarse`
+											: gracePeriodInfo.gracePeriodType === "cancellation"
+											? `Tu plan ${gracePeriodInfo.previousPlanName} cambiará al Plan Gratuito el ${gracePeriodInfo.cancellationFormatted}`
+											: gracePeriodInfo.willDowngradeToFreePlan
 											? `Tu plan ${gracePeriodInfo.previousPlanName} cambió al Plan Gratuito el ${gracePeriodInfo.cancellationFormatted}`
 											: `Tu plan cambió de ${gracePeriodInfo.previousPlanName} a ${gracePeriodInfo.currentPlanName}`}
 									</Typography>
 									<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-										Tenés hasta el {gracePeriodInfo.expiryFormatted} para ajustar tus datos a los nuevos límites antes de que se archive
-										automáticamente el contenido excedente.
+										{gracePeriodInfo.gracePeriodType === "payment_failed"
+											? `Actualizá tu medio de pago para conservar tu ${gracePeriodInfo.currentPlanName}. Si el pago no se regulariza, tu cuenta pasará a los límites del Plan Gratuito.`
+											: gracePeriodInfo.gracePeriodType === "cancellation"
+											? `Hasta esa fecha seguís con todas las funciones de tu plan. Después tendrás hasta el ${gracePeriodInfo.expiryFormatted} para ajustar tus datos a los límites del Plan Gratuito antes de que se archive automáticamente el contenido excedente.`
+											: `Tenés hasta el ${gracePeriodInfo.expiryFormatted} para ajustar tus datos a los nuevos límites antes de que se archive automáticamente el contenido excedente.`}
 									</Typography>
 								</Stack>
 							</Stack>
@@ -1496,12 +1509,10 @@ const TabSubscription = () => {
 								{[
 									{
 										label: "Carpetas",
-										prev:
-											subscription.downgradeGracePeriod?.previousPlan === "premium"
-												? "Ilimitadas"
-												: subscription.downgradeGracePeriod?.previousPlan === "standard"
-												? "50"
-												: "5",
+										prev: (() => {
+											const l = getPlanLimits(subscription.downgradeGracePeriod?.previousPlan || subscription.plan);
+											return l.folders === 999999 ? "Ilimitadas" : String(l.folders);
+										})(),
 										next: (() => {
 											const t = subscription.downgradeGracePeriod?.targetPlan || "free";
 											const l = getPlanLimits(t);
@@ -1510,12 +1521,10 @@ const TabSubscription = () => {
 									},
 									{
 										label: "Cálculos",
-										prev:
-											subscription.downgradeGracePeriod?.previousPlan === "premium"
-												? "Ilimitados"
-												: subscription.downgradeGracePeriod?.previousPlan === "standard"
-												? "20"
-												: "3",
+										prev: (() => {
+											const l = getPlanLimits(subscription.downgradeGracePeriod?.previousPlan || subscription.plan);
+											return l.calculators === 999999 ? "Ilimitados" : String(l.calculators);
+										})(),
 										next: (() => {
 											const t = subscription.downgradeGracePeriod?.targetPlan || "free";
 											const l = getPlanLimits(t);
@@ -1524,12 +1533,10 @@ const TabSubscription = () => {
 									},
 									{
 										label: "Contactos",
-										prev:
-											subscription.downgradeGracePeriod?.previousPlan === "premium"
-												? "Ilimitados"
-												: subscription.downgradeGracePeriod?.previousPlan === "standard"
-												? "100"
-												: "10",
+										prev: (() => {
+											const l = getPlanLimits(subscription.downgradeGracePeriod?.previousPlan || subscription.plan);
+											return l.contacts === 999999 ? "Ilimitados" : String(l.contacts);
+										})(),
 										next: (() => {
 											const t = subscription.downgradeGracePeriod?.targetPlan || "free";
 											const l = getPlanLimits(t);
@@ -1538,12 +1545,10 @@ const TabSubscription = () => {
 									},
 									{
 										label: "Almacenamiento",
-										prev:
-											subscription.downgradeGracePeriod?.previousPlan === "premium"
-												? "10 GB"
-												: subscription.downgradeGracePeriod?.previousPlan === "standard"
-												? "1 GB"
-												: "50 MB",
+										prev: (() => {
+											const l = getPlanLimits(subscription.downgradeGracePeriod?.previousPlan || subscription.plan);
+											return l.storage >= 1024 ? `${l.storage / 1024} GB` : `${l.storage} MB`;
+										})(),
 										next: (() => {
 											const t = subscription.downgradeGracePeriod?.targetPlan || "free";
 											const l = getPlanLimits(t);

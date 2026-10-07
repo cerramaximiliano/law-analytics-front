@@ -74,7 +74,7 @@ export interface FeatureWithDescription {
 
 // Subscription info from the team owner for feature inheritance
 export interface OwnerSubscription {
-	planName: "free" | "standard" | "premium";
+	planName: "free" | "standard" | "pro" | "premium";
 	status: "active" | "canceled" | "past_due" | "trialing" | "paused" | "incomplete" | "incomplete_expired" | "unpaid";
 	features: Record<string, boolean>;
 	featuresWithDescriptions?: FeatureWithDescription[]; // Incluye displayName para UI

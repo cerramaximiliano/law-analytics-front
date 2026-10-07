@@ -414,8 +414,13 @@ export const fetchCurrentSubscription =
 				throw new Error(response.data?.message || "Error al obtener la suscripción");
 			}
 		} catch (error: any) {
-			// Si hay error, actualizar con null
-			dispatch(updateSubscription(null));
+			// Solo borrar la suscripción conocida si el server dijo que no hay sesión o no
+			// existe. Ante un error de red o 5xx se conserva la última conocida: si no, el
+			// header pierde el plan y TeamContext cae a límites de Free por un blip.
+			const status = error.response?.status;
+			if (status === 401 || status === 404 || !getState().auth.subscription) {
+				dispatch(updateSubscription(null));
+			}
 
 			// No mostrar error si es 401 (usuario no autenticado)
 			if (error.response?.status !== 401) {

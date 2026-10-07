@@ -31,7 +31,7 @@ import Avatar from "components/@extended/Avatar";
 import { dispatch, useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { fetchUserStats } from "store/reducers/userStats";
-import { updateUser } from "store/reducers/auth";
+import { updateUser, fetchCurrentSubscription } from "store/reducers/auth";
 import ApiService from "store/reducers/ApiService";
 
 // assets
@@ -153,6 +153,9 @@ const SubscriptionSuccess = () => {
 
 					console.log("Suscripción sincronizada exitosamente");
 				}
+				// /sync no devuelve la suscripción: refrescar Redux para que el header,
+				// los límites y el banner de gracia muestren el plan nuevo sin recargar.
+				await Promise.resolve(dispatch(fetchCurrentSubscription(true) as any)).catch(() => {});
 			} catch (error) {
 				// Error silencioso - no interrumpir la experiencia del usuario
 				console.error("Error al sincronizar suscripción:", error);

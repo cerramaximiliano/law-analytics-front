@@ -26,6 +26,13 @@ const DowngradeGracePeriodAlert: React.FC = () => {
 
 	const { previousPlan, targetPlan, autoArchiveScheduled } = downgradeGracePeriod;
 
+	// Baja programada todavía vigente: el backend crea la gracia al cancelar (con
+	// expiresAt = fin de período + N días), pero el plan NO cambió hasta esa fecha.
+	// No afirmar "tu plan ha cambiado" durante todo el período pago.
+	const periodEnd = subscription?.cancelAtPeriodEnd && subscription?.currentPeriodEnd ? dayjs(subscription.currentPeriodEnd) : null;
+	const pendingCancellation = !!periodEnd && periodEnd.isAfter(now);
+	const formattedPeriodEnd = periodEnd ? periodEnd.format("D [de] MMMM [de] YYYY") : "";
+
 	// Format expiration date
 	const formattedExpirationDate = expirationDate.format("D [de] MMMM [de] YYYY");
 
@@ -84,8 +91,18 @@ const DowngradeGracePeriodAlert: React.FC = () => {
 			>
 				<Box>
 					<Typography variant="body2" component="span">
-						<strong>Período de gracia:</strong> Tu plan ha cambiado del plan {getPlanName(previousPlan)} al plan {getPlanName(targetPlan)}.
-						Debes archivar los recursos que excedan los límites antes del <strong>{formattedExpirationDate}</strong>.
+						{pendingCancellation ? (
+							<>
+								<strong>Baja programada:</strong> tu plan {getPlanName(previousPlan)} se cancelará el <strong>{formattedPeriodEnd}</strong>.
+								Hasta entonces seguís con todas sus funciones; después tendrás hasta el <strong>{formattedExpirationDate}</strong> para archivar
+								los recursos que excedan los límites del plan {getPlanName(targetPlan)}.
+							</>
+						) : (
+							<>
+								<strong>Período de gracia:</strong> Tu plan ha cambiado del plan {getPlanName(previousPlan)} al plan {getPlanName(targetPlan)}.
+								Debes archivar los recursos que excedan los límites antes del <strong>{formattedExpirationDate}</strong>.
+							</>
+						)}
 						{autoArchiveScheduled && (
 							<>
 								{" "}
