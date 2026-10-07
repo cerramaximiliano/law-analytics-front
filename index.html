@@ -29,6 +29,21 @@
 					if ("requestIdleCallback" in w) w.requestIdleCallback(cargar, { timeout: 3000 });
 					else setTimeout(cargar, 1500);
 				}
+				// /register y /login (2026-10-07): ~525 KB de terceros compiten con el formulario
+				// en móvil. Se cargan en la primera interacción (foco, clic, tecla, scroll o toque)
+				// o, como máximo, a los 8 s. Los push al dataLayer hechos antes no se pierden: GTM
+				// procesa la cola al cargar. Contrapartida: quien rebota sin tocar nada antes de 8 s
+				// no genera page_view de GA4 / PageView del píxel de Meta en esas dos rutas.
+				if (/^\/(register|login)(\/|$)/.test(w.location.pathname)) {
+					var eventos = ["pointerdown", "keydown", "scroll", "focusin", "touchstart"];
+					var alInteractuar = function () {
+						for (var i = 0; i < eventos.length; i++) w.removeEventListener(eventos[i], alInteractuar, true);
+						cargar();
+					};
+					for (var i = 0; i < eventos.length; i++) w.addEventListener(eventos[i], alInteractuar, { capture: true, passive: true });
+					setTimeout(cargar, 8000);
+					return;
+				}
 				if (d.readyState === "complete") cuandoLibre();
 				else w.addEventListener("load", cuandoLibre, { once: true });
 				// Red de seguridad por si "load" tarda demasiado en un teléfono lento.
