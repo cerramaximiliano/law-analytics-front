@@ -1288,7 +1288,7 @@ class ApiService {
 		successUrl: string,
 		cancelUrl: string,
 		discountCode?: string,
-	): Promise<ApiResponse<{ sessionId?: string; url?: string }>> {
+	): Promise<ApiResponse<{ sessionId?: string; url?: string }> & Record<string, any>> {
 		try {
 			const response = await axios.post<ApiResponse<{ sessionId?: string; url?: string }>>(
 				`${API_BASE_URL}/api/subscriptions/checkout`,
@@ -1301,8 +1301,20 @@ class ApiService {
 				{ withCredentials: true },
 			);
 			return response.data;
-		} catch (error) {
-			throw this.handleAxiosError(error);
+		} catch (error: any) {
+			// Mismo contrato que changeImmediate/scheduleChange: no lanzar, devolver el
+			// cuerpo del error. Si se lanzaba, handleAxiosError conservaba solo `message`
+			// y se perdían `code` (TEAM_DOWNGRADE_BLOCKED, INVALID_DISCOUNT_CODE,
+			// SUBSCRIPTION_NOT_ACTIVE…) y `teamCheck`, y el 409/400 se registraba como
+			// checkout fallido.
+			const data = error?.response?.data || {};
+			return {
+				success: false,
+				statusCode: error?.response?.status,
+				code: data.code,
+				message: data.message || this.handleAxiosError(error).message,
+				teamCheck: data.teamCheck,
+			} as any;
 		}
 	}
 

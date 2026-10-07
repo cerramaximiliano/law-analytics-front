@@ -338,6 +338,28 @@ const Pricing = () => {
 					});
 					refreshReduxSubscription();
 				}
+			} else if (
+				response.code === "TEAM_DOWNGRADE_BLOCKED" ||
+				response.code === "DOWNGRADE_MUST_BE_SCHEDULED" ||
+				response.code === "SUBSCRIPTION_NOT_ACTIVE" ||
+				response.code === "INVALID_DISCOUNT_CODE" ||
+				response.code === "ALREADY_ON_PLAN" ||
+				response.code === "INVALID_PLAN" ||
+				(typeof response.statusCode === "number" && response.statusCode >= 400 && response.statusCode < 500)
+			) {
+				// Rechazo de negocio (4xx): no es un checkout fallido ni un error del sistema.
+				// Mostrar el motivo del backend, sin redirigir ni registrar en paymentattempts.
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: response.message || "No se pudo iniciar el cambio de plan.",
+						variant: "alert",
+						alert: {
+							color: "warning",
+						},
+						close: false,
+					}),
+				);
 			} else {
 				// Respuesta no exitosa
 
