@@ -7,6 +7,7 @@ import CommonLayout from "layout/CommonLayout";
 import PublicLayout from "layout/PublicLayout";
 import Loadable from "components/Loadable";
 import EmailVisitTracker from "contexts/EmailVisitTracker";
+import usePageView from "hooks/usePageView";
 import LoginRoutes from "./LoginRoutes";
 import MainRoutes from "./MainRoutes";
 const MaintenanceError = Loadable(lazy(() => import("pages/maintenance/error/404")));
@@ -30,6 +31,7 @@ const MovementDocPublicPage = Loadable(lazy(() => import("pages/public/movement-
 // ==============================|| ROUTES RENDER ||============================== //
 
 export default function ThemeRoutes() {
+	usePageView();
 	const routes = useRoutes([
 		{
 			path: "/",

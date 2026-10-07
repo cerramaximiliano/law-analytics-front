@@ -66,6 +66,24 @@ export const GTMEvents = {
 	ONBOARDING_EXAMPLE_FOLDER_USED: "onboarding_example_folder_used",
 	ONBOARDING_DISMISSED: "onboarding_dismissed",
 	ONBOARDING_COMPLETED: "onboarding_completed",
+	// Uso interior de la app (productAnalytics.ts) — pending GTM tags / GA4 custom events
+	SCREEN_VIEW: "screen_view",
+	FOLDER_CREATE_START: "folder_create_start",
+	FOLDER_CREATE_COMPLETE: "folder_create_complete",
+	CAUSA_LINK_START: "causa_link_start",
+	CAUSA_LINK_SUCCESS: "causa_link_success",
+	CAUSA_LINK_ERROR: "causa_link_error",
+	FOLDER_DETAIL_VIEW: "folder_detail_view",
+	MOVEMENT_OPEN: "movement_open",
+	CALENDAR_EVENT_CREATE: "calendar_event_create",
+	GOOGLE_CALENDAR_SYNC: "google_calendar_sync",
+	TASK_CREATE: "task_create",
+	CONTACT_CREATE: "contact_create",
+	CALCULATOR_RUN: "calculator_run",
+	POSTAL_TRACKING_ADD: "postal_tracking_add",
+	SUBSCRIPTION_CHECKOUT_START: "subscription_checkout_start",
+	SUBSCRIPTION_SUCCESS: "subscription_success",
+	WEB_VITALS: "web_vitals",
 } as const;
 
 // Landing page section names for scroll tracking

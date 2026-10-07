@@ -2,6 +2,7 @@ import axios, { AxiosError, AxiosInstance } from "axios";
 import authTokenService from "services/authTokenService";
 import Cookies from "js-cookie";
 import { refreshAccessToken } from "utils/refreshToken";
+import { installApiMetrics } from "utils/productAnalytics";
 
 // Subdominio prod: pjcatamarca.lawanalytics.app.
 const PJCATAMARCA_BASE_URL = import.meta.env.VITE_PJCATAMARCA_URL || "https://pjcatamarca.lawanalytics.app";
@@ -17,6 +18,7 @@ const pjcatamarcaAxios: AxiosInstance = axios.create({
 		Accept: "application/json",
 	},
 });
+installApiMetrics(pjcatamarcaAxios);
 
 pjcatamarcaAxios.interceptors.request.use(
 	(config) => {

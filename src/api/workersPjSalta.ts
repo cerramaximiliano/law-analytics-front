@@ -2,6 +2,7 @@ import axios, { AxiosError, AxiosInstance } from "axios";
 import authTokenService from "services/authTokenService";
 import Cookies from "js-cookie";
 import { refreshAccessToken } from "utils/refreshToken";
+import { installApiMetrics } from "utils/productAnalytics";
 
 // Ojo con el subdominio: es `pjsal`, no `pjsalta`.
 const PJSALTA_BASE_URL = import.meta.env.VITE_PJSALTA_URL || "https://pjsal.lawanalytics.app";
@@ -17,6 +18,7 @@ const pjsaltaAxios: AxiosInstance = axios.create({
 		Accept: "application/json",
 	},
 });
+installApiMetrics(pjsaltaAxios);
 
 pjsaltaAxios.interceptors.request.use(
 	(config) => {

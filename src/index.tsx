@@ -14,7 +14,7 @@ import { PersistGate } from "redux-persist/integration/react";
 
 // fonts
 import "assets/fonts/inter/inter.css";
-import "@fontsource-variable/geist";
+import "assets/fonts/geist/geist.css";
 
 // scroll bar
 import "simplebar-react/dist/simplebar.min.css";
@@ -34,12 +34,21 @@ import { store, persister } from "store";
 import { ConfigProvider } from "contexts/ConfigContext";
 import { TeamProvider } from "contexts/TeamContext";
 import reportWebVitals from "./reportWebVitals";
+import ErrorBoundary from "components/ErrorBoundary";
+import axios from "axios";
+import { installGsiDeferral } from "utils/gsiDeferral";
+import { installApiMetrics, installGlobalErrorHandlers, reportFrontendError, reportVital } from "utils/productAnalytics";
 import { preloadCriticalRoutes } from "./utils/lazyRetry";
 
 const container = document.getElementById("root");
 const root = createRoot(container!);
 
 // La limpieza de Service Workers se maneja en index.html antes de cargar este script
+
+// Medición de errores y tiempos de API + errores globales del front (fallan en silencio).
+installGsiDeferral();
+installApiMetrics(axios);
+installGlobalErrorHandlers();
 
 // Precargar rutas críticas en segundo plano
 preloadCriticalRoutes();
@@ -89,7 +98,15 @@ root.render(
 			<ConfigProvider>
 				<BrowserRouter basename={import.meta.env.VITE_BASE_NAME}>
 					<TeamProvider>
-						<App />
+						<ErrorBoundary
+							onError={(error, info) => {
+								// Primer componente de la pila (solo el identificador, sin datos del usuario).
+								const first = /at\s+([A-Za-z0-9_$]+)/.exec(info?.componentStack || "");
+								reportFrontendError(first?.[1] || "react_error_boundary", error?.message || "render_error", error?.name || "Error");
+							}}
+						>
+							<App />
+						</ErrorBoundary>
 					</TeamProvider>
 				</BrowserRouter>
 			</ConfigProvider>
@@ -100,4 +117,6 @@ root.render(
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+// Métricas de rendimiento reales (una vez por métrica y página). En rutas públicas
+// solo llegan al dataLayer; al hub solo si hay sesión (ver utils/productAnalytics).
+reportWebVitals(reportVital);

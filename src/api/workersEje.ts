@@ -2,6 +2,7 @@ import axios, { AxiosError, AxiosInstance } from "axios";
 import authTokenService from "services/authTokenService";
 import Cookies from "js-cookie";
 import { refreshAccessToken } from "utils/refreshToken";
+import { installApiMetrics } from "utils/productAnalytics";
 
 const EJE_BASE_URL = import.meta.env.VITE_EJE_URL || "https://eje.lawanalytics.app";
 
@@ -15,6 +16,7 @@ const ejeAxios: AxiosInstance = axios.create({
 		Accept: "application/json",
 	},
 });
+installApiMetrics(ejeAxios);
 
 // Interceptor para agregar el token a todas las peticiones
 ejeAxios.interceptors.request.use(

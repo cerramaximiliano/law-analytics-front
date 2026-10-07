@@ -1,4 +1,5 @@
 import axios from "axios";
+import { installApiMetrics } from "utils/productAnalytics";
 
 // Configuración base de axios
 const baseURL = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
@@ -12,6 +13,7 @@ const axiosInstance = axios.create({
 		"Content-Type": "application/json",
 	},
 });
+installApiMetrics(axiosInstance);
 
 // Interceptor para agregar token si existe
 axiosInstance.interceptors.request.use(

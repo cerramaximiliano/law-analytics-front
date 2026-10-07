@@ -2,6 +2,7 @@ import axios, { AxiosError, AxiosInstance } from "axios";
 import authTokenService from "services/authTokenService";
 import Cookies from "js-cookie";
 import { refreshAccessToken } from "utils/refreshToken";
+import { installApiMetrics } from "utils/productAnalytics";
 
 const MEV_BASE_URL = import.meta.env.VITE_MEV_URL || "https://mev.lawanalytics.app";
 
@@ -15,6 +16,7 @@ const mevAxios: AxiosInstance = axios.create({
 		Accept: "application/json",
 	},
 });
+installApiMetrics(mevAxios);
 
 // Interceptor para agregar el token a todas las peticiones
 mevAxios.interceptors.request.use(

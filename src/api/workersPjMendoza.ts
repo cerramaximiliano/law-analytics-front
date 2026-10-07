@@ -2,6 +2,7 @@ import axios, { AxiosError, AxiosInstance } from "axios";
 import authTokenService from "services/authTokenService";
 import Cookies from "js-cookie";
 import { refreshAccessToken } from "utils/refreshToken";
+import { installApiMetrics } from "utils/productAnalytics";
 
 // Subdominio prod: pjmendoza.lawanalytics.app.
 const PJMENDOZA_BASE_URL = import.meta.env.VITE_PJMENDOZA_URL || "https://pjmendoza.lawanalytics.app";
@@ -17,6 +18,7 @@ const pjmendozaAxios: AxiosInstance = axios.create({
 		Accept: "application/json",
 	},
 });
+installApiMetrics(pjmendozaAxios);
 
 pjmendozaAxios.interceptors.request.use(
 	(config) => {

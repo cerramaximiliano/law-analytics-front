@@ -1,6 +1,7 @@
 import axios from "axios";
 import secureStorage from "services/secureStorage";
 import { refreshAccessToken } from "utils/refreshToken";
+import { installApiMetrics } from "utils/productAnalytics";
 
 /**
  * Axios instance dedicada a la RAG API (ia.lawanalytics.app).
@@ -18,6 +19,7 @@ const ragAxios = axios.create({
 	withCredentials: true,
 	headers: { "Content-Type": "application/json" },
 });
+installApiMetrics(ragAxios);
 
 ragAxios.interceptors.request.use((config) => {
 	const token = secureStorage.getAuthToken();

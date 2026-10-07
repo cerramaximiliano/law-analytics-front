@@ -1,10 +1,12 @@
 import axios from "axios";
+import { installApiMetrics } from "utils/productAnalytics";
 
 // Creamos una instancia de axios específica para el servicio de usuarios
 const userApi = axios.create({
 	baseURL: import.meta.env.VITE_BASE_URL || "http://localhost:3010/",
 	withCredentials: true, // Importante: enviar cookies con cada petición
 });
+installApiMetrics(userApi);
 
 // Rutas públicas que no deben redirigir a login
 const publicRoutes = ["/teams/invitation", "/auth/", "/login", "/register"];
