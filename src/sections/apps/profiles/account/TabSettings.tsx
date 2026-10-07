@@ -512,6 +512,8 @@ const TabSubscription = () => {
 			targetPlanName: getPlanName(targetPlan),
 			expiryDate,
 			expiryFormatted: formatDate(expiryDate),
+			// En una baja programada la fecha de gracia solo se conoce si el backend ya la guardó
+			graceEndKnown: gracePeriodType !== "cancellation" || !!subscription.downgradeGracePeriod?.expiresAt,
 			daysRemaining,
 			isExpiringSoon,
 			cancellationDate: subscription.currentPeriodEnd,
@@ -1369,7 +1371,9 @@ const TabSubscription = () => {
 										{gracePeriodInfo.gracePeriodType === "payment_failed"
 											? `Actualizá tu medio de pago para conservar tu ${gracePeriodInfo.currentPlanName}. Si el pago no se regulariza, tu cuenta pasará a los límites del Plan Gratuito.`
 											: gracePeriodInfo.gracePeriodType === "cancellation"
-											? `Hasta esa fecha seguís con todas las funciones de tu plan. Después tendrás hasta el ${gracePeriodInfo.expiryFormatted} para ajustar tus datos a los límites del Plan Gratuito antes de que se archive automáticamente el contenido excedente.`
+											? gracePeriodInfo.graceEndKnown
+												? `Hasta esa fecha seguís con todas las funciones de tu plan. Después tendrás hasta el ${gracePeriodInfo.expiryFormatted} para ajustar tus datos a los límites del Plan Gratuito antes de que se archive automáticamente el contenido excedente.`
+												: `Hasta esa fecha seguís con todas las funciones de tu plan. Después tendrás un período de gracia para ajustar tus datos a los límites del Plan Gratuito antes de que se archive automáticamente el contenido excedente.`
 											: `Tenés hasta el ${gracePeriodInfo.expiryFormatted} para ajustar tus datos a los nuevos límites antes de que se archive automáticamente el contenido excedente.`}
 									</Typography>
 								</Stack>
