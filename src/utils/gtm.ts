@@ -296,6 +296,7 @@ export const trackRegisterFormError = (errorType: string, errorMessage?: string,
 //   - oauth_login_success   → GA4 event con dimensión `method`
 //   - oauth_login_error     → GA4 event con dimensiones `error_type`, `method`
 //   - oauth_consent_view    → GA4 event con dimensión `client_name`, `verified`
+//     (view/accept/reject llevan `scope_write`: true si el consent pidió `mcp:write`, Etapa F)
 //   - oauth_consent_accept  → GA4 event (conversión soft)
 //   - oauth_consent_reject  → GA4 event con dimensión `reason`
 //   - oauth_upgrade_view    → GA4 event con dimensión `reason` (señal de upsell)
@@ -338,27 +339,30 @@ export const trackOauthLoginError = (errorType: string, method?: OauthLoginMetho
 };
 
 /** Montaje de /oauth/consent */
-export const trackOauthConsentView = (clientId?: string, clientName?: string, verified?: boolean): void => {
+export const trackOauthConsentView = (clientId?: string, clientName?: string, verified?: boolean, scopeWrite?: boolean): void => {
 	pushGTMEvent(GTMEvents.OAUTH_CONSENT_VIEW, {
 		client_id: clientId || null,
 		client_name: clientName || null,
 		verified: !!verified,
+		scope_write: !!scopeWrite,
 	});
 };
 
 /** User clickea "Autorizar" en consent — conversión soft */
-export const trackOauthConsentAccept = (clientId?: string, grantedScopes?: string[]): void => {
+export const trackOauthConsentAccept = (clientId?: string, grantedScopes?: string[], scopeWrite?: boolean): void => {
 	pushGTMEvent(GTMEvents.OAUTH_CONSENT_ACCEPT, {
 		client_id: clientId || null,
 		granted_scopes: grantedScopes || [],
+		scope_write: !!scopeWrite,
 	});
 };
 
 /** User clickea "Rechazar" en consent */
-export const trackOauthConsentReject = (clientId?: string, reason?: string): void => {
+export const trackOauthConsentReject = (clientId?: string, reason?: string, scopeWrite?: boolean): void => {
 	pushGTMEvent(GTMEvents.OAUTH_CONSENT_REJECT, {
 		client_id: clientId || null,
 		reason: reason || null,
+		scope_write: !!scopeWrite,
 	});
 };
 

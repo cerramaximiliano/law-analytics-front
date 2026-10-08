@@ -29,6 +29,17 @@ export interface OauthConsentLegal {
 	previously_accepted_version: string | null;
 }
 
+/**
+ * Estado del permiso de escritura (Etapa F, ESCRITURA.md §3.8). Opcional: un hub
+ * sin F1 no lo manda y el front lo trata como "sin información" (el hub igual
+ * filtra `mcp:write` de `granted_scopes` si no corresponde).
+ */
+export interface OauthConsentWrite {
+	allowed: boolean;
+	reason?: string | null;
+	message?: string | null;
+}
+
 export interface OauthUserInfo {
 	email: string;
 	name: string;
@@ -59,6 +70,8 @@ export interface OauthConsentContext {
 	skip: boolean;
 	/** Ausente en hubs previos a la Etapa P → se trata como "sin exigencia". */
 	legal?: OauthConsentLegal | null;
+	/** Solo relevante si `requested_scope` incluye `mcp:write` (step-up). */
+	write?: OauthConsentWrite | null;
 }
 
 export type OauthConsentContextState =

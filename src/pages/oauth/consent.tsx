@@ -16,7 +16,14 @@
  *  5. Submit → POST a /api/oauth/consent/{accept,reject} → window.location.href
  *     al redirect_to devuelto por Hydra.
  *
- * Tracking: oauth_consent_view (mount), oauth_consent_accept, oauth_consent_reject.
+ * Escritura (Etapa F, ESCRITURA.md §2.1): `mcp:write` llega solo por step-up.
+ * Si `requested_scope` lo incluye se muestra un bloque propio y la aceptación de
+ * la política vigente se pide de nuevo (F-D4: el consent de escritura registra la
+ * aceptación de la versión vigente). Si el hub manda `write.allowed === false`, se
+ * muestra su mensaje y `mcp:write` no se manda en `granted_scopes`.
+ *
+ * Tracking: oauth_consent_view (mount), oauth_consent_accept, oauth_consent_reject
+ * (los tres con `scope_write`).
  */
 
 import { useEffect, useState } from "react";
@@ -46,28 +53,20 @@ import OauthClientBanner from "sections/oauth/OauthClientBanner";
 import axiosInstance from "utils/axios";
 import { useOauthConsentContext } from "hooks/useOauthConsentContext";
 import { trackOauthConsentAccept, trackOauthConsentReject, trackOauthConsentView } from "utils/gtm";
-import { MCP_SHARED_DATA_TEXT, PRIVACY_CONNECTORS_URL, aiProviderLabel, deriveAiProvider } from "utils/mcpLegal";
+import { PRIVACY_CONNECTORS_URL, aiProviderLabel, deriveAiProvider } from "utils/mcpLegal";
+import { MCP_WRITE_RESOURCES_TEXT, MCP_WRITE_SCOPE, describeConsentScope, includesWriteScope } from "utils/mcpScopes";
 
-import { TickCircle } from "iconsax-react";
+import { Edit2, TickCircle } from "iconsax-react";
 
 interface AcceptResponse {
 	redirect_to: string;
 }
 
 /**
- * Mapping scope canónico → texto humano. Para scopes desconocidos cae al ID.
- * Mantener sincronizado con services/oauthAuthService.js del hub si se agregan
- * scopes nuevos.
+ * Mapping scope canónico → texto humano: utils/mcpScopes (compartido con la
+ * tarjeta de apps conectadas). Para scopes desconocidos cae al ID.
  */
-const SCOPE_LABELS: Record<string, string> = {
-	openid: "Saber tu identidad básica (email, nombre)",
-	offline_access: "Mantener la sesión activa entre conversaciones (sin pedirte autorización cada vez)",
-	"mcp:access": `Consultar, en modo de solo lectura, la información de tu cuenta y de tus equipos: ${MCP_SHARED_DATA_TEXT}`,
-};
-
-function describeScope(scope: string): string {
-	return SCOPE_LABELS[scope] || scope;
-}
+const describeScope = describeConsentScope;
 
 /**
  * Plan ID interno (standard/premium/free) → nombre display.
@@ -101,7 +100,16 @@ const OauthConsentPage = () => {
 	// si el user ya aceptó exactamente esta versión.
 	const legal = contextState.status === "ready" ? contextState.context.legal ?? null : null;
 	const privacyVersion = legal?.privacy_version || null;
-	const previouslyAccepted = !!privacyVersion && legal?.previously_accepted_version === privacyVersion;
+
+	// Escritura (step-up): pedida = requested_scope incluye mcp:write; ofrecida = el
+	// hub no la bloqueó (sin bloque `write` → se ofrece y el hub filtra al aceptar).
+	const writeRequested = contextState.status === "ready" && includesWriteScope(contextState.context.requested_scope);
+	const writeBlocked = writeRequested && contextState.status === "ready" && contextState.context.write?.allowed === false;
+	const writeOffered = writeRequested && !writeBlocked;
+
+	// Con escritura ofrecida la casilla no se pre-marca: el user confirma la política
+	// vigente para este permiso nuevo (F-D4).
+	const previouslyAccepted = !!privacyVersion && legal?.previously_accepted_version === privacyVersion && !writeOffered;
 	useEffect(() => {
 		if (previouslyAccepted) setPolicyAccepted(true);
 	}, [previouslyAccepted]);
@@ -132,9 +140,9 @@ const OauthConsentPage = () => {
 	// (si plan no OK redirigimos sin trackear consent_view, en su lugar trackeará oauth_upgrade_view).
 	useEffect(() => {
 		if (contextState.status === "ready" && contextState.context.plan_check.allowed) {
-			trackOauthConsentView(clientId || undefined, clientName || undefined, verified || false);
+			trackOauthConsentView(clientId || undefined, clientName || undefined, verified || false, writeOffered);
 		}
-	}, [contextState, clientId, clientName, verified]);
+	}, [contextState, clientId, clientName, verified, writeOffered]);
 
 	if (contextState.status === "loading") {
 		return (
@@ -194,6 +202,11 @@ const OauthConsentPage = () => {
 	const clientLabel = clientName || "la aplicación";
 	const privacyUrl = legal?.privacy_url || PRIVACY_CONNECTORS_URL;
 	const acceptBlocked = !!privacyVersion && !policyAccepted;
+	// Granted = lo pedido; si el hub bloqueó la escritura, no la mandamos (el hub igual la filtra).
+	const grantedScopes = writeBlocked ? ctx.requested_scope.filter((s) => s !== MCP_WRITE_SCOPE) : ctx.requested_scope;
+	const listedScopes = writeBlocked ? grantedScopes : ctx.requested_scope;
+	const writeBlockedMessage =
+		ctx.write?.message || "Por ahora tu cuenta no tiene habilitado el permiso de escritura para asistentes de IA.";
 
 	const handleAccept = async () => {
 		if (acceptBlocked) return;
@@ -203,11 +216,11 @@ const OauthConsentPage = () => {
 		try {
 			const res = await axiosInstance.post<AcceptResponse>("/api/oauth/consent/accept", {
 				consent_challenge: challenge,
-				granted_scopes: ctx.requested_scope,
+				granted_scopes: grantedScopes,
 				remember,
 				...(privacyVersion ? { accepted_policy_version: privacyVersion } : {}),
 			});
-			trackOauthConsentAccept(clientId || undefined, ctx.requested_scope);
+			trackOauthConsentAccept(clientId || undefined, grantedScopes, writeOffered);
 			window.location.href = res.data.redirect_to;
 		} catch (err: any) {
 			// 400 policy_acceptance_required: la versión aceptada no coincide con la
@@ -236,7 +249,7 @@ const OauthConsentPage = () => {
 				consent_challenge: challenge,
 				reason: "user_declined",
 			});
-			trackOauthConsentReject(clientId || undefined, "user_declined");
+			trackOauthConsentReject(clientId || undefined, "user_declined", writeOffered);
 			window.location.href = res.data.redirect_to;
 		} catch (err: any) {
 			const msg = err.response?.data?.error_description || "No se pudo cancelar la solicitud. Intentá de nuevo.";
@@ -292,7 +305,7 @@ const OauthConsentPage = () => {
 						{clientName || "La aplicación"} podrá:
 					</Typography>
 					<List dense disablePadding>
-						{ctx.requested_scope.map((scope) => (
+						{listedScopes.map((scope) => (
 							<ListItem key={scope} sx={{ py: 0.5 }}>
 								<ListItemIcon sx={{ minWidth: 28 }}>
 									<TickCircle size={18} variant="Bold" color="#2e7d32" />
@@ -302,6 +315,35 @@ const OauthConsentPage = () => {
 						))}
 					</List>
 				</Grid>
+
+				{writeOffered && (
+					<Grid item xs={12}>
+						<Alert severity="warning" icon={<Edit2 size={22} />} data-testid="consent-write-block">
+							<Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+								Permiso de escritura
+							</Typography>
+							<Typography variant="body2" sx={{ mb: 0.5 }}>
+								{clientLabel} pide permiso para crear y modificar {MCP_WRITE_RESOURCES_TEXT} en tu cuenta.
+							</Typography>
+							<Typography variant="body2">
+								No puede borrar ni archivar. Lo que cree queda marcado como creado por el asistente.
+							</Typography>
+						</Alert>
+					</Grid>
+				)}
+
+				{writeBlocked && (
+					<Grid item xs={12}>
+						<Alert severity="info" data-testid="consent-write-blocked">
+							<Typography variant="body2" sx={{ mb: 0.5 }}>
+								{writeBlockedMessage}
+							</Typography>
+							<Typography variant="body2">
+								Si continuás, {clientLabel} va a poder consultar tu cuenta pero no crear ni modificar nada.
+							</Typography>
+						</Alert>
+					</Grid>
+				)}
 
 				<Grid item xs={12}>
 					<FormControlLabel
@@ -368,7 +410,7 @@ const OauthConsentPage = () => {
 							Rechazar
 						</Button>
 						<Button variant="contained" color="primary" onClick={handleAccept} disabled={isSubmitting || acceptBlocked} size="large">
-							{isSubmitting ? "Procesando..." : "Autorizar"}
+							{isSubmitting ? "Procesando..." : writeOffered ? "Permitir" : "Autorizar"}
 						</Button>
 					</Stack>
 				</Grid>

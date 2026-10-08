@@ -23,6 +23,7 @@ import { Link1, ShieldTick, Trash, Warning2 } from "iconsax-react";
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
 import ChatGptLogo from "components/icons/ChatGptLogo";
 import { deriveAiProvider } from "utils/mcpLegal";
+import { describeScopeChip } from "utils/mcpScopes";
 import useMcpAccess from "hooks/useMcpAccess";
 import McpConnectGuide from "sections/apps/profiles/account/McpConnectGuide";
 
@@ -47,14 +48,8 @@ interface ListResponse {
 
 type LoadState = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; apps: ConnectedApp[] };
 
-// Scope ID → nombre humano (sincronizado con consent.tsx).
-const SCOPE_LABELS: Record<string, string> = {
-	openid: "Identidad",
-	offline_access: "Sesión persistente",
-	"mcp:access": "Datos de tu cuenta (solo lectura)",
-};
-
-const describeScope = (scope: string): string => SCOPE_LABELS[scope] || scope;
+// Scope ID → nombre humano: etiquetas compartidas con el consent en utils/mcpScopes.
+const describeScope = describeScopeChip;
 
 function formatGrantedAt(iso: string | null): string {
 	if (!iso) return "Fecha no disponible";
