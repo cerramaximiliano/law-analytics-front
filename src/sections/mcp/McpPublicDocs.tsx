@@ -46,7 +46,6 @@ export const MCP_TOOL_GROUPS: McpToolGroup[] = [
 			{ name: "list_folder_movements", title: "Listar movimientos de una carpeta" },
 			{ name: "list_recent_movements", title: "Listar movimientos recientes" },
 			{ name: "read_movement_text", title: "Leer texto de movimiento" },
-			{ name: "get_movement_text", title: "Leer texto de movimiento (alias)" },
 			{ name: "search_folder_movement_texts", title: "Buscar en textos de movimientos" },
 			{ name: "get_movement_document", title: "Ver documento de movimiento" },
 		],
@@ -100,14 +99,18 @@ const clientLabel = (client: McpDocsClient) => (client === "chatgpt" ? "ChatGPT"
 
 // ─── Qué necesitás ─────────────────────────────────────────────────────────
 
+/** Precio vigente del add-on, usado si la API todavía no devolvió el precio (confirmado en checkout 2026-10-07). */
+export const MCP_ADDON_FALLBACK_PRICE = "US$ 4/mes";
+
 export const McpRequirementsSection = ({ client, priceLabel }: { client: McpDocsClient; priceLabel: string | null }) => {
+	const price = priceLabel || MCP_ADDON_FALLBACK_PRICE;
 	const items = [
 		{
 			title: "Una cuenta de Law||Analytics con plan Estándar, Pro o Premium",
 			body: "Es la cuenta con la que vas a autorizar la conexión. El conector consulta tus carpetas y las de los equipos de los que sos miembro.",
 		},
 		{
-			title: `El add-on Conectores de IA${priceLabel ? ` (${priceLabel})` : ""}`,
+			title: `El add-on Conectores de IA (${price})`,
 			body: "Se suma a tu plan y lo podés quitar cuando quieras. Un mismo add-on habilita Claude y ChatGPT.",
 		},
 		{

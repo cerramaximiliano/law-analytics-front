@@ -86,7 +86,7 @@ Pre-requisitos del solicitante:
 
 El usuario solicita acceso a la beta cerrada del conector MCP. Una vez aprobado:
 1. Activar grant manual en User.featureGrants.mcp_access = true (admin → Feature Grants)
-2. Enviar instrucciones de cómo conectar el conector en Claude.ai (Settings → Connectors) o ChatGPT`;
+2. Enviar instrucciones de cómo conectar el conector en Claude.ai (Configuración → Conectores) o ChatGPT`;
 
 interface UseCase {
 	icon: React.ReactNode;
@@ -184,7 +184,7 @@ const FAQ: FaqItem[] = [
 	},
 	{
 		q: "¿Cómo revoco el acceso?",
-		a: "Dos formas: (1) En lawanalytics.app → Perfil → Integraciones → Asistentes de IA → Revocar: corta el acceso en el momento. (2) En Claude.ai → Settings → Connectors → Law Analytics → Disconnect: quita el conector de Claude.ai; para revocar también la autorización en Law||Analytics, usá la opción (1).",
+		a: "Dos formas: (1) En lawanalytics.app → Perfil → Integraciones → Asistentes de IA → Revocar: corta el acceso en el momento. (2) En Claude.ai → Configuración → Conectores → Law Analytics → Desconectar: quita el conector de Claude.ai; para revocar también la autorización en Law||Analytics, usá la opción (1).",
 	},
 	{
 		q: "¿Qué información puede consultar?",
@@ -200,7 +200,7 @@ const FAQ: FaqItem[] = [
 	},
 	{
 		q: "Conecté pero Claude.ai dice que no encuentra herramientas",
-		a: "Suele ser cache. En Claude.ai: Settings → Connectors → Law Analytics → Disconnect + Remove (los 3 puntitos) → Re-add con la misma URL. Después abrí un chat NUEVO. Si persiste, contactanos.",
+		a: "Suele ser cache. En Claude.ai: Configuración → Conectores → Law Analytics → Desconectar y Quitar (los 3 puntitos) → volvé a agregarlo con la misma URL. Después abrí un chat NUEVO. Si persiste, contactanos.",
 	},
 	{
 		q: "¿Mis datos salen del país?",

@@ -44,6 +44,7 @@ import MainCard from "components/MainCard";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
+import { DEFAULT_MCP_URL } from "types/mcpAddon";
 import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 
 // ============================== TOKENS ============================== //
@@ -242,8 +243,7 @@ const FAQS: Faq[] = [
 		id: "int3",
 		category: "integraciones",
 		question: "¿Qué necesito para conectarlo?",
-		answer:
-			"(1) Una cuenta activa en Law||Analytics con plan Estándar, Pro o Premium + el add-on Conectores de IA (durante la beta cerrada el acceso se habilita a mano, sin add-on). (2) Un plan Pro o Team de Claude.ai (los planes Free no soportan custom connectors). Después en Claude.ai → Settings → Connectors → Add custom connector, pegás https://mcp.lawanalytics.app y autorizás.",
+		answer: `(1) Una cuenta activa en Law||Analytics con plan Estándar, Pro o Premium + el add-on Conectores de IA (durante la beta cerrada el acceso se habilita a mano, sin add-on). (2) Una cuenta de Claude: la disponibilidad de los conectores depende de tu plan de Claude. Después en Claude: Configuración → Conectores → Agregar conector personalizado, pegás ${DEFAULT_MCP_URL} y autorizás.`,
 	},
 	{
 		id: "int4",
