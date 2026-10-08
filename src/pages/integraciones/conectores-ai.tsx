@@ -37,7 +37,9 @@ import { alpha } from "@mui/material/styles";
 import {
 	ArrowDown2,
 	ArrowRight2,
+	Calendar,
 	DocumentText,
+	DocumentText1,
 	Folder,
 	Lock1,
 	Message,
@@ -58,14 +60,19 @@ import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 import useMcpAccess from "hooks/useMcpAccess";
 import useMcpLandingCta from "hooks/useMcpLandingCta";
 import McpConnectGuide from "sections/apps/profiles/account/McpConnectGuide";
+import {
+	MCP_CONNECTOR_URL,
+	McpRequirementsSection,
+	McpReviewerSummary,
+	McpSupportSection,
+	McpToolsSection,
+} from "sections/mcp/McpPublicDocs";
 
 // tracking
 import { pushGTMEvent } from "utils/gtm";
 import { PRIVACY_CONNECTORS_URL } from "utils/mcpLegal";
 
 const BRAND_BLUE = "#3A7BFF";
-
-const MCP_SERVER_URL = "https://mcp.lawanalytics.app";
 
 // Subject EXACTO (matchea subjectOptions en SupportModal.tsx — si lo renombrás,
 // actualizar acá también).
@@ -75,7 +82,7 @@ const BETA_REQUEST_LOCKED_HEADER = `Tipo: Solicitud de acceso beta — Conector 
 Origen: /integraciones/conectores-ai
 Pre-requisitos del solicitante:
   • Cuenta activa en lawanalytics.app
-  • Plan Pro/Team en Claude.ai o ChatGPT (necesario para custom connectors)
+  • Cuenta de Claude.ai o ChatGPT con un plan que admita conectores
 
 El usuario solicita acceso a la beta cerrada del conector MCP. Una vez aprobado:
 1. Activar grant manual en User.featureGrants.mcp_access = true (admin → Feature Grants)
@@ -85,6 +92,8 @@ interface UseCase {
 	icon: React.ReactNode;
 	title: string;
 	example: string;
+	/** Herramientas MCP que suele usar el asistente para responder (nombres de la-mcp-server). */
+	tools: string[];
 }
 
 const USE_CASES: UseCase[] = [
@@ -92,21 +101,37 @@ const USE_CASES: UseCase[] = [
 		icon: <SearchNormal1 size={24} color={BRAND_BLUE} />,
 		title: "Buscar tus expedientes",
 		example: '"Buscame todos los casos de Pérez c/ Banco Nación"',
+		tools: ["search_folders"],
 	},
 	{
 		icon: <DocumentText size={24} color={BRAND_BLUE} />,
 		title: "Resumir movimientos recientes",
 		example: '"¿Qué pasó esta semana en mi causa de laboral con Acme S.A.?"',
+		tools: ["search_folders", "list_folder_movements"],
+	},
+	{
+		icon: <Calendar size={24} color={BRAND_BLUE} />,
+		title: "Revisar tu agenda y vencimientos",
+		example: '"¿Qué audiencias, tareas y vencimientos tengo en los próximos 7 días?"',
+		tools: ["get_upcoming_agenda"],
+	},
+	{
+		icon: <DocumentText1 size={24} color={BRAND_BLUE} />,
+		title: "Leer el texto de un movimiento",
+		example: '"Leé la última resolución de la causa Pérez c/ Banco Nación y explicame qué ordena"',
+		tools: ["list_folder_movements", "read_movement_text"],
 	},
 	{
 		icon: <Folder size={24} color={BRAND_BLUE} />,
 		title: "Consultar detalle de un caso",
 		example: '"Mostrame el detalle del folder Onildo — partes, juzgado, últimos escritos"',
+		tools: ["get_folder_detail"],
 	},
 	{
 		icon: <Star1 size={24} color={BRAND_BLUE} />,
 		title: "Buscar jurisprudencia",
 		example: '"Buscame sentencias sobre indemnización agravada por despido sin causa"',
+		tools: ["search_sentencias", "get_sentencia_text"],
 	},
 ];
 
@@ -114,6 +139,8 @@ interface Step {
 	num: number;
 	title: string;
 	body: string;
+	/** Camino alternativo (se muestra debajo del body). */
+	alt?: string;
 }
 
 const buildSteps = (priceLabel: string | null): Step[] => [
@@ -124,18 +151,14 @@ const buildSteps = (priceLabel: string | null): Step[] => [
 	},
 	{
 		num: 2,
-		title: "Abrí Claude.ai → Settings → Connectors",
-		body: "Necesitás un plan Pro/Team de Claude.ai (los planes Free no soportan custom connectors). Andá a Settings (avatar arriba a la derecha) → Connectors en la sidebar izquierda → 'Add custom connector'.",
+		title: "Agregá Law Analytics en Claude",
+		body: "En Claude: Configuración → Conectores → Explorar conectores → buscá \"Law Analytics\" → Conectar. Los conectores están disponibles según tu plan de Claude.",
+		alt: `Alternativa: Configuración → Conectores → Agregar conector personalizado. Nombre: "Law Analytics". URL: ${MCP_CONNECTOR_URL}.`,
 	},
 	{
 		num: 3,
-		title: "Pegá la URL del servidor MCP",
-		body: `Server URL: ${MCP_SERVER_URL}. Nombre: "Law Analytics" (o el que quieras). Click "Add".`,
-	},
-	{
-		num: 4,
 		title: "Autorizá la conexión con tu cuenta",
-		body: "Claude.ai te va a redirigir a lawanalytics.app/oauth/login. Iniciá sesión con tu cuenta habitual, revisá los permisos en la pantalla de autorización y aceptá. Listo: las herramientas de Law||Analytics quedan disponibles en cualquier chat de Claude.",
+		body: "Claude te va a redirigir a lawanalytics.app/oauth/login. Iniciá sesión con tu cuenta habitual, revisá los permisos en la pantalla de autorización y aceptá. Desde ese momento las herramientas de Law||Analytics quedan disponibles en tus chats de Claude.",
 	},
 ];
 
@@ -420,6 +443,13 @@ const ClaudeAiLandingPage = () => {
 												>
 													{uc.example}
 												</Typography>
+												<Typography
+													variant="caption"
+													color="text.secondary"
+													sx={{ display: "block", mt: 1, fontFamily: "monospace", fontSize: 11, wordBreak: "break-word" }}
+												>
+													{uc.tools.join(" · ")}
+												</Typography>
 											</Box>
 										</Stack>
 									</CardContent>
@@ -432,6 +462,13 @@ const ClaudeAiLandingPage = () => {
 
 				<Divider sx={{ my: 6 }} />
 
+				{/* Requisitos */}
+				<FadeInWhenVisible>
+					<McpRequirementsSection client="claude" priceLabel={cta.priceLabel} />
+				</FadeInWhenVisible>
+
+				<Divider sx={{ my: 6 }} />
+
 				{/* Steps */}
 				<FadeInWhenVisible>
 				<Box sx={{ mb: 8 }} id="como-funciona">
@@ -439,7 +476,7 @@ const ClaudeAiLandingPage = () => {
 						Cómo conectarlo
 					</Typography>
 					<Typography variant="body1" color="text.secondary" sx={{ textAlign: "center", mb: 4 }}>
-						4 pasos. Demora menos de 2 minutos.
+						{steps.length} pasos. Demora menos de 2 minutos.
 					</Typography>
 					<Stack spacing={2}>
 						{steps.map((s) => (
@@ -469,6 +506,11 @@ const ClaudeAiLandingPage = () => {
 											<Typography variant="body2" color="text.secondary">
 												{s.body}
 											</Typography>
+											{s.alt && (
+												<Typography variant="body2" color="text.secondary" sx={{ mt: 1, wordBreak: "break-word" }}>
+													{s.alt}
+												</Typography>
+											)}
 										</Box>
 									</Stack>
 								</CardContent>
@@ -476,6 +518,13 @@ const ClaudeAiLandingPage = () => {
 						))}
 					</Stack>
 				</Box>
+				</FadeInWhenVisible>
+
+				<Divider sx={{ my: 6 }} />
+
+				{/* Herramientas */}
+				<FadeInWhenVisible>
+					<McpToolsSection />
 				</FadeInWhenVisible>
 
 				<Divider sx={{ my: 6 }} />
@@ -583,6 +632,13 @@ const ClaudeAiLandingPage = () => {
 
 				<Divider sx={{ my: 6 }} />
 
+				{/* Soporte */}
+				<FadeInWhenVisible>
+					<McpSupportSection />
+				</FadeInWhenVisible>
+
+				<Divider sx={{ my: 6 }} />
+
 				{/* CTA final */}
 				<FadeInWhenVisible>
 				<Box sx={{ textAlign: "center", py: 6 }}>
@@ -608,11 +664,16 @@ const ClaudeAiLandingPage = () => {
 						</Button>
 					</Stack>
 					<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 3, maxWidth: 560, mx: "auto" }}>
-						{cta.footnote} Además necesitás un plan de {bothAiEnabled ? "Claude.ai o ChatGPT" : claudeAiEnabled ? "Claude.ai" : "ChatGPT"} que
-						permita conectores personalizados.
+						{cta.footnote} Además necesitás una cuenta de {bothAiEnabled ? "Claude o ChatGPT" : claudeAiEnabled ? "Claude" : "ChatGPT"}; la
+						disponibilidad de los conectores depende de tu plan.
 					</Typography>
 				</Box>
 				</FadeInWhenVisible>
+
+				<Divider sx={{ my: 6 }} />
+
+				{/* Resumen en inglés para revisores del directorio de conectores */}
+				<McpReviewerSummary client="claude" />
 			</Container>
 
 			{/* SupportModal — "Solicitar acceso beta" (beta cerrada). Diálogos del alta del add-on. */}

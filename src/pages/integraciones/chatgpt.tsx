@@ -38,7 +38,9 @@ import { alpha } from "@mui/material/styles";
 import {
 	ArrowDown2,
 	ArrowRight2,
+	Calendar,
 	DocumentText,
+	DocumentText1,
 	Folder,
 	Lock1,
 	Message,
@@ -58,14 +60,19 @@ import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 import useMcpAccess from "hooks/useMcpAccess";
 import useMcpLandingCta from "hooks/useMcpLandingCta";
 import McpConnectGuide from "sections/apps/profiles/account/McpConnectGuide";
+import {
+	MCP_CONNECTOR_URL,
+	McpRequirementsSection,
+	McpReviewerSummary,
+	McpSupportSection,
+	McpToolsSection,
+} from "sections/mcp/McpPublicDocs";
 
 // tracking
 import { pushGTMEvent } from "utils/gtm";
 import { PRIVACY_CONNECTORS_URL } from "utils/mcpLegal";
 
 const BRAND_BLUE = "#3A7BFF";
-
-const MCP_SERVER_URL = "https://mcp.lawanalytics.app";
 
 // Subject EXACTO (matchea subjectOptions en SupportModal.tsx — si lo renombrás,
 // actualizar acá también).
@@ -75,7 +82,7 @@ const BETA_REQUEST_LOCKED_HEADER = `Tipo: Solicitud de acceso beta — Conector 
 Origen: /integraciones/chatgpt
 Pre-requisitos del solicitante:
   • Cuenta activa en lawanalytics.app
-  • Plan Plus/Team/Enterprise en ChatGPT (necesario para custom connectors / apps)
+  • Cuenta de ChatGPT con un plan que admita conectores
 
 El usuario solicita acceso a la beta cerrada del conector MCP para ChatGPT. Una vez aprobado:
 1. Activar grant manual en User.featureGrants.mcp_access = true (admin → Feature Grants)
@@ -85,6 +92,8 @@ interface UseCase {
 	icon: React.ReactNode;
 	title: string;
 	example: string;
+	/** Herramientas MCP que suele usar el asistente para responder (nombres de la-mcp-server). */
+	tools: string[];
 }
 
 const USE_CASES: UseCase[] = [
@@ -92,21 +101,37 @@ const USE_CASES: UseCase[] = [
 		icon: <SearchNormal1 size={24} color={BRAND_BLUE} />,
 		title: "Buscar tus expedientes",
 		example: '"Buscame todos los casos de Pérez c/ Banco Nación"',
+		tools: ["search_folders"],
 	},
 	{
 		icon: <DocumentText size={24} color={BRAND_BLUE} />,
 		title: "Resumir movimientos recientes",
 		example: '"¿Qué pasó esta semana en mi causa de laboral con Acme S.A.?"',
+		tools: ["search_folders", "list_folder_movements"],
+	},
+	{
+		icon: <Calendar size={24} color={BRAND_BLUE} />,
+		title: "Revisar tu agenda y vencimientos",
+		example: '"¿Qué audiencias, tareas y vencimientos tengo en los próximos 7 días?"',
+		tools: ["get_upcoming_agenda"],
+	},
+	{
+		icon: <DocumentText1 size={24} color={BRAND_BLUE} />,
+		title: "Leer el texto de un movimiento",
+		example: '"Leé la última resolución de la causa Pérez c/ Banco Nación y explicame qué ordena"',
+		tools: ["list_folder_movements", "read_movement_text"],
 	},
 	{
 		icon: <Folder size={24} color={BRAND_BLUE} />,
 		title: "Consultar detalle de un caso",
 		example: '"Mostrame el detalle del folder Onildo — partes, juzgado, últimos escritos"',
+		tools: ["get_folder_detail"],
 	},
 	{
 		icon: <Star1 size={24} color={BRAND_BLUE} />,
 		title: "Buscar jurisprudencia",
 		example: '"Buscame sentencias sobre indemnización agravada por despido sin causa"',
+		tools: ["search_sentencias", "get_sentencia_text"],
 	},
 ];
 
@@ -124,13 +149,13 @@ const buildSteps = (priceLabel: string | null): Step[] => [
 	},
 	{
 		num: 2,
-		title: "Abrí ChatGPT → Settings → Apps & Connectors",
-		body: "Necesitás un plan Plus, Team o Enterprise de ChatGPT (el plan Free no soporta custom connectors). Andá a Settings → Apps & Connectors → 'Add connector'.",
+		title: "Abrí ChatGPT → Configuración → Apps y conectores",
+		body: "Andá a Configuración → Apps y conectores → Crear. La posibilidad de agregar conectores depende de tu plan de ChatGPT.",
 	},
 	{
 		num: 3,
 		title: "Pegá la URL del servidor MCP",
-		body: `Server URL: ${MCP_SERVER_URL}. Nombre: "Law Analytics" (o el que prefieras). Confirmá.`,
+		body: `URL del servidor: ${MCP_CONNECTOR_URL}. Nombre: "Law Analytics" (o el que prefieras). Confirmá.`,
 	},
 	{
 		num: 4,
@@ -174,7 +199,7 @@ const FAQ: FaqItem[] = [
 	},
 	{
 		q: "¿Qué plan de ChatGPT necesito?",
-		a: "Plus, Team o Enterprise — el plan Free de ChatGPT no soporta custom connectors / apps externos. Una vez conectado, podés usarlo en cualquier chat sin restricciones de tipo de modelo.",
+		a: "Depende de tu plan de ChatGPT: no todos permiten agregar conectores propios. Revisá en ChatGPT → Configuración → Apps y conectores si tu cuenta te deja crear uno.",
 	},
 	{
 		q: "¿Tiene costo extra del lado de lawanalytics.app?",
@@ -404,6 +429,13 @@ const ChatGptLandingPage = () => {
 												>
 													{uc.example}
 												</Typography>
+												<Typography
+													variant="caption"
+													color="text.secondary"
+													sx={{ display: "block", mt: 1, fontFamily: "monospace", fontSize: 11, wordBreak: "break-word" }}
+												>
+													{uc.tools.join(" · ")}
+												</Typography>
 											</Box>
 										</Stack>
 									</CardContent>
@@ -416,6 +448,13 @@ const ChatGptLandingPage = () => {
 
 				<Divider sx={{ my: 6 }} />
 
+				{/* Requisitos */}
+				<FadeInWhenVisible>
+					<McpRequirementsSection client="chatgpt" priceLabel={cta.priceLabel} />
+				</FadeInWhenVisible>
+
+				<Divider sx={{ my: 6 }} />
+
 				{/* Steps */}
 				<FadeInWhenVisible>
 				<Box sx={{ mb: 8 }} id="como-funciona">
@@ -423,7 +462,7 @@ const ChatGptLandingPage = () => {
 						Cómo conectarlo
 					</Typography>
 					<Typography variant="body1" color="text.secondary" sx={{ textAlign: "center", mb: 4 }}>
-						4 pasos. Demora menos de 2 minutos.
+						{steps.length} pasos. Demora menos de 2 minutos.
 					</Typography>
 					<Stack spacing={2}>
 						{steps.map((s) => (
@@ -460,6 +499,13 @@ const ChatGptLandingPage = () => {
 						))}
 					</Stack>
 				</Box>
+				</FadeInWhenVisible>
+
+				<Divider sx={{ my: 6 }} />
+
+				{/* Herramientas */}
+				<FadeInWhenVisible>
+					<McpToolsSection />
 				</FadeInWhenVisible>
 
 				<Divider sx={{ my: 6 }} />
@@ -567,6 +613,13 @@ const ChatGptLandingPage = () => {
 
 				<Divider sx={{ my: 6 }} />
 
+				{/* Soporte */}
+				<FadeInWhenVisible>
+					<McpSupportSection />
+				</FadeInWhenVisible>
+
+				<Divider sx={{ my: 6 }} />
+
 				{/* CTA final */}
 				<FadeInWhenVisible>
 				<Box sx={{ textAlign: "center", py: 6 }}>
@@ -592,10 +645,15 @@ const ChatGptLandingPage = () => {
 						</Button>
 					</Stack>
 					<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 3, maxWidth: 560, mx: "auto" }}>
-						{cta.footnote} Además necesitás un plan Plus, Team o Enterprise de ChatGPT.
+						{cta.footnote} Además necesitás una cuenta de ChatGPT; la posibilidad de agregar conectores depende de tu plan.
 					</Typography>
 				</Box>
 				</FadeInWhenVisible>
+
+				<Divider sx={{ my: 6 }} />
+
+				{/* Resumen en inglés para revisores */}
+				<McpReviewerSummary client="chatgpt" />
 			</Container>
 
 			{/* SupportModal — "Solicitar acceso beta" (beta cerrada). Diálogos del alta del add-on. */}
