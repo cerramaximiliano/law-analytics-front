@@ -13,7 +13,7 @@ import {
 	Typography,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { Buildings2, InfoCircle, Link1, People } from "iconsax-react";
+import { Buildings2, Calendar, InfoCircle, Link1, People } from "iconsax-react";
 import { enqueueSnackbar } from "notistack";
 
 // project-imports
@@ -21,6 +21,7 @@ import MainCard from "components/MainCard";
 import PjnAccountConnect from "sections/apps/folders/step-components/PjnAccountConnect";
 import ScbaAccountConnect from "sections/apps/folders/step-components/ScbaAccountConnect";
 import MevAccountConnect from "sections/apps/profiles/account/MevAccountConnect";
+import PlazosAutomaticosConfig from "sections/apps/profiles/account/PlazosAutomaticosConfig";
 import AiAssistantsView from "sections/mcp/AiAssistantsView";
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
 import ChatGptLogo from "components/icons/ChatGptLogo";
@@ -493,6 +494,17 @@ const TabPjnIntegration = () => {
 					)}
 				</SectionCard>
 			</Grid>
+
+					<Grid item xs={12}>
+						<SectionCard
+							eyebrow="Plazos · Nación"
+							title="Vencimientos automáticos"
+							subtitle="Te proponemos el vencimiento de cada cédula que llega a tus causas, con su fundamento."
+							icon={<Calendar size={16} variant="Bulk" />}
+						>
+							<PlazosAutomaticosConfig />
+						</SectionCard>
+					</Grid>
 			</Grid>
 			) : view === "scba" ? (
 				<Grid container spacing={2.5}>

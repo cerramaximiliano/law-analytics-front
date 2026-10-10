@@ -38,6 +38,8 @@ import { useMemo, useState } from "react";
 import { createGoogleEvent, updateGoogleEvent } from "store/reducers/googleCalendar";
 import googleCalendarService from "services/googleCalendarService";
 import { useTeam } from "contexts/TeamContext";
+import SugerenciaPlazoFeedback from "sections/apps/calendar/SugerenciaPlazoFeedback";
+import { getEventsByUserId } from "store/reducers/events";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 const getInitialValues = (event: FormikValues | null, range: DateRange | null, defaultType?: string) => {
@@ -111,6 +113,7 @@ const AddEventFrom = ({
 	const errorColor = theme.palette.error.main;
 	const isCreating = useMemo(() => event == null || Object.keys(event).length === 0, [event]);
 	const { isConnected: isGoogleConnected } = useSelector((state: any) => state.googleCalendar);
+	const authUserId = useSelector((state: any) => state.auth?.user?._id);
 	const [syncWithGoogle, setSyncWithGoogle] = useState(isGoogleConnected);
 	const { getTeamIdForResource, getRequestHeaders } = useTeam();
 
@@ -423,6 +426,16 @@ const AddEventFrom = ({
 							gap: 2,
 						}}
 					>
+						{/* Sugerencia automática de vencimiento (plazos automáticos, beta) */}
+						{event?.origen === "plazos-automaticos" && (event?._id || event?.id) && (
+							<SugerenciaPlazoFeedback
+								eventId={String(event._id || event.id)}
+								onIncorrecto={() => {
+									onCancel();
+									if (authUserId) dispatch(getEventsByUserId(authUserId));
+								}}
+							/>
+						)}
 						{/* Título */}
 						<Stack spacing={0.5}>
 							<InputLabel htmlFor="event-title" sx={eyebrowLabelSx}>

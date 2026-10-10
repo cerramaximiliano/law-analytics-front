@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import SugerenciaPlazoFeedback from "sections/apps/calendar/SugerenciaPlazoFeedback";
 import {
 	Box,
 	Paper,
@@ -2568,6 +2569,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 									<Typography variant="body1">{formatDate(viewNotificationDetails.dateExpiration)}</Typography>
 								</Box>
 							)}
+							{viewNotificationDetails.user === "plazos-automaticos" && viewNotificationDetails._id && (
+								<SugerenciaPlazoFeedback notificationId={String(viewNotificationDetails._id)} />
+							)}
 						</Stack>
 						<Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
 							<Button onClick={() => setViewNotificationDetails(null)}>Cerrar</Button>
@@ -2665,6 +2669,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 									</Typography>
 									<Typography variant="body1">{viewEventDetails.description}</Typography>
 								</Box>
+							)}
+							{viewEventDetails.origen === "plazos-automaticos" && viewEventDetails._id && (
+								<SugerenciaPlazoFeedback eventId={String(viewEventDetails._id)} onIncorrecto={() => setViewEventDetails(null)} />
 							)}
 							{viewEventDetails.allDay && <Chip label="Evento de todo el día" color="info" variant="outlined" />}
 						</Stack>

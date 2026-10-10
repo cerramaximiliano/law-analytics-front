@@ -1,0 +1,45 @@
+import axios from "utils/axios";
+
+// Plazos automáticos (beta, 2026-10): sugerencias de vencimiento a partir de las cédulas de las
+// causas del PJN. Backend: law-analytics-server /api/plazos-automaticos.
+
+export interface PlazosAutomaticosConfig {
+	activo: boolean;
+	cuit: string | null;
+	activadoEn: string | null;
+}
+
+export const getPlazosAutomaticosConfig = async (): Promise<PlazosAutomaticosConfig> => {
+	const { data } = await axios.get("/api/plazos-automaticos/config");
+	return data.data;
+};
+
+export const savePlazosAutomaticosConfig = async (cambios: {
+	activo?: boolean;
+	cuit?: string | null;
+}): Promise<PlazosAutomaticosConfig> => {
+	const { data } = await axios.put("/api/plazos-automaticos/config", cambios);
+	return data.data;
+};
+
+export const enviarFeedbackPlazo = async (body: {
+	eventId?: string;
+	notificationId?: string;
+	correcto: boolean;
+	comentario?: string;
+}): Promise<{ ok: boolean; eventoArchivado: boolean }> => {
+	const { data } = await axios.post("/api/plazos-automaticos/feedback", body);
+	return data.data;
+};
+
+// Dígito verificador de CUIT/CUIL (módulo 11), igual que el backend.
+export const cuitValido = (cuit: string): boolean => {
+	const c = String(cuit || "").replace(/\D/g, "");
+	if (c.length !== 11) return false;
+	const pesos = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+	const suma = pesos.reduce((acc, p, i) => acc + p * Number(c[i]), 0);
+	let dv = 11 - (suma % 11);
+	if (dv === 11) dv = 0;
+	if (dv === 10) return false;
+	return dv === Number(c[10]);
+};
