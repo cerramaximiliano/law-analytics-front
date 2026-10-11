@@ -55,7 +55,8 @@ const PlazosAutomaticosConfig = () => {
 			<Typography sx={{ fontSize: "0.82rem", color: "text.secondary" }}>
 				Cuando llega una cédula electrónica a una de tus causas del PJN, calculamos el vencimiento (días hábiles, feriados y ferias) y te lo
 				proponemos en el calendario con su fundamento. Es una sugerencia: verificala siempre. Solo proponemos los plazos que la cédula
-				indica o que surgen de una regla revisada.
+				indica o que surgen de una regla revisada. Si tenés tu cuenta del PJN vinculada, reconocemos solas las cédulas que llegan a tu
+				bandeja; el CUIT sirve para las demás.
 			</Typography>
 			<Box>
 				<Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "flex-start" }}>
@@ -66,7 +67,9 @@ const PlazosAutomaticosConfig = () => {
 						value={cuit}
 						onChange={(e) => setCuit(e.target.value)}
 						error={cuitError}
-						helperText={cuitError ? "El CUIT no es válido" : "Para saber qué cédulas están dirigidas a vos (y no a la otra parte)."}
+						helperText={
+							cuitError ? "El CUIT no es válido" : "Para reconocer las cédulas dirigidas a vos que no llegan por tu cuenta del PJN."
+						}
 						sx={{ maxWidth: 320 }}
 					/>
 					<Button
@@ -80,7 +83,7 @@ const PlazosAutomaticosConfig = () => {
 				</Stack>
 				{config.activo && !config.cuit && (
 					<Typography sx={{ fontSize: "0.8rem", color: "warning.dark", mt: 0.5 }}>
-						Sin CUIT solo podemos avisarte que llegó una cédula con plazo, sin agregarla al calendario.
+						Sin CUIT, las cédulas que no llegan a tu bandeja del PJN quedan como aviso, sin agregarse al calendario.
 					</Typography>
 				)}
 			</Box>
