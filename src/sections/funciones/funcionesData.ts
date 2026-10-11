@@ -73,16 +73,18 @@ export const FUNCIONES: Funcion[] = [
 		eyebrow: "Vencimientos",
 		titulo: "Los plazos dejan de depender de tu memoria",
 		bajada:
-			"Cada causa proyecta sus vencimientos y los vuelca en un calendario que podés sincronizar con el de Google. Los feriados judiciales y las ferias ya están contemplados.",
+			"Cuando llega una cédula electrónica a una causa del PJN (civil, comercial, trabajo y seguridad social), calculamos el vencimiento (días hábiles, feriados, ferias judiciales y plazo de gracia) y te lo proponemos en el calendario, con su fundamento, para que lo confirmes. Se sincroniza con Google Calendar.",
 		icono: Calendar,
 		puntos: [
 			"Sincronización con Google Calendar en los dos sentidos",
+			"Si vinculás tu usuario del PJN, reconocemos solas las cédulas de tu bandeja",
+			"Si un vencimiento no es correcto, lo marcás y sale del calendario",
 			"Recordatorios configurables por tipo de plazo",
 			"Vista por causa, por responsable o por semana",
 		],
 		datos: [
 			{ valor: "Dos vías", etiqueta: "sincronización con Google Calendar" },
-			{ valor: "Automático", etiqueta: "cálculo de plazos y ferias" },
+			{ valor: "Desde la cédula", etiqueta: "vencimiento propuesto, para que lo confirmes" },
 		],
 	},
 	{
