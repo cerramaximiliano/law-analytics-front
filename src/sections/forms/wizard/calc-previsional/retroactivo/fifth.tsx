@@ -22,6 +22,7 @@ import NumberField from "components/UI/NumberField";
 import { useFormikContext } from "formik";
 import { useSelector, dispatch } from "store";
 import { getInterestRates } from "store/reducers/interestRates";
+import { OPCIONES_BONO, TRATAMIENTOS_BONO } from "services/previsionalService";
 
 interface FifthFormProps {
 	formField: any;
@@ -93,6 +94,43 @@ export default function FifthForm({ formField }: FifthFormProps) {
 				control={<Checkbox checked={values.sac !== false} onChange={(e) => setFieldValue("sac", e.target.checked)} />}
 				label="Incluir las diferencias de SAC (junio y diciembre, proporcional en el semestre de inicio)"
 			/>
+
+			<Typography variant="h6" sx={{ mt: 3, mb: 0.5 }}>
+				Bono previsional
+			</Typography>
+			<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+				Sumas fijas que el Poder Ejecutivo otorgó algunos meses (subsidios desde 12/2019, refuerzos 2022–23, ayudas y bonos extraordinarios
+				desde 2024). Cada decreto da el monto completo a quien cobra hasta un umbral y completa hasta umbral + monto por encima. No integran
+				el haber ni se mueven con la movilidad.
+			</Typography>
+			<Grid container spacing={2} sx={{ maxWidth: 720 }}>
+				<Grid item xs={12} sm={6}>
+					<InputLabel sx={{ mb: 0.5 }}>Contabilizar el bono</InputLabel>
+					<FormControl fullWidth>
+						<Select value={values.bono || "no"} onChange={(e) => setFieldValue("bono", e.target.value)}>
+							{OPCIONES_BONO.map((o) => (
+								<MenuItem key={o.value} value={o.value}>
+									{o.label}
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
+				</Grid>
+				{values.bono && values.bono !== "no" && (
+					<Grid item xs={12} sm={6}>
+						<InputLabel sx={{ mb: 0.5 }}>Cómo se liquida</InputLabel>
+						<FormControl fullWidth>
+							<Select value={values.bonoTratamiento || "decreto"} onChange={(e) => setFieldValue("bonoTratamiento", e.target.value)}>
+								{TRATAMIENTOS_BONO.map((o) => (
+									<MenuItem key={o.value} value={o.value}>
+										{o.label}
+									</MenuItem>
+								))}
+							</Select>
+						</FormControl>
+					</Grid>
+				)}
+			</Grid>
 
 			<Typography variant="h6" sx={{ mt: 3, mb: 0.5 }}>
 				Pagos a cuenta

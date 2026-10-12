@@ -49,6 +49,8 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 	const [guardado, setGuardado] = useState(false);
 
 	const conTope = r.filas.some((f) => f.quitaTope);
+	const conBono = r.filas.some((f) => f.bonoPercibido || f.bonoReclamado);
+	const bonoAparte = conBono && r.bono?.tratamiento !== "integrado";
 	const reclamante = values.reclamante?.startsWith("__CAUSA_VINCULADA__") ? values.folderName || "" : values.reclamante;
 
 	// formato de `calculationResult` que leen el listado de cálculos, el PDF y las variables calculo.*
@@ -62,6 +64,16 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 					value: `${fecha(r.desde)} – ${fecha(r.filas[r.filas.length - 1] && `${r.filas[r.filas.length - 1].periodo}-01`)}`,
 				},
 				{ key: "Fecha de cierre", value: fecha(r.consolidacion) },
+				...(r.bono && (r.bono.percibido || r.bono.reclamado)
+					? [
+							{
+								key: "Bono previsional",
+								value: `sobre el haber ${[r.bono.percibido && "percibido", r.bono.reclamado && "reclamado"]
+									.filter(Boolean)
+									.join(" y el ")}, ${r.bono.tratamiento === "integrado" ? "integrado a la diferencia" : "aparte, sin SAC ni obra social"}`,
+							},
+					  ]
+					: []),
 			],
 			indemnizacion: [
 				{ key: "Capital (diferencias netas)", value: r.totales.capital },
@@ -225,8 +237,11 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 								<TableCell align="right">Reclamado</TableCell>
 								<TableCell align="right">Diferencia</TableCell>
 								{conTope && <TableCell align="right">Quita tope</TableCell>}
+								{conBono && <TableCell align="right">Bono percibido</TableCell>}
+								{conBono && <TableCell align="right">Bono reclamado</TableCell>}
 								<TableCell align="right">SAC</TableCell>
 								<TableCell align="right">Obra social</TableCell>
+								{bonoAparte && <TableCell align="right">Diferencia de bono</TableCell>}
 								<TableCell align="right">Capital</TableCell>
 								<TableCell align="right">Interés</TableCell>
 							</TableRow>
@@ -249,12 +264,27 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 											{f.quitaTope ? money(f.quitaTope) : "—"}
 										</TableCell>
 									)}
+									{conBono && (
+										<TableCell align="right" sx={num}>
+											{f.bonoPercibido ? money(f.bonoPercibido) : "—"}
+										</TableCell>
+									)}
+									{conBono && (
+										<TableCell align="right" sx={num}>
+											{f.bonoReclamado ? money(f.bonoReclamado) : "—"}
+										</TableCell>
+									)}
 									<TableCell align="right" sx={num}>
 										{f.sac ? money(f.sac) : "—"}
 									</TableCell>
 									<TableCell align="right" sx={num}>
 										{money(f.obraSocial)}
 									</TableCell>
+									{bonoAparte && (
+										<TableCell align="right" sx={num}>
+											{f.diferenciaBono ? money(f.diferenciaBono) : "—"}
+										</TableCell>
+									)}
 									<TableCell align="right" sx={num}>
 										{money(f.capital)}
 									</TableCell>

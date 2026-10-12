@@ -26,6 +26,21 @@ export const PISOS_PERCIBIDO: { value: PisoPercibido; label: string }[] = [
 	{ value: "minimo82", label: "Cobra al menos el haber mínimo y el suplemento al 82 % del SMVM (ley 27.426, 30 años de aportes)" },
 ];
 
+export type OpcionBono = "no" | "percibido" | "reclamado" | "ambos";
+export type TratamientoBono = "decreto" | "integrado";
+
+export const OPCIONES_BONO: { value: OpcionBono; label: string }[] = [
+	{ value: "no", label: "No contabilizar" },
+	{ value: "percibido", label: "Sobre el haber percibido" },
+	{ value: "ambos", label: "Sobre el percibido y el reclamado" },
+	{ value: "reclamado", label: "Sobre el haber reclamado" },
+];
+
+export const TRATAMIENTOS_BONO: { value: TratamientoBono; label: string }[] = [
+	{ value: "decreto", label: "Aparte, sin SAC ni obra social (como dicen los decretos)" },
+	{ value: "integrado", label: "Integrado a la diferencia, con SAC y obra social" },
+];
+
 export interface RetroactivoInput {
 	desde: string;
 	hasta?: string;
@@ -48,6 +63,7 @@ export interface RetroactivoInput {
 	obraSocialPct?: number;
 	tasa?: string;
 	pagos?: { fecha: string; importe: number }[];
+	bono?: "no" | { percibido: boolean; reclamado: boolean; tratamiento: TratamientoBono };
 }
 
 export interface FilaRetroactivo {
@@ -65,6 +81,9 @@ export interface FilaRetroactivo {
 	tramo: number;
 	coefPercibido?: number;
 	coefReclamado?: number;
+	bonoPercibido?: number;
+	bonoReclamado?: number;
+	diferenciaBono?: number;
 }
 
 export interface RetroactivoResultado {
@@ -72,6 +91,7 @@ export interface RetroactivoResultado {
 	desde: string;
 	consolidacion: string;
 	tasa: { tipo: string; descripcion?: string; metodo: string };
+	bono?: { percibido: boolean; reclamado: boolean; tratamiento: TratamientoBono };
 	filas: FilaRetroactivo[];
 	pagos: { fecha: string; importe: number }[];
 	tramos: {
@@ -140,6 +160,14 @@ export function armarInputRetroactivo(values: any): RetroactivoInput {
 		pagos: (values.pagosACuenta || [])
 			.filter((p: PagoACuenta) => p && p.fecha && Number(p.importe) > 0)
 			.map((p: PagoACuenta) => ({ fecha: aISO(p.fecha), importe: Number(p.importe) })),
+		bono:
+			values.bono && values.bono !== "no"
+				? {
+						percibido: values.bono === "percibido" || values.bono === "ambos",
+						reclamado: values.bono === "reclamado" || values.bono === "ambos",
+						tratamiento: values.bonoTratamiento === "integrado" ? "integrado" : "decreto",
+				  }
+				: "no",
 	};
 }
 

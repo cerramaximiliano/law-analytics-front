@@ -36,6 +36,8 @@ const {
 		topePorcentaje,
 		sac,
 		pagosACuenta,
+		bono,
+		bonoTratamiento,
 	},
 } = previsionalFormModel;
 
@@ -74,6 +76,8 @@ const formInitialValues = {
 	[topePorcentaje.name]: "",
 	[sac.name]: true,
 	[pagosACuenta.name]: [],
+	[bono.name]: "no",
+	[bonoTratamiento.name]: "decreto",
 };
 
 export default formInitialValues;
