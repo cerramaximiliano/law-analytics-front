@@ -6,7 +6,14 @@ import axios from "utils/axios";
 export type CapitalizacionTramo = "none" | "monthly" | "quarterly" | "semiannual" | "annual";
 
 export type TramoTasaRequest =
-	| { desde: string; hasta: string; tasa: string; capitalizacion?: CapitalizacionTramo; comparativaCER?: boolean }
+	| {
+			desde: string;
+			hasta: string;
+			tasa: string;
+			capitalizacion?: CapitalizacionTramo;
+			primeraCapitalizacion?: string;
+			comparativaCER?: boolean;
+	  }
 	| {
 			desde: string;
 			hasta: string;

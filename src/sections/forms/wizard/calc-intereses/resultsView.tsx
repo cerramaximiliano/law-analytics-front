@@ -94,6 +94,7 @@ interface InterestSegment {
 	simpleRate?: number;
 	ratePeriod?: "daily" | "monthly" | "annual";
 	capitalizationFrequency?: "none" | "monthly" | "quarterly" | "semiannual" | "annual";
+	firstCapitalizationDate?: string;
 	// Comparativa CER (Ley 27.802): el efectivo del tramo se acota a [piso.monto, techo.monto]
 	cerComparisonEnabled?: boolean;
 	cerComparison?: {
@@ -887,6 +888,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 									simpleRate: seg.simpleRate,
 									ratePeriod: seg.ratePeriod,
 									capitalizationFrequency: seg.capitalizationFrequency,
+									firstCapitalizationDate: seg.firstCapitalizationDate,
 									// Comparativa CER (Ley 27.802) — se persiste para que al releer
 									// el cómputo, getEffectiveInterest() pueda recalcular el clamp.
 									cerComparisonEnabled: seg.cerComparisonEnabled,

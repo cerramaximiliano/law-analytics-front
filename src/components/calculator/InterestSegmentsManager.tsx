@@ -80,6 +80,9 @@ export interface InterestSegment {
 	simpleRate?: number;
 	ratePeriod?: RatePeriod;
 	capitalizationFrequency?: CapitalizationFrequency;
+	// Primera capitalización (DD/MM/YYYY), como en CPACF: p. ej. la notificación de la demanda.
+	// Después se capitaliza cada 365 días. Sin fecha, cada 365 días desde el inicio del tramo.
+	firstCapitalizationDate?: string;
 	// Activa la comparativa CER (techo/piso Ley 27.802) para este tramo.
 	// Solo tiene efecto cuando rate ∈ RATES_WITH_CER_COMPARISON.
 	cerComparisonEnabled?: boolean;
@@ -136,12 +139,13 @@ const RATE_PERIODS: { value: RatePeriod; label: string; daysPerPeriod: number }[
 ];
 
 // Opciones de capitalización para interés simple
-const CAPITALIZATION_OPTIONS: { value: CapitalizationFrequency; label: string; months: number }[] = [
-	{ value: "none", label: "Sin capitalización", months: 0 },
-	{ value: "monthly", label: "Mensual", months: 1 },
-	{ value: "quarterly", label: "Trimestral", months: 3 },
-	{ value: "semiannual", label: "Semestral", months: 6 },
-	{ value: "annual", label: "Anual", months: 12 },
+// Períodos en días corridos, como las calculadoras del CPACF y el motor del hub (anual = 365 días).
+const CAPITALIZATION_OPTIONS: { value: CapitalizationFrequency; label: string; days: number }[] = [
+	{ value: "none", label: "Sin capitalización", days: 0 },
+	{ value: "monthly", label: "Mensual", days: 30 },
+	{ value: "quarterly", label: "Trimestral", days: 90 },
+	{ value: "semiannual", label: "Semestral", days: 180 },
+	{ value: "annual", label: "Anual", days: 365 },
 ];
 
 // Helper para obtener días por período
@@ -180,7 +184,7 @@ const calculateSimpleInterest = (
 
 	// Con capitalización: calcular por períodos
 	const capOption = CAPITALIZATION_OPTIONS.find((c) => c.value === capitalizationFrequency);
-	const monthsPerPeriod = capOption?.months || 12;
+	const daysPerCapitalization = capOption?.days || 365;
 
 	let currentDate = start.clone();
 	let accumulatedCapital = capital;
@@ -189,7 +193,7 @@ const calculateSimpleInterest = (
 
 	while (currentDate.isBefore(end)) {
 		// Calcular fecha fin del período de capitalización
-		let periodEnd = currentDate.add(monthsPerPeriod, "month");
+		let periodEnd = currentDate.add(daysPerCapitalization, "day");
 
 		// Si el período excede la fecha final, usar la fecha final
 		if (periodEnd.isAfter(end)) {
@@ -435,6 +439,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 							hasta: segment.endDate,
 							tasa: segment.rate,
 							...(capitalizacion ? { capitalizacion } : {}),
+							...(capitalizacion && segment.firstCapitalizationDate ? { primeraCapitalizacion: segment.firstCapitalizationDate } : {}),
 							...(segment.cerComparisonEnabled && supportsCERComparison(segment.rate) ? { comparativaCER: true } : {}),
 						},
 					],
@@ -634,6 +639,10 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 				capitalizationFrequency:
 					isSimpleInterest || newSegment.capitalizationFrequency !== "none" ? newSegment.capitalizationFrequency : undefined,
 				cerComparisonEnabled: !isSimpleInterest && supportsCERComparison(newSegment.rate) ? !!newSegment.cerComparisonEnabled : undefined,
+				firstCapitalizationDate:
+					!isSimpleInterest && newSegment.capitalizationFrequency === "annual" && newSegment.firstCapitalizationDate
+						? newSegment.firstCapitalizationDate
+						: undefined,
 				cerComparison: "cerComparison" in result ? result.cerComparison : undefined,
 			};
 
@@ -1550,6 +1559,23 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 										</TextField>
 									</Grid>
 								)}
+								{isDailyRate(newSegment.rate) && newSegment.capitalizationFrequency === "annual" && (
+									<Grid item xs={12} sm={4}>
+										<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es" localeText={datePickerLocaleText}>
+											<DatePicker
+												label="Primera capitalización (opcional)"
+												value={newSegment.firstCapitalizationDate ? dayjs(newSegment.firstCapitalizationDate, "DD/MM/YYYY") : null}
+												onChange={(date: Dayjs | null) =>
+													setNewSegment({ ...newSegment, firstCapitalizationDate: date?.format("DD/MM/YYYY") || undefined })
+												}
+												format="DD/MM/YYYY"
+												minDate={newSegment.startDate ? dayjs(newSegment.startDate, "DD/MM/YYYY").add(1, "day") : undefined}
+												maxDate={newSegment.endDate ? dayjs(newSegment.endDate, "DD/MM/YYYY") : undefined}
+												slotProps={{ textField: { size: "small", fullWidth: true } }}
+											/>
+										</LocalizationProvider>
+									</Grid>
+								)}
 							</>
 						)}
 
@@ -1620,8 +1646,8 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 
 					{newSegment.interestType !== "simple" && newSegment.capitalizationFrequency === "annual" && (
 						<Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
-							Los intereses se capitalizan en cada aniversario del inicio del tramo. Si la sentencia capitaliza desde la notificación de la
-							demanda, empezá el tramo en esa fecha.
+							Los intereses se capitalizan cada 365 días (criterio de las calculadoras del CPACF), desde la primera capitalización indicada
+							(por ejemplo, la notificación de la demanda) o, si no la indicás, desde el inicio del tramo.
 						</Typography>
 					)}
 

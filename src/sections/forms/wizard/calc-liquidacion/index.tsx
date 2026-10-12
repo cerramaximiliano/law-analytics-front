@@ -80,6 +80,9 @@ export function segmentosATramos(segments: InterestSegment[]): TramoTasaRequest[
 						hasta: s.endDate,
 						tasa: s.rate,
 						...(s.capitalizationFrequency && s.capitalizationFrequency !== "none" ? { capitalizacion: s.capitalizationFrequency } : {}),
+						...(s.capitalizationFrequency && s.capitalizationFrequency !== "none" && s.firstCapitalizationDate
+							? { primeraCapitalizacion: s.firstCapitalizationDate }
+							: {}),
 						...(s.cerComparisonEnabled ? { comparativaCER: true } : {}),
 				  },
 		);
