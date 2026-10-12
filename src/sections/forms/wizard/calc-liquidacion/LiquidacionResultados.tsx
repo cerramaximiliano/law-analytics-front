@@ -159,6 +159,9 @@ const LiquidacionResultados = ({ resultado: r, input, segments, folderId, folder
 								<TableCell>
 									{t.tipo === "simple" ? `Tasa fija ${numero(t.tasaFija)} %` : tasasLabels[t.tasa] || t.tasa}
 									{t.capitalizacion && t.capitalizacion !== "none" ? " (capitalización anual)" : ""}
+									{t.comparativaCER?.disponible
+										? ` · tope art. 55 Ley 27.802 (${t.comparativaCER.criterio === "ipc" ? "IPC" : "CER"} + 3 %)`
+										: ""}
 								</TableCell>
 								<TableCell align="right">{money(t.capital)}</TableCell>
 								<TableCell align="right">{money(t.interesEfectivo)}</TableCell>

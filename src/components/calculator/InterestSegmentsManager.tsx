@@ -41,23 +41,52 @@ export type InterestType = "indexed" | "simple";
 export type RatePeriod = "daily" | "monthly" | "annual";
 export type CapitalizationFrequency = "none" | "monthly" | "quarterly" | "semiannual" | "annual";
 
-// Resultado de la comparativa CER (Ley 27.802 art.55(a), Notas BCRA):
-//   Techo: A = C * (CER_tm/CER_t0 * (1+0.03)^((tm-t0)/365) - 1)
-//   Piso:  S = 0.67 * Techo
+// Tope y piso del art. 55 de la Ley 27.802 (el nombre "CER" del tipo queda por compatibilidad con los
+// cálculos guardados). Dos criterios, calculados en el hub:
+//   ipc (por defecto): Techo = C × (IPC_final / IPC_inicial × (1 + 0,03 × días / 365) − 1) — texto legal,
+//        CNAT Sala II "Ferrero" (19/3/2026), calculadora 32 del CPACF.
+//   cer: Techo = C × (CER_tm / CER_t0 × 1,03^(días / 365) − 1) — calculadora del BCRA (Notas aclaratorias).
+//   Piso: 0,67 × Techo. Sin `criterio` (guardados antes del 12/10/2026) es CER.
+export type CriterioTopeArt55 = "ipc" | "cer";
 export interface CERComparison {
 	disponible: boolean;
+	criterio?: CriterioTopeArt55;
 	motivo?: string;
+	aviso?: string;
 	techo?: { factor: number; monto: number };
 	piso?: { factor: number; monto: number };
 	componentes?: {
-		cerInicial: number;
-		fechaCerInicial: string;
-		cerFinal: number;
-		fechaCerFinal: string;
+		cerInicial?: number;
+		fechaCerInicial?: string;
+		cerFinal?: number;
+		fechaCerFinal?: string;
+		ipcInicial?: number;
+		periodoInicial?: string;
+		ipcFinal?: number;
+		periodoFinal?: string;
 		diasCorridos: number;
 		tasaPura: number;
 	};
 }
+
+export const TOPE_ART55_OPCIONES: { value: CriterioTopeArt55; label: string }[] = [
+	{ value: "ipc", label: "IPC INDEC + 3 % simple (texto legal · CNAT Sala II · CPACF)" },
+	{ value: "cer", label: "CER + 3 % compuesto (calculadora del BCRA)" },
+];
+export const criterioTope = (cmp?: CERComparison): CriterioTopeArt55 => (cmp?.criterio === "ipc" ? "ipc" : "cer");
+export const etiquetaTope = (cmp?: CERComparison) => (criterioTope(cmp) === "ipc" ? "IPC + 3 %" : "CER + 3 %");
+const detalleTope = (cmp: CERComparison) => {
+	const c = cmp.componentes;
+	if (!c) return "";
+	if (criterioTope(cmp) === "ipc") {
+		return `IPC ${c.periodoInicial}: ${Number(c.ipcInicial).toFixed(4)} | IPC ${c.periodoFinal}: ${Number(c.ipcFinal).toFixed(4)} | ${
+			c.diasCorridos
+		} días | 3 % anual simple`;
+	}
+	return `CER ${dayjs(c.fechaCerInicial).format("DD/MM/YYYY")}: ${c.cerInicial} | CER ${dayjs(c.fechaCerFinal).format("DD/MM/YYYY")}: ${
+		c.cerFinal
+	} | ${c.diasCorridos} días | 3 % anual compuesto`;
+};
 
 // Constante exportada: tasas para las cuales aplica la comparativa CER (Ley 27.802 art.55(a)).
 // Por ahora solo tasaPasivaBCRA27802 según las Notas BCRA.
@@ -83,9 +112,11 @@ export interface InterestSegment {
 	// Primera capitalización (DD/MM/YYYY), como en CPACF: p. ej. la notificación de la demanda.
 	// Después se capitaliza cada 365 días. Sin fecha, cada 365 días desde el inicio del tramo.
 	firstCapitalizationDate?: string;
-	// Activa la comparativa CER (techo/piso Ley 27.802) para este tramo.
+	// Activa el tope y piso del art. 55 (Ley 27.802) para este tramo.
 	// Solo tiene efecto cuando rate ∈ RATES_WITH_CER_COMPARISON.
 	cerComparisonEnabled?: boolean;
+	// Índice del tope: "ipc" (por defecto) o "cer" (calculadora del BCRA).
+	topeCriterion?: CriterioTopeArt55;
 	// Resultado de la comparativa CER si se calculó. Cuando está disponible,
 	// el interés efectivo del tramo queda acotado a [piso.monto, techo.monto].
 	cerComparison?: CERComparison;
@@ -440,7 +471,9 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 							tasa: segment.rate,
 							...(capitalizacion ? { capitalizacion } : {}),
 							...(capitalizacion && segment.firstCapitalizationDate ? { primeraCapitalizacion: segment.firstCapitalizationDate } : {}),
-							...(segment.cerComparisonEnabled && supportsCERComparison(segment.rate) ? { comparativaCER: true } : {}),
+							...(segment.cerComparisonEnabled && supportsCERComparison(segment.rate)
+								? { comparativaCER: true, criterioTope: segment.topeCriterion || "ipc" }
+								: {}),
 						},
 					],
 				});
@@ -639,6 +672,10 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 				capitalizationFrequency:
 					isSimpleInterest || newSegment.capitalizationFrequency !== "none" ? newSegment.capitalizationFrequency : undefined,
 				cerComparisonEnabled: !isSimpleInterest && supportsCERComparison(newSegment.rate) ? !!newSegment.cerComparisonEnabled : undefined,
+				topeCriterion:
+					!isSimpleInterest && supportsCERComparison(newSegment.rate) && newSegment.cerComparisonEnabled
+						? newSegment.topeCriterion || "ipc"
+						: undefined,
 				firstCapitalizationDate:
 					!isSimpleInterest && newSegment.capitalizationFrequency === "annual" && newSegment.firstCapitalizationDate
 						? newSegment.firstCapitalizationDate
@@ -805,6 +842,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 								? editingSegment.capitalizationFrequency
 								: undefined,
 						cerComparisonEnabled: cerEnabled,
+						topeCriterion: cerEnabled ? editingSegment.topeCriterion || "ipc" : undefined,
 						// Si la tasa cambió y no soporta comparativa, limpiar el resultado.
 						cerComparison: cerEnabled === undefined ? undefined : result!.cerComparison ?? seg.cerComparison,
 					};
@@ -1179,10 +1217,28 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 																		}
 																		label={
 																			<Typography variant="caption" color="info.main" fontWeight={500}>
-																				Comparativa CER (Ley 27.802)
+																				Tope y piso art. 55 (Ley 27.802)
 																			</Typography>
 																		}
 																	/>
+																)}
+																{supportsCERComparison(editingSegment?.rate) && editingSegment?.cerComparisonEnabled && (
+																	<TextField
+																		select
+																		size="small"
+																		value={editingSegment?.topeCriterion || "ipc"}
+																		onChange={(e) =>
+																			setEditingSegment({ ...editingSegment, topeCriterion: e.target.value as CriterioTopeArt55 })
+																		}
+																		SelectProps={{ MenuProps: { disablePortal: false } }}
+																		sx={{ minWidth: 220 }}
+																	>
+																		{TOPE_ART55_OPCIONES.map((o) => (
+																			<MenuItem key={o.value} value={o.value}>
+																				<Typography variant="caption">{o.label}</Typography>
+																			</MenuItem>
+																		))}
+																	</TextField>
 																)}
 															</Stack>
 														)}
@@ -1293,7 +1349,13 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 												<TableCell />
 												<TableCell colSpan={6}>
 													<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-														<Chip size="small" label="Comparativa CER · Ley 27.802" color="info" variant="light" sx={{ borderRadius: 1 }} />
+														<Chip
+															size="small"
+															label={`Art. 55 Ley 27.802 · ${etiquetaTope(cmp)}`}
+															color="info"
+															variant="light"
+															sx={{ borderRadius: 1 }}
+														/>
 														{clampLabel ? (
 															<Chip
 																size="small"
@@ -1306,13 +1368,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 															<Chip size="small" label="Dentro del rango" color="success" variant="light" sx={{ borderRadius: 1 }} />
 														)}
 														{cmp.componentes && (
-															<Tooltip
-																title={`CER ${dayjs(cmp.componentes.fechaCerInicial).format("DD/MM/YYYY")}: ${
-																	cmp.componentes.cerInicial
-																} | CER ${dayjs(cmp.componentes.fechaCerFinal).format("DD/MM/YYYY")}: ${cmp.componentes.cerFinal} | ${
-																	cmp.componentes.diasCorridos
-																} días | tasa pura ${(cmp.componentes.tasaPura * 100).toFixed(0)}%`}
-															>
+															<Tooltip title={detalleTope(cmp)}>
 																<Typography variant="caption" color="text.secondary" sx={{ cursor: "help" }}>
 																	ⓘ Detalle del cálculo
 																</Typography>
@@ -1328,7 +1384,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 												<TableCell />
 												<TableCell colSpan={7}>
 													<Typography variant="caption" color="warning.main">
-														Comparativa CER no disponible: {cmp.motivo}
+														Tope y piso del art. 55 no disponibles: {cmp.motivo}
 													</Typography>
 												</TableCell>
 											</TableRow>
@@ -1603,7 +1659,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 						</Grid>
 					</Grid>
 
-					{/* Comparativa CER: solo aparece cuando la tasa elegida es la pasiva BCRA Ley 27.802 */}
+					{/* Tope y piso del art. 55: solo aparece cuando la tasa elegida es la pasiva BCRA Ley 27.802 */}
 					{newSegment.interestType !== "simple" && supportsCERComparison(newSegment.rate) && (
 						<Box
 							sx={{
@@ -1627,14 +1683,32 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 								label={
 									<Stack>
 										<Typography variant="body2" fontWeight={600} color="info.main">
-											Aplicar comparativa CER (Ley 27.802 art.55(a))
+											Aplicar tope y piso del art. 55 (Ley 27.802)
 										</Typography>
 										<Typography variant="caption" color="text.secondary">
-											Calcula techo (CER+3%) y piso (67% × CER+3%). El interés efectivo del tramo se acota al rango.
+											Techo: capital actualizado más 3 % anual. Piso: 67 % del techo. El interés efectivo del tramo se acota al rango.
 										</Typography>
 									</Stack>
 								}
 							/>
+							{newSegment.cerComparisonEnabled && (
+								<TextField
+									select
+									fullWidth
+									size="small"
+									label="Índice del tope"
+									value={newSegment.topeCriterion || "ipc"}
+									onChange={(e) => setNewSegment({ ...newSegment, topeCriterion: e.target.value as CriterioTopeArt55 })}
+									helperText="La ley nombra el IPC del INDEC; la calculadora del BCRA usa CER. El IPC se publica desde mayo de 2016."
+									sx={{ mt: 1 }}
+								>
+									{TOPE_ART55_OPCIONES.map((o) => (
+										<MenuItem key={o.value} value={o.value}>
+											{o.label}
+										</MenuItem>
+									))}
+								</TextField>
+							)}
 						</Box>
 					)}
 

@@ -88,6 +88,7 @@ interface CalculationDetailsViewProps {
 				cerComparisonEnabled?: boolean;
 				cerComparison?: {
 					disponible: boolean;
+					criterio?: "ipc" | "cer";
 					techo?: { factor: number; monto: number };
 					piso?: { factor: number; monto: number };
 					componentes?: any;
@@ -940,6 +941,8 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 											const piso = segment.cerComparison.piso?.monto || 0;
 											const fmt = (v: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(v);
 											const aplicado = eff === techo ? "(techo)" : eff === piso ? "(piso)" : "(dentro del rango)";
+											// Sin criterio: guardado antes del 12/10/2026, con CER.
+											const indice = segment.cerComparison.criterio === "ipc" ? "IPC" : "CER";
 											return (
 												<Box
 													sx={{
@@ -962,7 +965,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 																color: BRAND_BLUE,
 															}}
 														>
-															Comparativa CER (Ley 27.802)
+															Tope y piso art. 55 Ley 27.802 ({indice} + 3 %)
 														</Typography>
 													</Stack>
 													<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.15 }}>
@@ -997,7 +1000,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 																letterSpacing: "-0.005em",
 															}}
 														>
-															{eff === piso && "▸ "}Piso (67% × CER+3%)
+															{eff === piso && "▸ "}Piso (67 % × {indice} + 3 %)
 														</Typography>
 														<Typography
 															sx={{
@@ -1020,7 +1023,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 																letterSpacing: "-0.005em",
 															}}
 														>
-															{eff === techo && "▸ "}Techo (CER+3%)
+															{eff === techo && "▸ "}Techo ({indice} + 3 %)
 														</Typography>
 														<Typography
 															sx={{

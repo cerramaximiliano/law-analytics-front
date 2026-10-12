@@ -71,6 +71,9 @@ const LiquidacionPDF = ({ resultado: r, tasasLabels = {}, titulo = "Liquidación
 					<Text style={s.celdaAncha}>
 						{t.tipo === "simple" ? `Tasa fija ${numero(t.tasaFija)} %` : tasasLabels[t.tasa] || t.tasa}
 						{t.capitalizacion && t.capitalizacion !== "none" ? " (capitalización anual)" : ""}
+						{t.comparativaCER?.disponible
+							? ` · tope art. 55 Ley 27.802 (${t.comparativaCER.criterio === "ipc" ? "IPC" : "CER"} + 3 %)`
+							: ""}
 					</Text>
 					<Text style={s.derecha}>{money(t.capital)}</Text>
 					<Text style={s.derecha}>{money(t.interesEfectivo)}</Text>

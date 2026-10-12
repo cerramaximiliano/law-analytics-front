@@ -95,10 +95,12 @@ interface InterestSegment {
 	ratePeriod?: "daily" | "monthly" | "annual";
 	capitalizationFrequency?: "none" | "monthly" | "quarterly" | "semiannual" | "annual";
 	firstCapitalizationDate?: string;
-	// Comparativa CER (Ley 27.802): el efectivo del tramo se acota a [piso.monto, techo.monto]
+	// Tope y piso art. 55 Ley 27.802 (IPC o CER): el efectivo del tramo se acota a [piso.monto, techo.monto]
 	cerComparisonEnabled?: boolean;
+	topeCriterion?: "ipc" | "cer";
 	cerComparison?: {
 		disponible: boolean;
+		criterio?: "ipc" | "cer";
 		motivo?: string;
 		techo?: { factor: number; monto: number };
 		piso?: { factor: number; monto: number };
@@ -632,10 +634,11 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 				text += `  Interés generado: ${formatValue("interest", getEffectiveInterest(segment))}\n`;
 				if (segment.cerComparison?.disponible) {
 					const eff = getEffectiveInterest(segment);
-					text += `  Comparativa CER (Ley 27.802):\n`;
+					const indice = segment.cerComparison.criterio === "ipc" ? "IPC" : "CER";
+					text += `  Tope y piso art. 55 Ley 27.802 (${indice} + 3 %):\n`;
 					text += `    Calculado: ${formatValue("interest", segment.interest)}\n`;
-					text += `    Piso (67% × CER+3%): ${formatValue("interest", segment.cerComparison.piso?.monto || 0)}\n`;
-					text += `    Techo (CER+3%): ${formatValue("interest", segment.cerComparison.techo?.monto || 0)}\n`;
+					text += `    Piso (67 % × ${indice} + 3 %): ${formatValue("interest", segment.cerComparison.piso?.monto || 0)}\n`;
+					text += `    Techo (${indice} + 3 %): ${formatValue("interest", segment.cerComparison.techo?.monto || 0)}\n`;
 					text += `    Aplicado: ${formatValue("interest", eff)}${
 						eff === segment.cerComparison.techo?.monto
 							? " (techo)"
@@ -745,7 +748,9 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 					const techo = segment.cerComparison.techo?.monto || 0;
 					const aplicado = eff === techo ? "(techo)" : eff === piso ? "(piso)" : "(dentro del rango)";
 					html += `<tr><td colspan="2" style="padding: 6px 12px; background: #e3f2fd; color: #1565c0; font-size: 12px;">
-						<strong>Comparativa CER (Ley 27.802):</strong> Calculado: ${formatValue("interest", segment.interest)} ·
+						<strong>Tope y piso art. 55 Ley 27.802 (${
+							segment.cerComparison.criterio === "ipc" ? "IPC" : "CER"
+						} + 3 %):</strong> Calculado: ${formatValue("interest", segment.interest)} ·
 						Piso: ${formatValue("interest", piso)} ·
 						Techo: ${formatValue("interest", techo)} ·
 						<strong>Aplicado: ${formatValue("interest", eff)} ${aplicado}</strong>
@@ -889,9 +894,10 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 									ratePeriod: seg.ratePeriod,
 									capitalizationFrequency: seg.capitalizationFrequency,
 									firstCapitalizationDate: seg.firstCapitalizationDate,
-									// Comparativa CER (Ley 27.802) — se persiste para que al releer
+									// Tope y piso art. 55 (Ley 27.802) — se persiste para que al releer
 									// el cómputo, getEffectiveInterest() pueda recalcular el clamp.
 									cerComparisonEnabled: seg.cerComparisonEnabled,
+									topeCriterion: seg.topeCriterion,
 									cerComparison: seg.cerComparison,
 								})),
 								capitalizeInterest: values.capitalizeInterest || false,
@@ -987,8 +993,9 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 								simpleRate: seg.simpleRate,
 								ratePeriod: seg.ratePeriod,
 								capitalizationFrequency: seg.capitalizationFrequency,
-								// Comparativa CER (Ley 27.802)
+								// Tope y piso art. 55 (Ley 27.802)
 								cerComparisonEnabled: seg.cerComparisonEnabled,
+								topeCriterion: seg.topeCriterion,
 								cerComparison: seg.cerComparison,
 							})),
 							capitalizeInterest: values.capitalizeInterest || false,

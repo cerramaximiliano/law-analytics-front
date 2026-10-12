@@ -83,7 +83,7 @@ export function segmentosATramos(segments: InterestSegment[]): TramoTasaRequest[
 						...(s.capitalizationFrequency && s.capitalizationFrequency !== "none" && s.firstCapitalizationDate
 							? { primeraCapitalizacion: s.firstCapitalizationDate }
 							: {}),
-						...(s.cerComparisonEnabled ? { comparativaCER: true } : {}),
+						...(s.cerComparisonEnabled ? { comparativaCER: true, criterioTope: s.topeCriterion || "ipc" } : {}),
 				  },
 		);
 }
