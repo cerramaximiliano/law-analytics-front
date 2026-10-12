@@ -239,6 +239,8 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 				return "Intereses";
 			case "liquidacion":
 				return "Liquidación";
+			case "previsional":
+				return "Previsional";
 			default:
 				return classType || "No especificado";
 		}
@@ -290,6 +292,8 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 				return "Liquidación Final";
 			case "art":
 				return "Riesgos del trabajo (ART)";
+			case "retroactivo":
+				return "Retroactivo previsional";
 		}
 
 		// Para cálculos de intereses, el subClassType contiene el value de la tasa
