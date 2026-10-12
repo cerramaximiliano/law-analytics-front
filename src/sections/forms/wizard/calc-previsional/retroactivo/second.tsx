@@ -14,7 +14,10 @@ import {
 	FormHelperText,
 	Switch,
 	Paper,
+	Button,
+	IconButton,
 } from "@mui/material";
+import { Add, Trash } from "iconsax-react";
 import { useFormikContext } from "formik";
 import { PISOS_PERCIBIDO } from "services/previsionalService";
 import NumberField from "components/UI/NumberField";
@@ -62,6 +65,8 @@ export default function SecondForm({ formField }: SecondFormProps) {
 								if (!e.target.checked) {
 									setFieldValue(fechaAltaReajuste.name, "");
 									setFieldValue(importeReajuste.name, "");
+									setFieldValue("descuentoReajuste", "");
+									setFieldValue("reajustesAdicionales", []);
 								}
 							}}
 							color="primary"
@@ -116,7 +121,75 @@ export default function SecondForm({ formField }: SecondFormProps) {
 									InputProps={{ startAdornment: "$" }}
 								/>
 							</Grid>
+
+							<Grid item xs={12} md={6}>
+								<InputLabel>Descuento ley 24.463 sobre el reajustado (%)</InputLabel>
+								<NumberField allowNegative={false} decimalScale={4} fullWidth placeholder="0" name="descuentoReajuste" />
+								<FormHelperText>Opcional: porcentaje fijo que ANSES descuenta del haber reajustado.</FormHelperText>
+							</Grid>
 						</Grid>
+
+						{(values.reajustesAdicionales || []).map((_: any, i: number) => (
+							<Grid container spacing={2.5} key={i} sx={{ mt: 0.5 }} alignItems="flex-end">
+								<Grid item xs={12} md={4}>
+									<InputLabel>Reajuste {i + 2}: fecha de alta *</InputLabel>
+									<DateInputField name={`reajustesAdicionales.${i}.fecha`} />
+								</Grid>
+								<Grid item xs={12} md={4}>
+									<InputLabel>Importe *</InputLabel>
+									<NumberField
+										thousandSeparator=","
+										allowNegative={false}
+										decimalScale={2}
+										fullWidth
+										placeholder="0,00"
+										name={`reajustesAdicionales.${i}.importe`}
+										InputProps={{ startAdornment: "$" }}
+									/>
+								</Grid>
+								<Grid item xs={10} md={3}>
+									<InputLabel>Descuento (%)</InputLabel>
+									<NumberField
+										allowNegative={false}
+										decimalScale={4}
+										fullWidth
+										placeholder="0"
+										name={`reajustesAdicionales.${i}.descuentoPct`}
+									/>
+								</Grid>
+								<Grid item xs={2} md={1}>
+									<IconButton
+										color="error"
+										aria-label="Quitar reajuste"
+										onClick={() =>
+											setFieldValue(
+												"reajustesAdicionales",
+												values.reajustesAdicionales.filter((__: any, j: number) => j !== i),
+											)
+										}
+									>
+										<Trash size={18} />
+									</IconButton>
+								</Grid>
+							</Grid>
+						))}
+						<Button
+							size="small"
+							startIcon={<Add size={16} />}
+							sx={{ mt: 2, textTransform: "none" }}
+							onClick={() =>
+								setFieldValue("reajustesAdicionales", [
+									...(values.reajustesAdicionales || []),
+									{ fecha: "", importe: "", descuentoPct: "" },
+								])
+							}
+						>
+							Agregar otro reajuste
+						</Button>
+						<FormHelperText>
+							Cada reajuste reemplaza el haber percibido desde su mes y sigue con la movilidad. Si es posterior al fallecimiento del
+							causante, cargue el haber de la pensión.
+						</FormHelperText>
 					</Paper>
 				)}
 			</Box>

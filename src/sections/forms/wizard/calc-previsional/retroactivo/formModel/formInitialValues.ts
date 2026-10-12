@@ -57,6 +57,8 @@ const formInitialValues = {
 	[fechaAltaReajuste.name]: "",
 	[importeReajuste.name]: "",
 	[monedaReajuste.name]: "ARS",
+	descuentoReajuste: "",
+	reajustesAdicionales: [],
 	[haberReclamado.name]: "",
 	[monedaReclamado.name]: "ARS",
 	[fechaDesdeReclamado.name]: "",

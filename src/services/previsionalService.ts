@@ -49,6 +49,7 @@ export interface RetroactivoInput {
 		importe: number;
 		fecha: string;
 		reajuste?: { fecha: string; importe: number } | null;
+		reajustes?: { fecha: string; importe: number; descuentoPct?: number }[];
 		piso?: PisoPercibido;
 	};
 	reclamado: {
@@ -120,6 +121,18 @@ export function aISO(fecha?: string | null): string {
 
 const numero = (v: unknown) => (v === "" || v === null || v === undefined ? NaN : Number(v));
 
+/** Reajustes administrativos del percibido: el primero del formulario y los adicionales, por fecha. */
+function reajustesDe(values: any) {
+	const pct = (v: unknown) => (Number.isFinite(numero(v)) && numero(v) > 0 ? numero(v) : 0);
+	return [
+		{ fecha: values.fechaAltaReajuste, importe: values.importeReajuste, descuentoPct: values.descuentoReajuste },
+		...(values.reajustesAdicionales || []),
+	]
+		.filter((r: any) => r && r.fecha && Number(r.importe) > 0)
+		.map((r: any) => ({ fecha: aISO(r.fecha), importe: Number(r.importe), descuentoPct: pct(r.descuentoPct) }))
+		.sort((a, b) => (a.fecha < b.fecha ? -1 : 1));
+}
+
 /** Arma el input del motor a partir de los valores del wizard. */
 export function armarInputRetroactivo(values: any): RetroactivoInput {
 	const fechaPercibido = aISO(values.haberPagadoAl);
@@ -132,10 +145,7 @@ export function armarInputRetroactivo(values: any): RetroactivoInput {
 		percibido: {
 			importe: Number(values.haberPagadoAnses),
 			fecha: fechaPercibido,
-			reajuste:
-				values.tieneReajuste && values.fechaAltaReajuste
-					? { fecha: aISO(values.fechaAltaReajuste), importe: Number(values.importeReajuste) }
-					: null,
+			reajustes: values.tieneReajuste ? reajustesDe(values) : [],
 			piso: values.pisoPercibido || "no",
 		},
 		reclamado: {

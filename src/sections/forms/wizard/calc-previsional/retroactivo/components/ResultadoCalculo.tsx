@@ -183,6 +183,7 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 								<TableCell align="right">Intereses sobre saldo</TableCell>
 								<TableCell align="right">Pago</TableCell>
 								<TableCell align="right">Saldo de capital</TableCell>
+								<TableCell align="right">Intereses impagos</TableCell>
 							</TableRow>
 						</TableHead>
 						<TableBody>
@@ -203,6 +204,9 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 									</TableCell>
 									<TableCell align="right" sx={num}>
 										{t.saldoCapital !== undefined ? money(t.saldoCapital) : "—"}
+									</TableCell>
+									<TableCell align="right" sx={num}>
+										{t.saldoInteres ? money(t.saldoInteres) : "—"}
 									</TableCell>
 								</TableRow>
 							))}

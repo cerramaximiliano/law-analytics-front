@@ -133,10 +133,12 @@ export default function FifthForm({ formField }: FifthFormProps) {
 			</Grid>
 
 			<Typography variant="h6" sx={{ mt: 3, mb: 0.5 }}>
-				Pagos a cuenta
+				Pagos de retroactivo y a cuenta
 			</Typography>
 			<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-				Cada pago se imputa primero a intereses y después a capital; el saldo de capital sigue devengando hasta la fecha de cierre.
+				En el mes de cada pago se corta la liquidación: lo adeudado hasta ese mes se trae con intereses, el pago se imputa primero a
+				intereses y después a capital, y el saldo que queda (capital e intereses impagos) sigue devengando como capital hasta el pago
+				siguiente o la fecha de cierre. Las diferencias de los meses posteriores se liquidan aparte.
 			</Typography>
 			<Stack spacing={1.5}>
 				{(values.pagosACuenta || []).map((_: any, i: number) => (
