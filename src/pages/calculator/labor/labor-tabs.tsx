@@ -2,6 +2,7 @@ import React from "react";
 import { useState, ReactNode, SyntheticEvent, useEffect } from "react";
 import BasicWizard from "sections/forms/wizard/calc-laboral/despido";
 import LiquidacionWizard from "sections/forms/wizard/calc-laboral/liquidacion";
+import ARTWizard from "sections/forms/wizard/calc-laboral/art";
 
 // material-ui
 import { Box, Tab, Tabs, Typography, Tooltip, IconButton, Skeleton, Stack, Grid } from "@mui/material";
@@ -144,7 +145,7 @@ export default function LaborTabs() {
 		setValue(newValue);
 	};
 
-	const shouldShowFolderName = value !== 2 && folderParam && currentFolder?.folderName;
+	const shouldShowFolderName = value !== 3 && folderParam && currentFolder?.folderName;
 
 	// Estilo brand-aware de los Tabs (selected indicator + colors).
 	const tabsSx = {
@@ -255,10 +256,18 @@ export default function LaborTabs() {
 						gap: 1,
 					}}
 				>
-					<Tabs value={value} onChange={handleChange} variant="scrollable" scrollButtons={false} aria-label="Calculadoras laborales" sx={tabsSx}>
+					<Tabs
+						value={value}
+						onChange={handleChange}
+						variant="scrollable"
+						scrollButtons={false}
+						aria-label="Calculadoras laborales"
+						sx={tabsSx}
+					>
 						<Tab label="Despido" icon={<Calculator size={18} variant="Bulk" />} iconPosition="start" {...a11yProps(0)} />
 						<Tab label="Liquidación" icon={<Calculator size={18} variant="Bulk" />} iconPosition="start" {...a11yProps(1)} />
-						<Tab label="Guardados" icon={<DocumentCloud size={18} variant="Bulk" />} iconPosition="start" {...a11yProps(2)} />
+						<Tab label="Riesgos del trabajo" icon={<Calculator size={18} variant="Bulk" />} iconPosition="start" {...a11yProps(2)} />
+						<Tab label="Guardados" icon={<DocumentCloud size={18} variant="Bulk" />} iconPosition="start" {...a11yProps(3)} />
 					</Tabs>
 
 					{/* Chip de carpeta vinculada — solo en panels que aplican */}
@@ -339,6 +348,18 @@ export default function LaborTabs() {
 				</TabPanel>
 
 				<TabPanel value={value} index={2}>
+					<Stack spacing={2.5}>
+						<PanelHeader
+							eyebrow="Riesgos del trabajo"
+							title="Indemnización por accidente o enfermedad laboral (ART)"
+							subtitle="Ingreso base con RIPTE (ley 27.348), fórmula del art. 14, pisos y compensaciones del semestre de la PMI, adicional del 20 % y actualización del art. 12."
+						/>
+						<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1) }} />
+						<ARTWizard folder={currentFolder} />
+					</Stack>
+				</TabPanel>
+
+				<TabPanel value={value} index={3}>
 					<SavedLabor />
 				</TabPanel>
 			</Box>
