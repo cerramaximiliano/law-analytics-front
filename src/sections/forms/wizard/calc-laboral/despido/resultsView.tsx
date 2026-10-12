@@ -821,7 +821,27 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 				isSaving={isSaving}
 			/>
 
-			<Stack direction="row" justifyContent="flex-end" className="no-print" sx={{ mt: 2 }}>
+			<Stack direction="row" justifyContent="flex-end" spacing={2} className="no-print" sx={{ mt: 2 }}>
+				<Button
+					variant="outlined"
+					onClick={() =>
+						navigate("/apps/calc/liquidacion", {
+							state: {
+								liquidacion: {
+									// capital = rubros (indemnización + liquidación final + multas + otras sumas), sin intereses
+									capital: capitalBase,
+									segments: values.segmentsIntereses || values.datosIntereses?.segments || [],
+									capitalizeInterest: !!(values.capitalizeInterest || values.datosIntereses?.capitalizeInterest),
+									folderId: folderId || null,
+									folderName: folderName || null,
+									origen: "laboral",
+								},
+							},
+						})
+					}
+				>
+					Practicar liquidación
+				</Button>
 				<Button variant="contained" color="error" onClick={handleReset}>
 					Nueva Liquidación
 				</Button>

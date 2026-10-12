@@ -83,6 +83,12 @@ const applications: NavItemType = {
 					url: "/apps/calc/intereses",
 				},
 				{
+					id: "liquidacion-calculator",
+					title: <FormattedMessage id="Liquidación" />,
+					type: "item",
+					url: "/apps/calc/liquidacion",
+				},
+				{
 					id: "valores-arancelarios",
 					title: <FormattedMessage id="Valores arancelarios" />,
 					type: "item",

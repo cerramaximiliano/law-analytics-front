@@ -130,12 +130,9 @@ export default function ThirdForm(props: ThirdFormProps) {
 	);
 
 	// Convertir tasas al formato esperado por InterestSegmentsManager
-	const availableRates: InterestRate[] = tasasOpciones.map((tasa) => ({
-		label: tasa.label,
-		value: tasa.value,
-		fechaInicio: tasa.fechaInicio,
-		fechaUltima: tasa.fechaUltima,
-	}));
+	// Se pasa la tasa completa: tipoIndice, vigencia y periodicidad habilitan la capitalización,
+	// el aviso de vigencia y la descripción de la serie en InterestSegmentsManager.
+	const availableRates: InterestRate[] = tasasOpciones.map((tasa) => ({ ...tasa }));
 
 	// Obtener la fecha de egreso para usarla como fecha inicial por defecto
 	const fechaEgresoValue = values[fechaEgreso.name];
@@ -164,7 +161,9 @@ export default function ThirdForm(props: ThirdFormProps) {
 				<Box sx={{ color: accent, display: "flex", mt: 0.125, flexShrink: 0 }}>
 					<InfoCircle size={16} variant="Bulk" />
 				</Box>
-				<Typography sx={{ fontSize: "0.82rem", color: "text.primary", lineHeight: 1.5, fontWeight: 500, textWrap: "pretty" }}>{text}</Typography>
+				<Typography sx={{ fontSize: "0.82rem", color: "text.primary", lineHeight: 1.5, fontWeight: 500, textWrap: "pretty" }}>
+					{text}
+				</Typography>
 			</Box>
 		);
 	};
@@ -182,8 +181,8 @@ export default function ThirdForm(props: ThirdFormProps) {
 			>
 				<Stack spacing={1}>
 					<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", lineHeight: 1.55, textWrap: "pretty" }}>
-						Actualizá el monto calculado aplicando intereses desde una fecha determinada hasta hoy u otra fecha. Podés sumar múltiples tramos con
-						diferentes tasas.
+						Actualizá el monto calculado aplicando intereses desde una fecha determinada hasta hoy u otra fecha. Podés sumar múltiples
+						tramos con diferentes tasas.
 					</Typography>
 
 					<FormControlLabel
@@ -210,7 +209,9 @@ export default function ThirdForm(props: ThirdFormProps) {
 					{errors[segmentsIntereses.name] &&
 						touched[segmentsIntereses.name] &&
 						renderNotice(
-							typeof errors[segmentsIntereses.name] === "string" ? String(errors[segmentsIntereses.name]) : "Debe agregar al menos un tramo",
+							typeof errors[segmentsIntereses.name] === "string"
+								? String(errors[segmentsIntereses.name])
+								: "Debe agregar al menos un tramo",
 							"error",
 						)}
 

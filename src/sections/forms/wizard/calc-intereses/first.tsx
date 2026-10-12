@@ -161,12 +161,9 @@ export default function FirstForm(props: FirstFormProps) {
 	);
 
 	// Convertir tasas al formato esperado por InterestSegmentsManager
-	const availableRates: InterestRate[] = tasasOpciones.map((tasa) => ({
-		label: tasa.label,
-		value: tasa.value,
-		fechaInicio: tasa.fechaInicio,
-		fechaUltima: tasa.fechaUltima,
-	}));
+	// Se pasa la tasa completa: tipoIndice, vigencia y periodicidad habilitan la capitalización,
+	// el aviso de vigencia y la descripción de la serie en InterestSegmentsManager.
+	const availableRates: InterestRate[] = tasasOpciones.map((tasa) => ({ ...tasa }));
 
 	// Obtener el capital como número
 	const capitalValue = typeof values[capital.name] === "string" ? parseFloat(values[capital.name]) || 0 : values[capital.name] || 0;
@@ -174,9 +171,7 @@ export default function FirstForm(props: FirstFormProps) {
 	const isDark = theme.palette.mode === "dark";
 
 	// Hairline brand-tinted que reemplaza el <Divider /> MUI.
-	const hairline = (
-		<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1), my: 2.5 }} />
-	);
+	const hairline = <Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1), my: 2.5 }} />;
 
 	return (
 		<>

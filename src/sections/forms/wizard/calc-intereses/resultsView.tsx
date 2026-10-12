@@ -26,6 +26,7 @@ import { CalculatorType } from "types/calculator";
 import { CalculationDetailsView } from "components/calculator/CalculationDetailsView";
 import { getEffectiveInterest } from "components/calculator/InterestSegmentsManager";
 import { useTeam } from "contexts/TeamContext";
+import { useNavigate } from "react-router-dom";
 
 //third party
 import dayjs from "utils/dayjs-config";
@@ -105,6 +106,7 @@ interface InterestSegment {
 }
 
 const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, onSave, currentUser, folderId, folderName, groupId }) => {
+	const navigate = useNavigate();
 	// Analítica: mostrar el resultado equivale a una corrida de la calculadora
 	React.useEffect(() => {
 		trackActivity("calculator_run", { type: "intereses" });
@@ -1306,6 +1308,25 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 			<Stack direction="row" justifyContent="flex-end" spacing={2} className="no-print" sx={{ mt: 3, px: 2 }}>
 				<Button variant="contained" color="info" onClick={() => setShowTasasModal(true)}>
 					Ver Tasas
+				</Button>
+				<Button
+					variant="outlined"
+					onClick={() =>
+						navigate("/apps/calc/liquidacion", {
+							state: {
+								liquidacion: {
+									capital: typeof values.capital === "number" ? values.capital : parseFloat(values.capital || "0"),
+									segments: values.segments || [],
+									capitalizeInterest: !!values.capitalizeInterest,
+									folderId: folderId || null,
+									folderName: folderName || null,
+									origen: "de intereses",
+								},
+							},
+						})
+					}
+				>
+					Practicar liquidación
 				</Button>
 				<Button variant="contained" color="error" onClick={onReset}>
 					Nueva Liquidación

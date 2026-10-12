@@ -237,6 +237,8 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 				return "Civil";
 			case "intereses":
 				return "Intereses";
+			case "liquidacion":
+				return "Liquidación";
 			default:
 				return classType || "No especificado";
 		}
@@ -1386,6 +1388,14 @@ const AllCalculators = () => {
 			comingSoon: false,
 		},
 		{
+			title: "Liquidación",
+			description: "Capital, intereses, pagos a cuenta, honorarios en UMA, IVA y tasa de justicia en una sola planilla.",
+			icon: <Calculator size={48} variant="Bulk" style={{ color: "var(--mui-palette-secondary-main)" }} />,
+			path: "/apps/calc/liquidacion",
+			disabled: false,
+			comingSoon: false,
+		},
+		{
 			title: "Civil",
 			description: "Calcula liquidaciones del ámbito civil, indemnizaciones y otros conceptos relacionados.",
 			icon: <Chart2 size={48} variant="Bulk" style={{ color: "var(--mui-palette-warning-main)" }} />,
@@ -1566,6 +1576,8 @@ const AllCalculators = () => {
 								return "Civil";
 							case "intereses":
 								return "Intereses";
+							case "liquidacion":
+								return "Liquidación";
 							default:
 								return "No especificado";
 						}
@@ -1579,6 +1591,8 @@ const AllCalculators = () => {
 								return <Chart2 size="16" style={{ marginRight: "4px" }} />;
 							case "intereses":
 								return <Coin size="16" style={{ marginRight: "4px" }} />;
+							case "liquidacion":
+								return <Calculator size="16" style={{ marginRight: "4px" }} />;
 							default:
 								return null;
 						}

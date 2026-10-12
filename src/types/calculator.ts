@@ -57,8 +57,21 @@ export type CalculatorType = {
 	folderId?: string | null;
 	folderName?: string | null;
 	type: "Calculado" | "Ofertado" | "Reclamado";
-	classType?: "laboral" | "civil" | "intereses";
-	subClassType?: "despido" | "liquidación final" | "intereses";
+	classType?: "laboral" | "civil" | "intereses" | "liquidacion";
+	subClassType?: "despido" | "liquidación final" | "intereses" | "liquidacion";
+	// Liquidación encadenada: un componente por concepto (capital, intereses, honorarios, IVA, tasa de justicia…)
+	componentes?: {
+		tipo: string;
+		label?: string;
+		orden?: number;
+		monto?: number;
+		base?: number;
+		porcentaje?: number;
+		unidades?: number;
+		valorUnidad?: number;
+		fecha?: string;
+		meta?: object;
+	}[];
 	amount: number;
 	capital?: number;
 	user?: string;

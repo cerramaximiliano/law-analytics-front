@@ -135,6 +135,17 @@ export const MERGE_FIELD_GROUPS: MergeFieldGroup[] = [
 			{ key: "calculo.fecha_inicio_intereses", label: "Fecha inicio de intereses" },
 			{ key: "calculo.fecha_fin_intereses", label: "Fecha fin de intereses" },
 			{ key: "calculo.tasa", label: "Tasa de interés aplicada" },
+			// Liquidación encadenada (calculadora "Liquidación")
+			{ key: "calculo.fecha_corte", label: "Fecha de corte de la liquidación" },
+			{ key: "calculo.total_liquidacion", label: "Total de la liquidación" },
+			{ key: "calculo.saldo_credito", label: "Saldo del crédito (capital + intereses − pagos)" },
+			{ key: "calculo.pagos_a_cuenta", label: "Pagos a cuenta" },
+			{ key: "calculo.honorarios", label: "Honorarios" },
+			{ key: "calculo.honorarios_uma", label: "Honorarios en UMA" },
+			{ key: "calculo.valor_uma", label: "Valor de la UMA" },
+			{ key: "calculo.iva_honorarios", label: "IVA sobre honorarios" },
+			{ key: "calculo.tasa_justicia", label: "Tasa de justicia" },
+			{ key: "calculo.detalle_tramos", label: "Detalle de intereses por tramo" },
 		],
 	},
 ];
