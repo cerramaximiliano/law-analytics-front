@@ -198,7 +198,9 @@ echo -e "${YELLOW}5. Construyendo aplicación...${NC}"
 if [ "$IS_SERVER" = true ]; then
     # Build a directorio temporal para hacer swap atómico
     rm -rf build_new/
-    npx vite build --outDir build_new --mode production
+    # Heap de 3 GB para el build (con el límite por defecto de Node quedó corto el 12/10/2026:
+    # "JavaScript heap out of memory"). nice para no competir con los servicios del hub.
+    NODE_OPTIONS="--max-old-space-size=3072" nice -n 10 npx vite build --outDir build_new --mode production
     if [ $? -ne 0 ]; then
         echo -e "${RED}✗ Error durante el build${NC}"
         # Restaurar build anterior si existe backup
