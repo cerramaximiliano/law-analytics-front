@@ -58,7 +58,7 @@ interface Plan {
 }
 
 /**
- * Schema del teaser — 5 filas con el mismo topic across todos los planes.
+ * Schema del teaser — 6 filas con el mismo topic across todos los planes.
  * Esto mantiene visualmente alineada la comparación (qty progresivas + binarios
  * de diferenciación). El resto de features y límites quedan implícitos detrás
  * del link "Ver comparación completa".
@@ -78,6 +78,7 @@ const TEASER_ROWS: TeaserRowDef[] = [
 		format: (n) => (n < 0 ? "Búsqueda de jurisprudencia con IA ilimitada" : `${n} búsquedas de jurisprudencia/mes`),
 	},
 	{ kind: "feature", featureName: "booking", label: "Sistema de reservas online" },
+	{ kind: "feature", featureName: "calculoPrevisional", label: "Retroactivo previsional (reajustes)" },
 ];
 
 // Lo que no viene del API: nombre corto, CTA, orden en móvil. El precio y las

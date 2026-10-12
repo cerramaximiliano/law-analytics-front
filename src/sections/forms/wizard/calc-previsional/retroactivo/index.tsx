@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 // material-ui
-import { Box, Button, Stack, Typography, Zoom } from "@mui/material";
+import { Alert, Box, Button, Stack, Typography, Zoom } from "@mui/material";
 
 // third-party
 import { enqueueSnackbar } from "notistack";
@@ -21,6 +21,11 @@ import ThirdForm from "./third";
 import FourthForm from "./fourth";
 import FifthForm from "./fifth";
 import ResultadoCalculo from "./components/ResultadoCalculo";
+import useSubscription from "hooks/useSubscription";
+import { LimitErrorModal } from "sections/auth/LimitErrorModal";
+
+// Feature paga (PlanConfig): el hub responde 403 con upgradeRequired si el plan no la tiene
+const FEATURE = "calculoPrevisional";
 
 const steps = ["Datos del expediente", "Haberes", "Movilidad", "Topes", "Intereses"];
 const { formId, formField } = previsionalFormModel;
@@ -53,6 +58,10 @@ const PrevisionalRetroactivoWizard = ({ folder, onFolderChange }: PrevisionalRet
 	const [activeStep, setActiveStep] = useState(0);
 	const [calculo, setCalculo] = useState<{ resultado: RetroactivoResultado; input: RetroactivoInput; values: any } | null>(null);
 	const [valoresPrevios, setValoresPrevios] = useState<any>(null);
+	const [mejorarPlan, setMejorarPlan] = useState(false);
+	const { subscription, hasFeatureLocal } = useSubscription();
+	// Sin suscripción cargada todavía no se bloquea: decide el hub
+	const sinAcceso = !!subscription && !hasFeatureLocal(FEATURE);
 
 	const isLastStep = activeStep === steps.length - 1;
 	const currentValidationSchema = validationSchema[activeStep];
@@ -74,12 +83,21 @@ const PrevisionalRetroactivoWizard = ({ folder, onFolderChange }: PrevisionalRet
 			actions.setSubmitting(false);
 			return;
 		}
+		if (sinAcceso) {
+			setMejorarPlan(true);
+			actions.setSubmitting(false);
+			return;
+		}
 		try {
 			const input = armarInputRetroactivo(values);
 			const resultado = await calcularRetroactivo(input);
 			setValoresPrevios(values);
 			setCalculo({ resultado, input, values });
 		} catch (error: any) {
+			if (error?.response?.status === 403 && error?.response?.data?.upgradeRequired) {
+				setMejorarPlan(true);
+				return;
+			}
 			const mensaje = error?.response?.data?.mensaje || error?.mensaje || error?.message || "No se pudo calcular el retroactivo";
 			enqueueSnackbar(mensaje, {
 				variant: "error",
@@ -106,6 +124,23 @@ const PrevisionalRetroactivoWizard = ({ folder, onFolderChange }: PrevisionalRet
 
 	return (
 		<Box sx={{ width: "100%" }}>
+			{sinAcceso && (
+				<Alert severity="info" sx={{ mb: 3 }}>
+					El cálculo de retroactivos previsionales está disponible en los planes Estándar, Pro y Premium. Podés cargar los datos; para
+					calcular, mejorá tu plan.
+				</Alert>
+			)}
+			<LimitErrorModal
+				open={mejorarPlan}
+				onClose={() => setMejorarPlan(false)}
+				message="Para calcular retroactivos previsionales necesitás un plan pago."
+				featureInfo={{
+					feature: "Retroactivo previsional",
+					plan: subscription?.plan || "free",
+					availableIn: ["standard", "pro", "premium"],
+				}}
+				upgradeRequired={true}
+			/>
 			{/* Progress Steps */}
 			<Stack direction="row" spacing={1.5} sx={{ pb: 4 }}>
 				{steps.map((label, index) => (

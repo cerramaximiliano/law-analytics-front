@@ -122,6 +122,24 @@ export const FUNCIONES: Funcion[] = [
 		],
 	},
 	{
+		id: "previsional",
+		featureKey: FeatureNames.PREVISIONAL,
+		eyebrow: "Previsional",
+		titulo: "El retroactivo de un reajuste, mes a mes",
+		bajada:
+			"Cargás el haber que paga ANSES y el reclamado, elegís los criterios de movilidad y el cálculo arma las diferencias de cada mes con SAC, obra social, topes y bonos, descuenta los pagos de retroactivo y trae todo con intereses a la fecha de cierre.",
+		icono: Chart,
+		puntos: [
+			"Aumentos generales de ANSES, Badaro, recomposición de la ley 27.426 y otros criterios por tramos",
+			"Reajustes administrativos, pagos a cuenta y bono previsional opcional",
+			"Validado contra liquidaciones de causas de la Seguridad Social",
+		],
+		datos: [
+			{ valor: "Mes a mes", etiqueta: "diferencias, SAC e intereses" },
+			{ valor: "Planes pagos", etiqueta: "Estándar, Pro y Premium" },
+		],
+	},
+	{
 		id: "tareas",
 		featureKey: FeatureNames.TAREAS,
 		eyebrow: "Tareas",

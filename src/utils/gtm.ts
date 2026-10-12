@@ -107,6 +107,7 @@ export const FeatureNames = {
 	CALENDARIO: "calendario",
 	CALCULOS: "calculos",
 	INTERESES: "intereses",
+	PREVISIONAL: "previsional",
 	TAREAS: "tareas",
 	SISTEMA_CITAS: "sistema_citas",
 	ESCRITOS: "escritos",

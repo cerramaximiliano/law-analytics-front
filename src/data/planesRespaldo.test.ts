@@ -32,12 +32,12 @@ describe("respaldo estático de planes", () => {
 		expect(ids.map((id) => cupo(id, "jurisprudenciaSearchPerMonth"))).toEqual([5, -1, -1, -1]);
 	});
 
-	it("el gratuito no sincroniza causas ni tiene reservas; los pagos sí", () => {
+	it("el gratuito no sincroniza causas ni tiene reservas ni retroactivo previsional; los pagos sí", () => {
 		const funcion = (planId: string, nombre: string) =>
 			PLANES_RESPALDO.find((p) => p.planId === planId)?.features.find((f) => f.name === nombre)?.enabled;
-		expect(["movements", "booking"].map((f) => funcion("free", f))).toEqual([false, false]);
+		expect(["movements", "booking", "calculoPrevisional"].map((f) => funcion("free", f))).toEqual([false, false, false]);
 		for (const id of ["standard", "pro", "premium"]) {
-			expect(["movements", "booking"].map((f) => funcion(id, f))).toEqual([true, true]);
+			expect(["movements", "booking", "calculoPrevisional"].map((f) => funcion(id, f))).toEqual([true, true, true]);
 		}
 	});
 

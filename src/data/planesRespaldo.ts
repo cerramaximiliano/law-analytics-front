@@ -33,6 +33,7 @@ type Funciones = {
 	exportReports: boolean;
 	movements: boolean;
 	booking: boolean;
+	calculoPrevisional: boolean;
 	prioritySupport: boolean;
 };
 
@@ -138,6 +139,14 @@ const funciones = (f: Funciones): PlanFeature[] => [
 		order: 5,
 	},
 	{
+		name: "calculoPrevisional",
+		enabled: f.calculoPrevisional,
+		displayName: "Retroactivo previsional",
+		description: "Cálculo de retroactivos previsionales (reajustes de haberes)",
+		visibility: "all",
+		order: 6,
+	},
+	{
 		name: "prioritySupport",
 		enabled: f.prioritySupport,
 		displayName: "Soporte prioritario",
@@ -181,6 +190,7 @@ export const PLANES_RESPALDO: Plan[] = [
 			exportReports: false,
 			movements: false,
 			booking: false,
+			calculoPrevisional: false,
 			prioritySupport: false,
 		}),
 		activeDiscounts: [],
@@ -209,6 +219,7 @@ export const PLANES_RESPALDO: Plan[] = [
 			exportReports: true,
 			movements: true,
 			booking: true,
+			calculoPrevisional: true,
 			prioritySupport: false,
 		}),
 		activeDiscounts: [],
@@ -237,6 +248,7 @@ export const PLANES_RESPALDO: Plan[] = [
 			exportReports: true,
 			movements: true,
 			booking: true,
+			calculoPrevisional: true,
 			prioritySupport: false,
 		}),
 		activeDiscounts: [],
@@ -265,6 +277,7 @@ export const PLANES_RESPALDO: Plan[] = [
 			exportReports: true,
 			movements: true,
 			booking: true,
+			calculoPrevisional: true,
 			prioritySupport: true,
 		}),
 		activeDiscounts: [],

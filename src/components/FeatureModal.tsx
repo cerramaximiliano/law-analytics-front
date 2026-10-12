@@ -87,6 +87,19 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 		iconComponent: Chart,
 		colorKey: "success",
 	},
+	[FeatureNames.PREVISIONAL]: {
+		title: "Retroactivo Previsional",
+		description:
+			"Liquidá las diferencias de un reajuste de haberes mes a mes, con los aumentos de ANSES, topes, SAC, bonos, pagos a cuenta e intereses hasta la fecha de cierre.",
+		benefits: [
+			"Movilidad y criterios de reajuste por tramos",
+			"Reajustes administrativos y pagos de retroactivo",
+			"Intereses con la tasa pasiva o la que elijas",
+		],
+		cta: "Probar Retroactivo Previsional",
+		iconComponent: Chart,
+		colorKey: "warning",
+	},
 	[FeatureNames.TAREAS]: {
 		title: "Gestión de Tareas",
 		description: "Organizá el trabajo diario del estudio. Asigná tareas, definí prioridades y controlá plazos de manera simple.",
