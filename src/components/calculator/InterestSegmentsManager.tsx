@@ -32,6 +32,7 @@ import { Add, Trash, Calculator, Edit2, TickCircle, CloseCircle } from "iconsax-
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
+import dayjsCfg from "utils/dayjs-config";
 import { calcularTramos } from "services/tasasCalculoService";
 import "dayjs/locale/es";
 
@@ -105,6 +106,12 @@ export interface InterestRate {
 	avisoVigencia?: string;
 	norma?: string;
 	tipoIndice?: string;
+	// Configuración de la serie (TasasConfig): cómo publica la fuente y hasta dónde hay datos
+	periodicidad?: "diaria" | "diariaHabil" | "mensual";
+	fuente?: string;
+	unidadOrigen?: string;
+	ultimoPeriodo?: string;
+	fechaUltimaCompleta?: Date | null;
 }
 
 interface InterestSegmentsManagerProps {
@@ -262,6 +269,36 @@ const isDateInRateRange = (date: string, rate: string, rates: InterestRate[]): b
 	const ultima = dayjs(rateConfig.fechaUltima);
 
 	return dateObj.isAfter(inicio.subtract(1, "day")) && dateObj.isBefore(ultima.add(1, "day"));
+};
+
+// Texto de rango disponible para los mensajes de validación
+const describirRango = (rate: string, rates: InterestRate[]): string => {
+	const r = rates.find((x) => x.value === rate);
+	if (!r) return "";
+	if (r.periodicidad === "mensual") {
+		return ` (meses disponibles: ${dayjsCfg.utc(r.fechaInicio).format("MM/YYYY")} a ${dayjsCfg.utc(r.fechaUltima).format("MM/YYYY")})`;
+	}
+	return ` (datos del ${dayjsCfg.utc(r.fechaInicio).format("DD/MM/YYYY")} al ${dayjsCfg.utc(r.fechaUltima).format("DD/MM/YYYY")})`;
+};
+
+// Cómo se computa la serie elegida, según su periodicidad (TasasConfig)
+export const describirSerie = (r?: InterestRate): string | null => {
+	if (!r || !r.periodicidad) return null;
+	const fuente = r.fuente ? ` Fuente: ${r.fuente}.` : "";
+	if (r.periodicidad === "mensual") {
+		const ultimo = r.ultimoPeriodo ? dayjsCfg(r.ultimoPeriodo, "YYYY-MM").format("MM/YYYY") : dayjsCfg.utc(r.fechaUltima).format("MM/YYYY");
+		const regla =
+			r.tipoIndice === "variacionMensual"
+				? "Se acumula la variación de los meses posteriores al mes inicial, hasta el mes final."
+				: "Se toma el nivel del mes inicial y el del mes final.";
+		return `Serie mensual. ${regla} Último mes publicado: ${ultimo}.${fuente}`;
+	}
+	if (r.periodicidad === "diariaHabil") {
+		return `TNA publicada en días hábiles: fines de semana y feriados repiten el último valor. Último dato: ${dayjs
+			.utc(r.fechaUltima)
+			.format("DD/MM/YYYY")}.${fuente}`;
+	}
+	return r.fuente ? `Serie diaria. Último dato: ${dayjsCfg.utc(r.fechaUltima).format("DD/MM/YYYY")}.${fuente}` : null;
 };
 
 const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
@@ -501,11 +538,15 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 			}
 			// Validar fechas dentro del rango de la tasa
 			if (!isDateInRateRange(newSegment.startDate, newSegment.rate, availableRates)) {
-				setError("La fecha inicial está fuera del rango disponible para la tasa seleccionada");
+				setError(
+					`La fecha inicial está fuera del rango disponible para la tasa seleccionada${describirRango(newSegment.rate, availableRates)}`,
+				);
 				return;
 			}
 			if (!isDateInRateRange(newSegment.endDate, newSegment.rate, availableRates)) {
-				setError("La fecha final está fuera del rango disponible para la tasa seleccionada");
+				setError(
+					`La fecha final está fuera del rango disponible para la tasa seleccionada${describirRango(newSegment.rate, availableRates)}`,
+				);
 				return;
 			}
 		}
@@ -645,11 +686,18 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 			}
 			// Validar fechas
 			if (!isDateInRateRange(editingSegment.startDate, editingSegment.rate, availableRates)) {
-				setError("La fecha inicial está fuera del rango disponible para la tasa seleccionada");
+				setError(
+					`La fecha inicial está fuera del rango disponible para la tasa seleccionada${describirRango(
+						editingSegment.rate,
+						availableRates,
+					)}`,
+				);
 				return;
 			}
 			if (!isDateInRateRange(editingSegment.endDate, editingSegment.rate, availableRates)) {
-				setError("La fecha final está fuera del rango disponible para la tasa seleccionada");
+				setError(
+					`La fecha final está fuera del rango disponible para la tasa seleccionada${describirRango(editingSegment.rate, availableRates)}`,
+				);
 				return;
 			}
 		}
@@ -1562,6 +1610,12 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 								}
 							/>
 						</Box>
+					)}
+
+					{newSegment.interestType !== "simple" && describirSerie(rateInfo(newSegment.rate)) && (
+						<Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+							{describirSerie(rateInfo(newSegment.rate))}
+						</Typography>
 					)}
 
 					{newSegment.interestType !== "simple" && newSegment.capitalizationFrequency === "annual" && (

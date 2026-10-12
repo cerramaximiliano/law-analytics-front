@@ -14,6 +14,12 @@ export interface InterestRate {
 	avisoVigencia?: string;
 	norma?: string;
 	tipoIndice?: string;
+	// Configuración de la serie (TasasConfig): cómo publica la fuente y hasta dónde hay datos
+	periodicidad?: "diaria" | "diariaHabil" | "mensual";
+	fuente?: string;
+	unidadOrigen?: string;
+	ultimoPeriodo?: string;
+	fechaUltimaCompleta?: Date | null;
 }
 
 export interface InterestRatesState {
@@ -142,6 +148,11 @@ export function getInterestRates(userId: string, forceRefresh: boolean = false) 
 				avisoVigencia: tasa.avisoVigencia,
 				norma: tasa.norma,
 				tipoIndice: tasa.tipoIndice,
+				periodicidad: tasa.periodicidad || "diaria",
+				fuente: tasa.fuente,
+				unidadOrigen: tasa.unidadOrigen,
+				ultimoPeriodo: tasa.ultimoPeriodo,
+				fechaUltimaCompleta: tasa.fechaUltimaCompleta ? dayjs.utc(tasa.fechaUltimaCompleta).startOf("day").toDate() : null,
 			}));
 
 			dispatch(
