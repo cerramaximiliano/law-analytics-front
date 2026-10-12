@@ -9,6 +9,11 @@ export interface InterestRate {
 	value: string;
 	fechaInicio: Date;
 	fechaUltima: Date;
+	// Vigencia jurídica (TasasConfig.vigente/avisoVigencia/norma del hub)
+	vigente?: boolean;
+	avisoVigencia?: string;
+	norma?: string;
+	tipoIndice?: string;
 }
 
 export interface InterestRatesState {
@@ -133,6 +138,10 @@ export function getInterestRates(userId: string, forceRefresh: boolean = false) 
 				value: tasa.value,
 				fechaInicio: dayjs.utc(tasa.fechaInicio).startOf("day").toDate(),
 				fechaUltima: dayjs.utc(tasa.fechaUltima).startOf("day").toDate(),
+				vigente: tasa.vigente !== false,
+				avisoVigencia: tasa.avisoVigencia,
+				norma: tasa.norma,
+				tipoIndice: tasa.tipoIndice,
 			}));
 
 			dispatch(
@@ -160,27 +169,9 @@ export function getInterestRates(userId: string, forceRefresh: boolean = false) 
 
 			dispatch(slice.actions.hasError(errorMessage));
 
-			// En caso de error, proporcionar valores de fallback
-			const fallbackRates: InterestRate[] = [
-				{
-					label: "Tasa Pasiva BCRA",
-					value: "tasaPasivaBCRA",
-					fechaInicio: dayjs("2000-01-01").toDate(),
-					fechaUltima: dayjs().toDate(),
-				},
-				{
-					label: "Acta 2601",
-					value: "acta2601",
-					fechaInicio: dayjs("2000-01-01").toDate(),
-					fechaUltima: dayjs().toDate(),
-				},
-				{
-					label: "Acta 2630",
-					value: "acta2630",
-					fechaInicio: dayjs("2000-01-01").toDate(),
-					fechaUltima: dayjs().toDate(),
-				},
-			];
+			// Sin tasas de respaldo: los ids viejos (acta2601, acta2630) no existen en el hub y
+			// producían intereses con tasas inventadas. Lista vacía + error visible.
+			const fallbackRates: InterestRate[] = [];
 
 			// Establecer las tasas de fallback para que la aplicación siga funcionando
 			dispatch(

@@ -40,8 +40,8 @@ export default function SecondForm(props: any) {
 		{ value: "vacaciones", label: "Vacaciones" },
 	];
 	const optionsTopes = [
-		{ value: "topeTorrisi", label: "Aplica Torrisi" },
-		{ value: "topeVizzoti", label: "Aplica Vizzoti" },
+		{ value: "topeVizzoti", label: "Vizzoti (piso del 67 % de la remuneración)" },
+		{ value: "topeTorrisi", label: "Torrisi (tope pleno)" },
 	];
 	const optionsMultas = [
 		{ value: "multaArt1", label: "Multa Ley 25.323 art. 1" },
@@ -54,9 +54,7 @@ export default function SecondForm(props: any) {
 	const isDark = theme.palette.mode === "dark";
 
 	// Hairline divider brand-tinted que reemplaza el <Divider /> MUI.
-	const hairline = (
-		<Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1), my: 1.5 }} />
-	);
+	const hairline = <Box sx={{ height: 1, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.1), my: 1.5 }} />;
 
 	// Switch styling brand: track + thumb en BRAND_BLUE cuando checked.
 	const switchSx = {

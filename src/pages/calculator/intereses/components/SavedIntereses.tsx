@@ -1328,6 +1328,7 @@ const SavedIntereses = () => {
 						cer: "CER",
 						icl: "ICL BCRA",
 						tasaActivaCNAT2601: "Tasa Activa BNA - Acta 2601",
+						tasaActivaCNAT2630: "Tasa Activa BNA - Acta 2630",
 						tasaActivaCNAT2658: "Tasa Activa BNA - Acta 2658",
 						tasaActivaCNAT2764: "Tasa Activa BNA - Acta 2764",
 						tasaPasivaBCRA27802: "Tasa Pasiva BCRA Ley 27.802",

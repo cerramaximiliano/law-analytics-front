@@ -1,67 +1,39 @@
 import React from "react";
-import { Grid, FormControl, FormLabel, FormControlLabel, Checkbox, InputLabel, FormHelperText } from "@mui/material";
+import { Grid, FormControl, FormLabel, FormControlLabel, Radio, RadioGroup, InputLabel, FormHelperText } from "@mui/material";
 import NumberField from "components/UI/NumberField";
 import { useField } from "formik";
-import { useState } from "react";
 
 interface Props {
 	name: string;
 	nameRemuneracion: string;
 	options: { value: string; label: string }[];
 }
+
+// Criterio de tope del art. 245 LCT, excluyente:
+//  - Vizzoti (CSJN 2004): la base no puede bajar del 67 % de la mejor remuneración.
+//  - Torrisi (CSJN 1992): tope pleno, base = mínimo entre remuneración y tope.
+// El array `topes` guarda una sola opción para mantener el formato de los cálculos guardados.
 const LaborTopes: React.FC<Props> = (props) => {
-	const [aplicaFalloVizzoti, setAplicaFalloVizzoti] = useState(false);
-	//const [aplicaFalloTorrisi, setAplicaFalloTorrisi] = useState(false);
 	const { nameRemuneracion, name, options } = props;
 	const [field, meta, helper] = useField(name);
 	const { setValue } = helper;
 	const [touched, error] = [meta.touched, meta.error];
-	const _renderHelperText = () => {
-		if (touched && error) {
-			return <FormHelperText>{error}</FormHelperText>;
-		}
-	};
+	const seleccion: string = Array.isArray(field.value) && field.value.length > 0 ? field.value[0] : "";
 
-	const _onChange = (optionValue: string, isChecked: boolean) => {
-		const currentValues = field.value;
-		const valueIndex = currentValues.indexOf(optionValue);
-		let newValues;
-
-		if (isChecked && valueIndex === -1) {
-			newValues = [...currentValues, optionValue];
-		} else if (!isChecked && valueIndex !== -1) {
-			newValues = currentValues.filter((value: string) => value !== optionValue);
-		}
-
-		if (newValues) {
-			setValue(newValues);
-		}
-	};
 	return (
 		<Grid container spacing={3} justifyContent="center" sx={{ marginTop: "10px", marginBottom: "10px" }}>
 			<Grid>
-				<FormControl error={!!error}>
-					<FormLabel component="legend">Seleccione las opciones</FormLabel>
-					<FormControlLabel
-						name={field.name}
-						value={options[0].value}
-						control={
-							<Checkbox
-								{...field}
-								checked={field.value.includes(options[0].value)}
-								onChange={(e) => {
-									setAplicaFalloVizzoti(!aplicaFalloVizzoti);
-									_onChange(options[0].value, e.target.checked);
-								}}
-							/>
-						}
-						label="Aplica Vizzoti"
-						sx={{ width: "100%" }}
-					/>
-					{_renderHelperText()}
+				<FormControl error={!!(touched && error)}>
+					<FormLabel component="legend">Criterio del tope</FormLabel>
+					<RadioGroup name={field.name} value={seleccion} onChange={(e) => setValue([e.target.value])}>
+						{options.map((opt) => (
+							<FormControlLabel key={opt.value} value={opt.value} control={<Radio />} label={opt.label} sx={{ width: "100%" }} />
+						))}
+					</RadioGroup>
+					{touched && error && <FormHelperText>{error}</FormHelperText>}
 				</FormControl>
 			</Grid>
-			{field.value.length > 0 && (
+			{seleccion && (
 				<Grid item xs={12} style={{ maxWidth: "100%" }} justifyContent="center">
 					<InputLabel sx={{ textAlign: { xs: "left" } }}>Remuneración tope:</InputLabel>
 					<NumberField

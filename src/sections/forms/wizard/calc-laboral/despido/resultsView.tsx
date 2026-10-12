@@ -94,6 +94,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 			fechaFinalIntereses: "Fecha final de intereses",
 			tasaIntereses: "Tasa de interés aplicada",
 			montoIntereses: "Monto de intereses",
+			errorIntereses: "Intereses",
 			montoTotalConIntereses: "Monto total con intereses",
 			capitalizeInterest: "Capitalización de intereses",
 		};
@@ -357,10 +358,17 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 					key: "tasaIntereses",
 					value: intereses.tasaIntereses,
 				});
-				groups.intereses.push({
-					key: "montoIntereses",
-					value: intereses.montoIntereses,
-				});
+				if (intereses.errorIntereses) {
+					groups.intereses.push({
+						key: "errorIntereses",
+						value: intereses.errorIntereses,
+					});
+				} else {
+					groups.intereses.push({
+						key: "montoIntereses",
+						value: intereses.montoIntereses,
+					});
+				}
 			}
 
 			// Agregar el montoTotalConIntereses como campo oculto para el cálculo del total
@@ -862,42 +870,72 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 
 						<Divider />
 
-						{/* Sección Tope Vizzoti */}
-						{values.isTopes && (
-							<>
-								<Box>
-									<Typography variant="h6" color="primary" gutterBottom>
-										Criterio Vizzoti (Tope de Indemnización)
-									</Typography>
-									<Typography variant="body2" paragraph>
-										<strong>Aplicación del Tope:</strong>
-									</Typography>
-									<Typography variant="body2" component="div" sx={{ ml: 2 }}>
-										• Se calcula el <strong>67% de la remuneración real</strong>
-										<br />• Se toma el <strong>mayor valor</strong> entre:
-										<br />
-										&nbsp;&nbsp;- El 67% de la remuneración
-										<br />
-										&nbsp;&nbsp;- El tope legal vigente
-										<br />• <strong>Nunca puede superar</strong> la remuneración original
-									</Typography>
-									<Box sx={{ mt: 2, p: 2, bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.100"), borderRadius: 1 }}>
-										<Typography variant="body2" fontWeight="bold" gutterBottom>
-											Ejemplo práctico:
+						{/* Sección Tope (Vizzoti o Torrisi) */}
+						{values.isTopes &&
+							(Array.isArray(values.topes) && values.topes.includes("topeTorrisi") ? (
+								<>
+									<Box>
+										<Typography variant="h6" color="primary" gutterBottom>
+											Criterio Torrisi (Tope de Indemnización)
 										</Typography>
-										<Typography variant="body2" component="div">
-											• Remuneración: $1.000.000
-											<br />
-											• Tope legal: $500.000
-											<br />
-											• 67% remuneración: $670.000
-											<br />• <strong>Resultado: $670.000</strong> (mayor entre $670.000 y $500.000)
+										<Typography variant="body2" component="div" sx={{ ml: 2 }}>
+											• Se aplica el <strong>tope legal pleno</strong> del art. 245 LCT
+											<br />• La base es el <strong>menor valor</strong> entre la remuneración y el tope
+											<br />• No rige el piso del 67 % de Vizzoti
 										</Typography>
+										<Box
+											sx={{ mt: 2, p: 2, bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.100"), borderRadius: 1 }}
+										>
+											<Typography variant="body2" fontWeight="bold" gutterBottom>
+												Ejemplo práctico:
+											</Typography>
+											<Typography variant="body2" component="div">
+												• Remuneración: $1.000.000
+												<br />
+												• Tope legal: $500.000
+												<br />• <strong>Resultado: $500.000</strong> (menor entre $1.000.000 y $500.000)
+											</Typography>
+										</Box>
 									</Box>
-								</Box>
-								<Divider />
-							</>
-						)}
+									<Divider />
+								</>
+							) : (
+								<>
+									<Box>
+										<Typography variant="h6" color="primary" gutterBottom>
+											Criterio Vizzoti (Tope de Indemnización)
+										</Typography>
+										<Typography variant="body2" paragraph>
+											<strong>Aplicación del Tope:</strong>
+										</Typography>
+										<Typography variant="body2" component="div" sx={{ ml: 2 }}>
+											• Se calcula el <strong>67% de la remuneración real</strong>
+											<br />• Se toma el <strong>mayor valor</strong> entre:
+											<br />
+											&nbsp;&nbsp;- El 67% de la remuneración
+											<br />
+											&nbsp;&nbsp;- El tope legal vigente
+											<br />• <strong>Nunca puede superar</strong> la remuneración original
+										</Typography>
+										<Box
+											sx={{ mt: 2, p: 2, bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.100"), borderRadius: 1 }}
+										>
+											<Typography variant="body2" fontWeight="bold" gutterBottom>
+												Ejemplo práctico:
+											</Typography>
+											<Typography variant="body2" component="div">
+												• Remuneración: $1.000.000
+												<br />
+												• Tope legal: $500.000
+												<br />
+												• 67% remuneración: $670.000
+												<br />• <strong>Resultado: $670.000</strong> (mayor entre $670.000 y $500.000)
+											</Typography>
+										</Box>
+									</Box>
+									<Divider />
+								</>
+							))}
 
 						{/* Sección Liquidación Final */}
 						{values.isLiquidacion && (

@@ -20,6 +20,7 @@ import { Formik, Form } from "formik";
 // third party
 import dayjs from "utils/dayjs-config";
 import ResultsView from "./resultsView";
+import { calcularTramos } from "services/tasasCalculoService";
 
 import { WizardProps } from "types/wizards";
 
@@ -30,6 +31,17 @@ const { formId, formField } = despidoFormModel;
 // Función helper para calcular el monto base para intereses
 // IMPORTANTE: Esta función debe usar la MISMA lógica que _submitForm para que el capital
 // mostrado en el paso de intereses coincida con el capital final calculado
+// Criterio del tope del art. 245 LCT. Los cálculos guardados sin criterio quedan en Vizzoti.
+export function criterioTope(values: any): "vizzoti" | "torrisi" {
+	return Array.isArray(values?.topes) && values.topes.includes("topeTorrisi") ? "torrisi" : "vizzoti";
+}
+
+export function aplicarTope(remuneracion: number, tope: number, criterio: "vizzoti" | "torrisi"): number {
+	if (criterio === "torrisi") return Math.min(remuneracion, tope);
+	// Vizzoti: mayor entre 67 % de la remuneración y el tope, sin superar la remuneración
+	return Math.min(Math.max(remuneracion * 0.67, tope), remuneracion);
+}
+
 function calculateBaseAmount(values: any): number {
 	const remuneracionBase = parseFloat(values.remuneracion) || 0;
 	if (!remuneracionBase || remuneracionBase <= 0) return 0;
@@ -39,15 +51,12 @@ function calculateBaseAmount(values: any): number {
 
 	if (!fechaIngreso || !fechaEgreso || !fechaIngreso.isValid() || !fechaEgreso.isValid()) return 0;
 
-	// Calcular remuneración con tope Vizzoti si aplica
+	// Calcular remuneración con tope (Vizzoti por defecto, Torrisi si se eligió)
 	let remuneracionCalculada = remuneracionBase;
 	if (values.isTopes && values.remuneracionTopes) {
 		const topeLegalVigente = parseFloat(values.remuneracionTopes);
 		if (!isNaN(topeLegalVigente) && topeLegalVigente > 0) {
-			// Criterio Vizzoti: mayor entre 67% de remuneración y tope, pero no mayor que remuneración
-			const sesentiSietePorciento = remuneracionBase * 0.67;
-			const valorCalculado = Math.max(sesentiSietePorciento, topeLegalVigente);
-			remuneracionCalculada = Math.min(valorCalculado, remuneracionBase);
+			remuneracionCalculada = aplicarTope(remuneracionBase, topeLegalVigente, criterioTope(values));
 		}
 	}
 
@@ -222,31 +231,18 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
 
-	// Función para calcular intereses
-	const calcularIntereses = (montoBase: number, fechaInicial: string, fechaFinal: string, tasaId: string): number => {
+	// Intereses del camino sin tramos: se calculan en el hub con la serie real
+	// (antes eran tasas mensuales fijas aproximadas). Si la tasa no existe o el hub
+	// falla, se devuelve null y el resultado no muestra intereses inventados.
+	const calcularIntereses = async (montoBase: number, fechaInicial: string, fechaFinal: string, tasaId: string): Promise<number | null> => {
 		if (!montoBase || !fechaInicial || !fechaFinal || !tasaId) return 0;
-
-		const fechaInicialMoment = dayjs(fechaInicial, "DD/MM/YYYY");
-		const fechaFinalMoment = dayjs(fechaFinal, "DD/MM/YYYY");
-
-		// Calcular días entre fechas
-		const diasTotales = fechaFinalMoment.diff(fechaInicialMoment, "days");
-		if (diasTotales <= 0) return 0;
-
-		// Tasas mensuales aproximadas (en el backend se usará la real)
-		const tasas: { [key: string]: number } = {
-			tasaPasivaBCRA: 0.06 / 30, // ~6% mensual
-			acta2601: 0.08 / 30, // ~8% mensual
-			acta2630: 0.1 / 30, // ~10% mensual
-		};
-
-		// Tasa diaria (aproximada para preview)
-		const tasaDiaria = tasas[tasaId] || 0.06 / 30;
-
-		// Cálculo de interés simple
-		const interesTotal = montoBase * tasaDiaria * diasTotales;
-
-		return Math.round(interesTotal * 100) / 100;
+		try {
+			const r = await calcularTramos({ capital: montoBase, tramos: [{ desde: fechaInicial, hasta: fechaFinal, tasa: tasaId }] });
+			return r.interesTotal;
+		} catch (err) {
+			console.error("No se pudieron calcular los intereses:", err);
+			return null;
+		}
 	};
 
 	const calcularPreaviso = (fechaIngreso: string | null, fechaEgreso: string | null, remuneracion: number) => {
@@ -360,17 +356,6 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 		};
 	}
 
-	function calcularTopeVizzoti(mejorRemuneracionBruta: number, topeLegalVigente: number): number {
-		// Calcular el 67% de la remuneración (criterio Vizzoti)
-		const sesentiSietePorciento = mejorRemuneracionBruta * 0.67;
-
-		// Criterio Vizzoti: tomar el mayor valor entre el 67% de la remuneración y el tope legal
-		// Pero nunca superar la remuneración original
-		const valorCalculado = Math.max(sesentiSietePorciento, topeLegalVigente);
-
-		// No puede superar la remuneración original
-		return Math.min(valorCalculado, mejorRemuneracionBruta);
-	}
 	function calcularMultaArt1Ley25323(indemnizacionTotal: number): number {
 		return indemnizacionTotal * 0.5;
 	}
@@ -509,7 +494,7 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 		if (values.isTopes && values.remuneracionTopes) {
 			const topeLegalVigente = parseFloat(values.remuneracionTopes);
 			if (!isNaN(topeLegalVigente) && topeLegalVigente > 0) {
-				const remuneracionTope = calcularTopeVizzoti(remuneracionBase, topeLegalVigente);
+				const remuneracionTope = aplicarTope(remuneracionBase, topeLegalVigente, criterioTope(values));
 				remuneracionCalculada = values.incluirSAC ? remuneracionTope + remuneracionTope / 12 : remuneracionTope;
 			} else {
 				// Si el tope no es válido, usar la remuneración base
@@ -543,8 +528,9 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 		if (values.isTopes && values.remuneracionTopes) {
 			const topeLegalVigente = parseFloat(values.remuneracionTopes);
 			if (!isNaN(topeLegalVigente) && topeLegalVigente > 0) {
-				const remuneracionTope = calcularTopeVizzoti(remuneracionBase, topeLegalVigente);
+				const remuneracionTope = aplicarTope(remuneracionBase, topeLegalVigente, criterioTope(values));
 				resultado.remuneracionTope = remuneracionTope;
+				resultado.criterioTope = criterioTope(values);
 			}
 		}
 		// Debug intermedio
@@ -725,7 +711,7 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 				// Sumar otras sumas
 				if (values.otrasSumas) capitalBaseFallback += parseFloat(values.otrasSumas) || 0;
 
-				const montoIntereses = calcularIntereses(
+				const montoIntereses = await calcularIntereses(
 					capitalBaseFallback,
 					values.fechaInicialIntereses,
 					values.fechaFinalIntereses,
@@ -736,8 +722,9 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 					fechaInicialIntereses: values.fechaInicialIntereses,
 					fechaFinalIntereses: values.fechaFinalIntereses,
 					tasaIntereses: values.tasaIntereses,
-					montoIntereses: montoIntereses,
-					montoTotalConIntereses: capitalBaseFallback + montoIntereses,
+					montoIntereses: montoIntereses ?? 0,
+					montoTotalConIntereses: capitalBaseFallback + (montoIntereses ?? 0),
+					...(montoIntereses === null ? { errorIntereses: "No se pudieron calcular los intereses con la tasa elegida." } : {}),
 				};
 			}
 		}
@@ -801,9 +788,7 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 								<Box
 									sx={{
 										height: 3,
-										bgcolor: isActive
-											? BRAND_BLUE
-											: alpha(theme.palette.text.primary, isDark ? 0.12 : 0.08),
+										bgcolor: isActive ? BRAND_BLUE : alpha(theme.palette.text.primary, isDark ? 0.12 : 0.08),
 										borderRadius: 1,
 										transition: "background-color 0.3s ease",
 									}}

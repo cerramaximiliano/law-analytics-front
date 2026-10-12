@@ -32,7 +32,7 @@ import { Add, Trash, Calculator, Edit2, TickCircle, CloseCircle } from "iconsax-
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
-import axios from "axios";
+import { calcularTramos } from "services/tasasCalculoService";
 import "dayjs/locale/es";
 
 // Types
@@ -100,6 +100,11 @@ export interface InterestRate {
 	value: string;
 	fechaInicio: Date;
 	fechaUltima: Date;
+	// Vigencia jurídica (TasasConfig.vigente/avisoVigencia/norma del hub)
+	vigente?: boolean;
+	avisoVigencia?: string;
+	norma?: string;
+	tipoIndice?: string;
 }
 
 interface InterestSegmentsManagerProps {
@@ -361,6 +366,14 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 		}
 	}, [segments, capitalizeInterest, capital, onTotalChange]);
 
+	const rateInfo = (rateValue?: string) => availableRates.find((r) => r.value === rateValue);
+	const isDailyRate = (rateValue?: string) => rateInfo(rateValue)?.tipoIndice === "interesDiario";
+	const indexedRateName = (rateValue: string, cap?: CapitalizationFrequency) => {
+		const base = getRateName(rateValue, availableRates);
+		const capLabel = CAPITALIZATION_OPTIONS.find((c) => c.value === cap)?.label;
+		return cap && cap !== "none" && capLabel ? `${base} (Cap. ${capLabel})` : base;
+	};
+
 	// Calcular intereses para un segmento específico
 	const calculateSegmentInterest = useCallback(
 		async (
@@ -373,44 +386,34 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 			}
 
 			try {
-				const baseURL = import.meta.env.VITE_BASE_URL || "";
-				const params = new URLSearchParams({
-					fechaDesde: segment.startDate,
-					fechaHasta: segment.endDate,
-					campo: segment.rate,
-					calcular: "true",
+				// Motor único del hub (POST /api/tasas/calcular). La capitalización dentro del
+				// tramo (acta CNAT 2764: anual) solo aplica a series de interés diario.
+				const capitalizacion =
+					segment.capitalizationFrequency && segment.capitalizationFrequency !== "none" ? segment.capitalizationFrequency : undefined;
+				const r = await calcularTramos({
+					capital: segmentCapital,
+					tramos: [
+						{
+							desde: segment.startDate,
+							hasta: segment.endDate,
+							tasa: segment.rate,
+							...(capitalizacion ? { capitalizacion } : {}),
+							...(segment.cerComparisonEnabled && supportsCERComparison(segment.rate) ? { comparativaCER: true } : {}),
+						},
+					],
 				});
-				// Comparativa CER: solo si está activada y la tasa la soporta
-				if (segment.cerComparisonEnabled && supportsCERComparison(segment.rate)) {
-					params.set("cerComparison", "true");
-					params.set("capital", String(segmentCapital));
-				}
-				const url = `${baseURL}/api/tasas/consulta?${params.toString()}`;
-
-				const response = await axios.get(url, { withCredentials: true });
-
-				if (response.data.resultado !== undefined) {
-					const coefficient = response.data.resultado;
-					const interest = Math.round(segmentCapital * coefficient);
+				const tramo = r.tramos?.[0];
+				if (tramo) {
 					return {
-						interest,
-						coefficient,
-						cerComparison: response.data.cerComparison,
+						interest: tramo.interes,
+						coefficient: tramo.coeficiente,
+						cerComparison: tramo.comparativaCER,
 					};
-				}
-
-				// Formato legado (array)
-				if (Array.isArray(response.data)) {
-					const totalInterest = response.data.reduce(
-						(sum: number, item: any) => sum + (typeof item.interes === "number" ? item.interes : 0),
-						0,
-					);
-					return { interest: totalInterest, coefficient: totalInterest / segmentCapital };
 				}
 
 				return null;
 			} catch (err: any) {
-				const errorMsg = err.response?.data?.message || err.message || "Error al calcular intereses";
+				const errorMsg = err.response?.data?.mensaje || err.response?.data?.message || err.message || "Error al calcular intereses";
 				setError(errorMsg);
 				return null;
 			}
@@ -578,7 +581,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 				startDate: newSegment.startDate,
 				endDate: newSegment.endDate,
 				rate: isSimpleInterest ? "simple" : newSegment.rate!,
-				rateName: isSimpleInterest ? rateNameParts.join(" ") : getRateName(newSegment.rate!, availableRates),
+				rateName: isSimpleInterest ? rateNameParts.join(" ") : indexedRateName(newSegment.rate!, newSegment.capitalizationFrequency),
 				capital: segmentCapital,
 				interest: result.interest,
 				coefficient: result.coefficient,
@@ -587,7 +590,8 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 				interestType: newSegment.interestType,
 				simpleRate: isSimpleInterest ? newSegment.simpleRate : undefined,
 				ratePeriod: isSimpleInterest ? newSegment.ratePeriod : undefined,
-				capitalizationFrequency: isSimpleInterest ? newSegment.capitalizationFrequency : undefined,
+				capitalizationFrequency:
+					isSimpleInterest || newSegment.capitalizationFrequency !== "none" ? newSegment.capitalizationFrequency : undefined,
 				cerComparisonEnabled: !isSimpleInterest && supportsCERComparison(newSegment.rate) ? !!newSegment.cerComparisonEnabled : undefined,
 				cerComparison: "cerComparison" in result ? result.cerComparison : undefined,
 			};
@@ -729,7 +733,9 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 						startDate: editingSegment.startDate!,
 						endDate: editingSegment.endDate!,
 						rate: newRate,
-						rateName: isSimpleInterest ? rateNameParts.join(" ") : getRateName(editingSegment.rate!, availableRates),
+						rateName: isSimpleInterest
+							? rateNameParts.join(" ")
+							: indexedRateName(editingSegment.rate!, editingSegment.capitalizationFrequency),
 						capital: segmentCapital,
 						interest: result!.interest,
 						coefficient: result!.coefficient,
@@ -737,7 +743,10 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 						interestType: editingSegment.interestType,
 						simpleRate: isSimpleInterest ? editingSegment.simpleRate : undefined,
 						ratePeriod: isSimpleInterest ? editingSegment.ratePeriod : undefined,
-						capitalizationFrequency: isSimpleInterest ? editingSegment.capitalizationFrequency : undefined,
+						capitalizationFrequency:
+							isSimpleInterest || (editingSegment.capitalizationFrequency && editingSegment.capitalizationFrequency !== "none")
+								? editingSegment.capitalizationFrequency
+								: undefined,
 						cerComparisonEnabled: cerEnabled,
 						// Si la tasa cambió y no soporta comparativa, limpiar el resultado.
 						cerComparison: cerEnabled === undefined ? undefined : result!.cerComparison ?? seg.cerComparison,
@@ -1446,29 +1455,54 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 								</Grid>
 							</>
 						) : (
-							<Grid item xs={12} sm={5}>
-								<TextField
-									select
-									label="Tasa de Interés"
-									size="small"
-									fullWidth
-									value={newSegment.rate || ""}
-									onChange={(e) =>
-										setNewSegment({
-											...newSegment,
-											rate: e.target.value,
-											// si cambia a una tasa que no soporta CER, limpiar el flag
-											cerComparisonEnabled: supportsCERComparison(e.target.value) ? newSegment.cerComparisonEnabled : false,
-										})
-									}
-								>
-									{availableRates.map((rate) => (
-										<MenuItem key={rate.value} value={rate.value}>
-											{rate.label}
-										</MenuItem>
-									))}
-								</TextField>
-							</Grid>
+							<>
+								<Grid item xs={12} sm={isDailyRate(newSegment.rate) ? 3 : 5}>
+									<TextField
+										select
+										label="Tasa de Interés"
+										size="small"
+										fullWidth
+										value={newSegment.rate || ""}
+										onChange={(e) =>
+											setNewSegment({
+												...newSegment,
+												rate: e.target.value,
+												// si cambia a una tasa que no soporta CER, limpiar el flag
+												cerComparisonEnabled: supportsCERComparison(e.target.value) ? newSegment.cerComparisonEnabled : false,
+												// la capitalización dentro del tramo solo aplica a series de interés diario
+												capitalizationFrequency: isDailyRate(e.target.value) ? newSegment.capitalizationFrequency : "none",
+											})
+										}
+									>
+										{availableRates.map((rate) => (
+											<MenuItem key={rate.value} value={rate.value}>
+												{rate.label}
+												{rate.vigente === false ? " (no vigente)" : ""}
+											</MenuItem>
+										))}
+									</TextField>
+								</Grid>
+								{isDailyRate(newSegment.rate) && (
+									<Grid item xs={12} sm={2}>
+										<TextField
+											select
+											label="Capitalización"
+											size="small"
+											fullWidth
+											value={newSegment.capitalizationFrequency || "none"}
+											onChange={(e) =>
+												setNewSegment({
+													...newSegment,
+													capitalizationFrequency: e.target.value as CapitalizationFrequency,
+												})
+											}
+										>
+											<MenuItem value="none">Sin capitalización</MenuItem>
+											<MenuItem value="annual">Anual (art. 770 CCyC)</MenuItem>
+										</TextField>
+									</Grid>
+								)}
+							</>
 						)}
 
 						<Grid item xs={12} sm={3}>
@@ -1528,6 +1562,19 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 								}
 							/>
 						</Box>
+					)}
+
+					{newSegment.interestType !== "simple" && newSegment.capitalizationFrequency === "annual" && (
+						<Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+							Los intereses se capitalizan en cada aniversario del inicio del tramo. Si la sentencia capitaliza desde la notificación de la
+							demanda, empezá el tramo en esa fecha.
+						</Typography>
+					)}
+
+					{newSegment.interestType !== "simple" && rateInfo(newSegment.rate)?.vigente === false && (
+						<Alert severity="warning" sx={{ mt: 1.5 }}>
+							{rateInfo(newSegment.rate)?.avisoVigencia || "Esta tasa no está vigente."}
+						</Alert>
 					)}
 
 					{/* Mostrar información adicional del capital */}

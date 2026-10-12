@@ -563,6 +563,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({
 				// Mapeo de nombres de tasas
 				const tasasMapping: Record<string, string> = {
 					tasaActivaCNAT2601: "Tasa Activa Banco Nación - Acta 2601",
+					tasaActivaCNAT2630: "Tasa Activa Banco Nación - Acta 2630",
 					tasaActivaCNAT2658: "Tasa Activa Banco Nación - Acta 2658",
 					tasaActivaCNAT2764: "Tasa Activa Banco Nación - Acta 2764",
 				};

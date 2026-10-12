@@ -88,20 +88,7 @@ const applications: NavItemType = {
 					type: "item",
 					url: "/apps/calc/valores",
 				},
-				{
-					id: "civil-calculator",
-					title: <FormattedMessage id="civil" />,
-					type: "item",
-					url: "/apps/calc/civil",
-					disabled: true,
-					chip: {
-						label: "Próximamente",
-						color: "primary",
-						size: "small",
-						variant: "filled",
-						className: "truncate-chip coming-soon-chip",
-					},
-				},
+				// Civil oculta hasta tener motor propio (backlog la-ads ítem 7, D3 b.7).
 				{
 					id: "previsional-calculator",
 					title: <FormattedMessage id="Previsional" />,
