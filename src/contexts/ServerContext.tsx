@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { createContext, useEffect, useReducer, ReactElement, useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios, { AxiosError } from "axios";
@@ -11,8 +11,6 @@ import authReducer from "store/reducers/auth";
 import { logoutUser } from "store/reducers/auth";
 import Loader from "components/Loader";
 import { esRutaPublica, necesitaGoogleSignIn } from "utils/lazyRetry";
-import { UnauthorizedModal } from "../sections/auth/UnauthorizedModal";
-import { LimitErrorModal } from "../sections/auth/LimitErrorModal";
 import { AuthProps, ServerContextType, UserProfile, LoginResponse, RegisterResponse, VerifyCodeResponse } from "../types/auth";
 import { Subscription } from "../types/user";
 import { Payment } from "store/reducers/ApiService";
@@ -28,6 +26,12 @@ import { extractErrorMessage } from "utils/errorMessages";
 import webSocketService from "store/reducers/WebSocketService";
 import { APP_DEFAULT_PATH } from "config";
 import { getErrorCode } from "utils/accountDeletion";
+
+// Los dos modales se muestran solo ante un error (sesión vencida, límite del plan)
+// y traen Formik, Yup, Framer Motion y la tarjeta de planes: se cargan recién
+// cuando hay que abrirlos, no en el paquete de arranque (2026-10-13).
+const UnauthorizedModal = lazy(() => import("../sections/auth/UnauthorizedModal").then((m) => ({ default: m.UnauthorizedModal })));
+const LimitErrorModal = lazy(() => import("../sections/auth/LimitErrorModal").then((m) => ({ default: m.LimitErrorModal })));
 
 // Global setting for hiding international banking data
 export const HIDE_INTERNATIONAL_BANKING_DATA = import.meta.env.VITE_HIDE_BANKING_DATA === "true";
@@ -53,6 +57,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	const [showUnauthorizedModal, setShowUnauthorizedModal] = useState<boolean>(false);
 	const [showLimitErrorModal, setShowLimitErrorModal] = useState<boolean>(false);
 	const [limitErrorData, setLimitErrorData] = useState<any>({});
+	// Una vez abierto, el modal de límite queda montado para que cierre con su animación.
+	const [limitErrorModalMontado, setLimitErrorModalMontado] = useState<boolean>(false);
+	useEffect(() => {
+		if (showLimitErrorModal) setLimitErrorModalMontado(true);
+	}, [showLimitErrorModal]);
 	const [hasPlanRestrictionError, setHasPlanRestrictionError] = useState<boolean>(false);
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -853,22 +862,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			    proveedor ya no se monta en las páginas de marketing. Se monta el modal
 			    solo cuando hay que abrirlo y solo donde el proveedor existe. */}
 			{showUnauthorizedModal && necesitaGoogleSignIn(window.location.pathname) && (
-				<UnauthorizedModal
-					open={showUnauthorizedModal}
-					onClose={() => setShowUnauthorizedModal(false)}
-					onLogin={login}
-					onGoogleLogin={loginWithGoogle}
-					onLogout={handleLogoutAndRedirect}
-				/>
+				<Suspense fallback={null}>
+					<UnauthorizedModal
+						open={showUnauthorizedModal}
+						onClose={() => setShowUnauthorizedModal(false)}
+						onLogin={login}
+						onGoogleLogin={loginWithGoogle}
+						onLogout={handleLogoutAndRedirect}
+					/>
+				</Suspense>
 			)}
-			<LimitErrorModal
-				open={showLimitErrorModal}
-				onClose={() => setShowLimitErrorModal(false)}
-				message={limitErrorData.message}
-				limitInfo={limitErrorData.limitInfo}
-				featureInfo={limitErrorData.featureInfo}
-				upgradeRequired={limitErrorData.upgradeRequired}
-			/>
+			{(showLimitErrorModal || limitErrorModalMontado) && (
+				<Suspense fallback={null}>
+					<LimitErrorModal
+						open={showLimitErrorModal}
+						onClose={() => setShowLimitErrorModal(false)}
+						message={limitErrorData.message}
+						limitInfo={limitErrorData.limitInfo}
+						featureInfo={limitErrorData.featureInfo}
+						upgradeRequired={limitErrorData.upgradeRequired}
+					/>
+				</Suspense>
+			)}
 		</AuthContext.Provider>
 	);
 };

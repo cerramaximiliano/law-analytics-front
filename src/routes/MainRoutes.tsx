@@ -3,13 +3,17 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 
 // project-imports
-import MainLayout from "layout/MainLayout";
 import CommonLayout from "layout/CommonLayout";
 import PublicLayout from "layout/PublicLayout";
 import Loadable from "components/Loadable";
 import AuthGuard from "utils/route-guard/AuthGuard";
 import AdminRoleGuard from "utils/route-guard/AdminRoleGuard";
 import { lazyRetry } from "utils/lazyRetry";
+
+// El layout del panel va en su propio chunk: las páginas públicas (landing,
+// funciones, registro) no lo usan y pesaba en el paquete de arranque. Se precarga
+// en las rutas privadas y desde login/registro (utils/lazyRetry) (2026-10-13).
+const MainLayout = Loadable(lazyRetry(() => import("layout/MainLayout"), "MainLayout"));
 
 // render - dashboard
 const DashboardDefault = Loadable(lazyRetry(() => import("pages/dashboard/default"), "DashboardDefault"));

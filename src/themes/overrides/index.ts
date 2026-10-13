@@ -2,7 +2,9 @@
 import { Theme } from "@mui/material/styles";
 
 // third-party
-import merge from "lodash/merge";
+// deepmerge de MUI en vez de lodash/merge: lodash/merge arrastraba ~40 módulos
+// CommonJS de lodash al paquete de arranque solo para el tema (2026-10-13).
+import { deepmerge } from "@mui/utils";
 
 // project-imports
 import Accordion from "./Accordion";
@@ -54,6 +56,8 @@ import ToggleButton from "./ToggleButton";
 import Tooltip from "./Tooltip";
 import TreeItem from "./TreeItem";
 import Typography from "./Typography";
+
+const merge = (...partes: object[]) => partes.reduce((acc, parte) => deepmerge(acc, parte), {});
 
 // ==============================|| OVERRIDES - MAIN ||============================== //
 

@@ -7,7 +7,6 @@ import { Outlet } from "react-router-dom";
 import { Container, Toolbar } from "@mui/material";
 
 // project-imports
-import ComponentLayout from "./ComponentLayout";
 import ThemeCustomization from "themes";
 import { dispatch, useSelector } from "store";
 import { openComponentDrawer } from "store/reducers/menu";
@@ -19,6 +18,9 @@ import LinearProgress, { LinearProgressProps } from "@mui/material/LinearProgres
 
 const Header = lazy(() => import("./Header"));
 const FooterBlock = lazy(() => import("./FooterBlock"));
+// Solo lo usa el layout "component" (con SimpleBar y react-device-detect): fuera
+// del paquete de arranque de las páginas públicas (2026-10-13).
+const ComponentLayout = lazy(() => import("./ComponentLayout"));
 
 // ==============================|| LOADER - WRAPPER ||============================== //
 

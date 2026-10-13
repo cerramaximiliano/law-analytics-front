@@ -291,6 +291,12 @@ export const necesitaGoogleSignIn = (ruta: string): boolean => !esRutaPublica(ru
 export const preloadCriticalRoutes = () => {
 	if (typeof window !== "undefined" && esRutaPublica(window.location.pathname)) return;
 
+	// El layout del panel ya no viaja en el paquete de arranque: en una ruta privada
+	// se pide enseguida, en paralelo con el resto del arranque.
+	import("layout/MainLayout").catch(() => {
+		// Ignorar errores de precarga
+	});
+
 	// Lista de rutas críticas que se usan frecuentemente
 	const criticalRoutes = [
 		() => import("pages/dashboard/default"),
@@ -312,8 +318,8 @@ export const preloadCriticalRoutes = () => {
 // dashboard (el registro y la verificación redirigen ahí). Con el formulario ya
 // usable, se baja el chunk del dashboard en segundo plano para que la primera pantalla
 // después del login no espere la red (antes recién se precargaba a los 5 s y solo en
-// rutas privadas). `MainLayout` va en el paquete principal (import estático en
-// MainRoutes), así que no hace falta pedirlo aparte.
+// rutas privadas). Junto con el dashboard se pide `MainLayout`, que desde el
+// 2026-10-13 tiene su propio chunk.
 const RUTAS_PRE_DASHBOARD = /^\/(register|login|code-verification)(\/|$)/;
 let dashboardPrecargado = false;
 
@@ -321,6 +327,9 @@ export const preloadDashboardFromAuthRoutes = (ruta: string = typeof window !== 
 	if (dashboardPrecargado || typeof window === "undefined" || !RUTAS_PRE_DASHBOARD.test(ruta)) return;
 	dashboardPrecargado = true;
 	const cargar = () => {
+		import("layout/MainLayout").catch(() => {
+			// Ignorar errores de precarga
+		});
 		import("pages/dashboard/default").catch(() => {
 			// Ignorar errores de precarga
 		});
