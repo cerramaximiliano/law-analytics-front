@@ -49,6 +49,7 @@ import ejeWorkersService from "api/workersEje";
 import pjsaltaWorkersService from "api/workersPjSalta";
 import pjcatamarcaWorkersService from "api/workersPjCatamarca";
 import pjmendozaWorkersService from "api/workersPjMendoza";
+import { trackActivity } from "utils/productAnalytics";
 import PjnAccountConnect, { PjnAccountConnectRef } from "./PjnAccountConnect";
 import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import { usePjnSiteStatus } from "hooks/usePjnSiteStatus";
@@ -260,7 +261,7 @@ const AutomaticStep = () => {
 	// checklist que envía al user directo al modo "Importar expediente individual"
 	// cuando clickea el logo PJN en la opción B del step "Conectar con el Poder
 	// Judicial".
-	const [pjnImportMode, setPjnImportMode] = useState<PjnImportMode>((values.pjnImportMode as PjnImportMode) || "connect");
+	const [pjnImportMode, setPjnImportMode] = useState<PjnImportMode>((values.pjnImportMode as PjnImportMode) || "single");
 
 	// Modo de importación Buenos Aires: conectar cuenta SCBA o importar expediente individual.
 	// Mismo patrón que `pjnImportMode`.
@@ -1506,7 +1507,8 @@ const AutomaticStep = () => {
 											<PjnAccountConnect
 												ref={pjnAccountConnectRef}
 												onConnectionSuccess={() => {
-													// Opcional: cerrar modal o mostrar mensaje
+													// Las carpetas las crea la sincronización (sin POST /folders): se mide acá.
+													trackActivity("folder_create_complete", { mode: "connect", jurisdiction: "nacional" });
 												}}
 												onSyncComplete={() => {
 													// Opcional: recargar lista de carpetas
@@ -1701,7 +1703,7 @@ const AutomaticStep = () => {
 											<ScbaAccountConnect
 												ref={scbaAccountConnectRef}
 												onConnectionSuccess={() => {
-													// Opcional: cerrar modal o mostrar mensaje
+													trackActivity("folder_create_complete", { mode: "connect", jurisdiction: "buenosaires" });
 												}}
 											/>
 										</Grid>

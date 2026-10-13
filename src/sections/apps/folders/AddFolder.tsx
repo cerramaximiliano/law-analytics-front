@@ -1,6 +1,7 @@
 import React from "react";
 //AddFolder.tsx
-import { useEffect, useState } from "react";
+import { isDevReview } from "utils/devReview";
+import { useEffect, useRef, useState } from "react";
 import {
 	Button,
 	DialogActions,
@@ -68,7 +69,7 @@ const getInitialValues = (
 		eje: false, // Para indicar si los datos provienen del EJE (CABA)
 		ejeSearchType: "expediente", // Tipo de búsqueda para EJE: "cuij" o "expediente"
 		ejeCuij: "", // CUIJ para búsqueda en EJE
-		pjnImportMode: overrides?.pjnImportMode ?? "connect", // Modo de importación PJN: "connect" o "single"
+		pjnImportMode: overrides?.pjnImportMode ?? "single", // Modo de importación PJN: "connect" o "single" (13/10: arranca en importar por número)
 		baImportMode: overrides?.baImportMode ?? "connect", // Modo de importación BA: "connect" o "single"
 		mevUsername: "", // Credencial del portal MEV del usuario (importar expediente individual)
 		mevPassword: "", // Contraseña del portal MEV del usuario
@@ -302,6 +303,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 	const steps = !isCreating ? stepsEditing : values.entryMethod === "automatic" ? stepsCreatingAutomatic : stepsCreatingManual;
 	const [openAlert, setOpenAlert] = useState(false);
 	const [activeStep, setActiveStep] = useState(0);
+	const createStartTrackedRef = useRef(false);
 	const isLastStep = activeStep === steps.length - 1;
 
 	// Para solucionar el problema de la referencia circular en la definición de FolderSchema
@@ -398,18 +400,17 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 			dispatch(fetchPjnSiteStatus());
 			// Si estamos creando, verificar límites
 			if (isCreating) {
-				trackActivity("folder_create_start", {
-					mode: initialFormValues?.entryMethod === "automatic" ? "link" : "manual",
-					jurisdiction: initialFormValues?.judicialPower,
-				});
+				createStartTrackedRef.current = false;
 				// Resetear valores con overrides (entryMethod, judicialPower) para que steps sea correcto
 				const freshValues = getInitialValues(null, initialFormValues);
 				setInitialValues(freshValues);
 				setValues(freshValues);
 
-				// Resetear el estado del modal
-				setShowAddFolderModal(false);
-				setIsCheckingLimit(true);
+				// El formulario se muestra de inmediato y el límite se verifica en segundo plano
+				// (folders.tsx ya lo chequeó con las stats del cliente y el hub lo vuelve a
+				// validar en el POST); antes había un spinner "Verificando disponibilidad…".
+				setShowAddFolderModal(true);
+				setIsCheckingLimit(false);
 
 				// Verificar el límite de recursos para carpetas (folders)
 				const checkLimit = async () => {
@@ -426,29 +427,18 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 									limit: response.data.limit,
 								});
 								setLimitErrorMessage("Has alcanzado el límite de carpetas disponibles en tu plan actual.");
-								setIsCheckingLimit(false);
+								setShowAddFolderModal(false);
 								setLimitErrorOpen(true);
-							} else {
-								// Si no ha alcanzado el límite, mostrar el modal de nueva carpeta
-								setIsCheckingLimit(false);
-								setShowAddFolderModal(true);
 							}
-						} else {
-							// Si hay un error en la respuesta, mostrar el modal de nueva carpeta por defecto
-							if (!response.success) {
-								console.error("Error al verificar el límite de recursos:", response.message);
-							}
-							setIsCheckingLimit(false);
-							setShowAddFolderModal(true);
+						} else if (!response.success) {
+							console.error("Error al verificar el límite de recursos:", response.message);
 						}
 					} catch (error) {
+						// En caso de error se deja seguir: el hub valida el límite en el POST
 						console.error("Error al verificar el límite de recursos:", error);
-						// En caso de error, permitir crear la carpeta de todos modos
-						setIsCheckingLimit(false);
-						setShowAddFolderModal(true);
 					}
 				};
-				checkLimit();
+				if (!isDevReview()) checkLimit();
 			} else {
 				// Si estamos editando, mostrar directamente el modal sin verificar límites
 				setShowAddFolderModal(true);
@@ -602,6 +592,16 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 		// Actualizamos el estado de los valores para las validaciones condicionales
 		setValues(formValues);
 
+		// folder_create_start a la primera acción del usuario (no al abrir el modal), con el
+		// método y el poder judicial reales.
+		if (isCreating && !createStartTrackedRef.current) {
+			createStartTrackedRef.current = true;
+			trackActivity("folder_create_start", {
+				mode: formValues.entryMethod === "automatic" ? "link" : "manual",
+				jurisdiction: formValues.judicialPower || undefined,
+			});
+		}
+
 		// Si estamos en el último paso, enviamos el formulario
 		if (isLastStep) {
 			await _submitForm(formValues, actions, mode);
@@ -723,9 +723,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 										Paso {activeStep + 1} / {steps.length}
 									</Typography>
 									<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1 }}>·</Typography>
-									<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1 }}>
-										{steps[activeStep]}
-									</Typography>
+									<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", lineHeight: 1 }}>{steps[activeStep]}</Typography>
 								</Stack>
 							</Stack>
 						</Stack>
@@ -754,7 +752,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 												spacing={1.5}
 												sx={{
 													mb: 2,
-													pb: 3.5,
+													pb: { xs: 1, sm: 3.5 },
 													position: "sticky",
 													top: -16,
 													zIndex: 1,
@@ -778,6 +776,8 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 															/>
 															<Typography
 																sx={{
+																	// En el teléfono no entran: el título ya dice "Paso N / M · etiqueta"
+																	display: { xs: "none", sm: "block" },
 																	position: "absolute",
 																	top: 8,
 																	fontSize: "0.6rem",
@@ -805,6 +805,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 								<DialogActions
 									sx={{
 										p: { xs: 1.5, sm: 2 },
+										pb: { xs: "calc(12px + env(safe-area-inset-bottom))", sm: 2 },
 										bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.04 : 0.02),
 										borderTop: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.16 : 0.1)}`,
 										flexShrink: 0,
@@ -831,8 +832,8 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 												</Tooltip>
 											)}
 										</Grid>
-										<Grid item>
-											<Stack direction="row" spacing={1.25} alignItems="center">
+										<Grid item xs={isCreating ? 12 : undefined} sm="auto">
+											<Stack direction="row" spacing={1.25} alignItems="center" justifyContent="flex-end">
 												{activeStep > 0 && (
 													<Button
 														onClick={handleBack}
@@ -880,6 +881,8 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 														}
 														sx={{
 															minWidth: 100,
+															flex: { xs: 1, sm: "none" },
+															minHeight: { xs: 48, sm: "auto" },
 															textTransform: "none",
 															bgcolor: BRAND_BLUE,
 															color: "#fff",
@@ -895,13 +898,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 															},
 														}}
 													>
-														{isProcessing
-															? "Procesando…"
-															: folder && isLastStep
-															? "Editar"
-															: !folder && isLastStep
-															? "Crear"
-															: "Siguiente"}
+														{isProcessing ? "Procesando…" : folder && isLastStep ? "Editar" : !folder && isLastStep ? "Crear" : "Siguiente"}
 													</Button>
 												)}
 											</Stack>

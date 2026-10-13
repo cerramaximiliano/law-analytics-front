@@ -1,5 +1,5 @@
 import React from "react";
-import { Grid, Typography, Box, Stack } from "@mui/material";
+import { Typography, Box, Stack } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import { useFormikContext } from "formik";
 import { ArrowRight2, InfoCircle } from "iconsax-react";
@@ -138,7 +138,7 @@ const PowerCard = ({ selected, logoSrc, logoAlt, logoBg, title, description, cod
 const JudicialPowerSelection = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
-	const { setFieldValue, values } = useFormikContext<FormValues>();
+	const { setFieldValue, submitForm, values } = useFormikContext<FormValues>();
 
 	const handleSelectJudicialPower = (power: "nacional" | "buenosaires" | "caba" | "salta" | "catamarca" | "mendoza") => {
 		if (power !== values.judicialPower) {
@@ -149,6 +149,8 @@ const JudicialPowerSelection = () => {
 			for (const cuij of ["ejeCuij", "pjsaltaCuij", "pjcatamarcaCuij", "pjmendozaCuij", "mevCuij"]) setFieldValue(cuij, "");
 		}
 		setFieldValue("judicialPower", power);
+		// Tocar la tarjeta ya elige y avanza (antes había que tocar además "Siguiente").
+		setTimeout(() => submitForm(), 150);
 	};
 
 	return (
@@ -188,80 +190,68 @@ const JudicialPowerSelection = () => {
 				</Typography>
 			</Stack>
 
-			<Grid container spacing={1.25}>
-				<Grid item xs={12}>
-					<PowerCard
-						selected={values.judicialPower === "nacional"}
-						onClick={() => handleSelectJudicialPower("nacional")}
-						logoSrc={PJN_LOGO_URL}
-						logoAlt="Poder Judicial de la Nación"
-						logoBg="#222E43"
-						title="Poder Judicial de la Nación"
-						description="Causas federales y nacionales."
-						codeChip="PJN"
-					/>
-				</Grid>
-				<Grid item xs={12}>
-					<PowerCard
-						selected={values.judicialPower === "buenosaires"}
-						onClick={() => handleSelectJudicialPower("buenosaires")}
-						logoSrc={logoPJBuenosAires}
-						logoAlt="Poder Judicial de Buenos Aires"
-						logoBg="#f8f8f8"
-						title="Poder Judicial de Buenos Aires"
-						description="Fuero provincial — conectá tu cuenta SCBA (Mis Causas) o importá un expediente de la MEV."
-						codeChip="BA"
-					/>
-				</Grid>
-				<Grid item xs={12}>
-					<PowerCard
-						selected={values.judicialPower === "caba"}
-						onClick={() => handleSelectJudicialPower("caba")}
-						logoSrc={CABA_LOGO_URL}
-						logoAlt="Poder Judicial de CABA"
-						logoBg="#f8f8f8"
-						title="Poder Judicial de la Ciudad"
-						description="Fuero de CABA — EJE / Expediente judicial electrónico."
-						codeChip="CABA"
-					/>
-				</Grid>
-				<Grid item xs={12}>
-					<PowerCard
-						selected={values.judicialPower === "salta"}
-						onClick={() => handleSelectJudicialPower("salta")}
-						logoSrc={SALTA_LOGO_URL}
-						logoAlt="Poder Judicial de Salta"
-						logoBg="#ffffff"
-						title="Poder Judicial de Salta"
-						description="Fuero provincial — portal IOL de la Corte de Justicia."
-						codeChip="SALTA"
-					/>
-				</Grid>
-				<Grid item xs={12}>
-					<PowerCard
-						selected={values.judicialPower === "catamarca"}
-						onClick={() => handleSelectJudicialPower("catamarca")}
-						logoSrc={logoPJCatamarca}
-						logoAlt="Poder Judicial de Catamarca"
-						logoBg="#ffffff"
-						title="Poder Judicial de Catamarca"
-						description="Fuero provincial — portal IOL del Poder Judicial."
-						codeChip="CATAMARCA"
-					/>
-				</Grid>
-				<Grid item xs={12}>
-					<PowerCard
-						selected={values.judicialPower === "mendoza"}
-						onClick={() => handleSelectJudicialPower("mendoza")}
-						logoSrc={logoPJMendoza}
-						logoAlt="Poder Judicial de Mendoza"
-						logoBg="#ffffff"
-						title="Poder Judicial de Mendoza"
-						description="Fuero provincial — portal IOL del Poder Judicial."
-						codeChip="MENDOZA"
-					/>
-				</Grid>
-			</Grid>
+			<Stack spacing={1.25}>
+				<PowerCard
+					selected={values.judicialPower === "nacional"}
+					onClick={() => handleSelectJudicialPower("nacional")}
+					logoSrc={PJN_LOGO_URL}
+					logoAlt="Poder Judicial de la Nación"
+					logoBg="#222E43"
+					title="Poder Judicial de la Nación"
+					description="Causas federales y nacionales."
+					codeChip="PJN"
+				/>
+				<PowerCard
+					selected={values.judicialPower === "buenosaires"}
+					onClick={() => handleSelectJudicialPower("buenosaires")}
+					logoSrc={logoPJBuenosAires}
+					logoAlt="Poder Judicial de Buenos Aires"
+					logoBg="#f8f8f8"
+					title="Poder Judicial de Buenos Aires"
+					description="Fuero provincial — conectá tu cuenta SCBA (Mis Causas) o importá un expediente de la MEV."
+					codeChip="BA"
+				/>
+				<PowerCard
+					selected={values.judicialPower === "caba"}
+					onClick={() => handleSelectJudicialPower("caba")}
+					logoSrc={CABA_LOGO_URL}
+					logoAlt="Poder Judicial de CABA"
+					logoBg="#f8f8f8"
+					title="Poder Judicial de la Ciudad"
+					description="Fuero de CABA — EJE / Expediente judicial electrónico."
+					codeChip="CABA"
+				/>
+				<PowerCard
+					selected={values.judicialPower === "salta"}
+					onClick={() => handleSelectJudicialPower("salta")}
+					logoSrc={SALTA_LOGO_URL}
+					logoAlt="Poder Judicial de Salta"
+					logoBg="#ffffff"
+					title="Poder Judicial de Salta"
+					description="Fuero provincial — portal IOL de la Corte de Justicia."
+					codeChip="SALTA"
+				/>
+				<PowerCard
+					selected={values.judicialPower === "catamarca"}
+					onClick={() => handleSelectJudicialPower("catamarca")}
+					logoSrc={logoPJCatamarca}
+					logoAlt="Poder Judicial de Catamarca"
+					logoBg="#ffffff"
+					title="Poder Judicial de Catamarca"
+					description="Fuero provincial — portal IOL del Poder Judicial."
+					codeChip="CATAMARCA"
+				/>
+				<PowerCard
+					selected={values.judicialPower === "mendoza"}
+					onClick={() => handleSelectJudicialPower("mendoza")}
+					logoSrc={logoPJMendoza}
+					logoAlt="Poder Judicial de Mendoza"
+					logoBg="#ffffff"
+					title="Poder Judicial de Mendoza"
+					description="Fuero provincial — portal IOL del Poder Judicial."
+					codeChip="MENDOZA"
+				/>
+			</Stack>
 
 			{/* Notice brand-aware — reemplaza el Alert MUI info */}
 			<Box

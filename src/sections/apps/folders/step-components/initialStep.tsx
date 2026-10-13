@@ -1,5 +1,5 @@
 import React from "react";
-import { Grid, Stack, DialogContent, Typography, Box } from "@mui/material";
+import { Stack, DialogContent, Typography, Box } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import { DocumentDownload, DocumentText1 } from "iconsax-react";
 import { useFormikContext } from "formik";
@@ -101,10 +101,13 @@ const MethodCard = ({ selected, icon, title, description, onClick }: MethodCardP
 const InitialStep = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
-	const { setFieldValue, values } = useFormikContext<FormValues>();
+	const { setFieldValue, submitForm, values } = useFormikContext<FormValues>();
 
+	// Tocar la tarjeta ya elige y avanza (antes había que tocar además "Siguiente").
+	// La pausa breve deja ver la selección antes de cambiar de paso.
 	const handleSelectEntryMethod = (method: "manual" | "automatic") => {
 		setFieldValue("entryMethod", method);
+		setTimeout(() => submitForm(), 150);
 	};
 
 	return (
@@ -152,26 +155,24 @@ const InitialStep = () => {
 					</Typography>
 				</Stack>
 
-				<Grid container spacing={2} sx={{ pt: 0.5 }}>
-					<Grid item xs={12} sm={6}>
-						<MethodCard
-							selected={values.entryMethod === "manual"}
-							onClick={() => handleSelectEntryMethod("manual")}
-							icon={<DocumentText1 size={28} variant="Bulk" />}
-							title="Ingreso manual"
-							description="Cargá vos los datos de la causa. Útil cuando no está en los portales o querés ajustar todo."
-						/>
-					</Grid>
-					<Grid item xs={12} sm={6}>
-						<MethodCard
-							selected={values.entryMethod === "automatic"}
-							onClick={() => handleSelectEntryMethod("automatic")}
-							icon={<DocumentDownload size={28} variant="Bulk" />}
-							title="Ingreso automático"
-							description="Importá la causa desde PJN, MEV (Buenos Aires) o EJE (CABA). Más rápido y se sincroniza."
-						/>
-					</Grid>
-				</Grid>
+				{/* Grilla CSS (no Grid de MUI: sus márgenes negativos se desbordaban del diálogo
+				    en el teléfono). Automático primero: es el camino recomendado. */}
+				<Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2, pt: 0.5 }}>
+					<MethodCard
+						selected={values.entryMethod === "automatic"}
+						onClick={() => handleSelectEntryMethod("automatic")}
+						icon={<DocumentDownload size={28} variant="Bulk" />}
+						title="Ingreso automático"
+						description="Importá la causa desde PJN, MEV (Buenos Aires) o EJE (CABA). Más rápido y se sincroniza."
+					/>
+					<MethodCard
+						selected={values.entryMethod === "manual"}
+						onClick={() => handleSelectEntryMethod("manual")}
+						icon={<DocumentText1 size={28} variant="Bulk" />}
+						title="Ingreso manual"
+						description="Cargá vos los datos de la causa. Útil cuando no está en los portales o querés ajustar todo."
+					/>
+				</Box>
 			</Stack>
 		</DialogContent>
 	);

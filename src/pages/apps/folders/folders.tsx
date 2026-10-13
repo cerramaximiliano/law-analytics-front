@@ -1,4 +1,5 @@
 import React from "react";
+import { isDevReview } from "utils/devReview";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState, Fragment, MouseEvent, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 // material-ui
@@ -119,11 +120,7 @@ import { fetchUserStats } from "store/reducers/userStats";
 import { useTeam } from "contexts/TeamContext";
 import { Folder, Props } from "types/folders";
 import dayjs from "utils/dayjs-config";
-import {
-	DocumentText,
-	DocumentText1,
-	NoteText,
-} from "iconsax-react";
+import { DocumentText, DocumentText1, NoteText } from "iconsax-react";
 import CreatePostalDocumentModal from "sections/apps/postal-documents/CreatePostalDocumentModal";
 import PickModelDialog from "sections/apps/rich-text-documents/PickModelDialog";
 import { ResponsiveDialog } from "components/@extended/ResponsiveDialog";
@@ -2100,6 +2097,7 @@ function ReactTable({
 
 const FoldersLayout = () => {
 	const theme = useTheme();
+	const isPhone = useMediaQuery(theme.breakpoints.down("sm"));
 	const mode = theme.palette.mode;
 	const navigate = useNavigate();
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -2487,7 +2485,7 @@ const FoldersLayout = () => {
 		const currentFolderCount = folders.length;
 
 		// Verificar si se ha alcanzado el límite
-		if (maxFolders !== undefined && currentFolderCount >= maxFolders) {
+		if (maxFolders !== undefined && currentFolderCount >= maxFolders && !isDevReview()) {
 			// Si se ha alcanzado el límite, mostrar el modal de error
 			setLimitErrorInfo({
 				resourceType: "Carpetas/Causas",
@@ -4493,13 +4491,16 @@ const FoldersLayout = () => {
 							TransitionComponent={PopupTransition}
 							keepMounted
 							fullWidth
+							// En el teléfono, pantalla completa: con 90vh y márgenes la botonera quedaba
+							// recortada en ≤ 360 px y el teclado tapaba "Siguiente" (13/10/2026).
+							fullScreen={isPhone}
 							open={add}
 							onClose={handleCloseDialog}
 							sx={{
 								"& .MuiDialog-paper": {
 									p: 0,
-									height: { xs: "90vh", sm: "85vh", md: "80vh" },
-									maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" },
+									height: { xs: "100dvh", sm: "85vh", md: "80vh" },
+									maxHeight: { xs: "100dvh", sm: "85vh", md: "80vh" },
 									display: "flex",
 									flexDirection: "column",
 									overflow: "hidden",
