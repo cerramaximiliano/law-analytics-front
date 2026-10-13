@@ -310,7 +310,7 @@ export const preloadCriticalRoutes = () => {
 
 // Quien llega a /register, /login o /code-verification casi siempre termina en el
 // dashboard (el registro y la verificación redirigen ahí). Con el formulario ya
-// usable, se baja el chunk del dashboard en tiempo ocioso para que la primera pantalla
+// usable, se baja el chunk del dashboard en segundo plano para que la primera pantalla
 // después del login no espere la red (antes recién se precargaba a los 5 s y solo en
 // rutas privadas). `MainLayout` va en el paquete principal (import estático en
 // MainRoutes), así que no hace falta pedirlo aparte.
@@ -325,9 +325,21 @@ export const preloadDashboardFromAuthRoutes = (ruta: string = typeof window !== 
 			// Ignorar errores de precarga
 		});
 	};
+	// Arranca con la primera interacción (foco en un campo, toque o tecla) o, si no
+	// la hay, a los 12 s del load. Antes arrancaba en el primer momento ocioso tras el
+	// load, que en el teléfono era ~0,5 s: los 154 KB del dashboard + ApexCharts
+	// competían con el formulario y con Google Sign-In en 4G (Lighthouse, 2026-10-13).
+	const eventos = ["focusin", "pointerdown", "keydown"] as const;
+	let espera: ReturnType<typeof setTimeout> | undefined;
+	const disparar = () => {
+		eventos.forEach((e) => document.removeEventListener(e, disparar, true));
+		if (espera) clearTimeout(espera);
+		if ("requestIdleCallback" in window) (window as any).requestIdleCallback(cargar, { timeout: 2000 });
+		else setTimeout(cargar, 500);
+	};
+	eventos.forEach((e) => document.addEventListener(e, disparar, { capture: true, once: true, passive: true }));
 	const programar = () => {
-		if ("requestIdleCallback" in window) (window as any).requestIdleCallback(cargar, { timeout: 4000 });
-		else setTimeout(cargar, 2500);
+		espera = setTimeout(disparar, 12000);
 	};
 	if (document.readyState === "complete") programar();
 	else window.addEventListener("load", programar, { once: true });

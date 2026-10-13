@@ -523,8 +523,11 @@ const Register = () => {
 				<Box sx={{ flex: 1, display: "flex", alignItems: "center" }}>
 					<Grid container alignItems="center" justifyContent="center" spacing={{ xs: 3, md: 6 }}>
 						<Grid item xs={12} md={6} sx={{ display: "flex", justifyContent: "center" }}>
+							{/* Entrada solo con desplazamiento, sin arrancar en opacidad 0: el texto
+							invisible no cuenta como pintado y el LCP del teléfono esperaba a que los
+							scripts de GTM/GA4/Meta liberaran el hilo para animarlo (10 s, 2026-10-13). */}
 							<motion.div
-								initial={{ opacity: 0, translateY: 30 }}
+								initial={{ translateY: 30 }}
 								animate={{ opacity: 1, translateY: 0 }}
 								transition={SPRING}
 								style={{ width: "100%", maxWidth: 460 }}
@@ -564,7 +567,7 @@ const Register = () => {
 											</Box>
 
 											<motion.div
-												initial={{ opacity: 0, translateY: 16 }}
+												initial={{ translateY: 16 }}
 												animate={{ opacity: 1, translateY: 0 }}
 												transition={{ ...SPRING, delay: 0.1 }}
 											>
@@ -622,7 +625,7 @@ const Register = () => {
 											</motion.div>
 
 											<motion.div
-												initial={{ opacity: 0, translateY: 16 }}
+												initial={{ translateY: 16 }}
 												animate={{ opacity: 1, translateY: 0 }}
 												transition={{ ...SPRING, delay: 0.2 }}
 											>
@@ -645,7 +648,7 @@ const Register = () => {
 											)}
 
 											<motion.div
-												initial={{ opacity: 0, translateY: 16 }}
+												initial={{ translateY: 16 }}
 												animate={{ opacity: 1, translateY: 0 }}
 												transition={{ ...SPRING, delay: 0.3 }}
 											>
@@ -661,12 +664,22 @@ const Register = () => {
 											</motion.div>
 
 											<motion.div
-												initial={{ opacity: 0, translateY: 16 }}
+												initial={{ translateY: 16 }}
 												animate={{ opacity: 1, translateY: 0 }}
 												transition={{ ...SPRING, delay: 0.35 }}
 											>
 												<Stack spacing={1.25} alignItems="center" sx={{ mt: -0.5 }}>
-													<Stack direction="row" spacing={1.25} justifyContent="center" alignItems="center" flexWrap="wrap">
+													{/* En el teléfono, con Inter ya cargada, esta fila ocupa dos renglones; con
+													la fuente de respaldo entra en uno y la tarjeta saltaba al cambiar la fuente.
+													Se reserva el alto de los dos renglones (CLS, 2026-10-13). */}
+													<Stack
+														direction="row"
+														spacing={1.25}
+														justifyContent="center"
+														alignItems="center"
+														flexWrap="wrap"
+														sx={{ minHeight: { xs: 37, sm: 0 } }}
+													>
 														<Stack direction="row" alignItems="center" spacing={0.4}>
 															<TickCircle size={11} variant="Bold" color={LIVE_GREEN} />
 															<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
@@ -725,7 +738,7 @@ const Register = () => {
 											</AuthDivider>
 
 											<motion.div
-												initial={{ opacity: 0, translateY: 16 }}
+												initial={{ translateY: 16 }}
 												animate={{ opacity: 1, translateY: 0 }}
 												transition={{ ...SPRING, delay: 0.4 }}
 											>

@@ -95,14 +95,18 @@ export interface PublicIntegrations {
 export const DEFAULT_PUBLIC_INTEGRATIONS: PublicIntegrations = {
 	claudeAi: { enabled: false, maintenanceMessage: null, releaseStage: "beta" },
 	chatGpt: { enabled: false, maintenanceMessage: null, releaseStage: "beta" },
-	// Fail-safe del strip de la landing = comportamiento histórico hardcodeado.
+	// Fail-safe del strip de la landing. Es también lo que se pinta antes de que
+	// responda el endpoint, así que conviene que copie lo publicado en
+	// /admin/integrations: si difiere, el texto del hero cambia de largo al llegar
+	// la respuesta y empuja la página (CLS de la home, 2026-10-13).
 	landing: {
 		pjn: { status: "available", order: 1 },
 		mev: { status: "available", order: 2 },
 		eje: { status: "available", order: 3 },
-		seclo: { status: "comingSoon", order: 4 },
-		pjsalta: { status: "comingSoon", order: 5 },
-		pjcatamarca: { status: "comingSoon", order: 6 },
+		pjsalta: { status: "available", order: 4 },
+		pjmendoza: { status: "available", order: 5 },
+		pjcatamarca: { status: "available", order: 6 },
+		seclo: { status: "comingSoon", order: 7 },
 	},
 };
 

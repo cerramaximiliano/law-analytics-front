@@ -478,12 +478,15 @@ const HeaderPage = () => {
 		>
 			<PageBackground variant="default" />
 
-			{/* Atmosphere — blobs brand-blue (sin púrpura) sobre el PageBackground */}
+			{/* Atmosphere — blobs brand-blue (sin púrpura) sobre el PageBackground.
+			Posición en unidades de viewport, no en % de la sección: con % se movían cada vez
+			que la sección cambiaba de alto al cargar, y eso era todo el CLS de la home
+			(0,37 en Lighthouse móvil, 2026-10-13). */}
 			<Box
 				aria-hidden
 				sx={{
 					position: "absolute",
-					top: { xs: "-8%", md: "-12%" },
+					top: { xs: "-8svh", md: "-12vh" },
 					right: { xs: "-20%", md: "-10%" },
 					width: { xs: 380, md: 620 },
 					height: { xs: 380, md: 620 },
@@ -498,7 +501,7 @@ const HeaderPage = () => {
 				aria-hidden
 				sx={{
 					position: "absolute",
-					bottom: { xs: "-15%", md: "-18%" },
+					top: { xs: "calc(115svh - 420px)", md: "calc(118vh - 720px)" },
 					left: { xs: "-25%", md: "-12%" },
 					width: { xs: 420, md: 720 },
 					height: { xs: 420, md: 720 },

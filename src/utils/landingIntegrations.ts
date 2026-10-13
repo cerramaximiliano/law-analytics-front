@@ -12,6 +12,7 @@ const LABELS: Record<string, string> = {
 	eje: "EJE",
 	seclo: "SECLO",
 	pjsalta: "Salta",
+	pjmendoza: "Mendoza",
 	pjcatamarca: "Catamarca",
 };
 

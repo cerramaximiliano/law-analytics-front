@@ -1,15 +1,38 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import tsconfigPaths from "vite-tsconfig-paths";
 import svgr from "vite-plugin-svgr";
 import path from "path";
 import { visualizer } from "rollup-plugin-visualizer";
 
+// Precarga las dos fuentes de texto (Inter para el cuerpo, Geist latin para los
+// títulos) desde el HTML. Sin esto el navegador las pide recién cuando React pinta
+// el primer texto, después del paquete de arranque: en el teléfono llegaban ~1,5 s
+// más tarde, el texto se volvía a acomodar al cambiar de fuente y la home sumaba
+// saltos de diseño (Lighthouse móvil, 2026-10-13). Los nombres llevan hash, por eso
+// se inyectan acá y no a mano en index.html.
+const FUENTES_A_PRECARGAR = [/Inter-roman-latin\.var-[\w-]+\.woff2$/, /geist-latin-wght-normal-[\w-]+\.woff2$/];
+const precargarFuentes = (): Plugin => ({
+	name: "precargar-fuentes",
+	apply: "build",
+	transformIndexHtml(_html, ctx) {
+		if (!ctx.bundle) return [];
+		return Object.keys(ctx.bundle)
+			.filter((archivo) => FUENTES_A_PRECARGAR.some((re) => re.test(archivo)))
+			.map((archivo) => ({
+				tag: "link",
+				attrs: { rel: "preload", href: `/${archivo}`, as: "font", type: "font/woff2", crossorigin: "" },
+				injectTo: "head-prepend" as const,
+			}));
+	},
+});
+
 // https://vitejs.dev/config/
 export default defineConfig({
 	base: "/", // Asegurar que use rutas absolutas desde la raíz
 	plugins: [
 		react(),
+		precargarFuentes(),
 		tsconfigPaths(),
 		svgr({
 			svgrOptions: {
