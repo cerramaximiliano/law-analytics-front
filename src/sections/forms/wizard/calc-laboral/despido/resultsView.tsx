@@ -75,6 +75,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 			integracionMes: "Integración mes",
 			sacProp: "SAC proporcional",
 			sacPreaviso: "SAC s/ Preaviso",
+			sacIntegracion: "SAC s/ Integración mes",
 			diasTrabajados: "Días trabajados",
 			vacaciones: "Vacaciones",
 		};
@@ -83,8 +84,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 			return liquidacionLabels[key];
 		}
 
-		// Manejo especial para período de prueba
-		if (key === "periodoPruebaLeyenda") {
+		// Manejo especial para período de prueba y avisos de multas
+		if (key === "periodoPruebaLeyenda" || key.startsWith("avisoMultas")) {
 			return "Aviso";
 		}
 
@@ -120,8 +121,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 	};
 
 	const formatValue = (key: string, value: number | string): string => {
-		// Para leyenda de período de prueba, devolver tal cual
-		if (key === "periodoPruebaLeyenda") {
+		// Para leyenda de período de prueba y avisos de multas, devolver tal cual
+		if (key === "periodoPruebaLeyenda" || key.startsWith("avisoMultas")) {
 			return String(value);
 		}
 
@@ -443,6 +444,11 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 			}
 			// Remover la sección "otros" que duplicaba el total
 		});
+
+		// Avisos de vigencia y concurrencia de las multas (texto, no suman)
+		if (Array.isArray(inputValues.avisosMultas)) {
+			inputValues.avisosMultas.forEach((texto: string, i: number) => groups.multas.push({ key: `avisoMultas${i}`, value: texto }));
+		}
 
 		// Ordenar cada grupo según su tipo
 		Object.keys(groups).forEach((groupKey) => {
@@ -986,16 +992,25 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 										Multas Laborales
 									</Typography>
 									<Typography variant="body2" paragraph>
-										<strong>Art. 1° Ley 25.323:</strong> 50% de la indemnización
+										<strong>Art. 1° Ley 25.323:</strong> 100% de la indemnización del art. 245 (la duplica)
 									</Typography>
 									<Typography variant="body2" paragraph>
-										<strong>Art. 2° Ley 25.323:</strong> 100% de la indemnización
+										<strong>Art. 2° Ley 25.323:</strong> 50% de las indemnizaciones de los arts. 245, 232 y 233 (con el SAC sobre preaviso e
+										integración, salvo que se excluya); el juez puede reducirla
+									</Typography>
+									<Typography variant="body2" paragraph>
+										<strong>Art. 15 Ley 24.013:</strong> 100% de esa misma base (duplica las indemnizaciones del despido)
 									</Typography>
 									<Typography variant="body2" paragraph>
 										<strong>Art. 80 LCT:</strong> 3 meses de remuneración
 									</Typography>
 									<Typography variant="body2" paragraph>
-										<strong>Arts. 8, 9, 10, 15 Ley 24.013:</strong> 25% del total de remuneraciones no registradas
+										<strong>Arts. 8, 9 y 10 Ley 24.013:</strong> 25% de las remuneraciones (o diferencias) no registradas, por meses
+										enteros; el art. 8 nunca menos de 3 remuneraciones
+									</Typography>
+									<Typography variant="body2" paragraph>
+										La Ley 27.742 derogó estas multas para hechos desde el 9/7/2024. El art. 1 de la Ley 25.323 no se acumula con los arts.
+										8, 9, 10 y 15 de la Ley 24.013.
 									</Typography>
 								</Box>
 								<Divider />

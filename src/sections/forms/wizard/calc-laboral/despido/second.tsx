@@ -21,6 +21,9 @@ export default function SecondForm(props: any) {
 			fechaFalsa,
 			salarioFalso,
 			multa245bisPorcentaje,
+			multasSinSAC,
+			multaArt2Porcentaje,
+			fechaDeficiente,
 		},
 	} = props;
 	const fieldIsLiquidacion = useField(isLiquidacion.name)[0];
@@ -36,6 +39,7 @@ export default function SecondForm(props: any) {
 		{ value: "integracionMes", label: "Integración mes" },
 		{ value: "sacProp", label: "SAC proporcional" },
 		{ value: "sacPreaviso", label: "SAC s/ Preaviso" },
+		{ value: "sacIntegracion", label: "SAC s/ Integración mes" },
 		{ value: "diasTrabajados", label: "Días trabajados" },
 		{ value: "vacaciones", label: "Vacaciones" },
 	];
@@ -134,6 +138,9 @@ export default function SecondForm(props: any) {
 						nameFechaFalsa={fechaFalsa.name}
 						nameSalarioFalso={salarioFalso.name}
 						nameMulta245bisPorcentaje={multa245bisPorcentaje.name}
+						nameMultasSinSAC={multasSinSAC.name}
+						nameMultaArt2Porcentaje={multaArt2Porcentaje.name}
+						nameFechaDeficiente={fechaDeficiente.name}
 					/>
 				)}
 			</Grid>

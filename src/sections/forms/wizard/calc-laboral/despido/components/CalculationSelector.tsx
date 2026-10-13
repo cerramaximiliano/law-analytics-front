@@ -49,6 +49,12 @@ const CalculationSelector: React.FC<Props> = ({ name, options }) => {
 			icon: <MoneyRecive variant="Bold" size={24} color={theme.palette.primary.main} />,
 		},
 		{
+			value: "sacIntegracion",
+			label: "SAC s/ Integración mes",
+			description: "SAC sobre la integración del mes de despido",
+			icon: <MoneyRecive variant="Bold" size={24} color={theme.palette.primary.main} />,
+		},
+		{
 			value: "diasTrabajados",
 			label: "Días trabajados",
 			description: "Remuneración por los días efectivamente trabajados en el último período",

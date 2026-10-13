@@ -32,6 +32,9 @@ interface FormModel {
 		fechaFalsa: FormField;
 		salarioFalso: FormField;
 		multa245bisPorcentaje: FormField;
+		multasSinSAC: FormField;
+		multaArt2Porcentaje: FormField;
+		fechaDeficiente: FormField;
 
 		// Paso 3: Actualización por intereses
 		aplicarIntereses: FormField;
@@ -167,6 +170,21 @@ const despidoFormModel: FormModel = {
 		multa245bisPorcentaje: {
 			name: "multa245bisPorcentaje",
 			label: "Porcentaje agravamiento (Art. 245 bis)",
+			type: "multas",
+		},
+		multasSinSAC: {
+			name: "multasSinSAC",
+			label: "Excluir el SAC de la base de los arts. 2 (Ley 25.323) y 15 (Ley 24.013)",
+			type: "multas",
+		},
+		multaArt2Porcentaje: {
+			name: "multaArt2Porcentaje",
+			label: "Porcentaje del art. 2 Ley 25.323",
+			type: "multas",
+		},
+		fechaDeficiente: {
+			name: "fechaDeficiente",
+			label: "Fecha desde la que se registró un salario menor",
 			type: "multas",
 		},
 

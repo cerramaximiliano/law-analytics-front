@@ -23,6 +23,9 @@ const {
 		fechaFalsa,
 		salarioFalso,
 		multa245bisPorcentaje,
+		multasSinSAC,
+		multaArt2Porcentaje,
+		fechaDeficiente,
 		aplicarIntereses,
 		fechaInicialIntereses,
 		fechaFinalIntereses,
@@ -59,6 +62,9 @@ const initialValues = {
 	[fechaFalsa.name]: "",
 	[salarioFalso.name]: "",
 	[multa245bisPorcentaje.name]: 50,
+	[multasSinSAC.name]: false,
+	[multaArt2Porcentaje.name]: 50,
+	[fechaDeficiente.name]: "",
 
 	// Paso 3: Actualización por intereses
 	[aplicarIntereses.name]: false,

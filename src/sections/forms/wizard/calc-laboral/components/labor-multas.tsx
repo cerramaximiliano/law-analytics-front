@@ -27,11 +27,24 @@ interface Props {
 	nameFechaFalsa: string;
 	nameSalarioFalso: string;
 	nameMulta245bisPorcentaje?: string;
+	nameMultasSinSAC?: string;
+	nameMultaArt2Porcentaje?: string;
+	nameFechaDeficiente?: string;
 	options: { value: string; label: string }[];
 }
 
 const LaborMultas: React.FC<Props> = (props) => {
-	const { name, options, nameMultas, nameFechaFalsa, nameSalarioFalso, nameMulta245bisPorcentaje } = props;
+	const {
+		name,
+		options,
+		nameMultas,
+		nameFechaFalsa,
+		nameSalarioFalso,
+		nameMulta245bisPorcentaje,
+		nameMultasSinSAC = "multasSinSAC",
+		nameMultaArt2Porcentaje = "multaArt2Porcentaje",
+		nameFechaDeficiente = "fechaDeficiente",
+	} = props;
 
 	const [fieldMultas, metaMultas] = useField(nameMultas);
 	const { value: selectedValue } = fieldMultas;
@@ -49,6 +62,8 @@ const LaborMultas: React.FC<Props> = (props) => {
 	// Field para el porcentaje del agravamiento Art. 245 bis (50% o 100%).
 	// Se renderiza solo cuando "multaArt245bis" está seleccionada.
 	const [fieldPorcentaje, , helperPorcentaje] = useField(nameMulta245bisPorcentaje || "multa245bisPorcentaje");
+	// Base de los arts. 2 (Ley 25.323) y 15 (Ley 24.013): con el SAC sobre preaviso e integración salvo que se excluya
+	const [fieldSinSAC, , helperSinSAC] = useField(nameMultasSinSAC);
 
 	const _renderHelperText = () => {
 		if (touched && error) {
@@ -126,6 +141,33 @@ const LaborMultas: React.FC<Props> = (props) => {
 				{_renderHelperText()}
 			</FormControl>
 
+			{/* Base y porcentaje de los arts. 2 (Ley 25.323) y 15 (Ley 24.013) */}
+			{(field.value.includes("multaArt2") || field.value.includes("multaArt15")) && (
+				<Grid container spacing={2} justifyContent="center" alignItems="center" item xs={12} sx={{ marginTop: "4px" }}>
+					<FormControlLabel
+						control={<Checkbox checked={!!fieldSinSAC.value} onChange={(e) => helperSinSAC.setValue(e.target.checked)} />}
+						label="Excluir el SAC de la base (preaviso e integración sin SAC)"
+					/>
+					{field.value.includes("multaArt2") && (
+						<NumberField
+							label="Porcentaje del art. 2"
+							allowNegative={false}
+							decimalScale={2}
+							name={nameMultaArt2Porcentaje}
+							helperText="50 % por ley; el juez puede reducirlo o eximir (art. 2, párrafo 2)."
+							InputProps={{ endAdornment: "%" }}
+							sx={{ width: 250 }}
+						/>
+					)}
+					<Grid item xs={12}>
+						<FormHelperText sx={{ textAlign: "center" }}>
+							Base: indemnización del art. 245 + preaviso + integración del mes{fieldSinSAC.value ? "" : " + SAC sobre ambos"}. La mayoría
+							de las Salas de la CNAT incluye el SAC.
+						</FormHelperText>
+					</Grid>
+				</Grid>
+			)}
+
 			{/* Selector de porcentaje cuando se aplica Art. 245 bis */}
 			{field.value.includes("multaArt245bis") && nameMulta245bisPorcentaje && (
 				<Grid container spacing={3} justifyContent="center" item xs={12} sx={{ marginTop: "10px", marginBottom: "10px" }}>
@@ -158,16 +200,16 @@ const LaborMultas: React.FC<Props> = (props) => {
 						name={fieldMultas.name}
 					>
 						<MenuItem value={0}>Seleccione una opción</MenuItem>
-						<MenuItem value={1}>Art. 9</MenuItem>
-						<MenuItem value={2}>Art. 10</MenuItem>
-						<MenuItem value={3}>Art. 11</MenuItem>
+						<MenuItem value={1}>Art. 8 (relación no registrada)</MenuItem>
+						<MenuItem value={2}>Art. 9 (fecha de ingreso posterior)</MenuItem>
+						<MenuItem value={3}>Art. 10 (remuneración menor)</MenuItem>
 					</Select>
 					{_renderHelperTextMultas()}
 				</FormControl>
 			</Grid>
 			{selectedValue === 3 && (
 				<Grid item sx={{ marginTop: "10px", marginBottom: "10px" }}>
-					<InputLabel sx={{ textAlign: { xs: "center" } }}>Complete el salario falso consignado:</InputLabel>
+					<InputLabel sx={{ textAlign: { xs: "center" } }}>Remuneración registrada (menor a la real):</InputLabel>
 					<NumberField
 						thousandSeparator={","}
 						allowNegative={false}
@@ -177,11 +219,15 @@ const LaborMultas: React.FC<Props> = (props) => {
 						name={nameSalarioFalso}
 						InputProps={{ startAdornment: "$" }}
 					/>
+					<InputLabel sx={{ textAlign: { xs: "center" }, mt: 2 }}>
+						Desde qué fecha se registró ese salario (vacío: desde el ingreso):
+					</InputLabel>
+					<InputField placeholder="DD/MM/AAAA" name={nameFechaDeficiente} InputProps={{ startAdornment: <Calendar /> }} />
 				</Grid>
 			)}
 			{selectedValue === 2 && (
 				<Grid item sx={{ marginTop: "10px", marginBottom: "10px" }}>
-					<InputLabel sx={{ textAlign: { xs: "center" } }}>Complete la fecha de inicio falsa:</InputLabel>
+					<InputLabel sx={{ textAlign: { xs: "center" } }}>Fecha de ingreso registrada (posterior a la real):</InputLabel>
 					<InputField placeholder="DD/MM/AAAA" name={nameFechaFalsa} InputProps={{ startAdornment: <Calendar /> }} />
 				</Grid>
 			)}

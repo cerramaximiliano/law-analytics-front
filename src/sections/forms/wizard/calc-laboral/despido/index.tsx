@@ -21,6 +21,7 @@ import { Formik, Form } from "formik";
 import dayjs from "utils/dayjs-config";
 import ResultsView from "./resultsView";
 import { calcularTramos } from "services/tasasCalculoService";
+import { calcularMultas, integracionArt233, preavisoArt232 } from "./multas";
 
 import { WizardProps } from "types/wizards";
 
@@ -88,41 +89,13 @@ function calculateBaseAmount(values: any): number {
 
 	// 2. Liquidación final (si está habilitada)
 	if (values.isLiquidacion && Array.isArray(values.liquidacion)) {
-		// Preaviso (misma lógica que calcularPreaviso)
-		if (values.liquidacion.includes("preaviso")) {
-			const mesesTotal = fechaEgreso.diff(fechaIngreso, "months");
-			const añosTotal = fechaEgreso.diff(fechaIngreso, "years");
-			if (mesesTotal < 3) {
-				total += (remuneracionCalculada / 30) * 15;
-			} else if (mesesTotal >= 3 && añosTotal < 5) {
-				total += remuneracionCalculada;
-			} else {
-				total += remuneracionCalculada * 2;
-			}
-		}
-
-		// Integración mes (misma lógica que calcularIntegracionMes)
-		if (values.liquidacion.includes("integracionMes")) {
-			const diasTotalesMes = fechaEgreso.daysInMonth();
-			const diaEgreso = fechaEgreso.date();
-			const diasRestantes = diasTotalesMes - diaEgreso;
-			total += diasRestantes * (remuneracionBase / diasTotalesMes);
-		}
-
-		// SAC s/ Preaviso
-		if (values.liquidacion.includes("sacPreaviso") && values.liquidacion.includes("preaviso")) {
-			const mesesTotal = fechaEgreso.diff(fechaIngreso, "months");
-			const añosTotal = fechaEgreso.diff(fechaIngreso, "years");
-			let preaviso = 0;
-			if (mesesTotal < 3) {
-				preaviso = (remuneracionCalculada / 30) * 15;
-			} else if (mesesTotal >= 3 && añosTotal < 5) {
-				preaviso = remuneracionCalculada;
-			} else {
-				preaviso = remuneracionCalculada * 2;
-			}
-			total += preaviso / 12;
-		}
+		// Preaviso, integración y sus SAC (mismas funciones que _submitForm; sin el tope del art. 245)
+		const preaviso = preavisoArt232(values.fechaIngreso, values.fechaEgreso, remuneracionBase);
+		const integracion = integracionArt233(values.fechaEgreso, remuneracionBase);
+		if (values.liquidacion.includes("preaviso")) total += preaviso;
+		if (values.liquidacion.includes("integracionMes")) total += integracion;
+		if (values.liquidacion.includes("sacPreaviso") && values.liquidacion.includes("preaviso")) total += preaviso / 12;
+		if (values.liquidacion.includes("sacIntegracion") && values.liquidacion.includes("integracionMes")) total += integracion / 12;
 
 		// SAC proporcional (misma lógica que en _submitForm)
 		if (values.liquidacion.includes("sacProp")) {
@@ -156,28 +129,9 @@ function calculateBaseAmount(values: any): number {
 		}
 	}
 
-	// 3. Multas (si están habilitadas)
-	if (values.isMultas && Array.isArray(values.multas)) {
-		if (values.multas.includes("multaArt1")) {
-			total += indemnizacion * 0.5;
-		}
-		if (values.multas.includes("multaArt2")) {
-			total += indemnizacion;
-		}
-		if (values.multas.includes("multaArt80")) {
-			total += remuneracionBase * 3;
-		}
-		if (values.multas.includes("multaArt15")) {
-			const mesesTrabajados = fechaEgreso.diff(fechaIngreso, "months", true);
-			total += mesesTrabajados * remuneracionBase * 0.25;
-		}
-		if (values.multas.includes("multaArt245bis")) {
-			// Agravamiento art. 245 bis Ley 27.742: 50% (mínimo) o 100% (máximo
-			// según gravedad de los hechos) sobre la indemnización por antigüedad.
-			const porcentaje = Number(values.multa245bisPorcentaje) || 50;
-			total += indemnizacion * (porcentaje / 100);
-		}
-	}
+	// 3. Multas (si están habilitadas), con las mismas fórmulas que _submitForm
+	const { rubros: multas } = calcularMultas(values, { indemnizacion, remuneracion: remuneracionBase });
+	total += Object.values(multas).reduce((a, b) => a + b, 0);
 
 	// 4. Otras sumas adeudadas
 	const otrasSumas = parseFloat(values.otrasSumas) || 0;
@@ -245,44 +199,6 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 		}
 	};
 
-	const calcularPreaviso = (fechaIngreso: string | null, fechaEgreso: string | null, remuneracion: number) => {
-		if (!fechaIngreso || !fechaEgreso) return 0;
-
-		const inicio = dayjs(fechaIngreso, "DD/MM/YYYY");
-		const fin = dayjs(fechaEgreso, "DD/MM/YYYY");
-
-		if (!inicio.isValid() || !fin.isValid()) return 0;
-
-		const periodoPrueba = 3; // 3 meses
-		const mesesTotal = fin.diff(inicio, "months");
-		const añosTotal = fin.diff(inicio, "years");
-
-		// Escenario 1: Menos de 3 meses (período de prueba)
-		if (mesesTotal < periodoPrueba) {
-			return (remuneracion / 30) * 15;
-		}
-
-		// Escenario 2: 3 meses o más pero menos de 5 años
-		if (mesesTotal >= periodoPrueba && añosTotal < 5) {
-			return remuneracion * 1;
-		}
-
-		// Escenario 3: 5 años o más
-		return remuneracion * 2;
-	};
-	const calcularIntegracionMes = (fechaEgreso: string | null, remuneracion: number) => {
-		if (!fechaEgreso) return 0;
-
-		const fin = dayjs(fechaEgreso, "DD/MM/YYYY");
-		if (!fin.isValid()) return 0;
-
-		const diasTotalesMes = fin.daysInMonth();
-		const diaEgreso = fin.date();
-		const diasRestantes = diasTotalesMes - diaEgreso;
-
-		const valorDiario = remuneracion / diasTotalesMes;
-		return diasRestantes * valorDiario;
-	};
 	function calcularDiasTrabajados(fechaDespido: string) {
 		// Convertir la fecha de despido a un objeto dayjs con formato DD/MM/YYYY
 		const finPeriodo = dayjs(fechaDespido, "DD/MM/YYYY");
@@ -356,98 +272,6 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 		};
 	}
 
-	function calcularMultaArt1Ley25323(indemnizacionTotal: number): number {
-		return indemnizacionTotal * 0.5;
-	}
-	function calcularMultaArt2Ley25323(indemnizacionTotal: number): number {
-		return indemnizacionTotal * 1;
-	}
-	function calcularMultaArt80LCT(mejorRemuneracionMensual: number): number {
-		return mejorRemuneracionMensual * 3;
-	}
-	function calcularMultaArt15Ley24013(fechaInicio: string, fechaEgreso: string, mejorRemuneracion: number): number {
-		// Convertir las fechas a objetos Moment
-		const inicio = dayjs(fechaInicio, "DD/MM/YYYY");
-		const egreso = dayjs(fechaEgreso, "DD/MM/YYYY");
-
-		// Validar las fechas
-		if (!inicio.isValid() || !egreso.isValid()) {
-			throw new Error("Las fechas proporcionadas no son válidas.");
-		}
-
-		// Calcular la diferencia en meses completos
-		const mesesTrabajados = egreso.diff(inicio, "months", true);
-
-		// Calcular el total de remuneraciones no registradas
-		const remuneracionesNoRegistradas = mesesTrabajados * mejorRemuneracion;
-
-		// Calcular la multa (25% de las remuneraciones no registradas)
-		const multa = remuneracionesNoRegistradas * 0.25;
-
-		// Redondear a dos decimales y retornar
-		return parseFloat(multa.toFixed(2));
-	}
-	function calcularMultaArt8Ley24013(fechaInicio: string, fechaEgreso: string, mejorRemuneracion: number): number {
-		const inicio = dayjs(fechaInicio, "DD/MM/YYYY");
-		const egreso = dayjs(fechaEgreso, "DD/MM/YYYY");
-
-		if (!inicio.isValid() || !egreso.isValid()) {
-			throw new Error("Las fechas proporcionadas no son válidas.");
-		}
-
-		const mesesTrabajados = egreso.diff(inicio, "months", true);
-		const totalRemuneraciones = mesesTrabajados * mejorRemuneracion;
-
-		return parseFloat((totalRemuneraciones * 0.25).toFixed(2));
-	}
-	function calcularMultaArt9Ley24013(fechaInicio: string, fechaEgreso: string, mejorRemuneracion: number): number {
-		const inicio = dayjs(fechaInicio, "DD/MM/YYYY");
-		const egreso = dayjs(fechaEgreso, "DD/MM/YYYY");
-
-		if (!inicio.isValid() || !egreso.isValid()) {
-			throw new Error("Las fechas proporcionadas no son válidas.");
-		}
-
-		const mesesTrabajados = egreso.diff(inicio, "months", true);
-		const totalRemuneraciones = mesesTrabajados * mejorRemuneracion;
-
-		return parseFloat((totalRemuneraciones * 0.25).toFixed(2));
-	}
-	function calcularMultaArt10Ley24013(
-		fechaInicioNoRegistrada: string,
-		fechaEgreso: string,
-		remuneracionPercibida: number,
-		remuneracionConsignada: number,
-	): number {
-		// Convertir fechas a objetos Moment
-		const inicio = dayjs(fechaInicioNoRegistrada, "DD/MM/YYYY");
-		const egreso = dayjs(fechaEgreso, "DD/MM/YYYY");
-
-		// Validar fechas
-		if (!inicio.isValid() || !egreso.isValid()) {
-			throw new Error("Las fechas proporcionadas no son válidas.");
-		}
-
-		// Calcular meses trabajados en el período no registrado
-		const mesesNoRegistrados = egreso.diff(inicio, "months", true);
-
-		// Calcular el monto mensual no registrado
-		const montoNoRegistradoMensual = remuneracionPercibida - remuneracionConsignada;
-
-		// Validar que haya un monto no registrado positivo
-		if (montoNoRegistradoMensual <= 0) {
-			throw new Error("No hay remuneración no registrada para calcular la multa.");
-		}
-
-		// Calcular el total no registrado
-		const totalNoRegistrado = montoNoRegistradoMensual * mesesNoRegistrados;
-
-		// Calcular la multa (25% del total no registrado)
-		const multa = totalNoRegistrado * 0.25;
-
-		// Retornar el resultado redondeado a dos decimales
-		return parseFloat(multa.toFixed(2));
-	}
 	async function _submitForm(values: any, actions: any) {
 		await _sleep(1000);
 		const calcularPeriodos = (fechaIngreso: string | null, fechaEgreso: string | null, aplicarLey27742: boolean = false) => {
@@ -537,13 +361,17 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 
 		if (values.isLiquidacion && Array.isArray(values.liquidacion)) {
 			if (values.liquidacion.includes("preaviso")) {
-				resultado.Preaviso = calcularPreaviso(values.fechaIngreso, values.fechaEgreso, remuneracionCalculada);
+				// sin el tope del art. 245: el tope no alcanza al preaviso (art. 232)
+				resultado.Preaviso = preavisoArt232(values.fechaIngreso, values.fechaEgreso, remuneracionBase);
 			}
 			if (values.liquidacion.includes("integracionMes")) {
-				resultado["Integración Mes"] = calcularIntegracionMes(values.fechaEgreso, remuneracionBase);
+				resultado["Integración Mes"] = integracionArt233(values.fechaEgreso, remuneracionBase);
 			}
 			if (values.liquidacion.includes("sacPreaviso") && resultado.Preaviso) {
 				resultado["SAC s/ Preaviso"] = resultado.Preaviso / 12;
+			}
+			if (values.liquidacion.includes("sacIntegracion") && resultado["Integración Mes"]) {
+				resultado["SAC s/ Integración"] = resultado["Integración Mes"] / 12;
 			}
 			if (values.liquidacion.includes("sacProp")) {
 				const diasTrabajados = calcularDiasTrabajados(values.fechaEgreso);
@@ -566,37 +394,10 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 			}
 		}
 
-		if (values.isMultas && Array.isArray(values.multas)) {
-			if (values.multas.includes("multaArt1")) {
-				resultado["Multa Art. 1º Ley 25.323"] = calcularMultaArt1Ley25323(indemnizacion);
-			}
-			if (values.multas.includes("multaArt2")) {
-				resultado["Multa Art. 2º Ley 25.323"] = calcularMultaArt2Ley25323(indemnizacion);
-			}
-			if (values.multas.includes("multaArt80")) {
-				resultado["Multa Art. 80 LCT"] = calcularMultaArt80LCT(remuneracionBase);
-			}
-			if (values.multas.includes("multaArt15")) {
-				resultado["Multa Art. 15 Ley 24.013"] = calcularMultaArt15Ley24013(values.fechaIngreso, values.fechaEgreso, remuneracionBase);
-			}
-			if (values.multas.includes("multaArt245bis")) {
-				const porcentaje = Number(values.multa245bisPorcentaje) || 50;
-				resultado[`Multa Art. 245 bis Ley 27.742 (${porcentaje}%)`] = parseFloat((indemnizacion * (porcentaje / 100)).toFixed(2));
-			}
-		}
-
-		if (values.multaLE === 1) {
-			resultado["Multa Art. 8 Ley 24.013"] = calcularMultaArt8Ley24013(values.fechaIngreso, values.fechaEgreso, remuneracionBase);
-		} else if (values.multaLE === 2 && values.fechaFalsa) {
-			resultado["Multa Art. 9 Ley 24.013"] = calcularMultaArt9Ley24013(values.fechaFalsa, values.fechaIngreso, remuneracionBase);
-		} else if (values.multaLE === 3) {
-			resultado["Multa Art. 10 Ley 24.013"] = calcularMultaArt10Ley24013(
-				values.fechaIngreso,
-				values.fechaEgreso,
-				remuneracionBase,
-				values.salarioFalso,
-			);
-		}
+		// Multas (fórmulas y avisos en ./multas.ts)
+		const { rubros: multas, avisos: avisosMultas } = calcularMultas(values, { indemnizacion, remuneracion: remuneracionBase });
+		Object.assign(resultado, multas);
+		resultado.avisosMultas = avisosMultas;
 
 		// Agregar cálculo de intereses si corresponde
 		if (values.aplicarIntereses) {
@@ -610,21 +411,13 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 				if (resultado.Preaviso) capitalBase += resultado.Preaviso;
 				if (resultado["Integración Mes"]) capitalBase += resultado["Integración Mes"];
 				if (resultado["SAC s/ Preaviso"]) capitalBase += resultado["SAC s/ Preaviso"];
+				if (resultado["SAC s/ Integración"]) capitalBase += resultado["SAC s/ Integración"];
 				if (resultado["SAC proporcional"]) capitalBase += resultado["SAC proporcional"];
 				if (resultado["Días Trabajados"]) capitalBase += resultado["Días Trabajados"];
 				if (resultado["Monto Vacaciones"]) capitalBase += resultado["Monto Vacaciones"];
 
 				// Sumar multas
-				if (resultado["Multa Art. 1º Ley 25.323"]) capitalBase += resultado["Multa Art. 1º Ley 25.323"];
-				if (resultado["Multa Art. 2º Ley 25.323"]) capitalBase += resultado["Multa Art. 2º Ley 25.323"];
-				if (resultado["Multa Art. 80 LCT"]) capitalBase += resultado["Multa Art. 80 LCT"];
-				if (resultado["Multa Art. 15 Ley 24.013"]) capitalBase += resultado["Multa Art. 15 Ley 24.013"];
-				if (resultado["Multa Art. 8 Ley 24.013"]) capitalBase += resultado["Multa Art. 8 Ley 24.013"];
-				if (resultado["Multa Art. 9 Ley 24.013"]) capitalBase += resultado["Multa Art. 9 Ley 24.013"];
-				if (resultado["Multa Art. 10 Ley 24.013"]) capitalBase += resultado["Multa Art. 10 Ley 24.013"];
-				// La key del Art. 245 bis incluye el porcentaje aplicado, así que se busca por prefijo.
-				const m245bisKey = Object.keys(resultado).find((k) => k.startsWith("Multa Art. 245 bis"));
-				if (m245bisKey && resultado[m245bisKey]) capitalBase += resultado[m245bisKey] as number;
+				for (const [k, v] of Object.entries(multas)) if (k.startsWith("Multa ")) capitalBase += v;
 
 				// Sumar otras sumas
 				if (values.otrasSumas) capitalBase += parseFloat(values.otrasSumas) || 0;
@@ -695,18 +488,13 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 				if (resultado.Preaviso) capitalBaseFallback += resultado.Preaviso;
 				if (resultado["Integración Mes"]) capitalBaseFallback += resultado["Integración Mes"];
 				if (resultado["SAC s/ Preaviso"]) capitalBaseFallback += resultado["SAC s/ Preaviso"];
+				if (resultado["SAC s/ Integración"]) capitalBaseFallback += resultado["SAC s/ Integración"];
 				if (resultado["SAC proporcional"]) capitalBaseFallback += resultado["SAC proporcional"];
 				if (resultado["Días Trabajados"]) capitalBaseFallback += resultado["Días Trabajados"];
 				if (resultado["Monto Vacaciones"]) capitalBaseFallback += resultado["Monto Vacaciones"];
 
 				// Sumar multas
-				if (resultado["Multa Art. 1º Ley 25.323"]) capitalBaseFallback += resultado["Multa Art. 1º Ley 25.323"];
-				if (resultado["Multa Art. 2º Ley 25.323"]) capitalBaseFallback += resultado["Multa Art. 2º Ley 25.323"];
-				if (resultado["Multa Art. 80 LCT"]) capitalBaseFallback += resultado["Multa Art. 80 LCT"];
-				if (resultado["Multa Art. 15 Ley 24.013"]) capitalBaseFallback += resultado["Multa Art. 15 Ley 24.013"];
-				if (resultado["Multa Art. 8 Ley 24.013"]) capitalBaseFallback += resultado["Multa Art. 8 Ley 24.013"];
-				if (resultado["Multa Art. 9 Ley 24.013"]) capitalBaseFallback += resultado["Multa Art. 9 Ley 24.013"];
-				if (resultado["Multa Art. 10 Ley 24.013"]) capitalBaseFallback += resultado["Multa Art. 10 Ley 24.013"];
+				for (const [k, v] of Object.entries(multas)) if (k.startsWith("Multa ")) capitalBaseFallback += v;
 
 				// Sumar otras sumas
 				if (values.otrasSumas) capitalBaseFallback += parseFloat(values.otrasSumas) || 0;

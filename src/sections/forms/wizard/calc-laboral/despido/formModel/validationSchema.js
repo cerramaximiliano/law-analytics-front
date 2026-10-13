@@ -133,21 +133,48 @@ const schema = [
 		[fechaFalsa.name]: Yup.string().when(multaLE.name, {
 			is: (multaLE) => multaLE === 2,
 			then: () => {
-				return Yup.string()
-					.required(`${fechaFalsa.requiredErrorMsg}`)
-					.matches(/^(0[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/, {
-						message: "El formato de fecha debe ser DD/MM/AAAA",
-					})
-					.test("is-before", "La fecha falsa debe ser anterior a la fecha de ingreso", function (value) {
-						const fechaIngresoValue = this.parent[fechaIngreso.name];
-						const check = moment(value, "DD/MM/YYYY").isBefore(moment(fechaIngresoValue, "DD/MM/YYYY"));
-						return check;
-					});
+				return (
+					Yup.string()
+						.required(`${fechaFalsa.requiredErrorMsg}`)
+						.matches(/^(0[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/, {
+							message: "El formato de fecha debe ser DD/MM/AAAA",
+						})
+						// art. 9 Ley 24.013: la fecha registrada es posterior al ingreso real (y no posterior al egreso)
+						.test("is-after", "La fecha registrada debe ser posterior a la fecha de ingreso real", function (value) {
+							const fechaIngresoValue = this.parent[fechaIngreso.name];
+							return moment(value, "DD/MM/YYYY").isAfter(moment(fechaIngresoValue, "DD/MM/YYYY"));
+						})
+						.test("is-before-egreso", "La fecha registrada no puede ser posterior al egreso", function (value) {
+							const fechaEgresoValue = this.parent[fechaEgreso.name];
+							return !moment(value, "DD/MM/YYYY").isAfter(moment(fechaEgresoValue, "DD/MM/YYYY"));
+						})
+				);
 			},
 			otherwise: () => {
 				Yup.number();
 			},
 		}),
+		// art. 10 Ley 24.013: opcional; vacía toma la fecha de ingreso
+		fechaDeficiente: Yup.string()
+			.nullable()
+			.matches(/^(0[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/, {
+				message: "El formato de fecha debe ser DD/MM/AAAA",
+				excludeEmptyString: true,
+			})
+			.test("en-relacion", "Debe estar entre la fecha de ingreso y la de egreso", function (value) {
+				if (!value) return true;
+				const v = moment(value, "DD/MM/YYYY");
+				return (
+					!v.isBefore(moment(this.parent[fechaIngreso.name], "DD/MM/YYYY")) &&
+					!v.isAfter(moment(this.parent[fechaEgreso.name], "DD/MM/YYYY"))
+				);
+			}),
+		// art. 2 Ley 25.323: 50 % por ley; el juez puede reducirlo
+		multaArt2Porcentaje: Yup.number()
+			.transform((v, original) => (original === "" || original == null ? undefined : v))
+			.typeError("Debe ser un número")
+			.min(0, "Mínimo 0 %")
+			.max(50, "Máximo 50 %"),
 	}),
 
 	// Paso 3: Validación para intereses
