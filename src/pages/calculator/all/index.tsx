@@ -1394,8 +1394,9 @@ const AllCalculators = () => {
 			comingSoon: false,
 		},
 		{
-			title: "Liquidación",
-			description: "Capital, intereses, pagos a cuenta, honorarios en UMA, IVA y tasa de justicia en una sola planilla.",
+			title: "Liquidación judicial",
+			description:
+				"La planilla posterior a la sentencia: lleva el capital de condena a una fecha de corte con intereses, pagos a cuenta, honorarios en UMA, IVA y tasa de justicia.",
 			icon: <Calculator size={48} variant="Bulk" style={{ color: "var(--mui-palette-secondary-main)" }} />,
 			path: "/apps/calc/liquidacion",
 			disabled: false,

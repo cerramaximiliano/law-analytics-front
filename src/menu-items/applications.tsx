@@ -90,7 +90,7 @@ const applications: NavItemType = {
 				},
 				{
 					id: "liquidacion-calculator",
-					title: <FormattedMessage id="Liquidación" />,
+					title: <FormattedMessage id="Liquidación judicial" />,
 					type: "item",
 					url: "/apps/calc/liquidacion",
 				},
