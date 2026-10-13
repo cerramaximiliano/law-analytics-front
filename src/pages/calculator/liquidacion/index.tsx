@@ -14,20 +14,30 @@ import type { CalculatorType } from "types/calculator";
 const ORIGEN: Record<string, string> = {
 	despido: "de despido",
 	liquidacion: "de liquidación final",
+	"liquidación final": "de liquidación final",
 	art: "de riesgos del trabajo",
 	intereses: "de intereses",
 	previsional: "previsional",
+	retroactivo: "de retroactivo previsional",
 };
 const pesos = (n: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(n);
-const capitalDe = (c: CalculatorType) => Number(c.capital) || Math.max(0, (Number(c.amount) || 0) - (Number(c.interest) || 0));
-const tipoDe = (c: CalculatorType) => (c.classType === "intereses" ? "intereses" : c.subClassType || c.classType || "");
+const red2 = (n: number) => Math.round(n * 100) / 100;
+const capitalDe = (c: CalculatorType) => red2(Number(c.capital) || Math.max(0, (Number(c.amount) || 0) - (Number(c.interest) || 0)));
+// Los cálculos de intereses guardan en subClassType la tasa (p. ej. "TasaPasivaBCRA"), no el tipo
+const tipoDe = (c: CalculatorType): string => {
+	const sub = String(c.subClassType || "");
+	if (ORIGEN[sub]) return sub;
+	const v: any = c.variables || {};
+	if (c.classType === "intereses" || v.tasa || v.segments?.length) return "intereses";
+	return sub || c.classType || "";
+};
 
 /** Precarga de la liquidación desde un cálculo guardado (lo mismo que hace "Practicar liquidación" desde su resultado). */
 function prefillDe(c: CalculatorType): LiquidacionPrefill {
 	const v: any = c.variables || {};
 	let segments: any[] = (v.segmentsIntereses?.length ? v.segmentsIntereses : v.datosIntereses?.segments || v.segments) || [];
 	// cálculo de intereses de una sola tasa: se arma el tramo con sus fechas
-	if (!segments.length && c.classType === "intereses" && v.tasa && v.fechaInicial && v.fechaFinal) {
+	if (!segments.length && tipoDe(c) === "intereses" && v.tasa && v.fechaInicial && v.fechaFinal) {
 		segments = [{ startDate: v.fechaInicial, endDate: v.fechaFinal, rate: v.tasa, capital: capitalDe(c), interest: 0, coefficient: 0 }];
 	}
 	const fecha = c.date ? dayjs(c.date).format("DD/MM/YYYY") : "";
