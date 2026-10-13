@@ -15,17 +15,21 @@ import AuthDivider from "sections/auth/AuthDivider";
 import AuthWrapper from "sections/auth/AuthWrapper";
 import AuthLogin from "sections/auth/auth-forms/AuthLogin";
 import CustomGoogleButton from "components/auth/CustomGoogleButton";
+import { formatDeletionDate, getPendingDeletion } from "utils/accountDeletion";
 
 // ================================|| LOGIN ||================================ //
 
 const Login = () => {
-	const { loginWithGoogle } = useAuth();
+	const { loginWithGoogle, cancelAccountDeletion } = useAuth();
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [isEmailLoading, setIsEmailLoading] = useState<boolean>(false);
 	// Cuenta Google desactivada: retenemos el credential para ofrecer reactivar.
 	const [reactivateCred, setReactivateCred] = useState<CredentialResponse | null>(null);
 	const [reactivating, setReactivating] = useState<boolean>(false);
+	// Cuenta Google con eliminación programada: retenemos el token para cancelarla.
+	const [pendingDeletion, setPendingDeletion] = useState<{ token: string; deletionScheduledFor?: string } | null>(null);
+	const [cancellingDeletion, setCancellingDeletion] = useState<boolean>(false);
 
 	// Estado combinado de loading
 	const isAnyLoading = isLoading || isEmailLoading;
@@ -47,7 +51,12 @@ const Login = () => {
 			await loginWithGoogle(credentialResponse);
 		} catch (err: any) {
 			const errData = err?.response?.data?.error;
-			if (errData?.code === "ACCOUNT_INACTIVE" && errData?.canReactivate) {
+			const pending = getPendingDeletion(err);
+			if (pending && credentialResponse.credential) {
+				// Eliminación programada: ofrecemos cancelarla con el mismo token de Google.
+				setPendingDeletion({ token: credentialResponse.credential, deletionScheduledFor: pending.deletionScheduledFor });
+				setError(null);
+			} else if (errData?.code === "ACCOUNT_INACTIVE" && errData?.canReactivate) {
 				// Cuenta desactivada: ofrecemos reactivar reutilizando el mismo credential.
 				setReactivateCred(credentialResponse);
 				setError(null);
@@ -73,6 +82,22 @@ const Login = () => {
 			setReactivating(false);
 		}
 	};
+
+	const handleCancelDeletionGoogle = async () => {
+		if (!pendingDeletion) return;
+		setCancellingDeletion(true);
+		setError(null);
+		try {
+			await cancelAccountDeletion({ token: pendingDeletion.token });
+			setPendingDeletion(null);
+		} catch (err) {
+			setError("No pudimos cancelar la eliminación. Intentá nuevamente o escribinos a soporte@lawanalytics.app.");
+		} finally {
+			setCancellingDeletion(false);
+		}
+	};
+
+	const pendingDeletionDate = formatDeletionDate(pendingDeletion?.deletionScheduledFor);
 
 	// Hook para iniciar sesión con Google
 	const { login: googleLogin, warm: warmGoogle } = useDeferredGoogleLogin({
@@ -164,7 +189,39 @@ const Login = () => {
 						</AuthDivider>
 					</Grid>
 					<Grid item xs={12}>
-						{reactivateCred ? (
+						{pendingDeletion ? (
+							<Alert severity="warning" sx={{ "& .MuiAlert-message": { width: "100%" } }}>
+								<Stack spacing={1.25}>
+									<Typography variant="body2">
+										{pendingDeletionDate
+											? `Tu cuenta tiene una eliminación programada para el ${pendingDeletionDate}.`
+											: "Tu cuenta tiene una eliminación programada."}{" "}
+										Si la cancelás, conservás todos tus datos y entrás normalmente.
+									</Typography>
+									<Stack direction="row" spacing={1}>
+										<Button
+											variant="contained"
+											size="small"
+											onClick={handleCancelDeletionGoogle}
+											disabled={cancellingDeletion}
+											startIcon={cancellingDeletion ? <CircularProgress size={16} color="inherit" /> : null}
+											sx={{ textTransform: "none" }}
+										>
+											{cancellingDeletion ? "Cancelando..." : "Cancelar eliminación y entrar"}
+										</Button>
+										<Button
+											variant="text"
+											size="small"
+											onClick={() => setPendingDeletion(null)}
+											disabled={cancellingDeletion}
+											sx={{ textTransform: "none" }}
+										>
+											Volver
+										</Button>
+									</Stack>
+								</Stack>
+							</Alert>
+						) : reactivateCred ? (
 							<Alert severity="warning" sx={{ "& .MuiAlert-message": { width: "100%" } }}>
 								<Stack spacing={1.25}>
 									<Typography variant="body2">Tu cuenta está desactivada. ¿Querés reactivarla y volver a ingresar?</Typography>

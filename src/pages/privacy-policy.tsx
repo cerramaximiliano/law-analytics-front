@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 
 // material-ui
 import { useTheme, alpha } from "@mui/material/styles";
@@ -217,6 +217,17 @@ const PrivacyPolicy = () => {
 					{renderSectionContent(section.content)}
 				</Box>
 			))}
+			<Box component="section" aria-labelledby="eliminar-cuenta">
+				{sectionHeading("Eliminación de su cuenta y sus datos", "eliminar-cuenta")}
+				<Typography paragraph sx={bodySx}>
+					Puede solicitar la eliminación completa de su cuenta y de sus datos desde la aplicación, desde la web o por correo electrónico.
+					Los pasos, el plazo y qué información se conserva están detallados en{" "}
+					<Link component={RouterLink} to="/eliminar-cuenta" sx={linkSx}>
+						Eliminar tu cuenta
+					</Link>
+					.
+				</Typography>
+			</Box>
 			<Divider sx={{ my: 4, borderColor: alpha(theme.palette.divider, 0.6) }} />
 			{d.conclusion && (
 				<Typography paragraph sx={{ ...bodySx, whiteSpace: "pre-line" }}>
@@ -514,6 +525,14 @@ const PrivacyPolicy = () => {
 									<Typography paragraph sx={bodySx}>
 										En cualquier momento usted puede restringir la recopilación o el uso de la información personal que es proporcionada a
 										nuestro sitio web. Puede acceder a su información personal almacenada en su cuenta para corregirla o eliminarla.
+									</Typography>
+									<Typography paragraph sx={bodySx}>
+										También puede solicitar la eliminación completa de su cuenta y de sus datos desde la aplicación, desde la web o por
+										correo electrónico. Los pasos, el plazo y qué información se conserva están detallados en{" "}
+										<Link component={RouterLink} to="/eliminar-cuenta" sx={linkSx}>
+											Eliminar tu cuenta
+										</Link>
+										.
 									</Typography>
 									<Typography paragraph sx={bodySx}>
 										Law||Analytics no venderá ni transferirá información personal ni datos obtenidos desde Google a terceros, salvo a

@@ -36,6 +36,7 @@ import AnimateButton from "components/@extended/AnimateButton";
 import { Eye, EyeSlash } from "iconsax-react";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
+import { formatDeletionDate, getPendingDeletion } from "utils/accountDeletion";
 
 // ============================|| JWT - LOGIN ||============================ //
 
@@ -50,8 +51,11 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 	// Cuenta desactivada detectada en el login → ofrecer reactivación inline (opción A).
 	const [reactivateCreds, setReactivateCreds] = useState<{ email: string; password: string } | null>(null);
 	const [reactivating, setReactivating] = useState(false);
+	// Cuenta con eliminación programada → ofrecer cancelarla con las mismas credenciales.
+	const [pendingDeletion, setPendingDeletion] = useState<{ email: string; password: string; deletionScheduledFor?: string } | null>(null);
+	const [cancellingDeletion, setCancellingDeletion] = useState(false);
 
-	const { isLoggedIn, login } = useAuth();
+	const { isLoggedIn, login, cancelAccountDeletion } = useAuth();
 	const scriptedRef = useScriptRef();
 	const navigate = useNavigate();
 
@@ -111,6 +115,34 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 		}
 	};
 
+	// Cancela la eliminación programada; el hub responde como un login exitoso.
+	const handleCancelDeletion = async () => {
+		if (!pendingDeletion) return;
+		setCancellingDeletion(true);
+		if (onLoadingChange) onLoadingChange(true);
+		try {
+			await cancelAccountDeletion({ email: pendingDeletion.email, password: pendingDeletion.password });
+			setPendingDeletion(null);
+		} catch (e: any) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message:
+						e?.response?.data?.message ||
+						"No pudimos cancelar la eliminación. Verificá tus credenciales o escribinos a soporte@lawanalytics.app.",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+		} finally {
+			setCancellingDeletion(false);
+			if (onLoadingChange) onLoadingChange(false);
+		}
+	};
+
+	const pendingDeletionDate = formatDeletionDate(pendingDeletion?.deletionScheduledFor);
+
 	return (
 		<>
 			<Formik
@@ -125,6 +157,7 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
 					setReactivateCreds(null);
+					setPendingDeletion(null);
 					try {
 						if (onLoadingChange) {
 							onLoadingChange(true);
@@ -141,6 +174,15 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 							// Cuenta desactivada → en vez de un error muerto, ofrecer reactivación inline.
 							if (err?.response?.data?.error?.code === "ACCOUNT_INACTIVE") {
 								setReactivateCreds({ email: values.email, password: values.password });
+								setSubmitting(false);
+								if (onLoadingChange) onLoadingChange(false);
+								return;
+							}
+
+							// Eliminación de cuenta programada → ofrecer cancelarla inline.
+							const pending = getPendingDeletion(err);
+							if (pending) {
+								setPendingDeletion({ email: values.email, password: values.password, deletionScheduledFor: pending.deletionScheduledFor });
 								setSubmitting(false);
 								if (onLoadingChange) onLoadingChange(false);
 								return;
@@ -382,6 +424,29 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 										</Link>
 									</Stack>
 								</Grid>
+								{pendingDeletion && (
+									<Grid item xs={12}>
+										<Alert severity="warning">
+											<Typography variant="body2" sx={{ mb: 1 }}>
+												{pendingDeletionDate
+													? `Tu cuenta tiene una eliminación programada para el ${pendingDeletionDate}.`
+													: "Tu cuenta tiene una eliminación programada."}{" "}
+												Si la cancelás, conservás todos tus datos y entrás normalmente.
+											</Typography>
+											<Button
+												variant="contained"
+												color="warning"
+												size="small"
+												disabled={cancellingDeletion}
+												onClick={handleCancelDeletion}
+												startIcon={cancellingDeletion ? <CircularProgress size={16} color="inherit" /> : null}
+												sx={{ textTransform: "none" }}
+											>
+												{cancellingDeletion ? "Cancelando..." : "Cancelar eliminación y entrar"}
+											</Button>
+										</Alert>
+									</Grid>
+								)}
 								{reactivateCreds && (
 									<Grid item xs={12}>
 										<Alert severity="warning">

@@ -1,5 +1,6 @@
 import React from "react";
 import { useState, useEffect } from "react";
+import { Link as RouterLink } from "react-router-dom";
 import { useSelector } from "store";
 import dayjs from "utils/dayjs-config";
 import useBankingDisplay from "hooks/useBankingDisplay";
@@ -16,6 +17,7 @@ import {
 	Grid,
 	IconButton,
 	InputLabel,
+	Link,
 	MenuItem,
 	Select,
 	Stack,
@@ -1297,6 +1299,12 @@ const TabAccount = () => {
 								Desactivar mi cuenta
 							</Button>
 						</Stack>
+						<Typography sx={{ fontSize: "0.8rem", color: "text.secondary", letterSpacing: "-0.005em", textAlign: "center" }}>
+							¿Preferís borrar tu cuenta y tus datos de forma definitiva?{" "}
+							<Link component={RouterLink} to="/eliminar-cuenta" underline="hover" sx={{ fontWeight: 600 }}>
+								Eliminar mi cuenta
+							</Link>
+						</Typography>
 					</Stack>
 				) : (
 					<Stack spacing={2}>

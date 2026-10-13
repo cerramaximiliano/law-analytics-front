@@ -265,6 +265,8 @@ const RUTAS_PUBLICAS = [
 	"/plans",
 	"/terms",
 	"/privacy-policy",
+	"/eliminar-cuenta",
+	"/delete-account",
 	"/cookies-policy",
 	"/unsubscribe",
 	"/oauth",

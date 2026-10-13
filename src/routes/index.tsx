@@ -23,6 +23,7 @@ const FaqPage = Loadable(lazy(() => import("pages/faq")));
 const PrivacyPolicy = Loadable(lazy(() => import("pages/privacy-policy")));
 const CookiesPolicy = Loadable(lazy(() => import("pages/cookies-policy")));
 const UnsubscribePage = Loadable(lazy(() => import("pages/unsubscribe")));
+const AccountDeletionPage = Loadable(lazy(() => import("pages/account-deletion")));
 const TermsPage = Loadable(lazy(() => import("pages/terms")));
 const Plans = Loadable(lazy(() => import("pages/plans")));
 const FeedbackInvitePage = Loadable(lazy(() => import("pages/feedback-invite")));
@@ -64,6 +65,15 @@ export default function ThemeRoutes() {
 				{
 					path: "privacy-policy",
 					element: <PrivacyPolicy />,
+				},
+				{
+					// Página pública exigida por Google Play (link declarado en Play Console).
+					path: "eliminar-cuenta",
+					element: <AccountDeletionPage />,
+				},
+				{
+					path: "delete-account",
+					element: <AccountDeletionPage />,
 				},
 				{
 					path: "cookies-policy",

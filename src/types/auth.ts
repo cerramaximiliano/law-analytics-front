@@ -183,6 +183,8 @@ export interface ServerContextType extends AuthProps {
 	setIsLoggedIn: (value: boolean) => void;
 	setNeedsVerification: (value: boolean) => void;
 	loginWithGoogle: (tokenResponse: CredentialResponse, confirmReactivation?: boolean) => Promise<{ success: boolean; isNewUser?: boolean }>;
+	cancelAccountDeletion: (credentials: { email: string; password: string } | { token: string }) => Promise<boolean>;
+	clearLocalSession: () => void;
 	handleLogoutAndRedirect?: () => Promise<void>;
 	resetPassword: (email: string) => Promise<void>;
 	verifyResetCode: (email: string, code: string) => Promise<boolean>;

@@ -27,6 +27,7 @@ import { refreshAccessToken } from "utils/refreshToken";
 import { extractErrorMessage } from "utils/errorMessages";
 import webSocketService from "store/reducers/WebSocketService";
 import { APP_DEFAULT_PATH } from "config";
+import { getErrorCode } from "utils/accountDeletion";
 
 // Global setting for hiding international banking data
 export const HIDE_INTERNATIONAL_BANKING_DATA = import.meta.env.VITE_HIDE_BANKING_DATA === "true";
@@ -216,7 +217,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			// Cuenta desactivada: no mostramos el snackbar genérico — la UI de login
 			// ofrece reactivar (re-envía con confirmReactivation). Re-lanzamos con
 			// el response intacto para que login.tsx detecte ACCOUNT_INACTIVE.
-			if (error?.response?.data?.error?.code !== "ACCOUNT_INACTIVE") {
+			// Lo mismo con una eliminación de cuenta pendiente (ACCOUNT_PENDING_DELETION):
+			// login.tsx ofrece cancelarla.
+			const code = getErrorCode(error);
+			if (code !== "ACCOUNT_INACTIVE" && code !== "ACCOUNT_PENDING_DELETION") {
 				showSnackbar("Error al iniciar sesión con Google", "error");
 			}
 			throw error;
@@ -371,7 +375,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					!url.includes("/api/auth/google") &&
 					!url.includes("/api/auth/refresh-token") &&
 					!url.includes("/api/auth/logout") &&
-					!url.includes("/api/auth/me") // Excluir /api/auth/me para evitar problemas en registro
+					!url.includes("/api/auth/me") && // Excluir /api/auth/me para evitar problemas en registro
+					// Eliminación de cuenta: el 401 es "contraseña incorrecta" (INVALID_PASSWORD) o
+					// sesión ya revocada; no hay que refrescar ni abrir el modal de re-login.
+					!url.includes("/api/auth/account-deletion")
 				) {
 					// Intentar refrescar el token automáticamente ante cualquier 401
 					if (!originalRequest._queued && !originalRequest._retry) {
@@ -401,7 +408,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				}
 
 				// Manejar errores 403 (límites de plan)
-				if (error.response?.status === 403) {
+				if (error.response?.status === 403 && getErrorCode(error) !== "ACCOUNT_PENDING_DELETION") {
 					const responseData = error.response.data as any;
 
 					// Verificar si es un error de límite o de característica
@@ -569,6 +576,37 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 			throw error;
 		}
+	};
+
+	// Cancelar una eliminación de cuenta pendiente con las mismas credenciales del
+	// login. El hub responde igual que un login exitoso → dejamos la sesión iniciada.
+	const cancelAccountDeletion = async (credentials: { email: string; password: string } | { token: string }): Promise<boolean> => {
+		const response = await axios.post<LoginResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/account-deletion/cancel`, credentials);
+		const { user, subscription, paymentHistory, customer } = response.data;
+		if ("token" in credentials) setIsGoogleLoggedIn(true);
+
+		const payload = { isLoggedIn: true, user, subscription, paymentHistory, customer };
+		localDispatch({ type: LOGIN, payload });
+		reduxDispatch({ type: LOGIN, payload });
+		reduxDispatch(fetchUserStats());
+
+		showSnackbar("Cancelamos la eliminación de tu cuenta. ¡Bienvenido de nuevo!", "success");
+		await processRequestQueue();
+		return true;
+	};
+
+	// Limpia la sesión local sin pegarle a /api/auth/logout ni navegar (se usa
+	// después de pedir la eliminación de la cuenta: el hub ya revocó las sesiones).
+	const clearLocalSession = (): void => {
+		if (isGoogleLoggedIn) {
+			googleLogout();
+			setIsGoogleLoggedIn(false);
+		}
+		secureStorage.clearSession();
+		requestQueueService.clearQueue();
+		authTokenService.clearToken();
+		localDispatch({ type: LOGOUT, payload: { isInitialized: true } });
+		reduxDispatch(logoutUser());
 	};
 
 	// Registro
@@ -799,6 +837,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				resetPassword,
 				updateProfile,
 				loginWithGoogle,
+				cancelAccountDeletion,
+				clearLocalSession,
 				setIsLoggedIn,
 				setNeedsVerification,
 				handleLogoutAndRedirect,
