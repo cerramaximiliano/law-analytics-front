@@ -1,5 +1,6 @@
 import React from "react";
 // material-ui
+import { isDevReview } from "utils/devReview";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { alpha } from "@mui/material/styles";
 import { Grid, Stack, Typography, Snackbar, Alert, Skeleton, Fade, CircularProgress, Box } from "@mui/material";
@@ -9,6 +10,7 @@ import EcommerceDataCard from "components/cards/statistics/WidgetDataCard";
 import BarsDataWidget from "sections/widget/chart/BarsDataWidget";
 import ErrorStateCard from "components/ErrorStateCard";
 import OnboardingChecklist, { useJudicialConnectionState } from "components/cards/OnboardingChecklist";
+import PrimeraCausa from "components/cards/PrimeraCausa";
 
 import RepeatCustomerRate from "sections/widget/chart/FoldersDataRate";
 import FinancialWidget from "sections/widget/chart/FinancialWidget";
@@ -52,13 +54,14 @@ const DashboardDefault = () => {
 	// dentro de la sesión del tab.
 	//   ?onboarding=force → fuerza el hero onboarding
 	//   ?onboarding=skip  → fuerza el billboard default
+	//   ?onboarding=primera → muestra la pantalla "Primera causa" aunque la cuenta tenga carpetas (revisión)
 	//   ?onboarding=clear → limpia el override
 	//   sin param          → usa el override de sessionStorage si existe, o el estado real
 	const [searchParams, setSearchParams] = useSearchParams();
-	const [onboardingOverride, setOnboardingOverride] = useState<"force" | "skip" | null>(() => {
+	const [onboardingOverride, setOnboardingOverride] = useState<"force" | "skip" | "primera" | null>(() => {
 		if (typeof window === "undefined") return null;
 		const stored = sessionStorage.getItem(ONBOARDING_OVERRIDE_KEY);
-		return stored === "force" || stored === "skip" ? stored : null;
+		return stored === "force" || stored === "skip" || stored === "primera" ? stored : null;
 	});
 
 	const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "error" | "success" }>({
@@ -95,8 +98,13 @@ const DashboardDefault = () => {
 	useEffect(() => {
 		if (!isAdmin) return;
 		const param = searchParams.get("onboarding");
-		if (param === "force" || param === "skip") {
+		if (param === "force" || param === "skip" || param === "primera") {
 			sessionStorage.setItem(ONBOARDING_OVERRIDE_KEY, param);
+			if (param === "primera") {
+				// Revisión: vuelve a mostrarla aunque se haya tocado "Explorar la app primero"
+				sessionStorage.removeItem("primera_causa_skip");
+				setFirstCausaSkipped(false);
+			}
 			setOnboardingOverride(param);
 		} else if (param === "clear") {
 			sessionStorage.removeItem(ONBOARDING_OVERRIDE_KEY);
@@ -192,7 +200,41 @@ const DashboardDefault = () => {
 	// mostrar — evita requests inútiles en cada carga del dashboard del user
 	// que ya completó/dismissó el flow. Se basa en showOnboarding (y no en
 	// complete/dismissed) para que la vista forzada de admin también lo consulte.
-	const skipJudicialFetch = !showOnboarding || onboardingLoading;
+	// Primer minuto (2026-10-13): sin carpetas, en lugar del checklist se muestra
+	// PrimeraCausa (una sola acción: cargar una causa por número). Queda "enganchada"
+	// una vez mostrada para que el resultado de la búsqueda no desaparezca cuando
+	// el dashboard se recarga con la carpeta nueva. "Explorar la app primero" la
+	// saltea en esta sesión del navegador.
+	const [firstCausaSkipped, setFirstCausaSkipped] = useState<boolean>(() => {
+		try {
+			return sessionStorage.getItem("primera_causa_skip") === "1";
+		} catch {
+			return false;
+		}
+	});
+	const [firstCausaLatched, setFirstCausaLatched] = useState(false);
+	const forceFirstCausa = (isAdmin && onboardingOverride === "primera") || isDevReview();
+	const firstCausaEligible =
+		(forceFirstCausa || showOnboarding) &&
+		(forceFirstCausa || !hasFolders) &&
+		!firstCausaSkipped &&
+		!isFullyLoading &&
+		!error &&
+		!!dashboardData;
+	useEffect(() => {
+		if (firstCausaEligible) setFirstCausaLatched(true);
+	}, [firstCausaEligible]);
+	const showFirstCausa = firstCausaLatched && !firstCausaSkipped;
+	const handleSkipFirstCausa = useCallback(() => {
+		try {
+			sessionStorage.setItem("primera_causa_skip", "1");
+		} catch {
+			/* sin storage: se saltea igual en memoria */
+		}
+		setFirstCausaSkipped(true);
+	}, []);
+
+	const skipJudicialFetch = !showOnboarding || onboardingLoading || showFirstCausa || (!hasFolders && !firstCausaSkipped);
 	const judicialState = useJudicialConnectionState(skipJudicialFetch);
 
 	// Nombre del usuario para el banner
@@ -399,7 +441,7 @@ const DashboardDefault = () => {
 				    onboarding. Cuando hay onboarding, el OnboardingChecklist se
 				    renderiza más abajo dentro del bloque condicional y reemplaza al
 				    banner — sin esto saldrían dos hero rows uno arriba del otro. */}
-				{!showOnboarding && (
+				{!showOnboarding && !showFirstCausa && (
 					<Grid item xs={12}>
 						{isFullyLoading ? (
 							<Skeleton variant="rectangular" height={120} sx={{ borderRadius: 1.5 }} />
@@ -453,10 +495,10 @@ const DashboardDefault = () => {
 				)}
 
 				{/* Contenido del dashboard - skeleton mientras carga */}
-				{isFullyLoading && !isDismissing && renderSkeletonCards()}
+				{isFullyLoading && !isDismissing && !showFirstCausa && renderSkeletonCards()}
 
 				{/* Mostrar error si existe */}
-				{error && !isFullyLoading && !isDismissing && (
+				{error && !isFullyLoading && !isDismissing && !showFirstCausa && (
 					<Grid item xs={12}>
 						<ErrorStateCard
 							type={getErrorType()}
@@ -478,7 +520,19 @@ const DashboardDefault = () => {
 				    Si el user ya creó carpeta (step 1 done), el checklist sigue
 				    visible empujando al step #2 — conectar cuenta judicial — que
 				    es el cuello de botella real (0% activación a 90 días). */}
-				{!isFullyLoading && !error && dashboardData && showOnboarding && !isDismissing && !judicialState.loading && (
+				{/* Primer minuto: usuario sin carpetas → una sola acción, cargar una causa por número. */}
+				{showFirstCausa && (
+					<Grid item xs={12}>
+						<PrimeraCausa
+							userName={userName}
+							preferredJurisdiction={onboardingSignals?.preferredJurisdiction || null}
+							onExplore={handleSkipFirstCausa}
+							onFolderCreated={handleRetry}
+						/>
+					</Grid>
+				)}
+
+				{!showFirstCausa && !isFullyLoading && !error && dashboardData && showOnboarding && !isDismissing && !judicialState.loading && (
 					<Fade in timeout={400}>
 						<Grid container item spacing={2.75}>
 							{/* Checklist full-width. Si el user ya tiene carpetas, el
@@ -506,7 +560,7 @@ const DashboardDefault = () => {
 
 				{/* Momento de éxito: primera causa con movimientos sincronizados. Una sola
 				    vez por usuario y carpeta; se muestra con o sin checklist. */}
-				{!isFullyLoading && !error && !isDismissing && onboardingSignals?.firstSyncedFolder && (
+				{!showFirstCausa && !isFullyLoading && !error && !isDismissing && onboardingSignals?.firstSyncedFolder && (
 					<Grid item xs={12}>
 						<FirstSyncBanner userId={personalUserId} folder={onboardingSignals.firstSyncedFolder} />
 					</Grid>
@@ -515,7 +569,7 @@ const DashboardDefault = () => {
 				{/* Datos normales: sin onboarding, o con onboarding si el user ya tiene
 				    carpetas (el checklist queda arriba). Sin carpetas el dashboard está
 				    vacío y el checklist ocupa toda la vista. */}
-				{!isFullyLoading && !error && dashboardData && (!showOnboarding || hasFolders) && !isDismissing && (
+				{!showFirstCausa && !isFullyLoading && !error && dashboardData && (!showOnboarding || hasFolders) && !isDismissing && (
 					<Fade in timeout={400}>
 						<Grid container item spacing={2.75}>
 							{/* row 1 - Mostrar estadisticas clave del dashboard */}
