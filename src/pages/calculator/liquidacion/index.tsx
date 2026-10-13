@@ -23,13 +23,14 @@ const ORIGEN: Record<string, string> = {
 const pesos = (n: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(n);
 const red2 = (n: number) => Math.round(n * 100) / 100;
 const capitalDe = (c: CalculatorType) => red2(Number(c.capital) || Math.max(0, (Number(c.amount) || 0) - (Number(c.interest) || 0)));
-// Los cálculos de intereses guardan en subClassType la tasa (p. ej. "TasaPasivaBCRA"), no el tipo
+// Los cálculos de intereses y los previsionales viejos guardan en subClassType la tasa (p. ej. "tasaPasivaBCRA"), no el tipo
 const tipoDe = (c: CalculatorType): string => {
 	const sub = String(c.subClassType || "");
 	if (ORIGEN[sub]) return sub;
+	const clase = String(c.classType || "");
+	if (ORIGEN[clase]) return clase;
 	const v: any = c.variables || {};
-	if (c.classType === "intereses" || v.tasa || v.segments?.length) return "intereses";
-	return sub || c.classType || "";
+	return v.tasa || v.segments?.length ? "intereses" : sub || clase;
 };
 
 /** Precarga de la liquidación desde un cálculo guardado (lo mismo que hace "Practicar liquidación" desde su resultado). */
