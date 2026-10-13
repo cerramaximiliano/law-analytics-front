@@ -1,0 +1,10 @@
+[
+	{
+		"relation": ["delegate_permission/common.handle_all_urls"],
+		"target": {
+			"namespace": "android_app",
+			"package_name": "app.lawanalytics",
+			"sha256_cert_fingerprints": ["0B:58:F4:51:59:76:2A:94:5C:06:0E:61:BC:E1:9A:3C:E1:C0:45:6D:DD:98:E4:91:99:EB:EF:38:F1:94:D7:E1"]
+		}
+	}
+]
