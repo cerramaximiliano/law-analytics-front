@@ -11,6 +11,9 @@ import dashboardImage from "assets/images/dashboard.png";
 // React la montaba, casi 5 s después del HTML (2026-09-20).
 const dashboardWebp = "/images/dashboard-1878.webp";
 const dashboardWebpChico = "/images/dashboard-940.webp";
+// 720 px: la que elige un teléfono (ancho ~380 px a 1,75–2x) en vez de la de 940.
+const dashboardWebpMovil = "/images/dashboard-720.webp";
+const dashboardSrcSet = `${dashboardWebpMovil} 720w, ${dashboardWebpChico} 940w, ${dashboardWebp} 1878w`;
 
 const BRAND_BLUE = "#3A7BFF";
 
@@ -63,6 +66,9 @@ const MockupFrame = ({
 				<Box
 					component="img"
 					src={esCapturaDelPanel ? dashboardWebpChico : image}
+					// Mismo srcset y sizes que la captura principal: el navegador elige el mismo archivo y no baja otro.
+					srcSet={esCapturaDelPanel ? dashboardSrcSet : undefined}
+					sizes={esCapturaDelPanel ? "(max-width: 900px) 92vw, 560px" : undefined}
 					alt=""
 					aria-hidden
 					loading="lazy"
@@ -148,7 +154,7 @@ const MockupFrame = ({
 					<Box
 						component="img"
 						src={esCapturaDelPanel ? dashboardWebpChico : image}
-						srcSet={esCapturaDelPanel ? `${dashboardWebpChico} 940w, ${dashboardWebp} 1878w` : undefined}
+						srcSet={esCapturaDelPanel ? dashboardSrcSet : undefined}
 						sizes={esCapturaDelPanel ? (compact ? "(max-width: 600px) 92vw, 420px" : "(max-width: 900px) 92vw, 560px") : undefined}
 						alt={alt}
 						decoding="async"

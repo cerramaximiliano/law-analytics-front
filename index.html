@@ -131,7 +131,10 @@
 				l.rel = "preload";
 				l.as = "image";
 				l.href = "/images/dashboard-940.webp";
-				l.setAttribute("imagesrcset", "/images/dashboard-940.webp 940w, /images/dashboard-1878.webp 1878w");
+				l.setAttribute(
+					"imagesrcset",
+					"/images/dashboard-720.webp 720w, /images/dashboard-940.webp 940w, /images/dashboard-1878.webp 1878w",
+				);
 				l.setAttribute("imagesizes", "(max-width: 900px) 92vw, 560px");
 				l.setAttribute("fetchpriority", "high");
 				document.head.appendChild(l);

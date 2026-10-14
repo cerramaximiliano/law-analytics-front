@@ -247,14 +247,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			// El chunk del reducer de Google Calendar se baja en paralelo con /auth/me.
 			const googleCalendarModule = import("store/reducers/googleCalendar").catch(() => null);
 			try {
-				// Verificar la sesión actual con el token en cookies
+				// Verificar la sesión actual con el token en cookies. Con ?anonimo=1, un visitante sin
+				// cookies de sesión recibe 200 con user null en vez de un 401 en la consola.
 				const response = await axios.get<{
-					user: UserProfile;
+					user: UserProfile | null;
 					subscription?: Subscription;
 					paymentHistory?: Payment[];
 					customer?: { id: string; email: string | null };
-				}>(`${import.meta.env.VITE_BASE_URL}/api/auth/me`);
+				}>(`${import.meta.env.VITE_BASE_URL}/api/auth/me?anonimo=1`);
 				const { user, subscription, paymentHistory, customer } = response.data;
+				if (!user) throw new Error("sin sesión");
 
 				localDispatch({
 					type: LOGIN,

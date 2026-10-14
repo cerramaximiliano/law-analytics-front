@@ -28,10 +28,15 @@ import logoPJCatamarca from "assets/images/logos/logo_pj_catamarca.png";
 
 // Logos externos (Cloudinary)
 const logoPJCABA =
-	"https://res.cloudinary.com/dqyoeolib/image/upload/f_auto,q_auto,w_160/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
-const logoSECLO = "https://res.cloudinary.com/dqyoeolib/image/upload/f_auto,q_auto,w_160/v1776203385/seclo-removebg-preview_rxcvzm.png";
+	"https://res.cloudinary.com/dqyoeolib/image/upload/f_auto,q_auto,w_112/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
+const logoSECLO = "https://res.cloudinary.com/dqyoeolib/image/upload/f_auto,q_auto,w_112/v1776203385/seclo-removebg-preview_rxcvzm.png";
 const logoPJSalta =
-	"https://res.cloudinary.com/dqyoeolib/image/upload/f_auto,q_auto,w_160/v1779137783/ChatGPT_Image_18_may_2026__05_52_35_p.m.-removebg-preview_bngpqd.png";
+	"https://res.cloudinary.com/dqyoeolib/image/upload/f_auto,q_auto,w_112/v1779137783/ChatGPT_Image_18_may_2026__05_52_35_p.m.-removebg-preview_bngpqd.png";
+
+// Los logos que agrega el admin llegan como URL de Cloudinary sin transformación (p. ej. 170×209 para un
+// ícono de 26 px). Se les pide la misma versión chica que a los de arriba.
+const logoRemotoChico = (url: string): string =>
+	/res\.cloudinary\.com\/[^/]+\/image\/upload\/v\d/.test(url) ? url.replace("/image/upload/", "/image/upload/f_auto,q_auto,w_112/") : url;
 
 // ============================== TOKENS ============================== //
 // El gradiente sobre "Estudio Jurídico" es el ÚNICO uso intencional de púrpura
@@ -262,7 +267,7 @@ const HeaderPage = () => {
 							shortName: local?.shortName || entry.shortName,
 							fullName: local?.fullName || entry.name,
 							tooltipTitle: local?.tooltipTitle || entry.name,
-							logoSrc: local?.logoSrc || entry.logoUrl || "",
+							logoSrc: local?.logoSrc || (entry.logoUrl ? logoRemotoChico(entry.logoUrl) : ""),
 							bgColor: local?.bgColor || entry.bgColor,
 							hasBorder: local ? local.hasBorder : entry.hasBorder,
 							status: entry.status,
