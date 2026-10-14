@@ -115,6 +115,14 @@ interface ContactState {
   - Vista principal que integra contactos en carpetas
 - **src/pages/apps/folders/details/modals/ModalMembers.tsx**
   - Modal para gestionar miembros (contactos) de la carpeta
+- **src/pages/apps/folders/details/components/IntervinientesPjnPanel.tsx** (desde 2026-10-14)
+  - Sección "Partes y letrados del expediente (PJN)" debajo de `MembersImproved`, solo en carpetas PJN (Civil, Seg.
+    Social, Trabajo, Comercial). Muestra las partes del expediente aunque **no** sean contactos (el usuario puede no tener
+    activada la sincronización), marca cada una como "En la carpeta" / "En tus contactos" y permite "Agregar
+    seleccionados" o "Agregar todos a contactos" (ocultos sin `canCreate`). No usa el store: pide la vista a
+    `src/api/intervinientesPjn.ts` (`GET/POST /api/folders/:folderId/intervinientes-pjn`) y, tras agregar, despacha
+    `filterContactsByFolder(folderId)` para refrescar `selectedContacts`. Backend y reglas:
+    `law-analytics-server/docs/INTERVINIENTES_PJN.md`.
 
 #### **3. Componentes de creación/edición**
 
