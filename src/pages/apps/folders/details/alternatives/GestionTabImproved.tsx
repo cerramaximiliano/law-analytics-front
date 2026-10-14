@@ -4,6 +4,7 @@ import { Calculator, People, TaskSquare, Menu, DocumentText, Briefcase } from "i
 import MainCard from "components/MainCard";
 import CalcTableResponsive from "../components/CalcTableResponsive";
 import MembersImproved from "../components/MembersImproved";
+import IntervinientesPjnPanel from "../components/IntervinientesPjnPanel";
 import TaskListImproved from "../components/TaskListImproved";
 import Notes from "../components/Notes";
 import { FolderData } from "types/folder";
@@ -31,12 +32,16 @@ function TabPanel(props: TabPanelProps) {
 	);
 }
 
+const FUEROS_PJN = new Set(["CausasCivil", "CausasTrabajo", "CausasSegSocial", "CausasSegSoc", "CausasComercial"]);
+
 interface GestionTabImprovedProps {
 	folder: FolderData & { groupId?: string };
 	isDetailedView: boolean;
 }
 
 const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetailedView }) => {
+	// Partes y letrados del PJN (extra-info), visibles aunque no estén sincronizados como contactos
+	const esPjn = !!(folder.causaId && FUEROS_PJN.has(folder.causaType || ""));
 	void isDetailedView;
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
@@ -443,6 +448,7 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 							</TabPanel>
 							<TabPanel value={value} index={1}>
 								<MembersImproved title="" membersData={selectedContacts || []} isLoader={false} folderId={folder._id} />
+								{esPjn && <IntervinientesPjnPanel folderId={folder._id} />}
 							</TabPanel>
 							<TabPanel value={value} index={2}>
 								<TaskListImproved title="" folderName={folder.folderName} />
@@ -477,6 +483,7 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 							</TabPanel>
 							<TabPanel value={value} index={1}>
 								<MembersImproved title="" membersData={selectedContacts || []} isLoader={false} folderId={folder._id} />
+								{esPjn && <IntervinientesPjnPanel folderId={folder._id} />}
 							</TabPanel>
 							<TabPanel value={value} index={2}>
 								<TaskListImproved title="" folderName={folder.folderName} />
