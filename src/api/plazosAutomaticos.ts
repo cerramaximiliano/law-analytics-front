@@ -32,6 +32,36 @@ export const enviarFeedbackPlazo = async (body: {
 	return data.data;
 };
 
+// Parte que el usuario representa en la carpeta (P15): las cédulas dirigidas a esa parte o a sus
+// letrados se proponen como propias. Sin elección, se detecta sola (sus CUIT entre los letrados).
+export interface PlazosParteOpcion {
+	intervinienteId: string;
+	nombre: string;
+	tipo: string | null;
+	letrados: number;
+	sugerida: boolean;
+	elegida: boolean;
+}
+
+export interface PlazosParteVista {
+	soportada: boolean;
+	activo: boolean;
+	fuente: "usuario" | "auto" | null;
+	ninguna: boolean;
+	partes: PlazosParteOpcion[];
+	reevaluacion?: { revisados: number; actualizados: number } | null;
+}
+
+export const getPlazosParte = async (folderId: string): Promise<PlazosParteVista> => {
+	const { data } = await axios.get(`/api/plazos-automaticos/carpetas/${folderId}/parte`);
+	return data.data;
+};
+
+export const savePlazosParte = async (folderId: string, body: { partes: string[] } | { auto: true }): Promise<PlazosParteVista> => {
+	const { data } = await axios.put(`/api/plazos-automaticos/carpetas/${folderId}/parte`, body);
+	return data.data;
+};
+
 // Dígito verificador de CUIT/CUIL (módulo 11), igual que el backend.
 export const cuitValido = (cuit: string): boolean => {
 	const c = String(cuit || "").replace(/\D/g, "");

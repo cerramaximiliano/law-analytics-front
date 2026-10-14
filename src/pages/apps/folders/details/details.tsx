@@ -77,6 +77,7 @@ import LinkToPJBuenosAires from "sections/apps/folders/LinkToPJBuenosAires";
 import LinkToPJCaba from "sections/apps/folders/LinkToPJCaba";
 import NavigationControls from "./components/NavigationControls";
 import InfoTabsVertical from "./components/InfoTabsVertical";
+import PlazosParteCard from "./components/PlazosParteCard";
 
 // Actions
 import { dispatch } from "store";
@@ -1404,6 +1405,7 @@ const Details = () => {
 							judicialDataComponent={MemoizedJudData}
 							isLoader={isLoader}
 						/>
+						<PlazosParteCard folder={folder} />
 					</TabPanel>
 
 					{/* Tab 2: Actividad */}
