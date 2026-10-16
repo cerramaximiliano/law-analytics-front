@@ -216,7 +216,8 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 				// filas salían siempre vacías y el bloque que se manda a soporte iba sin el
 				// dato más importante. Los valores reales viven en judFolder / searchTerm.
 				{ label: "N° de expediente", value: numeroExpediente },
-				{ label: "CUIJ", value: folder?.judFolder?.cuij || null },
+				// "PENDING-…"/"PIVOT-…" son marcadores internos de eje-api, no un CUIJ: no mostrarlos.
+				{ label: "CUIJ", value: folder?.judFolder?.cuij && !/^(PENDING|PIVOT|TEMP)-/.test(String(folder.judFolder.cuij)) ? folder.judFolder.cuij : null },
 				{ label: "Lo que buscaste", value: folder?.searchTerm || null },
 				{ label: "Origen", value: sourceLabel },
 				{ label: "Fecha de alta", value: createdAt },
@@ -269,7 +270,16 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 		}
 	};
 
-	const titleProvisoria = folder?.folderName ? formatFolderName(folder.folderName, 80) : "Carpeta sin nombre";
+	// Si la verificación falló y la carpeta todavía lleva el nombre provisorio que
+	// arma el alta ("Pendiente de verificación: <número>"), no repetir "pendiente"
+	// debajo de "No pudimos encontrar este expediente": mostrar el número buscado.
+	const esNombreProvisorio = /^Pendiente de verificaci[óo]n:/i.test(String(folder?.folderName || ""));
+	const titleProvisoria =
+		gate === "failed" && esNombreProvisorio && numeroExpediente
+			? `No encontrada: ${numeroExpediente}`
+			: folder?.folderName
+			? formatFolderName(folder.folderName, 80)
+			: "Carpeta sin nombre";
 
 	// Texto contextual del CTA de reintentar según estado --------------------
 	const reverifyTitle = locked
