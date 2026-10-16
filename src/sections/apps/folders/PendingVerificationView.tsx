@@ -217,7 +217,10 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 				// dato más importante. Los valores reales viven en judFolder / searchTerm.
 				{ label: "N° de expediente", value: numeroExpediente },
 				// "PENDING-…"/"PIVOT-…" son marcadores internos de eje-api, no un CUIJ: no mostrarlos.
-				{ label: "CUIJ", value: folder?.judFolder?.cuij && !/^(PENDING|PIVOT|TEMP)-/.test(String(folder.judFolder.cuij)) ? folder.judFolder.cuij : null },
+				{
+					label: "CUIJ",
+					value: folder?.judFolder?.cuij && !/^(PENDING|PIVOT|TEMP)-/.test(String(folder.judFolder.cuij)) ? folder.judFolder.cuij : null,
+				},
 				{ label: "Lo que buscaste", value: folder?.searchTerm || null },
 				{ label: "Origen", value: sourceLabel },
 				{ label: "Fecha de alta", value: createdAt },
