@@ -489,8 +489,15 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 				// Incluir groupId si estamos en modo equipo
 				let folderDataToSend = { ...values, userId, ...(groupId && { groupId }) };
 
-				// Si es Poder Judicial de Buenos Aires (MEV), agregar campos específicos
-				if (values.judicialPower === "buenosaires") {
+				if (values.entryMethod !== "automatic") {
+					// Carpeta manual: sin flags de jurisdicción. `values` arrastra judicialPower/pjn de
+					// un paso automático previo (si el usuario cambió de modo) y el chain de abajo
+					// agregaba `pjn: true` igual; el front trataba la carpeta como automática
+					// (chip "Pendiente de verificación", gate que bloquea el detalle) para siempre.
+					// 3 casos reales con jurisdicción Misiones (barrido 2026-10-16). El hub también lo limpia.
+					for (const flag of ["pjn", "mev", "eje", "scba", "pjsalta", "pjcatamarca", "pjmendoza"]) folderDataToSend[flag] = false;
+					// Si es Poder Judicial de Buenos Aires (MEV), agregar campos específicos
+				} else if (values.judicialPower === "buenosaires") {
 					folderDataToSend = {
 						...folderDataToSend,
 						mev: true,
