@@ -32,7 +32,8 @@ import AlertFolderDelete from "./AlertFolderDelete";
 import CausaSelector from "./CausaSelector";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 
-export type VerificationGate = "pending" | "pending_selection" | "failed" | "invalid" | "reserved" | "reserved_revoked" | "cred_error";
+// 'invalid' se quitó (2026-10-16): verificada+inválida es el gate 'failed' desde F7/F10 (details.tsx verificationGate).
+export type VerificationGate = "pending" | "pending_selection" | "failed" | "reserved" | "reserved_revoked" | "cred_error";
 
 interface PendingVerificationViewProps {
 	folder: any;
@@ -78,14 +79,6 @@ const gateMeta: Record<
 			"La búsqueda en el portal judicial no devolvió resultados. Suele pasar cuando hay un error de tipeo en el número, la jurisdicción o el año. Revisá los datos y, si están bien, pedile a soporte que lo revise manualmente.",
 		toneColor: "red",
 		icon: CloseCircle,
-	},
-	invalid: {
-		label: "Causa inválida",
-		title: "El expediente no es accesible",
-		description:
-			"El portal devolvió el expediente, pero está marcado como no público o no existe en el sistema judicial. No vamos a poder sincronizar sus movimientos.",
-		toneColor: "red",
-		icon: Warning2,
 	},
 	reserved: {
 		label: "Causa reservada",
@@ -173,7 +166,7 @@ const PendingVerificationView = ({ folder, gate, onSelectCausa }: PendingVerific
 	// "Pendiente de verificación: <número>".
 	const numeroExpediente = useMemo(() => {
 		const delJud = folder?.judFolder?.numberJudFolder;
-		if (delJud && !/^(PENDING|PIVOT)-/.test(String(delJud))) return delJud;
+		if (delJud && !/^(PENDING|PIVOT|TEMP)-/.test(String(delJud))) return delJud;
 		if (folder?.searchTerm) return folder.searchTerm;
 		const m = String(folder?.folderName || "").match(/^Pendiente de verificaci[óo]n:\s*(.+)$/i);
 		return m ? m[1].trim() : null;

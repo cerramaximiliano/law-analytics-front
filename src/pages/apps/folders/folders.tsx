@@ -336,29 +336,51 @@ function FolderSourceBadge({
 		: sourceKind === "scba"
 		? (() => {
 				const state = getScbaBindingState(folder, { credError: scbaCredErrorActive });
-				if (state === "ok") return st(LIVE_GREEN, SCBA_BINDING_COPY.ok, "ok");
-				return st(
-					STALE_AMBER,
-					(state && SCBA_BINDING_COPY[state]) || "Requiere atención",
-					"warn",
-					state === "cred_error" ? SCBA_PROFILE_PATH : undefined,
-				);
-		  })()
-		: sourceKind === "mev"
-		? (() => {
-				const issue = mevCredIssue(folder);
-				if (issue) return st(STALE_AMBER, MEV_CRED_MESSAGE[issue] || "Requiere atención", "warn", MEV_PROFILE_PATH);
+				if (state !== "ok")
+					return st(
+						STALE_AMBER,
+						(state && SCBA_BINDING_COPY[state]) || "Requiere atención",
+						"warn",
+						state === "cred_error" ? SCBA_PROFILE_PATH : undefined,
+					);
+				// Auditoría 2026-10-16: con la credencial y la lista en orden, el ícono quedaba verde
+				// aunque la Carátula dijera "Seleccionar expediente", "Asociación fallida" o
+				// "Pendiente de verificación". Misma cadena que el resto de las jurisdicciones.
+				if (folder.causaAssociationStatus === "pending_selection") return st(STALE_AMBER, "Elegí el expediente correcto", "warn");
 				if (folder.causaAssociationStatus === "failed" || (folder.causaVerified === true && folder.causaIsValid === false))
 					return st(
 						RED,
 						folder.causaAssociationError ? `Vinculación fallida: ${folder.causaAssociationError}` : "Vinculación fallida",
 						"warn",
 					);
+				if (folder.causaVerified !== true) return st(STALE_AMBER, "Verificando la causa en el portal", "warn");
+				return st(LIVE_GREEN, SCBA_BINDING_COPY.ok, "ok");
+		  })()
+		: sourceKind === "mev"
+		? (() => {
+				const issue = mevCredIssue(folder);
+				if (issue) return st(STALE_AMBER, MEV_CRED_MESSAGE[issue] || "Requiere atención", "warn", MEV_PROFILE_PATH);
+				// Auditoría 2026-10-16: pendiente, selección múltiple y "ya no en la lista" quedaban en
+				// verde aunque la Carátula mostrara el chip correspondiente (T20: selección antes que lista).
+				if (folder.causaAssociationStatus === "pending_selection") return st(STALE_AMBER, "Elegí el expediente correcto", "warn");
+				if (folder.source === "mev-login" && folder.listRemoved === true && folder.listRemovedSource === "mev")
+					return st(
+						STALE_AMBER,
+						"Esta causa ya no aparece en tu lista de Mis Causas del portal MEV. Puede haber sido archivada o desvinculada por el tribunal.",
+						"warn",
+					);
+				if (folder.causaAssociationStatus === "failed" || (folder.causaVerified === true && folder.causaIsValid === false))
+					return st(
+						RED,
+						folder.causaAssociationError ? `Vinculación fallida: ${folder.causaAssociationError}` : "Vinculación fallida",
+						"warn",
+					);
+				if (folder.causaVerified !== true) return st(STALE_AMBER, "Verificando la causa en el portal", "warn");
 				return st(LIVE_GREEN, "Vinculado con MEV", "ok");
 		  })()
 		: folder.causaAssociationStatus === "pending_selection"
 		? st(STALE_AMBER, "Elegí el expediente correcto", "warn")
-		: folder.listRemoved
+		: folder.listRemoved === true && ["pjsalta", "pjcatamarca", "pjmendoza"].includes(folder.listRemovedSource || "")
 		? st(
 				STALE_AMBER,
 				`El expediente dejó de aparecer en el portal del ${sourceMeta?.label}. Puede haber sido archivado, reservado o movido de organismo.`,
