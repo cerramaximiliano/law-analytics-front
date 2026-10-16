@@ -11,8 +11,8 @@ describe("parseExpedienteInput", () => {
 	it('pegado con texto "CNT 40791/2026" → 40791 / 2026 (antes quedaba 407914998)', () => {
 		expect(parseExpedienteInput("CNT 40791/2026")).toEqual({ number: "40791", year: "2026", split: true, altered: true });
 	});
-	it('pegado "Expte. 959839/26 - JUZGADO 3" con tope 9 (IOL) → 959839 / 2026', () => {
-		expect(parseExpedienteInput("Expte. 959839/26 - JUZGADO 3", 9)).toEqual({ number: "959839", year: "2026", split: true, altered: true });
+	it('pegado "Expte. 959839/26 - JUZGADO 3" con tope 8 (IOL) → 959839 / 2026', () => {
+		expect(parseExpedienteInput("Expte. 959839/26 - JUZGADO 3", 8)).toEqual({ number: "959839", year: "2026", split: true, altered: true });
 	});
 	it("guion como separador y espacios", () => {
 		expect(parseExpedienteInput(" 47054 - 2010 ")).toMatchObject({ number: "47054", year: "2010", split: true });
@@ -22,7 +22,7 @@ describe("parseExpedienteInput", () => {
 	});
 	it("recorta al tope de dígitos y marca altered", () => {
 		expect(parseExpedienteInput("123456789012")).toEqual({ number: "123456", year: null, split: false, altered: true });
-		expect(parseExpedienteInput("123456789012", 9).number).toBe("123456789");
+		expect(parseExpedienteInput("123456789012", 8).number).toBe("12345678");
 	});
 	it("descarta letras y espacios sin barra", () => {
 		expect(parseExpedienteInput("CNT 23593")).toEqual({ number: "23593", year: null, split: false, altered: true });
@@ -45,11 +45,12 @@ describe("expandYear", () => {
 });
 
 describe("validadores", () => {
-	it("número: 1 a 6 dígitos para PJN, hasta 9 para otros", () => {
+	it("número: 1 a 6 dígitos para PJN, hasta 8 para otros (ancho del bloque del CUIJ)", () => {
 		expect(isValidExpedienteNumber("1")).toBe(true);
 		expect(isValidExpedienteNumber("123456")).toBe(true);
 		expect(isValidExpedienteNumber("1234567")).toBe(false);
-		expect(isValidExpedienteNumber("1234567", 9)).toBe(true);
+		expect(isValidExpedienteNumber("1234567", 8)).toBe(true);
+		expect(isValidExpedienteNumber("123456789", 8)).toBe(false);
 		expect(isValidExpedienteNumber("6952015")).toBe(false);
 		expect(isValidExpedienteNumber("")).toBe(false);
 		expect(isValidExpedienteNumber("12a")).toBe(false);

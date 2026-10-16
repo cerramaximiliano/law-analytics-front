@@ -10,7 +10,10 @@
  */
 
 export const PJN_NUMBER_MAX_DIGITS = 6;
-export const OTHER_NUMBER_MAX_DIGITS = 9;
+// EJE/IOL: 8 = ancho del bloque numérico del CUIJ (J-01-00003201-4). La numeración es corrida y
+// crece (EJE ya tiene 7 dígitos), así que el tope es estructural, no el máximo observado.
+// Alineado con utils/expedienteValidation.js del hub (2026-10-16).
+export const OTHER_NUMBER_MAX_DIGITS = 8;
 export const EXPEDIENTE_MIN_YEAR = 1980;
 
 export interface ParsedExpediente {
