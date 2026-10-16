@@ -15,6 +15,14 @@ import { useTeam } from "contexts/TeamContext";
 import { BRAND_BLUE, LIVE_GREEN, LIVE_PULSE_KEYFRAMES, STALE_AMBER } from "themes/dashboardTokens";
 import { formatFolderName } from "utils/formatFolderName";
 import { trackActivity } from "utils/productAnalytics";
+import {
+	OTHER_NUMBER_MAX_DIGITS,
+	PJN_NUMBER_MAX_DIGITS,
+	EXPEDIENTE_MIN_YEAR,
+	isValidExpedienteNumber,
+	isValidExpedienteYear,
+	parseExpedienteInput,
+} from "utils/expedienteInput";
 import CausaSelector from "sections/apps/folders/CausaSelector";
 import ConectarCuenta, { Portal } from "./ConectarCuenta";
 
@@ -120,10 +128,10 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 
 	const selected = POWERS.find((p) => p.key === power)!;
 	const currentYear = new Date().getFullYear();
-	const numberError = touched && !/^\d{1,9}$/.test(number) ? "Solo números, sin barras ni letras" : "";
-	const yearNum = parseInt(year, 10);
-	const yearError =
-		touched && (!/^\d{4}$/.test(year) || yearNum < 1950 || yearNum > currentYear) ? `Año de 4 cifras, hasta ${currentYear}` : "";
+	// PJN: ningún expediente válido supera los 6 dígitos (ver utils/expedienteInput.ts).
+	const maxDigits = power === "pjn" ? PJN_NUMBER_MAX_DIGITS : OTHER_NUMBER_MAX_DIGITS;
+	const numberError = touched && !isValidExpedienteNumber(number, maxDigits) ? `Solo números, hasta ${maxDigits} cifras` : "";
+	const yearError = touched && !isValidExpedienteYear(year) ? `Año de 4 cifras, entre ${EXPEDIENTE_MIN_YEAR} y ${currentYear}` : "";
 	const pjnError = touched && power === "pjn" && !pjnCode ? "Elegí el fuero" : "";
 	const canSubmit = power !== "mev";
 
@@ -182,7 +190,7 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 		setTouched(true);
 		markStart(power);
 		if (!canSubmit) return;
-		if (!/^\d{1,9}$/.test(number) || !/^\d{4}$/.test(year) || yearNum < 1950 || yearNum > currentYear) return;
+		if (!isValidExpedienteNumber(number, maxDigits) || !isValidExpedienteYear(year)) return;
 		if (power === "pjn" && !pjnCode) return;
 
 		const userId = getUserIdForResource();
@@ -597,13 +605,25 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 						<TextField
 							value={number}
 							onChange={(e) => {
-								setNumber(e.target.value.replace(/\D/g, "").slice(0, 9));
+								// Si pegan "69520/15" o "CNT 40791/2026", separamos número y año en vez de
+								// fusionarlos (antes la barra se descartaba en silencio → "6952015").
+								const parsed = parseExpedienteInput(e.target.value, maxDigits);
+								setNumber(parsed.number);
+								if (parsed.split) {
+									if (parsed.year) setYear(parsed.year);
+									trackActivity("expediente_input_split", {
+										jurisdiction: power,
+										source: "primera_causa",
+										mode: parsed.year ? "number_year" : "number_only",
+										count: parsed.number.length,
+									});
+								}
 								markStart(power);
 							}}
 							placeholder="Ej. 45218"
 							inputProps={{ inputMode: "numeric", pattern: "[0-9]*", "aria-label": "Número", autoComplete: "off" }}
 							error={!!numberError}
-							helperText={numberError || "Número"}
+							helperText={numberError || "Número (o número/año)"}
 							disabled={sending}
 							sx={inputSx}
 						/>

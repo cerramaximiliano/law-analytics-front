@@ -42,6 +42,14 @@ import { alpha, useTheme } from "@mui/material/styles";
 import { BRAND_BLUE, LIVE_GREEN } from "themes/dashboardTokens";
 import { useFormikContext } from "formik";
 import InputField from "components/UI/InputField";
+import {
+	OTHER_NUMBER_MAX_DIGITS,
+	PJN_NUMBER_MAX_DIGITS,
+	EXPEDIENTE_MIN_YEAR,
+	isValidExpedienteNumber,
+	parseExpedienteInput,
+} from "utils/expedienteInput";
+import { trackActivity } from "utils/productAnalytics";
 import { useState, useEffect, useRef } from "react";
 import mevWorkersService, { NavigationCode } from "api/workersMev";
 import mevCredentialsService from "api/mevCredentials";
@@ -49,7 +57,6 @@ import ejeWorkersService from "api/workersEje";
 import pjsaltaWorkersService from "api/workersPjSalta";
 import pjcatamarcaWorkersService from "api/workersPjCatamarca";
 import pjmendozaWorkersService from "api/workersPjMendoza";
-import { trackActivity } from "utils/productAnalytics";
 import PjnAccountConnect, { PjnAccountConnectRef } from "./PjnAccountConnect";
 import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import { usePjnSiteStatus } from "hooks/usePjnSiteStatus";
@@ -365,10 +372,10 @@ const AutomaticStep = () => {
 			return false;
 		}
 
-		// Verificamos que esté en el rango correcto
-		if (yearNumber < 2000 || yearNumber > currentYear) {
-			setYearError(`El año debe estar entre 2000 y ${currentYear}`);
-			setFieldError("expedientYear", `El año debe estar entre 2000 y ${currentYear}`);
+		// Verificamos que esté en el rango correcto (hay causas PJN reales de 1989)
+		if (yearNumber < EXPEDIENTE_MIN_YEAR || yearNumber > currentYear) {
+			setYearError(`El año debe estar entre ${EXPEDIENTE_MIN_YEAR} y ${currentYear}`);
+			setFieldError("expedientYear", `El año debe estar entre ${EXPEDIENTE_MIN_YEAR} y ${currentYear}`);
 			return false;
 		}
 
@@ -382,6 +389,13 @@ const AutomaticStep = () => {
 		if (!number || number.trim() === "") {
 			setNumberError("El número de expediente es requerido");
 			setFieldError("expedientNumber", "El número de expediente es requerido");
+			return false;
+		}
+		// PJN: ningún expediente válido supera los 6 dígitos; "6952015" es "69520/15" sin la barra.
+		const maxDigits = values.judicialPower === "nacional" ? PJN_NUMBER_MAX_DIGITS : OTHER_NUMBER_MAX_DIGITS;
+		if (!isValidExpedienteNumber(number.trim(), maxDigits)) {
+			setNumberError(`Solo números, hasta ${maxDigits} cifras (sin la barra ni el año)`);
+			setFieldError("expedientNumber", `Solo números, hasta ${maxDigits} cifras (sin la barra ni el año)`);
 			return false;
 		}
 		setNumberError("");
@@ -1227,10 +1241,22 @@ const AutomaticStep = () => {
 
 	// Manejar cambio en el campo de número de expediente
 	const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = e.target.value;
-		setFieldValue("expedientNumber", value);
+		// Si pegan "69520/15" o "CNT 40791/2026", separamos número y año en vez de
+		// fusionarlos (el input type="number" descartaba la barra en silencio).
+		const maxDigits = values.judicialPower === "nacional" ? PJN_NUMBER_MAX_DIGITS : OTHER_NUMBER_MAX_DIGITS;
+		const parsed = parseExpedienteInput(e.target.value, maxDigits);
+		setFieldValue("expedientNumber", parsed.number);
+		if (parsed.split) {
+			if (parsed.year) setFieldValue("expedientYear", parsed.year);
+			trackActivity("expediente_input_split", {
+				jurisdiction: values.judicialPower || "otra",
+				source: "add_folder",
+				mode: parsed.year ? "number_year" : "number_only",
+				count: parsed.number.length,
+			});
+		}
 		setTouched({ ...touched, expedientNumber: true });
-		validateExpedientNumber(value);
+		validateExpedientNumber(parsed.number);
 	};
 
 	const isDark = theme.palette.mode === "dark";
@@ -1604,7 +1630,8 @@ const AutomaticStep = () => {
 																id="expedient-number"
 																placeholder="Ej. 123456"
 																name="expedientNumber"
-																type="number"
+																type="text"
+																inputProps={{ inputMode: "numeric" }}
 																onChange={handleNumberChange}
 																error={Boolean(numberError && touched.expedientNumber)}
 																helperText={touched.expedientNumber ? numberError : ""}
@@ -1926,7 +1953,8 @@ const AutomaticStep = () => {
 																id="eje-expedient-number"
 																placeholder="Ej. 123456"
 																name="expedientNumber"
-																type="number"
+																type="text"
+																inputProps={{ inputMode: "numeric" }}
 																onChange={handleNumberChange}
 																error={Boolean(numberError && touched.expedientNumber)}
 																helperText={touched.expedientNumber ? numberError : ""}
@@ -2067,7 +2095,8 @@ const AutomaticStep = () => {
 																id="pjsalta-expedient-number"
 																placeholder="Ej. 959839"
 																name="expedientNumber"
-																type="number"
+																type="text"
+																inputProps={{ inputMode: "numeric" }}
 																onChange={handleNumberChange}
 																error={Boolean(numberError && touched.expedientNumber)}
 																helperText={touched.expedientNumber ? numberError : ""}
@@ -2208,7 +2237,8 @@ const AutomaticStep = () => {
 																id="pjcatamarca-expedient-number"
 																placeholder="Ej. 568"
 																name="expedientNumber"
-																type="number"
+																type="text"
+																inputProps={{ inputMode: "numeric" }}
 																onChange={handleNumberChange}
 																error={Boolean(numberError && touched.expedientNumber)}
 																helperText={touched.expedientNumber ? numberError : ""}
@@ -2349,7 +2379,8 @@ const AutomaticStep = () => {
 																id="pjmendoza-expedient-number"
 																placeholder="Ej. 10721"
 																name="expedientNumber"
-																type="number"
+																type="text"
+																inputProps={{ inputMode: "numeric" }}
 																onChange={handleNumberChange}
 																error={Boolean(numberError && touched.expedientNumber)}
 																helperText={touched.expedientNumber ? numberError : ""}
@@ -2397,7 +2428,8 @@ const AutomaticStep = () => {
 												id="expedient-number"
 												placeholder="Ej. 123456"
 												name="expedientNumber"
-												type="number"
+												type="text"
+												inputProps={{ inputMode: "numeric" }}
 												onChange={handleNumberChange}
 												error={Boolean(numberError && touched.expedientNumber)}
 												helperText={touched.expedientNumber ? numberError : ""}

@@ -25,6 +25,7 @@ export type ActivityEventName =
 	| "causa_link_start"
 	| "causa_link_success"
 	| "causa_link_error"
+	| "expediente_input_split"
 	| "folder_detail_view"
 	| "movement_open"
 	| "calendar_event_create"

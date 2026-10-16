@@ -33,6 +33,13 @@ import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import PjnGuardedButton from "components/PjnGuardedButton";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import { trackActivity } from "utils/productAnalytics";
+import {
+	OTHER_NUMBER_MAX_DIGITS,
+	PJN_NUMBER_MAX_DIGITS,
+	EXPEDIENTE_MIN_YEAR,
+	isValidExpedienteNumber,
+	parseExpedienteInput,
+} from "utils/expedienteInput";
 
 interface LinkToJudicialPowerProps {
 	openLink: boolean;
@@ -125,8 +132,8 @@ const LinkToJudicialPower = ({
 			setYearError("El año debe tener 4 dígitos");
 			return false;
 		}
-		if (yearNumber < 2000 || yearNumber > currentYear) {
-			setYearError(`El año debe estar entre 2000 y ${currentYear}`);
+		if (yearNumber < EXPEDIENTE_MIN_YEAR || yearNumber > currentYear) {
+			setYearError(`El año debe estar entre ${EXPEDIENTE_MIN_YEAR} y ${currentYear}`);
 			return false;
 		}
 		setYearError("");
@@ -136,6 +143,11 @@ const LinkToJudicialPower = ({
 	const validateExpedientNumber = (number: string) => {
 		if (!number || number.trim() === "") {
 			setNumberError("El número de expediente es requerido");
+			return false;
+		}
+		const maxDigits = selectedPower === "nacional" ? PJN_NUMBER_MAX_DIGITS : OTHER_NUMBER_MAX_DIGITS;
+		if (!isValidExpedienteNumber(number.trim(), maxDigits)) {
+			setNumberError(`Solo números, hasta ${maxDigits} cifras (sin la barra ni el año)`);
 			return false;
 		}
 		setNumberError("");
@@ -242,10 +254,21 @@ const LinkToJudicialPower = ({
 	};
 
 	const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = e.target.value;
-		setExpedientNumber(value);
+		// Pegado "69520/15" → número y año por separado (antes la barra se descartaba en silencio).
+		const maxDigits = selectedPower === "nacional" ? PJN_NUMBER_MAX_DIGITS : OTHER_NUMBER_MAX_DIGITS;
+		const parsed = parseExpedienteInput(e.target.value, maxDigits);
+		setExpedientNumber(parsed.number);
+		if (parsed.split) {
+			if (parsed.year) setExpedientYear(parsed.year);
+			trackActivity("expediente_input_split", {
+				jurisdiction: selectedPower ? String(selectedPower) : "otra",
+				source: "link_folder",
+				mode: parsed.year ? "number_year" : "number_only",
+				count: parsed.number.length,
+			});
+		}
 		setTouched({ ...touched, expedientNumber: true });
-		if (touched.expedientNumber || formSubmitAttempted.current) validateExpedientNumber(value);
+		if (touched.expedientNumber || formSubmitAttempted.current) validateExpedientNumber(parsed.number);
 	};
 
 	useEffect(() => {
@@ -741,7 +764,8 @@ const LinkToJudicialPower = ({
 											id="expedient-number"
 											placeholder="Ej. 123456"
 											name="expedientNumber"
-											type="number"
+											type="text"
+											inputProps={{ inputMode: "numeric" }}
 											value={expedientNumber}
 											onChange={handleNumberChange}
 											disabled={loading}
