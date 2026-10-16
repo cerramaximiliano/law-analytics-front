@@ -158,3 +158,31 @@ El bloque "Sincronizando causas..." en la card chequea **primero** `credentialsS
 2. **Cred en error visible**: el endpoint server filtra por `enabled OR syncStatus='error'`. Si tocás filtros del endpoint, NO removas la rama de error — la UI necesita ver creds en error para mostrar el form de re-link.
 3. **Pre-popular form re-link**: si agregás un campo nuevo al form, asegurate de que el backend lo devuelva en `getCredentialsStatus` (con decrypt si es encriptado) Y que el frontend lo pre-popule en el click del botón "Actualizar contraseña".
 4. **PJN paridad**: la mayoría de los fixes SCBA tienen gemelo en PJN. Si arreglás algo en SCBA, chequeá si aplica también a PJN.
+
+## Campos de número de expediente (`utils/expedienteInput.ts`)
+
+Todo campo donde el usuario tipea o pega un número de expediente (tarjeta "Primera causa", wizard
+`automaticStep`, `LinkToJudicialPower`, `LinkToPJBuenosAires`) usa `parseExpedienteInput(raw, maxDigits)`
+en el `onChange`, con `type="text"` + `inputProps={{ inputMode: "numeric" }}`:
+
+- Si lo pegado trae "número/año" (barra o guion) separa las dos partes, expande el año de 2 cifras
+  (`expandYear`) y completa el campo Año. **Nunca** `type="number"`: el navegador descarta la barra en
+  silencio y manda "6952015" por "69520/15" (3 carpetas inválidas reales, 2026-10-14/15).
+- Tope: `PJN_NUMBER_MAX_DIGITS` = 6; `OTHER_NUMBER_MAX_DIGITS` = 8 (ancho del bloque numérico del CUIJ;
+  la numeración de los portales crece, no bajar). Año ≥ `EXPEDIENTE_MIN_YEAR` (1980; hay causas de 1989).
+- Al separar se emite `expediente_input_split` (jurisdiction / source / mode / count) para medir cuánto
+  se pega con formato. El hub valida lo mismo del lado del servidor (`utils/expedienteValidation.js`).
+- Tests: `src/utils/expedienteInput.test.ts` (vitest).
+
+## Reglas de visualización de carpetas ↔ espejo del admin
+
+Cómo se ve una carpeta sale de **un estado por jurisdicción**: `utils/pjnBindingState.ts`
+(`getPjnBindingState`), `utils/scbaBindingState.ts`, `utils/mevCredential.ts` (`mevCredIssue`), la rama
+IOL-7 de `FolderView.tsx` y el gate de `details.tsx`. La lista tiene dos indicadores distintos: la
+columna Carátula (chips) y el ícono de la fuente (`FolderSourceBadge`, cadena propia por jurisdicción).
+
+El panel admin replica estas reglas en `law-analytics-server/admin-api/services/folderUserView.js`
+(guía `/admin/causas/user-view-guide`, diálogo "vista del usuario", tab Carpetas con anomalías). **Si
+tocás una regla acá, actualizá ese módulo y sus tests**; no hay paridad automática y la auditoría del
+2026-10-16 encontró 21 desfasajes por no hacerlo. Carpetas manuales nunca llevan flags de jurisdicción
+(`AddFolder._submitForm` los fuerza en false; el hub también los limpia).
