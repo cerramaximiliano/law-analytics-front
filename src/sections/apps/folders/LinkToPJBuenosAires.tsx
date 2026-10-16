@@ -35,6 +35,7 @@ import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 import mevWorkersService, { NavigationCode } from "api/workersMev";
 import mevCredentialsService from "api/mevCredentials";
 import { trackActivity } from "utils/productAnalytics";
+import { EXPEDIENTE_MIN_YEAR, OTHER_NUMBER_MAX_DIGITS, isValidExpedienteNumber, parseExpedienteInput } from "utils/expedienteInput";
 
 interface LinkToPJBuenosAiresProps {
 	open: boolean;
@@ -229,9 +230,9 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 			return false;
 		}
 
-		// Verificamos que esté en el rango correcto
-		if (yearNumber < 2000 || yearNumber > currentYear) {
-			setYearError(`El año debe estar entre 2000 y ${currentYear}`);
+		// Verificamos que esté en el rango correcto (mismo mínimo que el resto de los formularios)
+		if (yearNumber < EXPEDIENTE_MIN_YEAR || yearNumber > currentYear) {
+			setYearError(`El año debe estar entre ${EXPEDIENTE_MIN_YEAR} y ${currentYear}`);
 			return false;
 		}
 
@@ -243,6 +244,11 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 	const validateExpedientNumber = (number: string) => {
 		if (!number || number.trim() === "") {
 			setNumberError("El número de expediente es requerido");
+			return false;
+		}
+		// MEV: en la base los expedientes válidos tienen de 3 a 6 dígitos; se deja margen.
+		if (!isValidExpedienteNumber(number.trim(), OTHER_NUMBER_MAX_DIGITS)) {
+			setNumberError(`Solo números, hasta ${OTHER_NUMBER_MAX_DIGITS} cifras (sin la barra ni el año)`);
 			return false;
 		}
 		setNumberError("");
@@ -510,11 +516,22 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 
 	// Manejar cambio en el campo de número de expediente
 	const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = e.target.value;
-		setExpedientNumber(value);
+		// Pegado "46817/2020" → número y año por separado (el input type="number" descartaba la barra
+		// en silencio y mandaba "468172020"). Mismo parser que el alta y la vinculación PJN.
+		const parsed = parseExpedienteInput(e.target.value, OTHER_NUMBER_MAX_DIGITS);
+		setExpedientNumber(parsed.number);
+		if (parsed.split) {
+			if (parsed.year) setExpedientYear(parsed.year);
+			trackActivity("expediente_input_split", {
+				jurisdiction: "mev",
+				source: "link_folder",
+				mode: parsed.year ? "number_year" : "number_only",
+				count: parsed.number.length,
+			});
+		}
 		setTouched({ ...touched, expedientNumber: true });
 		if (touched.expedientNumber || formSubmitAttempted.current) {
-			validateExpedientNumber(value);
+			validateExpedientNumber(parsed.number);
 		}
 	};
 
@@ -819,7 +836,8 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 										id="expedient-number"
 										placeholder="Ej. 123456"
 										name="expedientNumber"
-										type="number"
+										type="text"
+										inputProps={{ inputMode: "numeric" }}
 										value={expedientNumber}
 										onChange={handleNumberChange}
 										disabled={loading}
