@@ -1,4 +1,5 @@
 import React, { FC, useCallback, useEffect, useMemo, useRef, useState, Fragment } from "react";
+import { useNavigate } from "react-router-dom";
 
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
@@ -48,9 +49,11 @@ import LinkCauseModal from "sections/forms/wizard/calc-laboral/components/linkCa
 import { dispatch, useSelector } from "store";
 import { getCalculatorsByFilter, clearSelectedCalculators } from "store/reducers/calculator";
 import { InterestRate } from "store/reducers/interestRates";
+import TablaRetroactivo, { flagsDeFilas } from "components/calculator/TablaRetroactivo";
+import { sePuedeReabrir } from "sections/forms/wizard/calc-previsional/retroactivo/formModel/valoresDesdeGuardado";
 
 // assets
-import { Eye, EyeSlash, Link21, Trash } from "iconsax-react";
+import { ArrowDown2, ArrowUp2, Edit2, Eye, EyeSlash, Link21, Trash } from "iconsax-react";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -108,8 +111,59 @@ const variablesDe = (calc: any) => {
 		...(raw.formulario || {}),
 		reclamante: raw.datosExpediente?.reclamante ?? raw.formulario?.reclamante ?? raw.reclamante,
 		totales: raw.resultado?.totales || null,
+		resultado: raw.resultado || null,
+		// Versiones anteriores que arrastra el hub al actualizar un guardado (PUT /api/calculators/:id)
+		historial: Array.isArray(raw.historial) ? raw.historial : [],
 	};
 };
+
+// ── DetalleMesAMes ────────────────────────────────────────────────────────────
+
+function DetalleMesAMes({ resultado }: { resultado: any }) {
+	const [abierto, setAbierto] = useState(false);
+	const filas = Array.isArray(resultado?.filas) ? resultado.filas : [];
+
+	if (!filas.length) {
+		return (
+			<Typography variant="body2" color="text.secondary">
+				Este cálculo no tiene el detalle mes a mes guardado.
+			</Typography>
+		);
+	}
+
+	const flags = flagsDeFilas(filas, resultado?.bono?.tratamiento);
+	const pagos = Array.isArray(resultado?.pagos) ? resultado.pagos : [];
+
+	return (
+		<Box>
+			<Button
+				size="small"
+				onClick={() => setAbierto((v) => !v)}
+				endIcon={abierto ? <ArrowUp2 size={14} /> : <ArrowDown2 size={14} />}
+				sx={{ textTransform: "none", mb: 1 }}
+			>
+				{abierto ? "Ocultar" : "Ver"} el detalle mes a mes ({filas.length} {filas.length === 1 ? "mes" : "meses"})
+			</Button>
+			<Collapse in={abierto} unmountOnExit>
+				<TablaRetroactivo filas={filas} {...flags} totales={resultado?.totales || null} maxHeight={440} />
+				{pagos.length > 0 && (
+					<Box sx={{ mb: 1 }}>
+						<Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+							Pagos a cuenta
+						</Typography>
+						<Stack spacing={0.25}>
+							{pagos.map((p: any, i: number) => (
+								<Typography key={i} variant="body2">
+									{formatDate(p.fecha)} · {formatPesos(p.importe)}
+								</Typography>
+							))}
+						</Stack>
+					</Box>
+				)}
+			</Collapse>
+		</Box>
+	);
+}
 
 // ── ExpandedRow ───────────────────────────────────────────────────────────────
 
@@ -152,6 +206,16 @@ function ExpandedRow({ row, rates }: { row: Row<any>; rates: InterestRate[] }) {
 						</Paper>
 					</Grid>
 				)}
+
+				{/* Mes a mes (los guardados anteriores al motor no lo tienen) */}
+				<Grid item xs={12}>
+					<Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
+						Detalle mes a mes
+					</Typography>
+					<Paper elevation={0} sx={sectionStyle}>
+						<DetalleMesAMes resultado={vars.resultado} />
+					</Paper>
+				</Grid>
 
 				{/* Datos del expediente */}
 				<Grid item xs={12}>
@@ -315,6 +379,32 @@ function ExpandedRow({ row, rates }: { row: Row<any>; rates: InterestRate[] }) {
 						</Paper>
 					</Grid>
 				)}
+
+				{/* Versiones anteriores (las arrastra el hub al guardar cambios sobre un guardado) */}
+				{vars.historial.length > 0 && (
+					<Grid item xs={12}>
+						<Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
+							Versiones anteriores
+						</Typography>
+						<Paper elevation={0} sx={sectionStyle}>
+							<Stack spacing={0.75}>
+								{[...vars.historial].reverse().map((h: any, idx: number) => {
+									const saldo = h?.totales?.saldo ?? h?.resultado?.totales?.saldo;
+									return (
+										<Stack key={idx} direction="row" spacing={2} alignItems="baseline" flexWrap="wrap" useFlexGap>
+											<Typography sx={{ ...valueStyle, minWidth: 140 }}>
+												{h?.fecha ? dayjs(h.fecha).format("DD/MM/YYYY HH:mm") : "-"}
+											</Typography>
+											<Typography variant="body2" color="text.secondary">
+												Saldo: {formatPesos(saldo)}
+											</Typography>
+										</Stack>
+									);
+								})}
+							</Stack>
+						</Paper>
+					</Grid>
+				)}
 			</Grid>
 		</Box>
 	);
@@ -472,6 +562,7 @@ function ReactTable({ columns, data, renderRowSubComponent, isLoading, expandedR
 // ── SavedPrevisional ──────────────────────────────────────────────────────────
 
 export default function SavedPrevisional() {
+	const navigate = useNavigate();
 	const userId = useSelector((state: any) => state.auth.user?._id);
 	const { selectedCalculators, isLoader } = useSelector((state: any) => state.calculator);
 	const rates: InterestRate[] = useSelector((state: any) => state.interestRates.rates || []);
@@ -528,6 +619,16 @@ export default function SavedPrevisional() {
 		setDeleteId("");
 		setDeleteTitle("");
 	}, []);
+
+	// Reabrir en el wizard: la página lee `?edit=` y precarga el formulario con lo guardado
+	const handleEditar = useCallback(
+		(calc: any) => {
+			const params = new URLSearchParams({ edit: calc._id });
+			if (calc.folderId) params.set("folder", calc.folderId);
+			navigate(`/apps/calc/previsional?${params.toString()}`);
+		},
+		[navigate],
+	);
 
 	const columns: Column[] = useMemo(
 		() => [
@@ -638,6 +739,7 @@ export default function SavedPrevisional() {
 				Cell: ({ row }: { row: Row<any> }) => {
 					const isExpanded = expandedRowId === row.original._id;
 					const titular = row.original.user || variablesDe(row.original).reclamante || "este cálculo";
+					const reabrible = sePuedeReabrir(row.original);
 					return (
 						<Stack direction="row" spacing={0.5} justifyContent="center" onClick={(e) => e.stopPropagation()}>
 							<Tooltip title={isExpanded ? "Cerrar detalle" : "Ver detalle"}>
@@ -648,6 +750,13 @@ export default function SavedPrevisional() {
 								>
 									{isExpanded ? <EyeSlash size={18} /> : <Eye size={18} />}
 								</IconButton>
+							</Tooltip>
+							<Tooltip title={reabrible ? "Editar y recalcular" : "Este cálculo es anterior y no se puede reabrir"}>
+								<span>
+									<IconButton size="small" color="secondary" disabled={!reabrible} onClick={() => handleEditar(row.original)}>
+										<Edit2 size={18} />
+									</IconButton>
+								</span>
 							</Tooltip>
 							<Tooltip title="Vincular carpeta">
 								<IconButton
@@ -671,7 +780,7 @@ export default function SavedPrevisional() {
 				},
 			},
 		],
-		[expandedRowId, handleToggleExpanded, handleDeleteOpen],
+		[expandedRowId, handleToggleExpanded, handleDeleteOpen, handleEditar],
 	);
 
 	return (

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 
 // material-ui
 import { Alert, Box, Button, Stack, Typography, Zoom } from "@mui/material";
@@ -10,17 +10,20 @@ import { enqueueSnackbar } from "notistack";
 import AnimateButton from "components/@extended/AnimateButton";
 import { Formik, Form } from "formik";
 import { armarInputRetroactivo, calcularRetroactivo, RetroactivoInput, RetroactivoResultado } from "services/previsionalService";
+import { trackActivity } from "utils/productAnalytics";
+import dayjs from "utils/dayjs-config";
 
 import previsionalFormModel from "./formModel/previsionalFormModel";
 import formInitialValues from "./formModel/formInitialValues";
 import validationSchema from "./formModel/validationSchema";
+import { valoresDesdeCalculadora } from "./formModel/valoresDesdeGuardado";
 
 import FirstForm from "./first";
 import SecondForm from "./second";
 import ThirdForm from "./third";
 import FourthForm from "./fourth";
 import FifthForm from "./fifth";
-import ResultadoCalculo from "./components/ResultadoCalculo";
+import ResultadoCalculo, { CalculoEnEdicion } from "./components/ResultadoCalculo";
 import useSubscription from "hooks/useSubscription";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 
@@ -35,6 +38,12 @@ const { formId, formField } = previsionalFormModel;
 interface PrevisionalRetroactivoWizardProps {
 	folder?: any;
 	onFolderChange?: (folderId: string | null) => void;
+	/** Cálculo guardado (documento de `calculators`) que se reabre para editar. */
+	calculadoraEnEdicion?: any | null;
+	/** Descartar la edición: la página limpia `?edit=`. */
+	onSalirEdicion?: () => void;
+	/** Ya se guardó (actualizado o como nuevo): la página limpia `?edit=` y vuelve a Guardados. */
+	onGuardado?: (modo: "actualizado" | "nuevo") => void;
 }
 
 function _renderStepContent(step: number, formField: any, folder?: any, onFolderChange?: (folderId: string | null) => void) {
@@ -54,7 +63,13 @@ function _renderStepContent(step: number, formField: any, folder?: any, onFolder
 	}
 }
 
-const PrevisionalRetroactivoWizard = ({ folder, onFolderChange }: PrevisionalRetroactivoWizardProps) => {
+const PrevisionalRetroactivoWizard = ({
+	folder,
+	onFolderChange,
+	calculadoraEnEdicion,
+	onSalirEdicion,
+	onGuardado,
+}: PrevisionalRetroactivoWizardProps) => {
 	const [activeStep, setActiveStep] = useState(0);
 	const [calculo, setCalculo] = useState<{ resultado: RetroactivoResultado; input: RetroactivoInput; values: any } | null>(null);
 	const [valoresPrevios, setValoresPrevios] = useState<any>(null);
@@ -62,6 +77,21 @@ const PrevisionalRetroactivoWizard = ({ folder, onFolderChange }: PrevisionalRet
 	const { subscription, hasFeatureLocal } = useSubscription();
 	// Sin suscripción cargada todavía no se bloquea: decide el hub
 	const sinAcceso = !!subscription && !hasFeatureLocal(FEATURE);
+
+	// Edición de un guardado: valores iniciales desde `variables.formulario` (o `input` como fallback).
+	// Si el guardado es anterior y no trae ninguno de los dos, se avisa y se sigue con el formulario vacío.
+	const valoresEdicion = useMemo(
+		() => (calculadoraEnEdicion ? valoresDesdeCalculadora(calculadoraEnEdicion) : null),
+		[calculadoraEnEdicion],
+	);
+	const enEdicion: CalculoEnEdicion | null =
+		calculadoraEnEdicion && valoresEdicion
+			? {
+					id: calculadoraEnEdicion._id,
+					fecha: calculadoraEnEdicion.date,
+					titular: calculadoraEnEdicion.user || calculadoraEnEdicion.variables?.datosExpediente?.reclamante || "",
+			  }
+			: null;
 
 	const isLastStep = activeStep === steps.length - 1;
 	const currentValidationSchema = validationSchema[activeStep];
@@ -91,6 +121,7 @@ const PrevisionalRetroactivoWizard = ({ folder, onFolderChange }: PrevisionalRet
 		try {
 			const input = armarInputRetroactivo(values);
 			const resultado = await calcularRetroactivo(input);
+			trackActivity("calculator_run", { type: "previsional", mode: enEdicion ? "edit" : "new" });
 			setValoresPrevios(values);
 			setCalculo({ resultado, input, values });
 		} catch (error: any) {
@@ -117,13 +148,45 @@ const PrevisionalRetroactivoWizard = ({ folder, onFolderChange }: PrevisionalRet
 				input={calculo.input}
 				values={calculo.values}
 				onModificar={() => setCalculo(null)}
-				onNuevoCalculo={handleReset}
+				onNuevoCalculo={() => {
+					handleReset();
+					onSalirEdicion?.();
+				}}
+				enEdicion={enEdicion}
+				onGuardado={onGuardado}
 			/>
 		);
 	}
 
 	return (
 		<Box sx={{ width: "100%" }}>
+			{enEdicion && (
+				<Alert
+					severity="warning"
+					sx={{ mb: 3 }}
+					action={
+						<Button color="inherit" size="small" onClick={onSalirEdicion} sx={{ textTransform: "none" }}>
+							Descartar edición
+						</Button>
+					}
+				>
+					Estás editando el cálculo guardado del {enEdicion.fecha ? dayjs(enEdicion.fecha).format("DD/MM/YYYY") : "—"}
+					{enEdicion.titular ? ` (${enEdicion.titular})` : ""}. Los cambios no se aplican hasta que guardes.
+				</Alert>
+			)}
+			{calculadoraEnEdicion && !valoresEdicion && (
+				<Alert
+					severity="info"
+					sx={{ mb: 3 }}
+					action={
+						<Button color="inherit" size="small" onClick={onSalirEdicion} sx={{ textTransform: "none" }}>
+							Entendido
+						</Button>
+					}
+				>
+					Este cálculo es anterior y no se puede reabrir para editar. Podés cargar uno nuevo.
+				</Alert>
+			)}
 			{sinAcceso && (
 				<Alert severity="info" sx={{ mb: 3 }}>
 					El cálculo de retroactivos previsionales está disponible en los planes Estándar, Pro y Premium. Podés cargar los datos; para
@@ -170,7 +233,7 @@ const PrevisionalRetroactivoWizard = ({ folder, onFolderChange }: PrevisionalRet
 			</Stack>
 
 			<Formik
-				initialValues={valoresPrevios || formInitialValues}
+				initialValues={valoresPrevios || valoresEdicion || formInitialValues}
 				validationSchema={currentValidationSchema}
 				onSubmit={_handleSubmit}
 				validateOnChange={false}

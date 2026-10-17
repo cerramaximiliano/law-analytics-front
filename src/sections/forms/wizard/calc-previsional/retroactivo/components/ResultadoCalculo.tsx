@@ -20,9 +20,19 @@ import { ArrowDown2, ArrowUp2, Save2 } from "iconsax-react";
 import { enqueueSnackbar } from "notistack";
 import dayjs from "utils/dayjs-config";
 import { dispatch, useSelector } from "store";
-import { addCalculator } from "store/reducers/calculator";
+import { addCalculator, updateCalculator } from "store/reducers/calculator";
 import { useTeam } from "contexts/TeamContext";
+import useSubscription from "hooks/useSubscription";
+import { LimitErrorModal } from "sections/auth/LimitErrorModal";
+import TablaRetroactivo from "components/calculator/TablaRetroactivo";
 import { RetroactivoInput, RetroactivoResultado } from "services/previsionalService";
+
+/** Cálculo guardado que se está editando (ver `?edit=` en la página del previsional). */
+export interface CalculoEnEdicion {
+	id: string;
+	fecha?: string;
+	titular?: string;
+}
 
 interface ResultadoCalculoProps {
 	resultado: RetroactivoResultado;
@@ -30,6 +40,10 @@ interface ResultadoCalculoProps {
 	values: any;
 	onModificar: () => void;
 	onNuevoCalculo: () => void;
+	/** Si viene, además de "Guardar" se ofrece "Guardar cambios" sobre ese cálculo. */
+	enEdicion?: CalculoEnEdicion | null;
+	/** Avisa a la página que ya se guardó (actualizado o como nuevo) para salir del modo edición. */
+	onGuardado?: (modo: "actualizado" | "nuevo") => void;
 }
 
 const money = (v: number | null | undefined) =>
@@ -40,13 +54,15 @@ const fecha = (f?: string) => (f ? dayjs(f).format("DD/MM/YYYY") : "—");
 const mes = (p: string) => dayjs(`${p}-01`).format("MM/YYYY");
 const num = { whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" } as const;
 
-const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCalculo }: ResultadoCalculoProps) => {
+const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCalculo, enEdicion, onGuardado }: ResultadoCalculoProps) => {
 	const navigate = useNavigate();
 	const user = useSelector((state: any) => state.auth.user);
 	const { getRequestHeaders } = useTeam();
+	const { subscription } = useSubscription();
 	const [verDetalle, setVerDetalle] = useState(false);
-	const [guardando, setGuardando] = useState(false);
+	const [guardando, setGuardando] = useState<"nuevo" | "cambios" | null>(null);
 	const [guardado, setGuardado] = useState(false);
+	const [limite, setLimite] = useState<{ message: string; limitInfo?: any } | null>(null);
 
 	const conTope = r.filas.some((f) => f.quitaTope);
 	const conBono = r.filas.some((f) => f.bonoPercibido || f.bonoReclamado);
@@ -89,10 +105,25 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 		[r, input],
 	);
 
+	// `variables` tiene la forma que leen el listado de guardados, el PDF y otros consumidores: no cambiarla.
+	const armarVariables = () => ({
+		calculationResult,
+		input,
+		resultado: { ...r, filas: r.filas },
+		datosExpediente: {
+			reclamante: reclamante || null,
+			expedienteAdmin: values.expedienteAdmin || null,
+			prestacion: values.prestacion || null,
+			fechaAdquisicion: values.fechaAdquisicion || null,
+			fechaAlta: values.fechaAlta || null,
+		},
+		formulario: values,
+	});
+
 	const guardar = async () => {
 		const userId = user?._id || user?.id;
 		if (!userId) return enqueueSnackbar("No se encontró el usuario", { variant: "error" });
-		setGuardando(true);
+		setGuardando("nuevo");
 		const res: any = await dispatch(
 			addCalculator(
 				{
@@ -106,28 +137,42 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 					interest: r.totales.intereses,
 					user: reclamante || user?.name || "Usuario",
 					...(values.folderId ? { folderId: values.folderId, folderName: values.folderName } : {}),
-					variables: {
-						calculationResult,
-						input,
-						resultado: { ...r, filas: r.filas },
-						datosExpediente: {
-							reclamante: reclamante || null,
-							expedienteAdmin: values.expedienteAdmin || null,
-							prestacion: values.prestacion || null,
-							fechaAdquisicion: values.fechaAdquisicion || null,
-							fechaAlta: values.fechaAlta || null,
-						},
-						formulario: values,
-					},
+					variables: armarVariables(),
 				} as any,
 				{ headers: getRequestHeaders() },
 			),
 		);
-		setGuardando(false);
+		setGuardando(null);
 		if (res?.success) {
 			setGuardado(true);
-			enqueueSnackbar("Cálculo guardado", { variant: "success" });
+			enqueueSnackbar(enEdicion ? "Guardado como nuevo cálculo" : "Cálculo guardado", { variant: "success" });
+			if (enEdicion) onGuardado?.("nuevo");
+		} else if (res?.status === 403 && res?.limitInfo) {
+			// Límite de cálculos del plan: el hub lo rechaza en el POST
+			setLimite({ message: res.error || "Alcanzaste el límite de cálculos de tu plan.", limitInfo: res.limitInfo });
 		} else enqueueSnackbar(res?.error || "No se pudo guardar el cálculo", { variant: "error" });
+	};
+
+	const guardarCambios = async () => {
+		if (!enEdicion) return;
+		setGuardando("cambios");
+		const res: any = await dispatch(
+			updateCalculator(enEdicion.id, {
+				amount: r.totales.saldo,
+				capital: r.totales.capital,
+				interest: r.totales.intereses,
+				user: reclamante || user?.name || "Usuario",
+				folderId: values.folderId || null,
+				folderName: values.folderId ? values.folderName || null : null,
+				variables: armarVariables(),
+			} as any),
+		);
+		setGuardando(null);
+		if (res?.success) {
+			setGuardado(true);
+			enqueueSnackbar("Cálculo actualizado", { variant: "success" });
+			onGuardado?.("actualizado");
+		} else enqueueSnackbar(res?.error || "No se pudieron guardar los cambios", { variant: "error" });
 	};
 
 	const Tarjeta = ({ titulo, monto, fuerte }: { titulo: string; monto: number; fuerte?: boolean }) => (
@@ -232,74 +277,7 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 				{verDetalle ? "Ocultar" : "Ver"} el detalle mes a mes ({r.filas.length} meses)
 			</Button>
 			<Collapse in={verDetalle}>
-				<TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 520, mb: 2 }}>
-					<Table size="small" stickyHeader>
-						<TableHead>
-							<TableRow>
-								<TableCell>Mes</TableCell>
-								<TableCell align="right">Percibido</TableCell>
-								<TableCell align="right">Reclamado</TableCell>
-								<TableCell align="right">Diferencia</TableCell>
-								{conTope && <TableCell align="right">Quita tope</TableCell>}
-								{conBono && <TableCell align="right">Bono percibido</TableCell>}
-								{conBono && <TableCell align="right">Bono reclamado</TableCell>}
-								<TableCell align="right">SAC</TableCell>
-								<TableCell align="right">Obra social</TableCell>
-								{bonoAparte && <TableCell align="right">Diferencia de bono</TableCell>}
-								<TableCell align="right">Capital</TableCell>
-								<TableCell align="right">Interés</TableCell>
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							{r.filas.map((f) => (
-								<TableRow key={f.periodo} hover>
-									<TableCell>{mes(f.periodo)}</TableCell>
-									<TableCell align="right" sx={num}>
-										{money(f.percibido)}
-									</TableCell>
-									<TableCell align="right" sx={num}>
-										{money(f.reclamado)}
-									</TableCell>
-									<TableCell align="right" sx={num}>
-										{money(f.diferencia)}
-									</TableCell>
-									{conTope && (
-										<TableCell align="right" sx={num}>
-											{f.quitaTope ? money(f.quitaTope) : "—"}
-										</TableCell>
-									)}
-									{conBono && (
-										<TableCell align="right" sx={num}>
-											{f.bonoPercibido ? money(f.bonoPercibido) : "—"}
-										</TableCell>
-									)}
-									{conBono && (
-										<TableCell align="right" sx={num}>
-											{f.bonoReclamado ? money(f.bonoReclamado) : "—"}
-										</TableCell>
-									)}
-									<TableCell align="right" sx={num}>
-										{f.sac ? money(f.sac) : "—"}
-									</TableCell>
-									<TableCell align="right" sx={num}>
-										{money(f.obraSocial)}
-									</TableCell>
-									{bonoAparte && (
-										<TableCell align="right" sx={num}>
-											{f.diferenciaBono ? money(f.diferenciaBono) : "—"}
-										</TableCell>
-									)}
-									<TableCell align="right" sx={num}>
-										{money(f.capital)}
-									</TableCell>
-									<TableCell align="right" sx={num}>
-										{money(f.interes)}
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</TableContainer>
+				<TablaRetroactivo filas={r.filas} conTope={conTope} conBono={conBono} bonoAparte={bonoAparte} />
 			</Collapse>
 
 			<Stack direction="row" spacing={1} justifyContent="flex-end" flexWrap="wrap" useFlexGap sx={{ mt: 2 }}>
@@ -329,17 +307,54 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 				>
 					Practicar liquidación
 				</Button>
-				<Button
-					size="small"
-					variant="contained"
-					disabled={guardando || guardado}
-					startIcon={<Save2 size={16} />}
-					onClick={guardar}
-					sx={{ textTransform: "none" }}
-				>
-					{guardado ? "Guardado" : "Guardar"}
-				</Button>
+				{enEdicion ? (
+					<>
+						<Button
+							size="small"
+							variant="outlined"
+							disabled={!!guardando || guardado}
+							startIcon={<Save2 size={16} />}
+							onClick={guardar}
+							sx={{ textTransform: "none" }}
+						>
+							Guardar como nuevo
+						</Button>
+						<Button
+							size="small"
+							variant="contained"
+							disabled={!!guardando || guardado}
+							startIcon={<Save2 size={16} />}
+							onClick={guardarCambios}
+							sx={{ textTransform: "none" }}
+						>
+							{guardado ? "Guardado" : guardando === "cambios" ? "Guardando…" : "Guardar cambios"}
+						</Button>
+					</>
+				) : (
+					<Button
+						size="small"
+						variant="contained"
+						disabled={!!guardando || guardado}
+						startIcon={<Save2 size={16} />}
+						onClick={guardar}
+						sx={{ textTransform: "none" }}
+					>
+						{guardado ? "Guardado" : "Guardar"}
+					</Button>
+				)}
 			</Stack>
+
+			<LimitErrorModal
+				open={!!limite}
+				onClose={() => setLimite(null)}
+				message={limite?.message || ""}
+				limitInfo={{
+					resourceType: "Cálculos",
+					plan: limite?.limitInfo?.plan || subscription?.plan || "free",
+					currentCount: `${limite?.limitInfo?.currentCount ?? ""}`,
+					limit: limite?.limitInfo?.limit ?? 0,
+				}}
+			/>
 		</Box>
 	);
 };

@@ -183,7 +183,13 @@ export const addCalculator =
 			const errorMessage =
 				error instanceof AxiosError ? error.response?.data?.message || "Error al crear el cálculo" : "Error al crear el cálculo";
 			dispatch({ type: SET_ERROR, payload: errorMessage });
-			return { success: false, error: errorMessage };
+			// status y limitInfo (403 por límite del plan) para que la UI pueda ofrecer la mejora de plan
+			return {
+				success: false,
+				error: errorMessage,
+				status: error instanceof AxiosError ? error.response?.status : undefined,
+				limitInfo: error instanceof AxiosError ? error.response?.data?.limitInfo : undefined,
+			};
 		}
 	};
 
@@ -425,7 +431,7 @@ export const updateCalculator =
 			const errorMessage =
 				error instanceof AxiosError ? error.response?.data?.message || "Error al actualizar el cálculo" : "Error al actualizar el cálculo";
 			dispatch({ type: SET_ERROR, payload: errorMessage });
-			return { success: false, error: errorMessage };
+			return { success: false, error: errorMessage, status: error instanceof AxiosError ? error.response?.status : undefined };
 		}
 	};
 

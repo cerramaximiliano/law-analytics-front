@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, ReactNode, SyntheticEvent, useEffect } from "react";
+import { useState, ReactNode, SyntheticEvent, useEffect, useCallback } from "react";
 
 // material-ui
 import { Box, Tab, Tabs, Skeleton, Stack, Grid, Typography } from "@mui/material";
@@ -10,8 +10,10 @@ import SavedPrevisional from "./components/SavedPrevisional";
 import PrevisionalRetroactivoWizard from "sections/forms/wizard/calc-previsional/retroactivo";
 import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
 import { getFoldersByUserId } from "store/reducers/folder";
+import { getCalculatorsByUserId } from "store/reducers/calculator";
 
 // assets
 import { Calculator, DocumentCloud } from "iconsax-react";
@@ -53,25 +55,67 @@ export default function PrevisionalTabs() {
 	const [value, setValue] = useState(0);
 	const [searchParams, setSearchParams] = useSearchParams();
 	const { folders } = useSelector((state: any) => state.folder);
-	const { id } = useSelector((state: any) => state.auth?.user);
+	const user = useSelector((state: any) => state.auth?.user);
+	const id = user?._id || user?.id;
+	const { calculators, isInitialized, lastFetchedUserId } = useSelector((state: any) => state.calculator);
 	const [isLoading, setIsLoading] = useState(true);
 
 	const folderParam = searchParams.get("folder");
+	const editParam = searchParams.get("edit");
 	const currentFolder = folderParam ? folders.find((f: any) => f._id === folderParam) : null;
 
+	// Cálculo guardado que se reabre para editar (`?edit=<id>`): se busca en el store y, si el
+	// listado del usuario todavía no está cargado, se pide.
+	const calculadoraEnEdicion = editParam ? calculators.find((c: any) => c._id === editParam) || null : null;
+	const calculadorasCargadas = isInitialized && lastFetchedUserId === id;
+
+	const actualizarParams = useCallback(
+		(cambios: { folder?: string | null; edit?: string | null }) => {
+			const next = new URLSearchParams(searchParams);
+			(["folder", "edit"] as const).forEach((k) => {
+				if (!(k in cambios)) return;
+				const v = cambios[k];
+				if (v) next.set(k, v);
+				else next.delete(k);
+			});
+			setSearchParams(next, { replace: true });
+		},
+		[searchParams, setSearchParams],
+	);
+
 	const handleFolderChange = (newFolderId: string | null) => {
-		if (newFolderId) {
-			setSearchParams({ folder: newFolderId });
-		} else {
-			setSearchParams({});
-		}
+		actualizarParams({ folder: newFolderId });
 	};
+
+	const salirEdicion = useCallback(() => actualizarParams({ edit: null }), [actualizarParams]);
+
+	const handleGuardadoEdicion = useCallback(() => {
+		actualizarParams({ edit: null });
+		setValue(1);
+	}, [actualizarParams]);
 
 	useEffect(() => {
 		if (id && folderParam) {
 			dispatch(getFoldersByUserId(id));
 		}
 	}, [id, folderParam]);
+
+	// Con `?edit=` siempre se muestra el wizard, y se carga el listado si hace falta
+	useEffect(() => {
+		if (!editParam) return;
+		setValue(0);
+		if (id && !calculadorasCargadas) {
+			dispatch(getCalculatorsByUserId(id));
+		}
+	}, [editParam, id, calculadorasCargadas]);
+
+	// Listado cargado y el id no existe (borrado o de otro usuario): se avisa y se sale de la edición
+	useEffect(() => {
+		if (editParam && calculadorasCargadas && !calculadoraEnEdicion) {
+			enqueueSnackbar("No se encontró el cálculo guardado que querés editar", { variant: "warning" });
+			salirEdicion();
+		}
+	}, [editParam, calculadorasCargadas, calculadoraEnEdicion, salirEdicion]);
 
 	useEffect(() => {
 		const timer = setTimeout(() => setIsLoading(false), 150);
@@ -161,7 +205,21 @@ export default function PrevisionalTabs() {
 				</Box>
 
 				<TabPanel value={value} index={0}>
-					<PrevisionalRetroactivoWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+					{editParam && !calculadoraEnEdicion ? (
+						<Stack spacing={2}>
+							<Skeleton variant="rounded" height={48} />
+							<Skeleton variant="rounded" height={200} />
+						</Stack>
+					) : (
+						<PrevisionalRetroactivoWizard
+							key={calculadoraEnEdicion?._id || "nuevo"}
+							folder={currentFolder}
+							onFolderChange={handleFolderChange}
+							calculadoraEnEdicion={calculadoraEnEdicion}
+							onSalirEdicion={salirEdicion}
+							onGuardado={handleGuardadoEdicion}
+						/>
+					)}
 				</TabPanel>
 
 				<TabPanel value={value} index={1}>
