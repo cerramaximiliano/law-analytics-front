@@ -236,7 +236,9 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 											<Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
 												{selectedFolder.folderName}
 											</Typography>
-											{selectedFolder.materia && <Chip label={selectedFolder.materia} size="small" sx={{ height: 18, fontSize: "0.65rem" }} />}
+											{selectedFolder.materia && (
+												<Chip label={selectedFolder.materia} size="small" sx={{ height: 18, fontSize: "0.65rem" }} />
+											)}
 											{selectedFolder.description && (
 												<Tooltip title={selectedFolder.description}>
 													<Typography

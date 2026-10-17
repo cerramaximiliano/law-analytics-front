@@ -666,9 +666,7 @@ export default function SavedPrevisional() {
 			{
 				Header: "Fecha",
 				accessor: "date",
-				Cell: ({ row }: { row: Row<any> }) => (
-					<Typography noWrap>{fechaCalculo(row.original.date)}</Typography>
-				),
+				Cell: ({ row }: { row: Row<any> }) => <Typography noWrap>{fechaCalculo(row.original.date)}</Typography>,
 			},
 			{
 				Header: "Titular / Carátula",

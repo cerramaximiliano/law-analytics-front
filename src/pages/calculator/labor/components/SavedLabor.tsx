@@ -1331,9 +1331,7 @@ const SavedLabor = () => {
 			{
 				Header: "Fecha",
 				accessor: "date",
-				Cell: ({ row }: { row: Row<CalculatorData> }) => (
-					<Typography noWrap>{fechaCalculo(row.original.date)}</Typography>
-				),
+				Cell: ({ row }: { row: Row<CalculatorData> }) => <Typography noWrap>{fechaCalculo(row.original.date)}</Typography>,
 			},
 			{
 				Header: "Carátula",
