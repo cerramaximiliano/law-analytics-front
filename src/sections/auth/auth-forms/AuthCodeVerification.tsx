@@ -236,7 +236,25 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 			}
 		} catch (error) {
 			if (axios.isAxiosError(error) && error.response?.data?.message) {
-				setError(error.response.data.message);
+				const msg: string = error.response.data.message;
+				// La cuenta ya está verificada: no hay código válido posible. Avisar y sacar al
+				// usuario de la pantalla (al dashboard si tiene sesión, si no al login).
+				if (/ya est[áa] verificada/i.test(msg)) {
+					dispatch(
+						openSnackbar({
+							open: true,
+							message: auth.isLoggedIn
+								? "Tu cuenta ya está verificada. Te llevamos al inicio."
+								: "Tu cuenta ya está verificada. Iniciá sesión para continuar.",
+							variant: "alert",
+							alert: { color: "info" },
+							close: true,
+						}),
+					);
+					navigate(auth.isLoggedIn ? "/dashboard/default" : "/login", { replace: true });
+					return;
+				}
+				setError(msg);
 			} else {
 				setError("Hubo un problema al verificar el código. Inténtalo de nuevo más tarde.");
 			}

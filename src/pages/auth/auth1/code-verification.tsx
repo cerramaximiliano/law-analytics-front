@@ -50,6 +50,17 @@ const CodeVerification = () => {
 
 	const [showFallback, setShowFallback] = useState(false);
 
+	// Un usuario ya logueado y verificado que vuelve a esta URL (historial del navegador,
+	// pestaña del registro) no tiene nada que verificar: el hub responde 400 "La cuenta ya
+	// está verificada" a cualquier código y quedaba atrapado reintentando (caso real
+	// 2026-10-17: 6 intentos en 20 minutos). Lo mandamos al dashboard.
+	const { isLoggedIn: authLoggedIn, needsVerification: authNeedsVerification } = useSelector((state: RootState) => state.auth);
+	useEffect(() => {
+		if (mode === "register" && authLoggedIn && !authNeedsVerification) {
+			navigate("/dashboard/default", { replace: true });
+		}
+	}, [mode, authLoggedIn, authNeedsVerification, navigate]);
+
 	useEffect(() => {
 		if (!email) {
 			setShowFallback(true);
@@ -84,7 +95,15 @@ const CodeVerification = () => {
 					) : inferredMode === "register" ? (
 						<Grid item xs={12}>
 							<AnimateButton>
-								<Button component={Link} to="/register?source=verify_resend" disableElevation fullWidth size="large" variant="contained" color="primary">
+								<Button
+									component={Link}
+									to="/register?source=verify_resend"
+									disableElevation
+									fullWidth
+									size="large"
+									variant="contained"
+									color="primary"
+								>
 									Crear cuenta
 								</Button>
 							</AnimateButton>
