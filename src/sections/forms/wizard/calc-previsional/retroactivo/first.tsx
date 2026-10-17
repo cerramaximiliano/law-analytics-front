@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
 	Grid,
 	InputLabel,
@@ -71,15 +71,24 @@ export default function FirstForm({ formField, folder, onFolderChange }: FirstFo
 		monedaHaberPagado,
 	} = formField;
 
-	const [inputMethod, setInputMethod] = useState<"manual" | "causa">(folder ? "causa" : "manual");
-	const [selectedFolder, setSelectedFolder] = useState<any>(folder || null);
-
 	const theme = useTheme();
 	const { values, setFieldValue, errors, touched } = useFormikContext<any>();
 
-	// Carpeta con la que arranca el selector: la de `?folder=` o, al reabrir un guardado, la del formulario.
+	// Carpeta con la que arranca el paso: la de `?folder=` o, al reabrir un guardado, la del formulario
+	// (el listado del store puede no estar cargado todavía y `folder` llega después).
 	const carpetaInicial =
 		folder || (values.folderId ? { _id: values.folderId, folderName: values.folderName || "Carpeta vinculada", materia: "" } : null);
+
+	const [inputMethod, setInputMethod] = useState<"manual" | "causa">(carpetaInicial ? "causa" : "manual");
+	const [selectedFolder, setSelectedFolder] = useState<any>(carpetaInicial);
+
+	useEffect(() => {
+		if (folder && folder._id !== selectedFolder?._id) {
+			setSelectedFolder(folder);
+			setInputMethod("causa");
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [folder?._id]);
 
 	const handleMethodChange = (method: "manual" | "causa", folderData: any, folderMeta?: { folderId: string; folderName: string }) => {
 		setInputMethod(method);
