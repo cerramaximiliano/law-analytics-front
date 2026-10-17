@@ -117,6 +117,7 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos }: Props) => {
 	const conBono = filas.some((f) => f.bonoPercibido || f.bonoReclamado);
 	const bonoAparte = conBono && r.bono?.tratamiento !== "integrado";
 	const conPagos = (r.pagos || []).length > 0;
+	const interesSobreSaldoTotal = (r.tramos || []).reduce((acc, t) => acc + (Number(t.interesSobreSaldo) || 0), 0);
 	const sumaCapital = filas.reduce((acc, f) => acc + (f.capital || 0), 0);
 	const sumaInteres = filas.reduce((acc, f) => acc + (f.interes || 0), 0);
 	const tasaTexto = r.tasa?.descripcion || datos.tasaLabel || r.tasa?.tipo || "-";
@@ -269,8 +270,13 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos }: Props) => {
 				<Text style={s.seccionTabla}>Detalle mes a mes ({filas.length} meses)</Text>
 				<Text style={s.notaTabla}>
 					Importes en pesos. Capital = diferencia{conTope ? " menos la quita por tope" : ""}
-					{bonoAparte ? " más la diferencia de bono" : ""} + SAC - obra social. Interés calculado desde cada mes hasta el{" "}
-					{fecha(r.consolidacion)} ({tasaTexto}).
+					{bonoAparte ? " más la diferencia de bono" : ""} + SAC - obra social.{" "}
+					{conPagos
+						? `Interés calculado desde cada mes hasta el cierre del tramo en que se liquida (el mes del pago siguiente o el ${fecha(
+								r.consolidacion,
+						  )})`
+						: `Interés calculado desde cada mes hasta el ${fecha(r.consolidacion)}`}{" "}
+					({tasaTexto}).
 				</Text>
 				<View style={s.cab} fixed>
 					<Text style={s.celdaPeriodo}>Período</Text>
@@ -316,6 +322,13 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos }: Props) => {
 					<Text style={s.derecha}>{importe(sumaCapital)}</Text>
 					<Text style={s.derecha}>{importe(sumaInteres)}</Text>
 				</View>
+				{conPagos && interesSobreSaldoTotal > 0 && (
+					<Text style={s.notaTabla}>
+						La columna Interés suma {importe(sumaInteres)}. Los intereses totales ({importe(r.totales.intereses)}) incluyen además{" "}
+						{importe(interesSobreSaldoTotal)} de interés sobre el saldo impago de los tramos anteriores (tabla de tramos), que no se reparte
+						por mes.
+					</Text>
+				)}
 
 				<Pie />
 			</Page>
