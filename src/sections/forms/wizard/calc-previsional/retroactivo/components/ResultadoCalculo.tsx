@@ -23,6 +23,8 @@ import { dispatch, useSelector } from "store";
 import { addCalculator } from "store/reducers/calculator";
 import { useTeam } from "contexts/TeamContext";
 import { RetroactivoInput, RetroactivoResultado } from "services/previsionalService";
+import { DocumentDownload } from "iconsax-react";
+import { descargarPdfRetroactivo } from "utils/previsionalPdf";
 
 interface ResultadoCalculoProps {
 	resultado: RetroactivoResultado;
@@ -47,6 +49,8 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 	const [verDetalle, setVerDetalle] = useState(false);
 	const [guardando, setGuardando] = useState(false);
 	const [guardado, setGuardado] = useState(false);
+	const [descargando, setDescargando] = useState(false);
+	const rates = useSelector((state: any) => state.interestRates?.rates || []);
 
 	const conTope = r.filas.some((f) => f.quitaTope);
 	const conBono = r.filas.some((f) => f.bonoPercibido || f.bonoReclamado);
@@ -128,6 +132,22 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 			setGuardado(true);
 			enqueueSnackbar("Cálculo guardado", { variant: "success" });
 		} else enqueueSnackbar(res?.error || "No se pudo guardar el cálculo", { variant: "error" });
+	};
+
+	const descargarPdf = async () => {
+		setDescargando(true);
+		await descargarPdfRetroactivo({
+			resultado: r,
+			input,
+			datos: {
+				titular: reclamante,
+				expedienteAdmin: values.expedienteAdmin,
+				prestacion: values.prestacion,
+				carpeta: values.folderName,
+				tasaLabel: rates.find((t: any) => t.value === input.tasa)?.label,
+			},
+		});
+		setDescargando(false);
 	};
 
 	const Tarjeta = ({ titulo, monto, fuerte }: { titulo: string; monto: number; fuerte?: boolean }) => (
@@ -328,6 +348,16 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 					}
 				>
 					Practicar liquidación
+				</Button>
+				<Button
+					size="small"
+					variant="outlined"
+					disabled={descargando}
+					startIcon={<DocumentDownload size={16} />}
+					onClick={descargarPdf}
+					sx={{ textTransform: "none" }}
+				>
+					{descargando ? "Generando PDF…" : "Descargar PDF"}
 				</Button>
 				<Button
 					size="small"

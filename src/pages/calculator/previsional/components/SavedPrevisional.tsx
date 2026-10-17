@@ -48,9 +48,11 @@ import LinkCauseModal from "sections/forms/wizard/calc-laboral/components/linkCa
 import { dispatch, useSelector } from "store";
 import { getCalculatorsByFilter, clearSelectedCalculators } from "store/reducers/calculator";
 import { InterestRate } from "store/reducers/interestRates";
+import { descargarPdfRetroactivo, tieneDetalleParaPdf } from "utils/previsionalPdf";
 
 // assets
 import { Eye, EyeSlash, Link21, Trash } from "iconsax-react";
+import { DocumentDownload } from "iconsax-react";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -109,6 +111,26 @@ const variablesDe = (calc: any) => {
 		reclamante: raw.datosExpediente?.reclamante ?? raw.formulario?.reclamante ?? raw.reclamante,
 		totales: raw.resultado?.totales || null,
 	};
+};
+
+// PDF de un cálculo guardado: titular/expediente/prestación salen de `datosExpediente` (o del formulario, en guardados
+// sin ese bloque) y la tasa legible del store.
+const descargarPdfGuardado = (calc: any, rates: InterestRate[]) => {
+	const raw = calc?.variables || {};
+	const datos = raw.datosExpediente || {};
+	const form = raw.formulario || {};
+	const tasa = raw.input?.tasa || form.tasaInteresSentencia || raw.tasaInteresSentencia;
+	return descargarPdfRetroactivo({
+		resultado: raw.resultado,
+		input: raw.input,
+		datos: {
+			titular: datos.reclamante || variablesDe(calc).reclamante || calc.user,
+			expedienteAdmin: datos.expedienteAdmin || form.expedienteAdmin || raw.expedienteAdmin,
+			prestacion: datos.prestacion || form.prestacion || raw.prestacion,
+			carpeta: calc.folderName,
+			tasaLabel: rates.find((r) => r.value === tasa)?.label || TASA_FALLBACK_LABELS[tasa],
+		},
+	});
 };
 
 // ── ExpandedRow ───────────────────────────────────────────────────────────────
@@ -660,6 +682,24 @@ export default function SavedPrevisional() {
 								>
 									<Link21 size={18} />
 								</IconButton>
+							</Tooltip>
+							<Tooltip
+								title={
+									tieneDetalleParaPdf(row.original.variables)
+										? "Descargar PDF"
+										: "Este cálculo es anterior y no tiene el detalle para el PDF"
+								}
+							>
+								<span>
+									<IconButton
+										size="small"
+										color="secondary"
+										disabled={!tieneDetalleParaPdf(row.original.variables)}
+										onClick={() => descargarPdfGuardado(row.original, rates)}
+									>
+										<DocumentDownload size={18} />
+									</IconButton>
+								</span>
 							</Tooltip>
 							<Tooltip title="Eliminar">
 								<IconButton size="small" color="error" onClick={() => handleDeleteOpen(row.original._id, titular)}>
