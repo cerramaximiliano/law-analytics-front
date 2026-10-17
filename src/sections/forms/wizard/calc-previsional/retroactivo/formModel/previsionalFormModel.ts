@@ -49,6 +49,11 @@ const previsionalFormModel = {
 		bono: { name: "bono", label: "Bono previsional (subsidios, refuerzos y bonos extraordinarios)" },
 		bonoTratamiento: { name: "bonoTratamiento", label: "Cómo se liquida el bono" },
 		capitalizarInteresImpago: { name: "capitalizarInteresImpago", label: "Capitalizar el interés impago" },
+		// Tope con el salario del activo (CSJN "Villanustre"); cada salario: { fecha: DD/MM/AAAA, importe }
+		villanustre: { name: "villanustre", label: "Aplicar el tope con el salario del activo (Villanustre)" },
+		villanustrePorcentaje: { name: "villanustrePorcentaje", label: "Porcentaje del salario" },
+		villanustrePauta: { name: "villanustrePauta", label: "Pauta salarial objetiva en los meses sin salario cargado" },
+		villanustreSalarios: { name: "villanustreSalarios", label: "Salarios de actividad" },
 	},
 };
 

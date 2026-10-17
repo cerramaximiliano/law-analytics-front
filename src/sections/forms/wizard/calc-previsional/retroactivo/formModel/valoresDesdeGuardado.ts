@@ -73,6 +73,10 @@ export function valoresDesdeInput(input: RetroactivoInput, datosExpediente?: any
 		bono: bono ? (bono.percibido && bono.reclamado ? "ambos" : bono.reclamado ? "reclamado" : "percibido") : "no",
 		bonoTratamiento: bono?.tratamiento || "decreto",
 		capitalizarInteresImpago: input.capitalizarInteresImpago !== false,
+		villanustre: !!input.villanustre?.salarios?.length,
+		villanustrePorcentaje: input.villanustre?.porcentaje ?? 70,
+		villanustrePauta: !!input.villanustre?.pautaSalarial,
+		villanustreSalarios: (input.villanustre?.salarios || []).map((x) => ({ fecha: aDDMMYYYY(x.fecha), importe: x.importe })),
 	};
 }
 

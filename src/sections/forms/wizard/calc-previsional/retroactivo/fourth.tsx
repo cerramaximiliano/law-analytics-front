@@ -12,11 +12,15 @@ import {
 	FormHelperText,
 	Paper,
 	Stack,
+	Button,
+	Checkbox,
+	FormControlLabel,
+	IconButton,
 } from "@mui/material";
 import { useFormikContext } from "formik";
 import DateInputField from "components/UI/DateInputField";
 import NumberField from "components/UI/NumberField";
-import { InfoCircle } from "iconsax-react";
+import { Add, InfoCircle, Trash } from "iconsax-react";
 
 const TIPO_TOPE_OPCIONES = [
 	{ value: "no", label: "No" },
@@ -179,6 +183,122 @@ export default function FourthForm({ formField }: FourthFormProps) {
 					</Grid>
 				)}
 			</Grid>
+
+			<VillanustreSeccion />
 		</>
+	);
+}
+
+/** Tope con el salario del activo (CSJN "Villanustre"): el haber computado no supera un porcentaje del salario. */
+function VillanustreSeccion() {
+	const theme = useTheme();
+	const { values, setFieldValue, errors, submitCount } = useFormikContext<any>();
+	const errorSalarios = submitCount > 0 && typeof errors.villanustreSalarios === "string" ? errors.villanustreSalarios : null;
+	const salarios: { fecha: string; importe: number | string }[] = values.villanustreSalarios || [];
+	return (
+		<Box sx={{ mt: 3 }}>
+			<FormControlLabel
+				control={
+					<Checkbox
+						checked={!!values.villanustre}
+						onChange={(e) => {
+							setFieldValue("villanustre", e.target.checked);
+							if (e.target.checked && !salarios.length) setFieldValue("villanustreSalarios", [{ fecha: "", importe: "" }]);
+						}}
+					/>
+				}
+				label="Aplicar el tope con el salario del activo (Villanustre)"
+			/>
+			<Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
+				El haber computado de cada mes no supera el porcentaje indicado del salario de actividad (CSJN &quot;Villanustre&quot;, 1991). Se
+				aplica después del tope del art. 9.
+			</Typography>
+			{values.villanustre && (
+				<Paper
+					elevation={0}
+					sx={{
+						p: 2.5,
+						bgcolor: alpha(theme.palette.primary.main, 0.04),
+						border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+						borderRadius: 1,
+					}}
+				>
+					<Grid container spacing={2.5} alignItems="flex-end">
+						<Grid item xs={12} sm={4}>
+							<InputLabel>Porcentaje del salario *</InputLabel>
+							<NumberField
+								allowNegative={false}
+								decimalScale={2}
+								fullWidth
+								name="villanustrePorcentaje"
+								InputProps={{ endAdornment: "%" }}
+							/>
+						</Grid>
+						<Grid item xs={12} sm={8}>
+							<FormControlLabel
+								control={
+									<Checkbox checked={!!values.villanustrePauta} onChange={(e) => setFieldValue("villanustrePauta", e.target.checked)} />
+								}
+								label="Pauta salarial objetiva en los meses sin salario cargado"
+							/>
+						</Grid>
+					</Grid>
+					<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1, mb: 2 }}>
+						Cada salario rige desde su fecha hasta el siguiente. Con la pauta salarial objetiva (Circular 70/14), los meses sin salario
+						cargado mueven el último con la variación del salario mínimo, vital y móvil. Antes del primer salario no hay límite.
+					</Typography>
+					<Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+						Salarios de actividad
+					</Typography>
+					<Stack spacing={1.5}>
+						{salarios.map((_, i) => (
+							<Grid container spacing={2} key={i} alignItems="flex-end">
+								<Grid item xs={12} sm={5}>
+									<InputLabel sx={{ mb: 0.5 }}>Desde</InputLabel>
+									<DateInputField name={`villanustreSalarios.${i}.fecha`} />
+								</Grid>
+								<Grid item xs={10} sm={6}>
+									<InputLabel sx={{ mb: 0.5 }}>Salario</InputLabel>
+									<NumberField
+										thousandSeparator=","
+										allowNegative={false}
+										decimalScale={2}
+										fixedDecimalScale
+										fullWidth
+										placeholder="0,00"
+										name={`villanustreSalarios.${i}.importe`}
+										InputProps={{ startAdornment: "$" }}
+									/>
+								</Grid>
+								<Grid item xs={2} sm={1}>
+									<IconButton
+										color="error"
+										aria-label="Quitar salario"
+										onClick={() =>
+											setFieldValue(
+												"villanustreSalarios",
+												salarios.filter((__, j) => j !== i),
+											)
+										}
+									>
+										<Trash size={18} />
+									</IconButton>
+								</Grid>
+							</Grid>
+						))}
+					</Stack>
+					<Button
+						sx={{ mt: 1.5 }}
+						size="small"
+						variant="outlined"
+						startIcon={<Add size={16} />}
+						onClick={() => setFieldValue("villanustreSalarios", [...salarios, { fecha: "", importe: "" }])}
+					>
+						Agregar salario
+					</Button>
+					{errorSalarios && <FormHelperText error>{errorSalarios}</FormHelperText>}
+				</Paper>
+			)}
+		</Box>
 	);
 }

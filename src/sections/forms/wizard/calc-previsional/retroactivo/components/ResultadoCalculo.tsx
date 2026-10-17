@@ -72,6 +72,16 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 					value: `${fecha(r.desde)} – ${fecha(r.filas[r.filas.length - 1] && `${r.filas[r.filas.length - 1].periodo}-01`)}`,
 				},
 				{ key: "Fecha de cierre", value: fecha(r.consolidacion) },
+				...(r.villanustre
+					? [
+							{
+								key: "Tope Villanustre",
+								value: `${r.villanustre.porcentaje} % del salario de actividad${
+									r.villanustre.pautaSalarial ? ", con pauta salarial objetiva" : ""
+								}`,
+							},
+					  ]
+					: []),
 				...(r.bono && (r.bono.percibido || r.bono.reclamado)
 					? [
 							{

@@ -29,7 +29,8 @@ const num = { whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" } as cons
 export function flagsDeFilas(filas: FilaRetroactivo[], tratamientoBono?: string) {
 	const conTope = filas.some((f) => f.quitaTope);
 	const conBono = filas.some((f) => f.bonoPercibido || f.bonoReclamado);
-	return { conTope, conBono, bonoAparte: conBono && tratamientoBono !== "integrado" };
+	const conVillanustre = filas.some((f) => f.limiteVillanustre);
+	return { conTope, conBono, bonoAparte: conBono && tratamientoBono !== "integrado", conVillanustre };
 }
 
 const TablaRetroactivo = ({
@@ -45,8 +46,9 @@ const TablaRetroactivo = ({
 	const tope = conTope ?? derivados.conTope;
 	const bono = conBono ?? derivados.conBono;
 	const aparte = bonoAparte ?? derivados.bonoAparte;
+	const villanustre = derivados.conVillanustre;
 	// columnas fijas (Mes, Percibido, Reclamado, Diferencia, SAC, Obra social, Capital, Interés) + opcionales
-	const columnas = 8 + (tope ? 1 : 0) + (bono ? 2 : 0) + (aparte ? 1 : 0);
+	const columnas = 8 + (tope ? 1 : 0) + (villanustre ? 1 : 0) + (bono ? 2 : 0) + (aparte ? 1 : 0);
 
 	return (
 		<TableContainer component={Paper} variant="outlined" sx={{ maxHeight, mb: 2 }}>
@@ -61,6 +63,14 @@ const TablaRetroactivo = ({
 						<TableCell align="right">Reclamado</TableCell>
 						<TableCell align="right">Diferencia</TableCell>
 						{tope && <TableCell align="right">Quita tope</TableCell>}
+						{villanustre && (
+							<TableCell
+								align="right"
+								title="Límite con el salario del activo. * cuando el haber computado es el límite; ♣ con la pauta salarial objetiva"
+							>
+								Límite Villanustre
+							</TableCell>
+						)}
 						{bono && <TableCell align="right">Bono percibido</TableCell>}
 						{bono && <TableCell align="right">Bono reclamado</TableCell>}
 						<TableCell align="right">SAC</TableCell>
@@ -86,6 +96,13 @@ const TablaRetroactivo = ({
 							{tope && (
 								<TableCell align="right" sx={num}>
 									{f.quitaTope ? money(f.quitaTope) : "—"}
+								</TableCell>
+							)}
+							{villanustre && (
+								<TableCell align="right" sx={{ ...num, fontWeight: f.quitaVillanustre ? 600 : undefined }}>
+									{f.limiteVillanustre
+										? `${f.quitaVillanustre ? "* " : ""}${money(f.limiteVillanustre)}${f.pautaSalarial ? " ♣" : ""}`
+										: "—"}
 								</TableCell>
 							)}
 							{bono && (

@@ -39,6 +39,10 @@ const {
 		bono,
 		bonoTratamiento,
 		capitalizarInteresImpago,
+		villanustre,
+		villanustrePorcentaje,
+		villanustrePauta,
+		villanustreSalarios,
 	},
 } = previsionalFormModel;
 
@@ -82,6 +86,10 @@ const formInitialValues = {
 	[bono.name]: "no",
 	[bonoTratamiento.name]: "decreto",
 	[capitalizarInteresImpago.name]: true,
+	[villanustre.name]: false,
+	[villanustrePorcentaje.name]: 70,
+	[villanustrePauta.name]: false,
+	[villanustreSalarios.name]: [],
 };
 
 export default formInitialValues;

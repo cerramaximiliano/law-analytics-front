@@ -116,6 +116,24 @@ const validationSchema = [
 			then: (schema) => schema.required("Ingrese la fecha de fin de aplicación del tope"),
 			otherwise: (schema) => schema.notRequired(),
 		}),
+		villanustrePorcentaje: Yup.mixed().when("villanustre", {
+			is: true,
+			then: () =>
+				Yup.number()
+					.typeError("Ingrese el porcentaje del salario")
+					.required("Ingrese el porcentaje del salario")
+					.moreThan(0, "El porcentaje debe ser mayor a 0")
+					.max(100, "El porcentaje no puede superar el 100 %"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
+		villanustreSalarios: Yup.array().when("villanustre", {
+			is: true,
+			then: (schema) =>
+				schema.test("al-menos-uno", "Cargue al menos un salario de actividad con su fecha", (l) =>
+					(l || []).some((x: any) => x && x.fecha && Number(x.importe) > 0),
+				),
+			otherwise: (schema) => schema.notRequired(),
+		}),
 	}),
 
 	// Step 5 — Tasa de interés de sentencia

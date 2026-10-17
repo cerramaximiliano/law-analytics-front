@@ -83,6 +83,16 @@ export interface RetroactivoInput {
 	tasa?: string;
 	pagos?: { fecha: string; importe: number; tipo?: TipoPago }[];
 	bono?: "no" | { percibido: boolean; reclamado: boolean; tratamiento: TratamientoBono };
+	/** Tope con el salario del activo (CSJN "Villanustre"): el haber computado no supera el porcentaje del salario. */
+	villanustre?: VillanustreInput | null;
+}
+
+export interface VillanustreInput {
+	porcentaje: number;
+	/** Cada salario rige desde su mes hasta el siguiente. */
+	salarios: { fecha: string; importe: number }[];
+	/** Circular 70/14: los meses sin salario cargado mueven el último con la variación del SMVM. */
+	pautaSalarial?: boolean;
 }
 
 export interface FilaRetroactivo {
@@ -103,6 +113,10 @@ export interface FilaRetroactivo {
 	bonoPercibido?: number;
 	bonoReclamado?: number;
 	diferenciaBono?: number;
+	salarioActividad?: number;
+	limiteVillanustre?: number;
+	quitaVillanustre?: number;
+	pautaSalarial?: boolean;
 }
 
 /** Tramo de la liquidación (se corta en el mes de cada pago). El último no tiene pago ni saldos. */
@@ -128,6 +142,7 @@ export interface RetroactivoResultado {
 	consolidacion: string;
 	tasa: { tipo: string; descripcion?: string; metodo: string };
 	bono?: { percibido: boolean; reclamado: boolean; tratamiento: TratamientoBono };
+	villanustre?: VillanustreInput | null;
 	filas: FilaRetroactivo[];
 	pagos: { fecha: string; importe: number; tipo?: TipoPago; detalle?: string }[];
 	tramos: TramoRetroactivo[];
@@ -204,7 +219,18 @@ export function armarInputRetroactivo(values: any): RetroactivoInput {
 						tratamiento: values.bonoTratamiento === "integrado" ? "integrado" : "decreto",
 				  }
 				: "no",
+		villanustre: villanustreDe(values),
 	};
+}
+
+function villanustreDe(values: any): VillanustreInput | null {
+	if (!values.villanustre) return null;
+	const salarios = (values.villanustreSalarios || [])
+		.filter((x: any) => x && x.fecha && Number(x.importe) > 0)
+		.map((x: any) => ({ fecha: aISO(x.fecha), importe: Number(x.importe) }));
+	if (!salarios.length) return null;
+	const pct = numero(values.villanustrePorcentaje);
+	return { porcentaje: Number.isFinite(pct) && pct > 0 ? pct : 70, salarios, pautaSalarial: !!values.villanustrePauta };
 }
 
 export async function calcularRetroactivo(input: RetroactivoInput): Promise<RetroactivoResultado> {

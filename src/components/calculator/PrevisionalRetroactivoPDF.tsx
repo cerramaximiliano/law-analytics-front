@@ -182,6 +182,8 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 	const conTope = filas.some((f) => f.quitaTope);
 	const conBono = filas.some((f) => f.bonoPercibido || f.bonoReclamado);
 	const bonoAparte = conBono && r.bono?.tratamiento !== "integrado";
+	const conVillanustre = filas.some((f) => f.limiteVillanustre);
+	const villanustre = r.villanustre || input.villanustre || null;
 	const bloques = armarBloquesTramos(r);
 	const conPagos = bloques.tramos.length > 0;
 	const sumaCapital = filas.reduce((acc, f) => acc + (f.capital || 0), 0);
@@ -197,8 +199,8 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 		.join(" · ");
 	const tituloDoc = datos.titular ? `Retroactivo previsional - ${datos.titular}` : "Retroactivo previsional";
 	const notaCapital = `Importes en pesos. Capital = diferencia${conTope ? " menos la quita por tope" : ""}${
-		bonoAparte ? " más la diferencia de bono" : ""
-	} + SAC - obra social.`;
+		conVillanustre ? " menos lo que excede el límite Villanustre (* el haber computado es el límite; (P) con pauta salarial)" : ""
+	}${bonoAparte ? " más la diferencia de bono" : ""} + SAC - obra social.`;
 
 	const Pie = () => (
 		<Text
@@ -219,6 +221,7 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 			<Text style={s.derecha}>Reclamado</Text>
 			<Text style={s.derecha}>Diferencia</Text>
 			{conTope && <Text style={s.derecha}>Quita tope</Text>}
+			{conVillanustre && <Text style={s.derecha}>Límite Villanustre</Text>}
 			{conBono && <Text style={s.derecha}>Bono percibido</Text>}
 			{conBono && <Text style={s.derecha}>Bono reclamado</Text>}
 			<Text style={s.derecha}>SAC</Text>
@@ -236,6 +239,11 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 			<Text style={s.derecha}>{importe(f.reclamado)}</Text>
 			<Text style={s.derecha}>{importe(f.diferencia)}</Text>
 			{conTope && <Text style={s.derecha}>{importeOGuion(f.quitaTope)}</Text>}
+			{conVillanustre && (
+				<Text style={s.derecha}>
+					{f.limiteVillanustre ? `${f.quitaVillanustre ? "* " : ""}${importe(f.limiteVillanustre)}${f.pautaSalarial ? " (P)" : ""}` : "-"}
+				</Text>
+			)}
 			{conBono && <Text style={s.derecha}>{importeOGuion(f.bonoPercibido)}</Text>}
 			{conBono && <Text style={s.derecha}>{importeOGuion(f.bonoReclamado)}</Text>}
 			<Text style={s.derecha}>{importeOGuion(f.sac)}</Text>
@@ -253,6 +261,7 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 			<Text style={s.derecha} />
 			<Text style={s.derecha} />
 			{conTope && <Text style={s.derecha} />}
+			{conVillanustre && <Text style={s.derecha} />}
 			{conBono && <Text style={s.derecha} />}
 			{conBono && <Text style={s.derecha} />}
 			<Text style={s.derecha} />
@@ -339,6 +348,14 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 						]
 							.filter(Boolean)
 							.join(", ")}
+					/>
+				)}
+				{villanustre && (
+					<KV
+						k="Tope Villanustre"
+						v={`el haber computado no supera el ${numero(villanustre.porcentaje)} % del salario de actividad${
+							villanustre.pautaSalarial ? "; meses sin salario cargado por la pauta salarial objetiva (Circular 70/14)" : ""
+						}. Salarios: ${villanustre.salarios.map((x) => `${importe(x.importe)} desde el ${fecha(x.fecha)}`).join("; ")}`}
 					/>
 				)}
 				<KV k="SAC" v={input.sac === false ? "No se liquida" : "Se liquida sobre las diferencias"} />
