@@ -91,6 +91,13 @@ export function valoresDesdeCalculadora(calc: any): Record<string, any> | null {
 		...base,
 		folderId,
 		folderName,
-		reclamante: folderId && !base.reclamante ? `__CAUSA_VINCULADA__${folderId}` : base.reclamante,
+		// Si el guardado apuntaba a una carpeta que ya no existe, el marcador interno no debe
+		// aparecer como titular: cae al reclamante del expediente o al nombre de la carpeta.
+		reclamante:
+			folderId && !base.reclamante
+				? `__CAUSA_VINCULADA__${folderId}`
+				: !folderId && typeof base.reclamante === "string" && base.reclamante.startsWith("__CAUSA_VINCULADA__")
+				? calc.variables?.datosExpediente?.reclamante || folderName || ""
+				: base.reclamante,
 	};
 }
