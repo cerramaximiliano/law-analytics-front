@@ -15,6 +15,7 @@ import { useTeam } from "contexts/TeamContext";
 import { BRAND_BLUE, LIVE_GREEN, LIVE_PULSE_KEYFRAMES, STALE_AMBER } from "themes/dashboardTokens";
 import { formatFolderName } from "utils/formatFolderName";
 import { trackActivity } from "utils/productAnalytics";
+import ExpedienteSplitSuggestions from "components/UI/ExpedienteSplitSuggestions";
 import {
 	OTHER_NUMBER_MAX_DIGITS,
 	PJN_NUMBER_MAX_DIGITS,
@@ -22,6 +23,7 @@ import {
 	isValidExpedienteNumber,
 	isValidExpedienteYear,
 	parseExpedienteInput,
+	suggestExpedienteSplits,
 } from "utils/expedienteInput";
 import CausaSelector from "sections/apps/folders/CausaSelector";
 import ConectarCuenta, { Portal } from "./ConectarCuenta";
@@ -130,7 +132,12 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 	const currentYear = new Date().getFullYear();
 	// PJN: ningún expediente válido supera los 6 dígitos (ver utils/expedienteInput.ts).
 	const maxDigits = power === "pjn" ? PJN_NUMBER_MAX_DIGITS : OTHER_NUMBER_MAX_DIGITS;
-	const numberError = touched && !isValidExpedienteNumber(number, maxDigits) ? `Solo números, hasta ${maxDigits} cifras` : "";
+	const numberError =
+		touched && !isValidExpedienteNumber(number, maxDigits)
+			? `Solo números, hasta ${maxDigits} cifras. Cargá el año en su propio campo.`
+			: "";
+	// "6952015" sin barra: ofrecemos las lecturas plausibles (695/2015, 69520/2015) como chips.
+	const splitSuggestions = numberError ? suggestExpedienteSplits(number, maxDigits) : [];
 	const yearError = touched && !isValidExpedienteYear(year) ? `Año de 4 cifras, entre ${EXPEDIENTE_MIN_YEAR} y ${currentYear}` : "";
 	const pjnError = touched && power === "pjn" && !pjnCode ? "Elegí el fuero" : "";
 	const canSubmit = power !== "mev";
@@ -623,7 +630,26 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 							placeholder="Ej. 45218"
 							inputProps={{ inputMode: "numeric", pattern: "[0-9]*", "aria-label": "Número", autoComplete: "off" }}
 							error={!!numberError}
-							helperText={numberError || "Número (o número/año)"}
+							helperText={
+								splitSuggestions.length ? (
+									<ExpedienteSplitSuggestions
+										suggestions={splitSuggestions}
+										onPick={(s) => {
+											setNumber(s.number);
+											setYear(s.year);
+											trackActivity("expediente_input_split", {
+												jurisdiction: power,
+												source: "primera_causa",
+												mode: "suggestion",
+												count: s.number.length,
+											});
+											markStart(power);
+										}}
+									/>
+								) : (
+									numberError || "Número (o número/año)"
+								)
+							}
 							disabled={sending}
 							sx={inputSx}
 						/>

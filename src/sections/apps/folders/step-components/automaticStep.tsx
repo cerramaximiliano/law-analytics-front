@@ -42,12 +42,15 @@ import { alpha, useTheme } from "@mui/material/styles";
 import { BRAND_BLUE, LIVE_GREEN } from "themes/dashboardTokens";
 import { useFormikContext } from "formik";
 import InputField from "components/UI/InputField";
+import ExpedienteSplitSuggestions from "components/UI/ExpedienteSplitSuggestions";
 import {
 	OTHER_NUMBER_MAX_DIGITS,
 	PJN_NUMBER_MAX_DIGITS,
 	EXPEDIENTE_MIN_YEAR,
+	ExpedienteSplitSuggestion,
 	isValidExpedienteNumber,
 	parseExpedienteInput,
+	suggestExpedienteSplits,
 } from "utils/expedienteInput";
 import { trackActivity } from "utils/productAnalytics";
 import { useState, useEffect, useRef } from "react";
@@ -394,8 +397,8 @@ const AutomaticStep = () => {
 		// PJN: ningún expediente válido supera los 6 dígitos; "6952015" es "69520/15" sin la barra.
 		const maxDigits = values.judicialPower === "nacional" ? PJN_NUMBER_MAX_DIGITS : OTHER_NUMBER_MAX_DIGITS;
 		if (!isValidExpedienteNumber(number.trim(), maxDigits)) {
-			setNumberError(`Solo números, hasta ${maxDigits} cifras (sin la barra ni el año)`);
-			setFieldError("expedientNumber", `Solo números, hasta ${maxDigits} cifras (sin la barra ni el año)`);
+			setNumberError(`Solo números, hasta ${maxDigits} cifras. Cargá el año en su propio campo.`);
+			setFieldError("expedientNumber", `Solo números, hasta ${maxDigits} cifras. Cargá el año en su propio campo.`);
 			return false;
 		}
 		setNumberError("");
@@ -1259,6 +1262,33 @@ const AutomaticStep = () => {
 		validateExpedientNumber(parsed.number);
 	};
 
+	// "6952015" sin barra: en vez de recortar en silencio, ofrecemos las lecturas plausibles
+	// (695/2015, 69520/2015) y el usuario elige con un clic.
+	const numberMaxDigits = values.judicialPower === "nacional" ? PJN_NUMBER_MAX_DIGITS : OTHER_NUMBER_MAX_DIGITS;
+	const splitSuggestions = numberError ? suggestExpedienteSplits(values.expedientNumber || "", numberMaxDigits) : [];
+	const applySplitSuggestion = (s: ExpedienteSplitSuggestion) => {
+		setFieldValue("expedientNumber", s.number);
+		setFieldValue("expedientYear", s.year);
+		setTouched({ ...touched, expedientNumber: true, expedientYear: true });
+		setNumberError("");
+		setFieldError("expedientNumber", "");
+		trackActivity("expediente_input_split", {
+			jurisdiction: values.judicialPower || "otra",
+			source: "add_folder",
+			mode: "suggestion",
+			count: s.number.length,
+		});
+	};
+	const numberHelperText = touched.expedientNumber ? (
+		splitSuggestions.length ? (
+			<ExpedienteSplitSuggestions suggestions={splitSuggestions} onPick={applySplitSuggestion} />
+		) : (
+			numberError
+		)
+	) : (
+		""
+	);
+
 	const isDark = theme.palette.mode === "dark";
 
 	// Estilo brand-aware compartido para inputs/selects de este step.
@@ -1634,7 +1664,7 @@ const AutomaticStep = () => {
 																inputProps={{ inputMode: "numeric" }}
 																onChange={handleNumberChange}
 																error={Boolean(numberError && touched.expedientNumber)}
-																helperText={touched.expedientNumber ? numberError : ""}
+																helperText={numberHelperText}
 																sx={fieldSx}
 															/>
 														</Stack>
@@ -1957,7 +1987,7 @@ const AutomaticStep = () => {
 																inputProps={{ inputMode: "numeric" }}
 																onChange={handleNumberChange}
 																error={Boolean(numberError && touched.expedientNumber)}
-																helperText={touched.expedientNumber ? numberError : ""}
+																helperText={numberHelperText}
 																sx={fieldSx}
 															/>
 														</Stack>
@@ -2099,7 +2129,7 @@ const AutomaticStep = () => {
 																inputProps={{ inputMode: "numeric" }}
 																onChange={handleNumberChange}
 																error={Boolean(numberError && touched.expedientNumber)}
-																helperText={touched.expedientNumber ? numberError : ""}
+																helperText={numberHelperText}
 																sx={fieldSx}
 															/>
 														</Stack>
@@ -2241,7 +2271,7 @@ const AutomaticStep = () => {
 																inputProps={{ inputMode: "numeric" }}
 																onChange={handleNumberChange}
 																error={Boolean(numberError && touched.expedientNumber)}
-																helperText={touched.expedientNumber ? numberError : ""}
+																helperText={numberHelperText}
 																sx={fieldSx}
 															/>
 														</Stack>
@@ -2383,7 +2413,7 @@ const AutomaticStep = () => {
 																inputProps={{ inputMode: "numeric" }}
 																onChange={handleNumberChange}
 																error={Boolean(numberError && touched.expedientNumber)}
-																helperText={touched.expedientNumber ? numberError : ""}
+																helperText={numberHelperText}
 																sx={fieldSx}
 															/>
 														</Stack>
@@ -2432,7 +2462,7 @@ const AutomaticStep = () => {
 												inputProps={{ inputMode: "numeric" }}
 												onChange={handleNumberChange}
 												error={Boolean(numberError && touched.expedientNumber)}
-												helperText={touched.expedientNumber ? numberError : ""}
+												helperText={numberHelperText}
 											/>
 										</Stack>
 									</Grid>

@@ -35,7 +35,15 @@ import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 import mevWorkersService, { NavigationCode } from "api/workersMev";
 import mevCredentialsService from "api/mevCredentials";
 import { trackActivity } from "utils/productAnalytics";
-import { EXPEDIENTE_MIN_YEAR, OTHER_NUMBER_MAX_DIGITS, isValidExpedienteNumber, parseExpedienteInput } from "utils/expedienteInput";
+import ExpedienteSplitSuggestions from "components/UI/ExpedienteSplitSuggestions";
+import {
+	EXPEDIENTE_MIN_YEAR,
+	OTHER_NUMBER_MAX_DIGITS,
+	ExpedienteSplitSuggestion,
+	isValidExpedienteNumber,
+	parseExpedienteInput,
+	suggestExpedienteSplits,
+} from "utils/expedienteInput";
 
 interface LinkToPJBuenosAiresProps {
 	open: boolean;
@@ -248,7 +256,7 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 		}
 		// MEV: en la base los expedientes válidos tienen de 3 a 6 dígitos; se deja margen.
 		if (!isValidExpedienteNumber(number.trim(), OTHER_NUMBER_MAX_DIGITS)) {
-			setNumberError(`Solo números, hasta ${OTHER_NUMBER_MAX_DIGITS} cifras (sin la barra ni el año)`);
+			setNumberError(`Solo números, hasta ${OTHER_NUMBER_MAX_DIGITS} cifras. Cargá el año en su propio campo.`);
 			return false;
 		}
 		setNumberError("");
@@ -533,6 +541,23 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 		if (touched.expedientNumber || formSubmitAttempted.current) {
 			validateExpedientNumber(parsed.number);
 		}
+	};
+
+	// "468172020" sin barra: ofrecemos las lecturas plausibles (46817/2020, 4681720/2020) como chips.
+	const showNumberError = Boolean(touched.expedientNumber || formSubmitAttempted.current);
+	const splitSuggestions = numberError && showNumberError ? suggestExpedienteSplits(expedientNumber, OTHER_NUMBER_MAX_DIGITS) : [];
+	const applySplitSuggestion = (s: ExpedienteSplitSuggestion) => {
+		setExpedientNumber(s.number);
+		setExpedientYear(s.year);
+		setTouched({ ...touched, expedientNumber: true, expedientYear: true });
+		setNumberError("");
+		validateYear(s.year);
+		trackActivity("expediente_input_split", {
+			jurisdiction: "mev",
+			source: "link_folder",
+			mode: "suggestion",
+			count: s.number.length,
+		});
 	};
 
 	// Validar cuando se envía el formulario
@@ -841,8 +866,18 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName, fol
 										value={expedientNumber}
 										onChange={handleNumberChange}
 										disabled={loading}
-										error={Boolean(numberError && (touched.expedientNumber || formSubmitAttempted.current))}
-										helperText={touched.expedientNumber || formSubmitAttempted.current ? numberError : ""}
+										error={Boolean(numberError && showNumberError)}
+										helperText={
+											showNumberError ? (
+												splitSuggestions.length ? (
+													<ExpedienteSplitSuggestions suggestions={splitSuggestions} onPick={applySplitSuggestion} />
+												) : (
+													numberError
+												)
+											) : (
+												""
+											)
+										}
 										size="small"
 									/>
 								</Stack>

@@ -33,12 +33,15 @@ import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import PjnGuardedButton from "components/PjnGuardedButton";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import { trackActivity } from "utils/productAnalytics";
+import ExpedienteSplitSuggestions from "components/UI/ExpedienteSplitSuggestions";
 import {
 	OTHER_NUMBER_MAX_DIGITS,
 	PJN_NUMBER_MAX_DIGITS,
 	EXPEDIENTE_MIN_YEAR,
+	ExpedienteSplitSuggestion,
 	isValidExpedienteNumber,
 	parseExpedienteInput,
+	suggestExpedienteSplits,
 } from "utils/expedienteInput";
 
 interface LinkToJudicialPowerProps {
@@ -147,7 +150,7 @@ const LinkToJudicialPower = ({
 		}
 		const maxDigits = selectedPower === "nacional" ? PJN_NUMBER_MAX_DIGITS : OTHER_NUMBER_MAX_DIGITS;
 		if (!isValidExpedienteNumber(number.trim(), maxDigits)) {
-			setNumberError(`Solo números, hasta ${maxDigits} cifras (sin la barra ni el año)`);
+			setNumberError(`Solo números, hasta ${maxDigits} cifras. Cargá el año en su propio campo.`);
 			return false;
 		}
 		setNumberError("");
@@ -269,6 +272,24 @@ const LinkToJudicialPower = ({
 		}
 		setTouched({ ...touched, expedientNumber: true });
 		if (touched.expedientNumber || formSubmitAttempted.current) validateExpedientNumber(parsed.number);
+	};
+
+	// "6952015" sin barra: ofrecemos las lecturas plausibles (695/2015, 69520/2015) como chips.
+	const numberMaxDigits = selectedPower === "nacional" ? PJN_NUMBER_MAX_DIGITS : OTHER_NUMBER_MAX_DIGITS;
+	const showNumberError = Boolean(touched.expedientNumber || formSubmitAttempted.current);
+	const splitSuggestions = numberError && showNumberError ? suggestExpedienteSplits(expedientNumber, numberMaxDigits) : [];
+	const applySplitSuggestion = (s: ExpedienteSplitSuggestion) => {
+		setExpedientNumber(s.number);
+		setExpedientYear(s.year);
+		setTouched({ ...touched, expedientNumber: true, expedientYear: true });
+		setNumberError("");
+		validateYear(s.year);
+		trackActivity("expediente_input_split", {
+			jurisdiction: selectedPower ? String(selectedPower) : "otra",
+			source: "link_folder",
+			mode: "suggestion",
+			count: s.number.length,
+		});
 	};
 
 	useEffect(() => {
@@ -769,8 +790,18 @@ const LinkToJudicialPower = ({
 											value={expedientNumber}
 											onChange={handleNumberChange}
 											disabled={loading}
-											error={Boolean(numberError && (touched.expedientNumber || formSubmitAttempted.current))}
-											helperText={touched.expedientNumber || formSubmitAttempted.current ? numberError : ""}
+											error={Boolean(numberError && showNumberError)}
+											helperText={
+												showNumberError ? (
+													splitSuggestions.length ? (
+														<ExpedienteSplitSuggestions suggestions={splitSuggestions} onPick={applySplitSuggestion} />
+													) : (
+														numberError
+													)
+												) : (
+													""
+												)
+											}
 											size="small"
 										/>
 									</Stack>
