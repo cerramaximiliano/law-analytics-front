@@ -26,6 +26,8 @@ import useSubscription from "hooks/useSubscription";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import TablaRetroactivo from "components/calculator/TablaRetroactivo";
 import { RetroactivoInput, RetroactivoResultado } from "services/previsionalService";
+import { DocumentDownload } from "iconsax-react";
+import { descargarPdfRetroactivo } from "utils/previsionalPdf";
 
 /** Cálculo guardado que se está editando (ver `?edit=` en la página del previsional). */
 export interface CalculoEnEdicion {
@@ -63,6 +65,8 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 	const [guardando, setGuardando] = useState<"nuevo" | "cambios" | null>(null);
 	const [guardado, setGuardado] = useState(false);
 	const [limite, setLimite] = useState<{ message: string; limitInfo?: any } | null>(null);
+	const [descargando, setDescargando] = useState(false);
+	const rates = useSelector((state: any) => state.interestRates?.rates || []);
 
 	const conTope = r.filas.some((f) => f.quitaTope);
 	const conBono = r.filas.some((f) => f.bonoPercibido || f.bonoReclamado);
@@ -173,6 +177,22 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 			enqueueSnackbar("Cálculo actualizado", { variant: "success" });
 			onGuardado?.("actualizado");
 		} else enqueueSnackbar(res?.error || "No se pudieron guardar los cambios", { variant: "error" });
+	};
+
+	const descargarPdf = async () => {
+		setDescargando(true);
+		await descargarPdfRetroactivo({
+			resultado: r,
+			input,
+			datos: {
+				titular: reclamante,
+				expedienteAdmin: values.expedienteAdmin,
+				prestacion: values.prestacion,
+				carpeta: values.folderName,
+				tasaLabel: rates.find((t: any) => t.value === input.tasa)?.label,
+			},
+		});
+		setDescargando(false);
 	};
 
 	const Tarjeta = ({ titulo, monto, fuerte }: { titulo: string; monto: number; fuerte?: boolean }) => (
@@ -306,6 +326,16 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 					}
 				>
 					Practicar liquidación
+				</Button>
+				<Button
+					size="small"
+					variant="outlined"
+					disabled={descargando}
+					startIcon={<DocumentDownload size={16} />}
+					onClick={descargarPdf}
+					sx={{ textTransform: "none" }}
+				>
+					{descargando ? "Generando PDF…" : "Descargar PDF"}
 				</Button>
 				{enEdicion ? (
 					<>
