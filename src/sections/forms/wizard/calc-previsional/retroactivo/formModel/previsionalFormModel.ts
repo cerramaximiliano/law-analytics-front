@@ -50,6 +50,8 @@ const previsionalFormModel = {
 		bonoTratamiento: { name: "bonoTratamiento", label: "Cómo se liquida el bono" },
 		capitalizarInteresImpago: { name: "capitalizarInteresImpago", label: "Capitalizar el interés impago" },
 		// Tope con el salario del activo (CSJN "Villanustre"); cada salario: { fecha: DD/MM/AAAA, importe }
+		topeMaximoBadaro: { name: "topeMaximoBadaro", label: "Mover el haber máximo con la movilidad del fallo Badaro" },
+		topeMaximoBadaroDesde: { name: "topeMaximoBadaroDesde", label: "Desde" },
 		villanustre: { name: "villanustre", label: "Aplicar el tope con el salario del activo (Villanustre)" },
 		villanustrePorcentaje: { name: "villanustrePorcentaje", label: "Porcentaje del salario" },
 		villanustrePauta: { name: "villanustrePauta", label: "Pauta salarial objetiva en los meses sin salario cargado" },

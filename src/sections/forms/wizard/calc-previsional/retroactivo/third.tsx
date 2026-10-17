@@ -37,6 +37,7 @@ const INDICES_MOVILIDAD = [
 	{ value: "aumento_mar_2021_sem2_2020", label: "Aumento Marzo 2021 por segundo semestre 2020 (Cortes)" },
 	{ value: "ipc_trimestral_retrasado_3m", label: "IPC trimestral retrasado 3 meses (Cortes)" },
 	{ value: "badaro_isal", label: "Índice de salarios INDEC (Badaro), anual hasta 12/2006" },
+	{ value: "ngr_extendido", label: "Nivel General de las Remuneraciones extendido (Sánchez), mensual hasta 03/1995" },
 	{ value: "aumentos_porcentuales", label: "Aumentos generales ANSES, solo el porcentaje (sin sumas fijas)" },
 	{ value: "sin_movilidad", label: "Sin movilidad" },
 ];
@@ -67,6 +68,27 @@ const PATRONES: PatronMovilidad[] = [
 				tramos.push({ indiceMovilidad: "sin_movilidad", fechaDesde: fechaInicial });
 				tramos.push({ indiceMovilidad: "badaro_isal", fechaDesde: "01/01/2002" });
 			} else tramos.push({ indiceMovilidad: "badaro_isal", fechaDesde: fechaInicial });
+			tramos.push({ indiceMovilidad: "aumentos_generales_anses", fechaDesde: "01/01/2007" });
+			return tramos;
+		},
+	},
+	{
+		value: "sanchez_badaro",
+		label: "Sánchez y Badaro — remuneraciones hasta 03/1995 e índice de salarios hasta 12/2006",
+		descripcion:
+			"Nivel general de las remuneraciones (extendido) hasta 03/1995 → sin movilidad hasta 12/2001 → índice de salarios INDEC (anual) hasta 12/2006 → aumentos generales desde 1/2007.",
+		generaTramos: (fechaInicial) => {
+			const fi = dayjs(fechaInicial, "DD/MM/YYYY");
+			const tramos: MovilidadCriterio[] = [];
+			if (fi.isValid() && fi.isBefore(dayjs("1995-04-01"))) {
+				tramos.push({ indiceMovilidad: "ngr_extendido", fechaDesde: fechaInicial });
+				tramos.push({ indiceMovilidad: "sin_movilidad", fechaDesde: "01/04/1995" });
+			} else if (fi.isValid() && fi.isBefore(dayjs("2002-01-01")))
+				tramos.push({ indiceMovilidad: "sin_movilidad", fechaDesde: fechaInicial });
+			tramos.push({
+				indiceMovilidad: "badaro_isal",
+				fechaDesde: fi.isValid() && fi.isAfter(dayjs("2002-01-01")) ? fechaInicial : "01/01/2002",
+			});
 			tramos.push({ indiceMovilidad: "aumentos_generales_anses", fechaDesde: "01/01/2007" });
 			return tramos;
 		},
@@ -112,6 +134,8 @@ const detectarPatron = (criterios: MovilidadCriterio[]): string => {
 	if (!Array.isArray(criterios) || criterios.length === 0) return "personalizado";
 	const indices = criterios.map((c) => c?.indiceMovilidad);
 	if (indices.length === 1 && indices[0] === "aumentos_generales_anses") return "aumentos_generales";
+	if (indices[0] === "ngr_extendido" && indices.slice(-2).join() === "badaro_isal,aumentos_generales_anses" && indices.length <= 4)
+		return "sanchez_badaro";
 	if (indices[indices.length - 1] === "aumentos_generales_anses" && indices[indices.length - 2] === "badaro_isal" && indices.length <= 3)
 		return "badaro";
 	if (

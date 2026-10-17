@@ -2,6 +2,7 @@ import React from "react";
 import { Document, Image, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import logoLawAnalytics from "assets/images/large_logo_transparent.png";
 import type { FilaRetroactivo, RetroactivoInput, RetroactivoResultado } from "services/previsionalService";
+import { importeHaber } from "services/previsionalService";
 import { armarBloquesTramos, labelTipoPago, TramoBloque } from "utils/previsionalTramos";
 
 // Planilla del retroactivo previsional (diferencias de haberes mes a mes con intereses).
@@ -306,7 +307,7 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 				<Text style={s.seccion}>Datos del reclamo</Text>
 				<KV
 					k="Haber percibido"
-					v={`${money(input.percibido.importe)} al ${fecha(input.percibido.fecha)}${
+					v={`${importeHaber(input.percibido, money)} al ${fecha(input.percibido.fecha)}${
 						input.percibido.piso && PISOS[input.percibido.piso] ? ` (${PISOS[input.percibido.piso]})` : ""
 					}`}
 				/>
@@ -323,7 +324,7 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 							.join("; ")}
 					/>
 				)}
-				<KV k="Haber reclamado" v={`${money(input.reclamado.importe)} al ${fecha(input.reclamado.fecha)}`} />
+				<KV k="Haber reclamado" v={`${importeHaber(input.reclamado, money)} al ${fecha(input.reclamado.fecha)}`} />
 				{pension && <KV k="Pensión derivada" v={`${numero(pension.porcentaje)} % del haber desde el ${fecha(pension.fecha)}`} />}
 				{input.zonaAustral && <KV k="Zona austral" v="Sí (suma fija de los aumentos por 1,4)" />}
 				<KV k="Período de diferencias" v={`${fecha(r.desde)} - ${mes(ultimoPeriodo)}`} />
@@ -345,6 +346,7 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 							tope.evaluacion && EVALUACION_TOPE[tope.evaluacion],
 							tope.porcentaje ? `quita del ${numero(tope.porcentaje)} %` : null,
 							tope.desde || tope.hasta ? `del ${fecha(tope.desde)} al ${fecha(tope.hasta)}` : null,
+							tope.maximoBadaro ? `haber máximo movido con la movilidad del fallo Badaro desde el ${fecha(tope.maximoBadaro.desde)}` : null,
 						]
 							.filter(Boolean)
 							.join(", ")}

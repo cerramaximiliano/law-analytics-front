@@ -15,6 +15,7 @@ export const CRITERIOS_MOVILIDAD_LABELS: Record<string, string> = {
 	aumentos_porcentuales: "Aumentos generales ANSES, solo el porcentaje (sin sumas fijas)",
 	sin_movilidad: "Sin movilidad",
 	badaro_isal: "Índice de salarios INDEC (Badaro), anual hasta 12/2006",
+	ngr_extendido: "Nivel General de las Remuneraciones extendido (Sánchez), mensual hasta 03/1995",
 	recomposicion_ley_27426: "Recomposición ley 27.426 - Torelli (salto único)",
 	ley_27426_diferido_6_meses: "Continuidad ley 27.426 (IPC + RIPTE)",
 	aumento_mar_2021_sem2_2020: "Aumento de marzo 2021 por el segundo semestre 2020 (Cortes)",

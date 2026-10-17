@@ -57,6 +57,23 @@ export const TRATAMIENTOS_BONO: { value: TratamientoBono; label: string }[] = [
 	{ value: "integrado", label: "Integrado a la diferencia, con SAC y obra social" },
 ];
 
+/** Moneda del haber inicial (el motor la pasa a pesos con los divisores del haber de caja). "ARS" = pesos. */
+export const MONEDAS_HABER = [
+	{ value: "ARS", label: "Pesos (desde 1/1992)" },
+	{ value: "australes", label: "Australes (6/1985 a 12/1991)" },
+	{ value: "pesosArgentinos", label: "Pesos argentinos (6/1983 a 5/1985)" },
+	{ value: "pesosLey", label: "Pesos ley 18.188 (1/1970 a 5/1983)" },
+];
+const monedaMotor = (m?: string) => (m && m !== "ARS" ? m : undefined);
+const NOMBRE_MONEDA: Record<string, string> = { australes: "australes", pesosArgentinos: "pesos argentinos", pesosLey: "pesos ley" };
+/** Importe del haber inicial con su moneda: "$ 1.000,00" o "4.880.140,21 australes". */
+export function importeHaber(h: { importe: number; moneda?: string }, money: (n: number) => string): string {
+	const nombre = h.moneda && NOMBRE_MONEDA[h.moneda];
+	return nombre
+		? `${new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(h.importe)} ${nombre}`
+		: money(h.importe);
+}
+
 export interface RetroactivoInput {
 	desde: string;
 	/** Por defecto true: el interés impago tras un pago devenga intereses (art. 770 inc. c CCyC). */
@@ -66,6 +83,7 @@ export interface RetroactivoInput {
 	percibido: {
 		importe: number;
 		fecha: string;
+		moneda?: string;
 		reajuste?: { fecha: string; importe: number } | null;
 		reajustes?: { fecha: string; importe: number; descuentoPct?: number }[];
 		piso?: PisoPercibido;
@@ -73,11 +91,20 @@ export interface RetroactivoInput {
 	reclamado: {
 		importe: number;
 		fecha: string;
+		moneda?: string;
 		criterios: CriterioMovilidad[];
 		pension?: { fecha: string; porcentaje: number } | null;
 	};
 	zonaAustral?: boolean;
-	tope?: { tipo: TipoTope; evaluacion?: "cadaPeriodo" | "haberActual"; porcentaje?: number | null; desde?: string; hasta?: string };
+	tope?: {
+		tipo: TipoTope;
+		evaluacion?: "cadaPeriodo" | "haberActual";
+		porcentaje?: number | null;
+		desde?: string;
+		hasta?: string;
+		/** Haber máximo movido con Badaro (ISAL hasta 12/2006 y después el porcentaje de la movilidad) desde esa fecha. */
+		maximoBadaro?: { desde: string } | null;
+	};
 	sac?: boolean;
 	obraSocialPct?: number;
 	tasa?: string;
@@ -185,12 +212,14 @@ export function armarInputRetroactivo(values: any): RetroactivoInput {
 		percibido: {
 			importe: Number(values.haberPagadoAnses),
 			fecha: fechaPercibido,
+			moneda: monedaMotor(values.monedaHaberPagado),
 			reajustes: values.tieneReajuste ? reajustesDe(values) : [],
 			piso: values.pisoPercibido || "no",
 		},
 		reclamado: {
 			importe: Number(values.haberReclamado),
 			fecha: aISO(values.haberReclamadoAl) || fechaPercibido,
+			moneda: monedaMotor(values.monedaReclamado),
 			criterios: (values.criteriosMovilidad || [])
 				.filter((c: CriterioMovilidad) => c && c.indiceMovilidad && c.fechaDesde)
 				.map((c: CriterioMovilidad) => ({ indiceMovilidad: c.indiceMovilidad, fechaDesde: aISO(c.fechaDesde) })),
@@ -203,6 +232,10 @@ export function armarInputRetroactivo(values: any): RetroactivoInput {
 			porcentaje: Number.isFinite(topePct) && topePct > 0 ? topePct : null,
 			desde: aISO(values.topeDesde) || undefined,
 			hasta: aISO(values.topeHasta) || undefined,
+			maximoBadaro:
+				values.tipoTope && values.tipoTope !== "no" && values.topeMaximoBadaro
+					? { desde: aISO(values.topeMaximoBadaroDesde) || "2002-01-01" }
+					: null,
 		},
 		sac: values.sac !== false,
 		obraSocialPct: values.obraSocial === "inssjyp_pami" ? 6 : 0,

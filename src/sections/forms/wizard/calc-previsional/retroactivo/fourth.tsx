@@ -165,6 +165,24 @@ export default function FourthForm({ formField }: FourthFormProps) {
 										</Select>
 									</FormControl>
 								</Grid>
+								<Grid item xs={12}>
+									<FormControlLabel
+										control={
+											<Checkbox checked={!!values.topeMaximoBadaro} onChange={(e) => setFieldValue("topeMaximoBadaro", e.target.checked)} />
+										}
+										label="Mover el haber máximo con la movilidad del fallo Badaro"
+									/>
+									<Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+										El máximo del mes anterior a la fecha se actualiza con el índice de salarios INDEC hasta 12/2006 y después con el
+										porcentaje de la movilidad general, en lugar del máximo de ley.
+									</Typography>
+								</Grid>
+								{values.topeMaximoBadaro && (
+									<Grid item xs={12} md={4}>
+										<InputLabel>Desde</InputLabel>
+										<DateInputField name="topeMaximoBadaroDesde" />
+									</Grid>
+								)}
 								{values.topeEvaluacion === "haberActual" && (
 									<Grid item xs={12} md={4}>
 										<InputLabel>Porcentaje de quita (opcional)</InputLabel>

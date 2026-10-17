@@ -21,6 +21,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { DocumentText } from "iconsax-react";
 import { useFormikContext } from "formik";
+import { MONEDAS_HABER } from "services/previsionalService";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import NumberField from "components/UI/NumberField";
@@ -39,7 +40,7 @@ const PRESTACIONES = [
 
 const OBRAS_SOCIALES = [{ value: "inssjyp_pami", label: "INSSJyP (PAMI)" }];
 
-const MONEDAS = [{ value: "ARS", label: "Pesos (ARS)" }];
+const MONEDAS = MONEDAS_HABER;
 
 const formatExpediente = (raw: string): string => {
 	const digits = raw.replace(/\D/g, "").slice(0, 24);

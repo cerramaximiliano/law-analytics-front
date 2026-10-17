@@ -19,7 +19,7 @@ import {
 } from "@mui/material";
 import { Add, Trash } from "iconsax-react";
 import { useFormikContext } from "formik";
-import { PISOS_PERCIBIDO } from "services/previsionalService";
+import { MONEDAS_HABER, PISOS_PERCIBIDO } from "services/previsionalService";
 import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
 
@@ -260,7 +260,7 @@ export default function SecondForm({ formField }: SecondFormProps) {
 						<InputLabel>{monedaReclamado.label}</InputLabel>
 						<FormControl fullWidth>
 							<Select value={values[monedaReclamado.name]} onChange={(e) => setFieldValue(monedaReclamado.name, e.target.value)}>
-								{MONEDAS.map((m) => (
+								{MONEDAS_HABER.map((m) => (
 									<MenuItem key={m.value} value={m.value}>
 										{m.label}
 									</MenuItem>
