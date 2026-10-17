@@ -83,7 +83,7 @@ export type CalculatorType = {
 	// Campos para keepUpdated
 	keepUpdated?: boolean;
 	originalData?: OriginalData;
-	lastUpdate?: LastUpdate;
+	lastUpdate?: LastUpdate | null;
 };
 
 export interface CalculatorPaginationInfo {

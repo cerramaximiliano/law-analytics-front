@@ -426,7 +426,7 @@ export const updateCalculator =
 				type: UPDATE_CALCULATOR,
 				payload: response.data.calculator,
 			});
-			return { success: true };
+			return { success: true, calculator: response.data.calculator as CalculatorType };
 		} catch (error: unknown) {
 			const errorMessage =
 				error instanceof AxiosError ? error.response?.data?.message || "Error al actualizar el cálculo" : "Error al actualizar el cálculo";

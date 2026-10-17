@@ -11,7 +11,6 @@ import AnimateButton from "components/@extended/AnimateButton";
 import { Formik, Form } from "formik";
 import { armarInputRetroactivo, calcularRetroactivo, RetroactivoInput, RetroactivoResultado } from "services/previsionalService";
 import { trackActivity } from "utils/productAnalytics";
-import dayjs from "utils/dayjs-config";
 import { fechaCalculo } from "utils/calculatorDate";
 
 import previsionalFormModel from "./formModel/previsionalFormModel";
@@ -173,6 +172,9 @@ const PrevisionalRetroactivoWizard = ({
 				>
 					Estás editando el cálculo guardado del {enEdicion.fecha ? fechaCalculo(enEdicion.fecha) : "—"}
 					{enEdicion.titular ? ` (${enEdicion.titular})` : ""}. Los cambios no se aplican hasta que guardes.
+					{calculadoraEnEdicion?.keepUpdated
+						? " Tiene la actualización automática activa: al guardar con otra fecha de cierre, se volverá a extender al último mes publicado."
+						: ""}
 				</Alert>
 			)}
 			{calculadoraEnEdicion && !valoresEdicion && (

@@ -7,6 +7,7 @@ import {
 	Box,
 	Button,
 	Chip,
+	CircularProgress,
 	Collapse,
 	Grid,
 	Paper,
@@ -48,15 +49,17 @@ import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 import AlertCalculatorDelete from "pages/calculator/intereses/components/AlertCalculatorDelete";
 import LinkCauseModal from "sections/forms/wizard/calc-laboral/components/linkCauseModal";
 import { dispatch, useSelector } from "store";
-import { getCalculatorsByFilter, clearSelectedCalculators } from "store/reducers/calculator";
+import { getCalculatorsByFilter, clearSelectedCalculators, updateCalculator } from "store/reducers/calculator";
+import { openSnackbar } from "store/reducers/snackbar";
 import { InterestRate } from "store/reducers/interestRates";
 import TablaRetroactivo, { flagsDeFilas } from "components/calculator/TablaRetroactivo";
 import LiquidacionPorTramos from "components/calculator/LiquidacionPorTramos";
 import { sePuedeReabrir } from "sections/forms/wizard/calc-previsional/retroactivo/formModel/valoresDesdeGuardado";
 import { descargarPdfRetroactivo, tieneDetalleParaPdf } from "utils/previsionalPdf";
+import { etiquetaVersion, fechaActualizadoAl, puedeMantenerActualizado } from "utils/previsionalKeepUpdated";
 
 // assets
-import { ArrowDown2, ArrowUp2, DocumentDownload, Edit2, Eye, EyeSlash, Link21, Trash } from "iconsax-react";
+import { ArrowDown2, ArrowUp2, DocumentDownload, Edit2, Eye, EyeSlash, Link21, Refresh, Trash } from "iconsax-react";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -411,6 +414,13 @@ function ExpandedRow({ row, rates }: { row: Row<any>; rates: InterestRate[] }) {
 											<Typography sx={{ ...valueStyle, minWidth: 140 }}>
 												{h?.fecha ? dayjs(h.fecha).format("DD/MM/YYYY HH:mm") : "-"}
 											</Typography>
+											<Chip
+												size="small"
+												variant="light"
+												color={h?.motivo === "actualizacion_automatica" ? "primary" : "secondary"}
+												label={etiquetaVersion(h)}
+												sx={{ height: 20, fontSize: "0.7rem" }}
+											/>
 											<Typography variant="body2" color="text.secondary">
 												Saldo: {formatPesos(saldo)}
 											</Typography>
@@ -589,6 +599,7 @@ export default function SavedPrevisional() {
 	const [deleteTitle, setDeleteTitle] = useState("");
 	const [linkModalOpen, setLinkModalOpen] = useState(false);
 	const [linkCalculationId, setLinkCalculationId] = useState("");
+	const [keepUpdatedLoading, setKeepUpdatedLoading] = useState<string | null>(null);
 
 	const isMountedRef = useRef(false);
 	const isFirstRenderRef = useRef(true);
@@ -645,6 +656,32 @@ export default function SavedPrevisional() {
 		},
 		[navigate],
 	);
+
+	// Mantener actualizado: al activarlo el hub recalcula en el momento y devuelve el cálculo extendido al último mes
+	// con movilidad publicada; al desactivarlo el cálculo queda como estaba.
+	const handleKeepUpdatedChange = useCallback(async (calculatorId: string, keepUpdated: boolean) => {
+		setKeepUpdatedLoading(calculatorId);
+		const avisar = (message: string, color: "success" | "error") =>
+			dispatch(openSnackbar({ open: true, message, variant: "alert", alert: { color }, close: true }));
+		try {
+			const result = await dispatch(updateCalculator(calculatorId, { keepUpdated }) as any);
+			if (result?.success) {
+				const fecha = fechaActualizadoAl(result.calculator);
+				avisar(
+					keepUpdated
+						? `Actualización automática activada: el cálculo se extendió al ${fecha || "último mes publicado"}`
+						: "Actualización automática desactivada",
+					"success",
+				);
+			} else {
+				avisar(result?.error || "No se pudo cambiar la actualización automática", "error");
+			}
+		} catch {
+			avisar("No se pudo cambiar la actualización automática", "error");
+		} finally {
+			setKeepUpdatedLoading(null);
+		}
+	}, []);
 
 	const columns: Column[] = useMemo(
 		() => [
@@ -713,13 +750,28 @@ export default function SavedPrevisional() {
 			{
 				Header: "Saldo",
 				accessor: "amount",
-				Cell: ({ row }: { row: Row<any> }) => (
-					<Typography noWrap fontWeight={500}>
-						{formatPesos(
-							variablesDe(row.original).totales ? row.original.amount : variablesDe(row.original).haberReclamado || row.original.amount,
-						)}
-					</Typography>
-				),
+				Cell: ({ row }: { row: Row<any> }) => {
+					const actualizadoAl = row.original.keepUpdated ? fechaActualizadoAl(row.original) : null;
+					return (
+						<Stack spacing={0.5} alignItems="flex-start">
+							<Typography noWrap fontWeight={500}>
+								{formatPesos(
+									variablesDe(row.original).totales ? row.original.amount : variablesDe(row.original).haberReclamado || row.original.amount,
+								)}
+							</Typography>
+							{actualizadoAl && (
+								<Chip
+									size="small"
+									variant="light"
+									color="primary"
+									icon={<Refresh size={12} />}
+									label={`Actualizado al ${actualizadoAl}`}
+									sx={{ height: 20, fontSize: "0.7rem" }}
+								/>
+							)}
+						</Stack>
+					);
+				},
 			},
 			{
 				Header: "Expediente",
@@ -754,6 +806,9 @@ export default function SavedPrevisional() {
 					const isExpanded = expandedRowId === row.original._id;
 					const titular = row.original.user || variablesDe(row.original).reclamante || "este cálculo";
 					const reabrible = sePuedeReabrir(row.original);
+					const actualizable = puedeMantenerActualizado(row.original);
+					const activo = !!row.original.keepUpdated;
+					const cambiando = keepUpdatedLoading === row.original._id;
 					return (
 						<Stack direction="row" spacing={0.5} justifyContent="center" onClick={(e) => e.stopPropagation()}>
 							<Tooltip title={isExpanded ? "Cerrar detalle" : "Ver detalle"}>
@@ -769,6 +824,28 @@ export default function SavedPrevisional() {
 								<span>
 									<IconButton size="small" color="secondary" disabled={!reabrible} onClick={() => handleEditar(row.original)}>
 										<Edit2 size={18} />
+									</IconButton>
+								</span>
+							</Tooltip>
+							<Tooltip
+								title={
+									!actualizable
+										? "Este cálculo es anterior y no se puede actualizar"
+										: activo
+										? "Se actualiza solo con cada mes de movilidad publicado"
+										: "Activar actualización automática"
+								}
+							>
+								<span>
+									<IconButton
+										size="small"
+										color={activo ? "primary" : "secondary"}
+										aria-label="Mantener actualizado"
+										aria-pressed={activo}
+										disabled={!actualizable || cambiando}
+										onClick={() => handleKeepUpdatedChange(row.original._id, !activo)}
+									>
+										{cambiando ? <CircularProgress size={16} /> : <Refresh size={18} variant={activo ? "Bold" : "Linear"} />}
 									</IconButton>
 								</span>
 							</Tooltip>
@@ -812,7 +889,7 @@ export default function SavedPrevisional() {
 				},
 			},
 		],
-		[expandedRowId, handleToggleExpanded, handleDeleteOpen, handleEditar],
+		[expandedRowId, handleToggleExpanded, handleDeleteOpen, handleEditar, handleKeepUpdatedChange, keepUpdatedLoading, rates],
 	);
 
 	return (
@@ -822,7 +899,7 @@ export default function SavedPrevisional() {
 					columns={columns}
 					data={selectedCalculators}
 					renderRowSubComponent={({ row }: { row: Row<any> }) => <ExpandedRow row={row} rates={rates} />}
-					isLoading={isLoader}
+					isLoading={isLoader && !keepUpdatedLoading}
 					expandedRowId={expandedRowId}
 					onToggleExpanded={handleToggleExpanded}
 				/>
