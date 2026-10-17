@@ -1,5 +1,6 @@
 import React from "react";
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Image, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import logoLawAnalytics from "assets/images/large_logo_transparent.png";
 import type { FilaRetroactivo, RetroactivoInput, RetroactivoResultado } from "services/previsionalService";
 import { armarBloquesTramos, labelTipoPago, TramoBloque } from "utils/previsionalTramos";
 
@@ -8,6 +9,8 @@ import { armarBloquesTramos, labelTipoPago, TramoBloque } from "utils/previsiona
 // Páginas siguientes (horizontal): sin pagos, el detalle mes a mes con la cabecera repetida en cada hoja; con
 // pagos, una hoja por tramo (tabla mensual cortada en el mes del pago + cuadro "Detalle", como lo presentan
 // los liquidadores) y un anexo con los pagos ingresados y el remanente del último pago.
+// Si el hub emitió un código de validación, la página 1 lleva el QR hacia lawanalytics.app/validar/<código> y el pie
+// de todas las hojas repite el código.
 
 export interface DatosPdfRetroactivo {
 	titular?: string | null;
@@ -25,10 +28,20 @@ export interface DatosPdfRetroactivo {
 	emitido: string;
 }
 
+export interface ValidacionPdf {
+	codigo: string;
+	url: string;
+	/** QR de `url` como data URI PNG. */
+	qr: string;
+	/** Fecha y hora de emisión ya formateadas (DD/MM/AAAA HH:mm). */
+	emitidoEn: string;
+}
+
 interface Props {
 	resultado: RetroactivoResultado;
 	input: RetroactivoInput;
 	datos: DatosPdfRetroactivo;
+	validacion?: ValidacionPdf | null;
 }
 
 const money = (n: number | null | undefined) =>
@@ -54,6 +67,7 @@ const mes = (p?: string | null) => (p && /^\d{4}-\d{2}/.test(p) ? `${p.slice(5, 
 const s = StyleSheet.create({
 	page: { padding: 36, paddingBottom: 48, fontSize: 9.5, fontFamily: "Helvetica", color: "#1f2937" },
 	pageLandscape: { padding: 36, paddingBottom: 48, fontSize: 7.5, fontFamily: "Helvetica", color: "#1f2937" },
+	logo: { width: 110, marginBottom: 10 },
 	titulo: { fontSize: 15, fontFamily: "Helvetica-Bold", marginBottom: 2 },
 	sub: { fontSize: 9, color: "#4b5563", marginBottom: 10 },
 	seccion: { fontSize: 10.5, fontFamily: "Helvetica-Bold", marginTop: 12, marginBottom: 4 },
@@ -121,6 +135,20 @@ const s = StyleSheet.create({
 	saldosFila: { flexDirection: "row", paddingVertical: 4, borderBottomWidth: 0.5, borderBottomColor: "#d1d5db" },
 	saldosCelda: { flex: 1, textAlign: "right", paddingRight: 3 },
 	saldosFuerte: { flex: 1.15, textAlign: "right", paddingRight: 3, fontFamily: "Helvetica-Bold" },
+	validacion: {
+		flexDirection: "row",
+		marginTop: 12,
+		padding: 8,
+		borderWidth: 0.75,
+		borderColor: "#9ca3af",
+		borderRadius: 3,
+	},
+	validacionQr: { width: 80, height: 80, marginRight: 10 },
+	validacionTexto: { flex: 1, justifyContent: "center" },
+	validacionTitulo: { fontSize: 10, fontFamily: "Helvetica-Bold", marginBottom: 3 },
+	validacionCodigo: { fontSize: 15, fontFamily: "Courier-Bold", letterSpacing: 1, marginBottom: 3 },
+	validacionDato: { fontSize: 8.5, color: "#374151", marginBottom: 1.5 },
+	validacionNota: { fontSize: 8, color: "#4b5563", marginTop: 3, lineHeight: 1.3 },
 	pie: { position: "absolute", bottom: 22, left: 36, right: 36, fontSize: 7.5, color: "#6b7280", textAlign: "center" },
 });
 
@@ -148,7 +176,7 @@ const EVALUACION_TOPE: Record<string, string> = {
 	haberActual: "porcentaje de quita a la fecha de cierre aplicado a todo el período",
 };
 
-const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos }: Props) => {
+const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: Props) => {
 	const filas = r.filas || [];
 	const ultimoPeriodo = filas.length ? filas[filas.length - 1].periodo : r.haberReajustado?.periodo;
 	const conTope = filas.some((f) => f.quitaTope);
@@ -177,7 +205,9 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos }: Props) => {
 			style={s.pie}
 			fixed
 			render={({ pageNumber, totalPages }) =>
-				`Generado con Law||Analytics · lawanalytics.app · ${datos.emitido} · Página ${pageNumber} de ${totalPages}`
+				`Generado con Law||Analytics · lawanalytics.app · ${datos.emitido}${
+					validacion ? ` · Código de validación ${validacion.codigo}` : ""
+				} · Página ${pageNumber} de ${totalPages}`
 			}
 		/>
 	);
@@ -257,6 +287,7 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos }: Props) => {
 	return (
 		<Document title={tituloDoc} author="Law||Analytics">
 			<Page size="A4" style={s.page}>
+				<Image src={logoLawAnalytics} style={s.logo} />
 				<Text style={s.titulo}>Retroactivo previsional</Text>
 				{datos.titular ? <Text style={{ fontSize: 11, marginBottom: 2 }}>{datos.titular}</Text> : null}
 				<Text style={s.sub}>
@@ -363,6 +394,21 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos }: Props) => {
 					Haber reajustado al cierre ({mes(r.haberReajustado.periodo)}): {money(r.haberReajustado.reclamado)} · haber percibido:{" "}
 					{money(r.haberReajustado.percibido)}.
 				</Text>
+				{validacion && (
+					<View style={s.validacion} wrap={false}>
+						<Image src={validacion.qr} style={s.validacionQr} />
+						<View style={s.validacionTexto}>
+							<Text style={s.validacionTitulo}>Validación del documento</Text>
+							<Text style={s.validacionCodigo}>{validacion.codigo}</Text>
+							<Text style={s.validacionDato}>{validacion.url}</Text>
+							<Text style={s.validacionDato}>Emitido el {validacion.emitidoEn}</Text>
+							<Text style={s.validacionNota}>
+								Escaneá el código o ingresá en lawanalytics.app/validar para comprobar que los totales de este documento coinciden con los
+								emitidos por Law||Analytics.
+							</Text>
+						</View>
+					</View>
+				)}
 
 				{r.avisos && r.avisos.length > 0 && (
 					<>

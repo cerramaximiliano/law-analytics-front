@@ -170,6 +170,7 @@ const descargarPdfGuardado = (calc: any, rates: InterestRate[]) => {
 	return descargarPdfRetroactivo({
 		resultado: raw.resultado,
 		input: raw.input,
+		calculatorId: calc?._id || null,
 		datos: {
 			titular: datos.reclamante || variablesDe(calc).reclamante || calc.user,
 			expedienteAdmin: datos.expedienteAdmin || form.expedienteAdmin || raw.expedienteAdmin,

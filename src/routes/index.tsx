@@ -26,6 +26,8 @@ const UnsubscribePage = Loadable(lazy(() => import("pages/unsubscribe")));
 const AccountDeletionPage = Loadable(lazy(() => import("pages/account-deletion")));
 const TermsPage = Loadable(lazy(() => import("pages/terms")));
 const Plans = Loadable(lazy(() => import("pages/plans")));
+// Destino del QR de los PDF emitidos (retroactivo previsional): comprueba los totales sin login.
+const ValidarDocumentoPage = Loadable(lazy(() => import("pages/public/ValidarDocumento")));
 const FeedbackInvitePage = Loadable(lazy(() => import("pages/feedback-invite")));
 const MovementDocPublicPage = Loadable(lazy(() => import("pages/public/movement-doc")));
 
@@ -90,6 +92,14 @@ export default function ThemeRoutes() {
 				{
 					path: "plans",
 					element: <Plans />,
+				},
+				{
+					path: "validar",
+					element: <ValidarDocumentoPage />,
+				},
+				{
+					path: "validar/:codigo",
+					element: <ValidarDocumentoPage />,
 				},
 			],
 		},

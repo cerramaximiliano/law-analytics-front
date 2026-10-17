@@ -277,6 +277,7 @@ const RUTAS_PUBLICAS = [
 	"/maintenance",
 	"/f/",
 	"/m/",
+	"/validar",
 ];
 
 export const esRutaPublica = (ruta: string): boolean => ruta === "/" || RUTAS_PUBLICAS.some((p) => ruta.startsWith(p));

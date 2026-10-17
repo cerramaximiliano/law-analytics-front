@@ -172,6 +172,7 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 		await descargarPdfRetroactivo({
 			resultado: r,
 			input,
+			calculatorId: enEdicion?.id || null,
 			datos: {
 				titular: reclamante,
 				expedienteAdmin: values.expedienteAdmin,
