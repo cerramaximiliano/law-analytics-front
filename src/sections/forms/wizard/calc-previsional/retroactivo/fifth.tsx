@@ -44,6 +44,18 @@ export default function FifthForm({ formField }: FifthFormProps) {
 
 	const hasError = !!(touched[tasaInteresSentencia.name] && errors[tasaInteresSentencia.name]);
 
+	// El retroactivo sólo admite tasas de interés: índice acumulado (pasiva BCRA) o tasa diaria
+	// sumada (activas, pasivas, BADLAR, TAMAR, TM20). Los índices de actualización de capital
+	// (CER, ICL, UVA, UVI, IPC, RIPTE, inflación mensual) el hub los rechaza con 400 "La tasa X
+	// (indexado) no se puede usar en el retroactivo" — un usuario eligió CER y chocó con eso
+	// (2026-10-16). Si el listado no trae tipoIndice (server viejo) no se filtra.
+	const TIPOS_APLICABLES = ["interesDiario", "porcentajeAcumulado"];
+	const tasasAplicables: { label: string; value: string; tipoIndice?: string }[] = rates.some((r: { tipoIndice?: string }) => r.tipoIndice)
+		? rates.filter((r: { tipoIndice?: string }) => TIPOS_APLICABLES.includes(r.tipoIndice || ""))
+		: rates;
+	const seleccionNoAplicable =
+		!!values[tasaInteresSentencia.name] && !tasasAplicables.some((r) => r.value === values[tasaInteresSentencia.name]);
+
 	return (
 		<>
 			<Typography variant="h5" gutterBottom sx={{ mb: 0.5 }}>
@@ -77,13 +89,18 @@ export default function FifthForm({ formField }: FifthFormProps) {
 							<MenuItem value="" disabled>
 								<Typography color="text.secondary">Seleccione una tasa</Typography>
 							</MenuItem>
-							{rates.map((rate: { label: string; value: string }) => (
+							{tasasAplicables.map((rate: { label: string; value: string }) => (
 								<MenuItem key={rate.value} value={rate.value}>
 									{rate.label}
 								</MenuItem>
 							))}
 						</Select>
 						{hasError && <FormHelperText>{errors[tasaInteresSentencia.name] as string}</FormHelperText>}
+						{seleccionNoAplicable && (
+							<FormHelperText error>
+								La tasa guardada es un índice de actualización y no se puede usar en el retroactivo. Elegí una tasa de interés.
+							</FormHelperText>
+						)}
 					</FormControl>
 				</Box>
 			)}
