@@ -180,6 +180,7 @@ export default function FifthForm({ formField }: FifthFormProps) {
 								thousandSeparator=","
 								allowNegative={false}
 								decimalScale={2}
+								fixedDecimalScale
 								fullWidth
 								placeholder="0,00"
 								name={`pagosACuenta.${i}.importe`}

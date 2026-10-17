@@ -115,6 +115,7 @@ export default function SecondForm({ formField }: SecondFormProps) {
 									thousandSeparator=","
 									allowNegative={false}
 									decimalScale={2}
+									fixedDecimalScale
 									fullWidth
 									placeholder="0,00"
 									name={importeReajuste.name}
@@ -141,6 +142,7 @@ export default function SecondForm({ formField }: SecondFormProps) {
 										thousandSeparator=","
 										allowNegative={false}
 										decimalScale={2}
+										fixedDecimalScale
 										fullWidth
 										placeholder="0,00"
 										name={`reajustesAdicionales.${i}.importe`}
@@ -240,6 +242,7 @@ export default function SecondForm({ formField }: SecondFormProps) {
 							thousandSeparator=","
 							allowNegative={false}
 							decimalScale={2}
+							fixedDecimalScale
 							fullWidth
 							placeholder="0,00"
 							name={haberReclamado.name}

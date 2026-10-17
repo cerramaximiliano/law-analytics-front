@@ -264,6 +264,7 @@ export default function FirstForm({ formField, folder, onFolderChange }: FirstFo
 						thousandSeparator=","
 						allowNegative={false}
 						decimalScale={2}
+						fixedDecimalScale
 						fullWidth
 						placeholder="0,00"
 						name={haberPagadoAnses.name}
