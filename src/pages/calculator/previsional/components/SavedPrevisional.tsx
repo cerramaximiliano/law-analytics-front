@@ -51,6 +51,7 @@ import { dispatch, useSelector } from "store";
 import { getCalculatorsByFilter, clearSelectedCalculators } from "store/reducers/calculator";
 import { InterestRate } from "store/reducers/interestRates";
 import TablaRetroactivo, { flagsDeFilas } from "components/calculator/TablaRetroactivo";
+import LiquidacionPorTramos from "components/calculator/LiquidacionPorTramos";
 import { sePuedeReabrir } from "sections/forms/wizard/calc-previsional/retroactivo/formModel/valoresDesdeGuardado";
 import { descargarPdfRetroactivo, tieneDetalleParaPdf } from "utils/previsionalPdf";
 
@@ -134,7 +135,9 @@ function DetalleMesAMes({ resultado }: { resultado: any }) {
 	}
 
 	const flags = flagsDeFilas(filas, resultado?.bono?.tratamiento);
-	const pagos = Array.isArray(resultado?.pagos) ? resultado.pagos : [];
+	// Con pagos a cuenta se muestra la liquidación por tramos (tabla cortada en cada pago + cuadro Detalle + pagos)
+	const porTramos =
+		Array.isArray(resultado?.pagos) && resultado.pagos.length > 0 && Array.isArray(resultado?.tramos) && resultado.tramos.length > 0;
 
 	return (
 		<Box>
@@ -147,20 +150,10 @@ function DetalleMesAMes({ resultado }: { resultado: any }) {
 				{abierto ? "Ocultar" : "Ver"} el detalle mes a mes ({filas.length} {filas.length === 1 ? "mes" : "meses"})
 			</Button>
 			<Collapse in={abierto} unmountOnExit>
-				<TablaRetroactivo filas={filas} {...flags} totales={resultado?.totales || null} maxHeight={440} />
-				{pagos.length > 0 && (
-					<Box sx={{ mb: 1 }}>
-						<Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
-							Pagos a cuenta
-						</Typography>
-						<Stack spacing={0.25}>
-							{pagos.map((p: any, i: number) => (
-								<Typography key={i} variant="body2">
-									{formatDate(p.fecha)} · {formatPesos(p.importe)}
-								</Typography>
-							))}
-						</Stack>
-					</Box>
+				{porTramos ? (
+					<LiquidacionPorTramos resultado={resultado} />
+				) : (
+					<TablaRetroactivo filas={filas} {...flags} totales={resultado?.totales || null} maxHeight={440} />
 				)}
 			</Collapse>
 		</Box>

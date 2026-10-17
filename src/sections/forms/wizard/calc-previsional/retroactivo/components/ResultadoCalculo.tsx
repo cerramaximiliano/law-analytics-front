@@ -1,21 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import {
-	Alert,
-	Box,
-	Button,
-	Collapse,
-	Grid,
-	Paper,
-	Stack,
-	Table,
-	TableBody,
-	TableCell,
-	TableContainer,
-	TableHead,
-	TableRow,
-	Typography,
-} from "@mui/material";
+import { Alert, Box, Button, Collapse, Grid, Paper, Stack, Typography } from "@mui/material";
 import { ArrowDown2, ArrowUp2, Save2 } from "iconsax-react";
 import { enqueueSnackbar } from "notistack";
 import dayjs from "utils/dayjs-config";
@@ -25,6 +10,7 @@ import { useTeam } from "contexts/TeamContext";
 import useSubscription from "hooks/useSubscription";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import TablaRetroactivo from "components/calculator/TablaRetroactivo";
+import LiquidacionPorTramos from "components/calculator/LiquidacionPorTramos";
 import { RetroactivoInput, RetroactivoResultado } from "services/previsionalService";
 import { DocumentDownload } from "iconsax-react";
 import { descargarPdfRetroactivo } from "utils/previsionalPdf";
@@ -71,6 +57,8 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 	const conTope = r.filas.some((f) => f.quitaTope);
 	const conBono = r.filas.some((f) => f.bonoPercibido || f.bonoReclamado);
 	const bonoAparte = conBono && r.bono?.tratamiento !== "integrado";
+	// Con pagos a cuenta la liquidación se presenta por tramos (tabla mensual cortada en cada pago + cuadro Detalle)
+	const conPagos = r.pagos.length > 0 && r.tramos.length > 0;
 	const reclamante = values.reclamante?.startsWith("__CAUSA_VINCULADA__") ? values.folderName || "" : values.reclamante;
 
 	// formato de `calculationResult` que leen el listado de cálculos, el PDF y las variables calculo.*
@@ -217,16 +205,16 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 
 			<Grid container spacing={2} sx={{ mb: 2 }}>
 				<Grid item xs={12} sm={6} md={3}>
-					<Tarjeta titulo="Capital" monto={r.totales.capital} />
+					<Tarjeta titulo={conPagos ? "Capital (diferencias)" : "Capital"} monto={r.totales.capital} />
 				</Grid>
 				<Grid item xs={12} sm={6} md={3}>
-					<Tarjeta titulo="Intereses" monto={r.totales.intereses} />
+					<Tarjeta titulo={conPagos ? "Intereses (incluye los del saldo)" : "Intereses"} monto={r.totales.intereses} />
 				</Grid>
 				<Grid item xs={12} sm={6} md={3}>
 					<Tarjeta titulo="Pagos a cuenta" monto={r.totales.pagado} />
 				</Grid>
 				<Grid item xs={12} sm={6} md={3}>
-					<Tarjeta titulo="Saldo" monto={r.totales.saldo} fuerte />
+					<Tarjeta titulo={conPagos ? `Saldo al ${fecha(r.consolidacion)}` : "Saldo"} monto={r.totales.saldo} fuerte />
 				</Grid>
 			</Grid>
 
@@ -237,49 +225,6 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 				</Typography>
 			</Paper>
 
-			{r.tramos.length > 0 && (
-				<TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
-					<Table size="small">
-						<TableHead>
-							<TableRow>
-								<TableCell>Tramo hasta</TableCell>
-								<TableCell align="right">Capital del tramo</TableCell>
-								<TableCell align="right">Intereses del tramo</TableCell>
-								<TableCell align="right">Intereses sobre saldo</TableCell>
-								<TableCell align="right">Pago</TableCell>
-								<TableCell align="right">Saldo de capital</TableCell>
-								<TableCell align="right">Intereses impagos</TableCell>
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							{r.tramos.map((t, i) => (
-								<TableRow key={i}>
-									<TableCell>{fecha(t.hasta)}</TableCell>
-									<TableCell align="right" sx={num}>
-										{money(t.capitalTramo)}
-									</TableCell>
-									<TableCell align="right" sx={num}>
-										{money(t.interesTramo)}
-									</TableCell>
-									<TableCell align="right" sx={num}>
-										{money(t.interesSobreSaldo)}
-									</TableCell>
-									<TableCell align="right" sx={num}>
-										{t.pago ? money(t.pago) : "—"}
-									</TableCell>
-									<TableCell align="right" sx={num}>
-										{t.saldoCapital !== undefined ? money(t.saldoCapital) : "—"}
-									</TableCell>
-									<TableCell align="right" sx={num}>
-										{t.saldoInteres ? money(t.saldoInteres) : "—"}
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</TableContainer>
-			)}
-
 			{r.avisos.length > 0 && (
 				<Alert severity="info" sx={{ mb: 2 }}>
 					{r.avisos.map((a, i) => (
@@ -288,17 +233,32 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 				</Alert>
 			)}
 
-			<Button
-				size="small"
-				onClick={() => setVerDetalle((v) => !v)}
-				endIcon={verDetalle ? <ArrowUp2 size={14} /> : <ArrowDown2 size={14} />}
-				sx={{ textTransform: "none", mb: 1 }}
-			>
-				{verDetalle ? "Ocultar" : "Ver"} el detalle mes a mes ({r.filas.length} meses)
-			</Button>
-			<Collapse in={verDetalle}>
-				<TablaRetroactivo filas={r.filas} conTope={conTope} conBono={conBono} bonoAparte={bonoAparte} />
-			</Collapse>
+			{conPagos ? (
+				<Box sx={{ mt: 1 }}>
+					<Typography variant="h6" sx={{ mb: 0.5 }}>
+						Liquidación por tramos
+					</Typography>
+					<Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+						La tabla mensual se corta en el mes de cada pago. Cada pago cancela primero los intereses y el resto va a capital; el saldo
+						sigue devengando intereses hasta el pago siguiente o el cierre. El último cuadro es el resultado de la liquidación.
+					</Typography>
+					<LiquidacionPorTramos resultado={r} />
+				</Box>
+			) : (
+				<>
+					<Button
+						size="small"
+						onClick={() => setVerDetalle((v) => !v)}
+						endIcon={verDetalle ? <ArrowUp2 size={14} /> : <ArrowDown2 size={14} />}
+						sx={{ textTransform: "none", mb: 1 }}
+					>
+						{verDetalle ? "Ocultar" : "Ver"} el detalle mes a mes ({r.filas.length} meses)
+					</Button>
+					<Collapse in={verDetalle}>
+						<TablaRetroactivo filas={r.filas} conTope={conTope} conBono={conBono} bonoAparte={bonoAparte} />
+					</Collapse>
+				</>
+			)}
 
 			<Stack direction="row" spacing={1} justifyContent="flex-end" flexWrap="wrap" useFlexGap sx={{ mt: 2 }}>
 				<Button size="small" onClick={onNuevoCalculo} sx={{ textTransform: "none" }}>

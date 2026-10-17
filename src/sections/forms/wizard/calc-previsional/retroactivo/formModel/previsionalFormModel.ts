@@ -44,6 +44,7 @@ const previsionalFormModel = {
 		topeEvaluacion: { name: "topeEvaluacion", label: "Cómo se evalúa el tope" },
 		topePorcentaje: { name: "topePorcentaje", label: "Porcentaje de quita (opcional)" },
 		sac: { name: "sac", label: "Incluir diferencias de SAC" },
+		// cada ítem: { fecha: DD/MM/AAAA, importe, tipo: administrativo | embargo | deposito_judicial | otro }
 		pagosACuenta: { name: "pagosACuenta", label: "Pagos a cuenta" },
 		bono: { name: "bono", label: "Bono previsional (subsidios, refuerzos y bonos extraordinarios)" },
 		bonoTratamiento: { name: "bonoTratamiento", label: "Cómo se liquida el bono" },

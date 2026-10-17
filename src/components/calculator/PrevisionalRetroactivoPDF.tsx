@@ -1,10 +1,13 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
-import type { RetroactivoInput, RetroactivoResultado } from "services/previsionalService";
+import type { FilaRetroactivo, RetroactivoInput, RetroactivoResultado } from "services/previsionalService";
+import { armarBloquesTramos, labelTipoPago, TramoBloque } from "utils/previsionalTramos";
 
 // Planilla del retroactivo previsional (diferencias de haberes mes a mes con intereses).
-// Página 1 (vertical): datos del reclamo, totales y avisos. Páginas siguientes (horizontal): tramos de pagos
-// y detalle mes a mes, con la cabecera repetida en cada hoja.
+// Página 1 (vertical): datos del reclamo, totales (o saldos a la fecha de cierre si hay pagos) y avisos.
+// Páginas siguientes (horizontal): sin pagos, el detalle mes a mes con la cabecera repetida en cada hoja; con
+// pagos, una hoja por tramo (tabla mensual cortada en el mes del pago + cuadro "Detalle", como lo presentan
+// los liquidadores) y un anexo con los pagos ingresados y el remanente del último pago.
 
 export interface DatosPdfRetroactivo {
 	titular?: string | null;
@@ -83,6 +86,41 @@ const s = StyleSheet.create({
 	totalMonto: { flex: 1, textAlign: "right" },
 	filaMonto: { flexDirection: "row", borderBottomWidth: 0.5, borderBottomColor: "#d1d5db", paddingVertical: 3 },
 	nota: { fontSize: 8.5, color: "#374151", marginTop: 2, lineHeight: 1.35 },
+	tituloTramo: { fontSize: 10, fontFamily: "Helvetica-Bold", marginTop: 4, marginBottom: 2 },
+	detalle: { marginTop: 10, width: "62%" },
+	detalleTitulo: { fontSize: 8.5, fontFamily: "Helvetica-Bold", marginBottom: 3 },
+	detalleCab: {
+		flexDirection: "row",
+		borderBottomWidth: 1,
+		borderBottomColor: "#6b7280",
+		paddingVertical: 3,
+		fontFamily: "Helvetica-Bold",
+		backgroundColor: "#f3f4f6",
+	},
+	detalleFila: { flexDirection: "row", borderBottomWidth: 0.5, borderBottomColor: "#d1d5db", paddingVertical: 3 },
+	detalleSaldo: {
+		flexDirection: "row",
+		paddingVertical: 4,
+		fontFamily: "Helvetica-Bold",
+		borderTopWidth: 1,
+		borderTopColor: "#111827",
+		backgroundColor: "#f3f4f6",
+	},
+	detalleConcepto: { flex: 2.6, paddingRight: 4 },
+	detalleMonto: { flex: 1, textAlign: "right", paddingRight: 3 },
+	negativo: { color: "#b91c1c" },
+	saldosCab: {
+		flexDirection: "row",
+		borderBottomWidth: 1,
+		borderBottomColor: "#6b7280",
+		paddingVertical: 3,
+		fontFamily: "Helvetica-Bold",
+		backgroundColor: "#f3f4f6",
+		fontSize: 8.5,
+	},
+	saldosFila: { flexDirection: "row", paddingVertical: 4, borderBottomWidth: 0.5, borderBottomColor: "#d1d5db" },
+	saldosCelda: { flex: 1, textAlign: "right", paddingRight: 3 },
+	saldosFuerte: { flex: 1.15, textAlign: "right", paddingRight: 3, fontFamily: "Helvetica-Bold" },
 	pie: { position: "absolute", bottom: 22, left: 36, right: 36, fontSize: 7.5, color: "#6b7280", textAlign: "center" },
 });
 
@@ -116,8 +154,8 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos }: Props) => {
 	const conTope = filas.some((f) => f.quitaTope);
 	const conBono = filas.some((f) => f.bonoPercibido || f.bonoReclamado);
 	const bonoAparte = conBono && r.bono?.tratamiento !== "integrado";
-	const conPagos = (r.pagos || []).length > 0;
-	const interesSobreSaldoTotal = (r.tramos || []).reduce((acc, t) => acc + (Number(t.interesSobreSaldo) || 0), 0);
+	const bloques = armarBloquesTramos(r);
+	const conPagos = bloques.tramos.length > 0;
 	const sumaCapital = filas.reduce((acc, f) => acc + (f.capital || 0), 0);
 	const sumaInteres = filas.reduce((acc, f) => acc + (f.interes || 0), 0);
 	const tasaTexto = r.tasa?.descripcion || datos.tasaLabel || r.tasa?.tipo || "-";
@@ -130,6 +168,9 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos }: Props) => {
 		.filter(Boolean)
 		.join(" · ");
 	const tituloDoc = datos.titular ? `Retroactivo previsional - ${datos.titular}` : "Retroactivo previsional";
+	const notaCapital = `Importes en pesos. Capital = diferencia${conTope ? " menos la quita por tope" : ""}${
+		bonoAparte ? " más la diferencia de bono" : ""
+	} + SAC - obra social.`;
 
 	const Pie = () => (
 		<Text
@@ -139,6 +180,78 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos }: Props) => {
 				`Generado con Law||Analytics · lawanalytics.app · ${datos.emitido} · Página ${pageNumber} de ${totalPages}`
 			}
 		/>
+	);
+
+	const CabeceraMensual = () => (
+		<View style={s.cab} fixed>
+			<Text style={s.celdaPeriodo}>Período</Text>
+			<Text style={s.derecha}>Percibido</Text>
+			<Text style={s.derecha}>Reclamado</Text>
+			<Text style={s.derecha}>Diferencia</Text>
+			{conTope && <Text style={s.derecha}>Quita tope</Text>}
+			{conBono && <Text style={s.derecha}>Bono percibido</Text>}
+			{conBono && <Text style={s.derecha}>Bono reclamado</Text>}
+			<Text style={s.derecha}>SAC</Text>
+			<Text style={s.derecha}>Obra social</Text>
+			{bonoAparte && <Text style={s.derecha}>Dif. de bono</Text>}
+			<Text style={s.derecha}>Capital</Text>
+			<Text style={s.derecha}>Interés</Text>
+		</View>
+	);
+
+	const FilaMensual = ({ f }: { f: FilaRetroactivo }) => (
+		<View style={s.fila} wrap={false}>
+			<Text style={s.celdaPeriodo}>{mes(f.periodo)}</Text>
+			<Text style={s.derecha}>{importe(f.percibido)}</Text>
+			<Text style={s.derecha}>{importe(f.reclamado)}</Text>
+			<Text style={s.derecha}>{importe(f.diferencia)}</Text>
+			{conTope && <Text style={s.derecha}>{importeOGuion(f.quitaTope)}</Text>}
+			{conBono && <Text style={s.derecha}>{importeOGuion(f.bonoPercibido)}</Text>}
+			{conBono && <Text style={s.derecha}>{importeOGuion(f.bonoReclamado)}</Text>}
+			<Text style={s.derecha}>{importeOGuion(f.sac)}</Text>
+			<Text style={s.derecha}>{importeOGuion(f.obraSocial)}</Text>
+			{bonoAparte && <Text style={s.derecha}>{importeOGuion(f.diferenciaBono)}</Text>}
+			<Text style={s.derecha}>{importe(f.capital)}</Text>
+			<Text style={s.derecha}>{importe(f.interes)}</Text>
+		</View>
+	);
+
+	const FilaSuma = ({ label, capital, interes }: { label: string; capital: number; interes: number }) => (
+		<View style={s.totalFila} wrap={false}>
+			<Text style={s.celdaPeriodo}>{label}</Text>
+			<Text style={s.derecha} />
+			<Text style={s.derecha} />
+			<Text style={s.derecha} />
+			{conTope && <Text style={s.derecha} />}
+			{conBono && <Text style={s.derecha} />}
+			{conBono && <Text style={s.derecha} />}
+			<Text style={s.derecha} />
+			<Text style={s.derecha} />
+			{bonoAparte && <Text style={s.derecha} />}
+			<Text style={s.derecha}>{importe(capital)}</Text>
+			<Text style={s.derecha}>{importe(interes)}</Text>
+		</View>
+	);
+
+	// Cuadro "Detalle" del tramo: no se parte entre hojas
+	const CuadroDetalle = ({ tramo }: { tramo: TramoBloque }) => (
+		<View style={s.detalle} wrap={false}>
+			<Text style={s.detalleTitulo}>Detalle del tramo {tramo.indice + 1}</Text>
+			<View style={s.detalleCab}>
+				<Text style={s.detalleConcepto}>Concepto</Text>
+				<Text style={s.detalleMonto}>Capital</Text>
+				<Text style={s.detalleMonto}>Intereses</Text>
+				<Text style={s.detalleMonto}>Total</Text>
+			</View>
+			{tramo.detalle.map((d) => (
+				<View key={d.label} style={[d.negrita ? s.detalleSaldo : s.detalleFila, d.negativo ? s.negativo : {}]}>
+					<Text style={s.detalleConcepto}>{d.label}</Text>
+					<Text style={s.detalleMonto}>{d.capital === null ? "-" : money(d.capital)}</Text>
+					<Text style={s.detalleMonto}>{money(d.intereses)}</Text>
+					<Text style={s.detalleMonto}>{money(d.total)}</Text>
+				</View>
+			))}
+		</View>
 	);
 
 	return (
@@ -207,13 +320,45 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos }: Props) => {
 						}`}
 					/>
 				)}
-				{conPagos && <KV k="Pagos a cuenta" v={r.pagos.map((p) => `${money(p.importe)} el ${fecha(p.fecha)}`).join("; ")} />}
+				{(r.pagos || []).length > 0 && (
+					<KV
+						k="Pagos a cuenta"
+						v={r.pagos.map((p) => `${money(p.importe)} el ${fecha(p.fecha)} (${labelTipoPago(p.tipo).toLowerCase()})`).join("; ")}
+					/>
+				)}
 
-				<Text style={s.seccion}>Totales</Text>
-				<FilaMonto concepto="Capital (diferencias netas)" monto={r.totales.capital} />
-				<FilaMonto concepto={`Intereses al ${fecha(r.consolidacion)}`} monto={r.totales.intereses} />
-				{r.totales.pagado ? <FilaMonto concepto="Pagos a cuenta" monto={-r.totales.pagado} /> : null}
-				<FilaMonto concepto="Saldo" monto={r.totales.saldo} negrita />
+				{conPagos ? (
+					<>
+						<Text style={s.seccion}>Saldos a la fecha de cierre</Text>
+						<View wrap={false}>
+							<View style={s.saldosCab}>
+								<Text style={s.saldosCelda}>Capital</Text>
+								<Text style={s.saldosCelda}>Intereses</Text>
+								<Text style={s.saldosCelda}>Total</Text>
+								<Text style={s.saldosCelda}>Pagado</Text>
+								<Text style={s.saldosFuerte}>Saldo al {fecha(r.consolidacion)}</Text>
+							</View>
+							<View style={s.saldosFila}>
+								<Text style={s.saldosCelda}>{money(r.totales.capital)}</Text>
+								<Text style={s.saldosCelda}>{money(r.totales.intereses)}</Text>
+								<Text style={s.saldosCelda}>{money(r.totales.total)}</Text>
+								<Text style={s.saldosCelda}>{money(-r.totales.pagado)}</Text>
+								<Text style={s.saldosFuerte}>{money(r.totales.saldo)}</Text>
+							</View>
+						</View>
+						<Text style={s.nota}>
+							Capital: diferencias de haberes del período. Intereses: los de cada mes hasta el corte de su tramo más los devengados por el
+							saldo impago después de cada pago. La liquidación por tramos de las hojas siguientes llega a este saldo.
+						</Text>
+					</>
+				) : (
+					<>
+						<Text style={s.seccion}>Totales</Text>
+						<FilaMonto concepto="Capital (diferencias netas)" monto={r.totales.capital} />
+						<FilaMonto concepto={`Intereses al ${fecha(r.consolidacion)}`} monto={r.totales.intereses} />
+						<FilaMonto concepto="Saldo" monto={r.totales.saldo} negrita />
+					</>
+				)}
 				<Text style={s.nota}>
 					Haber reajustado al cierre ({mes(r.haberReajustado.periodo)}): {money(r.haberReajustado.reclamado)} · haber percibido:{" "}
 					{money(r.haberReajustado.percibido)}.
@@ -233,105 +378,85 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos }: Props) => {
 				<Pie />
 			</Page>
 
-			<Page size="A4" orientation="landscape" style={s.pageLandscape}>
-				{conPagos && r.tramos && r.tramos.length > 0 && (
-					<View>
-						<Text style={s.seccionTabla}>Tramos e imputación de pagos</Text>
+			{conPagos ? (
+				<>
+					{bloques.tramos.map((t) => {
+						const pago = t.corte.pago;
+						const sumaCapitalTramo = t.filas.reduce((acc, f) => acc + (f.capital || 0), 0);
+						const sumaInteresTramo = t.filas.reduce((acc, f) => acc + (f.interes || 0), 0);
+						return (
+							<Page key={t.indice} size="A4" orientation="landscape" style={s.pageLandscape}>
+								<Text style={s.tituloTramo}>
+									Tramo {t.indice + 1} · {mes(t.desde)} a {mes(t.hasta.slice(0, 7))}
+									{pago ? ` · corte por pago del ${fecha(pago.fecha)}` : ` · hasta el cierre del ${fecha(t.hasta)}`}
+								</Text>
+								<Text style={s.notaTabla}>
+									{notaCapital} Interés de cada mes calculado hasta el {fecha(t.hasta)} ({tasaTexto}).
+								</Text>
+								{t.filas.length > 0 ? (
+									<>
+										<CabeceraMensual />
+										{t.filas.map((f) => (
+											<FilaMensual key={f.periodo} f={f} />
+										))}
+										<FilaSuma label="Suma del tramo" capital={sumaCapitalTramo} interes={sumaInteresTramo} />
+									</>
+								) : (
+									<Text style={s.notaTabla}>Sin diferencias mensuales en este tramo.</Text>
+								)}
+								<CuadroDetalle tramo={t} />
+								<Pie />
+							</Page>
+						);
+					})}
+
+					<Page size="A4" orientation="landscape" style={s.pageLandscape}>
+						<Text style={s.tituloTramo}>Pagos ingresados a la liquidación</Text>
 						<Text style={s.notaTabla}>
-							Importes en pesos. Cada pago cancela primero los intereses devengados y el resto se imputa a capital.
+							Cada pago cancela primero los intereses devengados hasta su fecha y el resto se imputa a capital. El saldo que queda sigue
+							devengando intereses hasta el pago siguiente o la fecha de cierre.
 						</Text>
-						<View style={s.cab} fixed>
-							<Text style={s.celda}>Hasta</Text>
-							<Text style={s.derecha}>Capital del tramo</Text>
-							<Text style={s.derecha}>Intereses del tramo</Text>
-							<Text style={s.derecha}>Intereses sobre saldo</Text>
-							<Text style={s.derecha}>Pago</Text>
+						<View style={s.cab}>
+							<Text style={s.celda}>Fecha</Text>
+							<Text style={[s.celda, { flex: 2 }]}>Tipo</Text>
+							<Text style={s.derecha}>Importe</Text>
 							<Text style={s.derecha}>Imputado a intereses</Text>
 							<Text style={s.derecha}>Imputado a capital</Text>
-							<Text style={s.derecha}>Saldo de capital</Text>
-							<Text style={s.derecha}>Intereses impagos</Text>
+							<Text style={s.derecha}>Saldo luego del pago</Text>
 						</View>
-						{r.tramos.map((t, i) => (
-							<View style={s.fila} key={i} wrap={false}>
-								<Text style={s.celda}>{fecha(t.hasta)}</Text>
-								<Text style={s.derecha}>{importe(t.capitalTramo)}</Text>
-								<Text style={s.derecha}>{importe(t.interesTramo)}</Text>
-								<Text style={s.derecha}>{importeOGuion(t.interesSobreSaldo)}</Text>
-								<Text style={s.derecha}>{importeOGuion(t.pago)}</Text>
-								<Text style={s.derecha}>{importeOGuion(t.imputadoInteres)}</Text>
-								<Text style={s.derecha}>{importeOGuion(t.imputadoCapital)}</Text>
-								<Text style={s.derecha}>{t.saldoCapital !== undefined ? importe(t.saldoCapital) : "-"}</Text>
-								<Text style={s.derecha}>{importeOGuion(t.saldoInteres)}</Text>
+						{bloques.pagos.map((p, i) => (
+							<View style={s.fila} key={`${p.fecha}-${i}`} wrap={false}>
+								<Text style={s.celda}>{fecha(p.fecha)}</Text>
+								<Text style={[s.celda, { flex: 2 }]}>{p.label}</Text>
+								<Text style={s.derecha}>{money(p.importe)}</Text>
+								<Text style={s.derecha}>{money(p.imputadoInteres)}</Text>
+								<Text style={s.derecha}>{money(p.imputadoCapital)}</Text>
+								<Text style={s.derecha}>{money(p.saldoLuego)}</Text>
 							</View>
 						))}
-					</View>
-				)}
-
-				<Text style={s.seccionTabla}>Detalle mes a mes ({filas.length} meses)</Text>
-				<Text style={s.notaTabla}>
-					Importes en pesos. Capital = diferencia{conTope ? " menos la quita por tope" : ""}
-					{bonoAparte ? " más la diferencia de bono" : ""} + SAC - obra social.{" "}
-					{conPagos
-						? `Interés calculado desde cada mes hasta el cierre del tramo en que se liquida (el mes del pago siguiente o el ${fecha(
-								r.consolidacion,
-						  )})`
-						: `Interés calculado desde cada mes hasta el ${fecha(r.consolidacion)}`}{" "}
-					({tasaTexto}).
-				</Text>
-				<View style={s.cab} fixed>
-					<Text style={s.celdaPeriodo}>Período</Text>
-					<Text style={s.derecha}>Percibido</Text>
-					<Text style={s.derecha}>Reclamado</Text>
-					<Text style={s.derecha}>Diferencia</Text>
-					{conTope && <Text style={s.derecha}>Quita tope</Text>}
-					{conBono && <Text style={s.derecha}>Bono percibido</Text>}
-					{conBono && <Text style={s.derecha}>Bono reclamado</Text>}
-					<Text style={s.derecha}>SAC</Text>
-					<Text style={s.derecha}>Obra social</Text>
-					{bonoAparte && <Text style={s.derecha}>Dif. de bono</Text>}
-					<Text style={s.derecha}>Capital</Text>
-					<Text style={s.derecha}>Interés</Text>
-				</View>
-				{filas.map((f) => (
-					<View style={s.fila} key={f.periodo} wrap={false}>
-						<Text style={s.celdaPeriodo}>{mes(f.periodo)}</Text>
-						<Text style={s.derecha}>{importe(f.percibido)}</Text>
-						<Text style={s.derecha}>{importe(f.reclamado)}</Text>
-						<Text style={s.derecha}>{importe(f.diferencia)}</Text>
-						{conTope && <Text style={s.derecha}>{importeOGuion(f.quitaTope)}</Text>}
-						{conBono && <Text style={s.derecha}>{importeOGuion(f.bonoPercibido)}</Text>}
-						{conBono && <Text style={s.derecha}>{importeOGuion(f.bonoReclamado)}</Text>}
-						<Text style={s.derecha}>{importeOGuion(f.sac)}</Text>
-						<Text style={s.derecha}>{importeOGuion(f.obraSocial)}</Text>
-						{bonoAparte && <Text style={s.derecha}>{importeOGuion(f.diferenciaBono)}</Text>}
-						<Text style={s.derecha}>{importe(f.capital)}</Text>
-						<Text style={s.derecha}>{importe(f.interes)}</Text>
-					</View>
-				))}
-				<View style={s.totalFila} wrap={false}>
-					<Text style={s.celdaPeriodo}>Totales</Text>
-					<Text style={s.derecha} />
-					<Text style={s.derecha} />
-					<Text style={s.derecha} />
-					{conTope && <Text style={s.derecha} />}
-					{conBono && <Text style={s.derecha} />}
-					{conBono && <Text style={s.derecha} />}
-					<Text style={s.derecha} />
-					<Text style={s.derecha} />
-					{bonoAparte && <Text style={s.derecha} />}
-					<Text style={s.derecha}>{importe(sumaCapital)}</Text>
-					<Text style={s.derecha}>{importe(sumaInteres)}</Text>
-				</View>
-				{conPagos && interesSobreSaldoTotal > 0 && (
+						{bloques.remanente && (
+							<Text style={[s.nota, { fontSize: 8 }]}>
+								Remanente del último pago actualizado al {fecha(bloques.remanente.hasta)}: {money(bloques.remanente.saldoLuego)} + intereses
+								sobre ese saldo {money(bloques.remanente.interesesPosteriores)} = {money(bloques.remanente.actualizado)}.
+							</Text>
+						)}
+						<Pie />
+					</Page>
+				</>
+			) : (
+				<Page size="A4" orientation="landscape" style={s.pageLandscape}>
+					<Text style={s.seccionTabla}>Detalle mes a mes ({filas.length} meses)</Text>
 					<Text style={s.notaTabla}>
-						La columna Interés suma {importe(sumaInteres)}. Los intereses totales ({importe(r.totales.intereses)}) incluyen además{" "}
-						{importe(interesSobreSaldoTotal)} de interés sobre el saldo impago de los tramos anteriores (tabla de tramos), que no se reparte
-						por mes.
+						{notaCapital} Interés calculado desde cada mes hasta el {fecha(r.consolidacion)} ({tasaTexto}).
 					</Text>
-				)}
-
-				<Pie />
-			</Page>
+					<CabeceraMensual />
+					{filas.map((f) => (
+						<FilaMensual key={f.periodo} f={f} />
+					))}
+					<FilaSuma label="Totales" capital={sumaCapital} interes={sumaInteres} />
+					<Pie />
+				</Page>
+			)}
 		</Document>
 	);
 };

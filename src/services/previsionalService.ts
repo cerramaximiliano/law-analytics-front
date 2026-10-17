@@ -12,9 +12,25 @@ export interface CriterioMovilidad {
 	fechaDesde: string;
 }
 
+/** Tipo descriptivo del pago a cuenta: no cambia la imputación, sólo cómo se muestra en el resultado y el PDF. */
+export type TipoPago = "administrativo" | "embargo" | "deposito_judicial" | "otro";
+
+export const TIPO_PAGO_LABELS: Record<TipoPago, string> = {
+	administrativo: "Pago administrativo (ANSES)",
+	embargo: "Transferencia por embargo",
+	deposito_judicial: "Depósito judicial",
+	otro: "Otro pago",
+};
+
+export const TIPOS_PAGO: { value: TipoPago; label: string }[] = (Object.keys(TIPO_PAGO_LABELS) as TipoPago[]).map((value) => ({
+	value,
+	label: TIPO_PAGO_LABELS[value],
+}));
+
 export interface PagoACuenta {
 	fecha: string;
 	importe: number | string;
+	tipo?: TipoPago;
 }
 
 export type PisoPercibido = "no" | "minimo" | "minimo82";
@@ -63,7 +79,7 @@ export interface RetroactivoInput {
 	sac?: boolean;
 	obraSocialPct?: number;
 	tasa?: string;
-	pagos?: { fecha: string; importe: number }[];
+	pagos?: { fecha: string; importe: number; tipo?: TipoPago }[];
 	bono?: "no" | { percibido: boolean; reclamado: boolean; tratamiento: TratamientoBono };
 }
 
@@ -87,6 +103,22 @@ export interface FilaRetroactivo {
 	diferenciaBono?: number;
 }
 
+/** Tramo de la liquidación (se corta en el mes de cada pago). El último no tiene pago ni saldos. */
+export interface TramoRetroactivo {
+	hasta: string;
+	capitalTramo: number;
+	interesTramo: number;
+	interesSobreSaldo: number;
+	pago?: number;
+	/** Fecha y tipo del pago que corta el tramo (el hub los manda desde 10/2026; los guardados viejos no los traen). */
+	pagoFecha?: string;
+	pagoTipo?: TipoPago | null;
+	imputadoInteres?: number;
+	imputadoCapital?: number;
+	saldoCapital?: number;
+	saldoInteres?: number;
+}
+
 export interface RetroactivoResultado {
 	success: boolean;
 	desde: string;
@@ -94,18 +126,8 @@ export interface RetroactivoResultado {
 	tasa: { tipo: string; descripcion?: string; metodo: string };
 	bono?: { percibido: boolean; reclamado: boolean; tratamiento: TratamientoBono };
 	filas: FilaRetroactivo[];
-	pagos: { fecha: string; importe: number }[];
-	tramos: {
-		hasta: string;
-		capitalTramo: number;
-		interesTramo: number;
-		interesSobreSaldo: number;
-		pago?: number;
-		imputadoInteres?: number;
-		imputadoCapital?: number;
-		saldoCapital?: number;
-		saldoInteres?: number;
-	}[];
+	pagos: { fecha: string; importe: number; tipo?: TipoPago; detalle?: string }[];
+	tramos: TramoRetroactivo[];
 	totales: { capital: number; intereses: number; total: number; pagado: number; saldo: number };
 	haberReajustado: { periodo: string; reclamado: number; percibido: number };
 	avisos: string[];
@@ -169,7 +191,7 @@ export function armarInputRetroactivo(values: any): RetroactivoInput {
 		tasa: values.tasaInteresSentencia || "tasaPasivaBCRA",
 		pagos: (values.pagosACuenta || [])
 			.filter((p: PagoACuenta) => p && p.fecha && Number(p.importe) > 0)
-			.map((p: PagoACuenta) => ({ fecha: aISO(p.fecha), importe: Number(p.importe) })),
+			.map((p: PagoACuenta) => ({ fecha: aISO(p.fecha), importe: Number(p.importe), tipo: p.tipo || "administrativo" })),
 		bono:
 			values.bono && values.bono !== "no"
 				? {

@@ -69,7 +69,7 @@ export function valoresDesdeInput(input: RetroactivoInput, datosExpediente?: any
 		topeHasta: aDDMMYYYY(input.tope?.hasta),
 		sac: input.sac !== false,
 		tasaInteresSentencia: input.tasa || "",
-		pagosACuenta: (input.pagos || []).map((p) => ({ fecha: aDDMMYYYY(p.fecha), importe: p.importe })),
+		pagosACuenta: (input.pagos || []).map((p) => ({ fecha: aDDMMYYYY(p.fecha), importe: p.importe, tipo: p.tipo || "administrativo" })),
 		bono: bono ? (bono.percibido && bono.reclamado ? "ambos" : bono.reclamado ? "reclamado" : "percibido") : "no",
 		bonoTratamiento: bono?.tratamiento || "decreto",
 	};

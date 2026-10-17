@@ -22,7 +22,7 @@ import NumberField from "components/UI/NumberField";
 import { useFormikContext } from "formik";
 import { useSelector, dispatch } from "store";
 import { getInterestRates } from "store/reducers/interestRates";
-import { OPCIONES_BONO, TRATAMIENTOS_BONO } from "services/previsionalService";
+import { OPCIONES_BONO, TIPOS_PAGO, TRATAMIENTOS_BONO } from "services/previsionalService";
 
 interface FifthFormProps {
 	formField: any;
@@ -158,12 +158,24 @@ export default function FifthForm({ formField }: FifthFormProps) {
 				siguiente o la fecha de cierre. Las diferencias de los meses posteriores se liquidan aparte.
 			</Typography>
 			<Stack spacing={1.5}>
-				{(values.pagosACuenta || []).map((_: any, i: number) => (
+				{(values.pagosACuenta || []).map((p: any, i: number) => (
 					<Grid container spacing={2} key={i} alignItems="flex-end">
-						<Grid item xs={12} sm={5}>
+						<Grid item xs={12} sm={3}>
 							<DateInputField name={`pagosACuenta.${i}.fecha`} />
 						</Grid>
-						<Grid item xs={10} sm={5}>
+						<Grid item xs={12} sm={4}>
+							<InputLabel sx={{ mb: 0.5 }}>Tipo</InputLabel>
+							<FormControl fullWidth>
+								<Select value={p?.tipo || "administrativo"} onChange={(e) => setFieldValue(`pagosACuenta.${i}.tipo`, e.target.value)}>
+									{TIPOS_PAGO.map((o) => (
+										<MenuItem key={o.value} value={o.value}>
+											{o.label}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+						</Grid>
+						<Grid item xs={10} sm={4}>
 							<NumberField
 								thousandSeparator=","
 								allowNegative={false}
@@ -174,7 +186,7 @@ export default function FifthForm({ formField }: FifthFormProps) {
 								InputProps={{ startAdornment: "$" }}
 							/>
 						</Grid>
-						<Grid item xs={2}>
+						<Grid item xs={2} sm={1}>
 							<IconButton
 								color="error"
 								onClick={() =>
@@ -195,7 +207,7 @@ export default function FifthForm({ formField }: FifthFormProps) {
 				size="small"
 				variant="outlined"
 				startIcon={<Add size={16} />}
-				onClick={() => setFieldValue("pagosACuenta", [...(values.pagosACuenta || []), { fecha: "", importe: "" }])}
+				onClick={() => setFieldValue("pagosACuenta", [...(values.pagosACuenta || []), { fecha: "", importe: "", tipo: "administrativo" }])}
 			>
 				Agregar pago
 			</Button>

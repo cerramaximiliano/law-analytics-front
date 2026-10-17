@@ -12,7 +12,9 @@ interface TablaRetroactivoProps {
 	conBono?: boolean;
 	bonoAparte?: boolean;
 	/** Si se pasa, agrega una fila final con los totales de capital e interés. */
-	totales?: RetroactivoResultado["totales"] | null;
+	totales?: Pick<RetroactivoResultado["totales"], "capital" | "intereses"> | null;
+	/** Texto de la fila final (default "Totales"; en la liquidación por tramos, "Suma del tramo"). */
+	sumaLabel?: string;
 	maxHeight?: number;
 }
 
@@ -30,7 +32,15 @@ export function flagsDeFilas(filas: FilaRetroactivo[], tratamientoBono?: string)
 	return { conTope, conBono, bonoAparte: conBono && tratamientoBono !== "integrado" };
 }
 
-const TablaRetroactivo = ({ filas, conTope, conBono, bonoAparte, totales, maxHeight = 520 }: TablaRetroactivoProps) => {
+const TablaRetroactivo = ({
+	filas,
+	conTope,
+	conBono,
+	bonoAparte,
+	totales,
+	sumaLabel = "Totales",
+	maxHeight = 520,
+}: TablaRetroactivoProps) => {
 	const derivados = flagsDeFilas(filas);
 	const tope = conTope ?? derivados.conTope;
 	const bono = conBono ?? derivados.conBono;
@@ -109,7 +119,7 @@ const TablaRetroactivo = ({ filas, conTope, conBono, bonoAparte, totales, maxHei
 					))}
 					{totales && (
 						<TableRow sx={{ "& td": { fontWeight: 600, bgcolor: "action.hover" } }}>
-							<TableCell colSpan={columnas - 2}>Totales</TableCell>
+							<TableCell colSpan={columnas - 2}>{sumaLabel}</TableCell>
 							<TableCell align="right" sx={num}>
 								{money(totales.capital)}
 							</TableCell>
