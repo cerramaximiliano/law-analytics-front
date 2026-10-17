@@ -38,6 +38,7 @@ const {
 		pagosACuenta,
 		bono,
 		bonoTratamiento,
+		capitalizarInteresImpago,
 	},
 } = previsionalFormModel;
 
@@ -80,6 +81,7 @@ const formInitialValues = {
 	[pagosACuenta.name]: [],
 	[bono.name]: "no",
 	[bonoTratamiento.name]: "decreto",
+	[capitalizarInteresImpago.name]: true,
 };
 
 export default formInitialValues;

@@ -48,6 +48,7 @@ const previsionalFormModel = {
 		pagosACuenta: { name: "pagosACuenta", label: "Pagos a cuenta" },
 		bono: { name: "bono", label: "Bono previsional (subsidios, refuerzos y bonos extraordinarios)" },
 		bonoTratamiento: { name: "bonoTratamiento", label: "Cómo se liquida el bono" },
+		capitalizarInteresImpago: { name: "capitalizarInteresImpago", label: "Capitalizar el interés impago" },
 	},
 };
 

@@ -90,7 +90,9 @@ function pagoDeTramo(t: TramoRetroactivo, k: number, pagos: RetroactivoResultado
  * Un último tramo vacío (pago en el mes del cierre: sin meses, sin capital ni intereses) se omite porque el
  * cuadro del tramo anterior ya es el saldo final.
  */
-export function armarBloquesTramos(resultado: Pick<RetroactivoResultado, "filas" | "pagos" | "tramos" | "consolidacion">): BloquesTramos {
+export function armarBloquesTramos(
+	resultado: Pick<RetroactivoResultado, "filas" | "pagos" | "tramos" | "consolidacion" | "capitalizarInteresImpago">,
+): BloquesTramos {
 	const tramosMotor = resultado.tramos || [];
 	const pagosMotor = resultado.pagos || [];
 	if (!tramosMotor.length || !pagosMotor.length) return { tramos: [], pagos: [] };
@@ -129,7 +131,9 @@ export function armarBloquesTramos(resultado: Pick<RetroactivoResultado, "filas"
 				total: red(saldoCapitalAnterior + saldoInteresAnterior),
 			});
 			detalle.push({
-				label: `Intereses sobre el saldo del ${fechaCorta(corteAnterior)} al ${fechaCorta(t.hasta)}`,
+				label: `Intereses sobre el saldo${resultado.capitalizarInteresImpago === false ? " de capital" : ""} del ${fechaCorta(
+					corteAnterior,
+				)} al ${fechaCorta(t.hasta)}`,
 				capital: null,
 				intereses: interesSobreSaldo,
 				total: interesSobreSaldo,

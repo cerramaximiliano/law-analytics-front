@@ -59,6 +59,8 @@ export const TRATAMIENTOS_BONO: { value: TratamientoBono; label: string }[] = [
 
 export interface RetroactivoInput {
 	desde: string;
+	/** Por defecto true: el interés impago tras un pago devenga intereses (art. 770 inc. c CCyC). */
+	capitalizarInteresImpago?: boolean;
 	hasta?: string;
 	consolidacion: string;
 	percibido: {
@@ -121,6 +123,7 @@ export interface TramoRetroactivo {
 
 export interface RetroactivoResultado {
 	success: boolean;
+	capitalizarInteresImpago?: boolean;
 	desde: string;
 	consolidacion: string;
 	tasa: { tipo: string; descripcion?: string; metodo: string };
@@ -192,6 +195,7 @@ export function armarInputRetroactivo(values: any): RetroactivoInput {
 		pagos: (values.pagosACuenta || [])
 			.filter((p: PagoACuenta) => p && p.fecha && Number(p.importe) > 0)
 			.map((p: PagoACuenta) => ({ fecha: aISO(p.fecha), importe: Number(p.importe), tipo: p.tipo || "administrativo" })),
+		capitalizarInteresImpago: values.capitalizarInteresImpago !== false,
 		bono:
 			values.bono && values.bono !== "no"
 				? {

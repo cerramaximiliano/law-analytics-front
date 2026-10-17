@@ -157,6 +157,20 @@ export default function FifthForm({ formField }: FifthFormProps) {
 				intereses y después a capital, y el saldo que queda (capital e intereses impagos) sigue devengando como capital hasta el pago
 				siguiente o la fecha de cierre. Las diferencias de los meses posteriores se liquidan aparte.
 			</Typography>
+			<FormControlLabel
+				sx={{ mb: 0.5 }}
+				control={
+					<Checkbox
+						checked={values.capitalizarInteresImpago !== false}
+						onChange={(e) => setFieldValue("capitalizarInteresImpago", e.target.checked)}
+					/>
+				}
+				label="Capitalizar el interés que un pago no alcanza a cubrir"
+			/>
+			<Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
+				Art. 770 inc. c del Código Civil y Comercial: procede cuando hay liquidación aprobada, el juez mandó pagar y la demandada quedó en
+				mora. Si lo destildás, solo el saldo de capital sigue devengando intereses y el interés impago queda como interés.
+			</Typography>
 			<Stack spacing={1.5}>
 				{(values.pagosACuenta || []).map((p: any, i: number) => (
 					<Grid container spacing={2} key={i} alignItems="flex-end">
