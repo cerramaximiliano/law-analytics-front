@@ -35,7 +35,7 @@ import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 // types
 import { CalculatorType, CalculatorPaginationInfo } from "types/calculator";
-import dayjs from "utils/dayjs-config";
+import { fechaCalculo } from "utils/calculatorDate";
 
 interface ArchivedCalculatorsModalProps {
 	open: boolean;
@@ -520,7 +520,7 @@ const ArchivedCalculatorsModal = ({
 													</TableCell>
 													<TableCell>
 														<Typography sx={{ fontSize: "0.8rem", color: "text.primary", fontVariantNumeric: "tabular-nums" }}>
-															{dayjs(item.date).format("DD/MM/YYYY")}
+															{fechaCalculo(item.date)}
 														</Typography>
 													</TableCell>
 													<TableCell>

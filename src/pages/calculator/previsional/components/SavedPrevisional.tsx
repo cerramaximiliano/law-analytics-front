@@ -37,6 +37,7 @@ import {
 	useTable,
 } from "react-table";
 import dayjs from "utils/dayjs-config";
+import { fechaCalculo } from "utils/calculatorDate";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -666,7 +667,7 @@ export default function SavedPrevisional() {
 				Header: "Fecha",
 				accessor: "date",
 				Cell: ({ row }: { row: Row<any> }) => (
-					<Typography noWrap>{row.original.date ? dayjs(row.original.date).format("DD/MM/YYYY") : "-"}</Typography>
+					<Typography noWrap>{fechaCalculo(row.original.date)}</Typography>
 				),
 			},
 			{

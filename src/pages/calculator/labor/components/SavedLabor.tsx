@@ -25,7 +25,7 @@ import {
 	CircularProgress,
 } from "@mui/material";
 import { dispatch, useSelector } from "store";
-import dayjs from "utils/dayjs-config";
+import { fechaCalculo } from "utils/calculatorDate";
 import {
 	useFilters,
 	useExpanded,
@@ -1332,7 +1332,7 @@ const SavedLabor = () => {
 				Header: "Fecha",
 				accessor: "date",
 				Cell: ({ row }: { row: Row<CalculatorData> }) => (
-					<Typography noWrap>{row.original.date ? dayjs(row.original.date).format("DD/MM/YYYY") : "-"}</Typography>
+					<Typography noWrap>{fechaCalculo(row.original.date)}</Typography>
 				),
 			},
 			{

@@ -41,7 +41,10 @@ const TablaRetroactivo = ({ filas, conTope, conBono, bonoAparte, totales, maxHei
 	return (
 		<TableContainer component={Paper} variant="outlined" sx={{ maxHeight, mb: 2 }}>
 			<Table size="small" stickyHeader>
-				<TableHead>
+				{/* El override del tema pone `position: relative` en las celdas de encabezado (salvo la última) para
+				    dibujar el separador y pisa el `sticky` de MUI: al hacer scroll se iba todo el encabezado menos
+				    la última columna. */}
+				<TableHead sx={{ "& .MuiTableCell-head.MuiTableCell-stickyHeader": { position: "sticky", bgcolor: "background.paper" } }}>
 					<TableRow>
 						<TableCell>Mes</TableCell>
 						<TableCell align="right">Percibido</TableCell>

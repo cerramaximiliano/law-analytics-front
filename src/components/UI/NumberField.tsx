@@ -48,7 +48,12 @@ export default function NumberField(props: NumberFieldProps) {
 			allowNegative={allowNegative ?? false}
 			allowLeadingZeros={allowLeadingZeros ?? false}
 			decimalScale={decimalScale ?? 0}
-			thousandSeparator={thousandSeparator ?? undefined}
+			// Formato argentino: miles con punto y decimales con coma. Se acepta también el punto como
+			// separador decimal para quien tipea "2558.50"; antes, al tipear "2558,50" la coma se descartaba
+			// y el campo tomaba 255.850.
+			thousandSeparator={thousandSeparator ? "." : undefined}
+			decimalSeparator=","
+			allowedDecimalSeparators={[",", "."]}
 			type="text"
 			customInput={TextField}
 			error={Boolean(meta.touched && meta.error)}

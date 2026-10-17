@@ -77,6 +77,10 @@ export default function FirstForm({ formField, folder, onFolderChange }: FirstFo
 	const theme = useTheme();
 	const { values, setFieldValue, errors, touched } = useFormikContext<any>();
 
+	// Carpeta con la que arranca el selector: la de `?folder=` o, al reabrir un guardado, la del formulario.
+	const carpetaInicial =
+		folder || (values.folderId ? { _id: values.folderId, folderName: values.folderName || "Carpeta vinculada", materia: "" } : null);
+
 	const handleMethodChange = (method: "manual" | "causa", folderData: any, folderMeta?: { folderId: string; folderName: string }) => {
 		setInputMethod(method);
 		setSelectedFolder(folderData);
@@ -104,7 +108,12 @@ export default function FirstForm({ formField, folder, onFolderChange }: FirstFo
 				Datos del expediente
 			</Typography>
 
-			<LinkCauseSelector requiereField={reclamante.name} requeridoField={folderId.name} onMethodChange={handleMethodChange} />
+			<LinkCauseSelector
+				requiereField={reclamante.name}
+				requeridoField={folderId.name}
+				onMethodChange={handleMethodChange}
+				initialFolder={carpetaInicial}
+			/>
 
 			<Divider sx={{ my: 2.5 }} />
 

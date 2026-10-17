@@ -71,6 +71,7 @@ import { useTeam } from "contexts/TeamContext";
 import { CalculatorType } from "types/calculator";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 import dayjs from "utils/dayjs-config";
+import { fechaCalculo } from "utils/calculatorDate";
 // Importamos el componente selector de guías
 import { GuideSelector } from "components/guides";
 // Importamos componentes para gestión de archivado
@@ -533,7 +534,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 				<Grid item xs={12} md={6}>
 					<InfoSection eyebrow="Datos" title="Información general" icon={<DocumentText size={14} variant="Bulk" />}>
 						<Stack spacing={1.25}>
-							<Row label="Fecha" value={dayjs(data.date).format("DD/MM/YYYY")} />
+							<Row label="Fecha" value={fechaCalculo(data.date)} />
 							<Row label="Categoría" value={getClassTypeTitle(data.classType)} />
 							<Row label="Subcategoría" value={getSubClassTypeTitle(data.subClassType, data.classType)} />
 						</Stack>

@@ -2,6 +2,7 @@ import React from "react";
 import { useState, useMemo } from "react";
 import { useParams } from "react-router";
 import dayjs from "utils/dayjs-config";
+import { fechaCalculo } from "utils/calculatorDate";
 import {
 	Skeleton,
 	Grid,
@@ -274,7 +275,7 @@ const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, onDelete, previous
 
 					<Stack direction="row" justifyContent="space-between" alignItems="center">
 						<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
-							{row.date ? dayjs(row.date).format("DD/MM/YYYY") : "N/D"}
+							{fechaCalculo(row.date) === "-" ? "N/D" : fechaCalculo(row.date)}
 						</Typography>
 						{percentageChange !== null && (
 							<Stack direction="row" spacing={0.375} alignItems="center">
@@ -524,9 +525,7 @@ const CalcTableResponsive = ({
 							value={formatAmount(firstClaimedData?.amount ?? folderData?.monto ?? null)}
 							icon={<Calculator size={18} variant="Bulk" />}
 							accent={BRAND_BLUE}
-							subtitle={
-								firstClaimedData?.date ? `Registrado el ${dayjs(firstClaimedData.date).format("DD/MM/YYYY")}` : "Monto inicial del reclamo"
-							}
+							subtitle={firstClaimedData?.date ? `Registrado el ${fechaCalculo(firstClaimedData.date)}` : "Monto inicial del reclamo"}
 							trend={0}
 							isLoading={isLoader}
 							isDark={isDark}
@@ -650,7 +649,7 @@ const CalcTableResponsive = ({
 																			fontVariantNumeric: "tabular-nums",
 																		}}
 																	>
-																		{row.date ? dayjs(row.date).format("DD/MM/YYYY") : "N/D"}
+																		{fechaCalculo(row.date) === "-" ? "N/D" : fechaCalculo(row.date)}
 																	</Typography>
 																	<Typography sx={{ fontSize: "0.68rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 																		{row.date ? dayjs(row.date).fromNow() : "N/D"}

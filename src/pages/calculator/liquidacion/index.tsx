@@ -8,7 +8,7 @@ import LiquidacionWizard, { LiquidacionPrefill } from "sections/forms/wizard/cal
 import { dispatch, useSelector } from "store";
 import { getCalculatorsByUserId } from "store/reducers/calculator";
 import { BRAND_BLUE } from "themes/dashboardTokens";
-import dayjs from "utils/dayjs-config";
+import { fechaCalculo } from "utils/calculatorDate";
 import type { CalculatorType } from "types/calculator";
 
 const ORIGEN: Record<string, string> = {
@@ -41,7 +41,7 @@ function prefillDe(c: CalculatorType): LiquidacionPrefill {
 	if (!segments.length && tipoDe(c) === "intereses" && v.tasa && v.fechaInicial && v.fechaFinal) {
 		segments = [{ startDate: v.fechaInicial, endDate: v.fechaFinal, rate: v.tasa, capital: capitalDe(c), interest: 0, coefficient: 0 }];
 	}
-	const fecha = c.date ? dayjs(c.date).format("DD/MM/YYYY") : "";
+	const fecha = c.date ? fechaCalculo(c.date) : "";
 	return {
 		capital: capitalDe(c),
 		segments: segments.map((s, i) => ({ ...s, id: s.id || `guardado-${i}` })),
@@ -123,7 +123,7 @@ function LiquidacionLayout() {
 									[
 										(ORIGEN[tipoDe(c)] || tipoDe(c)).replace(/^de /, "").replace(/^\w/, (l) => l.toUpperCase()),
 										c.folderName || "sin carpeta",
-										c.date ? dayjs(c.date).format("DD/MM/YYYY") : "",
+										c.date ? fechaCalculo(c.date) : "",
 										`capital ${pesos(capitalDe(c))}`,
 									]
 										.filter(Boolean)

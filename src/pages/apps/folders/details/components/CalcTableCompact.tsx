@@ -2,6 +2,7 @@ import React from "react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams } from "react-router";
 import dayjs from "utils/dayjs-config";
+import { fechaCalculo } from "utils/calculatorDate";
 import {
 	Skeleton,
 	Button,
@@ -322,9 +323,7 @@ const CalcTableCompact = ({
 							value={formatAmount(firstClaimedData?.amount ?? folderData?.monto ?? null)}
 							icon={<Calculator size={24} />}
 							color="primary"
-							subtitle={
-								firstClaimedData?.date ? `Registrado el ${dayjs(firstClaimedData.date).format("DD/MM/YYYY")}` : "Monto inicial del reclamo"
-							}
+							subtitle={firstClaimedData?.date ? `Registrado el ${fechaCalculo(firstClaimedData.date)}` : "Monto inicial del reclamo"}
 							trend={0} // Show neutral trend to maintain consistent height
 							isLoading={isLoader}
 						/>
@@ -407,7 +406,7 @@ const CalcTableCompact = ({
 															content={
 																<Stack spacing={0.25}>
 																	<Typography variant="body2" fontWeight={500}>
-																		{row.date ? dayjs(row.date).format("DD/MM/YYYY") : "N/D"}
+																		{fechaCalculo(row.date) === "-" ? "N/D" : fechaCalculo(row.date)}
 																	</Typography>
 																	<Typography variant="caption" color="text.secondary">
 																		{row.date ? dayjs(row.date).fromNow() : "N/D"}

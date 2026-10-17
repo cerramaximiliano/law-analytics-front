@@ -30,6 +30,8 @@ import { Folder } from "types/folders";
 interface LinkCauseSelectorProps {
 	requiereField: string;
 	requeridoField: string;
+	/** Carpeta ya vinculada (al reabrir un guardado o entrar con `?folder=`): arranca en "Seleccionar Carpeta". */
+	initialFolder?: Folder | null;
 	onMethodChange: (
 		method: "manual" | "causa",
 		selectedFolder: Folder | null,
@@ -43,16 +45,25 @@ interface GetFoldersResponse {
 	error?: any;
 }
 
-const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, requeridoField, onMethodChange }) => {
+const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, requeridoField, onMethodChange, initialFolder }) => {
 	const theme = useTheme();
-	const [selectedMethod, setSelectedMethod] = useState<"manual" | "causa">("manual");
+	const [selectedMethod, setSelectedMethod] = useState<"manual" | "causa">(initialFolder ? "causa" : "manual");
 	const [openModal, setOpenModal] = useState(false);
 	const [folders, setFolders] = useState<Folder[]>([]);
-	const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
+	const [selectedFolder, setSelectedFolder] = useState<Folder | null>(initialFolder || null);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 
 	const userId = useSelector((state) => state.auth.user?._id);
+
+	// La carpeta vinculada puede llegar después del primer render (el listado del store se carga aparte).
+	useEffect(() => {
+		if (initialFolder && initialFolder._id !== selectedFolder?._id) {
+			setSelectedFolder(initialFolder);
+			setSelectedMethod("causa");
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [initialFolder?._id]);
 
 	useEffect(() => {
 		if (openModal) {
@@ -225,7 +236,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 											<Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
 												{selectedFolder.folderName}
 											</Typography>
-											<Chip label={selectedFolder.materia} size="small" sx={{ height: 18, fontSize: "0.65rem" }} />
+											{selectedFolder.materia && <Chip label={selectedFolder.materia} size="small" sx={{ height: 18, fontSize: "0.65rem" }} />}
 											{selectedFolder.description && (
 												<Tooltip title={selectedFolder.description}>
 													<Typography

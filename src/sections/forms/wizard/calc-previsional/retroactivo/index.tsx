@@ -12,6 +12,7 @@ import { Formik, Form } from "formik";
 import { armarInputRetroactivo, calcularRetroactivo, RetroactivoInput, RetroactivoResultado } from "services/previsionalService";
 import { trackActivity } from "utils/productAnalytics";
 import dayjs from "utils/dayjs-config";
+import { fechaCalculo } from "utils/calculatorDate";
 
 import previsionalFormModel from "./formModel/previsionalFormModel";
 import formInitialValues from "./formModel/formInitialValues";
@@ -170,7 +171,7 @@ const PrevisionalRetroactivoWizard = ({
 						</Button>
 					}
 				>
-					Estás editando el cálculo guardado del {enEdicion.fecha ? dayjs(enEdicion.fecha).format("DD/MM/YYYY") : "—"}
+					Estás editando el cálculo guardado del {enEdicion.fecha ? fechaCalculo(enEdicion.fecha) : "—"}
 					{enEdicion.titular ? ` (${enEdicion.titular})` : ""}. Los cambios no se aplican hasta que guardes.
 				</Alert>
 			)}
