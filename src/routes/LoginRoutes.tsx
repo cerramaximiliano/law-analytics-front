@@ -21,6 +21,7 @@ const AuthCodeVerification = Loadable(lazyRetry(() => import("pages/auth/auth1/c
 const OauthLogin = Loadable(lazyRetry(() => import("pages/oauth/login")));
 const OauthConsent = Loadable(lazyRetry(() => import("pages/oauth/consent")));
 const OauthUpgradeRequired = Loadable(lazyRetry(() => import("pages/oauth/upgrade-required")));
+const SessionHandoff = Loadable(lazyRetry(() => import("pages/auth/handoff")));
 
 // Landing pública de conectores AI (Claude.ai + ChatGPT) — Phase 7 PR 7.3.
 // Renombrada de /integraciones/claude-ai a /integraciones/conectores-ai
@@ -86,6 +87,12 @@ const LoginRoutes = {
 				{
 					path: "oauth/upgrade-required",
 					element: <OauthUpgradeRequired />,
+				},
+				{
+					// Traspaso de sesión desde la app móvil (utils/sessionHandoff.ts). Sin guard:
+					// canjea el token del fragmento y recarga logueado en el destino.
+					path: "handoff",
+					element: <SessionHandoff />,
 				},
 				{
 					path: "integraciones/conectores-ai",

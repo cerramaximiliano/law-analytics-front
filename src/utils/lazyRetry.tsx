@@ -270,6 +270,7 @@ const RUTAS_PUBLICAS = [
 	"/cookies-policy",
 	"/unsubscribe",
 	"/oauth",
+	"/handoff",
 	"/forgot-password",
 	"/reset-password",
 	"/code-verification",
