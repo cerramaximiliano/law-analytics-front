@@ -42,6 +42,9 @@ export function valoresDesdeInput(input: RetroactivoInput, datosExpediente?: any
 		haberPagadoAnses: oVacio(input.percibido?.importe),
 		haberPagadoAl: aDDMMYYYY(input.percibido?.fecha),
 		pisoPercibido: input.percibido?.piso || "no",
+		percibidoManual: input.percibido?.modo === "manual",
+		percibidosMensuales:
+			input.percibido?.modo === "manual" ? (input.percibido.manual || []).map((x) => ({ periodo: x.periodo, importe: x.importe })) : [],
 		tieneReajuste: reajustes.length > 0,
 		fechaAltaReajuste: aDDMMYYYY(primerReajuste?.fecha),
 		importeReajuste: oVacio(primerReajuste?.importe),

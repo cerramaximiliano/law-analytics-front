@@ -2,7 +2,7 @@ import React from "react";
 import { Document, Image, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import logoLawAnalytics from "assets/images/large_logo_transparent.png";
 import type { FilaRetroactivo, RetroactivoInput, RetroactivoResultado } from "services/previsionalService";
-import { importeHaber } from "services/previsionalService";
+import { descripcionPercibidoManual, importeHaber } from "services/previsionalService";
 import { armarBloquesTramos, labelTipoPago, TramoBloque } from "utils/previsionalTramos";
 
 // Planilla del retroactivo previsional (diferencias de haberes mes a mes con intereses).
@@ -307,9 +307,12 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 				<Text style={s.seccion}>Datos del reclamo</Text>
 				<KV
 					k="Haber percibido"
-					v={`${importeHaber(input.percibido, money)} al ${fecha(input.percibido.fecha)}${
-						input.percibido.piso && PISOS[input.percibido.piso] ? ` (${PISOS[input.percibido.piso]})` : ""
-					}`}
+					v={
+						descripcionPercibidoManual(input.percibido) ||
+						`${importeHaber(input.percibido, money)} al ${fecha(input.percibido.fecha)}${
+							input.percibido.piso && PISOS[input.percibido.piso] ? ` (${PISOS[input.percibido.piso]})` : ""
+						}`
+					}
 				/>
 				{reajustes.length > 0 && (
 					<KV

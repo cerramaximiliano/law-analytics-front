@@ -56,7 +56,8 @@ import TablaRetroactivo, { flagsDeFilas } from "components/calculator/TablaRetro
 import LiquidacionPorTramos from "components/calculator/LiquidacionPorTramos";
 import { sePuedeReabrir } from "sections/forms/wizard/calc-previsional/retroactivo/formModel/valoresDesdeGuardado";
 import { descargarPdfRetroactivo, tieneDetalleParaPdf } from "utils/previsionalPdf";
-import { etiquetaVersion, fechaActualizadoAl, puedeMantenerActualizado } from "utils/previsionalKeepUpdated";
+import { etiquetaVersion, fechaActualizadoAl, puedeMantenerActualizado, tienePercibidoManual } from "utils/previsionalKeepUpdated";
+import { AVISO_PERCIBIDO_MANUAL_SIN_ACTUALIZACION } from "services/previsionalService";
 
 // assets
 import { ArrowDown2, ArrowUp2, DocumentDownload, Edit2, Eye, EyeSlash, Link21, Refresh, Trash } from "iconsax-react";
@@ -829,7 +830,9 @@ export default function SavedPrevisional() {
 							</Tooltip>
 							<Tooltip
 								title={
-									!actualizable
+									!actualizable && tienePercibidoManual(row.original)
+										? AVISO_PERCIBIDO_MANUAL_SIN_ACTUALIZACION
+										: !actualizable
 										? "Este cálculo es anterior y no se puede actualizar"
 										: activo
 										? "Se actualiza solo con cada mes de movilidad publicado"

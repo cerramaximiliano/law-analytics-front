@@ -173,7 +173,7 @@ const PrevisionalRetroactivoWizard = ({
 					Estás editando el cálculo guardado del {enEdicion.fecha ? fechaCalculo(enEdicion.fecha) : "—"}
 					{enEdicion.titular ? ` (${enEdicion.titular})` : ""}. Los cambios no se aplican hasta que guardes.
 					{calculadoraEnEdicion?.keepUpdated
-						? " Tiene la actualización automática activa: al guardar con otra fecha de cierre, se volverá a extender al último mes publicado."
+						? " Tiene la actualización automática activa: al guardar con otra fecha de cierre, se volverá a extender al último mes publicado. Si cargás los percibidos mes a mes, se desactiva."
 						: ""}
 				</Alert>
 			)}

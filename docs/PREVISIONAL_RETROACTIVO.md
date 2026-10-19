@@ -7,6 +7,7 @@ dónde vive cada pieza del front (estado al 2026-10-17).
 |---|---|
 | Asistente (5 pasos) | `src/sections/forms/wizard/calc-previsional/retroactivo/{first..fifth}.tsx` |
 | Paso 1–2: haberes, moneda del haber inicial (pesos, australes, pesos argentinos, pesos ley) | `first.tsx`, `second.tsx`; opciones en `MONEDAS_HABER` (`src/services/previsionalService.ts`) |
+| Paso 2: percibidos cargados mes a mes (grilla, precarga con el percibido automático, pegar desde Excel, completitud; sin actualización automática) | `retroactivo/components/PercibidosMensuales.tsx`; `mesesDelPeriodo`, `mesesSinPercibido`, `seriePercibidoSugerida` en `src/services/previsionalService.ts`; test `src/services/previsionalPercibidoManual.test.ts` |
 | Paso 3: movilidad por tramos y patrones ("Badaro", "Sánchez y Badaro", Torelli, continuidad, Cortes) | `third.tsx` |
 | Paso 4: tope art. 9 inc. 3, haber máximo movido por Badaro, tope Villanustre (porcentaje, salarios, pauta salarial) | `fourth.tsx` |
 | Paso 5: tasa, bono, pagos a cuenta con tipo, capitalización del interés impago | `fifth.tsx` |

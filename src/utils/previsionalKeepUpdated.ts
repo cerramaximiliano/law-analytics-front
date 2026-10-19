@@ -1,9 +1,17 @@
 // "Mantener actualizado" de los retroactivos previsionales guardados: el hub extiende el cálculo a cada mes de
 // movilidad publicado y, al cambiar de mes, archiva la versión anterior en `variables.historial`.
 
-/** ¿El guardado se puede mantener actualizado? Hace falta lo que recibió el motor (`variables.input`). */
+/** ¿Los percibidos del guardado se cargaron a mano? Entonces no hay percibido para los meses nuevos. */
+export function tienePercibidoManual(calc: any): boolean {
+	return calc?.variables?.input?.percibido?.modo === "manual";
+}
+
+/**
+ * ¿El guardado se puede mantener actualizado? Hace falta lo que recibió el motor (`variables.input`) y que el percibido
+ * no se haya cargado a mano.
+ */
 export function puedeMantenerActualizado(calc: any): boolean {
-	return !!calc?.variables?.input;
+	return !!calc?.variables?.input && !tienePercibidoManual(calc);
 }
 
 /** Fecha de cierre del cálculo (`variables.input.consolidacion`, YYYY-MM-DD) como DD/MM/AAAA; null si falta. */

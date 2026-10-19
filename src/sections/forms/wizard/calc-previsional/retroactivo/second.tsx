@@ -22,6 +22,7 @@ import { useFormikContext } from "formik";
 import { MONEDAS_HABER, PISOS_PERCIBIDO } from "services/previsionalService";
 import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
+import PercibidosMensuales from "./components/PercibidosMensuales";
 
 const MONEDAS = [{ value: "ARS", label: "Pesos (ARS)" }];
 
@@ -328,6 +329,10 @@ export default function SecondForm({ formField }: SecondFormProps) {
 					</Grid>
 				</Grid>
 			</Box>
+
+			<Divider sx={{ my: 3 }} />
+
+			<PercibidosMensuales />
 		</>
 	);
 }

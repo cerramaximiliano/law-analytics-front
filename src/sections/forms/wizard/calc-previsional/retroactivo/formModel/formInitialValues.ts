@@ -78,6 +78,8 @@ const formInitialValues = {
 	[tasaInteresSentencia.name]: "",
 	[haberReclamadoAl.name]: "",
 	[pisoPercibido.name]: "no",
+	percibidoManual: false,
+	percibidosMensuales: [],
 	[zonaAustral.name]: false,
 	[pensionFecha.name]: "",
 	[pensionPorcentaje.name]: "",

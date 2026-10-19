@@ -11,7 +11,7 @@ import useSubscription from "hooks/useSubscription";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import TablaRetroactivo from "components/calculator/TablaRetroactivo";
 import LiquidacionPorTramos from "components/calculator/LiquidacionPorTramos";
-import { importeHaber, RetroactivoInput, RetroactivoResultado } from "services/previsionalService";
+import { descripcionPercibidoManual, importeHaber, RetroactivoInput, RetroactivoResultado } from "services/previsionalService";
 import { DocumentDownload } from "iconsax-react";
 import { descargarPdfRetroactivo } from "utils/previsionalPdf";
 
@@ -65,7 +65,11 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 	const calculationResult = useMemo(
 		() => ({
 			reclamo: [
-				{ key: "Haber percibido", value: `${importeHaber(input.percibido, money)} al ${fecha(input.percibido.fecha)}` },
+				{
+					key: "Haber percibido",
+					value:
+						descripcionPercibidoManual(input.percibido) || `${importeHaber(input.percibido, money)} al ${fecha(input.percibido.fecha)}`,
+				},
 				{ key: "Haber reclamado", value: `${importeHaber(input.reclamado, money)} al ${fecha(input.reclamado.fecha)}` },
 				{
 					key: "Período de diferencias",

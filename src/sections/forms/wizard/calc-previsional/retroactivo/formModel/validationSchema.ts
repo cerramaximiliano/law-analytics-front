@@ -1,6 +1,7 @@
 import * as Yup from "yup";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import { mesesSinPercibido } from "services/previsionalService";
 
 dayjs.extend(customParseFormat);
 
@@ -64,6 +65,21 @@ const validationSchema = [
 				if (!value) return true;
 				return !dayjs(value, "DD/MM/YYYY").isAfter(dayjs());
 			}),
+		// Percibidos cargados a mano: un importe por cada mes reclamado (sin percibido no hay diferencia)
+		percibidosMensuales: Yup.array().test("percibidos-completos", "", function () {
+			if (!this.parent.percibidoManual) return true;
+			const faltan = mesesSinPercibido(this.parent);
+			if (!faltan.length) return true;
+			const lista = faltan
+				.slice(0, 6)
+				.map((p) => `${p.slice(5)}/${p.slice(0, 4)}`)
+				.join(", ");
+			return this.createError({
+				message: `Falta el haber percibido de ${faltan.length} mes(es) del período reclamado (${lista}${
+					faltan.length > 6 ? "…" : ""
+				}): cada mes reclamado necesita su percibido`,
+			});
+		}),
 		fechaCierre: Yup.string()
 			.required("Ingrese la fecha de cierre de la liquidación")
 			.test("cierre-no-anterior-a-hasta", "No puede ser anterior a la fecha hasta del período reclamado", function (value) {

@@ -74,6 +74,46 @@ export function importeHaber(h: { importe: number; moneda?: string }, money: (n:
 		: money(h.importe);
 }
 
+/** Haber percibido cargado a mano para un mes (periodo "YYYY-MM"). */
+export interface PercibidoMensual {
+	periodo: string;
+	importe: number;
+}
+
+export const AVISO_PERCIBIDO_MANUAL_SIN_ACTUALIZACION =
+	"Los haberes percibidos se cargaron a mano: la actualización automática no está disponible porque no hay percibidos para los meses nuevos.";
+
+/** Meses ("YYYY-MM") del período de diferencias: desde el inicio hasta el fin del reclamo (o el cierre, si es anterior). */
+export function mesesDelPeriodo(values: any): string[] {
+	const desde = dayjs(values.fechaDesdeReclamado, "DD/MM/YYYY", true);
+	const fin = [values.fechaHastaReclamado, values.fechaCierre]
+		.map((v) => dayjs(v, "DD/MM/YYYY", true))
+		.filter((d) => d.isValid())
+		.sort((a, b) => a.valueOf() - b.valueOf())[0];
+	if (!desde.isValid() || !fin || fin.isBefore(desde, "month")) return [];
+	const out: string[] = [];
+	for (let m = desde.startOf("month"); !m.isAfter(fin, "month") && out.length < 1200; m = m.add(1, "month")) out.push(m.format("YYYY-MM"));
+	return out;
+}
+
+/** Meses del período sin un percibido mayor a 0 cargado. */
+export function mesesSinPercibido(values: any): string[] {
+	const cargados = new Set(
+		(values.percibidosMensuales || []).filter((x: any) => x && Number(x.importe) > 0).map((x: PercibidoMensual) => x.periodo),
+	);
+	return mesesDelPeriodo(values).filter((p) => !cargados.has(p));
+}
+
+/** Descripción del percibido cargado a mano para el resultado y el PDF; null si no es manual. */
+export function descripcionPercibidoManual(percibido: RetroactivoInput["percibido"] | undefined): string | null {
+	if (!percibido || percibido.modo !== "manual") return null;
+	const l = percibido.manual || [];
+	const mes = (p?: string) => (p ? `${p.slice(5)}/${p.slice(0, 4)}` : "");
+	return `Cargado por el usuario mes a mes (${l.length} ${l.length === 1 ? "mes" : "meses"}${
+		l.length ? `, ${mes(l[0].periodo)} a ${mes(l[l.length - 1].periodo)}` : ""
+	}), sin movilidad`;
+}
+
 export interface RetroactivoInput {
 	desde: string;
 	/** Por defecto true: el interés impago tras un pago devenga intereses (art. 770 inc. c CCyC). */
@@ -87,6 +127,9 @@ export interface RetroactivoInput {
 		reajuste?: { fecha: string; importe: number } | null;
 		reajustes?: { fecha: string; importe: number; descuentoPct?: number }[];
 		piso?: PisoPercibido;
+		/** "manual": el percibido es exactamente `manual` (un importe por mes de todo el período). */
+		modo?: "manual";
+		manual?: PercibidoMensual[];
 	};
 	reclamado: {
 		importe: number;
@@ -175,6 +218,8 @@ export interface RetroactivoResultado {
 	tramos: TramoRetroactivo[];
 	totales: { capital: number; intereses: number; total: number; pagado: number; saldo: number };
 	haberReajustado: { periodo: string; reclamado: number; percibido: number };
+	/** El percibido salió de la grilla cargada a mano (sin movilidad). */
+	percibidoManual?: boolean;
 	avisos: string[];
 }
 
@@ -200,6 +245,18 @@ function reajustesDe(values: any) {
 		.sort((a, b) => (a.fecha < b.fecha ? -1 : 1));
 }
 
+/** Solo los meses del período, en orden: lo cargado fuera del período no se manda. */
+function percibidosDelPeriodo(values: any): PercibidoMensual[] {
+	const m = new Map<string, number>(
+		(values.percibidosMensuales || [])
+			.filter((x: any) => x && x.periodo && Number(x.importe) > 0)
+			.map((x: any) => [x.periodo, Number(x.importe)] as [string, number]),
+	);
+	return mesesDelPeriodo(values)
+		.filter((p) => m.has(p))
+		.map((periodo) => ({ periodo, importe: m.get(periodo) as number }));
+}
+
 /** Arma el input del motor a partir de los valores del wizard. */
 export function armarInputRetroactivo(values: any): RetroactivoInput {
 	const fechaPercibido = aISO(values.haberPagadoAl);
@@ -209,13 +266,20 @@ export function armarInputRetroactivo(values: any): RetroactivoInput {
 		desde: aISO(values.fechaDesdeReclamado),
 		hasta: aISO(values.fechaHastaReclamado) || undefined,
 		consolidacion: aISO(values.fechaCierre || values.fechaHastaReclamado),
-		percibido: {
-			importe: Number(values.haberPagadoAnses),
-			fecha: fechaPercibido,
-			moneda: monedaMotor(values.monedaHaberPagado),
-			reajustes: values.tieneReajuste ? reajustesDe(values) : [],
-			piso: values.pisoPercibido || "no",
-		},
+		percibido: values.percibidoManual
+			? {
+					importe: Number(values.haberPagadoAnses),
+					fecha: fechaPercibido,
+					modo: "manual",
+					manual: percibidosDelPeriodo(values),
+			  }
+			: {
+					importe: Number(values.haberPagadoAnses),
+					fecha: fechaPercibido,
+					moneda: monedaMotor(values.monedaHaberPagado),
+					reajustes: values.tieneReajuste ? reajustesDe(values) : [],
+					piso: values.pisoPercibido || "no",
+			  },
 		reclamado: {
 			importe: Number(values.haberReclamado),
 			fecha: aISO(values.haberReclamadoAl) || fechaPercibido,
@@ -264,6 +328,23 @@ function villanustreDe(values: any): VillanustreInput | null {
 	if (!salarios.length) return null;
 	const pct = numero(values.villanustrePorcentaje);
 	return { porcentaje: Number.isFinite(pct) && pct > 0 ? pct : 70, salarios, pautaSalarial: !!values.villanustrePauta };
+}
+
+/**
+ * Grilla sugerida para cargar los percibidos a mano: el haber percibido que calcula el motor (aumentos generales,
+ * reajustes y piso) para cada mes del período de diferencias.
+ */
+export async function seriePercibidoSugerida(values: any): Promise<PercibidoMensual[]> {
+	const input = armarInputRetroactivo({ ...values, percibidoManual: false });
+	const { data } = await axios.post("/api/previsional/retroactivo/serie-percibido", {
+		desde: input.desde,
+		hasta: input.hasta,
+		consolidacion: input.consolidacion,
+		zonaAustral: input.zonaAustral,
+		percibido: input.percibido,
+		pension: input.reclamado.pension,
+	});
+	return data.serie || [];
 }
 
 export async function calcularRetroactivo(input: RetroactivoInput): Promise<RetroactivoResultado> {

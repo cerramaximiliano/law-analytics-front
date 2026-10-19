@@ -38,6 +38,9 @@ const previsionalFormModel = {
 		tasaInteresSentencia: { name: "tasaInteresSentencia", label: "Tasa de Interés de Sentencia" },
 		haberReclamadoAl: { name: "haberReclamadoAl", label: "Haber reclamado al" },
 		pisoPercibido: { name: "pisoPercibido", label: "Piso del haber percibido" },
+		// Percibidos cargados mes a mes: { periodo: YYYY-MM, importe }; sin actualización automática
+		percibidoManual: { name: "percibidoManual", label: "Cargar los haberes percibidos mes a mes" },
+		percibidosMensuales: { name: "percibidosMensuales", label: "Haberes percibidos por mes" },
 		zonaAustral: { name: "zonaAustral", label: "Bonificación por zona austral (×1,4 en las sumas fijas y en el haber máximo)" },
 		pensionFecha: { name: "pensionFecha", label: "Fecha de fallecimiento del causante" },
 		pensionPorcentaje: { name: "pensionPorcentaje", label: "Porcentaje de la pensión" },
