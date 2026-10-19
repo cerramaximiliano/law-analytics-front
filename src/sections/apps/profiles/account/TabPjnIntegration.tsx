@@ -121,10 +121,12 @@ const TabPjnIntegration = () => {
 			} as any);
 			if (response.success) {
 				setSyncContactsEnabled(newValue);
-				enqueueSnackbar(newValue ? "Sincronización de intervinientes activada" : "Sincronización de intervinientes desactivada", {
-					variant: "success",
-					anchorOrigin: { vertical: "bottom", horizontal: "right" },
-				});
+				enqueueSnackbar(
+					newValue
+						? "Sincronización activada. Estamos agregando a tus contactos las partes y letrados ya descargados de tus carpetas PJN."
+						: "Sincronización de intervinientes desactivada",
+					{ variant: "success", anchorOrigin: { vertical: "bottom", horizontal: "right" } },
+				);
 			} else {
 				enqueueSnackbar("Error al actualizar la preferencia", { variant: "error" });
 			}

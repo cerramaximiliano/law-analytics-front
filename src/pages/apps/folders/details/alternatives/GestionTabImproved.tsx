@@ -32,7 +32,41 @@ function TabPanel(props: TabPanelProps) {
 	);
 }
 
-const FUEROS_PJN = new Set(["CausasCivil", "CausasTrabajo", "CausasSegSocial", "CausasSegSoc", "CausasComercial"]);
+// Todos los fueros del PJN (enum causaType de Folder en el hub). Los 4 principales los lee
+// pjn-extra-info sin credencial; el resto solo pjn-mis-causas con credencial.
+const FUEROS_PJN = new Set([
+	"CausasCivil",
+	"CausasTrabajo",
+	"CausasSegSocial",
+	"CausasSegSoc",
+	"CausasComercial",
+	...[
+		"CAF",
+		"CCF",
+		"CNE",
+		"CPE",
+		"CFP",
+		"CCC",
+		"CSJ",
+		"CPF",
+		"CPN",
+		"FBB",
+		"FCR",
+		"FCB",
+		"FCT",
+		"FGR",
+		"FLP",
+		"FMP",
+		"FMZ",
+		"FPO",
+		"FPA",
+		"FRE",
+		"FSA",
+		"FRO",
+		"FSM",
+		"FTU",
+	].map((f) => `Causas${f}`),
+]);
 
 interface GestionTabImprovedProps {
 	folder: FolderData & { groupId?: string };
