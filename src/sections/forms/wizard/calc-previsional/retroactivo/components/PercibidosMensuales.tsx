@@ -301,7 +301,7 @@ export default function PercibidosMensuales() {
 							</FormHelperText>
 						</>
 					)}
-					{errorCompletitud && submitCount > 0 && (
+					{errorCompletitud && submitCount > 0 && faltan > 0 && (
 						<Alert severity="error" sx={{ mt: 1.5 }}>
 							{errorCompletitud}
 						</Alert>
