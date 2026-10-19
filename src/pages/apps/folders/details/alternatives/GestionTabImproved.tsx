@@ -96,6 +96,14 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 	const { selectedTasks, selectedFolderId: tasksFolderId } = useSelector((state: RootState) => state.tasksReducer);
 	const { selectedNotes } = useSelector((state: RootState) => state.notesReducer);
 	const userId = useSelector((state: RootState) => state.auth.user?._id);
+	// Tras agregar partes a contactos desde el panel PJN: volver a pedir los contactos (el cache
+	// del store no tiene al recién creado) y refiltrar los de esta carpeta.
+	const recargarContactos = useCallback(async () => {
+		const groupId = folder.groupId || (isTeamMode ? activeTeam?._id : undefined);
+		if (groupId) await dispatch(getContactsByGroupId(groupId));
+		else if (userId) await dispatch(getContactsByUserId(userId, true));
+		await dispatch(filterContactsByFolder(folder._id));
+	}, [folder._id, folder.groupId, isTeamMode, activeTeam?._id, userId]);
 
 	const lastFetchedFolderIdRef = React.useRef<string | null>(null);
 
@@ -495,7 +503,9 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 									folderId={folder._id}
 									intervinientesPjnDisponibles={esPjn ? intervinientesPjnTotal : 0}
 								/>
-								{esPjn && <IntervinientesPjnPanel folderId={folder._id} onVistaChange={onVistaPjn} />}
+								{esPjn && (
+									<IntervinientesPjnPanel folderId={folder._id} onVistaChange={onVistaPjn} onContactosAgregados={recargarContactos} />
+								)}
 							</TabPanel>
 							<TabPanel value={value} index={2}>
 								<TaskListImproved title="" folderName={folder.folderName} />
@@ -536,7 +546,9 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 									folderId={folder._id}
 									intervinientesPjnDisponibles={esPjn ? intervinientesPjnTotal : 0}
 								/>
-								{esPjn && <IntervinientesPjnPanel folderId={folder._id} onVistaChange={onVistaPjn} />}
+								{esPjn && (
+									<IntervinientesPjnPanel folderId={folder._id} onVistaChange={onVistaPjn} onContactosAgregados={recargarContactos} />
+								)}
 							</TabPanel>
 							<TabPanel value={value} index={2}>
 								<TaskListImproved title="" folderName={folder.folderName} />

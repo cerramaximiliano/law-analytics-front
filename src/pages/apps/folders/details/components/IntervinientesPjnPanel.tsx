@@ -30,6 +30,9 @@ interface Props {
 	folderId: string;
 	// Avisa al contenedor qué trajo el panel (null si no hay datos), para que el estado vacío de contactos no lo contradiga.
 	onVistaChange?: (vista: IntervinientesPjnVista | null) => void;
+	// Recarga la lista de contactos de la carpeta tras agregar (el cache del store no conoce al
+	// contacto recién creado; sin esto no aparece arriba hasta recargar la página).
+	onContactosAgregados?: () => Promise<void> | void;
 }
 
 const aviso = (message: string, color: "success" | "error" | "info" | "warning") =>
@@ -58,7 +61,7 @@ function mensajeResultado(r: ImportacionResultado): { texto: string; color: "suc
 	return { texto: `Listo: ${partes.join(" y ")}.`, color: "success" };
 }
 
-export default function IntervinientesPjnPanel({ folderId, onVistaChange }: Props) {
+export default function IntervinientesPjnPanel({ folderId, onVistaChange, onContactosAgregados }: Props) {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const { canCreate } = useTeam();
@@ -118,7 +121,8 @@ export default function IntervinientesPjnPanel({ folderId, onVistaChange }: Prop
 			aplicar(data);
 			const m = mensajeResultado(resultado);
 			aviso(m.texto, m.color);
-			dispatch(filterContactsByFolder(folderId) as any);
+			if (onContactosAgregados) await onContactosAgregados();
+			else dispatch(filterContactsByFolder(folderId) as any);
 		} catch {
 			aviso("No pudimos agregar los contactos. Probá de nuevo.", "error");
 		} finally {
