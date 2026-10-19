@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Box, Tabs, Tab, Typography, Badge, useTheme, useMediaQuery, Drawer, IconButton, Stack, alpha } from "@mui/material";
 import { Calculator, People, TaskSquare, Menu, DocumentText, Briefcase } from "iconsax-react";
 import MainCard from "components/MainCard";
 import CalcTableResponsive from "../components/CalcTableResponsive";
 import MembersImproved from "../components/MembersImproved";
 import IntervinientesPjnPanel from "../components/IntervinientesPjnPanel";
+import type { IntervinientesPjnVista } from "api/intervinientesPjn";
 import TaskListImproved from "../components/TaskListImproved";
 import Notes from "../components/Notes";
 import { FolderData } from "types/folder";
@@ -82,6 +83,11 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const [value, setValue] = useState(0);
 	const [mobileOpen, setMobileOpen] = useState(false);
+	const [intervinientesPjnTotal, setIntervinientesPjnTotal] = useState(0);
+	const onVistaPjn = useCallback(
+		(v: IntervinientesPjnVista | null) => setIntervinientesPjnTotal(v?.soportada && v.estado === "disponible" ? v.total || 0 : 0),
+		[],
+	);
 
 	const { activeTeam, isTeamMode } = useTeam();
 
@@ -416,7 +422,8 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 			sx={{
 				display: "flex",
 				flexDirection: "column",
-				height: isMobile ? "auto" : "calc(100vh - 200px)",
+				// Altura según el contenido: el scroll es el de la página, sin uno interno en la card
+				minHeight: isMobile ? undefined : 520,
 				overflow: "hidden",
 				borderRadius: 1.5,
 				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
@@ -425,7 +432,7 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 		>
 			{isMobile ? (
 				<>
-					<Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+					<Box sx={{ width: "100%", display: "flex", flexDirection: "column" }}>
 						{/* Mobile header */}
 						<Box
 							sx={{
@@ -476,13 +483,19 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 								{tabData[value].description}
 							</Typography>
 						</Box>
-						<Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
+						<Box sx={{ flex: 1, p: 2 }}>
 							<TabPanel value={value} index={0}>
 								<CalcTableResponsive title="" folderData={{ folderName: folder.folderName, monto: folder.amount || 0 }} />
 							</TabPanel>
 							<TabPanel value={value} index={1}>
-								<MembersImproved title="" membersData={selectedContacts || []} isLoader={false} folderId={folder._id} />
-								{esPjn && <IntervinientesPjnPanel folderId={folder._id} />}
+								<MembersImproved
+									title=""
+									membersData={selectedContacts || []}
+									isLoader={false}
+									folderId={folder._id}
+									intervinientesPjnDisponibles={esPjn ? intervinientesPjnTotal : 0}
+								/>
+								{esPjn && <IntervinientesPjnPanel folderId={folder._id} onVistaChange={onVistaPjn} />}
 							</TabPanel>
 							<TabPanel value={value} index={2}>
 								<TaskListImproved title="" folderName={folder.folderName} />
@@ -508,16 +521,22 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 					</Drawer>
 				</>
 			) : (
-				<Box sx={{ display: "flex", width: "100%", height: "100%" }}>
+				<Box sx={{ display: "flex", width: "100%", flex: 1 }}>
 					{sidebarContent}
-					<Box sx={{ flexGrow: 1, overflow: "auto", display: "flex", flexDirection: "column" }}>
-						<Box sx={{ flex: 1, p: 3, overflow: "auto" }}>
+					<Box sx={{ flexGrow: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+						<Box sx={{ flex: 1, p: 3 }}>
 							<TabPanel value={value} index={0}>
 								<CalcTableResponsive title="" folderData={{ folderName: folder.folderName, monto: folder.amount || 0 }} />
 							</TabPanel>
 							<TabPanel value={value} index={1}>
-								<MembersImproved title="" membersData={selectedContacts || []} isLoader={false} folderId={folder._id} />
-								{esPjn && <IntervinientesPjnPanel folderId={folder._id} />}
+								<MembersImproved
+									title=""
+									membersData={selectedContacts || []}
+									isLoader={false}
+									folderId={folder._id}
+									intervinientesPjnDisponibles={esPjn ? intervinientesPjnTotal : 0}
+								/>
+								{esPjn && <IntervinientesPjnPanel folderId={folder._id} onVistaChange={onVistaPjn} />}
 							</TabPanel>
 							<TabPanel value={value} index={2}>
 								<TaskListImproved title="" folderName={folder.folderName} />

@@ -52,6 +52,8 @@ interface MembersProps {
 	membersData: Contact[];
 	isLoader: boolean;
 	folderId: string;
+	// Partes y letrados del expediente PJN que el panel de abajo ofrece agregar (0 o ausente: no hay)
+	intervinientesPjnDisponibles?: number;
 }
 
 // Helper para obtener el primer rol (para contactos con múltiples roles)
@@ -136,7 +138,7 @@ const getRoleIcon = (role: string | string[]) => {
 	}
 };
 
-const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader, folderId }) => {
+const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader, folderId, intervinientesPjnDisponibles = 0 }) => {
 	const theme = useTheme();
 	const { canDelete, canUpdate, canCreate } = useTeam();
 	// Get selectedContacts and archivedByFolderCount from Redux store
@@ -522,10 +524,12 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 				<UserSquare size={28} variant="Bulk" />
 			</Box>
 			<Typography sx={{ fontSize: "1rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.015em" }}>
-				Sin intervinientes registrados
+				{intervinientesPjnDisponibles > 0 ? "Todavía no agregaste contactos a esta carpeta" : "Sin intervinientes registrados"}
 			</Typography>
 			<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", letterSpacing: "-0.005em", mt: 0.5, maxWidth: 360, mx: "auto" }}>
-				Agregá los contactos relacionados con este expediente: clientes, abogados, peritos y más.
+				{intervinientesPjnDisponibles > 0
+					? "Las partes y letrados del expediente están abajo: elegí cuáles agregar, o sumá otros contactos."
+					: "Agregá los contactos relacionados con este expediente: clientes, abogados, peritos y más."}
 			</Typography>
 		</Box>
 	);

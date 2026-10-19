@@ -28,6 +28,8 @@ import {
 
 interface Props {
 	folderId: string;
+	// Avisa al contenedor qué trajo el panel (null si no hay datos), para que el estado vacío de contactos no lo contradiga.
+	onVistaChange?: (vista: IntervinientesPjnVista | null) => void;
 }
 
 const aviso = (message: string, color: "success" | "error" | "info" | "warning") =>
@@ -56,7 +58,7 @@ function mensajeResultado(r: ImportacionResultado): { texto: string; color: "suc
 	return { texto: `Listo: ${partes.join(" y ")}.`, color: "success" };
 }
 
-export default function IntervinientesPjnPanel({ folderId }: Props) {
+export default function IntervinientesPjnPanel({ folderId, onVistaChange }: Props) {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const { canCreate } = useTeam();
@@ -65,22 +67,31 @@ export default function IntervinientesPjnPanel({ folderId }: Props) {
 	const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
 	const [guardando, setGuardando] = useState(false);
 
-	const aplicar = useCallback((v: IntervinientesPjnVista) => {
-		setVista(v);
-		setSeleccion(new Set());
-	}, []);
+	const aplicar = useCallback(
+		(v: IntervinientesPjnVista) => {
+			setVista(v);
+			setSeleccion(new Set());
+			onVistaChange?.(v);
+		},
+		[onVistaChange],
+	);
 
 	useEffect(() => {
 		let vivo = true;
 		setVista(null);
 		setAbierto(null);
+		onVistaChange?.(null);
 		getIntervinientesPjn(folderId)
 			.then((v) => vivo && aplicar(v))
-			.catch(() => vivo && setVista(null));
+			.catch(() => {
+				if (!vivo) return;
+				setVista(null);
+				onVistaChange?.(null);
+			});
 		return () => {
 			vivo = false;
 		};
-	}, [folderId, aplicar]);
+	}, [folderId, aplicar, onVistaChange]);
 
 	// Ids únicos de los que todavía no están en la carpeta (un letrado puede figurar bajo dos partes).
 	const pendientes = useMemo(() => {
