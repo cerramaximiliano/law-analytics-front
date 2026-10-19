@@ -50,6 +50,8 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 	const [verDetalle, setVerDetalle] = useState(false);
 	const [guardando, setGuardando] = useState<"nuevo" | "cambios" | null>(null);
 	const [guardado, setGuardado] = useState(false);
+	// id del cálculo recién guardado: el PDF lo manda para que el código de validación quede vinculado al guardado
+	const [guardadoId, setGuardadoId] = useState<string | null>(null);
 	const [limite, setLimite] = useState<{ message: string; limitInfo?: any } | null>(null);
 	const [descargando, setDescargando] = useState(false);
 	const rates = useSelector((state: any) => state.interestRates?.rates || []);
@@ -151,6 +153,7 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 		setGuardando(null);
 		if (res?.success) {
 			setGuardado(true);
+			setGuardadoId(res.calculator?._id || null);
 			enqueueSnackbar(enEdicion ? "Guardado como nuevo cálculo" : "Cálculo guardado", { variant: "success" });
 			if (enEdicion) onGuardado?.("nuevo");
 		} else if (res?.status === 403 && res?.limitInfo) {
@@ -186,7 +189,7 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 		await descargarPdfRetroactivo({
 			resultado: r,
 			input,
-			calculatorId: enEdicion?.id || null,
+			calculatorId: guardadoId || enEdicion?.id || null,
 			datos: {
 				titular: reclamante,
 				expedienteAdmin: values.expedienteAdmin,
