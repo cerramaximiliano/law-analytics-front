@@ -1,4 +1,5 @@
 // types/folder.ts
+import type { TipoProcesoFolder } from "utils/tipoProceso";
 
 export type JurisdictionData = {
 	item: string;
@@ -42,6 +43,8 @@ export type JudFolderData = {
 		tipo?: string;
 		updatedAt?: string;
 	};
+	// Tipo de proceso de la causa (plazos automáticos). Sólo en folders PJN.
+	tipoProceso?: TipoProcesoFolder | null;
 };
 
 export type FolderData = {

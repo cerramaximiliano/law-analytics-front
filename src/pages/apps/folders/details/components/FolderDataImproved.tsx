@@ -1,11 +1,12 @@
 import React from "react";
 import { useState } from "react";
 import { fechaFolderAInput, inputAFechaFolder } from "utils/fechaFolder";
+import { etiquetaTipoProceso, origenTipoProceso } from "utils/tipoProceso";
 import { dispatch } from "store";
 import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, useTheme, alpha, useMediaQuery } from "@mui/material";
 import dayjs from "utils/dayjs-config";
 import data from "data/folder.json";
-import { Edit2, Clock, TickCircle, Briefcase, DollarCircle, Calendar1, DocumentText, Location } from "iconsax-react";
+import { Edit2, Clock, TickCircle, Briefcase, DollarCircle, Calendar1, DocumentText, Location, Judge } from "iconsax-react";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
@@ -632,6 +633,20 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 											</Grid>
 										)}
 									</>
+								)}
+
+								{/* Tipo de proceso: sólo en folders de causas PJN, lo escribe el
+								    pipeline de plazos. No editable. */}
+								{etiquetaTipoProceso(folder) && (
+									<Grid item xs={12} sm={6} md={3}>
+										<FieldCard
+											label="Tipo de proceso"
+											value={etiquetaTipoProceso(folder)}
+											isLoading={isLoader}
+											icon={<Judge size={16} />}
+											helper={origenTipoProceso(folder?.judFolder?.tipoProceso)}
+										/>
+									</Grid>
 								)}
 
 								{/* Description - Full Width */}

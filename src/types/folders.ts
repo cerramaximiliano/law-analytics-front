@@ -1,3 +1,4 @@
+import type { TipoProcesoFolder } from "utils/tipoProceso";
 import { Column } from "react-table";
 import { FC } from "react";
 
@@ -32,6 +33,8 @@ interface JudFolder {
 		tipo?: string;
 		updatedAt?: string;
 	};
+	// Tipo de proceso de la causa (plazos automáticos). Sólo en folders PJN.
+	tipoProceso?: TipoProcesoFolder | null;
 }
 
 // Tipos principales de la carpeta (folder)
