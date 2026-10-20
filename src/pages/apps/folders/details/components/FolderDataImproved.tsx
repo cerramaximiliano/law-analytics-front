@@ -1,9 +1,10 @@
 import React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { fechaFolderAInput, inputAFechaFolder } from "utils/fechaFolder";
-import { etiquetaTipoProceso, origenTipoProceso } from "utils/tipoProceso";
+import { aplicaTipoProceso, etiquetaTipoProceso, origenTipoProceso, OPCIONES_TIPO_PROCESO } from "utils/tipoProceso";
+import { getTipoProceso, saveTipoProceso, type TipoProceso, type TipoProcesoVista } from "api/plazosAutomaticos";
 import { dispatch } from "store";
-import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, useTheme, alpha, useMediaQuery } from "@mui/material";
+import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, useTheme, alpha, useMediaQuery, Menu, MenuItem } from "@mui/material";
 import dayjs from "utils/dayjs-config";
 import data from "data/folder.json";
 import { Edit2, Clock, TickCircle, Briefcase, DollarCircle, Calendar1, DocumentText, Location, Judge } from "iconsax-react";
@@ -16,7 +17,7 @@ import { Formik, Form } from "formik";
 import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
-import { updateFolderById } from "store/reducers/folder";
+import { updateFolderById, getFolderById } from "store/reducers/folder";
 import { useTeam } from "contexts/TeamContext";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
@@ -40,9 +41,21 @@ interface FieldCardProps {
 	important?: boolean;
 	fullWidth?: boolean;
 	helper?: string;
+	// Acción a la derecha del encabezado (reemplaza al tilde). Hoy: cambiar el tipo de proceso.
+	action?: React.ReactNode;
 }
 
-const FieldCard: React.FC<FieldCardProps> = ({ label, value, isLoading, editComponent, isEditing, icon, important = false, helper }) => {
+const FieldCard: React.FC<FieldCardProps> = ({
+	label,
+	value,
+	isLoading,
+	editComponent,
+	isEditing,
+	icon,
+	important = false,
+	helper,
+	action,
+}) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const displayValue = value || "—";
@@ -113,7 +126,11 @@ const FieldCard: React.FC<FieldCardProps> = ({ label, value, isLoading, editComp
 					>
 						{label}
 					</Typography>
-					{hasValue && <TickCircle size={12} variant="Bold" color={LIVE_GREEN} style={{ marginLeft: "auto" }} />}
+					{action ? (
+						<Box sx={{ ml: "auto", display: "flex" }}>{action}</Box>
+					) : (
+						hasValue && <TickCircle size={12} variant="Bold" color={LIVE_GREEN} style={{ marginLeft: "auto" }} />
+					)}
 				</Stack>
 
 				{/* Value */}
@@ -142,6 +159,72 @@ const FieldCard: React.FC<FieldCardProps> = ({ label, value, isLoading, editComp
 	);
 };
 
+// Tipo de proceso de la causa (solo carpetas PJN de fueros con tipo): el detectado o "Sin determinar", y un menú
+// para que el usuario lo indique (gana sobre lo detectado; lo comparten todas las carpetas de la causa).
+const TipoProcesoCard = ({ folder, isLoading }: { folder: any; isLoading: boolean }) => {
+	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+	const [vista, setVista] = useState<TipoProcesoVista | null>(null);
+	const [guardando, setGuardando] = useState(false);
+	const folderId = folder?._id ? String(folder._id) : null;
+	useEffect(() => {
+		if (!folderId) return;
+		getTipoProceso(folderId)
+			.then(setVista)
+			.catch(() => setVista(null));
+	}, [folderId, folder?.judFolder?.tipoProceso?.tipo, folder?.judFolder?.tipoProceso?.fuente]);
+	const elegir = async (tipo: TipoProceso | null) => {
+		setAnchor(null);
+		if (!folderId) return;
+		setGuardando(true);
+		try {
+			setVista(await saveTipoProceso(folderId, tipo));
+			await dispatch(getFolderById(folderId, true) as any);
+			enqueueSnackbar(tipo ? "Tipo de proceso guardado" : "Se quitó tu indicación del tipo de proceso", { variant: "success" });
+		} catch (err: any) {
+			enqueueSnackbar(err?.response?.data?.message || "No se pudo guardar el tipo de proceso", { variant: "error" });
+		} finally {
+			setGuardando(false);
+		}
+	};
+	const tp = vista?.tipo ? { tipo: vista.tipo, fuente: vista.fuente } : folder?.judFolder?.tipoProceso;
+	const etiqueta = etiquetaTipoProceso({ pjn: true, judFolder: { tipoProceso: tp } });
+	const helper = vista?.indicadoPorMi && vista?.fuente === "usuario" ? "Indicado por vos" : origenTipoProceso(tp);
+	return (
+		<>
+			<FieldCard
+				label="Tipo de proceso"
+				value={etiqueta || "Sin determinar"}
+				isLoading={isLoading}
+				icon={<Judge size={16} />}
+				helper={etiqueta ? helper : undefined}
+				action={
+					<Button
+						size="small"
+						variant="text"
+						disabled={guardando}
+						onClick={(e) => setAnchor(e.currentTarget)}
+						sx={{ minWidth: 0, py: 0, px: 0.75, fontSize: "0.7rem" }}
+					>
+						{etiqueta ? "Cambiar" : "Indicar"}
+					</Button>
+				}
+			/>
+			<Menu anchorEl={anchor} open={!!anchor} onClose={() => setAnchor(null)}>
+				{OPCIONES_TIPO_PROCESO.map((o) => (
+					<MenuItem key={o.value} selected={vista?.indicadoPorMi === o.value} onClick={() => elegir(o.value)}>
+						{o.label}
+					</MenuItem>
+				))}
+				{vista?.indicadoPorMi && (
+					<MenuItem onClick={() => elegir(null)} sx={{ color: "text.secondary" }}>
+						Quitar mi indicación
+					</MenuItem>
+				)}
+			</Menu>
+		</>
+	);
+};
+
 const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boolean }) => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
@@ -164,12 +247,8 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 			try {
 				const formattedValues = {
 					...values,
-					initialDateFolder: values.initialDateFolder
-						? inputAFechaFolder(values.initialDateFolder)
-						: values.initialDateFolder,
-					finalDateFolder: values.finalDateFolder
-						? inputAFechaFolder(values.finalDateFolder)
-						: values.finalDateFolder,
+					initialDateFolder: values.initialDateFolder ? inputAFechaFolder(values.initialDateFolder) : values.initialDateFolder,
+					finalDateFolder: values.finalDateFolder ? inputAFechaFolder(values.finalDateFolder) : values.finalDateFolder,
 				};
 
 				const result = await dispatch(updateFolderById(id, formattedValues));
@@ -626,8 +705,8 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 														folder?.judFolder?.currentLocation?.tipo === "sala-vocalia"
 															? "Cámara"
 															: folder?.judFolder?.currentLocation?.tipo === "juzgado-secretaria"
-																? "Primera instancia"
-																: undefined
+															? "Primera instancia"
+															: undefined
 													}
 												/>
 											</Grid>
@@ -637,15 +716,9 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 
 								{/* Tipo de proceso: sólo en folders de causas PJN, lo escribe el
 								    pipeline de plazos. No editable. */}
-								{etiquetaTipoProceso(folder) && (
+								{aplicaTipoProceso(folder) && (
 									<Grid item xs={12} sm={6} md={3}>
-										<FieldCard
-											label="Tipo de proceso"
-											value={etiquetaTipoProceso(folder)}
-											isLoading={isLoader}
-											icon={<Judge size={16} />}
-											helper={origenTipoProceso(folder?.judFolder?.tipoProceso)}
-										/>
+										<TipoProcesoCard folder={folder} isLoading={isLoader} />
 									</Grid>
 								)}
 
@@ -657,7 +730,9 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 												p: 2,
 												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 												borderRadius: 1.5,
-												bgcolor: folder?.description ? theme.palette.background.paper : alpha(theme.palette.text.disabled, isDark ? 0.04 : 0.02),
+												bgcolor: folder?.description
+													? theme.palette.background.paper
+													: alpha(theme.palette.text.disabled, isDark ? 0.04 : 0.02),
 											}}
 										>
 											<Stack spacing={1}>

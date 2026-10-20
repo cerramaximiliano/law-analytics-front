@@ -26,11 +26,35 @@ const ORIGEN: Record<string, string> = {
 	plazo_agravios: "Según el plazo del traslado de agravios",
 	objeto: "Según el objeto de la causa",
 	objeto_especial: "Según el objeto de la causa",
-	norma: "Procedimiento laboral (ley 18.345)",
+	norma: "Según la norma del fuero",
+	usuario: "Indicado por un usuario",
 	operador: "Revisado por nuestro equipo",
 };
 
-/** Etiqueta para mostrar, o null si la carpeta no es PJN o no tiene el dato. */
+// Fueros con tipo de proceso (causaType del folder): civil, comercial, seguridad social, trabajo y federales CPCCN.
+const CAUSAS_CON_TIPO = new Set([
+	"CausasCivil",
+	"CausasComercial",
+	"CausasSegSocial",
+	"CausasSegSoc",
+	"CausasTrabajo",
+	"CausasCCF",
+	"CausasCAF",
+	...["FBB", "FCB", "FCR", "FCT", "FGR", "FLP", "FMP", "FMZ", "FPA", "FPO", "FRE", "FRO", "FSA", "FSM", "FTU"].map((f) => `Causas${f}`),
+]);
+
+/** ¿La carpeta muestra el tipo de proceso? Solo carpetas PJN vinculadas a una causa de un fuero con tipo. */
+export const aplicaTipoProceso = (
+	folder: { pjn?: boolean; causaId?: string | null; causaType?: string | null } | null | undefined,
+): boolean => !!(folder?.pjn && folder?.causaId && CAUSAS_CON_TIPO.has(folder?.causaType || ""));
+
+export const OPCIONES_TIPO_PROCESO: { value: "ordinario" | "sumario" | "especial"; label: string }[] = [
+	{ value: "ordinario", label: ETIQUETAS.ordinario },
+	{ value: "sumario", label: ETIQUETAS.sumario },
+	{ value: "especial", label: ETIQUETAS.especial },
+];
+
+/** Etiqueta para mostrar, o null si la carpeta no es PJN o no tiene el dato (la tarjeta dice "Sin determinar"). */
 export const etiquetaTipoProceso = (
 	folder: { pjn?: boolean; judFolder?: { tipoProceso?: TipoProcesoFolder | null } | null } | null | undefined,
 ): string | null => {

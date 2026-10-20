@@ -62,6 +62,30 @@ export const savePlazosParte = async (folderId: string, body: { partes: string[]
 	return data.data;
 };
 
+// ── Tipo de proceso de la causa (P21/P22) ─────────────────────────────────────
+// Lo detecta el pipeline de plazos; el usuario puede indicarlo desde la carpeta (gana sobre lo detectado).
+export type TipoProceso = "ordinario" | "sumario" | "especial";
+
+export interface TipoProcesoVista {
+	aplica: boolean;
+	fuero?: string;
+	tipo?: TipoProceso | null;
+	fuente?: string | null;
+	indicadoPorMi?: TipoProceso | null;
+	sugerencia?: TipoProceso | null;
+	reencoladas?: number;
+}
+
+export const getTipoProceso = async (folderId: string): Promise<TipoProcesoVista> => {
+	const { data } = await axios.get(`/api/plazos-automaticos/carpetas/${folderId}/tipo-proceso`);
+	return data.data;
+};
+
+export const saveTipoProceso = async (folderId: string, tipo: TipoProceso | null): Promise<TipoProcesoVista> => {
+	const { data } = await axios.put(`/api/plazos-automaticos/carpetas/${folderId}/tipo-proceso`, { tipo });
+	return data.data;
+};
+
 // Dígito verificador de CUIT/CUIL (módulo 11), igual que el backend.
 export const cuitValido = (cuit: string): boolean => {
 	const c = String(cuit || "").replace(/\D/g, "");

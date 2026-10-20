@@ -1,7 +1,7 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { fechaFolderAInput, inputAFechaFolder } from "utils/fechaFolder";
-import { etiquetaTipoProceso } from "utils/tipoProceso";
+import { aplicaTipoProceso, etiquetaTipoProceso } from "utils/tipoProceso";
 import { dispatch } from "store";
 import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, useTheme, alpha, useMediaQuery } from "@mui/material";
 import dayjs from "utils/dayjs-config";
@@ -503,9 +503,9 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 										</Grid>
 									)}
 									{/* Tipo de proceso: sólo en folders PJN, lo escribe el pipeline de plazos. */}
-									{etiquetaTipoProceso(folder) && (
+									{aplicaTipoProceso(folder) && (
 										<Grid item xs={6} md={3}>
-											<CompactField label="TIPO DE PROCESO" value={etiquetaTipoProceso(folder)} isLoading={isLoader} />
+											<CompactField label="TIPO DE PROCESO" value={etiquetaTipoProceso(folder) || "Sin determinar"} isLoading={isLoader} />
 										</Grid>
 									)}
 
