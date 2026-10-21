@@ -33,14 +33,18 @@ export interface PagoACuenta {
 	tipo?: TipoPago;
 }
 
-export type PisoPercibido = "no" | "minimo" | "minimo82";
+/** Piso del haber mínimo (percibido y reclamado). "no" solo aparece en guardados anteriores al 20/10/2026: vale como "minimo". */
+export type PisoPercibido = "no" | "minimo" | "minimo82" | "sinGarantia";
 export type TipoTope = "no" | "si" | "actis_caporale_menor_15" | "actis_caporale_menor_15_sino_descuenta";
 
 export const PISOS_PERCIBIDO: { value: PisoPercibido; label: string }[] = [
-	{ value: "no", label: "No: cobra el haber informado con sus aumentos" },
 	{ value: "minimo", label: "Cobra al menos el haber mínimo" },
 	{ value: "minimo82", label: "Cobra al menos el haber mínimo y el suplemento al 82 % del SMVM (ley 27.426, 30 años de aportes)" },
+	{ value: "sinGarantia", label: "Sin garantía del mínimo: el haber informado con sus aumentos, aunque quede por debajo" },
 ];
+
+/** Igual que pisoDe() del motor: el piso del mínimo se aplica solo salvo "minimo82" o "sinGarantia". */
+export const pisoNormalizado = (piso?: string): PisoPercibido => (piso === "minimo82" || piso === "sinGarantia" ? piso : "minimo");
 
 export type OpcionBono = "no" | "percibido" | "reclamado" | "ambos";
 export type TratamientoBono = "decreto" | "integrado";
@@ -137,6 +141,7 @@ export interface RetroactivoInput {
 		moneda?: string;
 		criterios: CriterioMovilidad[];
 		pension?: { fecha: string; porcentaje: number } | null;
+		piso?: PisoPercibido;
 	};
 	zonaAustral?: boolean;
 	tope?: {
@@ -278,7 +283,7 @@ export function armarInputRetroactivo(values: any): RetroactivoInput {
 					fecha: fechaPercibido,
 					moneda: monedaMotor(values.monedaHaberPagado),
 					reajustes: values.tieneReajuste ? reajustesDe(values) : [],
-					piso: values.pisoPercibido || "no",
+					piso: pisoNormalizado(values.pisoPercibido),
 			  },
 		reclamado: {
 			importe: Number(values.haberReclamado),
@@ -288,6 +293,7 @@ export function armarInputRetroactivo(values: any): RetroactivoInput {
 				.filter((c: CriterioMovilidad) => c && c.indiceMovilidad && c.fechaDesde)
 				.map((c: CriterioMovilidad) => ({ indiceMovilidad: c.indiceMovilidad, fechaDesde: aISO(c.fechaDesde) })),
 			pension: values.pensionFecha && pct > 0 ? { fecha: aISO(values.pensionFecha), porcentaje: pct } : null,
+			piso: pisoNormalizado(values.pisoReclamado),
 		},
 		zonaAustral: !!values.zonaAustral,
 		tope: {

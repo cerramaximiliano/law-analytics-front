@@ -118,3 +118,19 @@ describe("lectura de lo que escribe o pega el usuario", () => {
 		]);
 	});
 });
+
+describe("piso del haber mínimo", () => {
+	const base = { ...periodo, haberPagadoAnses: 1000, haberPagadoAl: "01/01/2024", haberReclamado: 2000, criteriosMovilidad: [] };
+	it('se aplica solo: sin elección (o con el "no" de los guardados) va "minimo" en el percibido y el reclamado', () => {
+		for (const piso of [undefined, "no"]) {
+			const input = armarInputRetroactivo({ ...base, pisoPercibido: piso, pisoReclamado: piso });
+			expect(input.percibido.piso).toBe("minimo");
+			expect(input.reclamado.piso).toBe("minimo");
+		}
+	});
+	it("respeta 82 % SMVM y sin garantía", () => {
+		const input = armarInputRetroactivo({ ...base, pisoPercibido: "minimo82", pisoReclamado: "sinGarantia" });
+		expect(input.percibido.piso).toBe("minimo82");
+		expect(input.reclamado.piso).toBe("sinGarantia");
+	});
+});

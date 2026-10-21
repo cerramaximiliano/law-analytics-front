@@ -1,5 +1,5 @@
 import dayjs from "utils/dayjs-config";
-import { RetroactivoInput } from "services/previsionalService";
+import { RetroactivoInput, pisoNormalizado } from "services/previsionalService";
 import formInitialValues from "./formInitialValues";
 
 // Reconstruye los valores del wizard a partir de un cálculo guardado para poder reabrirlo y editarlo.
@@ -41,7 +41,8 @@ export function valoresDesdeInput(input: RetroactivoInput, datosExpediente?: any
 		obraSocial: input.obraSocialPct ? "inssjyp_pami" : "",
 		haberPagadoAnses: oVacio(input.percibido?.importe),
 		haberPagadoAl: aDDMMYYYY(input.percibido?.fecha),
-		pisoPercibido: input.percibido?.piso || "no",
+		pisoPercibido: pisoNormalizado(input.percibido?.piso),
+		pisoReclamado: pisoNormalizado(input.reclamado?.piso),
 		percibidoManual: input.percibido?.modo === "manual",
 		percibidosMensuales:
 			input.percibido?.modo === "manual" ? (input.percibido.manual || []).map((x) => ({ periodo: x.periodo, importe: x.importe })) : [],

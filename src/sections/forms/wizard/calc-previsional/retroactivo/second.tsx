@@ -19,7 +19,7 @@ import {
 } from "@mui/material";
 import { Add, Trash } from "iconsax-react";
 import { useFormikContext } from "formik";
-import { MONEDAS_HABER, PISOS_PERCIBIDO } from "services/previsionalService";
+import { MONEDAS_HABER, PISOS_PERCIBIDO, pisoNormalizado } from "services/previsionalService";
 import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
 import PercibidosMensuales from "./components/PercibidosMensuales";
@@ -38,6 +38,7 @@ export default function SecondForm({ formField }: SecondFormProps) {
 		monedaReajuste,
 		haberReclamado,
 		monedaReclamado,
+		pisoReclamado,
 		fechaDesdeReclamado,
 		fechaHastaReclamado,
 		fechaCierre,
@@ -201,7 +202,7 @@ export default function SecondForm({ formField }: SecondFormProps) {
 				<InputLabel>{formField.pisoPercibido.label}</InputLabel>
 				<FormControl fullWidth>
 					<Select
-						value={values[formField.pisoPercibido.name] || "no"}
+						value={pisoNormalizado(values[formField.pisoPercibido.name])}
 						onChange={(e) => setFieldValue(formField.pisoPercibido.name, e.target.value)}
 					>
 						{PISOS_PERCIBIDO.map((p) => (
@@ -211,7 +212,10 @@ export default function SecondForm({ formField }: SecondFormProps) {
 						))}
 					</Select>
 				</FormControl>
-				<FormHelperText>Si el haber pagado queda por debajo del mínimo, ANSES paga el mínimo: el percibido se toma así.</FormHelperText>
+				<FormHelperText>
+					Si el haber pagado queda por debajo del mínimo del mes, ANSES paga el mínimo: el percibido se toma así. Elija &quot;Sin
+					garantía&quot; solo para beneficios que no la tienen.
+				</FormHelperText>
 			</Box>
 
 			<Divider sx={{ my: 3 }} />
@@ -268,6 +272,23 @@ export default function SecondForm({ formField }: SecondFormProps) {
 								))}
 							</Select>
 						</FormControl>
+					</Grid>
+
+					<Grid item xs={12}>
+						<InputLabel>{pisoReclamado.label}</InputLabel>
+						<FormControl fullWidth>
+							<Select
+								value={pisoNormalizado(values[pisoReclamado.name])}
+								onChange={(e) => setFieldValue(pisoReclamado.name, e.target.value)}
+							>
+								{PISOS_PERCIBIDO.map((p) => (
+									<MenuItem key={p.value} value={p.value}>
+										{p.label}
+									</MenuItem>
+								))}
+							</Select>
+						</FormControl>
+						<FormHelperText>Si el haber reclamado de un mes queda por debajo del mínimo, se toma el mínimo.</FormHelperText>
 					</Grid>
 				</Grid>
 			</Box>

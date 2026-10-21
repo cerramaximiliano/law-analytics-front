@@ -38,6 +38,7 @@ const previsionalFormModel = {
 		tasaInteresSentencia: { name: "tasaInteresSentencia", label: "Tasa de Interés de Sentencia" },
 		haberReclamadoAl: { name: "haberReclamadoAl", label: "Haber reclamado al" },
 		pisoPercibido: { name: "pisoPercibido", label: "Piso del haber percibido" },
+		pisoReclamado: { name: "pisoReclamado", label: "Piso del haber reclamado" },
 		// Percibidos cargados mes a mes: { periodo: YYYY-MM, importe }; sin actualización automática
 		percibidoManual: { name: "percibidoManual", label: "Cargar los haberes percibidos mes a mes" },
 		percibidosMensuales: { name: "percibidosMensuales", label: "Haberes percibidos por mes" },
