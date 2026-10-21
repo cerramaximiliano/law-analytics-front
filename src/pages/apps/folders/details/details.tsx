@@ -26,11 +26,8 @@ import {
 	DocumentText,
 	FolderCross,
 	ArrowLeft,
-	TickCircle,
-	CloseCircle,
 	Clock,
 	Warning2,
-	Lock1,
 	Link21,
 	MessageText1,
 	DocumentDownload,
@@ -42,20 +39,13 @@ import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 import { usePjnCredentialError } from "hooks/usePjnCredentialError";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { formatFolderName } from "utils/formatFolderName";
-import { MEV_CRED_LABEL, MEV_CRED_MESSAGE, MEV_PROFILE_PATH, isMevCredLoginFailure, mevCredIssue } from "utils/mevCredential";
-import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
-import {
-	getPjnBindingState,
-	PJN_BINDING_LABEL,
-	PJN_BINDING_COPY,
-	PJN_PROFILE_PATH,
-	formatPjnAccessCutoff,
-	pjnCredErrorCopy,
-	pjnFailedCopy,
-} from "utils/pjnBindingState";
+import { isMevCredLoginFailure } from "utils/mevCredential";
+import { BRAND_BLUE, STALE_AMBER } from "themes/dashboardTokens";
+import { getPjnBindingState, PJN_PROFILE_PATH, formatPjnAccessCutoff } from "utils/pjnBindingState";
 import { getScbaBindingState, SCBA_BINDING_LABEL, SCBA_BINDING_COPY, SCBA_PROFILE_PATH } from "utils/scbaBindingState";
 
 // Components
+import { FolderSourceBadge } from "../FolderSourceBadge";
 import FolderDataCompact from "./components/FolderDataCompact";
 import FolderPreJudDataCompact from "./components/FolderPreJudDataCompact";
 import FolderJudDataCompact from "./components/FolderJudDataCompact";
@@ -77,7 +67,6 @@ import LinkToPJBuenosAires from "sections/apps/folders/LinkToPJBuenosAires";
 import LinkToPJCaba from "sections/apps/folders/LinkToPJCaba";
 import NavigationControls from "./components/NavigationControls";
 import InfoTabsVertical from "./components/InfoTabsVertical";
-import PlazosParteCard from "./components/PlazosParteCard";
 
 // Actions
 import { dispatch } from "store";
@@ -521,6 +510,30 @@ const Details = () => {
 			return <Skeleton variant="rectangular" width={180} height={36} sx={{ borderRadius: 1 }} />;
 		}
 
+		// Carpetas vinculadas a un portal: mismo badge que el listado (logo + tilde/alerta/error) con la
+		// etiqueta corta cuando algo requiere atención. EJE, MEV y los portales IOL se desvinculan desde acá.
+		const hasSource = !!(
+			folder?.pjn ||
+			folder?.mev ||
+			folder?.scba ||
+			folder?.eje ||
+			folder?.pjsalta ||
+			folder?.pjcatamarca ||
+			folder?.pjmendoza
+		);
+		if (hasSource) {
+			const unlinkable = !!(folder?.mev || folder?.eje || folder?.pjsalta || folder?.pjcatamarca || folder?.pjmendoza);
+			return (
+				<FolderSourceBadge
+					folder={folder}
+					pjnCredErrorActive={!!pjnCredError.requiresAction}
+					scbaCredErrorActive={!!scbaCredError.hasError}
+					showLabel
+					onActivate={unlinkable ? () => setOpenUnlink(true) : undefined}
+				/>
+			);
+		}
+
 		type BindingState = {
 			label: string;
 			accent: string;
@@ -531,208 +544,7 @@ const Details = () => {
 
 		let state: BindingState;
 
-		if (folder?.pjn && pjnState) {
-			// Causa PJN reservada — visibilidad por credencial (Fase D). causaCredentialCovered
-			// lo denormaliza pjn-mis-causas: true = cubierto; false = gate 'reserved'/'reserved_revoked'.
-			const errorRed = theme.palette.error.main;
-			const accent =
-				pjnState === "reserved" || pjnState === "failed"
-					? errorRed
-					: pjnState === "revoked" ||
-					  pjnState === "list_removed" ||
-					  pjnState === "pending" ||
-					  pjnState === "pending_selection" ||
-					  pjnState === "cred_error"
-					? STALE_AMBER
-					: LIVE_GREEN;
-			const icon =
-				pjnState === "revoked" || pjnState === "reserved_covered" ? (
-					<Lock1 size={14} variant="Bulk" color={accent} />
-				) : pjnState === "ok" ? (
-					<ExportSquare size={14} variant="Bulk" color={accent} />
-				) : pjnState === "failed" ? (
-					<CloseCircle size={14} variant="Bulk" color={accent} />
-				) : (
-					<Warning2 size={14} variant="Bulk" color={accent} />
-				);
-			state = {
-				label: PJN_BINDING_LABEL[pjnState],
-				accent,
-				icon,
-				tooltip:
-					pjnState === "ok"
-						? undefined
-						: pjnState === "failed"
-						? pjnFailedCopy(folder)
-						: pjnState === "cred_error"
-						? pjnCredErrorCopy(folder)
-						: PJN_BINDING_COPY[pjnState],
-				// Cred rechazada: el pill lleva al perfil, como el de MEV (F14).
-				onClick: pjnState === "cred_error" ? () => navigate(PJN_PROFILE_PATH) : undefined,
-			};
-		} else if (folder?.mev && folder.causaAssociationStatus === "pending_selection") {
-			// MV11: pivote MEV — el gate 'pending_selection' muestra el selector de candidatas.
-			state = {
-				label: "MEV — Elegir expediente",
-				accent: STALE_AMBER,
-				icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
-				tooltip: "La búsqueda devolvió varios expedientes con ese número en el organismo. Elegí el correcto.",
-			};
-		} else if (folder?.mev && mevCredIssue(folder)) {
-			// Credencial MEV con problema: el chip lo dice y lleva al perfil (patrón "SCBA —
-			// Sincronización pausada"). Prevalece sobre "Ya no en la lista": sin credencial
-			// válida el worker ni siquiera pudo mirar la lista.
-			const credIssue = mevCredIssue(folder)!;
-			state = {
-				label: `MEV — ${MEV_CRED_LABEL[credIssue]}`,
-				accent: STALE_AMBER,
-				icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
-				onClick: () => navigate(MEV_PROFILE_PATH),
-				tooltip: `${MEV_CRED_MESSAGE[credIssue]} Hacé clic para ir a tu perfil.`,
-			};
-		} else if (folder?.mev) {
-			const accent = isListRemovedMev ? STALE_AMBER : LIVE_GREEN;
-			state = {
-				label: isListRemovedMev ? "MEV — Ya no en la lista" : "Vinculado con MEV",
-				accent,
-				icon: isListRemovedMev ? (
-					<Warning2 size={14} variant="Bulk" color={accent} />
-				) : (
-					<ExportSquare size={14} variant="Bulk" color={accent} />
-				),
-				// MEV se vincula por carpeta (no por credencial): el pill es el control del
-				// ciclo de vida del vínculo, igual que EJE/IOL. La credencial de cuenta no se toca.
-				onClick: () => setOpenUnlink(true),
-				tooltip: isListRemovedMev
-					? "Esta causa ya no aparece en tu lista de Mis Causas del portal MEV. Puede haber sido archivada o desvinculada por el tribunal. Hacé clic para desvincular la carpeta."
-					: "Hacé clic para desvincular esta carpeta del expediente",
-			};
-		} else if (folder?.scba) {
-			// Prioridad de estados: removida del listado > credenciales en error > OK
-			// (getScbaBindingState). "Cred en error" es por user (afecta a todos sus
-			// folders SCBA), no por folder.
-			if (scbaState === "list_removed") {
-				state = {
-					label: SCBA_BINDING_LABEL.list_removed,
-					accent: STALE_AMBER,
-					icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
-					tooltip: SCBA_BINDING_COPY.list_removed,
-				};
-			} else if (scbaState === "cred_error") {
-				// Clickeable: lleva a Integraciones → SCBA, donde se actualiza la contraseña.
-				state = {
-					label: SCBA_BINDING_LABEL.cred_error,
-					accent: STALE_AMBER,
-					icon: <Warning2 size={14} variant="Bulk" color={STALE_AMBER} />,
-					tooltip: scbaCredError.errorMessage || SCBA_BINDING_COPY.cred_error,
-					onClick: () => navigate(SCBA_PROFILE_PATH),
-				};
-			} else {
-				state = {
-					label: SCBA_BINDING_LABEL.ok,
-					accent: LIVE_GREEN,
-					icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
-				};
-			}
-		} else if (folder?.eje) {
-			state = {
-				label: "Vinculado con EJE",
-				accent: LIVE_GREEN,
-				icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
-				// El pill es el control del ciclo de vida del vínculo: acá se desvincula.
-				onClick: () => setOpenUnlink(true),
-				tooltip: "Hacé clic para desvincular esta carpeta del expediente",
-			};
-		} else if (folder?.pjsalta) {
-			// IOL-7: el chip refleja el estado real de la vinculación.
-			const iolFailed = folder?.causaAssociationStatus === "failed" || (folder?.causaVerified === true && folder?.causaIsValid === false);
-			const iolPending = !iolFailed && (folder?.causaAssociationStatus === "pending" || folder?.causaVerified === false);
-			const iolRemoved = folder?.listRemoved === true && folder?.listRemovedSource === "pjsalta";
-			state = iolRemoved
-				? { label: "PJ Salta — Ya no en el portal", accent: STALE_AMBER, icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} /> }
-				: iolFailed
-				? {
-						label: "Vinculación fallida · PJ Salta",
-						accent: theme.palette.error.main,
-						icon: <CloseCircle size={14} variant="Bold" color={theme.palette.error.main} />,
-				  }
-				: iolPending
-				? {
-						label: "Pendiente de verificación · PJ Salta",
-						accent: STALE_AMBER,
-						icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} />,
-				  }
-				: {
-						label: "Vinculado con PJ Salta",
-						accent: LIVE_GREEN,
-						icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
-						// El pill es el control del ciclo de vida del vínculo: acá se desvincula.
-						onClick: () => setOpenUnlink(true),
-						tooltip: "Hacé clic para desvincular esta carpeta del expediente",
-				  };
-		} else if (folder?.pjcatamarca) {
-			// IOL-7: el chip refleja el estado real de la vinculación.
-			const iolFailed = folder?.causaAssociationStatus === "failed" || (folder?.causaVerified === true && folder?.causaIsValid === false);
-			const iolPending = !iolFailed && (folder?.causaAssociationStatus === "pending" || folder?.causaVerified === false);
-			const iolRemoved = folder?.listRemoved === true && folder?.listRemovedSource === "pjcatamarca";
-			state = iolRemoved
-				? {
-						label: "PJ Catamarca — Ya no en el portal",
-						accent: STALE_AMBER,
-						icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} />,
-				  }
-				: iolFailed
-				? {
-						label: "Vinculación fallida · PJ Catamarca",
-						accent: theme.palette.error.main,
-						icon: <CloseCircle size={14} variant="Bold" color={theme.palette.error.main} />,
-				  }
-				: iolPending
-				? {
-						label: "Pendiente de verificación · PJ Catamarca",
-						accent: STALE_AMBER,
-						icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} />,
-				  }
-				: {
-						label: "Vinculado con PJ Catamarca",
-						accent: LIVE_GREEN,
-						icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
-						// El pill es el control del ciclo de vida del vínculo: acá se desvincula.
-						onClick: () => setOpenUnlink(true),
-						tooltip: "Hacé clic para desvincular esta carpeta del expediente",
-				  };
-		} else if (folder?.pjmendoza) {
-			// IOL-7: el chip refleja el estado real de la vinculación.
-			const iolFailed = folder?.causaAssociationStatus === "failed" || (folder?.causaVerified === true && folder?.causaIsValid === false);
-			const iolPending = !iolFailed && (folder?.causaAssociationStatus === "pending" || folder?.causaVerified === false);
-			const iolRemoved = folder?.listRemoved === true && folder?.listRemovedSource === "pjmendoza";
-			state = iolRemoved
-				? {
-						label: "PJ Mendoza — Ya no en el portal",
-						accent: STALE_AMBER,
-						icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} />,
-				  }
-				: iolFailed
-				? {
-						label: "Vinculación fallida · PJ Mendoza",
-						accent: theme.palette.error.main,
-						icon: <CloseCircle size={14} variant="Bold" color={theme.palette.error.main} />,
-				  }
-				: iolPending
-				? {
-						label: "Pendiente de verificación · PJ Mendoza",
-						accent: STALE_AMBER,
-						icon: <InfoCircle size={14} variant="Bold" color={STALE_AMBER} />,
-				  }
-				: {
-						label: "Vinculado con PJ Mendoza",
-						accent: LIVE_GREEN,
-						icon: <ExportSquare size={14} variant="Bulk" color={LIVE_GREEN} />,
-						// El pill es el control del ciclo de vida del vínculo: acá se desvincula.
-						onClick: () => setOpenUnlink(true),
-						tooltip: "Hacé clic para desvincular esta carpeta del expediente",
-				  };
-		} else if (folder?.previousSyncSource && RELINKABLE_SOURCES.includes(folder.previousSyncSource)) {
+		if (folder?.previousSyncSource && RELINKABLE_SOURCES.includes(folder.previousSyncSource)) {
 			// EJE, MEV y los portales IOL se vinculan por número de expediente, así
 			// que re-vincular es seguro (MEV pide la credencial de cuenta si falta).
 			state = {
@@ -788,23 +600,6 @@ const Details = () => {
 			};
 		}
 
-		const showVerify =
-			(folder?.pjn || folder?.mev || folder?.scba || folder?.eje || folder?.pjsalta || folder?.pjcatamarca || folder?.pjmendoza) &&
-			// T21: `causaIsValid: null` es "verificada, validez sin determinar" — sin
-			// ese chequeo el icono caía en la rama del else y mostraba cruz roja.
-			(folder?.causaVerified === false ||
-				(folder?.causaVerified === true && folder?.causaIsValid !== undefined && folder?.causaIsValid !== null));
-		const verifyTooltip =
-			folder?.causaVerified === false ? "Pendiente de verificación" : folder?.causaIsValid ? "Causa válida" : "Causa inválida";
-		const verifyIcon =
-			folder?.causaVerified === false ? (
-				<InfoCircle size={14} variant="Bold" color={STALE_AMBER} />
-			) : folder?.causaIsValid ? (
-				<TickCircle size={14} variant="Bold" color={LIVE_GREEN} />
-			) : (
-				<CloseCircle size={14} variant="Bold" color={theme.palette.error.main} />
-			);
-
 		return (
 			<Box sx={{ position: "relative", display: "inline-flex" }}>
 				<Tooltip title={state.tooltip ?? ""} disableHoverListener={!state.tooltip}>
@@ -844,28 +639,6 @@ const Details = () => {
 						</Typography>
 					</Box>
 				</Tooltip>
-				{showVerify && (
-					<Tooltip title={verifyTooltip}>
-						<Box
-							sx={{
-								position: "absolute",
-								bottom: -6,
-								right: -6,
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								width: 18,
-								height: 18,
-								bgcolor: theme.palette.background.paper,
-								borderRadius: "50%",
-								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
-								boxShadow: `0 2px 4px ${alpha("#000", 0.08)}`,
-							}}
-						>
-							{verifyIcon}
-						</Box>
-					</Tooltip>
-				)}
 			</Box>
 		);
 	}, [
@@ -1383,10 +1156,30 @@ const Details = () => {
 										<Button
 											size="small"
 											variant="outlined"
-											startIcon={<DocumentDownload size={16} variant="Bulk" />}
+											startIcon={<DocumentDownload size={14} variant="Bulk" />}
 											onClick={() => openExpedienteExport(id, folder.folderName)}
 											data-testid="folder-detail-download-expediente"
-											sx={{ textTransform: "none", fontWeight: 600, borderRadius: 1.25, whiteSpace: "nowrap", flexShrink: 0 }}
+											sx={{
+												// Mismo lenguaje que el toggle Compacta/Detallada: 32 px, borde BRAND_BLUE tenue, texto 0.74rem.
+												height: 32,
+												px: 1.25,
+												flexShrink: 0,
+												whiteSpace: "nowrap",
+												textTransform: "none",
+												fontSize: "0.74rem",
+												fontWeight: 600,
+												letterSpacing: "-0.005em",
+												borderRadius: 1,
+												bgcolor: theme.palette.background.paper,
+												color: theme.palette.text.secondary,
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+												transition: "all 180ms ease",
+												"&:hover": {
+													bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+													borderColor: alpha(BRAND_BLUE, isDark ? 0.32 : 0.22),
+													color: BRAND_BLUE,
+												},
+											}}
 										>
 											Descargar expediente
 										</Button>
@@ -1405,7 +1198,6 @@ const Details = () => {
 							judicialDataComponent={MemoizedJudData}
 							isLoader={isLoader}
 						/>
-						<PlazosParteCard folder={folder} />
 					</TabPanel>
 
 					{/* Tab 2: Actividad */}

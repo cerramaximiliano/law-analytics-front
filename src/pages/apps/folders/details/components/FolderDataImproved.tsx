@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 import { fechaFolderAInput, inputAFechaFolder } from "utils/fechaFolder";
 import { aplicaTipoProceso, etiquetaTipoProceso, origenTipoProceso, OPCIONES_TIPO_PROCESO } from "utils/tipoProceso";
 import { getTipoProceso, saveTipoProceso, type TipoProceso, type TipoProcesoVista } from "api/plazosAutomaticos";
+import { useRepresentaA, RepresentaAPopover } from "./RepresentaACard";
 import { dispatch } from "store";
 import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, useTheme, alpha, useMediaQuery, Menu, MenuItem } from "@mui/material";
 import dayjs from "utils/dayjs-config";
 import data from "data/folder.json";
-import { Edit2, Clock, TickCircle, Briefcase, DollarCircle, Calendar1, DocumentText, Location, Judge } from "iconsax-react";
+import { Edit2, Clock, TickCircle, Briefcase, DollarCircle, Calendar1, DocumentText, Location, Judge, CalendarTick } from "iconsax-react";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
@@ -222,6 +223,39 @@ const TipoProcesoCard = ({ folder, isLoading }: { folder: any; isLoading: boolea
 				)}
 			</Menu>
 		</>
+	);
+};
+
+// Parte que el usuario representa (vencimientos automáticos). Solo con la función activa y causa PJN vinculada.
+// fuente 'auto' ya trae una parte asignada: se muestra y se puede cambiar; solo fuente null se pide como pendiente.
+const RepresentaACardField = ({ folder, isLoading }: { folder: any; isLoading: boolean }) => {
+	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+	const data = useRepresentaA(folder);
+	if (!data.vista) return null;
+	return (
+		<Grid item xs={12} sm={6} md={3}>
+			<FieldCard
+				label="Representás a"
+				value={data.valor}
+				isLoading={isLoading}
+				icon={<CalendarTick size={16} />}
+				helper={data.helper}
+				action={
+					<Button
+						size="small"
+						variant={data.pendiente ? "contained" : "text"}
+						disableElevation
+						disabled={data.guardando}
+						onClick={(e) => setAnchor(e.currentTarget)}
+						data-testid="folder-plazos-parte-action"
+						sx={{ minWidth: 0, py: 0, px: 0.75, fontSize: "0.7rem", textTransform: "none" }}
+					>
+						{data.vista.fuente ? "Cambiar" : "Indicar"}
+					</Button>
+				}
+			/>
+			<RepresentaAPopover anchor={anchor} onClose={() => setAnchor(null)} data={data} />
+		</Grid>
 	);
 };
 
@@ -721,6 +755,7 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 										<TipoProcesoCard folder={folder} isLoading={isLoader} />
 									</Grid>
 								)}
+								<RepresentaACardField folder={folder} isLoading={isLoader} />
 
 								{/* Description - Full Width */}
 								{(folder?.description || isEditing) && (
