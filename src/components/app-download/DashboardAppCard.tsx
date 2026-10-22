@@ -12,7 +12,6 @@ import {
 	APP_ICON_SRC,
 	GOOGLE_PLAY_BADGE_SRC,
 	GOOGLE_PLAY_QR_SRC,
-	GOOGLE_PLAY_TRADEMARK,
 	devicePlatform,
 	dismissDashboardAppCard,
 	playStoreUrl,
@@ -41,47 +40,51 @@ const DashboardAppCard = () => {
 	const placement = "dashboard" as const;
 
 	return (
-		<MainCard content={false} sx={{ p: { xs: 2, sm: 2.5 }, position: "relative" }}>
-			<IconButton size="small" aria-label="Cerrar" onClick={close} sx={{ position: "absolute", top: 8, right: 8, color: "text.secondary" }}>
-				<CloseCircle size={20} />
-			</IconButton>
-			<Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "flex-start", sm: "center" }} sx={{ pr: 4 }}>
-				<Box component="img" src={APP_ICON_SRC} alt="" sx={{ width: 48, height: 48, borderRadius: "12px", flexShrink: 0 }} />
+		<MainCard content={false} sx={{ px: { xs: 1.5, sm: 2 }, py: 1.25 }}>
+			<Stack direction="row" spacing={1.5} alignItems="center">
+				<Box component="img" src={APP_ICON_SRC} alt="" sx={{ width: 36, height: 36, borderRadius: "9px", flexShrink: 0 }} />
 				<Box sx={{ flex: 1, minWidth: 0 }}>
-					<Typography variant="h5" sx={{ mb: 0.5 }}>
+					<Typography variant="subtitle1" sx={{ lineHeight: 1.3 }}>
 						Recibí las novedades de tus causas al instante
 					</Typography>
-					<Typography variant="body2" color="text.secondary">
+					<Typography variant="body2" color="text.secondary" sx={{ display: { xs: "none", md: "block" } }}>
 						Con la app para Android te llega una notificación con cada movimiento nuevo.
 					</Typography>
-					<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.75 }}>
-						{GOOGLE_PLAY_TRADEMARK}
-					</Typography>
 				</Box>
-				<Stack direction="row" alignItems="center" spacing={1.5} sx={{ flexShrink: 0 }}>
-					<Link
-						href={playStoreUrl(placement)}
-						target="_blank"
-						rel="noopener"
-						onClick={() => trackAppDownloadClick(placement)}
-						sx={{ display: "flex", ml: -0.75 }}
-					>
-						<Box
-							component="img"
-							src={GOOGLE_PLAY_BADGE_SRC}
-							alt="Descargar en Google Play"
-							sx={{ height: 52, width: "auto", display: "block" }}
-						/>
-					</Link>
-					{platform === "desktop" && (
-						<Box
-							component="img"
-							src={GOOGLE_PLAY_QR_SRC}
-							alt="Código QR para abrir Law Analytics en Google Play desde el teléfono"
-							sx={{ width: 72, height: 72, borderRadius: 1, border: "1px solid", borderColor: "divider", bgcolor: "#fff", p: 0.5 }}
-						/>
-					)}
-				</Stack>
+				<Link
+					href={playStoreUrl(placement)}
+					target="_blank"
+					rel="noopener"
+					onClick={() => trackAppDownloadClick(placement)}
+					sx={{ display: "flex", flexShrink: 0 }}
+				>
+					<Box
+						component="img"
+						src={GOOGLE_PLAY_BADGE_SRC}
+						alt="Descargar en Google Play"
+						sx={{ height: 40, width: "auto", display: "block" }}
+					/>
+				</Link>
+				{platform === "desktop" && (
+					<Box
+						component="img"
+						src={GOOGLE_PLAY_QR_SRC}
+						alt="Código QR para abrir Law Analytics en Google Play desde el teléfono"
+						sx={{
+							width: 52,
+							height: 52,
+							borderRadius: 1,
+							border: "1px solid",
+							borderColor: "divider",
+							bgcolor: "#fff",
+							p: 0.25,
+							flexShrink: 0,
+						}}
+					/>
+				)}
+				<IconButton size="small" aria-label="Cerrar" onClick={close} sx={{ color: "text.secondary", flexShrink: 0 }}>
+					<CloseCircle size={18} />
+				</IconButton>
 			</Stack>
 		</MainCard>
 	);
