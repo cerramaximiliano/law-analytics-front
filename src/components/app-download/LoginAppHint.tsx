@@ -20,7 +20,7 @@ const LoginAppHint = () => {
 			sx={{ mt: 1, p: 1.5, borderRadius: 2, border: "1px solid", borderColor: "divider", bgcolor: "background.paper" }}
 		>
 			<Typography variant="body2" color="text.secondary" sx={{ flex: 1, minWidth: 0 }}>
-				¿Usás Android? Tus causas y novedades con notificaciones, en la app.
+				También en la app, con notificaciones.
 			</Typography>
 			<Link
 				href={playStoreUrl("login")}
