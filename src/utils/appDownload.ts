@@ -10,7 +10,7 @@ import { pushGTMEvent } from "utils/gtm";
 const PLAY_PACKAGE = "app.lawanalytics";
 
 /** Dónde se hizo clic: es el `utm_medium` del link y el `placement` del evento de GA4. */
-export type AppDownloadPlacement = "banner" | "footer" | "footer_qr";
+export type AppDownloadPlacement = "banner" | "footer" | "footer_qr" | "login" | "dashboard";
 
 export const playStoreUrl = (placement: AppDownloadPlacement): string =>
 	`https://play.google.com/store/apps/details?id=${PLAY_PACKAGE}&utm_source=lawanalytics_web&utm_medium=${placement}&utm_campaign=app_download`;
@@ -76,3 +76,21 @@ export const dismissAppBanner = (): void => {
 
 export const trackAppDownloadClick = (placement: AppDownloadPlacement): void =>
 	pushGTMEvent("app_download_click", { placement, platform: devicePlatform(), store: "google_play" });
+
+// ---- Tarjeta del panel después del registro (se cierra para siempre en ese navegador) ----
+
+const DASHBOARD_CARD_DISMISSED_KEY = "la.app.dashboardCardDismissedAt";
+
+/** La tarjeta del panel corresponde: Android o computadora, sin haber llegado desde la app ni haberla cerrado. */
+export function shouldShowDashboardAppCard(): boolean {
+	if (devicePlatform() === "ios") return false;
+	return !storage.get(FROM_APP_KEY) && !storage.get(DASHBOARD_CARD_DISMISSED_KEY);
+}
+
+export const dismissDashboardAppCard = (): void => {
+	storage.set(DASHBOARD_CARD_DISMISSED_KEY, String(Date.now()));
+	pushGTMEvent("app_card_dismiss", { platform: devicePlatform() });
+};
+
+/** El bloque del login: solo Android y sin haber llegado desde la app. */
+export const shouldShowLoginAppHint = (): boolean => devicePlatform() === "android" && !storage.get(FROM_APP_KEY);

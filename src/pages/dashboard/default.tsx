@@ -1,7 +1,7 @@
 import React from "react";
 // material-ui
 import { isDevReview } from "utils/devReview";
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { lazy, Suspense, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { alpha } from "@mui/material/styles";
 import { Grid, Stack, Typography, Snackbar, Alert, Skeleton, Fade, CircularProgress, Box } from "@mui/material";
 
@@ -37,6 +37,9 @@ import { useEffectiveUser } from "hooks/useEffectiveUser";
 import { useTeam } from "contexts/TeamContext";
 import { readTeamHint } from "utils/teamHint";
 import { useUpcomingDeadlines } from "hooks/useUpcomingDeadlines";
+
+// Oferta de la app (Android y computadora), cargada aparte.
+const DashboardAppCard = lazy(() => import("components/app-download/DashboardAppCard"));
 
 // Key para sessionStorage (evitar multiples incrementos por sesion)
 const ONBOARDING_SESSION_KEY = "onboarding_session_checked";
@@ -563,6 +566,16 @@ const DashboardDefault = () => {
 				{!showFirstCausa && !isFullyLoading && !error && !isDismissing && onboardingSignals?.firstSyncedFolder && (
 					<Grid item xs={12}>
 						<FirstSyncBanner userId={personalUserId} folder={onboardingSignals.firstSyncedFolder} />
+					</Grid>
+				)}
+
+				{/* Oferta de la app después del registro (2026-10-22): recién con una carpeta cargada (antes,
+				    lo único es la primera causa). Android y computadora; se cierra para siempre. */}
+				{!showFirstCausa && !isFullyLoading && !error && !isDismissing && hasFolders && (
+					<Grid item xs={12} sx={{ "&:empty": { display: "none" } }}>
+						<Suspense fallback={null}>
+							<DashboardAppCard />
+						</Suspense>
 					</Grid>
 				)}
 

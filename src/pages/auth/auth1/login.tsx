@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import type { CredentialResponse } from "@react-oauth/google";
 import { useDeferredGoogleLogin } from "hooks/useDeferredGoogleLogin";
@@ -16,6 +16,8 @@ import AuthWrapper from "sections/auth/AuthWrapper";
 import AuthLogin from "sections/auth/auth-forms/AuthLogin";
 import CustomGoogleButton from "components/auth/CustomGoogleButton";
 import { formatDeletionDate, getPendingDeletion } from "utils/accountDeletion";
+
+const LoginAppHint = lazy(() => import("components/app-download/LoginAppHint"));
 
 // ================================|| LOGIN ||================================ //
 
@@ -252,6 +254,12 @@ const Login = () => {
 								showLoader={isLoading}
 							/>
 						)}
+					</Grid>
+					{/* Solo en Android: la app como alternativa a la web (2026-10-22). */}
+					<Grid item xs={12} sx={{ pt: "0 !important", "&:empty": { display: "none" } }}>
+						<Suspense fallback={null}>
+							<LoginAppHint />
+						</Suspense>
 					</Grid>
 				</Grid>
 			</Box>
