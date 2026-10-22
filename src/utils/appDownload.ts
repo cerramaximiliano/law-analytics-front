@@ -36,7 +36,7 @@ export function devicePlatform(): DevicePlatform {
 
 const FROM_APP_KEY = "la.app.installedSeen";
 const BANNER_DISMISSED_KEY = "la.app.bannerDismissedAt";
-const BANNER_DISMISS_MS = 30 * 86_400_000;
+const BANNER_DISMISS_MS = 7 * 86_400_000;
 
 const storage = {
 	get(key: string): string | null {
@@ -61,7 +61,7 @@ const storage = {
  */
 export const markOpenedFromApp = (): void => storage.set(FROM_APP_KEY, String(Date.now()));
 
-/** El aviso de descarga corresponde: Android, sin haber llegado desde la app, sin cerrarlo hace < 30 días. */
+/** El aviso de descarga corresponde: Android, sin haber llegado desde la app, sin cerrarlo hace < 7 días. */
 export function shouldShowAppBanner(now = Date.now()): boolean {
 	if (devicePlatform() !== "android") return false;
 	if (storage.get(FROM_APP_KEY)) return false;

@@ -20,7 +20,7 @@ const BANNER_CSS_VAR = "--app-banner-h";
 
 /**
  * Aviso de descarga de la app en las páginas públicas, solo para visitantes con Android
- * (`shouldShowAppBanner`: tampoco a quien llegó desde la app ni a quien lo cerró hace < 30 días).
+ * (`shouldShowAppBanner`: tampoco a quien llegó desde la app ni a quien lo cerró hace < 7 días).
  *
  * Va fijo arriba, debajo del banner de descuento si lo hay (--discount-banner-h). Publica su
  * altura en --app-banner-h: el AppBar se corre con ella, y el body se corre con padding-top para
