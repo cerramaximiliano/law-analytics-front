@@ -14,6 +14,7 @@ import AuthWrapper from "sections/auth/AuthWrapper";
 import Logo from "components/logo";
 import axiosInstance from "utils/axios";
 import { loginFallbackPath, parseHandoffHash } from "utils/sessionHandoff";
+import { markOpenedFromApp } from "utils/appDownload";
 
 const Handoff = () => {
 	const [error, setError] = useState<string | null>(null);
@@ -34,7 +35,11 @@ const Handoff = () => {
 
 		axiosInstance
 			.post("/api/auth/handoff/redeem", { token }, { withCredentials: true })
-			.then(() => window.location.replace(next))
+			.then(() => {
+				// Quien llega por el traspaso ya tiene la app: no se le ofrece descargarla.
+				markOpenedFromApp();
+				window.location.replace(next);
+			})
 			.catch(() => {
 				setError("El enlace venció o ya se usó. Te llevamos al inicio de sesión.");
 				window.setTimeout(() => window.location.replace(loginFallbackPath(next)), 2500);

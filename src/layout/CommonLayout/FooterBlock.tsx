@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { lazy, Suspense, useEffect, useRef } from "react";
 // material-ui
 import { styled, useTheme } from "@mui/material/styles";
 import { Box, Container, Grid, Link, Stack, Typography, Button } from "@mui/material";
@@ -12,6 +12,9 @@ import { Facebook, Instagram, MessageText1, DocumentText, MessageQuestion, Globa
 import Logo from "components/logo";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 import { Link as RouterLink } from "react-router-dom";
+
+// Bloque de descarga de la app (decide en el cliente si mostrarse).
+const AppDownloadFooter = lazy(() => import("components/app-download/AppDownloadFooter"));
 
 // link - custom style
 const FooterLink = styled(Link)(({ theme }) => ({
@@ -127,6 +130,11 @@ const FooterBlock = ({ isFull }: showProps) => {
 											Law||Analytics cuenta con más de 500 usuarios en listas de distribución de novedades desde hace más de 4 años gracias
 											a ofrecer herramientas de calidad y actualidad
 										</Typography>
+									</Grid>
+									<Grid item xs={12}>
+										<Suspense fallback={null}>
+											<AppDownloadFooter />
+										</Suspense>
 									</Grid>
 								</Grid>
 							</motion.div>

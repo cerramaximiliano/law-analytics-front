@@ -21,6 +21,9 @@ const FooterBlock = lazy(() => import("./FooterBlock"));
 // Solo lo usa el layout "component" (con SimpleBar y react-device-detect): fuera
 // del paquete de arranque de las páginas públicas (2026-10-13).
 const ComponentLayout = lazy(() => import("./ComponentLayout"));
+// Aviso de descarga de la app: solo se baja el chunk en Android (2026-10-22).
+const AndroidAppBanner = lazy(() => import("components/app-download/AndroidAppBanner"));
+const IS_ANDROID = typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent || "");
 
 // ==============================|| LOADER - WRAPPER ||============================== //
 
@@ -56,6 +59,7 @@ const CommonLayout = ({ layout = "blank" }: { layout?: string }) => {
 		<ThemeCustomization forceMode={ThemeMode.LIGHT}>
 			{(layout === "landing" || layout === "simple") && (
 				<Suspense fallback={<Loader />}>
+					{IS_ANDROID && <AndroidAppBanner />}
 					<Header layout={layout} />
 					<Outlet />
 					<FooterBlock isFull={layout === "landing"} />

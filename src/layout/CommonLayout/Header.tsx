@@ -94,9 +94,9 @@ const Header = ({ handleDrawerOpen, layout = "landing", ...others }: Props) => {
 					backdropFilter: "blur(8px)",
 					color: theme.palette.text.primary,
 					boxShadow: "none",
-					// Cuando hay banner de descuento, el AppBar baja para no taparlo
-					// (--discount-banner-h se setea en :root por DiscountBanner.tsx).
-					top: "var(--discount-banner-h, 0px)",
+					// Cuando hay banner de descuento o aviso de la app, el AppBar baja para no taparlos
+					// (--discount-banner-h lo setea DiscountBanner.tsx; --app-banner-h, AndroidAppBanner.tsx).
+					top: "calc(var(--discount-banner-h, 0px) + var(--app-banner-h, 0px))",
 					transition: "top 0.25s ease",
 				}}
 			>
