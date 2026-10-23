@@ -2473,6 +2473,14 @@ const FoldersLayout = () => {
 			setAdd(true);
 			setAddFolderMode("add");
 			setFolder(null);
+		} else if (j === "MANUAL") {
+			// Primera causa (2026-10-23): "Prefiero cargarla a mano" y la salida sin usuario de
+			// Buenos Aires abren directo los datos requeridos, sin pasar por "Método de ingreso".
+			setAddFolderInitialStep(1);
+			setAddFolderInitialFormValues({ entryMethod: "manual" });
+			setAdd(true);
+			setAddFolderMode("add");
+			setFolder(null);
 		} else if (j === "SALTA" || j === "CATAMARCA" || j === "MENDOZA") {
 			// O8 (2026-09-12): portales IOL, mismo asistente con el poder judicial preseleccionado
 			setAddFolderInitialStep(2);

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 // material-ui
 import { Box, Button, ButtonBase, CircularProgress, Link, Stack, TextField, Typography, useMediaQuery } from "@mui/material";
@@ -10,7 +10,7 @@ import { ArrowRight, CloseCircle, Clock, InfoCircle, SearchNormal1, TickCircle }
 
 // project-imports
 import { dispatch } from "store";
-import { addFolder, getFolderById } from "store/reducers/folder";
+import { addFolder, deleteFolderById, getFolderById } from "store/reducers/folder";
 import { useTeam } from "contexts/TeamContext";
 import { BRAND_BLUE, LIVE_GREEN, LIVE_PULSE_KEYFRAMES, STALE_AMBER } from "themes/dashboardTokens";
 import { formatFolderName } from "utils/formatFolderName";
@@ -79,6 +79,10 @@ const PJN_FUEROS = [
 ];
 
 const POLL_INTERVAL_MS = 5_000;
+// Marca en history.state de la entrada que agrega el resultado (ver "botón atrás" abajo).
+const HISTORY_KEY = "primeraCausa";
+// Alta manual directa (sin el paso "Método de ingreso"), ver folders.tsx.
+const MANUAL_CREATE_URL = "/apps/folders/list?onboarding=true&action=create&jurisdiction=MANUAL";
 const POLL_TIMEOUT_MS = 3 * 60 * 1000;
 
 type Phase =
@@ -113,11 +117,13 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 	// para que "Buscar mi causa" quede a la vista sin desplazarse.
 	const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
 	const navigate = useNavigate();
+	const location = useLocation();
 	const { getUserIdForResource, getTeamIdForResource, getRequestHeaders } = useTeam();
 
 	const initialPower = POWERS.find((p) => p.key === preferredJurisdiction)?.key || "pjn";
 	const [power, setPower] = useState<PowerKey>(initialPower);
-	const [pjnCode, setPjnCode] = useState<string>("");
+	const [pjnCodeState, setPjnCode] = useState<string>("");
+	const pjnCode = pjnCodeState;
 	const [number, setNumber] = useState("");
 	const [year, setYear] = useState("");
 	const [touched, setTouched] = useState(false);
@@ -193,7 +199,9 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 		[settle, power],
 	);
 
-	const handleSubmit = async () => {
+	// override.pjnCode: "Probar en otro fuero" busca de una con el fuero nuevo (el setState no llegó todavía).
+	const handleSubmit = async (override?: { pjnCode?: string }) => {
+		const pjnCode = override?.pjnCode ?? pjnCodeState;
 		setTouched(true);
 		markStart(power);
 		if (!canSubmit) return;
@@ -260,13 +268,91 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 		if (!settle(res.folder)) startPolling(res.folder);
 	};
 
-	const reset = () => {
+	const clearForm = () => {
 		stopPolling();
 		setNumber("");
 		setYear("");
 		setTouched(false);
 		setPhase({ kind: "form" });
 	};
+
+	// La carpeta de un intento no encontrado no le sirve al usuario y bloqueaba el reintento con
+	// un 409 de duplicado (medición 14–23/10). Se borra al volver a intentar. El hub también
+	// reemplaza los intentos fallidos del mismo número al dar de alta, así que un 404 acá (ya la
+	// borró) es normal y no se muestra. En PJN, otro fuero no cuenta como duplicado: sin este
+	// borrado la fallida quedaría en la cuenta.
+	const discardFailed = async (folder: any): Promise<void> => {
+		if (!folder?._id || folderOutcome(folder) !== "not_found") return;
+		try {
+			await dispatch(deleteFolderById(folder._id));
+		} catch {
+			// sin efecto visible: el reintento sigue igual
+		}
+	};
+
+	// ── botón atrás ───────────────────────────────────────────────────────────
+	// En el teléfono, 10 de 19 usuarios nuevos terminaban su primera sesión en /funciones: el
+	// atrás del sistema salía de la app porque el resultado no tenía entrada propia en el
+	// historial. Al pasar del formulario a un resultado (o a conectar cuenta) se agrega una
+	// entrada con la misma URL; atrás vuelve al formulario. Los botones de la pantalla que
+	// vuelven al formulario consumen esa misma entrada (navigate(-1)) para no dejar entradas
+	// muertas.
+	const inSubview = connectPortal !== null || (phase.kind !== "form" && phase.kind !== "sending");
+	const pushedRef = useRef(false);
+	const pendingBackRef = useRef<(() => void) | null>(null);
+
+	useEffect(() => {
+		// Entrada propia de una visita anterior (volvió desde la carpeta): se limpia.
+		if ((location.state as any)?.[HISTORY_KEY]) navigate(location.pathname + location.search, { replace: true, state: null });
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	useEffect(() => {
+		if (!inSubview || pushedRef.current) return;
+		pushedRef.current = true;
+		navigate(location.pathname + location.search, { state: { ...((location.state as any) || {}), [HISTORY_KEY]: true } });
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [inSubview]);
+
+	const backToFormDefault = () => {
+		stopPolling();
+		if (connectPortal) {
+			setConnectPortal(null);
+			return;
+		}
+		if (phase.kind === "not_found") {
+			// Conserva número, año y fuero para corregirlos.
+			discardFailed(phase.folder);
+			setTouched(false);
+			setPhase({ kind: "form" });
+		} else if (phase.kind === "error") {
+			setPhase({ kind: "form" });
+		} else {
+			clearForm();
+		}
+	};
+
+	useEffect(() => {
+		if ((location.state as any)?.[HISTORY_KEY] || !pushedRef.current) return;
+		pushedRef.current = false;
+		const action = pendingBackRef.current;
+		pendingBackRef.current = null;
+		(action || backToFormDefault)();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [location]);
+
+	const goBack = (action?: () => void) => {
+		if (pushedRef.current) {
+			pendingBackRef.current = action || null;
+			navigate(-1);
+		} else (action || backToFormDefault)();
+	};
+
+	const reset = () =>
+		goBack(() => {
+			if (phase.kind === "not_found") discardFailed(phase.folder);
+			clearForm();
+		});
 
 	// ── estilos compartidos ───────────────────────────────────────────────────
 	const border = `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`;
@@ -305,12 +391,15 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 	if (connectPortal) {
 		return (
 			<Box sx={{ ...shell, pt: { xs: 2, sm: 2 } }}>
-				<ConectarCuenta initialPortal={connectPortal} onBack={() => setConnectPortal(null)} onSynced={onFolderCreated} />
+				<ConectarCuenta initialPortal={connectPortal} onBack={() => goBack(() => setConnectPortal(null))} onSynced={onFolderCreated} />
 			</Box>
 		);
 	}
 	const openConnect = (p: Portal) => {
 		stopPolling();
+		// Abrir la pantalla también se mide: hasta el 23/10 nadie llegó a enviar la clave y no se sabía
+		// si alguien la abría.
+		trackActivity("causa_link_start", { jurisdiction: p, type: "account", mode: "connect_open", source: "primera_causa" });
 		setPhase({ kind: "form" });
 		setConnectPortal(p);
 	};
@@ -375,17 +464,46 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 				</Button>
 			);
 		} else if (phase.kind === "not_found") {
+			const fueroActual = PJN_FUEROS.find((f) => f.code === pjnCode);
+			const otrosFueros = PJN_FUEROS.filter((f) => f.code !== pjnCode);
+			const failedFolder = phase.folder;
 			icon = <CloseCircle size={40} variant="Bulk" color={theme.palette.error.main} />;
 			title = "No la encontramos";
 			body = (
 				<Typography color="text.secondary">
-					No aparece en {selected.portal} o no es de acceso público. Revisá el número y el año
-					{power === "pjn" ? ", y el fuero" : ""}.
+					Buscamos el expediente {number}/{year}
+					{power === "pjn" && fueroActual ? ` en ${fueroActual.label}` : ""} y no aparece en {selected.portal}, o no es de acceso público.
 				</Typography>
 			);
 			actions = (
 				<>
-					<Button fullWidth variant="contained" sx={primaryBtn} onClick={reset}>
+					{power === "pjn" && otrosFueros.length > 0 && (
+						<Box sx={{ mb: 2 }}>
+							<Typography sx={{ fontWeight: 600, mb: 1 }}>¿Es de otro fuero? Buscala en:</Typography>
+							<Box sx={{ display: "grid", gridTemplateColumns: `repeat(${otrosFueros.length}, 1fr)`, gap: 1 }}>
+								{otrosFueros.map((f) => (
+									<Button
+										key={f.code}
+										variant="outlined"
+										sx={{ minHeight: 48, textTransform: "none", fontWeight: 600, borderRadius: 2, px: 0.5 }}
+										onClick={() =>
+											goBack(async () => {
+												setPjnCode(f.code);
+												await discardFailed(failedFolder);
+												handleSubmit({ pjnCode: f.code });
+											})
+										}
+									>
+										{f.label}
+									</Button>
+								))}
+							</Box>
+						</Box>
+					)}
+					<Button fullWidth variant="contained" sx={primaryBtn} onClick={() => goBack()}>
+						Revisar número y año
+					</Button>
+					<Button fullWidth sx={{ mt: 1, minHeight: 48, textTransform: "none" }} onClick={reset}>
 						Probar con otro número
 					</Button>
 					{power === "pjn" && (
@@ -442,7 +560,7 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 			title = "No pudimos cargarla";
 			body = <Typography color="text.secondary">{phase.message}</Typography>;
 			actions = (
-				<Button fullWidth variant="contained" sx={primaryBtn} onClick={() => setPhase({ kind: "form" })}>
+				<Button fullWidth variant="contained" sx={primaryBtn} onClick={() => goBack()}>
 					Volver a intentar
 				</Button>
 			);
@@ -484,7 +602,7 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 			variant="contained"
 			sx={{ ...primaryBtn, minHeight: { xs: 52, sm: 58 } }}
 			disabled={sending}
-			onClick={handleSubmit}
+			onClick={() => handleSubmit()}
 			endIcon={sending ? <CircularProgress size={18} color="inherit" /> : <SearchNormal1 size={18} />}
 		>
 			{sending ? "Buscando…" : "Buscar mi causa"}
@@ -565,6 +683,9 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 							onClick={() => navigate("/apps/folders/list?onboarding=true&action=create&jurisdiction=MEV")}
 						>
 							Cargar una causa con mi usuario de la MEV
+						</Button>
+						<Button fullWidth sx={{ minHeight: 48, textTransform: "none" }} onClick={() => navigate(MANUAL_CREATE_URL)}>
+							No tengo usuario: cargarla a mano
 						</Button>
 					</Stack>
 				</Box>
@@ -688,12 +809,7 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 				justifyContent="center"
 				sx={{ mt: { xs: 3, sm: 2.5 }, mb: 4 }}
 			>
-				<Link
-					component="button"
-					underline="hover"
-					color="text.secondary"
-					onClick={() => navigate("/apps/folders/list?onboarding=true&action=create")}
-				>
+				<Link component="button" underline="hover" color="text.secondary" onClick={() => navigate(MANUAL_CREATE_URL)}>
 					Prefiero cargarla a mano
 				</Link>
 				<Link component="button" underline="hover" color="text.secondary" onClick={onExplore}>

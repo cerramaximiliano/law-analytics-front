@@ -11,6 +11,7 @@ import ThemeCustomization from "themes";
 import { dispatch, useSelector } from "store";
 import { openComponentDrawer } from "store/reducers/menu";
 import { ThemeMode } from "types/config";
+import useAuth from "hooks/useAuth";
 
 // material-ui
 import { styled } from "@mui/material/styles";
@@ -24,6 +25,8 @@ const ComponentLayout = lazy(() => import("./ComponentLayout"));
 // Aviso de descarga de la app: solo se baja el chunk en Android (2026-10-22).
 const AndroidAppBanner = lazy(() => import("components/app-download/AndroidAppBanner"));
 const IS_ANDROID = typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent || "");
+// "Ir a mi panel" en las páginas públicas: chunk aparte, solo se baja con sesión (2026-10-23).
+const VolverAlPanel = lazy(() => import("components/VolverAlPanel"));
 
 // ==============================|| LOADER - WRAPPER ||============================== //
 
@@ -50,6 +53,7 @@ const Loader = () => (
 
 const CommonLayout = ({ layout = "blank" }: { layout?: string }) => {
 	const { componentDrawerOpen } = useSelector((state) => state.menu);
+	const { isLoggedIn } = useAuth();
 
 	const handleDrawerOpen = () => {
 		dispatch(openComponentDrawer({ componentDrawerOpen: !componentDrawerOpen }));
@@ -63,6 +67,11 @@ const CommonLayout = ({ layout = "blank" }: { layout?: string }) => {
 					<Header layout={layout} />
 					<Outlet />
 					<FooterBlock isFull={layout === "landing"} />
+				</Suspense>
+			)}
+			{layout === "landing" && isLoggedIn && (
+				<Suspense fallback={null}>
+					<VolverAlPanel />
 				</Suspense>
 			)}
 			{layout === "component" && (
