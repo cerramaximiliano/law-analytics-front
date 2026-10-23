@@ -2,6 +2,7 @@ import React from "react";
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "@mui/material/styles";
 import { Button, CircularProgress, Grid, Stack, Typography } from "@mui/material";
+import { DirectSend, Sms } from "iconsax-react";
 import OtpInput from "react18-input-otp";
 import AnimateButton from "components/@extended/AnimateButton";
 import axios from "axios";
@@ -16,6 +17,21 @@ import { pushGTMEvent, GTMEvents } from "utils/gtm";
 
 // Define el tipo para el modo
 type VerificationMode = "register" | "reset";
+
+// Remitente del correo del código (DEFAULT_FROM de services/emailService.js del hub).
+const REMITENTE = "cuentas@lawanalytics.app";
+
+// Bandeja web según el dominio. 9 de 14 altas por correo desde el 1/9 nunca verificaron
+// (6 de esas 9 con Gmail): el botón lleva directo al correo, ya filtrado por remitente
+// en Gmail, en otra pestaña para no perder esta (2026-10-23).
+const bandejaDe = (email: string): { nombre: string; url: string } | null => {
+	const dominio = (email.split("@")[1] || "").toLowerCase();
+	if (/^(gmail|googlemail)\./.test(dominio))
+		return { nombre: "Gmail", url: `https://mail.google.com/mail/u/0/#search/from%3A${encodeURIComponent(REMITENTE)}+in%3Aanywhere` };
+	if (/^(hotmail|outlook|live|msn)\./.test(dominio)) return { nombre: "Outlook", url: "https://outlook.live.com/mail/0/" };
+	if (/^(yahoo|ymail)\./.test(dominio)) return { nombre: "Yahoo Mail", url: "https://mail.yahoo.com/" };
+	return null;
+};
 
 // Props para el componente
 interface AuthCodeVerificationProps {
@@ -103,6 +119,7 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 
 			setError(null);
 			startCooldown();
+			pushGTMEvent("verify_email_action", { action: "resend", mode, provider: proveedor });
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -120,6 +137,9 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 			setIsResending(false);
 		}
 	};
+
+	const bandeja = mode === "register" ? bandejaDe(emailToUse) : null;
+	const proveedor = (emailToUse.split("@")[1] || "").toLowerCase().split(".")[0] || "otro";
 
 	// Manejador de verificación de código según el modo
 	const handleVerifyCode = async () => {
@@ -263,6 +283,12 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 		}
 	};
 
+	// Con los 6 dígitos (tipeados, pegados o autocompletados desde el SMS/correo) se verifica solo.
+	useEffect(() => {
+		if (otp.length === 6 && !isVerifying) handleVerifyCode();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [otp]);
+
 	return (
 		<Grid container spacing={3}>
 			<Grid item xs={12}>
@@ -280,6 +306,9 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 					onChange={(otp: string) => setOtp(otp)}
 					numInputs={6}
 					isDisabled={isVerifying}
+					isInputNum
+					shouldAutoFocus
+					autoComplete="one-time-code"
 					containerStyle={{ justifyContent: "space-between" }}
 					inputStyle={{
 						width: "100%",
@@ -324,23 +353,41 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 				</AnimateButton>
 			</Grid>
 
-			<Grid item xs={12}>
-				<Stack direction="row" justifyContent="space-between" alignItems="baseline">
-					<Typography>¿No recibiste el código?</Typography>
-					<Typography
-						variant="body1"
-						sx={{
-							minWidth: 85,
-							ml: 2,
-							textDecoration: "none",
-							cursor: isResending || cooldownSeconds > 0 ? "not-allowed" : "pointer",
-							opacity: isResending || cooldownSeconds > 0 ? 0.5 : 1,
-						}}
-						color="primary"
-						onClick={handleResendCode}
+			{bandeja && (
+				<Grid item xs={12}>
+					<Button
+						fullWidth
+						size="large"
+						variant="outlined"
+						href={bandeja.url}
+						target="_blank"
+						rel="noopener"
+						startIcon={<Sms size={20} />}
+						onClick={() => pushGTMEvent("verify_email_action", { action: "open_mail", mode, provider: proveedor })}
+						sx={{ textTransform: "none", fontWeight: 600 }}
 					>
-						{isResending ? "Enviando..." : cooldownSeconds > 0 ? `Reenviar en ${cooldownSeconds}s` : "Reenviar código"}
+						Abrir {bandeja.nombre}
+					</Button>
+				</Grid>
+			)}
+
+			<Grid item xs={12}>
+				<Stack spacing={1.5}>
+					<Typography variant="body2" color="text.secondary" textAlign="center">
+						Lo enviamos desde <strong>{REMITENTE}</strong>. Si no lo ves en unos minutos, revisá las carpetas <strong>Spam</strong> y{" "}
+						<strong>Promociones</strong>.
 					</Typography>
+					<Button
+						fullWidth
+						size="large"
+						variant="text"
+						onClick={handleResendCode}
+						disabled={isResending || cooldownSeconds > 0}
+						startIcon={isResending ? <CircularProgress size={18} color="inherit" /> : <DirectSend size={18} />}
+						sx={{ textTransform: "none" }}
+					>
+						{isResending ? "Enviando…" : cooldownSeconds > 0 ? `Reenviar el código en ${cooldownSeconds} s` : "Reenviar el código"}
+					</Button>
 				</Stack>
 			</Grid>
 		</Grid>
