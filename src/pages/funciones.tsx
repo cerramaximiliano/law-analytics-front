@@ -12,6 +12,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Box } from "@mui/material";
 
 import SEO from "components/SEO/SEO";
+import useAuth from "hooks/useAuth";
 import FuncionesHero from "sections/funciones/FuncionesHero";
 import FuncionBloque from "sections/funciones/FuncionBloque";
 import CierreFunciones, { BarraFija } from "sections/funciones/CierreFunciones";
@@ -22,6 +23,8 @@ const Funciones = () => {
 	const navigate = useNavigate();
 	const [params] = useSearchParams();
 	const source = params.get("source") || "funciones";
+	// Con sesión, CommonLayout muestra "Ir a mi panel" en el mismo lugar (2026-10-23).
+	const { isLoggedIn } = useAuth();
 
 	useEffect(() => {
 		trackViewFeaturesSection();
@@ -34,7 +37,7 @@ const Funciones = () => {
 			if (feature) qs.set("feature", feature);
 			navigate(`/register?${qs.toString()}`);
 		},
-		[navigate, source]
+		[navigate, source],
 	);
 
 	const alUsarFuncion = useCallback(
@@ -42,7 +45,7 @@ const Funciones = () => {
 			if (funcion.featureKey) trackFeatureInterest(funcion.featureKey);
 			irARegistro(funcion.featureKey, `funcion_${funcion.id}`);
 		},
-		[irARegistro]
+		[irARegistro],
 	);
 
 	const bajarAFunciones = useCallback(() => {
@@ -63,7 +66,7 @@ const Funciones = () => {
 
 				<CierreFunciones onEmpezar={() => irARegistro(undefined, "cierre")} />
 			</Box>
-			<BarraFija onEmpezar={() => irARegistro(undefined, "barra_fija")} />
+			{!isLoggedIn && <BarraFija onEmpezar={() => irARegistro(undefined, "barra_fija")} />}
 		</>
 	);
 };
