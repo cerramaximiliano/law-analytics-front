@@ -31,7 +31,8 @@ export async function getPublicMovementDoc(token: string, silent = false): Promi
 		const response = await axios.get<PublicMovementDocResponse>(url);
 		return response.data;
 	} catch (err: any) {
-		if (axios.isAxiosError(err) && err.response?.data && [400, 401, 404].includes(err.response.status)) {
+		// 403 `folder_archived` (con folderId): la carpeta del movimiento está archivada.
+		if (axios.isAxiosError(err) && err.response?.data && [400, 401, 403, 404].includes(err.response.status)) {
 			return err.response.data as PublicMovementDocResponse;
 		}
 		throw err;

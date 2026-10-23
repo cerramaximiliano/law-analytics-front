@@ -20,6 +20,9 @@ export interface PublicMovementDocResponse {
 	// Presente solo en error (401/404/500): por qué falló.
 	reason?: "expired" | "invalid" | "not_found" | "error";
 	message?: string;
+	// 403 del hub cuando la carpeta del movimiento está archivada (2026-10-22): la vista no
+	// muestra el movimiento y lleva a la carpeta, que muestra la vista de carpeta archivada.
+	error?: "folder_archived";
 	// "pdf" (PJN, documento desde S3) | "text" (SCBA/EJE/MEV, movimiento de
 	// texto — v2 multi-fuente). Ausente en respuestas del server viejo = pdf.
 	contentType?: "pdf" | "text";

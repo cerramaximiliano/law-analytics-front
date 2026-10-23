@@ -81,6 +81,7 @@ function expedienteLabel(exp: PublicMovementDocResponse["expediente"]): string {
 }
 
 const MovementDocPublicPage = () => {
+	const navigate = useNavigate();
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const { token } = useParams<{ token: string }>();
@@ -110,6 +111,12 @@ const MovementDocPublicPage = () => {
 			getPublicMovementDoc(token, silent)
 				.then((res) => {
 					if (cancelled) return;
+					// Carpeta archivada: su contenido no se muestra; se va a la carpeta (vista de
+					// archivada; si no hay sesión, el AuthGuard pide login y vuelve ahí).
+					if (res.error === "folder_archived" && res.folderId) {
+						navigate(`/apps/folders/details/${encodeURIComponent(res.folderId)}`, { replace: true });
+						return;
+					}
 					setData(res);
 					setPdfUrl(res.pdfUrl);
 					setLoading(false);
@@ -197,7 +204,6 @@ const MovementDocPublicPage = () => {
 			markPendingLoginContinue(token, source);
 		}
 	};
-	const navigate = useNavigate();
 
 	// Cierre suave de la promo: colapsa animado y se recuerda POR SESIÓN y por
 	// código (sessionStorage) — en esta pestaña no reaparece; el próximo email
