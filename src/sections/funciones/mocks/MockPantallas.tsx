@@ -12,9 +12,9 @@ import { ComponentType, ReactNode } from "react";
 
 import { Box, Stack, Typography } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { motion } from "framer-motion";
 import { ArrowRight, Calendar, DocumentText, TickCircle } from "iconsax-react";
 
+import { useFila } from "../animaciones";
 import { CARATULA, CONTACTO, EVENTOS_MES, MOVIMIENTOS, RUBROS, TAREAS, TOTAL_LIQUIDACION, TRAMOS } from "./datosFicticios";
 
 const AZUL = "#3A7BFF";
@@ -39,7 +39,12 @@ export const MockVentana = ({ titulo, children }: { titulo: string; children: Re
 				direction="row"
 				alignItems="center"
 				spacing={1}
-				sx={{ px: 2, py: 1.25, borderBottom: `1px solid ${theme.palette.divider}`, bgcolor: oscuro ? alpha("#0b101c", 0.6) : alpha("#f7f9fc", 0.9) }}
+				sx={{
+					px: 2,
+					py: 1.25,
+					borderBottom: `1px solid ${theme.palette.divider}`,
+					bgcolor: oscuro ? alpha("#0b101c", 0.6) : alpha("#f7f9fc", 0.9),
+				}}
 			>
 				{["#E5564E", "#E9B44C", "#4CAF7D"].map((c) => (
 					<Box key={c} sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: alpha(c, 0.7) }} />
@@ -52,16 +57,6 @@ export const MockVentana = ({ titulo, children }: { titulo: string; children: Re
 		</Box>
 	);
 };
-
-/** Entrada escalonada de las filas. */
-const fila = (i: number) => ({
-	initial: { opacity: 0, x: -10 },
-	whileInView: { opacity: 1, x: 0 },
-	// Umbral bajo a propósito: con 0.4 las filas de abajo quedaban invisibles
-	// mientras se scrolleaba y la maqueta parecía cortada.
-	viewport: { once: true, amount: 0.05 },
-	transition: { duration: 0.35, delay: 0.06 * i, ease: [0.22, 0.61, 0.36, 1] as const },
-});
 
 const Etiqueta = ({ texto, tono = "neutro" }: { texto: string; tono?: "acento" | "alerta" | "ok" | "neutro" }) => {
 	const theme = useTheme();
@@ -92,18 +87,18 @@ const Etiqueta = ({ texto, tono = "neutro" }: { texto: string; tono?: "acento" |
  *  repetir la misma ventana que el primer bloque, que va unos píxeles más abajo. */
 const MockExpedientes = ({ filas }: { filas?: number }) => {
 	const theme = useTheme();
+	const fila = useFila();
 	return (
 		<MockVentana titulo={CARATULA}>
 			<Stack spacing={1.25}>
 				{(filas ? MOVIMIENTOS.slice(0, filas) : MOVIMIENTOS).map((m, i) => (
 					<Stack
 						key={m.titulo}
-						component={motion.div}
-						{...fila(i)}
 						direction="row"
 						alignItems="center"
 						spacing={1.5}
 						sx={{
+							...fila(i),
 							py: 1,
 							px: 1.25,
 							borderRadius: 1.5,
@@ -129,6 +124,7 @@ const MockExpedientes = ({ filas }: { filas?: number }) => {
 // ---------------------------------------------------------------- calendario
 const MockCalendario = () => {
 	const theme = useTheme();
+	const fila = useFila();
 	const dias = Array.from({ length: 30 }, (_, i) => i + 1);
 	const tono = { acento: AZUL, alerta: AMBAR, neutro: theme.palette.text.secondary };
 	return (
@@ -144,9 +140,8 @@ const MockCalendario = () => {
 					return (
 						<Box
 							key={d}
-							component={motion.div}
-							{...fila(Math.floor(i / 7))}
 							sx={{
+								...fila(Math.floor(i / 7)),
 								minHeight: 42,
 								borderRadius: 1,
 								p: 0.5,
@@ -154,7 +149,9 @@ const MockCalendario = () => {
 								bgcolor: evs.length ? alpha(AZUL, 0.05) : "transparent",
 							}}
 						>
-							<Typography sx={{ fontSize: "0.62rem", color: "text.secondary", fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}>{d}</Typography>
+							<Typography sx={{ fontSize: "0.62rem", color: "text.secondary", fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}>
+								{d}
+							</Typography>
 							{evs.slice(0, 1).map((e) => (
 								<Box
 									key={e.texto}
@@ -185,11 +182,12 @@ const MockCalendario = () => {
 // ------------------------------------------------------------------- cálculos
 const MockCalculos = () => {
 	const theme = useTheme();
+	const fila = useFila();
 	return (
 		<MockVentana titulo="Liquidación por despido">
 			<Stack spacing={0.75}>
 				{RUBROS.map((r, i) => (
-					<Stack key={r.rubro} component={motion.div} {...fila(i)} direction="row" justifyContent="space-between" alignItems="baseline" sx={{ py: 0.6 }}>
+					<Stack key={r.rubro} direction="row" justifyContent="space-between" alignItems="baseline" sx={{ ...fila(i), py: 0.6 }}>
 						<Typography variant="body2" color="text.secondary" sx={{ pr: 2 }}>
 							{r.rubro}
 						</Typography>
@@ -203,7 +201,9 @@ const MockCalculos = () => {
 						<Typography variant="body2" sx={{ fontWeight: 600 }}>
 							Total
 						</Typography>
-						<Typography sx={{ fontSize: "1.35rem", fontWeight: 600, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", color: AZUL }}>
+						<Typography
+							sx={{ fontSize: "1.35rem", fontWeight: 600, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", color: AZUL }}
+						>
 							$ {TOTAL_LIQUIDACION}
 						</Typography>
 					</Stack>
@@ -215,44 +215,53 @@ const MockCalculos = () => {
 };
 
 // ------------------------------------------------------------------ intereses
-const MockIntereses = () => (
-	<MockVentana titulo="Intereses por tramo">
-		<Stack spacing={1}>
-			{TRAMOS.map((t, i) => (
-				<Box
-					key={t.periodo}
-					component={motion.div}
-					{...fila(i)}
-					sx={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 0.5, py: 1, px: 1.25, borderRadius: 1.5, bgcolor: alpha(AZUL, 0.05) }}
-				>
-					<Typography variant="body2" sx={{ fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>
-						{t.periodo}
-					</Typography>
-					<Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>
-						$ {t.aporte}
-					</Typography>
-					<Etiqueta texto={t.tasa} tono="acento" />
-				</Box>
-			))}
-		</Stack>
-	</MockVentana>
-);
+const MockIntereses = () => {
+	const fila = useFila();
+	return (
+		<MockVentana titulo="Intereses por tramo">
+			<Stack spacing={1}>
+				{TRAMOS.map((t, i) => (
+					<Box
+						key={t.periodo}
+						sx={{
+							...fila(i),
+							display: "grid",
+							gridTemplateColumns: "1fr auto",
+							gap: 0.5,
+							py: 1,
+							px: 1.25,
+							borderRadius: 1.5,
+							bgcolor: alpha(AZUL, 0.05),
+						}}
+					>
+						<Typography variant="body2" sx={{ fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>
+							{t.periodo}
+						</Typography>
+						<Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>
+							$ {t.aporte}
+						</Typography>
+						<Etiqueta texto={t.tasa} tono="acento" />
+					</Box>
+				))}
+			</Stack>
+		</MockVentana>
+	);
+};
 
 // --------------------------------------------------------------------- tareas
 const MockTareas = () => {
 	const theme = useTheme();
+	const fila = useFila();
 	return (
 		<MockVentana titulo="Tareas del estudio">
 			<Stack spacing={1}>
 				{TAREAS.map((t, i) => (
 					<Stack
 						key={t.tarea}
-						component={motion.div}
-						{...fila(i)}
 						direction="row"
 						alignItems="center"
 						spacing={1.25}
-						sx={{ py: 1, px: 1.25, borderRadius: 1.5, border: `1px solid ${theme.palette.divider}` }}
+						sx={{ ...fila(i), py: 1, px: 1.25, borderRadius: 1.5, border: `1px solid ${theme.palette.divider}` }}
 					>
 						{t.estado === "listo" ? (
 							<TickCircle size={18} color={VERDE} variant="Bold" style={{ flex: "none" }} />
@@ -261,7 +270,12 @@ const MockTareas = () => {
 						)}
 						<Typography
 							variant="body2"
-							sx={{ flex: 1, lineHeight: 1.3, textDecoration: t.estado === "listo" ? "line-through" : "none", color: t.estado === "listo" ? "text.disabled" : "text.primary" }}
+							sx={{
+								flex: 1,
+								lineHeight: 1.3,
+								textDecoration: t.estado === "listo" ? "line-through" : "none",
+								color: t.estado === "listo" ? "text.disabled" : "text.primary",
+							}}
 							noWrap
 						>
 							{t.tarea}
@@ -294,6 +308,7 @@ const MockTareas = () => {
 // ------------------------------------------------------------------ contactos
 const MockContactos = () => {
 	const theme = useTheme();
+	const fila = useFila();
 	return (
 		<MockVentana titulo="Ficha de contacto">
 			<Stack spacing={2}>
@@ -319,7 +334,7 @@ const MockContactos = () => {
 					</Box>
 				</Stack>
 				{CONTACTO.datos.map((d, i) => (
-					<Stack key={d.etiqueta} component={motion.div} {...fila(i)} direction="row" justifyContent="space-between">
+					<Stack key={d.etiqueta} sx={fila(i)} direction="row" justifyContent="space-between">
 						<Typography variant="body2" color="text.secondary">
 							{d.etiqueta}
 						</Typography>
@@ -328,12 +343,7 @@ const MockContactos = () => {
 						</Typography>
 					</Stack>
 				))}
-				<Stack
-					direction="row"
-					alignItems="center"
-					spacing={1}
-					sx={{ pt: 1.5, borderTop: `1px solid ${theme.palette.divider}` }}
-				>
+				<Stack direction="row" alignItems="center" spacing={1} sx={{ pt: 1.5, borderTop: `1px solid ${theme.palette.divider}` }}>
 					<Calendar size={16} color={AZUL} variant="Bold" />
 					<Typography variant="body2" sx={{ flex: 1 }}>
 						{CONTACTO.causas} causas vinculadas

@@ -15,7 +15,7 @@ import { Box, Button, Container, Grid, Stack, Typography } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 
 // third-party
-import { motion, useInView } from "framer-motion";
+import { aparecer, useEnVista } from "./animaciones";
 
 // project-imports
 import { TickCircle, ArrowRight } from "iconsax-react";
@@ -34,27 +34,23 @@ const FuncionBloque = ({ funcion, indice, onCtaClick }: Props) => {
 	const theme = useTheme();
 	const oscuro = theme.palette.mode === "dark";
 	const ref = useRef<HTMLDivElement>(null);
-	const visible = useInView(ref, { once: true, margin: "-80px" });
+	const visible = useEnVista(ref);
 	const invertido = indice % 2 === 1;
 	const Icono = funcion.icono;
 
-	const entrada = (retraso: number) => ({
-		initial: { opacity: 0, y: 24 },
-		animate: visible ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 },
-		transition: { duration: 0.5, delay: retraso, ease: [0.22, 0.61, 0.36, 1] as const },
-	});
-
+	// data-en-vista: las filas de las maquetas esperan en pausa hasta que el bloque se ve.
+	const entrada = (retraso: number) => ({ "data-en-vista": visible ? "si" : "no", sx: aparecer(visible, retraso) });
 	const Maqueta = MOCKS[funcion.id];
 
 	const visual = Maqueta ? (
-		<Box component={motion.div} {...entrada(0.12)}>
+		<Box {...entrada(0.12)}>
 			<Maqueta />
 		</Box>
 	) : funcion.imagen ? (
 		<Box
-			component={motion.div}
-			{...entrada(0.12)}
+			data-en-vista={visible ? "si" : "no"}
 			sx={{
+				...aparecer(visible, 0.12),
 				position: "relative",
 				borderRadius: 3,
 				overflow: "hidden",
@@ -80,9 +76,9 @@ const FuncionBloque = ({ funcion, indice, onCtaClick }: Props) => {
 		</Box>
 	) : (
 		<Box
-			component={motion.div}
-			{...entrada(0.12)}
+			data-en-vista={visible ? "si" : "no"}
 			sx={{
+				...aparecer(visible, 0.12),
 				position: "relative",
 				borderRadius: 3,
 				p: { xs: 3, md: 4.5 },
@@ -133,12 +129,7 @@ const FuncionBloque = ({ funcion, indice, onCtaClick }: Props) => {
 	);
 
 	return (
-		<Box
-			component="article"
-			ref={ref}
-			id={funcion.id}
-			sx={{ py: { xs: 7, md: 11 }, scrollMarginTop: 96 }}
-		>
+		<Box component="article" ref={ref} id={funcion.id} sx={{ py: { xs: 7, md: 11 }, scrollMarginTop: 96 }}>
 			<Container maxWidth="lg">
 				{/* En móvil la captura va siempre arriba: entra por la imagen y después lee.
 				    En escritorio alterna lado para romper la simetría. */}
@@ -149,7 +140,7 @@ const FuncionBloque = ({ funcion, indice, onCtaClick }: Props) => {
 					direction={{ xs: "row-reverse", md: invertido ? "row-reverse" : "row" }}
 				>
 					<Grid item xs={12} md={6}>
-						<Box component={motion.div} {...entrada(0)}>
+						<Box {...entrada(0)}>
 							<Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: 2 }}>
 								<Box
 									sx={{
@@ -192,11 +183,7 @@ const FuncionBloque = ({ funcion, indice, onCtaClick }: Props) => {
 								{funcion.titulo}
 							</Typography>
 
-							<Typography
-								variant="body1"
-								color="text.secondary"
-								sx={{ maxWidth: "62ch", lineHeight: 1.65, mb: 3.5 }}
-							>
+							<Typography variant="body1" color="text.secondary" sx={{ maxWidth: "62ch", lineHeight: 1.65, mb: 3.5 }}>
 								{funcion.bajada}
 							</Typography>
 

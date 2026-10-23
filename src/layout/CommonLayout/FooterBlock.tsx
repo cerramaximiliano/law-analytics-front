@@ -5,16 +5,16 @@ import { Box, Container, Grid, Link, Stack, Typography, Button } from "@mui/mate
 import { useState } from "react";
 
 // third-party
-import { motion } from "framer-motion";
 import { Facebook, Instagram, MessageText1, DocumentText, MessageQuestion, Global } from "iconsax-react";
 
 // project-imports
 import Logo from "components/logo";
-import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 import { Link as RouterLink } from "react-router-dom";
 
 // Bloque de descarga de la app (decide en el cliente si mostrarse).
 const AppDownloadFooter = lazy(() => import("components/app-download/AppDownloadFooter"));
+// Diferido (2026-10-23): trae framer-motion y el formulario de soporte; se baja al abrirlo.
+const SupportModal = lazy(() => import("layout/MainLayout/Drawer/DrawerContent/SupportModal"));
 
 // link - custom style
 const FooterLink = styled(Link)(({ theme }) => ({
@@ -112,15 +112,9 @@ const FooterBlock = ({ isFull }: showProps) => {
 				<Container>
 					<Grid container spacing={2}>
 						<Grid item xs={12} md={4}>
-							<motion.div
-								initial={{ opacity: 0, translateY: 550 }}
-								animate={{ opacity: 1, translateY: 0 }}
-								transition={{
-									type: "spring",
-									stiffness: 150,
-									damping: 30,
-								}}
-							>
+							{/* Sin la entrada con resorte de framer-motion (2026-10-23): no se veía (el pie está
+							    abajo de todo) y metía la librería en todas las páginas públicas. */}
+							<div>
 								<Grid container spacing={2}>
 									<Grid item xs={12}>
 										<FooterLogo />
@@ -137,7 +131,7 @@ const FooterBlock = ({ isFull }: showProps) => {
 										</Suspense>
 									</Grid>
 								</Grid>
-							</motion.div>
+							</div>
 						</Grid>
 						<Grid item xs={12} md={8}>
 							<Grid container spacing={{ xs: 5, md: 2 }}>
@@ -266,7 +260,11 @@ const FooterBlock = ({ isFull }: showProps) => {
 			</Box>
 
 			{/* Modal de soporte */}
-			<SupportModal open={supportOpen} onClose={handleCloseSupport} />
+			{supportOpen && (
+				<Suspense fallback={null}>
+					<SupportModal open={supportOpen} onClose={handleCloseSupport} />
+				</Suspense>
+			)}
 		</>
 	);
 };

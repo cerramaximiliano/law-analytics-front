@@ -220,6 +220,12 @@ echo -e "${GREEN}✓ Build completado${NC}"
 BUILD_DIR="build"
 [ "$IS_SERVER" = true ] && BUILD_DIR="build_new"
 
+# 5b. Pre-renderizado de /funciones (2026-10-23): escribe ${BUILD_DIR}/funciones.html con el
+# encabezado ya dibujado (nginx lo sirve en /funciones exacto). Si falla, avisa y sigue: /funciones
+# sale del index.html de siempre. Ver scripts/prerender-funciones.mjs.
+echo -e "${YELLOW}5b. Pre-renderizando /funciones...${NC}"
+nice -n 10 node scripts/prerender-funciones.mjs ${BUILD_DIR} || echo -e "${YELLOW}⚠ Pre-renderizado omitido${NC}"
+
 # 6. Crear archivo de versión para tracking
 echo -e "${YELLOW}6. Creando archivo de versión...${NC}"
 cat > ${BUILD_DIR}/version.json <<EOF

@@ -7,10 +7,10 @@
 
 import { Box, Button, Container, Grid, Stack, Typography } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { motion } from "framer-motion";
 import { ArrowDown2, ArrowRight } from "iconsax-react";
 
 import { MOCKS } from "./mocks/MockPantallas";
+import { AnimarFilas } from "./animaciones";
 import { TOTAL_LIQUIDACION } from "./mocks/datosFicticios";
 import { CIFRAS } from "./funcionesData";
 import { varianteDesdeBusqueda } from "./jurisdiccion";
@@ -32,16 +32,12 @@ const FuncionesHero = ({ onEmpezar, onVerFunciones }: Props) => {
 	const oscuro = theme.palette.mode === "dark";
 	const Expedientes = MOCKS.expedientes;
 	// Llega con ?jur= desde los anuncios del interior; sin eso, null y la página no cambia.
-	const variante = varianteDesdeBusqueda(window.location.search);
+	// Sin window al pre-renderizar en el build (scripts/prerender-funciones.mjs): versión sin ?jur=.
+	const variante = varianteDesdeBusqueda(typeof window !== "undefined" ? window.location.search : "");
 
-	// Sin opacidad inicial en cero: el navegador no cuenta un elemento invisible
-	// como contenido principal, y cada animación de entrada sumaba su retraso a la
-	// métrica. El desplazamiento se mantiene; la visibilidad, no (2026-09-20).
-	const entrada = (retraso: number) => ({
-		initial: { y: 22 },
-		animate: { y: 0 },
-		transition: { duration: 0.55, delay: retraso, ease: [0.22, 0.61, 0.36, 1] as const },
-	});
+	// Sin animación de entrada (2026-10-23): el encabezado se dibuja primero desde el HTML
+	// pre-renderizado (scripts/prerender-funciones.mjs) y animarlo al montar React lo haría
+	// saltar. Antes subía 22 px con framer-motion.
 
 	return (
 		<Box
@@ -75,7 +71,7 @@ const FuncionesHero = ({ onEmpezar, onVerFunciones }: Props) => {
 			<Container maxWidth="lg" sx={{ position: "relative" }}>
 				<Grid container spacing={{ xs: 6, md: 6 }} alignItems="center">
 					<Grid item xs={12} md={6}>
-						<Box component={motion.div} {...entrada(0)}>
+						<Box>
 							<Typography
 								component="span"
 								sx={{
@@ -123,7 +119,7 @@ const FuncionesHero = ({ onEmpezar, onVerFunciones }: Props) => {
 							</Typography>
 						</Box>
 
-						<Stack component={motion.div} {...entrada(0.1)} direction={{ xs: "column", sm: "row" }} spacing={1.75}>
+						<Stack direction={{ xs: "column", sm: "row" }} spacing={1.75}>
 							<Button
 								variant="contained"
 								disableElevation
@@ -171,8 +167,6 @@ const FuncionesHero = ({ onEmpezar, onVerFunciones }: Props) => {
 						</Typography>
 
 						<Box
-							component={motion.div}
-							{...entrada(0.18)}
 							sx={{
 								mt: 5,
 								display: "grid",
@@ -220,15 +214,15 @@ const FuncionesHero = ({ onEmpezar, onVerFunciones }: Props) => {
 							    total se apoya en el borde inferior, corrida hacia afuera, y solo pisa el
 							    margen de la ventana: ninguna fila queda tapada (2026-09-19). */}
 						<Box
-							component={motion.div}
-							{...entrada(0.14)}
 							sx={{
 								position: "relative",
 								// Se sale de la grilla en escritorio: rompe la simetría del bloque.
 								mr: { md: -6, lg: -12 },
 							}}
 						>
-							<Expedientes filas={4} />
+							<AnimarFilas.Provider value={false}>
+								<Expedientes filas={4} />
+							</AnimarFilas.Provider>
 							<Box
 								sx={{
 									// También en el teléfono: es el 93 % del tráfico y la cifra es lo que

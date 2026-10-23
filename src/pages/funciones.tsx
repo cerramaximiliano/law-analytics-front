@@ -6,7 +6,7 @@
 // registro aparece recién cuando ya sabe para qué es. El `source` del anuncio
 // se propaga al registro para no perder la atribución.
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useLayoutEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { Box } from "@mui/material";
@@ -25,6 +25,12 @@ const Funciones = () => {
 	const source = params.get("source") || "funciones";
 	// Con sesión, CommonLayout muestra "Ir a mi panel" en el mismo lugar (2026-10-23).
 	const { isLoggedIn } = useAuth();
+
+	// El encabezado pre-renderizado (build/funciones.html, scripts/prerender-funciones.mjs) se
+	// quita antes del primer dibujado de la página real: sin parpadeo ni contenido duplicado.
+	useLayoutEffect(() => {
+		document.getElementById("prerender")?.remove();
+	}, []);
 
 	useEffect(() => {
 		trackViewFeaturesSection();
