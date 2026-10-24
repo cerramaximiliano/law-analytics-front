@@ -57,6 +57,8 @@ import { scbaSiteStatusUpdated } from "store/reducers/scbaSiteStatus";
 import ScbaMaintenanceAlert from "components/ScbaMaintenanceAlert";
 import { getScbaStatusReason, isScbaConnected, isScbaDisabledByAdmin, isScbaRetryDeferred, scbaStatusNotice } from "utils/scbaBindingState";
 import { trackActivity } from "utils/productAnalytics";
+import ApiService from "store/reducers/ApiService";
+import { useTeam } from "contexts/TeamContext";
 
 interface ScbaAccountConnectProps {
 	onConnectionSuccess?: () => void;
@@ -129,6 +131,30 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 
 		// Estado del portal SCBA — usado para deshabilitar submit y mostrar banner.
 		const { isDown: isPortalDown } = useScbaSiteStatus();
+
+		// Tope de carpetas activas del plan (null = sin tope conocido o ilimitado).
+		// Mismo aviso previo que ConectarCuenta (decisión del 13/10): el usuario
+		// tiene que saber ANTES de conectar que, con una cuenta grande, el plan
+		// gratuito sigue N causas y el resto queda guardado como archivado — hasta
+		// el 24/10 este formulario no lo decía y la primera noticia era el email
+		// "5 activas, 331 archivadas".
+		const { getRequestHeaders } = useTeam();
+		const [maxFolders, setMaxFolders] = useState<number | null>(null);
+		useEffect(() => {
+			let cancelled = false;
+			ApiService.checkResourceLimit("folders", { headers: getRequestHeaders() })
+				.then((r: any) => {
+					const max = r?.data?.limit;
+					if (!cancelled && r?.success && typeof max === "number" && max > 0 && max < 1000) {
+						setMaxFolders(max);
+					}
+				})
+				.catch(() => undefined);
+			return () => {
+				cancelled = true;
+			};
+			// eslint-disable-next-line react-hooks/exhaustive-deps
+		}, []);
 
 		// Cargar estado al montar
 		useEffect(() => {
@@ -1503,6 +1529,13 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 								Conectar cuenta SCBA
 							</Typography>
 						</Stack>
+
+						{maxFolders !== null && (
+							<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", lineHeight: 1.45, textWrap: "pretty" }}>
+								Tu plan sigue {maxFolders} causas activas: si tu cuenta tiene más, las demás quedan guardadas como archivadas y se
+								activan al pasar a un plan pago.
+							</Typography>
+						)}
 
 						<TextField
 							fullWidth
