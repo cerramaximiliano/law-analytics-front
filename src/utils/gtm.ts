@@ -83,6 +83,8 @@ export const GTMEvents = {
 	POSTAL_TRACKING_ADD: "postal_tracking_add",
 	SUBSCRIPTION_CHECKOUT_START: "subscription_checkout_start",
 	SUBSCRIPTION_SUCCESS: "subscription_success",
+	// CTA "Ver planes" desde superficies de límite del plan (carpetas archivadas por el tope) — pending GTM tag
+	UPGRADE_CTA_CLICK: "upgrade_cta_click",
 	WEB_VITALS: "web_vitals",
 } as const;
 
@@ -139,6 +141,18 @@ export const trackCTAClick = (eventName: string, location: string): void => {
 	pushGTMEvent(eventName, {
 		source: location,
 		cta_location: location,
+	});
+};
+
+/**
+ * Track click en un CTA de upgrade dentro de la app ("Ver planes").
+ * `source` es el mismo valor que viaja en `?source=` hacia /suscripciones/tables
+ * (archived_folder, archived_banner, archived_unarchive_error).
+ */
+export const trackUpgradeCtaClick = (source: string): void => {
+	pushGTMEvent(GTMEvents.UPGRADE_CTA_CLICK, {
+		source,
+		destination: "/suscripciones/tables",
 	});
 };
 

@@ -79,6 +79,7 @@ import FolderRecursosTab from "./components/FolderRecursosTab";
 import PendingVerificationView, { VerificationGate } from "sections/apps/folders/PendingVerificationView";
 import ArchivedFolderView from "sections/apps/folders/ArchivedFolderView";
 import { trackActivity } from "utils/productAnalytics";
+import { showUnarchiveLimitSnackbar } from "utils/unarchiveLimitSnackbar";
 
 interface StateType {
 	folder: {
@@ -209,6 +210,8 @@ const Details = () => {
 						close: true,
 					}),
 				);
+			} else if (result.limitReached) {
+				showUnarchiveLimitSnackbar({ active: result.active, planLimit: result.planLimit, navigate });
 			} else {
 				dispatch(
 					openSnackbar({
@@ -233,7 +236,7 @@ const Details = () => {
 		} finally {
 			setUnarchiving(false);
 		}
-	}, [userId, id, unarchiving, getRequestHeaders]);
+	}, [userId, id, unarchiving, getRequestHeaders, navigate]);
 
 	// Memoized data fetching function
 	const fetchData = useCallback(async () => {
@@ -754,7 +757,14 @@ const Details = () => {
 	// folder._id === id ya evita mostrar el gate de un folder stale; el gate
 	// solo se va cuando el refetch post-desarchivo trae archived: false.
 	if (folder && folder._id === id && folder.archived === true) {
-		return <ArchivedFolderView folder={folder} unarchiving={unarchiving} onUnarchive={handleUnarchiveFromBanner} />;
+		return (
+			<ArchivedFolderView
+				folder={folder}
+				archivedReason={folder.archivedReason}
+				unarchiving={unarchiving}
+				onUnarchive={handleUnarchiveFromBanner}
+			/>
+		);
 	}
 
 	if (verificationGate) {

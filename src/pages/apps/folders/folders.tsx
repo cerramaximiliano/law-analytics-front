@@ -126,6 +126,8 @@ import { ResponsiveDialog } from "components/@extended/ResponsiveDialog";
 
 // sections
 import ArchivedItemsModal from "sections/apps/customer/ArchivedItemsModal";
+import ArchivedByPlanBanner from "sections/apps/folders/ArchivedByPlanBanner";
+import { showUnarchiveLimitSnackbar } from "utils/unarchiveLimitSnackbar";
 import { GuideFolders } from "components/guides";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
@@ -2740,6 +2742,10 @@ const FoldersLayout = () => {
 					} else {
 						await dispatch(getFoldersByUserId(user._id, true));
 					}
+				} else if (result.limitReached) {
+					// Tope del plan: aviso con acción "Ver planes" (notistack) en lugar del snackbar local
+					showUnarchiveLimitSnackbar({ active: result.active, planLimit: result.planLimit, navigate });
+					return;
 				} else {
 					setSnackbarMessage(result.message || "Error al desarchivar causas");
 					setSnackbarSeverity("error");
@@ -4059,6 +4065,9 @@ const FoldersLayout = () => {
 					}}
 				>
 					<DowngradeGracePeriodAlert />
+
+					{/* Causas archivadas por el límite del plan — solo en el listado personal */}
+					{!isTeamMode && user?._id && <ArchivedByPlanBanner onChooseVisible={handleOpenArchivedModal} refreshKey={folders?.length ?? 0} />}
 
 					{/* Microhint de onboarding */}
 					{isOnboarding && verifiedFolders.length === 0 && (

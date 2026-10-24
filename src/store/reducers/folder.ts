@@ -739,13 +739,15 @@ export const unarchiveFolders =
 				} else {
 					// Ninguna carpeta fue desarchivada (posiblemente por límites)
 					// Importante: Despachar SET_FOLDER_ERROR para resetear isLoader
+					const message = response.data.unarchiveResult?.message || "No se pudieron desarchivar las causas debido a los límites del plan.";
 					dispatch({
 						type: SET_FOLDER_ERROR,
-						payload: response.data.unarchiveResult?.message || "No se pudieron desarchivar las causas debido a los límites del plan.",
+						payload: message,
 					});
 					return {
 						success: false,
-						message: response.data.unarchiveResult?.message || "No se pudieron desarchivar las causas debido a los límites del plan.",
+						message,
+						...unarchiveLimitDetails(response.status, response.data, message),
 					};
 				}
 			} else {
@@ -768,9 +770,45 @@ export const unarchiveFolders =
 				type: SET_FOLDER_ERROR,
 				payload: errorMessage,
 			});
-			return { success: false, message: errorMessage };
+			return {
+				success: false,
+				message: errorMessage,
+				...(axios.isAxiosError(error) ? unarchiveLimitDetails(error.response?.status, error.response?.data, errorMessage) : {}),
+			};
 		}
 	};
+
+/**
+ * Detecta si un desarchivado se rechazó por el tope de carpetas activas del plan.
+ * Hoy el hub responde 200 con unarchiveResult.exceeded y un mensaje
+ * "Límite de carpetas activas alcanzado (X/Y)"; se acepta también un 403 con
+ * `code: "plan_limit_reached"` y, como respaldo, el mensaje con "límite".
+ */
+export interface UnarchiveLimitDetails {
+	limitReached?: boolean;
+	code?: string;
+	active?: number;
+	planLimit?: number;
+}
+
+const unarchiveLimitDetails = (status: number | undefined, data: any, message: string): UnarchiveLimitDetails => {
+	const code: string | undefined = data?.code || data?.unarchiveResult?.code;
+	const limitReached =
+		code === "plan_limit_reached" ||
+		data?.unarchiveResult?.exceeded === true ||
+		((status === 403 || status === 200) && /l[ií]mite/i.test(message || ""));
+	if (!limitReached) return {};
+
+	const toNum = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
+	let active = toNum(data?.active) ?? toNum(data?.limitInfo?.currentCount);
+	let planLimit = toNum(data?.planLimit) ?? toNum(data?.limit) ?? toNum(data?.limitInfo?.limit);
+	const match = /\((\d+)\s*\/\s*(\d+)\)/.exec(message || "");
+	if (match) {
+		active = active ?? Number(match[1]);
+		planLimit = planLimit ?? Number(match[2]);
+	}
+	return { limitReached: true, code: code || "plan_limit_reached", active, planLimit };
+};
 
 export interface GetFoldersByIdsResponse {
 	success: boolean;

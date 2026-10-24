@@ -44,6 +44,7 @@ const ARCHIVED_REASON_LABEL: Record<string, string> = {
 	user: "Por vos",
 	plan_limit: "Límite del plan",
 	plan_downgrade: "Cambio de plan",
+	auto_archived_limit_exceeded: "Límite del plan",
 	"Plan downgrade - automatic archiving": "Cambio de plan",
 };
 
