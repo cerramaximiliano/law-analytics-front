@@ -186,3 +186,8 @@ El panel admin replica estas reglas en `law-analytics-server/admin-api/services/
 tocás una regla acá, actualizá ese módulo y sus tests**; no hay paridad automática y la auditoría del
 2026-10-16 encontró 21 desfasajes por no hacerlo. Carpetas manuales nunca llevan flags de jurisdicción
 (`AddFolder._submitForm` los fuerza en false; el hub también los limpia).
+
+## Carpetas archivadas por el plan (2026-10-24)
+
+Vista de carpeta archivada por plan, intercambio con una activa, aviso de tope al desarchivar y banner del listado,
+alimentados por `GET /api/folders/archived-summary`. Evento `upgrade_cta_click`. Detalle: `docs/CARPETAS_ARCHIVADAS_POR_PLAN.md`.
