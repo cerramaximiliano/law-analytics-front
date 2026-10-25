@@ -63,7 +63,15 @@ export interface OauthConsentContext {
 
 export type OauthConsentContextState =
 	| { status: "loading" }
-	| { status: "error"; code: string; message: string }
+	| {
+			status: "error";
+			code: string;
+			message: string;
+			/** provider_disabled: el hub ya rechazó el challenge; URL para volver al asistente con el access_denied. */
+			redirectTo?: string | null;
+			/** provider_disabled: con qué cuenta se intentó (el login recordado hace fácil autorizar la equivocada). */
+			account?: string | null;
+	  }
 	| { status: "ready"; context: OauthConsentContext };
 
 export function useOauthConsentContext(challenge: string | null): OauthConsentContextState {
@@ -104,7 +112,9 @@ export function useOauthConsentContext(challenge: string | null): OauthConsentCo
 								: err.response?.status === 400
 								? "El enlace de autorización es inválido o ya fue usado."
 								: "No se pudo cargar la solicitud de autorización. Intentá de nuevo en un momento.");
-				setState({ status: "error", code, message });
+				const redirectTo = typeof err.response?.data?.redirect_to === "string" ? err.response.data.redirect_to : null;
+				const account = typeof err.response?.data?.account === "string" ? err.response.data.account : null;
+				setState({ status: "error", code, message, redirectTo, account });
 			});
 
 		return () => {
