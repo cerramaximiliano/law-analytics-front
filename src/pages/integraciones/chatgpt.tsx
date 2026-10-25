@@ -149,13 +149,13 @@ const buildSteps = (priceLabel: string | null): Step[] => [
 	},
 	{
 		num: 2,
-		title: "Abrí ChatGPT → Configuración → Apps y conectores",
-		body: "Andá a Configuración → Apps y conectores → Crear. La posibilidad de agregar conectores depende de tu plan de ChatGPT.",
+		title: "Abrí ChatGPT → Complementos → Agregar",
+		body: "En chatgpt.com entrá a Complementos (menú de la izquierda), tocá Agregar (arriba a la derecha) y elegí «Agregar servidor MCP personalizado». Disponible en ChatGPT Plus, Pro, Business y Enterprise.",
 	},
 	{
 		num: 3,
 		title: "Pegá la URL del servidor MCP",
-		body: `URL del servidor: ${MCP_CONNECTOR_URL}. Nombre: "Law Analytics" (o el que prefieras). Confirmá.`,
+		body: `Nombre: "Law Analytics". URL del servidor: ${MCP_CONNECTOR_URL}. Autenticación: OAuth (dejá vacíos el client ID y el secret: ChatGPT se registra solo). Marcá «Entiendo y quiero continuar», tocá «Crear como complemento» y después «Conectar Law Analytics».`,
 	},
 	{
 		num: 4,
@@ -199,7 +199,7 @@ const FAQ: FaqItem[] = [
 	},
 	{
 		q: "¿Qué plan de ChatGPT necesito?",
-		a: "Depende de tu plan de ChatGPT: no todos permiten agregar conectores propios. Revisá en ChatGPT → Configuración → Apps y conectores si tu cuenta te deja crear uno.",
+		a: "Uno que permita agregar servidores MCP personalizados: Plus, Pro, Business o Enterprise (en Business/Enterprise puede requerir que lo habilite el administrador del workspace). En Complementos → Agregar tenés que ver la opción «Agregar servidor MCP personalizado».",
 	},
 	{
 		q: "¿Tiene costo extra del lado de lawanalytics.app?",
@@ -207,7 +207,7 @@ const FAQ: FaqItem[] = [
 	},
 	{
 		q: "Conecté pero ChatGPT no encuentra las herramientas",
-		a: "Suele ser cache. En ChatGPT: Settings → Apps & Connectors → Law Analytics → Disconnect + Remove → volvé a agregar con la misma URL. Después abrí un chat NUEVO. Si persiste, contactanos.",
+		a: "Suele ser cache. En ChatGPT: Configuración → Complementos → Law Analytics → Desinstalar → volvé a agregarlo con la misma URL y conectá de nuevo. Después abrí un chat NUEVO y nombrá a Law Analytics en el pedido («usando Law Analytics, …»). Si persiste, contactanos.",
 	},
 	{
 		q: "¿Mis datos salen del país?",
