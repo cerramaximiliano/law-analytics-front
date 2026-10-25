@@ -13,6 +13,7 @@ import {
 	dismissAppBanner,
 	playStoreUrl,
 	shouldShowAppBanner,
+	trackAppBannerView,
 	trackAppDownloadClick,
 } from "utils/appDownload";
 
@@ -31,7 +32,9 @@ const AndroidAppBanner = () => {
 	const rootRef = useRef<HTMLDivElement | null>(null);
 
 	useEffect(() => {
-		setVisible(shouldShowAppBanner());
+		const show = shouldShowAppBanner();
+		setVisible(show);
+		if (show) trackAppBannerView();
 	}, []);
 
 	useEffect(() => {

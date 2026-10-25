@@ -74,6 +74,13 @@ export const dismissAppBanner = (): void => {
 	pushGTMEvent("app_banner_dismiss", { platform: devicePlatform() });
 };
 
+/**
+ * El aviso se mostró (2026-10-25): sin esto no hay base para la tasa de clics del banner. Es fijo arriba,
+ * así que mostrarse = verse. Una vez por carga del layout (no por cada navegación interna).
+ */
+export const trackAppBannerView = (): void =>
+	pushGTMEvent("app_banner_view", { placement: "banner", platform: devicePlatform() });
+
 export const trackAppDownloadClick = (placement: AppDownloadPlacement): void =>
 	pushGTMEvent("app_download_click", { placement, platform: devicePlatform(), store: "google_play" });
 
