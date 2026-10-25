@@ -85,6 +85,64 @@ function describePlan(plan?: string | null): string | null {
 	return PLAN_DISPLAY_NAMES[plan] || plan;
 }
 
+/** Segundos antes de volver solos al asistente cuando el hub ya rechazó el challenge. */
+const REDIRECT_BACK_SECONDS = 8;
+
+const ConsentContextError = ({
+	providerDisabled,
+	message,
+	redirectTo,
+	account,
+}: {
+	providerDisabled: boolean;
+	message: string;
+	redirectTo: string | null;
+	account: string | null;
+}) => {
+	const [secondsLeft, setSecondsLeft] = useState(REDIRECT_BACK_SECONDS);
+	useEffect(() => {
+		if (!redirectTo) return;
+		const t = setInterval(() => setSecondsLeft((n) => n - 1), 1000);
+		return () => clearInterval(t);
+	}, [redirectTo]);
+	useEffect(() => {
+		if (redirectTo && secondsLeft <= 0) window.location.href = redirectTo;
+	}, [redirectTo, secondsLeft]);
+	return (
+		<AuthWrapper>
+			<Grid container spacing={3}>
+				<Grid item xs={12} sx={{ textAlign: "center" }}>
+					<Logo to="/" />
+				</Grid>
+				<Grid item xs={12}>
+					<Alert severity={providerDisabled ? "warning" : "error"}>
+						<Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+							{providerDisabled ? "Integración no disponible para tu cuenta" : "No se puede continuar"}
+						</Typography>
+						<Typography variant="body2">{message}</Typography>
+						{account && (
+							<Typography variant="body2" sx={{ mt: 1 }}>
+								Cuenta con la que intentaste conectar: <strong>{account}</strong>. Si querés usar otra, elegí "Usar otra
+								cuenta" al volver a conectar desde el asistente.
+							</Typography>
+						)}
+					</Alert>
+				</Grid>
+				{redirectTo && (
+					<Grid item xs={12}>
+						<Button fullWidth size="large" variant="contained" href={redirectTo}>
+							Volver al asistente
+						</Button>
+						<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1, textAlign: "center" }}>
+							Te llevamos de vuelta en {Math.max(0, secondsLeft)} s para que el asistente deje de esperar la autorización.
+						</Typography>
+					</Grid>
+				)}
+			</Grid>
+		</AuthWrapper>
+	);
+};
+
 const OauthConsentPage = () => {
 	const [searchParams] = useSearchParams();
 	const navigate = useNavigate();
@@ -151,24 +209,17 @@ const OauthConsentPage = () => {
 
 	if (contextState.status === "error") {
 		// 403 provider_disabled (C-TOGGLES): el admin apagó la integración de este
-		// proveedor. No es un error del user → aviso, no error.
+		// proveedor. No es un error del user → aviso, no error. El hub ya rechazó el
+		// challenge: hay que volver al asistente (redirect_to) para que reciba el
+		// access_denied y deje de esperar (Etapa E, 2026-10-25). Botón + redirección sola.
 		const providerDisabled = contextState.code === "provider_disabled";
 		return (
-			<AuthWrapper>
-				<Grid container spacing={3}>
-					<Grid item xs={12} sx={{ textAlign: "center" }}>
-						<Logo to="/" />
-					</Grid>
-					<Grid item xs={12}>
-						<Alert severity={providerDisabled ? "warning" : "error"}>
-							<Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-								{providerDisabled ? "Integración no disponible para tu cuenta" : "No se puede continuar"}
-							</Typography>
-							<Typography variant="body2">{contextState.message}</Typography>
-						</Alert>
-					</Grid>
-				</Grid>
-			</AuthWrapper>
+			<ConsentContextError
+				providerDisabled={providerDisabled}
+				message={contextState.message}
+				redirectTo={contextState.redirectTo || null}
+				account={contextState.account || null}
+			/>
 		);
 	}
 
