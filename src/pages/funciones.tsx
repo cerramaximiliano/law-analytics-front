@@ -6,7 +6,7 @@
 // registro aparece recién cuando ya sabe para qué es. El `source` del anuncio
 // se propaga al registro para no perder la atribución.
 
-import { useCallback, useEffect, useLayoutEffect } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { Box } from "@mui/material";
@@ -16,7 +16,8 @@ import useAuth from "hooks/useAuth";
 import FuncionesHero from "sections/funciones/FuncionesHero";
 import FuncionBloque from "sections/funciones/FuncionBloque";
 import CierreFunciones, { BarraFija } from "sections/funciones/CierreFunciones";
-import { FUNCIONES, Funcion } from "sections/funciones/funcionesData";
+import { CONECTORES_IA_ID, FUNCIONES, Funcion, conAsistentes } from "sections/funciones/funcionesData";
+import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 import { pushGTMEvent, trackFeatureInterest, trackViewFeaturesSection } from "utils/gtm";
 
 const Funciones = () => {
@@ -25,6 +26,15 @@ const Funciones = () => {
 	const source = params.get("source") || "funciones";
 	// Con sesión, CommonLayout muestra "Ir a mi panel" en el mismo lugar (2026-10-23).
 	const { isLoggedIn } = useAuth();
+
+	// El bloque de conectores de IA sigue a los switches públicos (fail-closed mientras carga o si falla).
+	const { integrations } = usePublicIntegrations();
+	const claude = integrations.claudeAi.enabled;
+	const chatGpt = integrations.chatGpt.enabled;
+	const funciones = useMemo(() => {
+		const asistentes = claude && chatGpt ? "Claude o ChatGPT" : claude ? "Claude" : chatGpt ? "ChatGPT" : null;
+		return FUNCIONES.flatMap((f) => (f.id !== CONECTORES_IA_ID ? [f] : asistentes ? [conAsistentes(f, asistentes)] : []));
+	}, [claude, chatGpt]);
 
 	// El encabezado pre-renderizado (build/funciones.html, scripts/prerender-funciones.mjs) se
 	// quita antes del primer dibujado de la página real: sin parpadeo ni contenido duplicado.
@@ -65,7 +75,7 @@ const Funciones = () => {
 				<FuncionesHero onEmpezar={() => irARegistro(undefined, "hero")} onVerFunciones={bajarAFunciones} />
 
 				<Box component="section" aria-label="Funciones de Law Analytics">
-					{FUNCIONES.map((funcion, i) => (
+					{funciones.map((funcion, i) => (
 						<FuncionBloque key={funcion.id} funcion={funcion} indice={i} onCtaClick={alUsarFuncion} />
 					))}
 				</Box>

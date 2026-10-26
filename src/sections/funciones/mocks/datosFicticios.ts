@@ -59,3 +59,11 @@ export const CONTACTO = {
 		{ etiqueta: "Correo", valor: "m.gutierrez@ejemplo.com" },
 	],
 };
+
+export const CHAT_IA = {
+	pregunta: `En ${CARATULA}, ¿qué reclama la demanda y qué prueba falta producir?`,
+	lecturas: "Leyó 4 movimientos de la causa",
+	respuesta: "La actora reclama la indemnización por despido sin causa, con preaviso, integración y multas. De la prueba admitida falta:",
+	pendientes: ["Pericia contable: el perito todavía no aceptó el cargo", "Informe al Correo sobre el telegrama de despido"],
+	cita: "Fuente: proveído de prueba del 02/09",
+};

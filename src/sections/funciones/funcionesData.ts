@@ -12,6 +12,7 @@ import {
 	Chart,
 	DocumentText,
 	FolderOpen,
+	MessageText1,
 	Profile2User,
 	SearchNormal1,
 	Send2,
@@ -19,6 +20,7 @@ import {
 } from "iconsax-react";
 
 import { FeatureNames } from "utils/gtm";
+import { MCP_ADDON_FALLBACK_PRICE } from "sections/mcp/McpPublicDocs";
 
 // Sin capturas de la app: las que había mostraban causas reales con nombre y
 // apellido de las partes, y la agenda personal del dueño de la cuenta. Hasta que
@@ -47,6 +49,8 @@ export interface Funcion {
 	/** Destino del enlace secundario, si la función tiene página propia. */
 	enlace?: { texto: string; a: string; externo?: boolean };
 }
+
+export const CONECTORES_IA_ID = "conectores-ia";
 
 export const FUNCIONES: Funcion[] = [
 	{
@@ -250,7 +254,31 @@ export const FUNCIONES: Funcion[] = [
 		// plan gratuito), así que el enlace no puede prometer "probar la búsqueda".
 		enlace: { texto: "Ver el archivo de fallos", a: "/jurisprudencia" },
 	},
+	{
+		// Se muestra solo con algún switch público de conectores encendido (IntegrationsConfig);
+		// `{asistentes}` se reemplaza por "Claude", "ChatGPT" o "Claude o ChatGPT" en la página.
+		id: CONECTORES_IA_ID,
+		featureKey: "conectores_ia",
+		eyebrow: "Conectores de IA",
+		titulo: "Chateá con tus expedientes desde {asistentes}",
+		bajada:
+			"Conectás tu cuenta y le preguntás a {asistentes} qué reclama la demanda, qué prueba falta producir o qué vence esta semana: la respuesta sale del texto real del expediente. También te trae jurisprudencia pensada para cada caso.",
+		icono: MessageText1,
+		puntos: [
+			"Lee movimientos, escritos, resoluciones y cédulas de tus causas",
+			"Agenda, vencimientos, cálculos y contactos en la misma conversación",
+			"Fallos relacionados con los hechos de cada causa",
+			`Solo lectura, revocable cuando quieras. Add-on de ${MCP_ADDON_FALLBACK_PRICE} sobre los planes pagos`,
+		],
+		enlace: { texto: "Cómo funciona", a: "/integraciones/conectores-ai" },
+	},
 ];
+
+/** Reemplaza `{asistentes}` en los textos del bloque de conectores por los asistentes habilitados. */
+export const conAsistentes = (funcion: Funcion, asistentes: string): Funcion => {
+	const r = (t: string) => t.split("{asistentes}").join(asistentes);
+	return { ...funcion, titulo: r(funcion.titulo), bajada: r(funcion.bajada), puntos: funcion.puntos.map(r) };
+};
 
 /** Cifras del encabezado. Se mantienen conservadoras y verificables. */
 export const CIFRAS: DatoBloque[] = [

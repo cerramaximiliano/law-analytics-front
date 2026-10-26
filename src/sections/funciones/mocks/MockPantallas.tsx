@@ -12,10 +12,10 @@ import { ComponentType, ReactNode } from "react";
 
 import { Box, Stack, Typography } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { ArrowRight, Calendar, DocumentText, TickCircle } from "iconsax-react";
+import { ArrowRight, Calendar, DocumentText, MessageText1, TickCircle } from "iconsax-react";
 
 import { useFila } from "../animaciones";
-import { CARATULA, CONTACTO, EVENTOS_MES, MOVIMIENTOS, RUBROS, TAREAS, TOTAL_LIQUIDACION, TRAMOS } from "./datosFicticios";
+import { CARATULA, CHAT_IA, CONTACTO, EVENTOS_MES, MOVIMIENTOS, RUBROS, TAREAS, TOTAL_LIQUIDACION, TRAMOS } from "./datosFicticios";
 
 const AZUL = "#3A7BFF";
 const VERDE = "#2E9E6B";
@@ -355,6 +355,74 @@ const MockContactos = () => {
 	);
 };
 
+// -------------------------------------------------------------- conectores IA
+/** Conversación genérica con un asistente: sin logos ni interfaz de un proveedor concreto. */
+const MockConectorIA = () => {
+	const theme = useTheme();
+	const oscuro = theme.palette.mode === "dark";
+	const fila = useFila();
+	return (
+		<MockVentana titulo="Chat con tu asistente · Law Analytics conectado">
+			<Stack spacing={1.5}>
+				<Box
+					sx={{
+						...fila(0),
+						alignSelf: "flex-end",
+						maxWidth: "85%",
+						px: 1.75,
+						py: 1.25,
+						borderRadius: 2,
+						borderBottomRightRadius: 4,
+						bgcolor: alpha(AZUL, oscuro ? 0.22 : 0.1),
+					}}
+				>
+					<Typography variant="body2" sx={{ lineHeight: 1.45 }}>
+						{CHAT_IA.pregunta}
+					</Typography>
+				</Box>
+				<Stack direction="row" spacing={0.75} alignItems="center" sx={fila(1)}>
+					<DocumentText size={14} color={VERDE} variant="Bold" />
+					<Typography variant="caption" sx={{ color: VERDE, fontWeight: 600 }}>
+						{CHAT_IA.lecturas}
+					</Typography>
+				</Stack>
+				<Stack direction="row" spacing={1.25} alignItems="flex-start" sx={fila(2)}>
+					<Box
+						sx={{
+							width: 28,
+							height: 28,
+							borderRadius: 1.5,
+							flex: "none",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(AZUL, 0.12),
+						}}
+					>
+						<MessageText1 size={16} color={AZUL} variant="Bold" />
+					</Box>
+					<Stack spacing={1}>
+						<Typography variant="body2" sx={{ lineHeight: 1.5 }}>
+							{CHAT_IA.respuesta}
+						</Typography>
+						{CHAT_IA.pendientes.map((p, i) => (
+							<Stack key={p} direction="row" spacing={1} alignItems="flex-start" sx={fila(3 + i)}>
+								<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: AMBAR, mt: 0.9, flex: "none" }} />
+								<Typography variant="body2" sx={{ lineHeight: 1.45 }}>
+									{p}
+								</Typography>
+							</Stack>
+						))}
+						<Box sx={fila(5)}>
+							<Etiqueta texto={CHAT_IA.cita} tono="acento" />
+						</Box>
+					</Stack>
+				</Stack>
+			</Stack>
+		</MockVentana>
+	);
+};
+
 /** Maqueta por id de función. Sin maqueta, el bloque cae en su lista de datos. */
 export const MOCKS: Record<string, ComponentType<{ filas?: number }>> = {
 	expedientes: MockExpedientes,
@@ -363,4 +431,5 @@ export const MOCKS: Record<string, ComponentType<{ filas?: number }>> = {
 	intereses: MockIntereses,
 	tareas: MockTareas,
 	contactos: MockContactos,
+	"conectores-ia": MockConectorIA,
 };
