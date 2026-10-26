@@ -38,16 +38,10 @@ import { alpha } from "@mui/material/styles";
 import {
 	ArrowDown2,
 	ArrowRight2,
-	Calendar,
-	DocumentText,
-	DocumentText1,
-	Folder,
 	Lock1,
 	Message,
 	MessageQuestion,
-	SearchNormal1,
 	ShieldTick,
-	Star1,
 	TickCircle,
 } from "iconsax-react";
 
@@ -65,7 +59,8 @@ import {
 	McpRequirementsSection,
 	McpReviewerSummary,
 	McpSupportSection,
-	McpToolsSection,
+	McpCapabilitiesSection,
+	McpUseCasesSection,
 } from "sections/mcp/McpPublicDocs";
 
 // tracking
@@ -87,53 +82,6 @@ Pre-requisitos del solicitante:
 El usuario solicita acceso a la beta cerrada del conector MCP para ChatGPT. Una vez aprobado:
 1. Activar grant manual en User.featureGrants.mcp_access = true (admin → Feature Grants)
 2. Enviar instrucciones de cómo agregar el conector en ChatGPT (Settings → Apps & Connectors)`;
-
-interface UseCase {
-	icon: React.ReactNode;
-	title: string;
-	example: string;
-	/** Herramientas MCP que suele usar el asistente para responder (nombres de la-mcp-server). */
-	tools: string[];
-}
-
-const USE_CASES: UseCase[] = [
-	{
-		icon: <SearchNormal1 size={24} color={BRAND_BLUE} />,
-		title: "Buscar tus expedientes",
-		example: '"Buscame todos los casos de Pérez c/ Banco Nación"',
-		tools: ["search_folders"],
-	},
-	{
-		icon: <DocumentText size={24} color={BRAND_BLUE} />,
-		title: "Resumir movimientos recientes",
-		example: '"¿Qué pasó esta semana en mi causa de laboral con Acme S.A.?"',
-		tools: ["search_folders", "list_folder_movements"],
-	},
-	{
-		icon: <Calendar size={24} color={BRAND_BLUE} />,
-		title: "Revisar tu agenda y vencimientos",
-		example: '"¿Qué audiencias, tareas y vencimientos tengo en los próximos 7 días?"',
-		tools: ["get_upcoming_agenda"],
-	},
-	{
-		icon: <DocumentText1 size={24} color={BRAND_BLUE} />,
-		title: "Leer el texto de un movimiento",
-		example: '"Leé la última resolución de la causa Pérez c/ Banco Nación y explicame qué ordena"',
-		tools: ["list_folder_movements", "read_movement_text"],
-	},
-	{
-		icon: <Folder size={24} color={BRAND_BLUE} />,
-		title: "Consultar detalle de un caso",
-		example: '"Mostrame el detalle del folder Onildo — partes, juzgado, últimos escritos"',
-		tools: ["get_folder_detail"],
-	},
-	{
-		icon: <Star1 size={24} color={BRAND_BLUE} />,
-		title: "Buscar jurisprudencia",
-		example: '"Buscame sentencias sobre indemnización agravada por despido sin causa"',
-		tools: ["search_sentencias", "get_sentencia_text"],
-	},
-];
 
 interface Step {
 	num: number;
@@ -374,8 +322,8 @@ const ChatGptLandingPage = () => {
 						{heroTitle}
 					</Typography>
 					<Typography variant="h6" color="text.secondary" sx={{ maxWidth: 640, fontWeight: 400 }}>
-						Pediole a ChatGPT que busque tus causas, resuma movimientos, te recuerde audiencias y consulte
-						jurisprudencia — directo desde cualquier chat, con tus datos reales.
+						Chateá con tus expedientes, encontrá fechas y vencimientos, analizá tus casos y buscá jurisprudencia para cada uno: todo lo que
+						tenés en Law||Analytics, potenciado por ChatGPT.
 					</Typography>
 					<Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mt: 3 }}>
 						<Button
@@ -404,46 +352,7 @@ const ChatGptLandingPage = () => {
 
 				{/* Use cases */}
 				<FadeInWhenVisible>
-				<Box sx={{ mb: 8 }} id="que-podes-hacer">
-					<Typography variant="h4" sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}>
-						Qué podés hacer
-					</Typography>
-					<Typography variant="body1" color="text.secondary" sx={{ textAlign: "center", mb: 4 }}>
-						Estos son ejemplos reales de lo que podés pedirle a ChatGPT desde cualquier chat:
-					</Typography>
-					<Grid container spacing={2}>
-						{USE_CASES.map((uc, i) => (
-							<Grid item xs={12} sm={6} key={i}>
-								<Card variant="outlined" sx={{ height: "100%" }}>
-									<CardContent>
-										<Stack direction="row" spacing={2} alignItems="flex-start">
-											<Box sx={{ pt: 0.5 }}>{uc.icon}</Box>
-											<Box>
-												<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-													{uc.title}
-												</Typography>
-												<Typography
-													variant="body2"
-													color="text.secondary"
-													sx={{ fontStyle: "italic" }}
-												>
-													{uc.example}
-												</Typography>
-												<Typography
-													variant="caption"
-													color="text.secondary"
-													sx={{ display: "block", mt: 1, fontFamily: "monospace", fontSize: 11, wordBreak: "break-word" }}
-												>
-													{uc.tools.join(" · ")}
-												</Typography>
-											</Box>
-										</Stack>
-									</CardContent>
-								</Card>
-							</Grid>
-						))}
-					</Grid>
-				</Box>
+					<McpUseCasesSection assistantLabel={"ChatGPT"} />
 				</FadeInWhenVisible>
 
 				<Divider sx={{ my: 6 }} />
@@ -503,9 +412,9 @@ const ChatGptLandingPage = () => {
 
 				<Divider sx={{ my: 6 }} />
 
-				{/* Herramientas */}
+				{/* Qué puede consultar */}
 				<FadeInWhenVisible>
-					<McpToolsSection />
+					<McpCapabilitiesSection />
 				</FadeInWhenVisible>
 
 				<Divider sx={{ my: 6 }} />

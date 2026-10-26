@@ -45,7 +45,7 @@ export function getMcpBannerCopy(integrations: PublicIntegrations): McpBannerCop
 	const aiSubject = active.length === 1 ? clientsLabel : "Claude o ChatGPT";
 
 	const description =
-		`Pediole a ${aiSubject} que busque tus expedientes, resuma movimientos o consulte ` +
+		`Pedile a ${aiSubject} que busque tus expedientes, resuma movimientos o consulte ` +
 		`jurisprudencia desde el chat. Conector MCP oficial — datos en tiempo real.`;
 
 	void verb;
@@ -91,7 +91,7 @@ export function getAiBannerCopy(client: AiClient): AiBannerCopy {
 			displayName: "Claude.ai",
 			title: "Conectá Claude.ai a tu cuenta",
 			description:
-				"Pediole a Claude que busque tus expedientes, resuma movimientos o consulte jurisprudencia desde el chat.",
+				"Pedile a Claude que busque tus expedientes, resuma movimientos o consulte jurisprudencia desde el chat.",
 			to: AI_INTEGRATION_PATH,
 		};
 	}
@@ -100,7 +100,7 @@ export function getAiBannerCopy(client: AiClient): AiBannerCopy {
 		displayName: "ChatGPT",
 		title: "Conectá ChatGPT a tu cuenta",
 		description:
-			"Pediole a ChatGPT que busque tus expedientes, resuma movimientos o consulte jurisprudencia desde el chat.",
+			"Pedile a ChatGPT que busque tus expedientes, resuma movimientos o consulte jurisprudencia desde el chat.",
 		to: AI_CHATGPT_PATH,
 	};
 }
