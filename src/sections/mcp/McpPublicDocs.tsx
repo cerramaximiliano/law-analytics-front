@@ -18,6 +18,8 @@ import { PRIVACY_CONNECTORS_URL } from "utils/mcpLegal";
 
 export const MCP_CONNECTOR_URL = DEFAULT_MCP_URL;
 export const MCP_SUPPORT_EMAIL = "soporte@lawanalytics.app";
+/** Ficha pública en el directorio de conectores de Claude (publicada el 2026-10-27, etiqueta "Comunidad"). */
+export const CLAUDE_DIRECTORY_URL = "https://claude.ai/directory/law-analytics";
 
 export type McpDocsClient = "claude" | "chatgpt";
 

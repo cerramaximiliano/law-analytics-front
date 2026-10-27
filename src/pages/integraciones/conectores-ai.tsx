@@ -55,6 +55,7 @@ import useMcpAccess from "hooks/useMcpAccess";
 import useMcpLandingCta from "hooks/useMcpLandingCta";
 import McpConnectGuide from "sections/apps/profiles/account/McpConnectGuide";
 import {
+	CLAUDE_DIRECTORY_URL,
 	MCP_CONNECTOR_URL,
 	McpRequirementsSection,
 	McpReviewerSummary,
@@ -100,8 +101,8 @@ const buildSteps = (priceLabel: string | null): Step[] => [
 	{
 		num: 2,
 		title: "Agregá Law Analytics en Claude",
-		body: "En Claude: Configuración → Conectores → Explorar conectores → buscá \"Law Analytics\" → Conectar. Los conectores están disponibles según tu plan de Claude.",
-		alt: `Alternativa: Configuración → Conectores → Agregar conector personalizado. Nombre: "Law Analytics". URL: ${MCP_CONNECTOR_URL}.`,
+		body: `Law Analytics está en el directorio de conectores de Claude: abrí ${CLAUDE_DIRECTORY_URL} y tocá Conectar, o en Claude andá a Personalizar → Conectores → Descubrir → buscá "Law Analytics". Los conectores están disponibles según tu plan de Claude.`,
+		alt: `Alternativa: Personalizar → Conectores → Agregar → conector personalizado. Nombre: "Law Analytics". URL: ${MCP_CONNECTOR_URL}.`,
 	},
 	{
 		num: 3,
