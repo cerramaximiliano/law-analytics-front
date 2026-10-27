@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 // material-ui
 import { Alert, Box, Button, Stack, Typography, Zoom } from "@mui/material";
@@ -9,8 +9,15 @@ import { enqueueSnackbar } from "notistack";
 // project-imports
 import AnimateButton from "components/@extended/AnimateButton";
 import { Formik, Form } from "formik";
-import { armarInputRetroactivo, calcularRetroactivo, RetroactivoInput, RetroactivoResultado } from "services/previsionalService";
+import {
+	armarInputRetroactivo,
+	calcularRetroactivo,
+	registrarRetroactivoBloqueado,
+	RetroactivoInput,
+	RetroactivoResultado,
+} from "services/previsionalService";
 import { trackActivity } from "utils/productAnalytics";
+import { trackFeatureLocked } from "utils/gtm";
 import { fechaCalculo } from "utils/calculatorDate";
 
 import previsionalFormModel from "./formModel/previsionalFormModel";
@@ -77,6 +84,13 @@ const PrevisionalRetroactivoWizard = ({
 	const { subscription, hasFeatureLocal } = useSubscription();
 	// Sin suscripción cargada todavía no se bloquea: decide el hub
 	const sinAcceso = !!subscription && !hasFeatureLocal(FEATURE);
+
+	// Una vez por apertura del aviso de plan (sinAcceso o 403 del hub), no por render
+	useEffect(() => {
+		if (!mejorarPlan) return;
+		trackFeatureLocked("previsional", "plan");
+		registrarRetroactivoBloqueado();
+	}, [mejorarPlan]);
 
 	// Edición de un guardado: valores iniciales desde `variables.formulario` (o `input` como fallback).
 	// Si el guardado es anterior y no trae ninguno de los dos, se avisa y se sigue con el formulario vacío.

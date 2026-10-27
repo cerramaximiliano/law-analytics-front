@@ -357,3 +357,16 @@ export async function calcularRetroactivo(input: RetroactivoInput): Promise<Retr
 	const { data } = await axios.post("/api/previsional/retroactivo/calcular", input);
 	return data;
 }
+
+/**
+ * Registra en el hub que el usuario chocó con el aviso de plan del retroactivo (alimenta
+ * `customFields.retroactivoBloqueadoAt/Count` del contacto de marketing). Falla en silencio:
+ * la medición nunca debe romper la UI.
+ */
+export async function registrarRetroactivoBloqueado(): Promise<void> {
+	try {
+		await axios.post("/api/previsional/retroactivo/bloqueado");
+	} catch {
+		// sin efecto en la UI
+	}
+}

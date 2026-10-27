@@ -85,6 +85,7 @@ export const GTMEvents = {
 	SUBSCRIPTION_SUCCESS: "subscription_success",
 	// CTA "Ver planes" desde superficies de límite del plan (carpetas archivadas por el tope) — pending GTM tag
 	UPGRADE_CTA_CLICK: "upgrade_cta_click",
+	FEATURE_LOCKED: "feature_locked",
 	WEB_VITALS: "web_vitals",
 } as const;
 
@@ -154,6 +155,14 @@ export const trackUpgradeCtaClick = (source: string): void => {
 		source,
 		destination: "/suscripciones/tables",
 	});
+};
+
+/**
+ * Track que un usuario chocó con el aviso de plan de una función paga (la ve bloqueada).
+ * Se emite una vez por apertura del aviso, no por render.
+ */
+export const trackFeatureLocked = (feature: string, motivo: string): void => {
+	pushGTMEvent(GTMEvents.FEATURE_LOCKED, { feature, motivo });
 };
 
 /**
