@@ -403,6 +403,13 @@ export function useTeamsFeature() {
 	}, [subscription]);
 
 	const maxTeamMembers = useMemo(() => {
+		// Con un equipo activo, el cupo es el del plan del OWNER (la API lo calcula en
+		// capacity.maxCount): un administrador Free de un equipo Premium ve 10, no 0.
+		const activeTeam = teamsState.activeTeam as { capacity?: { maxCount?: number }; ownerSubscription?: { resourceLimits?: Array<{ name: string; limit: number }> } } | null;
+		if (typeof activeTeam?.capacity?.maxCount === "number") return activeTeam.capacity.maxCount;
+		const ownerLimit = activeTeam?.ownerSubscription?.resourceLimits?.find((l) => l.name === "teamMembers");
+		if (ownerLimit) return ownerLimit.limit;
+
 		if (!subscription) return 0;
 
 		// Method 1: Check limitsWithDescriptions array
@@ -420,7 +427,7 @@ export function useTeamsFeature() {
 		if (plan === "pro") return 8;
 		if (plan === "standard") return 5;
 		return 0;
-	}, [subscription]);
+	}, [subscription, teamsState.activeTeam]);
 
 	// Get plan name for display (in Spanish)
 	const planName = useMemo(() => {

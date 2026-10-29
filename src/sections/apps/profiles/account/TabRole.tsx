@@ -529,7 +529,9 @@ const TabRole = () => {
 	}
 
 	// No tiene feature teams habilitada
-	if (!isTeamsEnabled) {
+	// El plan que importa para un miembro del equipo es el del owner: un administrador
+	// Free de un equipo activo gestiona igual (prueba en producción del 29/10/2026).
+	if (!isTeamsEnabled && !(canManageMembers && activeTeam)) {
 		return (
 			<>
 				<Box
