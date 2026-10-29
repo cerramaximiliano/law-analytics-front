@@ -13,6 +13,7 @@ import {
 	ResolveFieldsPayload,
 	ResolvedFields,
 } from "types/rich-text-document";
+import { activeTeamIdOf, teamHeadersOf } from "./teamScope";
 
 const TEMPLATES_URL = `${import.meta.env.VITE_BASE_URL || ""}/api/rich-text-templates`;
 const DOCUMENTS_URL = `${import.meta.env.VITE_BASE_URL || ""}/api/rich-text-documents`;
@@ -189,12 +190,18 @@ export const deleteRichTextTemplate = (id: string) => async (dispatch: Dispatch)
 
 // ── Document thunks ─────────────────────────────────────────────────────────────
 
+// En modo equipo los escritos se listan por grupo (los del owner); sin equipo, los propios.
+const documentsListUrl = (getState?: () => any) => {
+	const teamId = activeTeamIdOf(getState);
+	return teamId ? `${DOCUMENTS_URL}/group/${teamId}` : DOCUMENTS_URL;
+};
+
 export const fetchRichTextDocuments =
 	(params: RichTextDocumentsQueryParams = {}) =>
-	async (dispatch: Dispatch) => {
+	async (dispatch: Dispatch, getState?: () => any) => {
 		dispatch({ type: SET_LOADING });
 		try {
-			const res = await axios.get(DOCUMENTS_URL, { params });
+			const res = await axios.get(documentsListUrl(getState), { params });
 			dispatch({ type: SET_DOCUMENTS, payload: { documents: res.data.documents, total: res.data.total } });
 			return { success: true };
 		} catch (error) {
@@ -223,9 +230,10 @@ export const previewRichTextDocument = (id: string) => async (_dispatch: Dispatc
 	}
 };
 
-export const createRichTextDocument = (data: CreateRichTextDocumentPayload) => async (dispatch: Dispatch) => {
+export const createRichTextDocument = (data: CreateRichTextDocumentPayload) => async (dispatch: Dispatch, getState?: () => any) => {
 	try {
-		const res = await axios.post(DOCUMENTS_URL, data);
+		// Con equipo activo va la cabecera X-Group-Id: el hub lo deja a nombre del owner.
+		const res = await axios.post(DOCUMENTS_URL, data, { headers: teamHeadersOf(activeTeamIdOf(getState)) });
 		dispatch({ type: ADD_DOCUMENT, payload: res.data.document });
 		return { success: true, document: res.data.document as RichTextDocument };
 	} catch (error) {
@@ -257,9 +265,9 @@ export const clearRichTextDocument = () => (dispatch: Dispatch) => {
 	dispatch({ type: CLEAR_DOCUMENT });
 };
 
-export const fetchRichTextDocumentsByFolder = (folderId: string) => async (dispatch: Dispatch) => {
+export const fetchRichTextDocumentsByFolder = (folderId: string) => async (dispatch: Dispatch, getState?: () => any) => {
 	try {
-		const res = await axios.get(DOCUMENTS_URL, { params: { folderId, limit: 100 } });
+		const res = await axios.get(documentsListUrl(getState), { params: { folderId, limit: 100 } });
 		dispatch({ type: SET_FOLDER_DOCS, payload: { documents: res.data.documents, total: res.data.total } });
 		return { success: true, documents: res.data.documents as RichTextDocument[] };
 	} catch (error) {

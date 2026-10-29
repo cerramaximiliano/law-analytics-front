@@ -36,6 +36,10 @@ export type ActivityEventName =
 	| "postal_tracking_add"
 	| "subscription_checkout_start"
 	| "subscription_success"
+	// Equipos (29/10/2026): alta del equipo, invitaciones enviadas y aceptadas
+	| "team_create"
+	| "team_invite_send"
+	| "team_invite_accept"
 	| "web_vitals"
 	| "api_timing"
 	| "api_error"

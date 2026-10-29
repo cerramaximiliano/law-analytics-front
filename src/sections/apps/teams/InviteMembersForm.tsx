@@ -1,7 +1,6 @@
 // sections/apps/teams/InviteMembersForm.tsx
 import { useState } from "react";
 import {
-	Box,
 	Button,
 	TextField,
 	FormControl,
@@ -18,6 +17,7 @@ import {
 import { Add, CloseCircle, Send2 } from "iconsax-react";
 import { useDispatch } from "store";
 import { sendInvitations } from "store/reducers/teams";
+import { trackActivity } from "utils/productAnalytics";
 import { TeamRole, ROLE_CONFIG, SendInvitationRequest } from "types/teams";
 import { useTeam, useTeamsFeature } from "contexts/TeamContext";
 
@@ -150,6 +150,7 @@ export default function InviteMembersForm({ onSuccess }: InviteMembersFormProps)
 				// Check for partial success (some sent, some failed)
 				const failedCount = result.results?.failed?.length || 0;
 				const sentCount = result.results?.sent?.length || 0;
+				if (sentCount > 0) trackActivity("team_invite_send", { count: sentCount });
 
 				if (failedCount > 0 && sentCount > 0) {
 					// Partial success - show both success and warning

@@ -415,8 +415,9 @@ export function useTeamsFeature() {
 
 		// Method 2: Fallback based on plan
 		const plan = subscription.plan?.toLowerCase();
+		// Mismos valores que planconfigs.teamMembers (free 0, standard 5, pro 8, premium 10)
 		if (plan === "premium") return 10;
-		if (plan === "pro") return 5;
+		if (plan === "pro") return 8;
 		if (plan === "standard") return 5;
 		return 0;
 	}, [subscription]);

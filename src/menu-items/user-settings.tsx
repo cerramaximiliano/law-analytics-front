@@ -49,6 +49,13 @@ const userSettings: NavItemType = {
 					type: "item",
 					url: "/apps/profiles/account/my-account",
 				},
+				{
+					// Equipos (29/10/2026): acceso directo a la pestaña "Mi equipo" del perfil.
+					id: "account-team",
+					title: <FormattedMessage id="Mi equipo" />,
+					type: "item",
+					url: "/apps/profiles/account/role",
+				},
 			],
 		},
 		{

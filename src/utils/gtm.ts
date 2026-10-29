@@ -115,6 +115,7 @@ export const FeatureNames = {
 	SISTEMA_CITAS: "sistema_citas",
 	ESCRITOS: "escritos",
 	POSTAL_TRACKING: "postal_tracking",
+	EQUIPOS: "equipos",
 } as const;
 
 // CTA locations

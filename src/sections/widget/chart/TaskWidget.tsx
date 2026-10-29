@@ -20,6 +20,7 @@ import { TaskType } from "types/task";
 import { useSelector, dispatch, RootState } from "store";
 import { ArrowRight, TaskSquare, TickCircle, Task as TaskIcon } from "iconsax-react";
 import { useNavigate } from "react-router-dom";
+import { useTeam } from "contexts/TeamContext";
 
 // Importar acción para obtener tareas próximas
 import { getUpcomingTasks, toggleTaskStatus } from "store/reducers/tasks";
@@ -43,6 +44,11 @@ const TaskWidget = () => {
 	const user = useSelector((state: RootState) => state.auth.user);
 	const userId = user?._id;
 
+	// Modo equipo: las tareas viven bajo el owner del equipo. Los miembros que no
+	// son owner piden solo las suyas (?vista=mias); el owner, sin filtro.
+	const { activeTeam, isTeamMode, isOwner, isInitialized: isTeamInitialized, getUserIdForResource, getRequestHeaders } = useTeam();
+	const teamId = isTeamMode ? activeTeam?._id : undefined;
+
 	// Obtener tareas próximas del estado con el nombre correcto del reducer
 	const upcomingTasks = useSelector((state: RootState) => state.tasksReducer.upcomingTasks);
 	const isTasksLoading = useSelector((state: RootState) => state.tasksReducer.isLoader);
@@ -62,13 +68,24 @@ const TaskWidget = () => {
 
 	// Cargar datos de tareas y métricas
 	useEffect(() => {
-		if (userId) {
-			if (!isInitialized && !unifiedData?.dashboard && !unifiedData?.tasks) {
-				dispatch(getUnifiedStats(userId, "dashboard,tasks"));
-			}
+		if (!userId) return;
+		if (!isInitialized && !unifiedData?.dashboard && !unifiedData?.tasks) {
+			dispatch(getUnifiedStats(userId, "dashboard,tasks"));
+		}
+		// Cuentas sin equipo: pedir enseguida, sin esperar a que se resuelvan los
+		// equipos (mismo criterio que el dashboard, 7/10). Si después resulta que
+		// hay equipo, se vuelve a pedir con el owner y el filtro del miembro.
+		if (teamId) {
+			dispatch(
+				getUpcomingTasks(getUserIdForResource() || userId, DAYS_TO_SHOW, {
+					vista: isOwner ? undefined : "mias",
+					headers: getRequestHeaders(),
+				}),
+			);
+		} else if (!isTeamMode) {
 			dispatch(getUpcomingTasks(userId, DAYS_TO_SHOW));
 		}
-	}, [userId, isInitialized, unifiedData]);
+	}, [userId, isInitialized, unifiedData, isTeamInitialized, isTeamMode, teamId, isOwner]);
 
 	const handleViewAllTasks = () => {
 		setShowAllTasks(true);

@@ -51,6 +51,7 @@ import {
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useDispatch, useSelector } from "store";
+import { useTeam } from "contexts/TeamContext";
 import {
 	fetchRichTextDocuments,
 	fetchRichTextTemplates,
@@ -1451,6 +1452,10 @@ const EscritosPage = () => {
 	const { documents: postalDocs, isLoader: postalLoading } = useSelector((state: any) => state.postalDocumentsReducer);
 	const folders = useSelector((state: any) => state.folder?.folders || []);
 	const userId = useSelector((state: any) => state.auth?.user?._id);
+	// Modo equipo: los thunks listan y crean con el equipo activo del store. Acá solo se
+	// vuelve a pedir cuando cambia el equipo (el primer fetch personal no espera a los equipos).
+	const { activeTeam } = useTeam();
+	const activeTeamId = activeTeam?._id ?? null;
 
 	const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
 	const [catFilter, setCatFilter] = useState<string>("");
@@ -1490,7 +1495,7 @@ const EscritosPage = () => {
 		// Siempre traemos ambos orígenes; el filtro (sistema/propio) se aplica client-side por `source`.
 		dispatch(fetchPostalDocuments({ page: 1, limit: FETCH_LIMIT, search: search || undefined }) as any);
 		dispatch(fetchRichTextDocuments({ page: 1, limit: FETCH_LIMIT, search: search || undefined }));
-	}, [dispatch, search]);
+	}, [dispatch, search, activeTeamId]);
 
 	const rows = useMemo((): DocRow[] => {
 		const result: DocRow[] = [

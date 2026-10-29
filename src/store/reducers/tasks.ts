@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { Dispatch } from "redux";
-import { TaskType, TaskState } from "types/task";
+import { TaskType, TaskState, TaskVista } from "types/task";
 import { trackActivity, inferSource } from "utils/productAnalytics";
 
 // Action types
@@ -30,6 +30,7 @@ const initialState: TaskState & { selectedFolderId?: string } = {
 	error: null,
 	isInitialized: false,
 	lastFetchedUserId: undefined,
+	lastFetchedVista: undefined,
 };
 
 const tasksReducer = (state = initialState, action: any) => {
@@ -56,6 +57,7 @@ const tasksReducer = (state = initialState, action: any) => {
 				isLoader: false,
 				isInitialized: true,
 				lastFetchedUserId: action.userId || state.lastFetchedUserId,
+				lastFetchedVista: action.vista,
 			};
 		case SET_SELECTED_TASKS:
 			return {
@@ -187,23 +189,28 @@ export const getTasksByUserId =
 	};
 
 export const getTasksByGroupId =
-	(groupId: string, forceRefresh: boolean = false) =>
+	(groupId: string, forceRefresh: boolean = false, options?: { vista?: TaskVista }) =>
 	async (dispatch: Dispatch, getState: any) => {
 		try {
 			const state = getState();
-			const { isInitialized, tasks } = state.tasksReducer;
+			const { isInitialized, tasks, lastFetchedVista } = state.tasksReducer;
+			// "todas" equivale a no filtrar: no se manda el parámetro.
+			const vista = options?.vista && options.vista !== "todas" ? options.vista : undefined;
 
-			// Cache validation: si ya tenemos datos y no forzamos refresh, retornar del cache
-			if (!forceRefresh && isInitialized && tasks.length > 0) {
+			// Cache validation: si ya tenemos datos de la misma vista y no forzamos refresh, retornar del cache
+			if (!forceRefresh && isInitialized && tasks.length > 0 && lastFetchedVista === vista) {
 				return { success: true, tasks, fromCache: true };
 			}
 
 			dispatch({ type: SET_LOADING });
-			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/tasks/group/${groupId}`);
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/tasks/group/${groupId}`, {
+				params: vista ? { vista } : undefined,
+			});
 			dispatch({
 				type: SET_TASKS,
 				payload: response.data,
 				groupId: groupId,
+				vista,
 			});
 			return { success: true, tasks: response.data };
 		} catch (error: unknown) {
@@ -433,11 +440,15 @@ export const updateSubtask =
  * Obtiene tareas próximas a vencer
  */
 export const getUpcomingTasks =
-	(userId: string, days: number = 7) =>
+	(userId: string, days: number = 7, options?: { vista?: TaskVista; headers?: Record<string, string> }) =>
 	async (dispatch: Dispatch) => {
 		try {
 			dispatch({ type: SET_LOADING });
-			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/tasks/upcoming/${userId}?days=${days}`);
+			const vista = options?.vista && options.vista !== "todas" ? options.vista : undefined;
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/tasks/upcoming/${userId}`, {
+				params: { days, ...(vista ? { vista } : {}) },
+				headers: options?.headers,
+			});
 			dispatch({
 				type: SET_UPCOMING_TASKS,
 				payload: response.data,

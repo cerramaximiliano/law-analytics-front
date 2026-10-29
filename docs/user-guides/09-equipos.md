@@ -47,14 +47,14 @@ Para crear un equipo necesitas:
 
 ### Limites de miembros por plan:
 
-| Plan         | Miembros máximos | Equipos       |
-| ------------ | ---------------- | ------------- |
-| **Free**     | —                | No disponible |
-| **Estándar** | 5 miembros       | 1 equipo      |
-| **Pro**      | 8 miembros       | 1 equipo      |
-| **Premium**  | 10 miembros      | 1 equipo      |
+| Plan         | Integrantes máximos | Equipos       |
+| ------------ | ------------------- | ------------- |
+| **Free**     | —                   | No disponible |
+| **Estándar** | 5 (incluido el propietario) | 1 equipo |
+| **Pro**      | 8 (incluido el propietario) | 1 equipo |
+| **Premium**  | 10 (incluido el propietario) | 1 equipo |
 
-> **💡 Nota**: El limite de miembros se refiere a los invitados. El propietario no cuenta dentro de ese limite.
+> **💡 Nota**: El límite cuenta al propietario. En Premium, por ejemplo, podés invitar hasta 9 colaboradores.
 
 ---
 

@@ -96,6 +96,12 @@ const RequirementsContent = () => {
 							</Typography>
 						</Box>
 						<Box display="flex" alignItems="center">
+							<TickCircle size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
+							<Typography>
+								<strong>Plan Pro:</strong> Hasta 8 miembros (incluido el propietario)
+							</Typography>
+						</Box>
+						<Box display="flex" alignItems="center">
 							<TickCircle size={20} style={{ marginRight: "8px", color: theme.palette.success.main }} />
 							<Typography>
 								<strong>Plan Premium:</strong> Hasta 10 miembros (incluido el propietario)

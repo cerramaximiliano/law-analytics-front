@@ -43,6 +43,10 @@ export interface TaskType {
 	updatedAt?: Date | string; // De timestamps
 }
 
+// Filtro de responsable para los listados: "mias" = asignadas a quien consulta
+// (o sin responsable y creadas por él), "todas" = sin filtro, "sin_asignar".
+export type TaskVista = "mias" | "todas" | "sin_asignar";
+
 export interface TaskState {
 	tasks: TaskType[];
 	selectedTasks: TaskType[]; // Tareas filtradas
@@ -54,6 +58,7 @@ export interface TaskState {
 	upcomingTasks: TaskType[];
 	isInitialized: boolean;
 	lastFetchedUserId?: string;
+	lastFetchedVista?: TaskVista;
 }
 
 export type TaskDataType = {
@@ -96,4 +101,5 @@ export type TaskFormValues = {
 	userId?: string;
 	movementRef?: string;
 	movementSource?: "pjn" | "mev" | "scba" | "eje" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "manual" | null;
+	assignedTo?: string[];
 };

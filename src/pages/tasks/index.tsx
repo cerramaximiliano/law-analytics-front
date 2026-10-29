@@ -24,6 +24,8 @@ import {
 	MenuItem,
 	ListItemIcon,
 	ListItemText,
+	ToggleButton,
+	ToggleButtonGroup,
 } from "@mui/material";
 
 import {
@@ -44,6 +46,7 @@ import {
 import MainCard from "components/MainCard";
 import ScrollX from "components/ScrollX";
 import TaskDetailRow from "sections/apps/tasks/TaskDetailRow";
+import TaskAssignees from "sections/apps/tasks/TaskAssignees";
 import { IndeterminateCheckbox, HeaderSort, SortingSelect, TablePagination, TableRowSelection } from "components/third-party/ReactTable";
 import AlertTaskDelete from "sections/apps/tasks/AlertTaskDelete";
 import TaskModal from "sections/apps/tasks/TaskModal";
@@ -61,7 +64,7 @@ import { getTasksByUserId, getTasksByGroupId, deleteTask, getTaskDetail } from "
 import { getFoldersByUserId, getFoldersByGroupId } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
 import { useTeam } from "contexts/TeamContext";
-import { TaskType } from "types/task";
+import { TaskType, TaskVista } from "types/task";
 import dayjs from "utils/dayjs-config";
 import { CSVLink } from "react-csv";
 
@@ -147,6 +150,8 @@ interface Props {
 	pageSize: number;
 	onPageChange: (pageIndex: number) => void;
 	onPageSizeChange: (pageSize: number) => void;
+	showAssignees?: boolean; // modo equipo: columna "Responsable" visible
+	vistaSelector?: React.ReactNode; // selector "Mis tareas / Todas / Sin asignar"
 }
 
 function ReactTable({
@@ -164,6 +169,8 @@ function ReactTable({
 	pageSize: controlledPageSize,
 	onPageChange,
 	onPageSizeChange,
+	showAssignees = false,
+	vistaSelector,
 }: Props) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
@@ -173,10 +180,11 @@ function ReactTable({
 	const filterTypes = useMemo(() => renderFilterTypes, []);
 	const [sortBy, setSortByState] = useState([{ id: "name", desc: false }]);
 
-	const defaultHiddenColumns = useMemo(
-		() => (matchDownSM ? ["_id", "description", "groupId", "folderId", "assignedTo", "subtasks"] : ["_id", "groupId", "assignedTo"]),
-		[matchDownSM],
-	);
+	const defaultHiddenColumns = useMemo(() => {
+		const hidden = matchDownSM ? ["_id", "description", "groupId", "folderId", "subtasks"] : ["_id", "groupId"];
+		if (!showAssignees) hidden.push("assignedTo");
+		return hidden;
+	}, [matchDownSM, showAssignees]);
 
 	const {
 		getTableProps,
@@ -361,6 +369,9 @@ function ReactTable({
 							allColumns={allColumns}
 						/>
 					</Box>
+
+					{/* Vista por responsable (solo modo equipo) */}
+					{vistaSelector && <Box sx={{ width: { xs: "100%", sm: "auto" } }}>{vistaSelector}</Box>}
 
 					{/* Spacer */}
 					<Box sx={{ flex: 1 }} />
@@ -611,7 +622,12 @@ const Tasks = () => {
 	const { user } = useSelector((state) => state.auth);
 	const userId = user?._id;
 
-	const { activeTeam, isTeamMode, canCreate, canUpdate, canDelete, isInitialized: isTeamInitialized } = useTeam();
+	const { activeTeam, isTeamMode, isOwner, canCreate, canUpdate, canDelete, isInitialized: isTeamInitialized } = useTeam();
+
+	// Vista por responsable (modo equipo). Default: "Mis tareas" para miembros,
+	// "Todas" para el owner; el usuario puede cambiarla y se vuelve a pedir el listado.
+	const [vistaElegida, setVistaElegida] = useState<TaskVista | null>(null);
+	const vista: TaskVista = vistaElegida ?? (isOwner ? "todas" : "mias");
 
 	const { tasks, isLoader, taskDetails, taskDetailsLoading } = useSelector((state) => state.tasksReducer);
 	const { folders } = useSelector((state) => state.folder);
@@ -636,14 +652,14 @@ const Tasks = () => {
 		if (isTeamMode && !activeTeam?._id) return;
 
 		if (isTeamMode && activeTeam?._id) {
-			dispatch(getTasksByGroupId(activeTeam._id));
+			dispatch(getTasksByGroupId(activeTeam._id, false, { vista }));
 			dispatch(getFoldersByGroupId(activeTeam._id));
 		} else {
 			dispatch(getTasksByUserId(userId));
 			dispatch(getFoldersByUserId(userId));
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [userId, activeTeam?._id, isTeamMode, isTeamInitialized]);
+	}, [userId, activeTeam?._id, isTeamMode, isTeamInitialized, vista]);
 
 	useEffect(() => {
 		setTaskData(tasks);
@@ -791,6 +807,12 @@ const Tasks = () => {
 				},
 			},
 			{
+				Header: "Responsable",
+				accessor: "assignedTo",
+				disableSortBy: true,
+				Cell: ({ value }: any) => <TaskAssignees ids={value} />,
+			},
+			{
 				Header: "Descripción",
 				accessor: "description",
 				Cell: ({ value }: any) => {
@@ -873,6 +895,44 @@ const Tasks = () => {
 	const filteredData = useMemo(() => {
 		return taskData.filter((task) => !task.archived);
 	}, [taskData]);
+
+	const vistaSelector = isTeamMode ? (
+		<ToggleButtonGroup
+			exclusive
+			size="small"
+			value={vista}
+			onChange={(_e, next: TaskVista | null) => {
+				if (next) {
+					setVistaElegida(next);
+					setPageIndex(0);
+				}
+			}}
+			aria-label="Filtrar tareas por responsable"
+			sx={{
+				width: { xs: "100%", sm: "auto" },
+				"& .MuiToggleButton-root": {
+					flex: { xs: 1, sm: "initial" },
+					textTransform: "none",
+					fontSize: "0.78rem",
+					fontWeight: 600,
+					letterSpacing: "-0.005em",
+					px: 1.5,
+					py: 0.625,
+					color: "text.secondary",
+					borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
+					"&.Mui-selected": {
+						color: BRAND_BLUE,
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+						"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.12) },
+					},
+				},
+			}}
+		>
+			<ToggleButton value="mias">Mis tareas</ToggleButton>
+			<ToggleButton value="todas">Todas</ToggleButton>
+			<ToggleButton value="sin_asignar">Sin asignar</ToggleButton>
+		</ToggleButtonGroup>
+	) : undefined;
 
 	const totalTasks = filteredData.length;
 	const pendingTasks = useMemo(
@@ -1029,6 +1089,8 @@ const Tasks = () => {
 					pageSize={pageSize}
 					onPageChange={setPageIndex}
 					onPageSizeChange={setPageSize}
+					showAssignees={isTeamMode}
+					vistaSelector={vistaSelector}
 				/>
 			</MainCard>
 

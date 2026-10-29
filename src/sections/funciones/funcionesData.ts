@@ -162,6 +162,24 @@ export const FUNCIONES: Funcion[] = [
 		],
 	},
 	{
+		id: "equipos",
+		featureKey: FeatureNames.EQUIPOS,
+		eyebrow: "Equipos",
+		titulo: "Un estudio, una cuenta, cada abogado con lo suyo",
+		bajada:
+			"El titular del estudio crea el equipo e invita a sus colegas por correo. Todos ven las causas, cada uno recibe las novedades y trabaja sus tareas, y la facturación es un solo plan para todo el estudio.",
+		icono: Profile2User,
+		puntos: [
+			"Roles de administrador, editor y lector por integrante",
+			"Las causas que carga cada abogado quedan a su nombre dentro del estudio",
+			"Un solo plan Estándar, Pro o Premium cubre a todo el equipo",
+		],
+		datos: [
+			{ valor: "1", etiqueta: "plan para todo el estudio" },
+			{ valor: "Hasta 10", etiqueta: "integrantes con Premium" },
+		],
+	},
+	{
 		id: "contactos",
 		featureKey: FeatureNames.CONTACTOS,
 		eyebrow: "Contactos",

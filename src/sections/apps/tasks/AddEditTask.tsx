@@ -2,7 +2,21 @@ import React, { useMemo } from "react";
 // react
 
 // material-ui
-import { Button, FormControl, Grid, InputLabel, MenuItem, Select, Stack, TextField } from "@mui/material";
+import {
+	Autocomplete,
+	Avatar,
+	Box,
+	Button,
+	Chip,
+	FormControl,
+	Grid,
+	InputLabel,
+	MenuItem,
+	Select,
+	Stack,
+	TextField,
+	Typography,
+} from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -18,6 +32,7 @@ import { dispatch, useSelector } from "store";
 import { addTask, updateTask } from "store/reducers/tasks";
 import { useTeam } from "contexts/TeamContext";
 import { BRAND_BLUE } from "themes/dashboardTokens";
+import { getTeamAssignees, resolveAssignees, TeamAssignee } from "utils/teamAssignees";
 
 // assets
 import { Add } from "iconsax-react";
@@ -47,9 +62,12 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 	const isDark = theme.palette.mode === "dark";
 	const { folders } = useSelector((state) => state.folder);
 	const { user } = useSelector((state) => state.auth);
-	const { getRequestHeaders } = useTeam();
+	const { getRequestHeaders, isTeamMode, activeTeam, getUserIdForResource } = useTeam();
 
 	const isCreating = !task;
+
+	// Responsables asignables: owner + miembros activos del equipo activo.
+	const assignableMembers = useMemo(() => getTeamAssignees(activeTeam), [activeTeam]);
 
 	const labelSx = {
 		fontSize: "0.72rem",
@@ -100,6 +118,7 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 			priority: task?.priority || "media",
 			status: task?.status || "pendiente",
 			folderId: task?.folderId || "",
+			assignedTo: (task?.assignedTo || []) as string[],
 		}),
 		[task?._id], // Solo dependemos del ID, no del objeto completo
 	);
@@ -110,11 +129,15 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 		validationSchema: TaskSchema,
 		onSubmit: async (values, { setSubmitting, resetForm }) => {
 			try {
+				const { assignedTo, ...rest } = values;
 				const taskData = {
-					...values,
+					...rest,
 					dueDate: dayjs(values.dueDate).toISOString(),
-					userId: user?._id,
+					// En modo equipo la tarea es del owner (el hub también lo resuelve por X-Group-Id)
+					userId: (isTeamMode ? getUserIdForResource() : undefined) || user?._id,
 					checked: false,
+					// Fuera del modo equipo no se manda el campo (el backend lo deja como está).
+					...(isTeamMode ? { assignedTo } : {}),
 				};
 
 				let result;
@@ -140,6 +163,10 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 	});
 
 	const { errors, touched, values, isSubmitting, handleSubmit, getFieldProps, setFieldValue } = formik;
+
+	// Valor del Autocomplete: los ids seleccionados resueltos a miembros (los que ya
+	// no están en el equipo se muestran como "Miembro" para que se puedan quitar).
+	const selectedAssignees = useMemo(() => resolveAssignees(values.assignedTo, assignableMembers), [values.assignedTo, assignableMembers]);
 
 	return (
 		<FormikProvider value={formik}>
@@ -253,6 +280,74 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 								</FormControl>
 							</Stack>
 						</Grid>
+
+						{isTeamMode && (
+							<Grid item xs={12}>
+								<Stack spacing={1}>
+									<InputLabel htmlFor="task-assignedTo" sx={labelSx}>
+										Responsables
+									</InputLabel>
+									<Autocomplete<TeamAssignee, true>
+										id="task-assignedTo"
+										multiple
+										fullWidth
+										options={assignableMembers}
+										value={selectedAssignees}
+										onChange={(_event, newValue) =>
+											setFieldValue(
+												"assignedTo",
+												newValue.map((a) => a.id),
+											)
+										}
+										isOptionEqualToValue={(option, value) => option.id === value.id}
+										getOptionLabel={(option) => option.name}
+										filterSelectedOptions
+										noOptionsText="No hay miembros para asignar"
+										renderOption={(props, option) => (
+											<Box component="li" {...props} key={option.id}>
+												<Stack direction="row" spacing={1} alignItems="center">
+													<Avatar src={option.avatar} sx={{ width: 26, height: 26, fontSize: "0.65rem", fontWeight: 700 }}>
+														{option.initials}
+													</Avatar>
+													<Stack spacing={0}>
+														<Typography variant="body2">
+															{option.name}
+															{option.isOwner ? " · Propietario" : ""}
+														</Typography>
+														{option.email && option.email !== option.name && (
+															<Typography variant="caption" color="text.secondary">
+																{option.email}
+															</Typography>
+														)}
+													</Stack>
+												</Stack>
+											</Box>
+										)}
+										renderTags={(tagValue, getTagProps) =>
+											tagValue.map((option, index) => (
+												<Chip
+													{...getTagProps({ index })}
+													key={option.id}
+													size="small"
+													label={option.name}
+													avatar={
+														<Avatar src={option.avatar} sx={{ fontSize: "0.6rem", fontWeight: 700 }}>
+															{option.initials}
+														</Avatar>
+													}
+												/>
+											))
+										}
+										renderInput={(params) => (
+											<TextField
+												{...params}
+												placeholder={selectedAssignees.length === 0 ? "Sin responsable (elegí uno o más miembros)" : ""}
+											/>
+										)}
+									/>
+								</Stack>
+							</Grid>
+						)}
 
 						<Grid item xs={12}>
 							<Stack direction="row" spacing={1.25} justifyContent="flex-end">

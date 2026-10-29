@@ -603,10 +603,10 @@ const TabRole = () => {
 										<Box component="span" sx={{ fontWeight: 600 }}>
 											{planName}
 										</Box>
-										) no incluye gestión de equipos. Mejorá a Estándar o Premium para acceder.
+										) no incluye gestión de equipos. Mejorá a Estándar, Pro o Premium para acceder.
 									</Typography>
 									<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
-										Estándar: hasta 5 miembros · Premium: hasta 20 miembros.
+										Estándar: hasta 5 miembros · Pro: hasta 8 · Premium: hasta 10 (incluido el propietario).
 									</Typography>
 								</Stack>
 							</Stack>

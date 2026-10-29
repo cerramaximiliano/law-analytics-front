@@ -23,6 +23,7 @@ import { People, TickCircle, CloseCircle, Sms, Lock, Login, Warning2, Logout, Ey
 import { useSelector, dispatch } from "store";
 import { getUserTeams } from "store/reducers/teams";
 import axios from "utils/axios";
+import { trackActivity } from "utils/productAnalytics";
 import Logo from "components/logo";
 import { RoleBadge, ResourceMigrationSection } from "sections/apps/teams";
 import { useTeam } from "contexts/TeamContext";
@@ -194,6 +195,7 @@ export default function AcceptInvitationPage() {
 			});
 
 			if (response.data.success) {
+				trackActivity("team_invite_accept", { mode: skipResourceCheck ? "migrate" : "direct" });
 				setHasAccepted(true);
 				setFlowState("success");
 			} else {

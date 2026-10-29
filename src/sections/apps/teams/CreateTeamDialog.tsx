@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Stack, Alert } from "@mui/material";
 import { useDispatch } from "store";
 import { createTeam } from "store/reducers/teams";
+import { trackActivity } from "utils/productAnalytics";
 import { useTeam, useTeamsFeature } from "contexts/TeamContext";
 
 interface CreateTeamDialogProps {
@@ -58,10 +59,12 @@ export default function CreateTeamDialog({ open, onClose, onSuccess }: CreateTea
 			);
 
 			if (result.success) {
+				trackActivity("team_create", { status: "success" });
 				await refreshTeams();
 				handleClose();
 				onSuccess?.();
 			} else {
+				trackActivity("team_create", { status: "error", error_code: result.code || "create_failed" });
 				setError(result.message || "Error al crear el equipo");
 			}
 		} catch (err) {

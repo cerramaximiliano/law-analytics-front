@@ -32,6 +32,7 @@ import { Add, Box as BoxIcon, DocumentUpload, Edit2, Eye, Link1, More, Refresh2,
 
 import MainCard from "components/MainCard";
 import { dispatch, useSelector } from "store";
+import { useTeam } from "contexts/TeamContext";
 import {
 	fetchPostalTrackings,
 	deletePostalTracking,
@@ -293,6 +294,10 @@ const PostalTrackingPage = () => {
 	const isMd = useMediaQuery(theme.breakpoints.down("md"));
 	const { trackings, isLoader, total } = useSelector((state: any) => state.postalTrackingReducer);
 	const { tracking: trackingDetail } = useSelector((state: any) => state.postalTrackingReducer);
+	// Modo equipo: el thunk lista con el equipo activo del store. Acá solo se vuelve a pedir
+	// cuando cambia el equipo (el primer fetch personal no espera a los equipos).
+	const { activeTeam } = useTeam();
+	const activeTeamId = activeTeam?._id ?? null;
 
 	// Paginación y filtros
 	const [page, setPage] = useState(0);
@@ -338,7 +343,7 @@ const PostalTrackingPage = () => {
 				sortOrder,
 			}),
 		);
-	}, [page, rowsPerPage, search, sortBy, sortOrder]);
+	}, [page, rowsPerPage, search, sortBy, sortOrder, activeTeamId]);
 
 	const handleLabelSort = () => {
 		if (sortBy === "label") {

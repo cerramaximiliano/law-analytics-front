@@ -2,8 +2,15 @@ import { Dispatch } from "redux";
 import axios from "axios";
 import { AxiosError } from "axios";
 import { PdfTemplate, PostalDocumentType } from "types/postal-document";
+import { activeTeamIdOf, teamHeadersOf } from "./teamScope";
 
 const BASE_URL = `${import.meta.env.VITE_BASE_URL || ""}/api/postal-documents`;
+
+// En modo equipo los documentos se listan por grupo (los del owner); sin equipo, los propios.
+const documentsListUrl = (getState?: () => any) => {
+	const teamId = activeTeamIdOf(getState);
+	return teamId ? `${BASE_URL}/group/${teamId}` : BASE_URL;
+};
 
 // Action types
 const SET_LOADING = "postalDocuments/SET_LOADING";
@@ -192,9 +199,10 @@ export const createPostalDocument =
 		linkedFolderId?: string | null;
 		tags?: string[];
 	}) =>
-	async (_dispatch: Dispatch) => {
+	async (_dispatch: Dispatch, getState?: () => any) => {
 		try {
-			const res = await axios.post(BASE_URL, data);
+			// Con equipo activo va la cabecera X-Group-Id: el hub lo deja a nombre del owner.
+			const res = await axios.post(BASE_URL, data, { headers: teamHeadersOf(activeTeamIdOf(getState)) });
 			return { success: true, document: res.data.document };
 		} catch (error: unknown) {
 			if (error instanceof AxiosError) {
@@ -220,9 +228,9 @@ export const saveDraft =
 		linkedFolderId?: string | null;
 		linkedTrackingId?: string | null;
 	}) =>
-	async (_dispatch: Dispatch) => {
+	async (_dispatch: Dispatch, getState?: () => any) => {
 		try {
-			const res = await axios.post(`${BASE_URL}/draft`, data);
+			const res = await axios.post(`${BASE_URL}/draft`, data, { headers: teamHeadersOf(activeTeamIdOf(getState)) });
 			return { success: true, document: res.data.document };
 		} catch (error: unknown) {
 			const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al guardar el borrador" : "Error al guardar el borrador";
@@ -277,10 +285,10 @@ export const generateDocument = (id: string, contextFiles?: File[]) => async (_d
 
 export const fetchPostalDocuments =
 	(params: { page?: number; limit?: number; search?: string; templateSlug?: string; status?: string; folderId?: string }) =>
-	async (dispatch: Dispatch) => {
+	async (dispatch: Dispatch, getState?: () => any) => {
 		dispatch({ type: SET_LOADING });
 		try {
-			const res = await axios.get(BASE_URL, { params });
+			const res = await axios.get(documentsListUrl(getState), { params });
 			dispatch({ type: SET_DOCUMENTS, payload: { documents: res.data.documents, total: res.data.total } });
 			return { success: true };
 		} catch (error: unknown) {
@@ -341,10 +349,10 @@ export const clearPostalDocument = () => (dispatch: Dispatch) => {
 	dispatch({ type: CLEAR_DOCUMENT });
 };
 
-export const fetchPostalDocumentsByFolder = (folderId: string) => async (dispatch: Dispatch) => {
+export const fetchPostalDocumentsByFolder = (folderId: string) => async (dispatch: Dispatch, getState?: () => any) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		const res = await axios.get(BASE_URL, { params: { folderId, limit: 100 } });
+		const res = await axios.get(documentsListUrl(getState), { params: { folderId, limit: 100 } });
 		dispatch({ type: SET_FOLDER_DOCS, payload: { documents: res.data.documents, total: res.data.total } });
 		return { success: true, documents: res.data.documents as PostalDocumentType[] };
 	} catch (error: unknown) {

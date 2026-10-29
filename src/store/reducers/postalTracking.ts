@@ -7,6 +7,7 @@ import {
 	CreatePostalTrackingData,
 	UpdatePostalTrackingData,
 } from "types/postal-tracking";
+import { activeTeamIdOf, teamHeadersOf } from "./teamScope";
 
 // Action types
 const SET_LOADING = "postalTracking/SET_LOADING";
@@ -90,12 +91,18 @@ const postalTrackingReducer = (state = initialState, action: any): PostalTrackin
 
 const BASE_URL = `${import.meta.env.VITE_BASE_URL}/api/postal-tracking`;
 
+// En modo equipo los seguimientos se listan por grupo (los del owner); sin equipo, los propios.
+const trackingsListUrl = (getState?: () => any) => {
+	const teamId = activeTeamIdOf(getState);
+	return teamId ? `${BASE_URL}/group/${teamId}` : BASE_URL;
+};
+
 export const fetchPostalTrackings =
 	(filters: PostalTrackingFilters = {}) =>
-	async (dispatch: Dispatch) => {
+	async (dispatch: Dispatch, getState?: () => any) => {
 		try {
 			dispatch({ type: SET_LOADING });
-			const response = await axios.get(BASE_URL, { params: filters });
+			const response = await axios.get(trackingsListUrl(getState), { params: filters });
 			dispatch({ type: SET_TRACKINGS, payload: response.data });
 			return { success: true };
 		} catch (error: unknown) {
@@ -118,7 +125,7 @@ export const fetchAllTrackings = () => async (dispatch: Dispatch, getState: () =
 	const isStale = Date.now() - allTrackingsCachedAt > CACHE_TTL_MS;
 	if (allTrackings.length > 0 && !isStale) return { success: true };
 	try {
-		const response = await axios.get(BASE_URL, { params: { limit: 200 } });
+		const response = await axios.get(trackingsListUrl(getState), { params: { limit: 200 } });
 		dispatch({ type: SET_ALL_TRACKINGS, payload: response.data.data });
 		return { success: true };
 	} catch (error: unknown) {
@@ -130,10 +137,11 @@ export const fetchAllTrackings = () => async (dispatch: Dispatch, getState: () =
 	}
 };
 
-export const createPostalTracking = (data: CreatePostalTrackingData) => async (dispatch: Dispatch) => {
+export const createPostalTracking = (data: CreatePostalTrackingData) => async (dispatch: Dispatch, getState?: () => any) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.post(BASE_URL, data);
+		// Con equipo activo va la cabecera X-Group-Id: el hub lo deja a nombre del owner.
+		const response = await axios.post(BASE_URL, data, { headers: teamHeadersOf(activeTeamIdOf(getState)) });
 		dispatch({ type: ADD_TRACKING, payload: response.data.data });
 		return { success: true, id: response.data.data._id as string };
 	} catch (error: unknown) {

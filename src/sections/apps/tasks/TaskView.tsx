@@ -3,6 +3,8 @@ import React from "react";
 import { Grid, Chip, Divider, Stack, TableCell, TableRow, Typography, Box, Paper } from "@mui/material";
 
 // project-imports
+import { useTeam } from "contexts/TeamContext";
+import TaskAssignees from "./TaskAssignees";
 
 // assets
 import { Calendar, FolderOpen, Profile, Clock, NoteText } from "iconsax-react";
@@ -13,6 +15,7 @@ import dayjs from "utils/dayjs-config";
 
 const TaskView = memo(({ data }: any) => {
 	const notAvailableMsg = "No disponible";
+	const { isTeamMode } = useTeam();
 
 	// Función para obtener el color del estado
 	const getStatusColor = (status: string) => {
@@ -71,7 +74,7 @@ const TaskView = memo(({ data }: any) => {
 					<Typography variant="caption" color="text.secondary">
 						{title}
 					</Typography>
-					<Typography variant="body2" color={color} fontWeight="medium">
+					<Typography variant="body2" color={color} fontWeight="medium" component="div">
 						{value}
 					</Typography>
 				</Stack>
@@ -111,7 +114,13 @@ const TaskView = memo(({ data }: any) => {
 							<InfoCard icon={<FolderOpen size={18} />} title="Carpeta" value={data.folderName || notAvailableMsg} />
 						</Grid>
 						<Grid item xs={6} sm={3}>
-							<InfoCard icon={<Profile size={18} />} title="Responsable" value={data.responsible || data.owner || notAvailableMsg} />
+							<InfoCard
+								icon={<Profile size={18} />}
+								title={isTeamMode && (data.assignedTo?.length || 0) > 1 ? "Responsables" : "Responsable"}
+								value={
+									isTeamMode ? <TaskAssignees ids={data.assignedTo} variant="chips" /> : data.responsible || data.owner || notAvailableMsg
+								}
+							/>
 						</Grid>
 						<Grid item xs={6} sm={3}>
 							<InfoCard icon={<Clock size={18} />} title="Actualizado" value={dayjs(data.updatedAt).format("DD/MM/YYYY HH:mm")} />
