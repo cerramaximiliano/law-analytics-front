@@ -255,7 +255,9 @@ const TabRole = () => {
 		);
 	}
 
-	const isTeamMember = teams.length > 0 && !isOwner && activeTeam;
+	// Un administrador gestiona miembros e invitaciones: va a la vista de gestión, no a
+	// la de miembro simple (prueba en producción del 29/10/2026).
+	const isTeamMember = teams.length > 0 && !isOwner && !canManageMembers && activeTeam;
 
 	// Usuario miembro de equipo (no owner)
 	if (isTeamMember && !isLoading) {
