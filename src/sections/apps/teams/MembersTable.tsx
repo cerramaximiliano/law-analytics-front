@@ -257,6 +257,17 @@ export default function MembersTable({ onMemberUpdated }: MembersTableProps) {
 				<Typography variant="caption" color="text.secondary" sx={{ px: 2, py: 0.5, display: "block" }}>
 					Cambiar rol a:
 				</Typography>
+				{/* Solo el propietario nombra administradores (la API lo admite; faltaba en la UI, 29/10/2026). */}
+				{userRole === "owner" && selectedMember?.role !== "admin" && (
+					<MenuItem onClick={() => handleChangeRole("admin")}>
+						<ListItemIcon>
+							<ShieldTick size={18} />
+						</ListItemIcon>
+						<ListItemText>
+							<Chip label={ROLE_CONFIG.admin.label} color={ROLE_CONFIG.admin.color} size="small" />
+						</ListItemText>
+					</MenuItem>
+				)}
 				{selectedMember?.role !== "editor" && (
 					<MenuItem onClick={() => handleChangeRole("editor")}>
 						<ListItemIcon>

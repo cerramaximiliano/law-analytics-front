@@ -32,7 +32,7 @@ interface InviteMembersFormProps {
 
 export default function InviteMembersForm({ onSuccess }: InviteMembersFormProps) {
 	const dispatch = useDispatch();
-	const { activeTeam, refreshActiveTeam } = useTeam();
+	const { activeTeam, refreshActiveTeam, userRole } = useTeam();
 	const { maxTeamMembers } = useTeamsFeature();
 
 	const [invites, setInvites] = useState<InviteEntry[]>([{ email: "", role: "viewer" }]);
@@ -233,6 +233,11 @@ export default function InviteMembersForm({ onSuccess }: InviteMembersFormProps)
 								disabled={isSubmitting}
 								renderValue={(value) => ROLE_CONFIG[value as TeamRole]?.label || value}
 							>
+								{userRole === "owner" && (
+									<MenuItem value="admin">
+										<Chip label={ROLE_CONFIG.admin.label} color={ROLE_CONFIG.admin.color} size="small" />
+									</MenuItem>
+								)}
 								<MenuItem value="editor">
 									<Chip label={ROLE_CONFIG.editor.label} color={ROLE_CONFIG.editor.color} size="small" />
 								</MenuItem>
