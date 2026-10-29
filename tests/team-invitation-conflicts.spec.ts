@@ -20,7 +20,7 @@
 import { test, expect } from "@playwright/test";
 import { apiAsUser, deleteAllOwnedTeams, leaveAllTeams, TEST_USERS } from "./helpers/multi-user";
 
-const API = "http://localhost:5000";
+const API = process.env.E2E_API_URL || "http://localhost:5000";
 const makeTeamName = (prefix: string) => `E2E-${prefix}-${Date.now()}`;
 
 async function createTeam(role: "owner" | "ownerSecondary", name: string): Promise<string> {

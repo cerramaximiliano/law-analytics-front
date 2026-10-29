@@ -1,5 +1,6 @@
 /**
- * Helpers para tests E2E que requieren múltiples usuarios reales.
+ * Helpers para tests E2E que requieren múltiples usuarios (cuentas descartables
+ * de la base de pruebas, ver ./e2e-env.ts).
  *
  * Cada usuario tiene un archivo de `storageState` dedicado en `tests/.auth/`
  * (distinto del principal `user.json` del global-setup).
@@ -21,52 +22,73 @@
 import { request as playwrightRequest, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import fs from "fs";
 import path from "path";
+import { E2E_API_URL, E2E_BASE_URL, requireE2EVar } from "./e2e-env";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = E2E_API_URL;
 const AUTH_DIR = path.join(__dirname, "..", ".auth");
 
 // ─── Catálogo de users de test ───────────────────────────────────────────────
+//
+// Cuentas DESCARTABLES de la base de pruebas. Las credenciales no viven en el
+// repo: se leen de `.env.e2e.local` (ver ./e2e-env.ts), que genera el seed del hub
+// (law-analytics-server/tests/helpers/seedE2EAccounts.js). Si falta alguna variable,
+// el primer acceso a TEST_USERS falla con un mensaje que explica cómo generarlas.
 
-export const TEST_USERS = {
-	owner: {
-		email: "artista@mirtaaguilar.art",
-		password: "988703za",
-		plan: "standard",
-		description: "Owner primario de team, plan standard (max 5 miembros)",
-	},
+export interface TestUser {
+	email: string;
+	password: string;
+	/** Plan esperado (informativo; lo fija el seed) */
+	plan: string;
+	description: string;
+}
+
+const ROLE_ENV: Record<string, { envKey: string; defaultPlan: string; description: string }> = {
+	owner: { envKey: "OWNER", defaultPlan: "standard", description: "Owner primario de team, plan pago (max 5 miembros en standard)" },
 	ownerSecondary: {
-		email: "juancamino713@gmail.com",
-		password: "988703za",
-		plan: "standard",
+		envKey: "OWNER_SECONDARY",
+		defaultPlan: "standard",
 		description: "Owner secundario con plan pagado — usado para ALREADY_IN_TEAM y PAID_PLAN_CONFLICT",
 	},
-	memberAdmin: {
-		email: "maximilian@rumba-dev.com",
-		password: "12345678",
-		plan: "free",
-		description: "Miembro destinado al rol Admin (nota: rol admin no está en UI aún)",
-	},
-	memberEditor: {
-		email: "maximiliano@rumba-dev.com",
-		password: "12345678",
-		plan: "free",
-		description: "Miembro destinado al rol Editor",
-	},
-	memberViewer: {
-		email: "soporte@lawanalytics.app",
-		password: "12345678",
-		plan: "free",
-		description: "Miembro destinado al rol Viewer",
-	},
-	memberExtra: {
-		email: "cerramaximiliano@protonmail.com",
-		password: "988703za",
-		plan: "free",
-		description: "Miembro extra (para test de max-members alcanzado)",
-	},
-} as const;
+	memberAdmin: { envKey: "MEMBER_ADMIN", defaultPlan: "free", description: "Miembro destinado al rol Admin (nota: rol admin no está en UI aún)" },
+	memberEditor: { envKey: "MEMBER_EDITOR", defaultPlan: "free", description: "Miembro destinado al rol Editor" },
+	memberViewer: { envKey: "MEMBER_VIEWER", defaultPlan: "free", description: "Miembro destinado al rol Viewer" },
+	memberExtra: { envKey: "MEMBER_EXTRA", defaultPlan: "free", description: "Miembro extra (para test de max-members alcanzado)" },
+};
 
-export type UserRole = keyof typeof TEST_USERS;
+export type UserRole = keyof typeof ROLE_ENV;
+
+function buildTestUsers(): Record<UserRole, TestUser> {
+	const out = {} as Record<UserRole, TestUser>;
+	for (const [role, meta] of Object.entries(ROLE_ENV)) {
+		out[role as UserRole] = {
+			email: requireE2EVar(`E2E_${meta.envKey}_EMAIL`),
+			password: requireE2EVar(`E2E_${meta.envKey}_PASSWORD`),
+			plan: process.env[`E2E_${meta.envKey}_PLAN`] || meta.defaultPlan,
+			description: meta.description,
+		};
+	}
+	return out;
+}
+
+// Lazy: no explota al importar el módulo (p. ej. en `playwright test --list`),
+// sólo cuando un test necesita efectivamente una cuenta.
+let cachedUsers: Record<UserRole, TestUser> | null = null;
+export const TEST_USERS: Record<UserRole, TestUser> = new Proxy({} as Record<UserRole, TestUser>, {
+	get(_target, prop) {
+		if (!cachedUsers) cachedUsers = buildTestUsers();
+		return (cachedUsers as any)[prop];
+	},
+	ownKeys() {
+		return Object.keys(ROLE_ENV);
+	},
+	getOwnPropertyDescriptor(_target, prop) {
+		if (!(prop in ROLE_ENV)) return undefined;
+		if (!cachedUsers) cachedUsers = buildTestUsers();
+		return { enumerable: true, configurable: true, value: (cachedUsers as any)[prop] };
+	},
+});
+
+export const ALL_ROLES = Object.keys(ROLE_ENV) as UserRole[];
 
 // ─── Login helpers ───────────────────────────────────────────────────────────
 
@@ -99,7 +121,7 @@ export async function createStorageStateFor(role: UserRole): Promise<string> {
 		if (token) {
 			const current = JSON.parse(fs.readFileSync(statePath, "utf-8"));
 			const origin = {
-				origin: "http://localhost:3000",
+				origin: E2E_BASE_URL,
 				localStorage: [{ name: "token", value: token }],
 			};
 			current.origins = current.origins ?? [];

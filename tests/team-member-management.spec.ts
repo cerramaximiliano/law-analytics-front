@@ -19,7 +19,7 @@
 import { test, expect } from "@playwright/test";
 import { apiAsUser, deleteAllOwnedTeams, leaveAllTeams, TEST_USERS } from "./helpers/multi-user";
 
-const API = "http://localhost:5000";
+const API = process.env.E2E_API_URL || "http://localhost:5000";
 const makeTeamName = () => `E2E-Member-${Date.now()}`;
 
 // Retries por timing multi-user (propagación de Mongo tras accept/leave)

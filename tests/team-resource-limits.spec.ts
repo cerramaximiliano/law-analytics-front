@@ -19,7 +19,7 @@
 import { test, expect } from "@playwright/test";
 import { apiAsUser, deleteAllOwnedTeams, leaveAllTeams, TEST_USERS } from "./helpers/multi-user";
 
-const API = "http://localhost:5000";
+const API = process.env.E2E_API_URL || "http://localhost:5000";
 const makeTeamName = () => `E2E-Limits-${Date.now()}`;
 
 test.describe.configure({ retries: 2 });
@@ -450,6 +450,14 @@ async function getOwnerLimitInfo(resourceKey: string, statsKey: string): Promise
 
 test("GRUPO 6 — postal-tracking: editor al cap del owner vía team → último OK, extra bloqueado", async () => {
 	test.setTimeout(90_000);
+	// Depende de scripts del hub que no están en el repo (countPostalActive.js y
+	// createPostalFillers.js nunca estuvieron versionados). Sin ellos no se puede
+	// contar ni rellenar hasta el cap: se omite.
+	const fsMod = await import("fs");
+	const missing = ["countPostalActive.js", "createPostalFillers.js"].filter(
+		(f) => !fsMod.existsSync(`/home/mcerra/www/law-analytics-server/scripts/${f}`),
+	);
+	test.skip(missing.length > 0, `Faltan scripts no versionados en law-analytics-server/scripts: ${missing.join(", ")}`);
 
 	const teamId = await createTeamAsOwner(makeTeamName());
 	await inviteEditor(teamId);

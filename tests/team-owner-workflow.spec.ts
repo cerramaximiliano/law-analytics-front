@@ -1,5 +1,9 @@
 /**
- * BLOQUE 1 — Owner workflow con usuario real `artista@mirtaaguilar.art` (plan standard).
+ * BLOQUE 1 — Owner workflow con la cuenta descartable `owner` (plan standard, ver helpers/e2e-env.ts).
+ *
+ * Selectores actualizados el 29/10/2026 a la UI vigente de TabRole.tsx (pestaña «Mi equipo»):
+ * «Creá tu primer equipo», «Crear equipo», «Zona de riesgo», «Eliminar equipo»; los títulos son
+ * Typography (no headings), por eso se usa getByText.
  *
  * Tests E2E contra backend real. No mocks. El owner real crea y elimina teams,
  * envía invitaciones, las revoca, y abandona/elimina el team al final.
@@ -24,7 +28,7 @@
 import { test, expect } from "@playwright/test";
 import { apiAsUser, deleteAllOwnedTeams, TEST_USERS } from "./helpers/multi-user";
 
-const API = "http://localhost:5000";
+const API = process.env.E2E_API_URL || "http://localhost:5000";
 const OWNER_STATE = "tests/.auth/owner.json";
 
 test.use({ storageState: OWNER_STATE });
@@ -66,10 +70,10 @@ async function createTeamViaAPI(name: string, description = "E2E test team"): Pr
 // GRUPO 1 — Vista inicial del tab Role (plan standard, sin teams)
 // ─────────────────────────────────────────────────────────────────────────────
 
-test("GRUPO 1 — owner standard sin teams → vista 'Crear tu Primer Equipo'", async ({ page }) => {
+test("GRUPO 1 — owner standard sin teams → vista 'Creá tu primer equipo'", async ({ page }) => {
 	await page.goto("/apps/profiles/account/role");
 
-	await expect(page.getByRole("heading", { name: "Crear tu Primer Equipo" })).toBeVisible({ timeout: 15_000 });
+	await expect(page.getByText("Creá tu primer equipo", { exact: true })).toBeVisible({ timeout: 15_000 });
 	await expect(page.getByText(/hasta 5 miembros en tu plan Estándar/i)).toBeVisible();
 	await expect(page.getByRole("button", { name: /Crear Equipo/i })).toBeEnabled();
 });
@@ -80,7 +84,7 @@ test("GRUPO 1 — owner standard sin teams → vista 'Crear tu Primer Equipo'", 
 
 test("GRUPO 2 — click 'Crear Equipo' → abre dialog 'Crear Nuevo Equipo'", async ({ page }) => {
 	await page.goto("/apps/profiles/account/role");
-	await expect(page.getByRole("heading", { name: "Crear tu Primer Equipo" })).toBeVisible({ timeout: 15_000 });
+	await expect(page.getByText("Creá tu primer equipo", { exact: true })).toBeVisible({ timeout: 15_000 });
 
 	await page.getByRole("button", { name: /Crear Equipo/i }).click();
 	await expect(page.getByRole("heading", { name: "Crear Nuevo Equipo" })).toBeVisible({ timeout: 5_000 });
@@ -117,8 +121,8 @@ test("GRUPO 2 — crear team real → POST /api/groups + team aparece en la UI",
 	]);
 	expect(postResponse.ok()).toBe(true);
 
-	// Tras la creación, la UI re-renderiza con el team activo
-	await expect(page.getByRole("heading", { name: teamName })).toBeVisible({ timeout: 10_000 });
+	// Tras la creación, la UI re-renderiza con el team activo (el nombre también puede estar en el chip del header → first)
+	await expect(page.getByText(teamName, { exact: true }).first()).toBeVisible({ timeout: 10_000 });
 	// Counter 1/5 (solo el owner)
 	await expect(page.getByText(/1\s*\/\s*5/)).toBeVisible({ timeout: 5_000 });
 });
@@ -133,7 +137,7 @@ test("GRUPO 3 — owner con team → InviteMembersForm visible con email+rol", a
 	await createTeamViaAPI(teamName);
 
 	await page.goto("/apps/profiles/account/role");
-	await expect(page.getByRole("heading", { name: teamName })).toBeVisible({ timeout: 15_000 });
+	await expect(page.getByText(teamName, { exact: true }).first()).toBeVisible({ timeout: 15_000 });
 
 	// InviteMembersForm
 	await expect(page.getByLabel("Email")).toBeVisible({ timeout: 5_000 });
@@ -147,7 +151,7 @@ test("GRUPO 3 — invitar member via UI → POST /api/groups/:id/invitations + a
 	const inviteeEmail = TEST_USERS.memberEditor.email;
 
 	await page.goto("/apps/profiles/account/role");
-	await expect(page.getByRole("heading", { name: teamName })).toBeVisible({ timeout: 15_000 });
+	await expect(page.getByText(teamName, { exact: true }).first()).toBeVisible({ timeout: 15_000 });
 
 	await page.getByLabel("Email").fill(inviteeEmail);
 
@@ -185,7 +189,7 @@ test("GRUPO 4 — invitación creada via API aparece en PendingInvitationsList",
 	}
 
 	await page.goto("/apps/profiles/account/role");
-	await expect(page.getByRole("heading", { name: teamName })).toBeVisible({ timeout: 15_000 });
+	await expect(page.getByText(teamName, { exact: true }).first()).toBeVisible({ timeout: 15_000 });
 
 	// La lista muestra al invitee
 	await expect(page.getByText(TEST_USERS.memberViewer.email)).toBeVisible({ timeout: 10_000 });
@@ -195,15 +199,15 @@ test("GRUPO 4 — invitación creada via API aparece en PendingInvitationsList",
 // GRUPO 5 — Eliminar team desde la Zona de Peligro
 // ─────────────────────────────────────────────────────────────────────────────
 
-test("GRUPO 5 — Zona de Peligro visible con botón 'Eliminar Equipo'", async ({ page }) => {
+test("GRUPO 5 — Zona de riesgo visible con botón 'Eliminar equipo'", async ({ page }) => {
 	test.setTimeout(45_000);
 	const teamName = makeTeamName();
 	await createTeamViaAPI(teamName);
 
 	await page.goto("/apps/profiles/account/role");
-	await expect(page.getByRole("heading", { name: teamName })).toBeVisible({ timeout: 15_000 });
+	await expect(page.getByText(teamName, { exact: true }).first()).toBeVisible({ timeout: 15_000 });
 
-	await expect(page.getByText("Zona de Peligro")).toBeVisible({ timeout: 5_000 });
+	await expect(page.getByText("Zona de riesgo")).toBeVisible({ timeout: 5_000 });
 	await expect(page.getByRole("button", { name: "Eliminar Equipo" })).toBeVisible();
 });
 
@@ -213,7 +217,7 @@ test("GRUPO 5 — click 'Eliminar Equipo' abre LeaveTeamDialog", async ({ page }
 	await createTeamViaAPI(teamName);
 
 	await page.goto("/apps/profiles/account/role");
-	await expect(page.getByRole("heading", { name: teamName })).toBeVisible({ timeout: 15_000 });
+	await expect(page.getByText(teamName, { exact: true }).first()).toBeVisible({ timeout: 15_000 });
 
 	await page.getByRole("button", { name: "Eliminar Equipo" }).click();
 	// El LeaveTeamDialog aparece
@@ -230,11 +234,11 @@ test("GRUPO 6 — owner con team NO puede crear otro (botón 'Nuevo Equipo' ause
 	await createTeamViaAPI(teamName);
 
 	await page.goto("/apps/profiles/account/role");
-	await expect(page.getByRole("heading", { name: teamName })).toBeVisible({ timeout: 15_000 });
+	await expect(page.getByText(teamName, { exact: true }).first()).toBeVisible({ timeout: 15_000 });
 
 	// Según el comentario en TabRole.tsx:403, el botón "Nuevo Equipo" fue eliminado
 	// porque solo se permite un equipo por usuario.
 	// Verificamos que NO hay un segundo botón de "Crear Equipo" en la vista (solo el del dialog si abriera, pero aquí no hay dialog).
-	// La vista "Crear tu Primer Equipo" NO debe estar visible.
-	await expect(page.getByRole("heading", { name: "Crear tu Primer Equipo" })).not.toBeVisible({ timeout: 2_000 });
+	// La vista "Creá tu primer equipo" NO debe estar visible.
+	await expect(page.getByText("Creá tu primer equipo", { exact: true })).not.toBeVisible({ timeout: 2_000 });
 });

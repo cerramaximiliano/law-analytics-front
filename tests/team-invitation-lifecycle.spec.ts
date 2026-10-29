@@ -22,6 +22,7 @@
 
 import { test, expect } from "@playwright/test";
 import { execSync } from "child_process";
+import fs from "fs";
 import path from "path";
 import { apiAsUser, deleteAllOwnedTeams, leaveAllTeams, TEST_USERS } from "./helpers/multi-user";
 
@@ -34,7 +35,7 @@ function expireInvitationViaDb(token: string): string {
 	return out.trim();
 }
 
-const API = "http://localhost:5000";
+const API = process.env.E2E_API_URL || "http://localhost:5000";
 const makeTeamName = () => `E2E-InvLife-${Date.now()}`;
 
 test.describe.configure({ retries: 2 });
@@ -275,6 +276,10 @@ test("GRUPO 6 — verify token válido devuelve metadata del grupo + invitación
 
 test("GRUPO 7 — Flujo 6.1: invitación expirada → verify/accept 400", async () => {
 	test.setTimeout(30_000);
+	// El retrodatado de expiresAt depende de un script del hub que no está en el repo
+	// (nunca estuvo versionado). Sin él no hay forma de expirar la invitación: se omite.
+	const expireScript = path.join(BACKEND_DIR, "scripts", "expireInvitation.js");
+	test.skip(!fs.existsSync(expireScript), `Falta ${expireScript} (script no versionado en law-analytics-server)`);
 	const teamId = await createTeamAsOwner(makeTeamName());
 	const { token } = await sendInvite(teamId, TEST_USERS.memberExtra.email, "viewer");
 

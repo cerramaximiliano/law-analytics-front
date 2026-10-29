@@ -5,7 +5,7 @@ export const CREDENTIALS = {
 	password: process.env.TEST_PASSWORD || "12345678",
 };
 
-export const API_BASE = "http://localhost:5000";
+export const API_BASE = process.env.E2E_API_URL || "http://localhost:5000";
 
 // ─── Helpers de formulario ────────────────────────────────────────────────────
 

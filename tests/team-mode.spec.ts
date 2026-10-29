@@ -17,9 +17,12 @@
  *   consistente con el enfoque ya usado en subscriptions-crud.spec.ts.
  *
  * GRUPO 1 — Usuario FREE → alert de upgrade + navegación a /suscripciones/tables
- * GRUPO 2 — Usuario PREMIUM sin teams → vista "Crear tu Primer Equipo"
+ * GRUPO 2 — Usuario PREMIUM sin teams → vista "Creá tu primer equipo"
  * GRUPO 3 — Usuario PREMIUM con team activo (owner) → header + MembersTable + InviteForm
- * GRUPO 4 — Usuario invitado (miembro no-owner) → vista "Eres Miembro de un Equipo"
+ * GRUPO 4 — Usuario invitado (miembro no-owner) → vista "Miembro de equipo / Sos parte de …"
+ *
+ * Selectores actualizados el 29/10/2026 a la UI vigente de TabRole.tsx (pestaña «Mi equipo»):
+ * los títulos son Typography (no headings), por eso se usa getByText.
  */
 
 import { test, expect, type Page, type Route } from "@playwright/test";
@@ -152,7 +155,7 @@ async function mockTeams(page: Page, teams: unknown[]) {
 async function gotoTeamsTab(page: Page) {
 	await page.goto("/apps/profiles/account/role");
 	// Esperar a que cargue — skeleton tiene width fijo, heading visible cuando carga
-	await expect(page.locator("text=/Gestión de Equipos|Crear tu Primer Equipo|Eres Miembro|Miembros del Equipo/i").first()).toBeVisible({
+	await expect(page.locator("text=/Gestión de equipos|Creá tu primer equipo|Miembro de equipo|Miembros del equipo/i").first()).toBeVisible({
 		timeout: 15_000,
 	});
 }
@@ -161,24 +164,24 @@ async function gotoTeamsTab(page: Page) {
 // GRUPO 1 — Usuario FREE
 // ─────────────────────────────────────────────────────────────────────────────
 
-test("GRUPO 1 — user FREE → muestra 'Gestión de Equipos' + alert de upgrade", async ({ page }) => {
+test("GRUPO 1 — user FREE → muestra 'Gestión de equipos' + alert de upgrade", async ({ page }) => {
 	await mockSubscription(page, SUBSCRIPTION_FREE);
 	await mockTeams(page, []);
 
 	await gotoTeamsTab(page);
 
-	await expect(page.getByRole("heading", { name: "Gestión de Equipos" })).toBeVisible({ timeout: 10_000 });
-	await expect(page.getByText(/Tu plan actual \(Gratuito\) no incluye la gestión de equipos/i)).toBeVisible();
-	await expect(page.getByText(/Actualiza a un plan Estándar o Premium/i)).toBeVisible();
+	await expect(page.getByText("Gestión de equipos", { exact: true })).toBeVisible({ timeout: 10_000 });
+	await expect(page.getByText(/Tu plan actual \(\s*Gratuito\s*\) no incluye gestión de equipos/i)).toBeVisible();
+	await expect(page.getByText(/Mejorá a Estándar, Pro o Premium/i)).toBeVisible();
 });
 
-test("GRUPO 1 — user FREE → botón 'Ver Planes Disponibles' navega a /suscripciones/tables", async ({ page }) => {
+test("GRUPO 1 — user FREE → botón 'Ver planes' navega a /suscripciones/tables", async ({ page }) => {
 	await mockSubscription(page, SUBSCRIPTION_FREE);
 	await mockTeams(page, []);
 
 	await gotoTeamsTab(page);
 
-	const upgradeBtn = page.getByRole("button", { name: "Ver Planes Disponibles" });
+	const upgradeBtn = page.getByRole("button", { name: /Ver planes/i });
 	await expect(upgradeBtn).toBeVisible({ timeout: 10_000 });
 	await upgradeBtn.click();
 
@@ -190,7 +193,7 @@ test("GRUPO 1 — user FREE → NO muestra botón 'Crear Equipo' ni MembersTable
 	await mockTeams(page, []);
 
 	await gotoTeamsTab(page);
-	await expect(page.getByRole("heading", { name: "Gestión de Equipos" })).toBeVisible({ timeout: 10_000 });
+	await expect(page.getByText("Gestión de equipos", { exact: true })).toBeVisible({ timeout: 10_000 });
 
 	await expect(page.getByRole("button", { name: /Crear Equipo/i })).not.toBeVisible({ timeout: 2_000 });
 	await expect(page.getByText("Miembros del Equipo")).not.toBeVisible({ timeout: 2_000 });
@@ -200,13 +203,13 @@ test("GRUPO 1 — user FREE → NO muestra botón 'Crear Equipo' ni MembersTable
 // GRUPO 2 — Usuario PREMIUM sin teams
 // ─────────────────────────────────────────────────────────────────────────────
 
-test("GRUPO 2 — user PREMIUM sin teams → 'Crear tu Primer Equipo' + botón Crear", async ({ page }) => {
+test("GRUPO 2 — user PREMIUM sin teams → 'Creá tu primer equipo' + botón Crear", async ({ page }) => {
 	await mockSubscription(page, SUBSCRIPTION_PREMIUM);
 	await mockTeams(page, []);
 
 	await gotoTeamsTab(page);
 
-	await expect(page.getByRole("heading", { name: "Crear tu Primer Equipo" })).toBeVisible({ timeout: 10_000 });
+	await expect(page.getByText("Creá tu primer equipo", { exact: true })).toBeVisible({ timeout: 10_000 });
 	// Mensaje con el límite del plan premium
 	await expect(page.getByText(/hasta 10 miembros en tu plan Premium/i)).toBeVisible();
 
@@ -221,7 +224,7 @@ test("GRUPO 2 — user STANDARD → muestra '5 miembros en tu plan Estándar'", 
 
 	await gotoTeamsTab(page);
 
-	await expect(page.getByRole("heading", { name: "Crear tu Primer Equipo" })).toBeVisible({ timeout: 10_000 });
+	await expect(page.getByText("Creá tu primer equipo", { exact: true })).toBeVisible({ timeout: 10_000 });
 	await expect(page.getByText(/hasta 5 miembros en tu plan Estándar/i)).toBeVisible();
 });
 
@@ -246,8 +249,8 @@ test("GRUPO 3 — user PREMIUM + team → muestra nombre del team + counter de m
 
 	await gotoTeamsTab(page);
 
-	// Header con el nombre del team (h5 del card, no el TeamSelector compacto del layout)
-	await expect(page.getByRole("heading", { name: "Estudio Jurídico E2E" })).toBeVisible({ timeout: 10_000 });
+	// Header del tab con el nombre del team (también puede aparecer en el chip del header global → first)
+	await expect(page.getByText("Estudio Jurídico E2E", { exact: true }).first()).toBeVisible({ timeout: 10_000 });
 	// Counter N/maxMembers (1/10 — solo el owner)
 	await expect(page.getByText(/1\s*\/\s*10/)).toBeVisible({ timeout: 5_000 });
 });
@@ -263,13 +266,13 @@ test("GRUPO 3 — user PREMIUM + team (owner) → MembersTable + InviteMembersFo
 	await expect(page.getByRole("textbox").first()).toBeVisible({ timeout: 5_000 });
 });
 
-test("GRUPO 3 — user PREMIUM + team (owner) → botón 'Eliminar Equipo' en zona de peligro", async ({ page }) => {
+test("GRUPO 3 — user PREMIUM + team (owner) → botón 'Eliminar equipo' en zona de riesgo", async ({ page }) => {
 	await mockSubscription(page, SUBSCRIPTION_PREMIUM);
 	await mockTeams(page, [buildTeamAsOwner(USER_ID)]);
 
 	await gotoTeamsTab(page);
 
-	await expect(page.getByText("Zona de Peligro")).toBeVisible({ timeout: 10_000 });
+	await expect(page.getByText("Zona de riesgo")).toBeVisible({ timeout: 10_000 });
 	await expect(page.getByRole("button", { name: "Eliminar Equipo" })).toBeVisible();
 });
 
@@ -277,16 +280,16 @@ test("GRUPO 3 — user PREMIUM + team (owner) → botón 'Eliminar Equipo' en zo
 // GRUPO 4 — Usuario invitado (miembro no-owner)
 // ─────────────────────────────────────────────────────────────────────────────
 
-test("GRUPO 4 — user invitado a team ajeno → vista 'Eres Miembro de un Equipo'", async ({ page }) => {
+test("GRUPO 4 — user invitado a team ajeno → vista 'Miembro de equipo / Sos parte de …'", async ({ page }) => {
 	// Un user con plan free PUEDE ser miembro de un team de otro (no necesita plan pagado)
 	await mockSubscription(page, SUBSCRIPTION_FREE);
 	await mockTeams(page, [buildTeamAsMember(USER_ID, "owner_ajeno_id")]);
 
 	await gotoTeamsTab(page);
 
-	await expect(page.getByRole("heading", { name: "Eres Miembro de un Equipo" })).toBeVisible({ timeout: 10_000 });
-	// Nombre del team (h6 del card, no el TeamSelector del layout global)
-	await expect(page.getByRole("heading", { name: "Equipo Ajeno" })).toBeVisible();
+	await expect(page.getByText("Miembro de equipo", { exact: true })).toBeVisible({ timeout: 10_000 });
+	// Nombre del team en el título del card
+	await expect(page.getByText("Sos parte de Equipo Ajeno")).toBeVisible();
 	await expect(page.getByText(/rol de Editor/i)).toBeVisible();
 });
 

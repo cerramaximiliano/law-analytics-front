@@ -16,7 +16,7 @@
 import { test, expect } from "@playwright/test";
 import { apiAsUser, deleteAllOwnedTeams, leaveAllTeams, TEST_USERS } from "./helpers/multi-user";
 
-const API = "http://localhost:5000";
+const API = process.env.E2E_API_URL || "http://localhost:5000";
 const makeTeamName = () => `E2E-Links-${Date.now()}`;
 
 test.describe.configure({ retries: 2 });
@@ -362,7 +362,8 @@ test("GRUPO 23.4 — editor crea escrito con linkedFolderId → se puede filtrar
 		for (const role of ["owner", "memberEditor", "memberViewer"] as const) {
 			const ctx = await apiAsUser(role);
 			try {
-				const r = await ctx.get(`${API}/api/rich-text-documents?groupId=${sharedTeamId}&folderId=${sharedFolderId}`);
+				// Contrato vigente (29/10/2026): listado por equipo en /rich-text-documents/group/:groupId (+ ?folderId=)
+				const r = await ctx.get(`${API}/api/rich-text-documents/group/${sharedTeamId}?folderId=${sharedFolderId}`);
 				expect(r.ok()).toBe(true);
 				const body = await r.json();
 				const docs = body.documents ?? body.data ?? [];

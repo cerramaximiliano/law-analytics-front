@@ -2,6 +2,111 @@
 
 **51 archivos `.spec.ts`** | **543 tests individuales** (+ 1 setup de autenticación)
 
+## Corrida 29/10/2026 — suite de Equipos contra base de PRUEBAS con cuentas descartables
+
+**Entorno** (levantado aparte, no por la suite): hub local `http://localhost:5050` con `NODE_ENV=test` contra
+`URLDB_TEST` (base `law_analytics_test`, correos suprimidos, arrancado 15:46 con `node server.js`); front Vite
+`http://localhost:3001` con `VITE_BASE_URL=http://localhost:5050`. Interruptor de Grupos encendido y feature `teams` en
+los planes pagos (seed `law-analytics-server/tests/helpers/seed.js`). Nunca se toca la base de producción (`URLDB`).
+
+**Cuentas descartables** (ya no hay credenciales reales en el repo): las genera
+`law-analytics-server/tests/helpers/seedE2EAccounts.js` en la base de pruebas — seis usuarios
+`e2e-<rol>@jest.internal` (`isVerified`, `isTestAccount`, `authProvider: email`, contraseña generada o `E2E_PASSWORD`)
+con suscripción activa `testMode: true`: owner y ownerSecondary **standard**, memberAdmin/memberEditor/memberViewer/
+memberExtra **free** y sin recursos. Planes cambiables por env `E2E_PLAN_<ROL>`. Se eligió standard (no premium) para
+los owners y free para memberExtra porque los specs lo asumen (`team-subscription-edge` GRUPO 2 y
+`team-invitation-conflicts` esperan `"standard"`; nueve specs invitan a memberExtra como miembro free — con plan pago el
+accept devolvería 409 PAID_PLAN_CONFLICT). El seed escribe `law-analytics-front/.env.e2e.local` (ignorado por git) con
+`E2E_<ROL>_EMAIL/PASSWORD/PLAN`, `E2E_BASE_URL` y `E2E_API_URL`; `tests/helpers/e2e-env.ts` lo carga y
+`tests/helpers/multi-user.ts` arma `TEST_USERS` desde ahí (falla con mensaje claro si falta una variable).
+`playwright.config.ts` toma `baseURL` de `E2E_BASE_URL`, los specs `team-*` la API de `E2E_API_URL`, y el
+`globalSetup` (`tests/helpers/e2e-global-cleanup.ts`) deja a las seis cuentas sin equipos y borra los storageState
+viejos antes de cada corrida. El seed además borra grupos y recursos de esas cuentas en Mongo.
+
+**Cómo se corre de punta a punta**
+
+```
+# 1) hub:   cd law-analytics-server && NODE_PATH=$PWD/node_modules node tests/helpers/seedE2EAccounts.js
+# 2) front: cd law-analytics-front && npx playwright test tests/team- --reporter=line
+```
+
+**Incidente de la primera corrida**: a mitad de la suite otra sesión corrió Jest en el hub; `cleanupLeftovers` de
+`seed.js` borraba todo `@jest.internal` fuera de su lista fija — incluidas las seis cuentas E2E — y desde ahí todo dio
+401 «User no longer exists». Se excluyó `e2e-*` de esa limpieza (`seed.js`), se resembró y se repitió la corrida.
+
+**Corrida 2** (hub arrancado antes de los cambios de Equipos del día): 107 ✅ · 30 ❌ · 2 skip. Causas de los 30:
+(A) 7 tests de escritos/postal con `groupId` — el hub de :5050 tenía en memoria código anterior a los cambios de
+`richTextDocumentsController`, `postalTrackingController`, `teamHelper` y `RichTextDocument` (editados a las 15:51–15:54,
+hub arrancado 15:46); (B) 19 tests de `team-mode` y `team-owner-workflow` con selectores del copy viejo («Gestión de
+Equipos», «Crear tu Primer Equipo», «Zona de Peligro»; rediseño `d45111a6` + pestaña «Mi equipo»); (C) 2 tests de
+`team-subscription-edge` con la premisa del fix del 19/4 (409 `TEAM_DOWNGRADE_BLOCKED` en `change-immediate`), superada por
+`db5a736` (6/10/2026, «downgrade solo programado»: con `free` responde 400 `INVALID_PLAN`; el bloqueo por equipo vive en
+`/cancel`); 2 tests que ejecutan scripts del hub que nunca estuvieron en git (`scripts/expireInvitation.js`,
+`scripts/countPostalActive.js`).
+
+**Corrida 3** (hub reiniciado con el código actual; sólo crud-matrix + folder-links + resource-limits): 24 ✅ · 3 ❌. La
+creación con `X-Group-Id` / `groupId` ya guarda `groupId` + `createdBy` (no hay bug del hub). Los 2 fallos de listado
+eran un cambio de contrato: el listado por equipo es ahora `GET /rich-text-documents/group/:groupId` (y
+`/postal-tracking/group/:groupId`), que es lo que usa el reducer del front (`richTextDocuments.ts:196`); `GET /?groupId=`
+devuelve sólo lo propio del solicitante. El tercero era el script faltante.
+
+**Ajustes de specs (29/10, sin cambiar expectativas de negocio)**
+- `team-mode` y `team-owner-workflow`: selectores a la UI vigente de `TabRole.tsx` — «Gestión de equipos», «Creá tu primer
+  equipo», «Crear equipo», «Ver planes», «Miembro de equipo» / «Sos parte de …», «Zona de riesgo», «Eliminar equipo»; los
+  títulos son `Typography` (no headings) → `getByText`; el nombre del equipo también puede estar en el chip del header →
+  `.first()`. Texto del aviso free: «Tu plan actual (Gratuito) no incluye gestión de equipos. Mejorá a Estándar, Pro o
+  Premium».
+- `team-resource-crud-matrix` GRUPO 3 y `team-folder-links` 23.4: listado por equipo vía `/group/:groupId` (+ `?folderId=`).
+- `team-subscription-edge`: GRUPO 1 y 3 esperan 400 `INVALID_PLAN` (y siguen tratando un 2xx como bug crítico); nuevo GRUPO 4
+  `POST /cancel` con equipo activo → 409 `TEAM_DOWNGRADE_BLOCKED`, con `test.skip` en runtime si el 500 es «No hay una
+  suscripción activa para cancelar» (las cuentas sembradas no tienen `stripeSubscriptionId`).
+- `team-invitation-lifecycle` GRUPO 7 y `team-resource-limits` GRUPO 6: `test.skip` si faltan los scripts no versionados
+  (`expireInvitation.js`; `countPostalActive.js` + `createPostalFillers.js`).
+- El spec de tareas (`team-notes-tasks`) es sólo API: no cuenta columnas, no lo afectan el selector «Mis tareas / Todas /
+  Sin asignar» ni la columna «Responsable».
+
+**Resultado final — corrida 4** (140 tests, 21 archivos incl. setup, `workers: 1`, 14,6 min):
+**135 ✅ · 0 ❌ · 5 skip** (0 reintentos).
+
+| Spec | Resultado |
+|---|---|
+| setup (login owner E2E) | ✅ |
+| team-archive-restore (3) | ✅ 3/3 |
+| team-edge-cases (4) | ✅ 4/4 |
+| team-folder-links (7) | ✅ 7/7 |
+| team-invitation-conflicts (3) | ✅ 3/3 |
+| team-invitation-flow (7) | ✅ 7/7 |
+| team-invitation-lifecycle (7) | ✅ 6/7 · skip GRUPO 7 (falta `scripts/expireInvitation.js`) |
+| team-member-management (7) | ✅ 7/7 |
+| team-mode (11) | ✅ 11/11 |
+| team-notes-tasks (10) | ✅ 10/10 |
+| team-ownership-transfer (5) | ✅ 3/5 · 2 `test.skip` preexistentes (GRUPO 1 y 5, «BLOCKED: contradicción accept(paid)») |
+| team-owner-workflow (10) | ✅ 10/10 |
+| team-permissions-by-role (10) | ✅ 10/10 |
+| team-profile-stats-ui (4) | ✅ 4/4 |
+| team-resource-crud-matrix (12) | ✅ 12/12 |
+| team-resource-lifecycle (4) | ✅ 4/4 |
+| team-resource-limits (8) | ✅ 7/8 · skip GRUPO 6 (faltan `countPostalActive.js`/`createPostalFillers.js`) |
+| team-resource-migration (4) | ✅ 4/4 |
+| team-resources-crud-extended (12) | ✅ 12/12 |
+| team-subscription-edge (4) | ✅ 3/4 · skip GRUPO 4 (`/cancel` sin Stripe en la cuenta sembrada) |
+| team-subscription-inheritance (5) | ✅ 5/5 |
+
+Los 5 skips: 3 nuevos de hoy (lifecycle GRUPO 7, limits GRUPO 6, subscription-edge GRUPO 4, motivos arriba) + los 2
+`test.skip` que `team-ownership-transfer` ya traía marcados como BLOCKED (también eran los «2 skipped» de la corrida 2).
+Ninguno de los skips condicionales de margen (`team-resource-limits`, `team-permissions-by-role`, `team-profile-stats-ui`)
+se disparó; `team-resource-limits` repetido aislado con `--reporter=list` dio 7/7 ✅ + skip GRUPO 6.
+
+**Bugs del hub**: ninguno. Lo único que queda abierto es cobertura, no producto: expirar invitaciones, llenar el cupo postal
+y `/cancel` con Stripe requieren scripts/datos que estas cuentas no tienen.
+
+**Riesgos de entorno**: con `NODE_ENV=test` NO aplica el bypass `DISABLE_RATE_LIMIT` (sólo en `development`); en estas
+corridas no hubo 429. Si Jest del hub corre en paralelo, `seed.js` ya respeta las cuentas `e2e-*`. Logs:
+`/tmp/claude-1000/-home-mcerra-www-la-ads/bbb98a99-df67-4923-b04f-291e90a2e3c7/scratchpad/e2e-team-run{2,3,4}.log`
+(`tr '\r' '\n' < ese.log | grep -E "✘|passed|failed"`); trazas y capturas en `test-results/artifacts/`.
+
+---
+
 ## Tests pendientes (priorizados)
 
 **Alta prioridad — gaps team system:**

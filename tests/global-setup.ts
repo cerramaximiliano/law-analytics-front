@@ -1,6 +1,7 @@
 import { test as setup, expect } from "@playwright/test";
 import path from "path";
 import fs from "fs";
+import { hasE2EAccounts, E2E_API_URL } from "./helpers/e2e-env";
 
 const authFile = path.join(__dirname, ".auth/user.json");
 
@@ -21,9 +22,12 @@ function readEnvFile(): Record<string, string> {
 }
 
 const env = readEnvFile();
-const BASE_URL = env.VITE_BASE_URL || "http://localhost:5000";
-const EMAIL = env.VITE_DEV_EMAIL || "";
-const PASSWORD = env.VITE_DEV_PASSWORD || "";
+// Con cuentas descartables (.env.e2e.local) el usuario principal es el owner E2E
+// contra E2E_API_URL; si no, se mantiene el comportamiento histórico (.env del front).
+const useE2E = hasE2EAccounts();
+const BASE_URL = useE2E ? E2E_API_URL : env.VITE_BASE_URL || "http://localhost:5000";
+const EMAIL = useE2E ? process.env.E2E_OWNER_EMAIL! : env.VITE_DEV_EMAIL || "";
+const PASSWORD = useE2E ? process.env.E2E_OWNER_PASSWORD! : env.VITE_DEV_PASSWORD || "";
 
 /**
  * Autenticación via API directa usando page.request (comparte cookies con la página).

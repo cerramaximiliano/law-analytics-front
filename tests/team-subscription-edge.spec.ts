@@ -1,27 +1,32 @@
 /**
- * BLOQUE 6 — Interacción Subscription + Team con usuarios reales.
+ * BLOQUE 6 — Interacción Subscription + Team con la cuenta descartable `owner` (plan standard).
  *
- * Escenarios críticos del TEAMS_SYSTEM_DESIGN.md:
- *   - Owner con team activo NO puede downgrade a plan que no soporta teams (free) o
- *     con menos capacidad → 409 `TEAM_DOWNGRADE_BLOCKED`.
- *   - El owner debe eliminar el team primero.
+ * Semántica vigente desde `db5a736` (6/10/2026, «downgrade solo programado»):
+ *   - `POST /api/subscriptions/change-immediate` y `POST /api/subscriptions/schedule-change`
+ *     sólo aceptan ids de planes pagos (`PAID_PLAN_PRODUCT_IDS`). Con `planId: "free"`
+ *     responden 400 `INVALID_PLAN` antes de cualquier chequeo de equipo: ya no son la vía
+ *     para bajar a free.
+ *   - La baja a free pasa por `POST /api/subscriptions/cancel` (`downgradeToFreePlan` /
+ *     `cancelSubscription` del servicio), que con un equipo activo del que el usuario es
+ *     propietario responde 409 `TEAM_DOWNGRADE_BLOCKED`.
  *
  * **⚠️ Riesgo y mitigación:**
- * Estos tests operan sobre la suscripción real del user `artista@mirtaaguilar.art`.
- * El **happy path esperado**: el backend BLOQUEA el downgrade con 409. Solo se
- * ejecuta el intento de change-immediate — si el backend responde 2xx, significa
- * que downgrade pasó y tendríamos que recuperar. Para no alterar billing real,
- * NO se ejecutan POST /checkout, /cancel con atPeriodEnd=true, etc.
+ * El happy path esperado es que el backend RECHACE (400 o 409). Si alguna de estas llamadas
+ * respondiera 2xx con un equipo activo, es un bug crítico: se anota y se intenta revertir.
+ * Las cuentas sembradas por `seedE2EAccounts.js` no tienen suscripción en Stripe
+ * (`stripeSubscriptionId` vacío): `/cancel` falla antes de llegar al chequeo de equipo con
+ * «No hay una suscripción activa para cancelar» → ese test se omite con el motivo.
  *
- * GRUPO 1 — Owner con team → downgrade a free bloqueado (409 TEAM_DOWNGRADE_BLOCKED)
- * GRUPO 2 — Owner sin team → downgrade a free sí permitido (no testeado para no
- *           romper la sub del user; queda documentado como verificación manual)
+ * GRUPO 1 — change-immediate a free con team activo → 400 INVALID_PLAN (no es vía de downgrade)
+ * GRUPO 2 — la subscription del owner sigue siendo "standard"
+ * GRUPO 3 — schedule-change a free con team activo → 400 INVALID_PLAN
+ * GRUPO 4 — /cancel con team activo → 409 TEAM_DOWNGRADE_BLOCKED (skip sin Stripe)
  */
 
 import { test, expect } from "@playwright/test";
 import { apiAsUser, deleteAllOwnedTeams } from "./helpers/multi-user";
 
-const API = "http://localhost:5000";
+const API = process.env.E2E_API_URL || "http://localhost:5000";
 const makeTeamName = () => `E2E-SubEdge-${Date.now()}`;
 
 async function createTeamAsOwner(name: string): Promise<string> {
@@ -38,6 +43,22 @@ async function createTeamAsOwner(name: string): Promise<string> {
 	}
 }
 
+/** Garantiza que el owner tenga al menos un team activo (precondición de todos los grupos). */
+async function ensureOwnerHasTeam(): Promise<void> {
+	const listCtx = await apiAsUser("owner");
+	let teamCount = 0;
+	try {
+		const teamsRes = await listCtx.get(`${API}/api/groups`);
+		const body = await teamsRes.json();
+		teamCount = body.groups?.length ?? 0;
+	} finally {
+		await listCtx.dispose();
+	}
+	if (teamCount === 0) {
+		await createTeamAsOwner(makeTeamName());
+	}
+}
+
 test.beforeAll(async () => {
 	// Estado limpio
 	await deleteAllOwnedTeams("owner");
@@ -50,40 +71,35 @@ test.afterAll(async () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GRUPO 1 — Owner con team → downgrade a free BLOQUEADO
+// GRUPO 1 — change-immediate a free con team activo → 400 INVALID_PLAN
 // ─────────────────────────────────────────────────────────────────────────────
 
-test("GRUPO 1 — owner standard con team activo intenta change-immediate a free → 409 bloqueado", async () => {
+test("GRUPO 1 — owner standard con team activo intenta change-immediate a free → 400 INVALID_PLAN", async () => {
 	test.setTimeout(45_000);
 
 	// 1) Crear team como owner (standard)
 	const teamId = await createTeamAsOwner(makeTeamName());
 	expect(teamId).toBeTruthy();
 
-	// 2) Intentar downgrade a free → el backend debe bloquear
+	// 2) Intentar downgrade a free por la vía inmediata → el backend la rechaza
 	const ctx = await apiAsUser("owner");
 	try {
 		const res = await ctx.post(`${API}/api/subscriptions/change-immediate`, {
 			data: { planId: "free" },
 		});
 
-		// Post-fix (2026-04-19): controller enruta `planId === 'free'` a downgradeToFreePlan
-		// que arroja TEAM_DOWNGRADE_BLOCKED cuando hay team activo → 409 con code + message.
 		if (res.status() >= 400) {
-			expect(res.status()).toBe(409);
+			// Desde db5a736 el servicio sólo acepta planes pagos: 400 INVALID_PLAN.
+			expect(res.status()).toBe(400);
 			const body = await res.json();
 			expect(body.success).toBe(false);
-			expect(body.code).toBe("TEAM_DOWNGRADE_BLOCKED");
-			expect(body.message).toMatch(/equipo/i);
-			expect(body.teamCheck).toBeTruthy();
+			expect(body.code).toBe("INVALID_PLAN");
 		} else {
 			// Inesperado: backend permitió downgrade → bug crítico
-			// Intentamos recovery inmediato (volver a standard)
 			test.info().annotations.push({
 				type: "critical-backend-bug",
-				description: `Backend permitió downgrade a free con team activo. Status: ${res.status()}`,
+				description: `Backend permitió change-immediate a free con team activo. Status: ${res.status()}`,
 			});
-			// Attempt to undo — cancelar el cambio programado
 			await ctx.post(`${API}/api/subscriptions/cancel-downgrade`).catch(() => {});
 			throw new Error("Backend permitió downgrade con team activo — violación de diseño TEAM_DOWNGRADE_BLOCKED");
 		}
@@ -112,25 +128,12 @@ test("GRUPO 2 — subscription del owner sigue siendo 'standard' tras intento fa
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GRUPO 3 — schedule-change a free también debe bloquearse
+// GRUPO 3 — schedule-change a free → 400 INVALID_PLAN
 // ─────────────────────────────────────────────────────────────────────────────
 
-test("GRUPO 3 — schedule-change a free con team activo → también bloqueado", async () => {
+test("GRUPO 3 — schedule-change a free con team activo → 400 INVALID_PLAN", async () => {
 	test.setTimeout(30_000);
-
-	// Crear team si no existe
-	const listCtx = await apiAsUser("owner");
-	let teamCount = 0;
-	try {
-		const teamsRes = await listCtx.get(`${API}/api/groups`);
-		const body = await teamsRes.json();
-		teamCount = body.groups?.length ?? 0;
-	} finally {
-		await listCtx.dispose();
-	}
-	if (teamCount === 0) {
-		await createTeamAsOwner(makeTeamName());
-	}
+	await ensureOwnerHasTeam();
 
 	const ctx = await apiAsUser("owner");
 	try {
@@ -138,20 +141,55 @@ test("GRUPO 3 — schedule-change a free con team activo → también bloqueado"
 			data: { planId: "free" },
 		});
 
-		// Post-fix (2026-04-19): schedule-change con planId='free' también se enruta
-		// a downgradeToFreePlan y hereda el check TEAM_DOWNGRADE_BLOCKED.
 		if (res.status() >= 400) {
-			expect(res.status()).toBe(409);
+			// Mismo filtro de planes pagos que change-immediate (db5a736).
+			expect(res.status()).toBe(400);
 			const body = await res.json();
-			expect(body.code).toBe("TEAM_DOWNGRADE_BLOCKED");
+			expect(body.code).toBe("INVALID_PLAN");
 			expect(body.success).toBe(false);
 		} else {
 			// Inmediatamente revertimos el schedule
 			await ctx.post(`${API}/api/subscriptions/cancel-downgrade`).catch(() => {});
 			test.info().annotations.push({
-				type: "schedule-change-behavior",
-				description: `schedule-change aceptó con team activo (status ${res.status()}) — enforcement queda al fin del período. Revertido.`,
+				type: "critical-backend-bug",
+				description: `schedule-change aceptó free con team activo (status ${res.status()}). Revertido.`,
 			});
+			throw new Error("Backend programó downgrade a free con team activo — violación de diseño TEAM_DOWNGRADE_BLOCKED");
+		}
+	} finally {
+		await ctx.dispose();
+	}
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GRUPO 4 — /cancel con team activo → 409 TEAM_DOWNGRADE_BLOCKED
+// ─────────────────────────────────────────────────────────────────────────────
+
+test("GRUPO 4 — /cancel con team activo → 409 TEAM_DOWNGRADE_BLOCKED", async () => {
+	test.setTimeout(30_000);
+	await ensureOwnerHasTeam();
+
+	const ctx = await apiAsUser("owner");
+	try {
+		const res = await ctx.post(`${API}/api/subscriptions/cancel`, { data: {} });
+		const body = await res.json().catch(() => ({}));
+
+		// Las cuentas sembradas no tienen suscripción en Stripe: el servicio corta antes del
+		// chequeo de equipo. No es un fallo del producto; sin Stripe de prueba no se puede cubrir.
+		const sinStripe = res.status() === 500 && /No hay una suscripción activa para cancelar/i.test(String(body.error ?? body.message ?? ""));
+		test.skip(sinStripe, "La cuenta owner sembrada no tiene stripeSubscriptionId: /cancel no llega al chequeo de equipo");
+
+		if (res.status() >= 400) {
+			expect(res.status()).toBe(409);
+			expect(body.success).toBe(false);
+			expect(body.code).toBe("TEAM_DOWNGRADE_BLOCKED");
+			expect(body.message).toMatch(/equipo/i);
+		} else {
+			test.info().annotations.push({
+				type: "critical-backend-bug",
+				description: `Backend aceptó /cancel con team activo. Status: ${res.status()}`,
+			});
+			throw new Error("Backend permitió cancelar la suscripción con team activo — violación de diseño TEAM_DOWNGRADE_BLOCKED");
 		}
 	} finally {
 		await ctx.dispose();

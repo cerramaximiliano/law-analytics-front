@@ -26,7 +26,7 @@
 import { test, expect } from "@playwright/test";
 import { apiAsUser, deleteAllOwnedTeams, leaveAllTeams, TEST_USERS } from "./helpers/multi-user";
 
-const API = "http://localhost:5000";
+const API = process.env.E2E_API_URL || "http://localhost:5000";
 const makeTeamName = () => `E2E-CrudMx-${Date.now()}`;
 
 test.describe.configure({ retries: 2 });
@@ -277,7 +277,7 @@ test("GRUPO 2 — viewer NO puede crear escrito con groupId → 403", async () =
 // GRUPO 3 — Lectura: viewer puede leer recursos del team
 // ─────────────────────────────────────────────────────────────────────────────
 
-test("GRUPO 3 — viewer puede GET escritos del team (list ?groupId=)", async () => {
+test("GRUPO 3 — viewer puede GET escritos del team (list /group/:groupId)", async () => {
 	// Precondición: owner crea un escrito con groupId
 	const owner = await apiAsUser("owner");
 	let docId = "";
@@ -293,10 +293,12 @@ test("GRUPO 3 — viewer puede GET escritos del team (list ?groupId=)", async ()
 		await owner.dispose();
 	}
 
-	// Viewer lista con ?groupId= → debe ver el doc
+	// Viewer lista los escritos del equipo → debe ver el doc.
+	// Contrato vigente (29/10/2026): el listado por equipo es GET /rich-text-documents/group/:groupId
+	// (checkGroupMembership); GET /rich-text-documents?groupId= devuelve sólo los propios del solicitante.
 	const viewer = await apiAsUser("memberViewer");
 	try {
-		const list = await viewer.get(`${API}/api/rich-text-documents?groupId=${sharedTeamId}`);
+		const list = await viewer.get(`${API}/api/rich-text-documents/group/${sharedTeamId}`);
 		expect(list.ok()).toBe(true);
 		const body = await list.json();
 		const docs = body.documents ?? [];
