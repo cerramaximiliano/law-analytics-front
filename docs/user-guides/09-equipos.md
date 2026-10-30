@@ -203,7 +203,8 @@ iniciales de cada uno. «Sin responsable» sirve para ver qué falta repartir.
 
 ### Distribución de responsables
 
-En **Configuración → Perfil → Mi equipo**, la tarjeta **Distribución de responsables** muestra las carpetas activas
+Para el propietario y los Administradores, en **Configuración → Perfil → Mi equipo**, la tarjeta **Distribución de
+responsables** muestra las carpetas activas
 agrupadas por integrante, con la cantidad de cada uno, y al final las que no tienen responsable. Una carpeta con varios
 responsables aparece en cada uno.
 
@@ -302,6 +303,11 @@ Nunca se pierde un aviso: si las reglas dejaran una novedad sin destinatario, le
 
 Las altas y bajas de causas que trae la sincronización con PJN o SCBA, la verificación de causas y el estado de las
 credenciales le llegan a todo el equipo, sin estas reglas.
+
+### Qué ve un integrante
+
+Los Editores y Visualizadores no ven las tarjetas de configuración. En **Mi equipo** ven un resumen de su situación:
+**Qué ves** (todo el equipo o solo lo tuyo) y **Tus avisos** (según cada carpeta, todo o solo lo tuyo).
 
 ### Preferencias personales
 

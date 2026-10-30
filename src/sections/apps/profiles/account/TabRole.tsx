@@ -20,6 +20,7 @@ import {
 	TeamSettingsCard,
 	TeamNotificationsCard,
 	TeamVisibilityCard,
+	MemberTeamScope,
 	TeamResponsablesDistributionCard,
 	RoleBadge,
 } from "sections/apps/teams";
@@ -429,6 +430,9 @@ const TabRole = () => {
 								</Typography>
 							</Stack>
 						</Box>
+
+						{/* Qué ve y cómo le llegan los avisos (lo configura el owner o un admin) */}
+						<MemberTeamScope />
 
 						<Button startIcon={<Logout size={15} variant="Linear" />} onClick={() => setShowLeaveDialog(true)} sx={destructiveGhostBtnSx}>
 							Abandonar equipo
