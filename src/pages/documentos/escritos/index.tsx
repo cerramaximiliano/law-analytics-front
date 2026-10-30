@@ -1454,7 +1454,9 @@ const EscritosPage = () => {
 	const userId = useSelector((state: any) => state.auth?.user?._id);
 	// Modo equipo: los thunks listan y crean con el equipo activo del store. Acá solo se
 	// vuelve a pedir cuando cambia el equipo (el primer fetch personal no espera a los equipos).
-	const { activeTeam } = useTeam();
+	const { activeTeam, isTeamMode, canDelete } = useTeam();
+	// En un equipo solo borran owner y administrador (la API rechaza al editor y al lector).
+	const canDeleteEscritos = !isTeamMode || canDelete;
 	const activeTeamId = activeTeam?._id ?? null;
 
 	const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
@@ -2084,7 +2086,8 @@ const EscritosPage = () => {
 													<Routing size={16} variant="Linear" />
 												</IconButton>
 											</Tooltip>
-											<Tooltip title="Eliminar">
+											{canDeleteEscritos && (
+<Tooltip title="Eliminar">
 												<IconButton
 													sx={iconBtnDestructiveSx}
 													onClick={() => setDeleteTarget({ kind: row.kind, id: row.id, title: row.title })}
@@ -2093,6 +2096,7 @@ const EscritosPage = () => {
 													<Trash size={16} variant="Linear" />
 												</IconButton>
 											</Tooltip>
+)}
 										</Stack>
 									</Box>
 								);
@@ -2262,7 +2266,8 @@ const EscritosPage = () => {
 																<Routing size={16} variant="Linear" />
 															</IconButton>
 														</Tooltip>
-														<Tooltip title="Eliminar">
+														{canDeleteEscritos && (
+<Tooltip title="Eliminar">
 															<IconButton
 																sx={iconBtnDestructiveSx}
 																onClick={() => setDeleteTarget({ kind: row.kind, id: row.id, title: row.title })}
@@ -2271,6 +2276,7 @@ const EscritosPage = () => {
 																<Trash size={16} variant="Linear" />
 															</IconButton>
 														</Tooltip>
+)}
 													</Stack>
 												</TableCell>
 											</TableRow>

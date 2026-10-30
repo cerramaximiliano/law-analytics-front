@@ -296,7 +296,9 @@ const PostalTrackingPage = () => {
 	const { tracking: trackingDetail } = useSelector((state: any) => state.postalTrackingReducer);
 	// Modo equipo: el thunk lista con el equipo activo del store. Acá solo se vuelve a pedir
 	// cuando cambia el equipo (el primer fetch personal no espera a los equipos).
-	const { activeTeam } = useTeam();
+	const { activeTeam, isTeamMode, canDelete } = useTeam();
+	// En un equipo solo borran owner y administrador (la API rechaza al editor y al lector).
+	const canDeleteTrackings = !isTeamMode || canDelete;
 	const activeTeamId = activeTeam?._id ?? null;
 
 	// Paginación y filtros
@@ -840,7 +842,7 @@ const PostalTrackingPage = () => {
 				)}
 
 				{/* Bulk bar */}
-				{selectedIds.size > 0 && (
+				{selectedIds.size > 0 && canDeleteTrackings && (
 					<Stack
 						direction="row"
 						alignItems="center"
@@ -1051,6 +1053,7 @@ const PostalTrackingPage = () => {
 														<Edit2 size={16} variant="Linear" />
 													</IconButton>
 												</Tooltip>
+												{canDeleteTrackings && (
 												<Tooltip title="Eliminar">
 													<IconButton
 														sx={iconBtnIntent(theme.palette.error.main, 30)}
@@ -1060,6 +1063,7 @@ const PostalTrackingPage = () => {
 														<Trash size={16} variant="Linear" />
 													</IconButton>
 												</Tooltip>
+												)}
 											</Stack>
 										</Box>
 									))}
@@ -1275,6 +1279,7 @@ const PostalTrackingPage = () => {
 																		})()}
 																</>
 															)}
+															{canDeleteTrackings && (
 															<Tooltip title="Eliminar">
 																<IconButton
 																	sx={iconBtnIntent(theme.palette.error.main, isMd ? 32 : 30)}
@@ -1284,6 +1289,7 @@ const PostalTrackingPage = () => {
 																	<Trash size={isMd ? 16 : 15} variant="Linear" />
 																</IconButton>
 															</Tooltip>
+															)}
 														</Stack>
 													</TableCell>
 												</TableRow>
