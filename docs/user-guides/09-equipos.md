@@ -1,485 +1,350 @@
-# Guia de Equipos
+# Guía de Equipos
 
-## Descripcion General
+## Descripción general
 
-Aprende a crear y gestionar equipos de trabajo para colaborar con otros profesionales en tus causas, contactos, calculadoras y demas recursos de Law Analytics.
+Equipos te permite trabajar con otros abogados y colaboradores de tu estudio sobre las mismas causas, contactos,
+calendario, tareas, escritos y seguimientos postales. Todos ven lo mismo, cada uno con los permisos de su rol, y cada
+integrante recibe las novedades de las causas y tiene su propia vista de tareas.
 
-## Objetivos de Aprendizaje
+Esta guía cubre todo lo que comprende la función: quién puede crear un equipo, cómo invitar, qué puede hacer cada rol,
+cómo se reparte el trabajo, a quién le llegan los avisos y qué pasa con el plan y los datos.
 
-- Entender como funciona el sistema de equipos
-- Crear un equipo y configurarlo
-- Invitar miembros y asignarles roles
-- Aceptar invitaciones a equipos
-- Gestionar recursos compartidos dentro del equipo
-- Conocer los limites por plan
-- Administrar miembros y roles
-- Abandonar o eliminar un equipo
+## Objetivos de aprendizaje
 
----
-
-## 1. Introduccion a los Equipos
-
-El sistema de equipos te permite invitar colaboradores para trabajar juntos en tus recursos de Law Analytics. Todo el equipo comparte las causas, contactos, calculadoras y documentos del propietario.
-
-### Lo que aprenderas:
-
-- ✅ Crear un equipo y ser su propietario
-- ✅ Invitar colegas y asignarles roles con permisos especificos
-- ✅ Trabajar colaborativamente en causas y recursos compartidos
-- ✅ Gestionar miembros, cambiar roles y remover colaboradores
-- ✅ Entender como funcionan los limites del plan en equipos
-- ✅ Migrar o eliminar recursos al unirte a un equipo
-
-### Concepto clave: Pool compartido
-
-> **"La cuenta del propietario ES el equipo"**
-
-Cuando creas un equipo, todos tus recursos (causas, contactos, calculadoras, documentos) pasan a estar disponibles para los miembros segun su rol. No existe separacion entre recursos "personales" y recursos "del equipo": todo se comparte desde la cuenta del propietario.
+- Entender cómo funciona un equipo y de quién son los datos
+- Crear un equipo e invitar integrantes
+- Elegir el rol adecuado para cada persona
+- Unirte a un equipo desde una invitación, con o sin datos propios
+- Repartir el trabajo con tareas asignadas
+- Saber qué avisos recibe cada integrante
+- Gestionar integrantes, salir del equipo o eliminarlo
+- Conocer cómo se relaciona el equipo con tu plan
 
 ---
 
-## 2. Requisitos para Crear un Equipo
+## 1. Cómo funciona un equipo
 
-Para crear un equipo necesitas:
+> **La cuenta del propietario es el equipo.**
 
-- **Plan Estándar, Pro o Premium**: Los usuarios con plan Free no pueden crear equipos
-- **No pertenecer a otro equipo**: Solo puedes pertenecer a un equipo a la vez
+Quien crea el equipo es su **propietario**. Todo lo que se carga dentro del equipo, lo cargue quien lo cargue, queda en
+la cuenta del propietario y cuenta contra los límites de su plan. Cada recurso guarda además **quién lo creó**.
 
-### Limites de miembros por plan:
+- Las causas, contactos, cálculos, notas, eventos, tareas, escritos y seguimientos postales del propietario son del equipo.
+- Los integrantes trabajan siempre dentro del equipo: no tienen un espacio personal aparte mientras pertenezcan a él.
+- Si alguien sale del equipo, lo que cargó queda en el equipo.
 
-| Plan         | Integrantes máximos | Equipos       |
-| ------------ | ------------------- | ------------- |
-| **Free**     | —                   | No disponible |
-| **Estándar** | 5 (incluido el propietario) | 1 equipo |
-| **Pro**      | 8 (incluido el propietario) | 1 equipo |
-| **Premium**  | 10 (incluido el propietario) | 1 equipo |
+### Qué se comparte
 
-> **💡 Nota**: El límite cuenta al propietario. En Premium, por ejemplo, podés invitar hasta 9 colaboradores.
-
----
-
-## 3. Crear un Equipo
-
-### Pasos para crear tu equipo:
-
-1. Ve a la seccion de **Equipos** en el menu lateral
-2. Haz clic en el boton **"Crear Equipo"**
-3. Completa los datos del equipo:
-   - **Nombre**: Un nombre descriptivo (ej. "Estudio Garcia & Asociados")
-   - **Descripcion**: Breve descripcion del equipo (opcional)
-4. Haz clic en **"Crear"**
-
-```
-┌─────────────────────────────────────┐
-│  Crear Equipo                       │
-├─────────────────────────────────────┤
-│                                     │
-│  Nombre del equipo *               │
-│  ┌─────────────────────────────┐   │
-│  │ Estudio Garcia & Asociados  │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  Descripcion                       │
-│  ┌─────────────────────────────┐   │
-│  │ Equipo del estudio juridico │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│         [Cancelar]  [Crear]        │
-└─────────────────────────────────────┘
-```
-
-### Que sucede al crear el equipo:
-
-- Te conviertes en el **Propietario (Owner)** del equipo
-- Todos tus recursos existentes pasan a estar disponibles para los futuros miembros
-- Los limites de tu plan definen la capacidad del equipo (causas, almacenamiento, etc.)
-
-> **⚠️ Importante**: Al crear un equipo, tus recursos siguen siendo tuyos. Los miembros podran verlos y (segun su rol) editarlos, pero la propiedad siempre es del propietario.
+| Sección | En el equipo |
+| --- | --- |
+| **Causas** | Todas las del propietario, incluidas las que ya tenía antes de crear el equipo y las que trae la sincronización con PJN o SCBA |
+| **Contactos, cálculos y notas** | Compartidos |
+| **Calendario** | Eventos compartidos |
+| **Tareas** | Compartidas, con responsables y vista «Mis tareas» (ver sección 7) |
+| **Escritos** | Compartidos: cada integrante ve y edita los escritos del equipo según su rol |
+| **Seguimiento postal** | Compartido |
+| **Conectores de IA** (Claude, ChatGPT) | Un integrante conectado ve las causas del equipo y nada de otros usuarios |
+| **Credenciales PJN y SCBA** | Solo el propietario las carga y las ve; las causas que traen son de todo el equipo |
 
 ---
 
-## 4. Invitar Miembros
+## 2. Requisitos y cupos
 
-### Pasos para invitar colaboradores:
+Para **crear** un equipo necesitás un plan pago: Estándar, Pro o Premium. El plan Free no puede crear equipos.
 
-1. Abre la configuracion de tu equipo
-2. Haz clic en **"Invitar Miembro"**
-3. Ingresa el **email** del colaborador
-4. Selecciona el **rol** que deseas asignarle
-5. Haz clic en **"Enviar Invitacion"**
+| Plan | Integrantes del equipo | Invitados posibles |
+| --- | --- | --- |
+| **Free** | No disponible | — |
+| **Estándar** | 5 | 4 |
+| **Pro** | 8 | 7 |
+| **Premium** | 10 | 9 |
 
-```
-┌─────────────────────────────────────┐
-│  Invitar Miembro                    │
-├─────────────────────────────────────┤
-│                                     │
-│  Email del colaborador *           │
-│  ┌─────────────────────────────┐   │
-│  │ juan@ejemplo.com            │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  Rol *                             │
-│  ┌─────────────────────────────┐   │
-│  │ Editor                  ▼   │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│     [Cancelar]  [Enviar Invitacion]│
-└─────────────────────────────────────┘
-```
+> **💡 El cupo incluye al propietario.** En Premium, por ejemplo, sos vos más nueve invitados.
 
-### Que sucede al enviar la invitacion:
+Los límites de causas, contactos, cálculos y almacenamiento son los del plan del propietario y se comparten entre todos.
+Si el equipo llega al tope de causas, nadie puede cargar una nueva hasta archivar alguna o mejorar el plan.
 
-- El colaborador recibe un **email con un link de invitacion**
-- La invitacion es **valida por 7 dias**
-- Aparece como **"Pendiente"** hasta que sea aceptada o rechazada
-- Puedes **revocar** la invitacion en cualquier momento antes de que sea aceptada
+Para **unirte** a un equipo no necesitás plan: alcanza con una cuenta Free. Si tenés un plan pago activo, primero tenés
+que cancelarlo (ver sección 5).
 
-> **💡 Nota**: Solo el Propietario y los Administradores pueden invitar nuevos miembros al equipo.
+Cada persona puede pertenecer a **un solo equipo** a la vez.
 
 ---
 
-## 5. Roles y Permisos
+## 3. Crear el equipo
 
-El sistema de equipos tiene cuatro roles con diferentes niveles de acceso:
+1. Abrí **Configuración → Perfil → Mi equipo**.
+2. Hacé clic en **Crear equipo**.
+3. Escribí el nombre (por ejemplo, «Estudio García & Asociados») y, si querés, una descripción.
+4. Confirmá con **Crear**.
 
-### Matriz de permisos:
-
-| Accion                | Propietario | Administrador | Editor | Visor |
-| --------------------- | :---------: | :-----------: | :----: | :---: |
-| **Ver recursos**      |     ✅      |      ✅       |   ✅   |  ✅   |
-| **Crear recursos**    |     ✅      |      ✅       |   ✅   |  ❌   |
-| **Editar recursos**   |     ✅      |      ✅       |   ✅   |  ❌   |
-| **Eliminar recursos** |     ✅      |      ✅       |   ❌   |  ❌   |
-| **Invitar miembros**  |     ✅      |      ✅       |   ❌   |  ❌   |
-| **Cambiar roles**     |     ✅      |      ✅       |   ❌   |  ❌   |
-| **Remover miembros**  |     ✅      |      ✅       |   ❌   |  ❌   |
-| **Configurar equipo** |     ✅      |      ✅       |   ❌   |  ❌   |
-| **Eliminar equipo**   |     ✅      |      ❌       |   ❌   |  ❌   |
-
-### Descripcion de cada rol:
-
-#### Propietario (Owner)
-
-- Es el creador y dueno del equipo y de todos los recursos
-- Los limites de su plan definen la capacidad del equipo
-- Es el unico que puede eliminar el equipo
-- No puede ser removido ni degradado de rol
-
-#### Administrador (Admin)
-
-- Puede gestionar miembros: invitar, cambiar roles y remover
-- Puede crear, editar y eliminar recursos
-- Puede configurar opciones del equipo
-- Rol ideal para socios o colaboradores de confianza
-
-#### Editor
-
-- Puede crear y editar recursos (causas, contactos, notas, etc.)
-- No puede eliminar recursos ni gestionar miembros
-- Rol ideal para colaboradores que necesitan contribuir activamente
-
-#### Visor (Viewer)
-
-- Solo puede ver recursos, sin crear, editar ni eliminar
-- No puede gestionar miembros
-- Rol ideal para supervisores, pasantes o clientes con acceso de consulta
-
-> **💡 Consejo**: Asigna el rol minimo necesario para cada colaborador. Un pasante que solo necesita consultar informacion debe ser Visor, mientras que un abogado que trabaja activamente en causas deberia ser Editor o Administrador.
+Al crearlo pasás a ser el **Propietario**. En la misma pestaña ves el cupo de tu plan, los integrantes, las invitaciones
+pendientes y el historial del equipo.
 
 ---
 
-## 6. Aceptar una Invitacion
+## 4. Invitar integrantes
 
-Cuando recibes una invitacion a un equipo, el proceso depende de tu situacion actual:
+1. En **Mi equipo**, hacé clic en **Invitar miembros**.
+2. Escribí el correo de cada persona.
+3. Elegí el rol: **Administrador**, **Editor** o **Visualizador**. Solo el propietario puede invitar como Administrador.
+4. Enviá las invitaciones.
 
-### Caso A: Eres un usuario nuevo
+Qué pasa después:
 
-1. Recibiras un email con un link de invitacion
-2. Haz clic en el link
-3. Se te pedira crear una cuenta con:
-   - Nombre
-   - Apellido
-   - Contrasena
-4. Al completar el registro, te unes automaticamente al equipo con el rol asignado
+- Cada persona recibe un correo con un enlace personal. **El enlace vale 7 días.**
+- La invitación figura como **Pendiente** hasta que la acepten. Podés **reenviarla** o **cancelarla**.
+- Si el cupo del plan está completo, el sistema te avisa cuántas invitaciones podés enviar todavía.
 
-### Caso B: Ya tienes cuenta pero SIN recursos
-
-1. Haz clic en el link de invitacion del email
-2. Si no estas logueado, ingresa con tu cuenta existente
-3. Veras los detalles de la invitacion (nombre del equipo, rol asignado)
-4. Haz clic en **"Aceptar"** para unirte al equipo
-
-### Caso C: Ya tienes cuenta CON recursos existentes
-
-Si ya tienes causas, contactos u otros recursos en tu cuenta personal, deberas decidir que hacer con ellos antes de unirte:
-
-```
-┌─────────────────────────────────────────────────────┐
-│  Tienes recursos existentes en tu cuenta personal   │
-├─────────────────────────────────────────────────────┤
-│                                                     │
-│  Resumen de tus recursos:                          │
-│  ├── 5 Causas                                      │
-│  ├── 12 Calculadoras                               │
-│  ├── 8 Contactos                                   │
-│  └── 150 MB de almacenamiento                      │
-│                                                     │
-│  Para unirte al equipo, elige que hacer:           │
-│                                                     │
-│  ○ Migrar al equipo                                │
-│    Tus recursos pasaran a ser del equipo           │
-│    y seran accesibles para todos los miembros.     │
-│                                                     │
-│  ○ Exportar y eliminar                             │
-│    Descargaras un backup antes de eliminarlos.     │
-│                                                     │
-│  ○ Eliminar recursos                               │
-│    Tus recursos seran eliminados permanentemente.  │
-│                                                     │
-│        [Cancelar]            [Continuar]           │
-└─────────────────────────────────────────────────────┘
-```
-
-#### Opcion 1: Migrar al equipo
-
-- Tus recursos se transfieren al equipo y pasan a ser propiedad del propietario
-- Todos los miembros podran acceder a ellos segun su rol
-- Es la opcion recomendada si quieres mantener tus datos
-
-#### Opcion 2: Exportar y eliminar
-
-- Descargas un respaldo de todos tus recursos
-- Luego se eliminan de tu cuenta
-- Te unes al equipo con la cuenta limpia
-
-#### Opcion 3: Eliminar recursos
-
-- Tus recursos se eliminan permanentemente
-- Te unes al equipo con la cuenta limpia
-
-> **⚠️ Importante**: Si la migracion excederia los limites del plan del propietario, se te notificara cuales recursos no pueden migrarse. El propietario debera liberar espacio o mejorar su plan.
+Pueden invitar el Propietario y los Administradores.
 
 ---
 
-## 7. Trabajar en Equipo
+## 5. Aceptar una invitación
 
-Una vez dentro del equipo, trabajas directamente con los recursos compartidos:
+Abrí el enlace del correo. Lo que sigue depende de tu situación.
 
-### Creacion de recursos:
+### No tenés cuenta
 
-Cuando creas una causa, contacto, nota o cualquier otro recurso:
+Te registrás desde la misma pantalla de la invitación y entrás al equipo con el rol que te asignaron.
 
-- El recurso se crea dentro del equipo automaticamente
-- Cuenta contra los limites del plan del **propietario**
-- Todos los miembros pueden acceder segun su rol
-- Se registra quien creo el recurso para auditoria
+### Tenés cuenta y no cargaste nada
 
-### Limites del equipo:
+Iniciás sesión, ves el nombre del equipo y tu rol, y hacés clic en **Aceptar**.
 
-Los limites de recursos son los del plan del propietario:
+### Tenés cuenta con causas u otros datos
 
-| Recurso            | Estándar | Pro    | Premium |
-| ------------------ | -------- | ------ | ------- |
-| **Causas**         | 50       | 200    | 500     |
-| **Calculadoras**   | 20       | 100    | 200     |
-| **Contactos**      | 100      | 500    | 1.000   |
-| **Almacenamiento** | 100 MB   | 150 MB | 200 MB  |
+Antes de entrar tenés que decidir qué hacer con lo que ya cargaste:
 
-> **💡 Nota**: Todos los recursos creados por cualquier miembro cuentan contra estos limites. Si el equipo alcanza el limite de causas, ningun miembro podra crear causas nuevas hasta que se archiven/eliminen existentes o el propietario mejore su plan.
+- **Migrar recursos al equipo**: tus causas, contactos, cálculos y demás pasan al equipo y los ven todos según su rol.
+  Podés incluir tus archivados, que siguen archivados.
+- **Migrar como archivados**: si lo tuyo no entra en los límites del plan del equipo, se migra archivado. No ocupa
+  cupo activo y después se puede desarchivar lo que haga falta.
+- **Eliminar mis recursos**: entrás con la cuenta limpia. Esta opción borra tus datos y no se puede deshacer.
 
-### Historial de actividad:
+### Tenés un plan pago activo
 
-El sistema registra automaticamente todas las acciones del equipo:
+No podés unirte mientras tu plan esté activo. El mensaje te pide cancelar la suscripción primero, porque dentro del
+equipo te cubre el plan del propietario.
 
-- Quien creo, edito o elimino cada recurso
-- Fecha y hora de cada accion
-- Detalle de los cambios realizados
+### Ya estás en otro equipo
 
-El propietario y los administradores pueden consultar el historial de actividad completo del equipo.
+Tenés que salir del equipo actual antes de aceptar la nueva invitación.
 
 ---
 
-## 8. Gestion de Miembros
+## 6. Roles y permisos
 
-### Cambiar el rol de un miembro:
+| Acción | Propietario | Administrador | Editor | Visualizador |
+| --- | :---: | :---: | :---: | :---: |
+| Ver causas, contactos, calendario, tareas, escritos y envíos | ✅ | ✅ | ✅ | ✅ |
+| Crear | ✅ | ✅ | ✅ | ❌ |
+| Editar, también lo que cargaron otros | ✅ | ✅ | ✅ | ❌ |
+| Eliminar | ✅ | ✅ | ❌ | ❌ |
+| Invitar, reenviar y cancelar invitaciones | ✅ | ✅ | ❌ | ❌ |
+| Remover integrantes | ✅ | ✅ | ❌ | ❌ |
+| Invitar como Administrador | ✅ | ❌ | ❌ | ❌ |
+| Cambiar el rol de un integrante | ✅ | ❌ | ❌ | ❌ |
+| Cargar credenciales PJN y SCBA | ✅ | ❌ | ❌ | ❌ |
+| Eliminar el equipo | ✅ | ❌ | ❌ | ❌ |
+| Salir del equipo | — | ✅ | ✅ | ✅ |
 
-1. Ve a la configuracion del equipo
-2. Busca al miembro en la lista
-3. Haz clic en el menu de opciones del miembro
-4. Selecciona **"Cambiar rol"**
-5. Elige el nuevo rol y confirma
+Los botones siguen al rol: quien no puede eliminar no ve el botón **Eliminar**, por ejemplo en Escritos o en
+Seguimiento postal.
 
-### Remover un miembro:
+### Cuándo usar cada rol
 
-1. Ve a la configuracion del equipo
-2. Busca al miembro en la lista
-3. Haz clic en **"Remover"**
-4. Confirma la accion
+- **Administrador**: socios o personas de confianza que también gestionan el equipo. Ven el cupo y las invitaciones.
+- **Editor**: abogados y colaboradores que trabajan las causas a diario. Cargan y editan, pero no borran.
+- **Visualizador**: pasantes, consultores o quien solo necesita consultar.
 
-### Que sucede al remover un miembro:
-
-- El miembro pierde acceso inmediato a todos los recursos del equipo
-- Los recursos que creo permanecen en el equipo (son del propietario)
-- El ex-miembro queda sin equipo y sin recursos
-- Puede unirse a otro equipo o comenzar a crear sus propios recursos
-
-> **💡 Nota**: Solo el Propietario y los Administradores pueden cambiar roles y remover miembros. Un Administrador no puede remover ni cambiar el rol del Propietario.
-
----
-
-## 9. Restriccion: Un Equipo por Usuario
-
-Actualmente, cada usuario solo puede pertenecer a **un equipo a la vez**. Esto significa:
-
-- Si ya eres miembro de un equipo, no puedes aceptar invitaciones a otros equipos
-- Debes **abandonar tu equipo actual** antes de unirte a uno nuevo
-
-### Para cambiar de equipo:
-
-1. Ve a la configuracion de tu equipo actual
-2. Haz clic en **"Abandonar Equipo"**
-3. Confirma la accion
-4. Acepta la nueva invitacion
-
-> **⚠️ Importante**: Al abandonar un equipo, los recursos que creaste o migraste permanecen en el equipo (son propiedad del propietario). Quedas sin recursos propios y puedes unirte a otro equipo o comenzar desde cero.
+> **💡 Consejo**: asigná el rol mínimo necesario. El rol se puede cambiar después sin volver a invitar.
 
 ---
 
-## 10. Eliminar un Equipo
+## 7. Repartir el trabajo: tareas con responsables
 
-Solo el **Propietario** puede eliminar el equipo.
+Las tareas del equipo son de todos, pero cada una puede tener uno o varios **responsables**.
 
-### Que sucede al eliminar el equipo:
+### Asignar
 
-1. Todos los miembros pierden acceso inmediatamente
-2. Los recursos permanecen en la cuenta del propietario (siguen siendo suyos)
-3. El propietario vuelve a ser un usuario individual con todos sus recursos
-4. Los ex-miembros quedan sin equipo y pueden unirse a otros o crear cuentas propias
+1. Creá o editá una tarea.
+2. En **Responsables**, elegí al propietario o a uno o más integrantes.
+3. Guardá. Si no elegís a nadie, la tarea queda **Sin asignar**.
 
-> **💡 Nota**: Eliminar un equipo **no elimina** ningún recurso. Las causas, contactos y demas datos siguen disponibles para el propietario como recursos personales.
+### Ver lo tuyo
 
----
+En **Tareas** tenés un selector con tres vistas:
 
-## 11. Tu Plan y los Equipos
+| Vista | Qué muestra |
+| --- | --- |
+| **Mis tareas** | Las tareas en las que sos responsable. Es la vista inicial de los integrantes |
+| **Todas** | Todas las tareas del equipo. Es la vista inicial del propietario |
+| **Sin asignar** | Las tareas que todavía no tienen responsable |
 
-### Mejora de plan:
+La columna **Responsable** muestra las iniciales de cada asignado; al pasar el mouse ves el nombre. En el tablero, el
+recuadro **Tareas próximas** de cada integrante muestra sus propias tareas.
 
-- Al mejorar de Standard a Premium, el equipo obtiene automaticamente mas capacidad (mas miembros, mas recursos, mas almacenamiento)
-- No se requiere ninguna accion adicional
+### Recordatorios
 
-### Degradacion de plan:
+Los recordatorios de vencimiento, por correo y en el navegador, le llegan **a cada responsable**. Si la tarea no tiene
+responsables, le llega al propietario.
 
-El sistema protege tu equipo impidiendo cambios de plan incompatibles:
-
-- **Si intentas bajar al plan Free**: Se bloquea la accion mientras tengas un equipo activo. Debes eliminar el equipo primero.
-- **Si intentas bajar a un plan con menos miembros permitidos**: Se bloquea si tu equipo tiene mas miembros activos de los que permite el nuevo plan. Debes remover miembros primero.
-
-```
-┌─────────────────────────────────────────────────────┐
-│  ⚠️ No es posible cambiar de plan                   │
-├─────────────────────────────────────────────────────┤
-│                                                     │
-│  No puedes cambiar al plan gratuito mientras seas  │
-│  propietario del equipo "Estudio Garcia".          │
-│                                                     │
-│  Para cambiar de plan, primero debes:              │
-│  • Eliminar tu equipo desde la configuracion       │
-│  • O remover miembros hasta cumplir los limites    │
-│    del nuevo plan                                  │
-│                                                     │
-│                               [Entendido]          │
-└─────────────────────────────────────────────────────┘
-```
-
-> **⚠️ Importante**: Si ocurre un problema de pago y Stripe fuerza una degradacion automatica, el equipo sera **suspendido** temporalmente hasta que se resuelva el plan.
+El Editor puede editar una tarea pero no borrarla. El Administrador y el Propietario pueden borrarla.
 
 ---
 
-## 12. Consejos Practicos
+## 8. Avisos de las causas
 
-### Asignacion de roles
+Las novedades de las causas del equipo le llegan **a todos los integrantes activos**, no solo al propietario:
 
-Asigna el rol minimo necesario a cada colaborador. Si alguien solo necesita consultar informacion, asignale el rol de Visor. Esto protege tus datos de modificaciones accidentales.
+- Movimientos nuevos de las causas (PJN, Provincia de Buenos Aires, CABA y las demás jurisdicciones disponibles).
+- Cédulas y notificaciones electrónicas.
+- Altas y bajas de causas que trae la sincronización con PJN o SCBA.
+- Avisos de verificación de causas y del estado de las credenciales.
 
-### Organizacion del equipo
+Cada integrante recibe los avisos **según sus propias preferencias de notificación**: modo inmediato o resumen diario, y
+qué tipos de aviso quiere. Si alguien apaga un tipo de aviso, los demás lo siguen recibiendo.
 
-Antes de invitar miembros, organiza tus causas y recursos. Un equipo bien organizado facilita el trabajo colaborativo desde el primer dia.
-
-### Comunicacion de limites
-
-Informa a tu equipo sobre los limites del plan para que todos sepan cuantos recursos pueden crear. Esto evita sorpresas al alcanzar los limites.
-
-### Supervision de actividad
-
-Como propietario o administrador, revisa periodicamente el historial de actividad del equipo para mantener el control sobre los cambios realizados.
-
-### Tips de flujo de trabajo:
-
-- Invita primero a los colaboradores mas activos para que comiencen a trabajar rapidamente
-- Usa el rol de Editor para abogados que trabajan activamente en causas
-- Reserva el rol de Administrador para socios o personas de confianza
-- Los pasantes o consultores externos funcionan bien como Visores
-- Si un miembro cambia de responsabilidades, actualiza su rol en lugar de removerlo y reinvitarlo
-- Antes de eliminar el equipo, asegurate de que ningun miembro necesite acceso a los recursos
-
-> **📢 Nota Final**: El sistema de equipos esta en constante mejora. En el futuro se habilitara la posibilidad de pertenecer a multiples equipos simultaneamente. Ante cualquier duda o sugerencia, contactanos en soporte@lawanalytics.app.
+La campana de notificaciones de cada integrante muestra sus propios avisos.
 
 ---
 
-## Resumen de Caracteristicas Clave
+## 9. Gestionar integrantes
 
-| Caracteristica             | Descripcion                                                     |
-| -------------------------- | --------------------------------------------------------------- |
-| **Creacion de equipos**    | Disponible para planes Standard y Premium                       |
-| **Roles diferenciados**    | Propietario, Administrador, Editor y Visor                      |
-| **Invitaciones por email** | Con link valido por 7 dias                                      |
-| **Pool compartido**        | Todos los recursos comparten los limites del propietario        |
-| **Migracion de recursos**  | Los miembros con recursos existentes pueden migrarlos al equipo |
-| **Historial de actividad** | Registro detallado de todas las acciones del equipo             |
-| **Proteccion de plan**     | Bloqueo de downgrades incompatibles con equipos activos         |
-| **Un equipo por usuario**  | Restriccion actual para simplicidad y claridad                  |
+### Cambiar el rol
+
+Solo el propietario. En **Mi equipo**, abrí el menú del integrante, elegí **Cambiar rol** y confirmá.
+
+### Remover a alguien
+
+El propietario o un Administrador. En **Mi equipo**, hacé clic en **Remover** junto al integrante y confirmá.
+
+Qué pasa al remover:
+
+- Pierde el acceso **al instante**, aunque tenga la sesión abierta.
+- Lo que cargó queda en el equipo.
+- Vuelve a ser un usuario individual, sin datos del equipo. Lo que cree desde ese momento es suyo.
+
+Al propietario no se lo puede remover ni cambiar de rol.
+
+### Historial
+
+En **Mi equipo** está el historial del equipo: quién se unió, quién salió, cambios de rol, invitaciones y migraciones.
+En cada causa, la pestaña de historial muestra quién hizo cada cambio.
 
 ---
 
-## Metadatos para Uso Posterior
+## 10. Salir del equipo
+
+Cualquier integrante que no sea el propietario puede salir desde **Mi equipo → Abandonar equipo**. Lo que cargó queda
+en el equipo y la persona vuelve a ser un usuario individual. Después puede aceptar otra invitación o contratar un plan.
+
+El propietario no puede abandonar su equipo: tiene que transferirlo o eliminarlo.
+
+---
+
+## 11. Transferir la titularidad
+
+El propietario puede pasarle el equipo a un integrante activo. Al transferir:
+
+- El nuevo propietario pasa a ser el titular de **todos** los datos del equipo: causas, contactos, cálculos, notas,
+  eventos, tareas, escritos y seguimientos postales. No cambia quién creó cada cosa ni a quién está asignada cada tarea.
+- El propietario anterior queda en el equipo como **Administrador**.
+- A partir de ese momento rigen el plan, los límites y el cupo del nuevo propietario.
+
+Requisitos: el nuevo propietario tiene que tener un **plan pago**, y los datos y los integrantes del equipo tienen que
+entrar en los límites de su plan. Si algo no entra, el sistema avisa qué límite se excede y no cambia nada.
+
+> **ℹ️ La opción todavía no está en la pantalla.** Si necesitás transferir el equipo, escribinos a
+> soporte@lawanalytics.app desde la cuenta del propietario, indicando a qué integrante, y lo hacemos con vos.
+
+---
+
+## 12. Eliminar el equipo
+
+Solo el propietario. Al eliminarlo:
+
+1. Los integrantes pierden el acceso y quedan como usuarios individuales.
+2. **No se borra ningún dato**: todo vuelve a ser del propietario como recursos personales.
+3. Las invitaciones pendientes se cancelan.
+
+---
+
+## 13. Tu plan y el equipo
+
+- **Un solo plan cubre a todo el equipo**: el del propietario. Los integrantes no pagan.
+- **Mejorar el plan** amplía el cupo de integrantes y los límites al instante.
+- **Bajar de plan** se bloquea si el equipo no entra en el plan nuevo: hay que remover integrantes antes. Para pasar a
+  Free primero hay que eliminar el equipo.
+- **Si un pago falla** y vence el período de gracia, el equipo se suspende hasta regularizar el plan. Los datos no se
+  pierden.
+
+---
+
+## 14. Consejos para estudios
+
+- Cargá las credenciales PJN o SCBA en la cuenta del propietario: así las causas de todo el estudio entran solas al equipo.
+- Asigná cada tarea a su abogado y pedile a cada uno que trabaje desde **Mis tareas**.
+- Revisá **Sin asignar** una vez por semana para que nada quede sin dueño.
+- Pedile a cada integrante que ajuste sus preferencias de notificación: el que quiere todo al instante, modo inmediato;
+  el que prefiere un resumen, el resumen diario.
+- Usá Editor para quien trabaja las causas y reservá Administrador para los socios.
+
+---
+
+## Resumen
+
+| Característica | Descripción |
+| --- | --- |
+| **Planes** | Estándar 5, Pro 8 y Premium 10 integrantes, incluido el propietario |
+| **Datos compartidos** | Causas, contactos, cálculos, notas, calendario, tareas, escritos y seguimiento postal |
+| **Roles** | Propietario, Administrador, Editor y Visualizador |
+| **Invitaciones** | Por correo, válidas 7 días; los invitados pueden ser cuentas Free |
+| **Tareas** | Responsables, vistas «Mis tareas / Todas / Sin asignar» y recordatorios a cada responsable |
+| **Avisos** | Novedades de las causas a todos los integrantes, con sus preferencias |
+| **Migración** | Al unirse, migrar lo propio, migrarlo archivado o borrarlo |
+| **Titularidad** | Transferible a un integrante con plan pago; los datos pasan con ella |
+| **Un equipo por persona** | Para cambiar de equipo, primero hay que salir |
+
+---
+
+## Metadatos para uso posterior
 
 ### Tags
 
 - equipos
-- teams
-- colaboracion
+- estudio jurídico
+- colaboración
 - roles
 - permisos
 - invitaciones
-- miembros
-- migracion
-- propietario
-- administrador
-- editor
-- visor
+- tareas asignadas
+- responsables
+- notificaciones
+- migración
+- transferencia de titularidad
 
-### Categoria
+### Categoría
 
-Colaboracion y Equipos
+Colaboración y equipos
 
-### Nivel de Usuario
+### Nivel de usuario
 
-Principiante - Intermedio
+Principiante a intermedio
 
-### Tiempo Estimado
+### Tiempo estimado
 
-15-20 minutos para dominar la herramienta
+15 a 20 minutos
 
 ### Prerrequisitos
 
-- Cuenta activa en Law Analytics
-- Plan Estándar, Pro o Premium (para crear equipos)
+- Cuenta activa en Law||Analytics
+- Plan Estándar, Pro o Premium para crear un equipo; cualquier cuenta para unirse
 
-### Formatos de Salida Posibles
+### Formatos de salida posibles
 
-- Tutorial interactivo web
-- Video tutorial con casos de uso
-- Diagrama de flujo de trabajo
-- Manual de mejores practicas
-- Tour guiado in-app
-- Webinar de capacitacion
+- Tutorial web
+- Video con un caso de estudio
+- Tour guiado dentro de la app
+- Webinar para estudios
