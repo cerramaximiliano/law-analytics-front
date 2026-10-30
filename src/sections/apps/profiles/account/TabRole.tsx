@@ -6,7 +6,6 @@ import { alpha, useTheme } from "@mui/material/styles";
 import { Add, Crown, InfoCircle, Logout, People, Trash, UserSquare, Warning2 } from "iconsax-react";
 
 // project-imports
-import MainCard from "components/MainCard";
 import { GuideTeams } from "components/guides";
 import { useTeam, useTeamsFeature } from "contexts/TeamContext";
 import { useDispatch } from "store";
@@ -19,6 +18,7 @@ import {
 	CreateTeamDialog,
 	LeaveTeamDialog,
 	TeamSettingsCard,
+	TeamNotificationsCard,
 	RoleBadge,
 } from "sections/apps/teams";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
@@ -871,6 +871,11 @@ const TabRole = () => {
 					<TeamSettingsCard onUpdated={refreshActiveTeam} />
 				</Grid>
 			)}
+
+			{/* Avisos del equipo: regla por defecto y modo por integrante */}
+			<Grid item xs={12}>
+				<TeamNotificationsCard />
+			</Grid>
 
 			{/* Zona de peligro */}
 			<Grid item xs={12}>

@@ -67,6 +67,7 @@ import LinkToPJBuenosAires from "sections/apps/folders/LinkToPJBuenosAires";
 import LinkToPJCaba from "sections/apps/folders/LinkToPJCaba";
 import NavigationControls from "./components/NavigationControls";
 import InfoTabsVertical from "./components/InfoTabsVertical";
+import FolderTeamPanel from "sections/apps/folders/FolderTeamPanel";
 
 // Actions
 import { dispatch } from "store";
@@ -192,7 +193,7 @@ const Details = () => {
 	const userId = useSelector((state: StateType) => state.auth.user?._id);
 
 	// Desarchivar desde el banner de carpeta archivada
-	const { getRequestHeaders } = useTeam();
+	const { getRequestHeaders, isTeamMode } = useTeam();
 	const [unarchiving, setUnarchiving] = useState(false);
 	const handleUnarchiveFromBanner = useCallback(async () => {
 		if (!userId || !id || unarchiving) return;
@@ -1198,6 +1199,11 @@ const Details = () => {
 							</Box>
 						</Box>
 					</Box>
+
+					{/* Equipos: responsables y regla de avisos de la carpeta (solo modo equipo) */}
+					{isTeamMode && id && folder && (
+						<FolderTeamPanel folderId={id} responsables={folder.responsables} notificationPolicy={folder.notificationPolicy} />
+					)}
 
 					{/* Tab 1: Información General */}
 					<TabPanel value={tabValue} index={0}>

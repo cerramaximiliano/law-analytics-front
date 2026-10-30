@@ -10,18 +10,20 @@ interface Props {
 	ids?: string[];
 	variant?: "avatars" | "chips";
 	max?: number;
+	/** Texto cuando no hay responsables (default «Sin asignar»). */
+	emptyLabel?: string;
 }
 
 // Muestra los responsables de una tarea resueltos contra el equipo activo.
 // Vacío → "Sin asignar" en gris.
-const TaskAssignees = ({ ids, variant = "avatars", max = 4 }: Props) => {
+const TaskAssignees = ({ ids, variant = "avatars", max = 4, emptyLabel = "Sin asignar" }: Props) => {
 	const { activeTeam } = useTeam();
 	const assignees = useMemo(() => resolveAssignees(ids, getTeamAssignees(activeTeam)), [ids, activeTeam]);
 
 	if (assignees.length === 0) {
 		return (
 			<Typography component="span" sx={{ fontSize: "0.8rem", color: "text.disabled", fontStyle: "italic" }}>
-				Sin asignar
+				{emptyLabel}
 			</Typography>
 		);
 	}

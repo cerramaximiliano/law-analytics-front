@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import { Dispatch } from "redux";
-import { FolderData, FolderState, PendingCausa } from "types/folder";
+import { FolderData, FolderNotificationPolicy, FolderState, PendingCausa } from "types/folder";
 import { incrementUserStat, updateUserStorage, isFolderLinkedToCausa } from "./userStats";
 
 // Action types
@@ -25,6 +25,7 @@ const SET_SELECTED_FOLDERS = "SET_SELECTED_FOLDERS";
 const SET_FOLDER_SORT = "SET_FOLDER_SORT";
 const UPSERT_FOLDER = "UPSERT_FOLDER";
 const MARK_FOLDER_SEEN = "MARK_FOLDER_SEEN";
+const PATCH_FOLDER = "PATCH_FOLDER";
 
 // Initial state
 const initialFolderState: FolderState = {
@@ -182,6 +183,16 @@ const folder = (state = initialFolderState, action: any) => {
 				folders: state.folders.map((folder: FolderData) => (folder._id === action.payload._id ? { ...folder, ...action.payload } : folder)),
 				isLoader: false,
 			};
+		case PATCH_FOLDER: {
+			// Merge parcial (responsables / regla de avisos): a diferencia de UPDATE_FOLDER
+			// no reemplaza el folder del detalle por el subset que devuelve el hub.
+			const patch = action.payload as Partial<FolderData> & { _id: string };
+			return {
+				...state,
+				folder: state.folder && state.folder._id === patch._id ? { ...state.folder, ...patch } : state.folder,
+				folders: state.folders.map((f: FolderData) => (f._id === patch._id ? { ...f, ...patch } : f)),
+			};
+		}
 		case SET_FOLDER_ERROR:
 			return {
 				...state,
@@ -313,7 +324,7 @@ export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatc
 		dispatch({ type: SET_FOLDER_LOADING });
 		// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 		const fields =
-			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,causaAccessCutoffAt,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate";
+			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,causaAccessCutoffAt,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate,responsables,notificationPolicy,createdBy";
 		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}`, {
 			params: { fields },
 		});
@@ -331,6 +342,75 @@ export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatc
 			payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al obtener folders por grupo" : "Error desconocido",
 		});
 		return { success: false, folders: [] };
+	}
+};
+
+// ==============================|| EQUIPOS: RESPONSABLES Y AVISOS ||============================== //
+
+type FolderTeamResult =
+	| { success: true; folder: { _id: string; responsables: string[]; notificationPolicy: FolderNotificationPolicy } }
+	| { success: false; message: string };
+
+const folderTeamError = (error: unknown, fallback: string) =>
+	axios.isAxiosError(error) ? error.response?.data?.message || error.response?.data?.error || fallback : fallback;
+
+/** PUT /api/folders/:id/responsables — owner, admin y editor. */
+export const updateFolderResponsables =
+	(folderId: string, responsables: string[], headers?: Record<string, string>) =>
+	async (dispatch: Dispatch): Promise<FolderTeamResult> => {
+		try {
+			const response = await axios.put(
+				`${import.meta.env.VITE_BASE_URL}/api/folders/${folderId}/responsables`,
+				{ responsables },
+				{ headers },
+			);
+			if (response.data?.success && response.data.folder) {
+				dispatch({ type: PATCH_FOLDER, payload: response.data.folder });
+				return { success: true, folder: response.data.folder };
+			}
+			return { success: false, message: response.data?.message || "No se pudieron guardar los responsables" };
+		} catch (error) {
+			return { success: false, message: folderTeamError(error, "No se pudieron guardar los responsables") };
+		}
+	};
+
+/** PUT /api/folders/:id/notification-policy — solo owner o admin. */
+export const updateFolderNotificationPolicy =
+	(folderId: string, notificationPolicy: FolderNotificationPolicy, headers?: Record<string, string>) =>
+	async (dispatch: Dispatch): Promise<FolderTeamResult> => {
+		try {
+			const response = await axios.put(
+				`${import.meta.env.VITE_BASE_URL}/api/folders/${folderId}/notification-policy`,
+				{ notificationPolicy },
+				{ headers },
+			);
+			if (response.data?.success && response.data.folder) {
+				dispatch({ type: PATCH_FOLDER, payload: response.data.folder });
+				return { success: true, folder: response.data.folder };
+			}
+			return { success: false, message: response.data?.message || "No se pudo guardar la regla de avisos" };
+		} catch (error) {
+			return { success: false, message: folderTeamError(error, "No se pudo guardar la regla de avisos") };
+		}
+	};
+
+/**
+ * Ids de las carpetas del grupo filtradas por responsable (`?responsable=me|ninguno|<userId>`).
+ * No toca el store: el listado sigue usando `state.folder.folders` (compartido con tareas,
+ * calendario, etc.) y solo filtra por estos ids.
+ */
+export const fetchGroupFolderIdsByResponsable = async (groupId: string, responsable: string): Promise<string[] | null> => {
+	try {
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}`, {
+			params: { responsable, fields: "_id" },
+			headers: { "X-Group-Id": groupId },
+		});
+		if (response.data?.success && Array.isArray(response.data.folders)) {
+			return response.data.folders.map((f: { _id: string }) => f._id);
+		}
+		return null;
+	} catch {
+		return null;
 	}
 };
 

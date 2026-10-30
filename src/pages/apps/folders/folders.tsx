@@ -36,6 +36,8 @@ import {
 	Select,
 	SelectChangeEvent,
 	CircularProgress,
+	ToggleButton,
+	ToggleButtonGroup,
 } from "@mui/material";
 
 import { useFilters, useExpanded, useGlobalFilter, useRowSelect, useSortBy, useTable, usePagination, Row, HeaderProps } from "react-table";
@@ -98,6 +100,7 @@ import {
 	ArrowRight2,
 } from "iconsax-react";
 import PjnCredErrorBanner from "sections/apps/folders/PjnCredErrorBanner";
+import TaskAssignees from "sections/apps/tasks/TaskAssignees";
 import { openExpedienteExport } from "utils/expedienteExportTracker";
 import FolderActionsMenu, { FolderCreateKind } from "sections/apps/folders/FolderActionsMenu";
 import { RelacionesIcon, SinVerCount } from "sections/apps/folders/FolderNovedadesIndicators";
@@ -107,6 +110,7 @@ import { dispatch, useSelector } from "store";
 import {
 	getFoldersByUserId,
 	getFoldersByGroupId,
+	fetchGroupFolderIdsByResponsable,
 	archiveFolders,
 	getArchivedFoldersByUserId,
 	getArchivedFoldersByGroupId,
@@ -420,6 +424,7 @@ function ReactTable({
 					"folderFuero",
 					"createdAt",
 					"updatedAt",
+					"responsables",
 			  ]
 			: ["email", "_id", "description", "finalDateFolder", "createdAt", "updatedAt"];
 		return disableRowSelection ? [...base, "selection"] : base;
@@ -1986,6 +1991,30 @@ const FoldersLayout = () => {
 	// Team context - para cargar recursos del equipo si hay uno activo
 	const { activeTeam, isTeamMode, canCreate, canUpdate, canDelete, isInitialized: isTeamInitialized, getRequestHeaders } = useTeam();
 
+	// Equipos: vista por responsable («Mis carpetas / Todas / Sin responsable»). Default «Todas».
+	// El filtro lo resuelve el hub (`?responsable=me|ninguno`); mientras llega la respuesta se
+	// filtra con los `responsables` que ya trae el listado. Solo afecta la tabla principal.
+	const [responsableVista, setResponsableVista] = useState<"todas" | "mias" | "sin">("todas");
+	const [responsableIds, setResponsableIds] = useState<Set<string> | null>(null);
+	const responsablesSignature = useMemo(
+		() => (isTeamMode ? folders.map((f: any) => `${f._id}:${(f.responsables || []).join(",")}`).join("|") : ""),
+		[folders, isTeamMode],
+	);
+	useEffect(() => {
+		if (!isTeamMode || !activeTeam?._id || responsableVista === "todas") {
+			setResponsableIds(null);
+			return;
+		}
+		let cancelled = false;
+		setResponsableIds(null);
+		fetchGroupFolderIdsByResponsable(activeTeam._id, responsableVista === "mias" ? "me" : "ninguno").then((ids) => {
+			if (!cancelled) setResponsableIds(ids ? new Set(ids) : null);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [isTeamMode, activeTeam?._id, responsableVista, responsablesSignature]);
+
 	// Separar folders en categorías
 	const { pendingOrInvalidFolders, verifiedFolders, pendingCount, invalidCount } = useMemo(() => {
 		// Helper para determinar si una carpeta es automática (PJN, MEV, EJE o SCBA)
@@ -2111,6 +2140,17 @@ const FoldersLayout = () => {
 	// Filtrar carpetas verificadas por todos los filtros
 	const filteredVerifiedFolders = useMemo(() => {
 		return verifiedFolders.filter((folder: any) => {
+			// Filtro por responsable (modo equipo)
+			if (isTeamMode && responsableVista !== "todas") {
+				if (responsableIds) {
+					if (!responsableIds.has(folder._id)) return false;
+				} else {
+					const ids: string[] = folder.responsables || [];
+					if (responsableVista === "mias" && !(user?._id && ids.includes(user._id))) return false;
+					if (responsableVista === "sin" && ids.length > 0) return false;
+				}
+			}
+
 			// Filtro por tipo de carpeta
 			if (folderTypeFilter !== "all") {
 				switch (folderTypeFilter) {
@@ -2197,6 +2237,10 @@ const FoldersLayout = () => {
 		});
 	}, [
 		verifiedFolders,
+		isTeamMode,
+		responsableVista,
+		responsableIds,
+		user?._id,
 		folderTypeFilter,
 		statusFilter,
 		parteFilter,
@@ -3650,6 +3694,20 @@ const FoldersLayout = () => {
 				accessor: "status",
 				Cell: ({ value }: { value: string }) => (value ? <StatusPill status={value} /> : null),
 			},
+			...(isTeamMode
+				? [
+						{
+							Header: "Responsable",
+							accessor: "responsables",
+							disableSortBy: true,
+							Cell: ({ value }: { value?: string[] }) => (
+								<Box sx={{ display: "flex", justifyContent: "flex-start" }}>
+									<TaskAssignees ids={value} max={3} emptyLabel="Sin responsable" />
+								</Box>
+							),
+						},
+				  ]
+				: []),
 			{
 				Header: "Fecha de Creación",
 				accessor: "createdAt",
@@ -3853,6 +3911,7 @@ const FoldersLayout = () => {
 			// actualiza al desmontar/montar (navegar a otra ruta y volver).
 			scbaCredError.hasError,
 			pjnCredError.requiresAction,
+			isTeamMode,
 		],
 	);
 
@@ -4082,6 +4141,44 @@ const FoldersLayout = () => {
 							>
 								Primeros pasos · Crea tu primera carpeta
 							</Typography>
+						</Box>
+					)}
+
+					{/* Equipos: vista por responsable */}
+					{isTeamMode && (
+						<Box sx={{ px: { xs: 0, sm: 3 }, pt: 2, pb: { xs: 1, sm: 0 } }}>
+							<ToggleButtonGroup
+								exclusive
+								size="small"
+								value={responsableVista}
+								onChange={(_e, next: "todas" | "mias" | "sin" | null) => {
+									if (next) setResponsableVista(next);
+								}}
+								aria-label="Filtrar carpetas por responsable"
+								sx={{
+									width: { xs: "100%", sm: "auto" },
+									"& .MuiToggleButton-root": {
+										flex: { xs: 1, sm: "initial" },
+										textTransform: "none",
+										fontSize: "0.78rem",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										px: 1.5,
+										py: 0.625,
+										color: "text.secondary",
+										borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
+										"&.Mui-selected": {
+											color: BRAND_BLUE,
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+											"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.12) },
+										},
+									},
+								}}
+							>
+								<ToggleButton value="mias">Mis carpetas</ToggleButton>
+								<ToggleButton value="todas">Todas</ToggleButton>
+								<ToggleButton value="sin">Sin responsable</ToggleButton>
+							</ToggleButtonGroup>
 						</Box>
 					)}
 

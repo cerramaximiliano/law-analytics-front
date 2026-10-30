@@ -1,5 +1,6 @@
 import React from "react";
 import {
+	Autocomplete,
 	Box,
 	Button,
 	CircularProgress,
@@ -34,12 +35,13 @@ import { deleteEvent, updateEvent } from "store/reducers/events";
 import { Calendar, Trash, Google } from "iconsax-react";
 import { DateRange } from "types/calendar";
 import { addEvent } from "store/reducers/events";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createGoogleEvent, updateGoogleEvent } from "store/reducers/googleCalendar";
 import googleCalendarService from "services/googleCalendarService";
 import { useTeam } from "contexts/TeamContext";
 import SugerenciaPlazoFeedback from "sections/apps/calendar/SugerenciaPlazoFeedback";
 import { getEventsByUserId } from "store/reducers/events";
+import { getFoldersByGroupId, getFoldersByUserId } from "store/reducers/folder";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 const getInitialValues = (event: FormikValues | null, range: DateRange | null, defaultType?: string) => {
@@ -53,6 +55,7 @@ const getInitialValues = (event: FormikValues | null, range: DateRange | null, d
 			start: event.start ? new Date(event.start) : new Date(),
 			end: event.end ? new Date(event.end) : new Date(),
 			type: event.type || "",
+			folderId: (event.folderId as string) || "",
 		};
 	}
 
@@ -65,6 +68,7 @@ const getInitialValues = (event: FormikValues | null, range: DateRange | null, d
 		start: range ? new Date(range.start) : new Date(),
 		end: range ? new Date(range.end) : new Date(),
 		type: defaultType || "",
+		folderId: "",
 	};
 };
 
@@ -115,7 +119,26 @@ const AddEventFrom = ({
 	const { isConnected: isGoogleConnected } = useSelector((state: any) => state.googleCalendar);
 	const authUserId = useSelector((state: any) => state.auth?.user?._id);
 	const [syncWithGoogle, setSyncWithGoogle] = useState(isGoogleConnected);
-	const { getTeamIdForResource, getRequestHeaders } = useTeam();
+	const { getTeamIdForResource, getRequestHeaders, isTeamMode, activeTeam } = useTeam();
+
+	// Selector de carpeta: solo cuando el formulario no viene ya ligado a una carpeta
+	// (calendario general). En modo equipo las carpetas del store son las del equipo.
+	const showFolderPicker = !folderId;
+	const storeFolders = useSelector((state: any) => state.folder?.folders) as { _id: string; folderName: string }[] | undefined;
+	const folderOptions = useMemo(
+		() => (storeFolders || []).filter((f) => f && f._id).map((f) => ({ _id: f._id, folderName: f.folderName || "Sin carátula" })),
+		[storeFolders],
+	);
+	useEffect(() => {
+		if (!showFolderPicker || (storeFolders && storeFolders.length > 0)) return;
+		if (isTeamMode && activeTeam?._id) {
+			dispatch(getFoldersByGroupId(activeTeam._id));
+		} else if (!isTeamMode && authUserId) {
+			dispatch(getFoldersByUserId(authUserId));
+		}
+		// Solo al abrir el formulario: no reintentar si el usuario no tiene carpetas.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [showFolderPicker, isTeamMode, activeTeam?._id, authUserId]);
 
 	const EventSchema = Yup.object().shape({
 		title: Yup.string().max(255).required("El título es requerido"),
@@ -172,10 +195,21 @@ const AddEventFrom = ({
 				}
 
 				const groupId = getTeamIdForResource();
+				// Carpeta: la del contexto (detalle de carpeta / movimiento) o la elegida en el selector.
+				const pickedFolderId = showFolderPicker ? values.folderId || "" : "";
+				const pickedFolder = pickedFolderId ? folderOptions.find((f) => f._id === pickedFolderId) : undefined;
+				const clearedFolder = showFolderPicker && !pickedFolderId && Boolean(event?.folderId);
+				const folderFields = folderId
+					? { folderId }
+					: pickedFolderId
+					? { folderId: pickedFolderId, ...(pickedFolder ? { folderName: pickedFolder.folderName } : {}) }
+					: clearedFolder
+					? { folderId: null, folderName: "" }
+					: { folderId: undefined };
 				const newEvent = {
 					userId: userId,
 					...(groupId && { groupId }),
-					folderId: folderId || undefined,
+					...folderFields,
 					...(movementRef && { movementRef, ...(movementSource ? { movementSource } : {}) }),
 					title: values.title,
 					description: values.description,
@@ -531,6 +565,38 @@ const AddEventFrom = ({
 								/>
 							)}
 						</Stack>
+
+						{/* Carpeta (opcional) — solo en el calendario general */}
+						{showFolderPicker && (
+							<Stack spacing={0.5}>
+								<InputLabel htmlFor="event-folder" sx={eyebrowLabelSx}>
+									Carpeta
+								</InputLabel>
+								<Autocomplete
+									id="event-folder"
+									fullWidth
+									options={folderOptions}
+									value={folderOptions.find((f) => f._id === values.folderId) || null}
+									onChange={(_e, next) => setFieldValue("folderId", next?._id || "")}
+									isOptionEqualToValue={(option, value) => option._id === value._id}
+									getOptionLabel={(option) => option.folderName}
+									noOptionsText="No hay carpetas"
+									renderOption={(props, option) => (
+										<li {...props} key={option._id}>
+											{option.folderName}
+										</li>
+									)}
+									renderInput={(params) => (
+										<TextField
+											{...params}
+											placeholder="Sin carpeta (opcional)"
+											helperText={isTeamMode ? "Los avisos del evento siguen la regla de avisos de la carpeta." : undefined}
+											sx={inputBrandSx}
+										/>
+									)}
+								/>
+							</Stack>
+						)}
 
 						{/* Grid: tipo + fechas */}
 						<Grid container spacing={2}>

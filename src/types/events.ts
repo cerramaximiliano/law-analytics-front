@@ -12,7 +12,7 @@ export interface Event {
 	title: string; // Título del evento
 	userId?: string; // ID del usuario asociado
 	groupId?: string; // ID del grupo asociado (opcional)
-	folderId?: string;
+	folderId?: string | null; // null desvincula la carpeta al editar
 	folderName?: string;
 	movementRef?: string; // movimiento vinculado (movement._id; "{causaId}:{sourceId}" en PJN)
 	movementSource?: "pjn" | "mev" | "scba" | "eje" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "manual" | null;

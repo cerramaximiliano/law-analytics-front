@@ -158,7 +158,18 @@ export type FolderData = {
 	// carpetas que nunca tuvieron cobertura (siguen con gate 'reserved').
 	causaAccessCutoffAt?: string | null;
 	causaPrivateDetectedAt?: string;
+	/** Equipos: ids de los integrantes responsables de la carpeta (owner o miembros activos). */
+	responsables?: string[];
+	/** Equipos: a quién avisa la carpeta. 'equipo' sigue la regla por defecto del equipo. */
+	notificationPolicy?: FolderNotificationPolicy;
+	/** Equipos: quién creó la carpeta (el userId es siempre el del owner). */
+	createdBy?: string | null;
 };
+
+export type FolderNotificationPolicy = "equipo" | "responsables" | "todos";
+
+/** Filtro del listado por grupo (`?responsable=`). */
+export type FolderResponsableFilter = "me" | "ninguno";
 
 // Interfaz para una causa pendiente de selección
 export interface PendingCausa {
