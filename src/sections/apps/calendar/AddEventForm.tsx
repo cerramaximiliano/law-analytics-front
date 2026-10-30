@@ -611,7 +611,7 @@ const AddEventFrom = ({
 										<TextField
 											{...params}
 											placeholder="Sin carpeta (opcional)"
-											helperText={isTeamMode ? "Los avisos del evento siguen la regla de avisos de la carpeta." : undefined}
+											helperText={isTeamMode ? "Con carpeta, avisa a sus responsables; sin carpeta, a todo el equipo." : undefined}
 											sx={inputBrandSx}
 										/>
 									)}
