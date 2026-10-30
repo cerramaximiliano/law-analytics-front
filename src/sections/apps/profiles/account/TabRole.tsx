@@ -19,6 +19,7 @@ import {
 	LeaveTeamDialog,
 	TeamSettingsCard,
 	TeamNotificationsCard,
+	TeamVisibilityCard,
 	TeamResponsablesDistributionCard,
 	RoleBadge,
 } from "sections/apps/teams";
@@ -872,6 +873,11 @@ const TabRole = () => {
 					<TeamSettingsCard onUpdated={refreshActiveTeam} />
 				</Grid>
 			)}
+
+			{/* Visibilidad: todos ven todo o cada uno lo suyo */}
+			<Grid item xs={12}>
+				<TeamVisibilityCard />
+			</Grid>
 
 			{/* Avisos del equipo: regla por defecto y modo por integrante */}
 			<Grid item xs={12}>
