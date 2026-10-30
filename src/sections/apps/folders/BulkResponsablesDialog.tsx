@@ -30,6 +30,11 @@ interface Props {
 	onClose: () => void;
 	/** Se llama después de guardar con éxito (p. ej. para limpiar la selección). */
 	onDone?: () => void;
+	/**
+	 * Edición de UNA carpeta desde la celda «Responsable» del listado: precarga sus
+	 * responsables actuales y reemplaza (asignar, cambiar o quitar con un clic).
+	 */
+	single?: { folderName?: string; responsables: string[] };
 }
 
 const MODE_OPTIONS: { value: BulkResponsablesMode; label: string; help: string }[] = [
@@ -44,7 +49,7 @@ const notify = (message: string, color: "success" | "error") =>
 	dispatch(openSnackbar({ open: true, message, variant: "alert", alert: { color }, close: true }));
 
 // Asignación masiva de responsables desde el listado de carpetas (solo modo equipo).
-const BulkResponsablesDialog = ({ open, folderIds, onClose, onDone }: Props) => {
+const BulkResponsablesDialog = ({ open, folderIds, onClose, onDone, single }: Props) => {
 	const { activeTeam, getRequestHeaders } = useTeam();
 	const assignableMembers = useMemo(() => getTeamAssignees(activeTeam), [activeTeam]);
 
@@ -54,9 +59,11 @@ const BulkResponsablesDialog = ({ open, folderIds, onClose, onDone }: Props) => 
 
 	useEffect(() => {
 		if (open) {
-			setSelected([]);
+			const current = single ? assignableMembers.filter((a) => single.responsables.includes(a.id)) : [];
+			setSelected(current);
 			setMode("replace");
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [open]);
 
 	const count = folderIds.length;
@@ -88,11 +95,15 @@ const BulkResponsablesDialog = ({ open, folderIds, onClose, onDone }: Props) => 
 
 	return (
 		<Dialog open={open} onClose={() => !saving && onClose()} fullWidth maxWidth="sm">
-			<DialogTitle>Asignar responsable</DialogTitle>
+			<DialogTitle>{single ? "Responsables de la carpeta" : "Asignar responsable"}</DialogTitle>
 			<DialogContent>
 				<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-					{count === 1 ? "1 carpeta seleccionada." : `${count} carpetas seleccionadas.`} Los responsables reciben los avisos de la carpeta
-					cuando la regla es «Solo responsables», y la ven en «Mis carpetas».
+					{single
+						? `${
+								single.folderName ? `«${single.folderName}». ` : ""
+						  }Elegí uno o más integrantes, cambiá los actuales o quitá todos para dejarla sin responsable.`
+						: `${count === 1 ? "1 carpeta seleccionada." : `${count} carpetas seleccionadas.`}`}{" "}
+					Los responsables reciben los avisos de la carpeta cuando la regla es «Solo responsables», y la ven en «Mis carpetas».
 				</Typography>
 				{tooMany && (
 					<Typography variant="body2" color="error" sx={{ mb: 2 }}>
@@ -102,30 +113,32 @@ const BulkResponsablesDialog = ({ open, folderIds, onClose, onDone }: Props) => 
 
 				<Stack spacing={2}>
 					<Box>
-						<ToggleButtonGroup
-							exclusive
-							size="small"
-							value={mode}
-							onChange={(_e, next: BulkResponsablesMode | null) => next && setMode(next)}
-							aria-label="Modo de asignación"
-							sx={{
-								"& .MuiToggleButton-root": {
-									textTransform: "none",
-									fontSize: "0.78rem",
-									fontWeight: 600,
-									px: 1.5,
-									py: 0.5,
-									"&.Mui-selected": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, 0.08) },
-								},
-							}}
-						>
-							{MODE_OPTIONS.map((o) => (
-								<ToggleButton key={o.value} value={o.value}>
-									{o.label}
-								</ToggleButton>
-							))}
-						</ToggleButtonGroup>
-						{modeHelp && (
+						{!single && (
+							<ToggleButtonGroup
+								exclusive
+								size="small"
+								value={mode}
+								onChange={(_e, next: BulkResponsablesMode | null) => next && setMode(next)}
+								aria-label="Modo de asignación"
+								sx={{
+									"& .MuiToggleButton-root": {
+										textTransform: "none",
+										fontSize: "0.78rem",
+										fontWeight: 600,
+										px: 1.5,
+										py: 0.5,
+										"&.Mui-selected": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, 0.08) },
+									},
+								}}
+							>
+								{MODE_OPTIONS.map((o) => (
+									<ToggleButton key={o.value} value={o.value}>
+										{o.label}
+									</ToggleButton>
+								))}
+							</ToggleButtonGroup>
+						)}
+						{!single && modeHelp && (
 							<Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.75 }}>
 								{modeHelp}
 							</Typography>

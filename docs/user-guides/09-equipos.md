@@ -182,6 +182,13 @@ trabajo, para que cada uno encuentre lo suyo y para decidir a quién le llegan l
 
 Pueden asignar el propietario, los Administradores y los Editores. El Visualizador ve los responsables pero no los cambia.
 
+### Cambiar desde el listado
+
+En **Carpetas**, la columna **Responsable** muestra las iniciales de cada responsable; al pasar el mouse ves el nombre.
+Hacé clic sobre ellas (o sobre **Asignar**, si la carpeta no tiene) para abrir los responsables de esa carpeta: podés
+agregar a alguien, cambiarlo por otro o quitar a todos para dejarla **Sin responsable**. Pueden hacerlo el propietario,
+los Administradores y los Editores; el Visualizador solo ve las iniciales.
+
 ### Asignar de a muchas
 
 1. En **Carpetas**, marcá las carpetas en la tabla.

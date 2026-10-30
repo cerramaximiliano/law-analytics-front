@@ -7,6 +7,7 @@ import { alpha, useTheme } from "@mui/material/styles";
 import {
 	Box,
 	Button,
+	ButtonBase,
 	Card,
 	CardActionArea,
 	CardContent,
@@ -2640,6 +2641,13 @@ const FoldersLayout = () => {
 		[user?._id],
 	);
 
+	// Equipos: responsables de una carpeta desde la celda del listado
+	const [singleAssign, setSingleAssign] = useState<{ open: boolean; folderId: string; folderName?: string; responsables: string[] }>({
+		open: false,
+		folderId: "",
+		responsables: [],
+	});
+
 	// Equipos: asignación masiva de responsables
 	const [bulkAssign, setBulkAssign] = useState<{ open: boolean; folderIds: string[]; clearSelection?: () => void }>({
 		open: false,
@@ -3769,11 +3777,36 @@ const FoldersLayout = () => {
 							Header: "Responsable",
 							accessor: "responsables",
 							disableSortBy: true,
-							Cell: ({ value }: { value?: string[] }) => (
-								<Box sx={{ display: "flex", justifyContent: "flex-start" }}>
-									<TaskAssignees ids={value} max={3} emptyLabel="Sin responsable" />
-								</Box>
-							),
+							Cell: ({ value, row }: { value?: string[]; row: Row<any> }) =>
+								canEditResponsables ? (
+									// Clic en el responsable: asignar, cambiar o quitar (owner, admin, editor).
+									<ButtonBase
+										onClick={(e) => {
+											e.stopPropagation();
+											setSingleAssign({
+												open: true,
+												folderId: row.original._id,
+												folderName: row.original.folderName,
+												responsables: value || [],
+											});
+										}}
+										aria-label="Cambiar responsable"
+										data-testid="folder-responsable-edit"
+										sx={{
+											borderRadius: 1,
+											px: 0.5,
+											py: 0.25,
+											justifyContent: "flex-start",
+											"&:hover": { bgcolor: "action.hover" },
+										}}
+									>
+										<TaskAssignees ids={value} max={3} emptyLabel="Asignar" />
+									</ButtonBase>
+								) : (
+									<Box sx={{ display: "flex", justifyContent: "flex-start" }}>
+										<TaskAssignees ids={value} max={3} emptyLabel="Sin responsable" />
+									</Box>
+								),
 						},
 				  ]
 				: []),
@@ -3972,6 +4005,7 @@ const FoldersLayout = () => {
 			handleMenuOpen,
 			canUpdate,
 			canDelete,
+			canEditResponsables,
 			verifyingFolderIds,
 			handleVerifyFolder,
 			// Cred-error hooks: la columna Carátula usa pjnCredError.requiresAction /
@@ -4795,6 +4829,16 @@ const FoldersLayout = () => {
 							</Alert>
 						</Snackbar>
 					</Portal>
+
+					{/* Equipos: responsables de una carpeta (clic en la celda) */}
+					{isTeamMode && (
+						<BulkResponsablesDialog
+							open={singleAssign.open}
+							folderIds={singleAssign.folderId ? [singleAssign.folderId] : []}
+							single={{ folderName: singleAssign.folderName, responsables: singleAssign.responsables }}
+							onClose={() => setSingleAssign((prev) => ({ ...prev, open: false }))}
+						/>
+					)}
 
 					{/* Equipos: asignación masiva de responsables */}
 					{isTeamMode && (
