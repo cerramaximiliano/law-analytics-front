@@ -10,6 +10,7 @@ import { ArrowRight } from "iconsax-react";
 // project-imports
 import { APP_DEFAULT_PATH } from "config";
 import { BRAND_BLUE } from "themes/dashboardTokens";
+import { trackActivity } from "utils/productAnalytics";
 
 // =============================================================================
 // Barra "Ir a mi panel" en las páginas públicas, solo con sesión iniciada (2026-10-23).
@@ -51,6 +52,7 @@ const VolverAlPanel = () => (
 			<Button
 				component={RouterLink}
 				to={APP_DEFAULT_PATH}
+				onClick={() => trackActivity("onboarding_action", { type: "panel_bar" })}
 				variant="contained"
 				endIcon={<ArrowRight size={18} />}
 				sx={{

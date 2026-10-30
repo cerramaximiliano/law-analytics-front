@@ -262,8 +262,11 @@ export const addFolder = (folderData: FolderData, options?: { headers?: Record<s
 		return { success: false, message: response.data.message || "Error al crear folder" };
 	} catch (error) {
 		let errorMessage = "Error al crear folder";
+		let existingFolder: any;
 
 		if (axios.isAxiosError(error)) {
+			// 409 del guard de duplicados: trae la carpeta que el usuario ya tiene.
+			existingFolder = error.response?.status === 409 ? error.response.data?.existingFolder : undefined;
 			// Si el servidor devuelve un mensaje específico, usarlo
 			if (error.response?.data?.message) {
 				errorMessage = error.response.data.message;
@@ -278,7 +281,7 @@ export const addFolder = (folderData: FolderData, options?: { headers?: Record<s
 			type: SET_FOLDER_ERROR,
 			payload: errorMessage,
 		});
-		return { success: false, message: errorMessage };
+		return { success: false, message: errorMessage, existingFolder };
 	}
 };
 

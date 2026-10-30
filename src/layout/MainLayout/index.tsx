@@ -7,6 +7,7 @@ import { alpha, useTheme } from "@mui/material/styles";
 import { useMediaQuery, Box, Container, Toolbar } from "@mui/material";
 
 // project-imports
+import { releaseAppBannerSpace } from "utils/appDownload";
 import Drawer from "./Drawer";
 import Header from "./Header";
 import Footer from "./Footer";
@@ -44,6 +45,9 @@ const MainLayout = () => {
 
 	// Initialize search entity loader
 	useSearchEntityLoader();
+
+	// Con sesión, /login y /register redirigen acá: el lugar que reservó index.html para el aviso de la app sobra.
+	useEffect(releaseAppBannerSpace, []);
 
 	// set media wise responsive drawer
 	useEffect(() => {

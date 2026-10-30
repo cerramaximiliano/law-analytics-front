@@ -1,6 +1,38 @@
 <!DOCTYPE html>
 <html lang="es-AR">
 	<head>
+		<!-- Reserva el lugar del aviso de la app antes del primer dibujado, para que no empuje la página al
+		     montarse (2026-10-30, ver la-ads/analysis/2026-10-30-revision-primer-minuto-funciones-verificacion.md).
+		     Mismas condiciones que shouldShowAppBanner (utils/appDownload.ts); solo en las rutas públicas de entrada.
+		     Lo libera AndroidAppBanner al cerrarse, o MainLayout si la ruta redirige al panel. -->
+		<style>
+			html.app-banner-reservado body {
+				padding-top: var(--app-banner-h);
+			}
+			html.app-banner-reservado::before {
+				content: "";
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				height: var(--app-banner-h);
+				background: #f4f6fb;
+				z-index: 1;
+			}
+		</style>
+		<script>
+			(function () {
+				try {
+					if (!/Android/i.test(navigator.userAgent) || !/^\/(funciones)?\/?$/.test(location.pathname)) return;
+					if (localStorage.getItem("la.app.installedSeen")) return;
+					var cerrado = Number(localStorage.getItem("la.app.bannerDismissedAt"));
+					if (cerrado && Date.now() - cerrado < 7 * 864e5) return;
+				} catch (e) {}
+				var h = document.documentElement;
+				h.classList.add("app-banner-reservado");
+				h.style.setProperty("--app-banner-h", "67px");
+			})();
+		</script>
 		<meta charset="utf-8" />
 		<!-- Google Tag Manager, diferido.
 		     Tag Manager, gtag y el píxel de Facebook suman 510 KB y medio segundo de

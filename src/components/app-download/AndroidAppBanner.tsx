@@ -12,6 +12,7 @@ import {
 	GOOGLE_PLAY_BADGE_SRC,
 	dismissAppBanner,
 	playStoreUrl,
+	releaseAppBannerSpace,
 	shouldShowAppBanner,
 	trackAppBannerView,
 	trackAppDownloadClick,
@@ -54,7 +55,7 @@ const AndroidAppBanner = () => {
 
 		return () => {
 			ro.disconnect();
-			root.style.removeProperty(BANNER_CSS_VAR);
+			releaseAppBannerSpace();
 			body.style.paddingTop = previousPadding;
 		};
 	}, [visible]);
@@ -82,6 +83,8 @@ const AndroidAppBanner = () => {
 				gap: 1.25,
 				px: 1.5,
 				py: 1,
+				minHeight: 67,
+				boxSizing: "border-box",
 				bgcolor: "#f4f6fb",
 				borderBottom: "1px solid #e3e8f2",
 				color: "#232d4f",

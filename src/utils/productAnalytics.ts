@@ -40,6 +40,7 @@ export type ActivityEventName =
 	| "team_create"
 	| "team_invite_send"
 	| "team_invite_accept"
+	| "onboarding_action"
 	| "web_vitals"
 	| "api_timing"
 	| "api_error"
@@ -62,6 +63,7 @@ export type ActivityMeta = Partial<{
 	count: number;
 	step: string | number;
 	message_trunc: string;
+	rating: string;
 }>;
 
 const ALLOWED_META_KEYS = new Set([
@@ -81,6 +83,7 @@ const ALLOWED_META_KEYS = new Set([
 	"count",
 	"step",
 	"message_trunc",
+	"rating",
 ]);
 
 const MAX_META_STRING = 80;
@@ -453,6 +456,7 @@ interface VitalMetric {
 	name: string;
 	value: number;
 	navigationType?: string;
+	rating?: string;
 }
 
 /** Una vez por métrica y página. En rutas públicas solo llega al dataLayer (el hub exige sesión). */
@@ -466,7 +470,7 @@ export const reportVital = (metric: VitalMetric): void => {
 		const value = metric.name === "CLS" ? Math.round(metric.value * 1000) / 1000 : Math.round(metric.value);
 		trackActivity(
 			"web_vitals",
-			{ metric: metric.name, value, type: isMobile ? "mobile" : "desktop", mode: metric.navigationType },
+			{ metric: metric.name, value, type: isMobile ? "mobile" : "desktop", mode: metric.navigationType, rating: metric.rating },
 			{ gtm: true, path },
 		);
 	} catch {

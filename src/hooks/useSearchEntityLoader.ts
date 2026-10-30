@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "store";
-import { setEntityLoadStatus } from "store/reducers/search";
+import { setEntityLoadStatus, performGlobalSearch } from "store/reducers/search";
 
 /**
  * Hook to monitor when entities are loaded in the store
@@ -90,7 +90,6 @@ export const useSearchEntityLoader = () => {
 	useEffect(() => {
 		// If there's an active search and new entities were loaded, re-run the search
 		if (searchQuery) {
-			const { performGlobalSearch } = require("store/reducers/search");
 			dispatch(performGlobalSearch(searchQuery, searchFilters));
 		}
 	}, [entityLoadStatus, dispatch]); // Only re-run when load status changes

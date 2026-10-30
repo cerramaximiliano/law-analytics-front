@@ -27,7 +27,7 @@ import { useHotkeys } from "react-hotkeys-hook";
 
 // project imports
 import { useDispatch, useSelector } from "store";
-import { openSearch, closeSearch, setQuery, performGlobalSearch } from "store/reducers/search";
+import { openSearch, closeSearch, setQuery, performGlobalSearch, forceServerSearch } from "store/reducers/search";
 import { SearchResult } from "types/search";
 
 // assets
@@ -108,7 +108,6 @@ const SearchModal = () => {
 		}
 
 		// Otherwise, force a server search
-		const { forceServerSearch } = require("store/reducers/search");
 		dispatch(forceServerSearch(localQuery, filters));
 	};
 

@@ -61,6 +61,15 @@ const storage = {
  */
 export const markOpenedFromApp = (): void => storage.set(FROM_APP_KEY, String(Date.now()));
 
+/**
+ * index.html reserva el lugar del aviso antes del primer dibujado (2026-10-30: montarlo tarde empujaba la
+ * página, CLS de 0,008 a 0,128 en Android). Si al final el aviso no se monta, hay que liberar ese lugar.
+ */
+export const releaseAppBannerSpace = (): void => {
+	document.documentElement.classList.remove("app-banner-reservado");
+	document.documentElement.style.removeProperty("--app-banner-h");
+};
+
 /** El aviso de descarga corresponde: Android, sin haber llegado desde la app, sin cerrarlo hace < 7 días. */
 export function shouldShowAppBanner(now = Date.now()): boolean {
 	if (devicePlatform() !== "android") return false;

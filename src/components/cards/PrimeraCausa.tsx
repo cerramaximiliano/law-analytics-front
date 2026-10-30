@@ -92,6 +92,7 @@ type Phase =
 	| { kind: "found"; folder: any }
 	| { kind: "selection"; folder: any }
 	| { kind: "not_found"; folder: any }
+	| { kind: "duplicate"; folder: any }
 	| { kind: "error"; message: string };
 
 // Estado de verificación de una carpeta (mismo criterio que details.tsx).
@@ -258,6 +259,12 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 
 		setPhase({ kind: "sending" });
 		const res: any = await dispatch(addFolder(body as any, { headers: getRequestHeaders() }));
+		if (!res?.success && res?.existingFolder?._id) {
+			// Ya la tiene cargada (medición 24–30/10: volvían al dashboard y la cargaban de nuevo). No es un error.
+			trackActivity("causa_link_error", { jurisdiction: power, source: "primera_causa", error_code: "duplicate" });
+			setPhase({ kind: "duplicate", folder: res.existingFolder });
+			return;
+		}
 		if (!res?.success || !res.folder) {
 			trackActivity("causa_link_error", { jurisdiction: power, source: "primera_causa", error_code: "create_failed" });
 			setPhase({ kind: "error", message: res?.message || "No pudimos cargar la causa. Probá de nuevo en un momento." });
@@ -353,6 +360,16 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 			if (phase.kind === "not_found") discardFailed(phase.folder);
 			clearForm();
 		});
+
+	// Salidas de la pantalla: sin esto no se sabe si los que se van sin buscar las usan.
+	const goManual = (step: "no_user" | "prefer") => {
+		trackActivity("onboarding_action", { type: "manual", step, jurisdiction: power, source: "primera_causa" });
+		navigate(MANUAL_CREATE_URL);
+	};
+	const explore = () => {
+		trackActivity("onboarding_action", { type: "explore", step: phase.kind, source: "primera_causa" });
+		onExplore();
+	};
 
 	// ── estilos compartidos ───────────────────────────────────────────────────
 	const border = `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.1)}`;
@@ -454,6 +471,26 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 					)}
 				</>
 			);
+		} else if (phase.kind === "duplicate") {
+			icon = <TickCircle size={40} variant="Bulk" color={LIVE_GREEN} />;
+			title = "Ya tenés esta causa";
+			body = caratula ? (
+				<Typography sx={{ fontWeight: 600, fontSize: "1.05rem", lineHeight: 1.35, wordBreak: "break-word" }}>{caratula}</Typography>
+			) : (
+				<Typography color="text.secondary">
+					Expediente {number}/{year}
+				</Typography>
+			);
+			actions = (
+				<>
+					<Button fullWidth variant="contained" sx={primaryBtn} endIcon={<ArrowRight size={18} />} onClick={goToFolder}>
+						Abrirla
+					</Button>
+					<Button fullWidth sx={{ mt: 1, minHeight: 48, textTransform: "none" }} onClick={reset}>
+						Cargar otra causa
+					</Button>
+				</>
+			);
 		} else if (phase.kind === "selection") {
 			icon = <SearchNormal1 size={40} variant="Bulk" color={BRAND_BLUE} />;
 			title = "Hay más de una causa con ese número";
@@ -536,7 +573,7 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 					<Button fullWidth variant="contained" sx={primaryBtn} onClick={goToFolder}>
 						Ver la carpeta
 					</Button>
-					<Button fullWidth sx={{ mt: 1, minHeight: 48, textTransform: "none" }} onClick={onExplore}>
+					<Button fullWidth sx={{ mt: 1, minHeight: 48, textTransform: "none" }} onClick={explore}>
 						Explorar la app mientras tanto
 					</Button>
 				</>
@@ -684,7 +721,7 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 						>
 							Cargar una causa con mi usuario de la MEV
 						</Button>
-						<Button fullWidth sx={{ minHeight: 48, textTransform: "none" }} onClick={() => navigate(MANUAL_CREATE_URL)}>
+						<Button fullWidth sx={{ minHeight: 48, textTransform: "none" }} onClick={() => goManual("no_user")}>
 							No tengo usuario: cargarla a mano
 						</Button>
 					</Stack>
@@ -809,10 +846,10 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 				justifyContent="center"
 				sx={{ mt: { xs: 3, sm: 2.5 }, mb: 4 }}
 			>
-				<Link component="button" underline="hover" color="text.secondary" onClick={() => navigate(MANUAL_CREATE_URL)}>
+				<Link component="button" underline="hover" color="text.secondary" onClick={() => goManual("prefer")}>
 					Prefiero cargarla a mano
 				</Link>
-				<Link component="button" underline="hover" color="text.secondary" onClick={onExplore}>
+				<Link component="button" underline="hover" color="text.secondary" onClick={explore}>
 					Explorar la app primero
 				</Link>
 			</Stack>
