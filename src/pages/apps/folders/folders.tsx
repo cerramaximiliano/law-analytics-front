@@ -98,9 +98,11 @@ import {
 	ArrowUp2,
 	ArrowDown2,
 	ArrowRight2,
+	UserEdit,
 } from "iconsax-react";
 import PjnCredErrorBanner from "sections/apps/folders/PjnCredErrorBanner";
 import TaskAssignees from "sections/apps/tasks/TaskAssignees";
+import BulkResponsablesDialog from "sections/apps/folders/BulkResponsablesDialog";
 import { openExpedienteExport } from "utils/expedienteExportTracker";
 import FolderActionsMenu, { FolderCreateKind } from "sections/apps/folders/FolderActionsMenu";
 import { RelacionesIcon, SinVerCount } from "sections/apps/folders/FolderNovedadesIndicators";
@@ -256,6 +258,8 @@ interface ReactTableProps extends Props {
 	onDepartamentoFilterChange?: (event: SelectChangeEvent<string>) => void;
 	uniqueDepartamentos?: string[];
 	handleDeleteSelected?: (selectedRows: any[]) => void;
+	/** Equipos: asignación masiva de responsables (recibe cómo limpiar la selección). */
+	handleAssignSelected?: (selectedRows: any[], clearSelection: () => void) => void;
 	onBarWidthMeasured?: (width: number) => void;
 }
 
@@ -266,6 +270,7 @@ function ReactTable({
 	handleAdd,
 	handleArchiveSelected,
 	handleDeleteSelected,
+	handleAssignSelected,
 	isLoading,
 	handleOpenArchivedModal,
 	handleOpenGuide,
@@ -447,6 +452,7 @@ function ReactTable({
 		setGlobalFilter,
 		setSortBy,
 		selectedFlatRows,
+		toggleAllRowsSelected,
 	} = useTable<Folder>(
 		{
 			columns: columns as any,
@@ -749,6 +755,26 @@ function ReactTable({
 										</MenuItem>
 									)}
 
+									{/* Equipos: asignar responsable a las seleccionadas */}
+									{handleAssignSelected && (
+										<MenuItem
+											onClick={() => {
+												handleMobileMenuClose();
+												handleAssignSelected(selectedFlatRows, () => toggleAllRowsSelected(false));
+											}}
+											disabled={Object.keys(selectedRowIds).length === 0}
+										>
+											<ListItemIcon>
+												<UserEdit size={18} />
+											</ListItemIcon>
+											<ListItemText>
+												{Object.keys(selectedRowIds).length > 0
+													? `Asignar responsable (${selectedFlatRows.length})`
+													: "Asignar responsable"}
+											</ListItemText>
+										</MenuItem>
+									)}
+
 									{/* Filtros toggle */}
 									{onFolderTypeFilterChange && (
 										<MenuItem
@@ -878,6 +904,29 @@ function ReactTable({
 												}
 											>
 												{Object.keys(selectedRowIds).length > 0 ? `Archivar (${selectedFlatRows.length})` : "Archivar"}
+											</Button>
+										</span>
+									</Tooltip>
+								)}
+								{handleAssignSelected && (
+									<Tooltip
+										title={Object.keys(selectedRowIds).length === 0 ? "Seleccioná al menos una carpeta para asignar responsable" : ""}
+										placement="top"
+									>
+										<span>
+											<Button
+												variant="outlined"
+												color="secondary"
+												size="small"
+												startIcon={<UserEdit size={18} />}
+												onClick={() => handleAssignSelected(selectedFlatRows, () => toggleAllRowsSelected(false))}
+												disabled={Object.keys(selectedRowIds).length === 0}
+												sx={{ textTransform: "none" }}
+												data-testid="folder-assign-responsable-btn"
+											>
+												{Object.keys(selectedRowIds).length > 0
+													? `Asignar responsable (${selectedFlatRows.length})`
+													: "Asignar responsable"}
 											</Button>
 										</span>
 									</Tooltip>
@@ -1989,7 +2038,17 @@ const FoldersLayout = () => {
 	const subscription = useSelector((state) => state.auth.subscription);
 
 	// Team context - para cargar recursos del equipo si hay uno activo
-	const { activeTeam, isTeamMode, canCreate, canUpdate, canDelete, isInitialized: isTeamInitialized, getRequestHeaders } = useTeam();
+	const {
+		activeTeam,
+		isTeamMode,
+		canCreate,
+		canUpdate,
+		canDelete,
+		isInitialized: isTeamInitialized,
+		getRequestHeaders,
+		userRole,
+	} = useTeam();
+	const canEditResponsables = userRole === "owner" || userRole === "admin" || userRole === "editor";
 
 	// Equipos: vista por responsable («Mis carpetas / Todas / Sin responsable»). Default «Todas».
 	// El filtro lo resuelve el hub (`?responsable=me|ninguno`); mientras llega la respuesta se
@@ -2580,6 +2639,16 @@ const FoldersLayout = () => {
 		},
 		[user?._id],
 	);
+
+	// Equipos: asignación masiva de responsables
+	const [bulkAssign, setBulkAssign] = useState<{ open: boolean; folderIds: string[]; clearSelection?: () => void }>({
+		open: false,
+		folderIds: [],
+	});
+	const handleAssignSelected = useCallback((selectedRows: Row<any>[], clearSelection: () => void) => {
+		if (selectedRows.length === 0) return;
+		setBulkAssign({ open: true, folderIds: selectedRows.map((row) => row.original._id), clearSelection });
+	}, []);
 
 	// Estado para diálogo de confirmación de eliminación
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -4191,6 +4260,7 @@ const FoldersLayout = () => {
 								handleAdd={canCreate ? handleAddFolder : undefined}
 								handleArchiveSelected={canUpdate ? handleArchiveSelected : undefined}
 								handleDeleteSelected={canDelete ? handleDeleteSelected : undefined}
+								handleAssignSelected={isTeamMode && canEditResponsables ? handleAssignSelected : undefined}
 								handleOpenGuide={handleOpenGuide}
 								handleOpenArchivedModal={handleOpenArchivedModal}
 								renderRowSubComponent={renderRowSubComponent}
@@ -4725,6 +4795,16 @@ const FoldersLayout = () => {
 							</Alert>
 						</Snackbar>
 					</Portal>
+
+					{/* Equipos: asignación masiva de responsables */}
+					{isTeamMode && (
+						<BulkResponsablesDialog
+							open={bulkAssign.open}
+							folderIds={bulkAssign.folderIds}
+							onClose={() => setBulkAssign((prev) => ({ ...prev, open: false }))}
+							onDone={() => bulkAssign.clearSelection?.()}
+						/>
+					)}
 
 					{/* Diálogo de confirmación de eliminación — brand sober destructive */}
 					<Dialog

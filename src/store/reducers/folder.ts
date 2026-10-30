@@ -397,6 +397,66 @@ export const updateFolderNotificationPolicy =
 		}
 	};
 
+export type BulkResponsablesMode = "replace" | "add" | "remove";
+
+type BulkResponsablesResult =
+	| { success: true; modified: number; folders: { _id: string; responsables: string[]; notificationPolicy?: FolderNotificationPolicy }[] }
+	| { success: false; message: string };
+
+/**
+ * PUT /api/folders/responsables/bulk — asignación masiva (owner, admin y editor; máx. 500,
+ * todas del mismo equipo). Aplica al store un PATCH_FOLDER por carpeta devuelta.
+ */
+export const updateFoldersResponsablesBulk =
+	(folderIds: string[], responsables: string[], mode: BulkResponsablesMode, headers?: Record<string, string>) =>
+	async (dispatch: Dispatch): Promise<BulkResponsablesResult> => {
+		try {
+			const response = await axios.put(
+				`${import.meta.env.VITE_BASE_URL}/api/folders/responsables/bulk`,
+				{ folderIds, responsables, mode },
+				{ headers },
+			);
+			if (response.data?.success) {
+				const folders: { _id: string; responsables: string[]; notificationPolicy?: FolderNotificationPolicy }[] = Array.isArray(
+					response.data.folders,
+				)
+					? response.data.folders
+					: [];
+				folders.forEach((folder) => dispatch({ type: PATCH_FOLDER, payload: folder }));
+				return { success: true, modified: Number(response.data.modified ?? folders.length) || 0, folders };
+			}
+			return { success: false, message: response.data?.message || "No se pudieron asignar los responsables" };
+		} catch (error) {
+			return { success: false, message: folderTeamError(error, "No se pudieron asignar los responsables") };
+		}
+	};
+
+/** Carpetas activas del grupo con sus responsables, sin tocar el store (Mi equipo → Distribución). */
+export const fetchGroupFoldersForDistribution = async (
+	groupId: string,
+): Promise<
+	| {
+			_id: string;
+			folderName?: string;
+			responsables?: string[];
+			folderJuris?: FolderData["folderJuris"];
+			folderFuero?: string;
+			judFolder?: Partial<FolderData["judFolder"]>;
+	  }[]
+	| null
+> => {
+	try {
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}`, {
+			params: { fields: "_id,folderName,responsables,folderJuris,folderFuero,judFolder" },
+			headers: { "X-Group-Id": groupId },
+		});
+		if (response.data?.success && Array.isArray(response.data.folders)) return response.data.folders;
+		return null;
+	} catch {
+		return null;
+	}
+};
+
 /**
  * Ids de las carpetas del grupo filtradas por responsable (`?responsable=me|ninguno|<userId>`).
  * No toca el store: el listado sigue usando `state.folder.folders` (compartido con tareas,

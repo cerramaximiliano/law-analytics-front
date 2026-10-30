@@ -9,3 +9,4 @@ export { default as LeaveTeamDialog } from "./LeaveTeamDialog";
 export { default as TeamSettingsCard } from "./TeamSettingsCard";
 export { default as ResourceMigrationSection } from "./ResourceMigrationSection";
 export { default as TeamNotificationsCard } from "./TeamNotificationsCard";
+export { default as TeamResponsablesDistributionCard } from "./TeamResponsablesDistributionCard";

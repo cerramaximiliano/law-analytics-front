@@ -19,6 +19,7 @@ import {
 	LeaveTeamDialog,
 	TeamSettingsCard,
 	TeamNotificationsCard,
+	TeamResponsablesDistributionCard,
 	RoleBadge,
 } from "sections/apps/teams";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
@@ -875,6 +876,11 @@ const TabRole = () => {
 			{/* Avisos del equipo: regla por defecto y modo por integrante */}
 			<Grid item xs={12}>
 				<TeamNotificationsCard />
+			</Grid>
+
+			{/* Distribución de carpetas por responsable (impresión y CSV) */}
+			<Grid item xs={12}>
+				<TeamResponsablesDistributionCard />
 			</Grid>
 
 			{/* Zona de peligro */}

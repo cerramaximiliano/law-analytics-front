@@ -59,6 +59,7 @@ export interface TaskState {
 	isInitialized: boolean;
 	lastFetchedUserId?: string;
 	lastFetchedVista?: TaskVista;
+	lastFetchedAsignado?: string; // filtro ?asignado=<userId> del último listado por grupo
 }
 
 export type TaskDataType = {

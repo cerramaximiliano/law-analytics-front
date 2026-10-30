@@ -18,6 +18,8 @@ export interface Event {
 	movementSource?: "pjn" | "mev" | "scba" | "eje" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "manual" | null;
 	googleCalendarId?: string; // ID del evento en Google Calendar
 	syncedWithGoogle?: boolean; // Si el evento está sincronizado con Google
+	/** Equipos: responsables del evento (los de su carpeta; sin carpeta, quien lo creó; carpeta sin responsables → []). */
+	responsables?: string[];
 }
 
 // Estado del reducer de eventos

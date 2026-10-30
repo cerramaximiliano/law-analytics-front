@@ -1,5 +1,5 @@
 import React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 
@@ -28,6 +28,8 @@ import {
 	Card,
 	Chip,
 	Link,
+	MenuItem,
+	Select,
 } from "@mui/material";
 import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 
@@ -69,6 +71,7 @@ import {
 	Category,
 	Grid6,
 	DocumentText,
+	Printer,
 } from "iconsax-react";
 import { dispatch, useSelector } from "store";
 import { addBatchEvents, deleteEvent, getEventsByUserId, getEventsByGroupId, selectEvent, updateEvent } from "store/reducers/events";
@@ -79,6 +82,8 @@ import { Event } from "types/events";
 import { Folder } from "types/folders";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { useTeam } from "contexts/TeamContext";
+import { getTeamAssignees } from "utils/teamAssignees";
+import { buildEventsPrintDocument, buildPrintHtml, eventMatchesResponsable, printHtml, SIN_RESPONSABLE } from "utils/teamReports";
 import googleCalendarService from "services/googleCalendarService";
 
 // ==============================|| LINK FOLDERS MODAL ||============================== //
@@ -466,6 +471,19 @@ const Calendar = () => {
 	// Team context - para cargar recursos del equipo si hay uno activo
 	// isOwner: true if user is the owner of the active team (can manage Google Calendar sync)
 	const { activeTeam, isTeamMode, canCreate, canUpdate, canDelete, isOwner, isInitialized: isTeamInitialized } = useTeam();
+
+	// Equipos: filtro por responsable («todos», un integrante o SIN_RESPONSABLE). Usa los
+	// `responsables` que el hub agrega a cada evento (los de su carpeta; sin carpeta, quien lo creó).
+	const showResponsableFilter = isTeamMode && !!activeTeam;
+	const [responsableFilter, setResponsableFilter] = useState<string>("todos");
+	const teamAssignees = useMemo(() => getTeamAssignees(activeTeam), [activeTeam]);
+	useEffect(() => {
+		setResponsableFilter("todos");
+	}, [activeTeam?._id]);
+	const visibleEvents = useMemo(
+		() => (showResponsableFilter ? events.filter((ev) => eventMatchesResponsable(ev, responsableFilter)) : events),
+		[events, showResponsableFilter, responsableFilter],
+	);
 
 	// Componente autónomo para manejar el modal
 	const selectedEvent = useSelector((state) => {
@@ -1022,7 +1040,7 @@ const Calendar = () => {
 	}
 
 	// Preprocesar los eventos para asegurarnos de que tengan el formato correcto
-	const formattedEvents = events.map((event) => ({
+	const formattedEvents = visibleEvents.map((event) => ({
 		id: event._id,
 		title: event.title,
 		start: event.start,
@@ -1208,8 +1226,31 @@ const Calendar = () => {
 		"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
 	} as const;
 
+	// Impresión de los eventos del período visible, agrupados por responsable.
+	const handlePrintEvents = () => {
+		const view = calendarRef.current?.getApi().view;
+		const rangeStart = view?.activeStart ?? dayjs(date).startOf("month").toDate();
+		const rangeEnd = view?.activeEnd ?? dayjs(date).endOf("month").toDate();
+		const inRange = visibleEvents.filter((ev) => {
+			const start = new Date(ev.start).getTime();
+			const end = ev.end ? new Date(ev.end).getTime() : start;
+			return start < rangeEnd.getTime() && end >= rangeStart.getTime();
+		});
+		printHtml(
+			buildPrintHtml(
+				buildEventsPrintDocument({
+					teamName: activeTeam?.name,
+					events: inRange,
+					assignees: teamAssignees,
+					periodLabel: view?.title || dayjs(date).format("MMMM YYYY"),
+					onlyKey: responsableFilter === "todos" ? null : responsableFilter,
+				}),
+			),
+		);
+	};
+
 	// Stat compacto del header — eventos del mes actual.
-	const eventsThisMonth = events.filter((ev) => {
+	const eventsThisMonth = visibleEvents.filter((ev) => {
 		const eventDate = dayjs(ev.start);
 		return eventDate.isSame(date, "month");
 	}).length;
@@ -1437,6 +1478,61 @@ const Calendar = () => {
 											})}
 										</Stack>
 										<Box sx={{ width: "1px", alignSelf: "stretch", mx: 0.75, my: 0.5, bgcolor: alpha(BRAND_BLUE, 0.22) }} />
+									</>
+								)}
+
+								{/* Equipos: filtro por responsable e impresión */}
+								{showResponsableFilter && (
+									<>
+										<Select
+											size="small"
+											value={responsableFilter}
+											onChange={(e) => setResponsableFilter(String(e.target.value))}
+											inputProps={{ "aria-label": "Filtrar eventos por responsable" }}
+											renderValue={(value) =>
+												value === "todos"
+													? "Responsable: todos"
+													: value === SIN_RESPONSABLE
+													? "Sin responsable"
+													: teamAssignees.find((a) => a.id === value)?.name || "Miembro"
+											}
+											data-testid="calendar-responsable-filter"
+											sx={{
+												minWidth: { xs: 120, sm: 170 },
+												maxWidth: { xs: 160, sm: 240 },
+												"& .MuiSelect-select": { py: "5px", fontSize: "0.78rem", fontWeight: 500 },
+											}}
+										>
+											<MenuItem value="todos">Todos</MenuItem>
+											{teamAssignees.map((a) => (
+												<MenuItem key={a.id} value={a.id}>
+													{a.name}
+													{a.isOwner ? " · Propietario" : ""}
+												</MenuItem>
+											))}
+											<MenuItem value={SIN_RESPONSABLE}>Sin responsable</MenuItem>
+										</Select>
+										{matchDownSM ? (
+											<Tooltip title="Imprimir eventos por responsable">
+												<IconButton size="small" onClick={handlePrintEvents} data-testid="calendar-print-btn">
+													<Printer size={18} />
+												</IconButton>
+											</Tooltip>
+										) : (
+											<Tooltip title="Imprimir los eventos del período, agrupados por responsable">
+												<Button
+													variant="outlined"
+													color="secondary"
+													size="small"
+													startIcon={<Printer size={16} />}
+													onClick={handlePrintEvents}
+													data-testid="calendar-print-btn"
+													sx={{ textTransform: "none", whiteSpace: "nowrap", flexShrink: 0 }}
+												>
+													Imprimir
+												</Button>
+											</Tooltip>
+										)}
 									</>
 								)}
 

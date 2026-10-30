@@ -58,6 +58,7 @@ const tasksReducer = (state = initialState, action: any) => {
 				isInitialized: true,
 				lastFetchedUserId: action.userId || state.lastFetchedUserId,
 				lastFetchedVista: action.vista,
+				lastFetchedAsignado: action.asignado,
 			};
 		case SET_SELECTED_TASKS:
 			return {
@@ -189,28 +190,31 @@ export const getTasksByUserId =
 	};
 
 export const getTasksByGroupId =
-	(groupId: string, forceRefresh: boolean = false, options?: { vista?: TaskVista }) =>
+	(groupId: string, forceRefresh: boolean = false, options?: { vista?: TaskVista; asignado?: string | null }) =>
 	async (dispatch: Dispatch, getState: any) => {
 		try {
 			const state = getState();
-			const { isInitialized, tasks, lastFetchedVista } = state.tasksReducer;
+			const { isInitialized, tasks, lastFetchedVista, lastFetchedAsignado } = state.tasksReducer;
+			// Filtrar por un integrante (?asignado=) reemplaza a la vista.
+			const asignado = options?.asignado || undefined;
 			// "todas" equivale a no filtrar: no se manda el parámetro.
-			const vista = options?.vista && options.vista !== "todas" ? options.vista : undefined;
+			const vista = !asignado && options?.vista && options.vista !== "todas" ? options.vista : undefined;
 
-			// Cache validation: si ya tenemos datos de la misma vista y no forzamos refresh, retornar del cache
-			if (!forceRefresh && isInitialized && tasks.length > 0 && lastFetchedVista === vista) {
+			// Cache validation: si ya tenemos datos del mismo filtro y no forzamos refresh, retornar del cache
+			if (!forceRefresh && isInitialized && tasks.length > 0 && lastFetchedVista === vista && lastFetchedAsignado === asignado) {
 				return { success: true, tasks, fromCache: true };
 			}
 
 			dispatch({ type: SET_LOADING });
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/tasks/group/${groupId}`, {
-				params: vista ? { vista } : undefined,
+				params: asignado ? { asignado } : vista ? { vista } : undefined,
 			});
 			dispatch({
 				type: SET_TASKS,
 				payload: response.data,
 				groupId: groupId,
 				vista,
+				asignado,
 			});
 			return { success: true, tasks: response.data };
 		} catch (error: unknown) {
