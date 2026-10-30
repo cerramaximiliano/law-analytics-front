@@ -8,725 +8,470 @@ import { useTheme } from "@mui/material/styles";
 import {
 	People,
 	ArrowRight2,
-	UserAdd,
 	UserRemove,
 	ShieldTick,
 	Crown1,
 	Eye,
 	Edit,
 	Trash,
-	Sms,
 	Warning2,
 	TickCircle,
 	CloseCircle,
 	Import,
 	Profile2User,
+	Notification,
+	TaskSquare,
+	Calendar,
+	FolderOpen,
+	Printer,
+	Lock,
 } from "iconsax-react";
 import GuideShell from "./GuideShell";
 
 // ==============================|| GUÍA EQUIPOS - ESTILOS ||============================== //
 
-const StyledPaper = styled(Paper)(({ theme }) => ({
+const StyledPaper = styled(Paper)(() => ({
 	margin: "16px 0",
 	overflow: "hidden",
 	borderRadius: "12px",
 	boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
 }));
 
-// ==============================|| GUÍA EQUIPOS - COMPONENTES DE CONTENIDO ||============================== //
+type Palette = "primary" | "info" | "success" | "warning" | "error";
 
-const IntroductionContent = () => {
+// Encabezado + lista de renglones con ícono: el bloque que más se repite en la guía.
+const Section = ({ title, color, items, intro }: { title: string; color: Palette; items: React.ReactNode[]; intro?: React.ReactNode }) => {
+	const theme = useTheme();
 	return (
-		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
-			<Typography paragraph>
-				El sistema de equipos te permite invitar colaboradores para trabajar juntos en tus causas, contactos, calculadoras y demás recursos
-				de Law||Analytics. Todo el equipo comparte los recursos del propietario.
-			</Typography>
-			<Alert severity="info">
-				<AlertTitle>Aprenderás a:</AlertTitle>
-				<Typography component="div">
-					<ul>
-						<li>Crear un equipo y configurarlo</li>
-						<li>Invitar miembros y asignarles roles con permisos específicos</li>
-						<li>Aceptar invitaciones y migrar recursos</li>
-						<li>Trabajar colaborativamente en recursos compartidos</li>
-						<li>Gestionar miembros, cambiar roles y administrar el equipo</li>
-						<li>Entender los límites por plan y las restricciones</li>
-					</ul>
+		<StyledPaper>
+			<Box sx={{ p: 2, bgcolor: alpha(theme.palette[color].lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
+				<Typography variant="subtitle1" fontWeight="bold">
+					{title}
 				</Typography>
-			</Alert>
-			<Alert severity="success" sx={{ mt: 2 }}>
-				<AlertTitle>Concepto clave: Pool compartido</AlertTitle>
-				<Typography>
-					Cuando creas un equipo, todos tus recursos (causas, contactos, calculadoras, documentos) pasan a estar disponibles para los
-					miembros según su rol. No existe separación entre recursos "personales" y recursos "del equipo": todo se comparte desde la cuenta
-					del propietario.
-				</Typography>
-			</Alert>
-		</Stack>
+			</Box>
+			<Box sx={{ p: 2 }}>
+				{intro && (
+					<Typography variant="body2" gutterBottom>
+						{intro}
+					</Typography>
+				)}
+				<Stack spacing={1.5} sx={{ mt: intro ? 1 : 0 }}>
+					{items.map((item, i) => (
+						<Box key={i} display="flex" alignItems="flex-start">
+							<ArrowRight2 size={18} style={{ minWidth: "24px", marginTop: "3px", color: theme.palette[color].main }} />
+							<Typography component="div">{item}</Typography>
+						</Box>
+					))}
+				</Stack>
+			</Box>
+		</StyledPaper>
 	);
 };
+
+// Tarjeta con ícono y texto (roles, gestión, consejos).
+const Card = ({ icon, title, color, children }: { icon: React.ReactNode; title: string; color: Palette; children: React.ReactNode }) => {
+	const theme = useTheme();
+	return (
+		<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette[color].lighter, 0.1) }}>
+			<Box display="flex" alignItems="flex-start" mb={1}>
+				<Box sx={{ color: theme.palette[color].main, mr: 1, mt: "2px", display: "flex" }}>{icon}</Box>
+				<Typography variant="subtitle1" fontWeight="bold">
+					{title}
+				</Typography>
+			</Box>
+			<Typography variant="body2" component="div">
+				{children}
+			</Typography>
+		</Paper>
+	);
+};
+
+// ==============================|| GUÍA EQUIPOS - CONTENIDO ||============================== //
+
+const IntroductionContent = () => (
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
+		<Typography paragraph>
+			Equipos te permite trabajar con los abogados y colaboradores de tu estudio sobre las mismas causas, contactos, calendario, tareas,
+			escritos y seguimientos postales. Cada uno trabaja con los permisos de su rol, las carpetas se reparten entre responsables, los avisos
+			llegan a quien corresponde y el propietario decide si todos ven todo o cada uno ve lo suyo.
+		</Typography>
+		<Alert severity="success">
+			<AlertTitle>La cuenta del propietario es el equipo</AlertTitle>
+			<Typography>
+				Todo lo que se carga dentro del equipo, lo cargue quien lo cargue, queda en la cuenta del propietario y cuenta contra los límites de
+				su plan. Cada recurso guarda además quién lo creó. Los integrantes no pagan: los cubre el plan del propietario.
+			</Typography>
+		</Alert>
+		<Alert severity="info">
+			<AlertTitle>En esta guía</AlertTitle>
+			<Typography component="div">
+				<ul style={{ margin: 0, paddingLeft: 18 }}>
+					<li>Cupos por plan, crear el equipo, invitar y aceptar</li>
+					<li>Roles y permisos</li>
+					<li>Responsables de carpetas y distribución imprimible</li>
+					<li>Tareas y eventos con responsables, «Solo para mí»</li>
+					<li>A quién le llegan los avisos y qué ve cada integrante</li>
+					<li>Gestión de integrantes y relación con tu plan</li>
+				</ul>
+			</Typography>
+		</Alert>
+	</Stack>
+);
 
 const RequirementsContent = () => {
 	const theme = useTheme();
+	const plans = [
+		{ name: "Gratuito", ok: false, text: "No puede crear equipos" },
+		{ name: "Estándar", ok: true, text: "Hasta 5 integrantes · 50 causas · 100 MB" },
+		{ name: "Pro", ok: true, text: "Hasta 8 integrantes · 200 causas · 150 MB" },
+		{ name: "Premium", ok: true, text: "Hasta 10 integrantes · 500 causas · 200 MB" },
+	];
 	return (
 		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
-			<Typography paragraph>
-				Para crear un equipo necesitas un plan Estándar o Premium. Los usuarios con plan Gratuito no pueden crear equipos.
-			</Typography>
-
+			<Typography paragraph>Para crear un equipo necesitás un plan pago: Estándar, Pro o Premium.</Typography>
 			<StyledPaper>
 				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
 					<Typography variant="subtitle1" fontWeight="bold">
-						Límites de miembros por plan
+						Cupos por plan (compartidos por todo el equipo)
 					</Typography>
 				</Box>
 				<Box sx={{ p: 2 }}>
 					<Stack spacing={2}>
-						<Box display="flex" alignItems="center">
-							<CloseCircle size={20} style={{ marginRight: "8px", color: theme.palette.error.main }} />
-							<Typography>
-								<strong>Plan Gratuito:</strong> No disponible — No puede crear equipos
-							</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<TickCircle size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
-							<Typography>
-								<strong>Plan Estándar:</strong> Hasta 5 miembros (incluido el propietario)
-							</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<TickCircle size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
-							<Typography>
-								<strong>Plan Pro:</strong> Hasta 8 miembros (incluido el propietario)
-							</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<TickCircle size={20} style={{ marginRight: "8px", color: theme.palette.success.main }} />
-							<Typography>
-								<strong>Plan Premium:</strong> Hasta 10 miembros (incluido el propietario)
-							</Typography>
-						</Box>
-					</Stack>
-				</Box>
-			</StyledPaper>
-
-			<Alert severity="info">
-				<Typography>
-					El límite de miembros incluye al propietario. Por ejemplo, en el plan Estándar con límite de 5, el propietario ocupa 1 lugar y
-					puede invitar hasta 4 colaboradores. Un usuario solo puede pertenecer a un equipo a la vez.
-				</Typography>
-			</Alert>
-
-			<StyledPaper>
-				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.warning.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
-					<Typography variant="subtitle1" fontWeight="bold">
-						Límites de recursos (pool compartido)
-					</Typography>
-				</Box>
-				<Box sx={{ p: 2 }}>
-					<Stack spacing={2}>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.warning.main }} />
-							<Typography>
-								<strong>Standard:</strong> 50 causas, 20 calculadoras, 100 contactos, 1 GB almacenamiento
-							</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.warning.main }} />
-							<Typography>
-								<strong>Premium:</strong> 500 causas, 200 calculadoras, 1.000 contactos, 10 GB almacenamiento
-							</Typography>
-						</Box>
-					</Stack>
-				</Box>
-			</StyledPaper>
-
-			<Typography variant="body2" color="textSecondary">
-				Todos los recursos creados por cualquier miembro cuentan contra los límites del plan del propietario.
-			</Typography>
-		</Stack>
-	);
-};
-
-const CreationContent = () => {
-	const theme = useTheme();
-	return (
-		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
-			<Typography paragraph>Para crear tu equipo, sigue estos pasos:</Typography>
-			<Paper variant="outlined" sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2) }}>
-				<Stack spacing={2}>
-					<Box display="flex" alignItems="center">
-						<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
-						<Typography>Ve a la sección de Equipos en el menú lateral</Typography>
-					</Box>
-					<Box display="flex" alignItems="center">
-						<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
-						<Typography>Haz clic en el botón "Crear Equipo"</Typography>
-					</Box>
-					<Box display="flex" alignItems="center">
-						<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
-						<Typography>Ingresa un nombre descriptivo para el equipo (ej. "Estudio García & Asociados")</Typography>
-					</Box>
-					<Box display="flex" alignItems="center">
-						<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
-						<Typography>Opcionalmente agrega una descripción</Typography>
-					</Box>
-					<Box display="flex" alignItems="center">
-						<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
-						<Typography>Haz clic en "Crear" para finalizar</Typography>
-					</Box>
-				</Stack>
-			</Paper>
-
-			<Alert severity="success" sx={{ mt: 2 }}>
-				<AlertTitle>¿Qué sucede al crear el equipo?</AlertTitle>
-				<Stack spacing={1}>
-					<Typography>• Te conviertes en el Propietario (Owner) del equipo</Typography>
-					<Typography>• Todos tus recursos existentes pasan a estar disponibles para los futuros miembros</Typography>
-					<Typography>• Los límites de tu plan definen la capacidad del equipo</Typography>
-				</Stack>
-			</Alert>
-
-			<Alert severity="warning" sx={{ mt: 2 }}>
-				<AlertTitle>Importante</AlertTitle>
-				<Typography>
-					Al crear un equipo, tus recursos siguen siendo tuyos. Los miembros podrán verlos y (según su rol) editarlos, pero la propiedad
-					siempre es del propietario.
-				</Typography>
-			</Alert>
-		</Stack>
-	);
-};
-
-const InvitingContent = () => {
-	const theme = useTheme();
-	return (
-		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
-			<Typography paragraph>Para invitar colaboradores a tu equipo:</Typography>
-			<Paper variant="outlined" sx={{ p: 2, bgcolor: alpha(theme.palette.info.lighter, 0.2) }}>
-				<Stack spacing={2}>
-					<Box display="flex" alignItems="center">
-						<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
-						<Typography>Abre la configuración de tu equipo</Typography>
-					</Box>
-					<Box display="flex" alignItems="center">
-						<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
-						<Typography>Haz clic en "Invitar Miembro"</Typography>
-					</Box>
-					<Box display="flex" alignItems="center">
-						<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
-						<Typography>Ingresa el email del colaborador</Typography>
-					</Box>
-					<Box display="flex" alignItems="center">
-						<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
-						<Typography>Selecciona el rol que deseas asignarle (Editor o Visor)</Typography>
-					</Box>
-					<Box display="flex" alignItems="center">
-						<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
-						<Typography>Haz clic en "Enviar Invitación"</Typography>
-					</Box>
-				</Stack>
-			</Paper>
-
-			<StyledPaper>
-				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
-					<Typography variant="subtitle1" fontWeight="bold">
-						¿Qué sucede al enviar la invitación?
-					</Typography>
-				</Box>
-				<Box sx={{ p: 2 }}>
-					<Stack spacing={1.5}>
-						<Box display="flex" alignItems="center">
-							<Sms size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
-							<Typography>El colaborador recibe un email con un link de invitación</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<Warning2 size={18} style={{ minWidth: "24px", color: theme.palette.warning.main }} />
-							<Typography>La invitación es válida por 7 días</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.info.main }} />
-							<Typography>Aparece como "Pendiente" hasta que sea aceptada o rechazada</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.info.main }} />
-							<Typography>Puedes revocar la invitación en cualquier momento antes de que sea aceptada</Typography>
-						</Box>
-					</Stack>
-				</Box>
-			</StyledPaper>
-
-			<Alert severity="info">
-				<Typography>Solo el Propietario puede invitar nuevos miembros al equipo.</Typography>
-			</Alert>
-		</Stack>
-	);
-};
-
-const RolesContent = () => {
-	const theme = useTheme();
-	return (
-		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
-			<Typography paragraph>El sistema de equipos tiene tres roles con diferentes niveles de acceso:</Typography>
-
-			<Grid container spacing={2}>
-				<Grid item xs={12} md={4}>
-					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.warning.lighter, 0.1) }}>
-						<Box display="flex" alignItems="flex-start" mb={1}>
-							<Crown1 size={24} style={{ color: theme.palette.warning.main, marginRight: "8px", marginTop: "2px" }} />
-							<Typography variant="subtitle1" fontWeight="bold">
-								Propietario (Owner)
-							</Typography>
-						</Box>
-						<Typography variant="body2">
-							Es el creador y dueño del equipo y de todos los recursos. Los límites de su plan definen la capacidad del equipo. Es el único
-							que puede eliminar el equipo e invitar miembros. No puede ser removido ni degradado.
-						</Typography>
-					</Paper>
-				</Grid>
-				<Grid item xs={12} md={4}>
-					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.success.lighter, 0.1) }}>
-						<Box display="flex" alignItems="flex-start" mb={1}>
-							<Edit size={24} style={{ color: theme.palette.success.main, marginRight: "8px", marginTop: "2px" }} />
-							<Typography variant="subtitle1" fontWeight="bold">
-								Editor
-							</Typography>
-						</Box>
-						<Typography variant="body2">
-							Puede crear y editar recursos (causas, contactos, notas, etc.). No puede eliminar recursos ni gestionar miembros. Rol ideal
-							para abogados y colaboradores que necesitan contribuir activamente.
-						</Typography>
-					</Paper>
-				</Grid>
-				<Grid item xs={12} md={4}>
-					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.info.lighter, 0.1) }}>
-						<Box display="flex" alignItems="flex-start" mb={1}>
-							<Eye size={24} style={{ color: theme.palette.info.main, marginRight: "8px", marginTop: "2px" }} />
-							<Typography variant="subtitle1" fontWeight="bold">
-								Visor (Viewer)
-							</Typography>
-						</Box>
-						<Typography variant="body2">
-							Solo puede ver recursos, sin crear, editar ni eliminar. No puede gestionar miembros. Rol ideal para supervisores, pasantes o
-							clientes con acceso de consulta.
-						</Typography>
-					</Paper>
-				</Grid>
-			</Grid>
-
-			<Alert severity="info" sx={{ mt: 2 }}>
-				<AlertTitle>Consejo</AlertTitle>
-				<Typography>
-					Asigna el rol mínimo necesario para cada colaborador. Si alguien solo necesita consultar información, asígnale el rol de Visor.
-					Esto protege tus datos de modificaciones accidentales.
-				</Typography>
-			</Alert>
-		</Stack>
-	);
-};
-
-const AcceptingContent = () => {
-	const theme = useTheme();
-	return (
-		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
-			<Typography paragraph>Cuando recibes una invitación a un equipo, el proceso depende de tu situación actual:</Typography>
-
-			<StyledPaper>
-				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
-					<Typography variant="subtitle1" fontWeight="bold">
-						Caso A: Usuario nuevo
-					</Typography>
-				</Box>
-				<Box sx={{ p: 2 }}>
-					<Stack spacing={1.5}>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
-							<Typography>Recibirás un email con un link de invitación</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
-							<Typography>Haz clic en el link y se te pedirá crear una cuenta (nombre, apellido, contraseña)</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
-							<Typography>Al completar el registro, te unes automáticamente al equipo</Typography>
-						</Box>
-					</Stack>
-				</Box>
-			</StyledPaper>
-
-			<StyledPaper>
-				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.success.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
-					<Typography variant="subtitle1" fontWeight="bold">
-						Caso B: Usuario existente sin recursos
-					</Typography>
-				</Box>
-				<Box sx={{ p: 2 }}>
-					<Stack spacing={1.5}>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.success.main }} />
-							<Typography>Haz clic en el link de invitación del email</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.success.main }} />
-							<Typography>Inicia sesión si no estás logueado</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.success.main }} />
-							<Typography>Verás los detalles de la invitación y podrás aceptar directamente</Typography>
-						</Box>
-					</Stack>
-				</Box>
-			</StyledPaper>
-
-			<StyledPaper>
-				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.warning.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
-					<Typography variant="subtitle1" fontWeight="bold">
-						Caso C: Usuario existente con recursos
-					</Typography>
-				</Box>
-				<Box sx={{ p: 2 }}>
-					<Typography variant="body2" gutterBottom>
-						Si ya tienes causas, contactos u otros recursos, deberás elegir qué hacer con ellos:
-					</Typography>
-					<Stack spacing={1.5} sx={{ mt: 1 }}>
-						<Box display="flex" alignItems="flex-start">
-							<Import size={18} style={{ minWidth: "24px", color: theme.palette.warning.main, marginTop: "3px" }} />
-							<Box>
-								<Typography fontWeight="bold">Migrar al equipo</Typography>
-								<Typography variant="body2">
-									Tus recursos se transfieren al equipo y pasan a ser propiedad del propietario. Es la opción recomendada.
+						{plans.map((p) => (
+							<Box key={p.name} display="flex" alignItems="center">
+								{p.ok ? (
+									<TickCircle size={20} style={{ marginRight: "8px", color: theme.palette.success.main }} />
+								) : (
+									<CloseCircle size={20} style={{ marginRight: "8px", color: theme.palette.error.main }} />
+								)}
+								<Typography>
+									<strong>{p.name}:</strong> {p.text}
 								</Typography>
 							</Box>
-						</Box>
-						<Box display="flex" alignItems="flex-start">
-							<Trash size={18} style={{ minWidth: "24px", color: theme.palette.error.main, marginTop: "3px" }} />
-							<Box>
-								<Typography fontWeight="bold">Eliminar recursos</Typography>
-								<Typography variant="body2">Tus recursos se eliminan permanentemente y te unes con la cuenta limpia.</Typography>
-							</Box>
-						</Box>
+						))}
 					</Stack>
 				</Box>
 			</StyledPaper>
-
-			<Alert severity="warning">
-				<Typography>
-					Si la migración excedería los límites del plan del propietario, se te notificará cuáles recursos no pueden migrarse. El
-					propietario deberá liberar espacio o mejorar su plan.
-				</Typography>
-			</Alert>
-		</Stack>
-	);
-};
-
-const TeamworkContent = () => {
-	const theme = useTheme();
-	return (
-		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
-			<Typography paragraph>Una vez dentro del equipo, trabajas directamente con los recursos compartidos:</Typography>
-
-			<StyledPaper>
-				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
-					<Typography variant="subtitle1" fontWeight="bold">
-						Creación de recursos en equipo
-					</Typography>
-				</Box>
-				<Box sx={{ p: 2 }}>
-					<Stack spacing={1.5}>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
-							<Typography>Los recursos se crean dentro del equipo automáticamente</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
-							<Typography>Todo cuenta contra los límites del plan del propietario</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
-							<Typography>Todos los miembros pueden acceder según su rol</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
-							<Typography>Se registra quién creó cada recurso para auditoría</Typography>
-						</Box>
-					</Stack>
-				</Box>
-			</StyledPaper>
-
-			<StyledPaper>
-				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.info.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
-					<Typography variant="subtitle1" fontWeight="bold">
-						Historial de actividad
-					</Typography>
-				</Box>
-				<Box sx={{ p: 2 }}>
-					<Typography variant="body2" gutterBottom>
-						El sistema registra automáticamente todas las acciones del equipo:
-					</Typography>
-					<Stack spacing={1.5} sx={{ mt: 1 }}>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.info.main }} />
-							<Typography>Quién creó, editó o eliminó cada recurso</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.info.main }} />
-							<Typography>Fecha y hora de cada acción</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.info.main }} />
-							<Typography>Detalle de los cambios realizados</Typography>
-						</Box>
-					</Stack>
-				</Box>
-			</StyledPaper>
-
 			<Alert severity="info">
 				<Typography>
-					Si el equipo alcanza el límite de causas u otro recurso, ningún miembro podrá crear nuevos hasta que se archiven/eliminen
-					existentes o el propietario mejore su plan.
+					El cupo de integrantes incluye al propietario: en Premium sos vos más nueve invitados. Para <strong>unirte</strong> a un equipo no
+					necesitás plan; si tenés un plan pago activo, primero tenés que cancelarlo. Cada persona pertenece a un solo equipo a la vez.
 				</Typography>
 			</Alert>
 		</Stack>
 	);
 };
 
-const ManagementContent = () => {
-	const theme = useTheme();
-	return (
-		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
-			<Typography paragraph>El Propietario puede gestionar los miembros del equipo:</Typography>
+const CreationContent = () => (
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
+		<Section
+			title="Crear el equipo"
+			color="primary"
+			items={[
+				<>
+					Abrí <strong>Configuración → Perfil → Mi equipo</strong>
+				</>,
+				<>Hacé clic en «Crear equipo» y escribí un nombre (por ejemplo, «Estudio García &amp; Asociados»)</>,
+				<>Confirmá. Pasás a ser el Propietario y ves el cupo de tu plan</>,
+			]}
+		/>
+		<Section
+			title="Invitar integrantes"
+			color="info"
+			items={[
+				<>
+					En Mi equipo, hacé clic en <strong>Invitar miembros</strong>, escribí los correos y elegí el rol de cada uno
+				</>,
+				<>Cada persona recibe un enlace personal, válido por 7 días; podés reenviarlo o cancelarlo mientras esté pendiente</>,
+				<>Invitan el propietario y los Administradores; solo el propietario puede invitar como Administrador</>,
+			]}
+		/>
+	</Stack>
+);
 
-			<Grid container spacing={2}>
-				<Grid item xs={12} md={6}>
-					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.primary.lighter, 0.1) }}>
-						<Box display="flex" alignItems="flex-start" mb={1}>
-							<Profile2User size={24} style={{ color: theme.palette.primary.main, marginRight: "8px", marginTop: "2px" }} />
-							<Typography variant="subtitle1" fontWeight="bold">
-								Cambiar Rol
-							</Typography>
-						</Box>
-						<Typography variant="body2">
-							Busca al miembro en la configuración del equipo, haz clic en el menú de opciones y selecciona "Cambiar rol" para asignar un
-							nuevo rol.
-						</Typography>
-					</Paper>
-				</Grid>
-				<Grid item xs={12} md={6}>
-					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.error.lighter, 0.1) }}>
-						<Box display="flex" alignItems="flex-start" mb={1}>
-							<UserRemove size={24} style={{ color: theme.palette.error.main, marginRight: "8px", marginTop: "2px" }} />
-							<Typography variant="subtitle1" fontWeight="bold">
-								Remover Miembro
-							</Typography>
-						</Box>
-						<Typography variant="body2">
-							Busca al miembro, haz clic en "Remover" y confirma. El miembro pierde acceso inmediato. Los recursos que creó permanecen en el
-							equipo.
-						</Typography>
-					</Paper>
-				</Grid>
-				<Grid item xs={12} md={6}>
-					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.warning.lighter, 0.1) }}>
-						<Box display="flex" alignItems="flex-start" mb={1}>
-							<UserAdd size={24} style={{ color: theme.palette.warning.main, marginRight: "8px", marginTop: "2px" }} />
-							<Typography variant="subtitle1" fontWeight="bold">
-								Invitar Miembros
-							</Typography>
-						</Box>
-						<Typography variant="body2">
-							Envía invitaciones por email con un rol preseleccionado. Las invitaciones son válidas por 7 días y pueden revocarse antes de
-							ser aceptadas.
-						</Typography>
-					</Paper>
-				</Grid>
-				<Grid item xs={12} md={6}>
-					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.info.lighter, 0.1) }}>
-						<Box display="flex" alignItems="flex-start" mb={1}>
-							<Trash size={24} style={{ color: theme.palette.info.main, marginRight: "8px", marginTop: "2px" }} />
-							<Typography variant="subtitle1" fontWeight="bold">
-								Eliminar Equipo
-							</Typography>
-						</Box>
-						<Typography variant="body2">
-							Solo el Propietario puede eliminar el equipo. Al hacerlo, los miembros pierden acceso pero los recursos permanecen en la
-							cuenta del propietario.
-						</Typography>
-					</Paper>
-				</Grid>
+const AcceptingContent = () => (
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
+		<Typography paragraph>Al abrir el enlace de la invitación, lo que sigue depende de tu situación:</Typography>
+		<Section
+			title="Casos posibles"
+			color="primary"
+			items={[
+				<>
+					<strong>No tenés cuenta:</strong> te registrás desde la invitación y entrás con el rol asignado
+				</>,
+				<>
+					<strong>Tenés cuenta sin datos:</strong> iniciás sesión y aceptás
+				</>,
+				<>
+					<strong>Tenés plan pago activo:</strong> primero cancelalo; dentro del equipo te cubre el plan del propietario
+				</>,
+				<>
+					<strong>Ya estás en otro equipo:</strong> primero salí de ese equipo
+				</>,
+			]}
+		/>
+		<Section
+			title="Si ya tenés causas u otros datos"
+			color="warning"
+			items={[
+				<>
+					<Import size={14} style={{ marginRight: 4 }} />
+					<strong>Migrar al equipo:</strong> lo tuyo pasa al equipo (podés incluir lo archivado)
+				</>,
+				<>
+					<strong>Migrar como archivados:</strong> si no entra en los límites del plan del equipo
+				</>,
+				<>
+					<strong>Eliminar mis recursos:</strong> entrás con la cuenta limpia; no se puede deshacer
+				</>,
+			]}
+		/>
+	</Stack>
+);
+
+const RolesContent = () => (
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
+		<Grid container spacing={2}>
+			<Grid item xs={12} md={6}>
+				<Card icon={<Crown1 size={24} />} title="Propietario" color="warning">
+					Dueño del equipo y de sus datos; su plan define los cupos. Hace todo, incluido cambiar roles, invitar Administradores, cargar
+					credenciales PJN y SCBA y eliminar el equipo. Siempre ve todo.
+				</Card>
 			</Grid>
-
-			<Alert severity="info" sx={{ mt: 2 }}>
-				<AlertTitle>Nota</AlertTitle>
-				<Typography>Solo el Propietario puede gestionar miembros: invitar, cambiar roles y remover colaboradores.</Typography>
-			</Alert>
-		</Stack>
-	);
-};
-
-const RestrictionsContent = () => {
-	const theme = useTheme();
-	return (
-		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
-			<Typography paragraph>
-				Cada usuario solo puede pertenecer a un equipo a la vez. Esto aplica tanto a propietarios como a miembros.
+			<Grid item xs={12} md={6}>
+				<Card icon={<ShieldTick size={24} />} title="Administrador" color="primary">
+					Para socios. Crea, edita y borra; invita y remueve integrantes; asigna responsables y configura avisos y qué ve cada integrante.
+					Siempre ve todo.
+				</Card>
+			</Grid>
+			<Grid item xs={12} md={6}>
+				<Card icon={<Edit size={24} />} title="Editor" color="success">
+					Para los abogados. Crea y edita causas, tareas, eventos, contactos y escritos, y asigna responsables. No borra ni gestiona
+					integrantes.
+				</Card>
+			</Grid>
+			<Grid item xs={12} md={6}>
+				<Card icon={<Eye size={24} />} title="Visualizador" color="info">
+					Solo consulta: no crea, no edita, no borra. Para pasantes, consultores o supervisión.
+				</Card>
+			</Grid>
+		</Grid>
+		<Alert severity="info">
+			<Typography>
+				Los botones siguen al rol: quien no puede borrar no ve «Eliminar». Asigná el rol mínimo necesario; se puede cambiar después sin
+				volver a invitar.
 			</Typography>
+		</Alert>
+	</Stack>
+);
 
-			<StyledPaper>
-				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.warning.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
-					<Typography variant="subtitle1" fontWeight="bold">
-						Si ya perteneces a un equipo
-					</Typography>
-				</Box>
-				<Box sx={{ p: 2 }}>
-					<Stack spacing={1.5}>
-						<Box display="flex" alignItems="center">
-							<CloseCircle size={18} style={{ minWidth: "24px", color: theme.palette.error.main }} />
-							<Typography>No puedes aceptar invitaciones a otros equipos</Typography>
-						</Box>
-						<Box display="flex" alignItems="center">
-							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.warning.main }} />
-							<Typography>Debes abandonar tu equipo actual antes de unirte a uno nuevo</Typography>
-						</Box>
-					</Stack>
-				</Box>
-			</StyledPaper>
+const ResponsablesContent = () => (
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
+		<Typography paragraph>
+			Cada carpeta puede tener uno o varios responsables. Sirven para repartir el trabajo, para que cada uno encuentre lo suyo y para
+			decidir a quién le llegan los avisos.
+		</Typography>
+		<Section
+			title="Asignar y cambiar"
+			color="primary"
+			items={[
+				<>
+					<FolderOpen size={14} style={{ marginRight: 4 }} />
+					<strong>En la carpeta:</strong> franja «Responsables» → Editar
+				</>,
+				<>
+					<strong>Desde el listado:</strong> hacé clic en las iniciales de la columna «Responsable» (o en «Asignar») para agregar, cambiar o
+					quitar
+				</>,
+				<>
+					<strong>De a muchas:</strong> marcá carpetas y usá «Asignar responsable (N)» con Reemplazar, Agregar o Quitar
+				</>,
+				<>Pueden hacerlo el propietario, los Administradores y los Editores</>,
+			]}
+		/>
+		<Section
+			title="Encontrar y controlar"
+			color="info"
+			items={[
+				<>
+					En Carpetas: selector <strong>Mis carpetas / Todas / Sin responsable</strong>
+				</>,
+				<>
+					<Printer size={14} style={{ marginRight: 4 }} />
+					En Mi equipo, <strong>Distribución de responsables</strong>: carpetas por integrante, con Imprimir y Descargar CSV (propietario y
+					Administradores)
+				</>,
+			]}
+		/>
+	</Stack>
+);
 
-			<Box sx={{ bgcolor: alpha(theme.palette.info.lighter, 0.1), p: 2, borderRadius: "8px" }}>
-				<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-					Para cambiar de equipo:
-				</Typography>
-				<Stack spacing={1.5}>
-					<Box display="flex" alignItems="center">
-						<ArrowRight2 size={18} style={{ marginRight: "8px", color: theme.palette.info.main }} />
-						<Typography>Ve a la configuración de tu equipo actual</Typography>
-					</Box>
-					<Box display="flex" alignItems="center">
-						<ArrowRight2 size={18} style={{ marginRight: "8px", color: theme.palette.info.main }} />
-						<Typography>Haz clic en "Abandonar Equipo" y confirma</Typography>
-					</Box>
-					<Box display="flex" alignItems="center">
-						<ArrowRight2 size={18} style={{ marginRight: "8px", color: theme.palette.info.main }} />
-						<Typography>Ahora puedes aceptar la nueva invitación</Typography>
-					</Box>
-				</Stack>
-			</Box>
+const TasksEventsContent = () => (
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
+		<Section
+			title="Tareas"
+			color="primary"
+			intro={
+				<>
+					<TaskSquare size={14} style={{ marginRight: 4 }} />
+					Cada tarea puede tener uno o varios responsables, con o sin carpeta.
+				</>
+			}
+			items={[
+				<>
+					Vistas <strong>Mis tareas / Todas / Sin asignar</strong> y filtro <strong>Responsable</strong>; Imprimir agrupa por responsable
+				</>,
+				<>Los recordatorios le llegan a cada responsable; sin responsables, a quien la creó</>,
+			]}
+		/>
+		<Section
+			title="Eventos del calendario"
+			color="success"
+			intro={
+				<>
+					<Calendar size={14} style={{ marginRight: 4 }} />A quién avisa un evento:
+				</>
+			}
+			items={[
+				<>
+					<strong>Con carpeta:</strong> a los responsables de esa carpeta (si no tiene, a todo el equipo)
+				</>,
+				<>
+					<strong>Sin carpeta:</strong> a todo el equipo
+				</>,
+				<>
+					<Lock size={14} style={{ marginRight: 4 }} />
+					<strong>Solo para mí:</strong> lo ve y lo recibe solo quien lo creó, con cualquier rol. La agenda que el propietario tenía antes
+					del equipo queda así; para compartir un evento, desmarcá la casilla
+				</>,
+				<>El calendario se filtra por responsable e imprime el período visible</>,
+			]}
+		/>
+	</Stack>
+);
 
-			<Alert severity="warning" sx={{ mt: 2 }}>
-				<AlertTitle>Sobre el plan y los equipos</AlertTitle>
-				<Stack spacing={1}>
-					<Typography>
-						• <strong>Si intentas bajar al plan Gratuito:</strong> Se bloquea la acción mientras tengas un equipo activo. Debes eliminar el
-						equipo primero.
-					</Typography>
-					<Typography>
-						• <strong>Si reduces miembros permitidos:</strong> Se bloquea si tu equipo tiene más miembros activos de los que permite el
-						nuevo plan.
-					</Typography>
-				</Stack>
-			</Alert>
+const NotificationsContent = () => (
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
+		<Typography paragraph>
+			<Notification size={16} style={{ marginRight: 4, verticalAlign: "text-bottom" }} />
+			Los movimientos nuevos y las cédulas de las carpetas del equipo se reparten según tres reglas, que configuran el propietario o un
+			Administrador en <strong>Mi equipo → Avisos del equipo</strong>.
+		</Typography>
+		<Section
+			title="Las tres reglas"
+			color="primary"
+			items={[
+				<>
+					<strong>Del equipo:</strong> «Todos los integrantes» (predeterminada) o «Solo los responsables de cada carpeta» (si no tiene,
+					todos)
+				</>,
+				<>
+					<strong>De una carpeta:</strong> «Según el equipo», «Solo responsables» o «Todos»
+				</>,
+				<>
+					<strong>Por integrante:</strong> «Según cada carpeta», «Todo» o «Solo lo mío»
+				</>,
+			]}
+		/>
+		<Alert severity="info">
+			<Typography>
+				Nunca se pierde un aviso: si las reglas dejan una novedad sin destinatario, le llega al propietario. Las altas y bajas de la
+				sincronización, la verificación de causas y el estado de credenciales van a todo el equipo. Cada integrante recibe sus avisos con
+				sus preferencias (inmediato o resumen de las 19 h); los recordatorios de tareas y eventos salen a las 9 h.
+			</Typography>
+		</Alert>
+	</Stack>
+);
 
-			<Alert severity="error">
-				<Typography>
-					Al abandonar un equipo, los recursos que creaste o migraste permanecen en el equipo (son propiedad del propietario). Quedas sin
-					recursos propios.
-				</Typography>
-			</Alert>
-		</Stack>
-	);
-};
+const VisibilityContent = () => (
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
+		<Typography paragraph>
+			En <strong>Mi equipo → Qué ve cada integrante</strong>, el propietario o un Administrador eligen «Todos ven todo» (predeterminada) o
+			«Cada integrante ve solo lo suyo», con excepciones por persona.
+		</Typography>
+		<Section
+			title="«Lo suyo» es"
+			color="primary"
+			items={[
+				<>Carpetas donde es responsable o que creó, y lo que cuelga de ellas</>,
+				<>Tareas asignadas a él, creadas por él o de sus carpetas</>,
+				<>Eventos que creó, los de sus carpetas y los del equipo sin carpeta</>,
+			]}
+		/>
+		<Alert severity="warning">
+			<Typography>
+				La restricción es real: una carpeta ajena abierta por enlace muestra «Este recurso no está asignado a vos», no se pueden cambiar sus
+				responsables y no llegan sus avisos. También vale para los conectores de IA. El propietario y los Administradores siempre ven todo.
+				Contactos, cálculos, notas, escritos y seguimientos siguen compartidos.
+			</Typography>
+		</Alert>
+		<Alert severity="info">
+			<Typography>
+				Los Editores y Visualizadores ven en Mi equipo un resumen: <strong>Qué ves</strong> y <strong>Tus avisos</strong>.
+			</Typography>
+		</Alert>
+	</Stack>
+);
 
-const TipsContent = () => {
-	const theme = useTheme();
-	return (
-		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
-			<Typography paragraph>Para sacar el máximo provecho del sistema de equipos, te ofrecemos estos consejos prácticos:</Typography>
-
-			<Grid container spacing={2}>
-				<Grid item xs={12} md={6}>
-					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.primary.lighter, 0.1) }}>
-						<Box display="flex" alignItems="flex-start" mb={1}>
-							<ShieldTick size={24} style={{ color: theme.palette.primary.main, marginRight: "8px", marginTop: "2px" }} />
-							<Typography variant="subtitle1" fontWeight="bold">
-								Asignación de roles
-							</Typography>
-						</Box>
-						<Typography variant="body2">
-							Usa el rol mínimo necesario. Pasantes y supervisores como Visores, y abogados activos como Editores.
-						</Typography>
-					</Paper>
-				</Grid>
-				<Grid item xs={12} md={6}>
-					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.primary.lighter, 0.1) }}>
-						<Box display="flex" alignItems="flex-start" mb={1}>
-							<People size={24} style={{ color: theme.palette.primary.main, marginRight: "8px", marginTop: "2px" }} />
-							<Typography variant="subtitle1" fontWeight="bold">
-								Organización previa
-							</Typography>
-						</Box>
-						<Typography variant="body2">
-							Antes de invitar miembros, organiza tus causas y recursos. Un equipo bien organizado facilita el trabajo colaborativo desde el
-							primer día.
-						</Typography>
-					</Paper>
-				</Grid>
-				<Grid item xs={12} md={6}>
-					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.primary.lighter, 0.1) }}>
-						<Box display="flex" alignItems="flex-start" mb={1}>
-							<Warning2 size={24} style={{ color: theme.palette.primary.main, marginRight: "8px", marginTop: "2px" }} />
-							<Typography variant="subtitle1" fontWeight="bold">
-								Comunicar límites
-							</Typography>
-						</Box>
-						<Typography variant="body2">
-							Informa a tu equipo sobre los límites del plan para que todos sepan cuántos recursos pueden crear y evitar sorpresas.
-						</Typography>
-					</Paper>
-				</Grid>
-				<Grid item xs={12} md={6}>
-					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.primary.lighter, 0.1) }}>
-						<Box display="flex" alignItems="flex-start" mb={1}>
-							<Eye size={24} style={{ color: theme.palette.primary.main, marginRight: "8px", marginTop: "2px" }} />
-							<Typography variant="subtitle1" fontWeight="bold">
-								Supervisar actividad
-							</Typography>
-						</Box>
-						<Typography variant="body2">
-							Revisa periódicamente el historial de actividad del equipo para mantener el control sobre los cambios realizados.
-						</Typography>
-					</Paper>
-				</Grid>
+const ManagementContent = () => (
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
+		<Grid container spacing={2}>
+			<Grid item xs={12} md={6}>
+				<Card icon={<Profile2User size={24} />} title="Cambiar rol" color="primary">
+					Solo el propietario, desde el menú del integrante en Mi equipo.
+				</Card>
 			</Grid>
+			<Grid item xs={12} md={6}>
+				<Card icon={<UserRemove size={24} />} title="Remover" color="error">
+					El propietario o un Administrador. Pierde el acceso al instante; lo que cargó queda en el equipo.
+				</Card>
+			</Grid>
+			<Grid item xs={12} md={6}>
+				<Card icon={<ArrowRight2 size={24} />} title="Salir del equipo" color="warning">
+					Cualquier integrante salvo el propietario, desde «Abandonar equipo». Lo que cargó queda en el equipo.
+				</Card>
+			</Grid>
+			<Grid item xs={12} md={6}>
+				<Card icon={<Trash size={24} />} title="Eliminar el equipo" color="info">
+					Solo el propietario. No se borra ningún dato: todo vuelve a ser suyo como recursos personales.
+				</Card>
+			</Grid>
+		</Grid>
+		<Section
+			title="Tu plan y el equipo"
+			color="warning"
+			items={[
+				<>Un solo plan cubre a todo el equipo: el del propietario</>,
+				<>Mejorar el plan amplía el cupo y los límites al instante</>,
+				<>Bajar de plan se bloquea si el equipo no entra; para pasar a Gratuito, primero eliminá el equipo</>,
+				<>Si un pago falla y vence el período de gracia, el equipo se suspende hasta regularizarlo; los datos no se pierden</>,
+			]}
+		/>
+	</Stack>
+);
 
-			<Box sx={{ mt: 3, p: 2, bgcolor: alpha(theme.palette.success.lighter, 0.1), borderRadius: "8px" }}>
-				<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-					Tips de flujo de trabajo:
-				</Typography>
-				<Stack spacing={1.5}>
-					<Box display="flex" alignItems="center">
-						<ArrowRight2 size={18} style={{ marginRight: "8px", color: theme.palette.success.main }} />
-						<Typography>Invita primero a los colaboradores más activos para que comiencen a trabajar rápidamente</Typography>
-					</Box>
-					<Box display="flex" alignItems="center">
-						<ArrowRight2 size={18} style={{ marginRight: "8px", color: theme.palette.success.main }} />
-						<Typography>Si un miembro cambia de responsabilidades, actualiza su rol en lugar de removerlo</Typography>
-					</Box>
-					<Box display="flex" alignItems="center">
-						<ArrowRight2 size={18} style={{ marginRight: "8px", color: theme.palette.success.main }} />
-						<Typography>Antes de eliminar el equipo, asegúrate de que ningún miembro necesite acceso a los recursos</Typography>
-					</Box>
-				</Stack>
-			</Box>
-
-			<Alert severity="info" sx={{ mt: 3 }}>
-				<AlertTitle>Mejora Continua</AlertTitle>
-				El sistema de equipos está en constante mejora. En el futuro se habilitará la posibilidad de pertenecer a múltiples equipos
-				simultáneamente. Ante cualquier duda, contactanos en soporte@lawanalytics.app.
-			</Alert>
-		</Stack>
-	);
-};
+const TipsContent = () => (
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
+		<Section
+			title="Para estudios"
+			color="success"
+			items={[
+				<>Cargá las credenciales PJN o SCBA en la cuenta del propietario: las causas del estudio entran solas al equipo</>,
+				<>Repartí las carpetas por juzgado o fuero con «Asignar responsable» y revisá la Distribución de responsables</>,
+				<>
+					Si cada abogado lleva sus causas, poné los avisos en «Solo los responsables»; si querés reserva, «Cada integrante ve solo lo suyo»
+				</>,
+				<>Pedile a cada uno que trabaje desde «Mis carpetas» y «Mis tareas», y revisá «Sin asignar» y «Sin responsable» cada semana</>,
+				<>Editor para los abogados, Administrador para los socios</>,
+			]}
+		/>
+		<Alert severity="info" icon={<Warning2 size={20} />}>
+			<Typography>
+				¿Dudas? Escribinos a <strong>soporte@lawanalytics.app</strong>.
+			</Typography>
+		</Alert>
+	</Stack>
+);
 
 // ==============================|| COMPONENTE PRINCIPAL DE GUÍA EQUIPOS ||============================== //
 
@@ -737,15 +482,17 @@ interface GuideTeamsProps {
 
 const GuideTeams: React.FC<GuideTeamsProps> = ({ open, onClose }) => {
 	const steps = [
-		{ title: "Introducción a los Equipos", content: <IntroductionContent /> },
-		{ title: "Requisitos y Límites", content: <RequirementsContent /> },
-		{ title: "Crear un Equipo", content: <CreationContent /> },
-		{ title: "Invitar Miembros", content: <InvitingContent /> },
-		{ title: "Roles y Permisos", content: <RolesContent /> },
-		{ title: "Aceptar una Invitación", content: <AcceptingContent /> },
-		{ title: "Trabajar en Equipo", content: <TeamworkContent /> },
-		{ title: "Gestión de Miembros", content: <ManagementContent /> },
-		{ title: "Restricciones y Consejos", content: <RestrictionsContent /> },
+		{ title: "Cómo funciona un equipo", content: <IntroductionContent /> },
+		{ title: "Requisitos y cupos", content: <RequirementsContent /> },
+		{ title: "Crear e invitar", content: <CreationContent /> },
+		{ title: "Aceptar una invitación", content: <AcceptingContent /> },
+		{ title: "Roles y permisos", content: <RolesContent /> },
+		{ title: "Responsables de carpetas", content: <ResponsablesContent /> },
+		{ title: "Tareas y eventos", content: <TasksEventsContent /> },
+		{ title: "Avisos de las causas", content: <NotificationsContent /> },
+		{ title: "Qué ve cada integrante", content: <VisibilityContent /> },
+		{ title: "Gestión y plan", content: <ManagementContent /> },
+		{ title: "Consejos", content: <TipsContent /> },
 	];
 
 	return (
@@ -755,7 +502,7 @@ const GuideTeams: React.FC<GuideTeamsProps> = ({ open, onClose }) => {
 			icon={<People size={18} variant="Bulk" />}
 			eyebrow="Guía"
 			title="Guía de Equipos"
-			subtitle="Trabajá colaborativamente con tu equipo de trabajo"
+			subtitle="Trabajá con tu estudio: responsables, avisos y permisos"
 			steps={steps}
 		/>
 	);
