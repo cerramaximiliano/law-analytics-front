@@ -56,6 +56,8 @@ const getInitialValues = (event: FormikValues | null, range: DateRange | null, d
 			end: event.end ? new Date(event.end) : new Date(),
 			type: event.type || "",
 			folderId: (event.folderId as string) || "",
+			// «Solo para mí»: marcado, o evento viejo sin creador ni carpeta (agenda previa).
+			personal: event.personal === true || (event.personal !== false && !event.createdBy && !event.folderId),
 		};
 	}
 
@@ -69,6 +71,7 @@ const getInitialValues = (event: FormikValues | null, range: DateRange | null, d
 		end: range ? new Date(range.end) : new Date(),
 		type: defaultType || "",
 		folderId: "",
+		personal: false,
 	};
 };
 
@@ -218,6 +221,8 @@ const AddEventFrom = ({
 					start: values.start,
 					end: values.end,
 					type: values.type,
+					// Equipos: «Solo para mí» (lo ve y lo recibe solo quien lo creó).
+					...(isTeamMode ? { personal: Boolean(values.personal) } : {}),
 				};
 
 				if (event) {
@@ -541,6 +546,22 @@ const AddEventFrom = ({
 									</Typography>
 								}
 							/>
+							{isTeamMode && (
+								<FormControlLabel
+									sx={{ m: 0 }}
+									control={<Checkbox checked={Boolean(values.personal)} {...getFieldProps("personal")} size="small" />}
+									label={
+										<Box>
+											<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em", ml: 0.5 }}>
+												Solo para mí
+											</Typography>
+											<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", ml: 0.5 }}>
+												Lo ves y lo recibís solo vos. Si no, avisa a los responsables de la carpeta o, sin carpeta, a todo el equipo.
+											</Typography>
+										</Box>
+									}
+								/>
+							)}
 							{isGoogleConnected && (
 								<FormControlLabel
 									sx={{ m: 0 }}

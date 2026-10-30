@@ -256,21 +256,26 @@ El Editor puede editar una tarea pero no borrarla. El Administrador y el Propiet
 Al crear o editar un evento podés vincularlo a una carpeta con el campo **Carpeta**. Ese vínculo decide a quién le
 llegan sus recordatorios:
 
-| Evento | Recordatorio a |
+| Evento | Lo ve y recibe el recordatorio |
 | --- | --- |
-| Vinculado a una carpeta | Quienes reciben los avisos de esa carpeta (sección 10) |
-| Sin carpeta | Quien lo creó |
+| Vinculado a una carpeta | Los **responsables de esa carpeta**. Si la carpeta no tiene responsables, todo el equipo |
+| Sin carpeta | **Todo el equipo** |
+| Marcado **Solo para mí** | Solo quien lo creó, aunque tenga carpeta |
 
-En el **Calendario**, el selector **Responsable** muestra solo los eventos de un integrante (los de sus carpetas y los
-que creó sin carpeta) o los que no tienen responsable. **Imprimir** genera la lista del período que estás viendo,
-agrupada por responsable, con fecha, título y carpeta.
+**Solo para mí** es una casilla del formulario del evento, visible dentro de un equipo. Sirve para la agenda personal:
+nadie más lo ve en el calendario ni recibe su aviso, con ningún rol. Los eventos que el propietario tenía antes de crear
+el equipo, sin carpeta, quedan como suyos («Solo para mí»). Si querés compartir alguno, abrilo y desmarcá la casilla.
+
+En el **Calendario**, el selector **Responsable** muestra los eventos de un integrante (los de sus carpetas, los del
+equipo sin carpeta y los suyos personales) o los de carpetas sin responsable. **Imprimir** genera la lista del período
+que estás viendo, agrupada por responsable, con fecha, título y carpeta.
 
 ---
 
 ## 10. Avisos de las causas
 
-Las novedades de las carpetas del equipo (movimientos nuevos en cualquier jurisdicción, cédulas y notificaciones
-electrónicas, y recordatorios de los eventos vinculados) se reparten según tres reglas. Las configuran el propietario o
+Las novedades de las carpetas del equipo (movimientos nuevos en cualquier jurisdicción y cédulas y notificaciones
+electrónicas) se reparten según tres reglas. Los recordatorios de eventos siguen su propio criterio (sección 9). Las configuran el propietario o
 un Administrador.
 
 ### Regla del equipo
@@ -334,7 +339,7 @@ solo lo suyo salvo un socio.
 
 - **Carpetas** donde es responsable o que creó.
 - **Tareas** asignadas a él, creadas por él o de sus carpetas.
-- **Eventos** que creó o de sus carpetas.
+- **Eventos** que creó, los de sus carpetas y los del equipo sin carpeta. Los eventos «Solo para mí» de otros no los ve nadie.
 - Lo que cuelga de sus carpetas: movimientos, documentos, tareas y eventos.
 
 El propietario y los Administradores **siempre ven todo**, porque administran el equipo.
@@ -430,7 +435,7 @@ Solo el propietario. Al eliminarlo:
 | **Invitaciones** | Por correo, válidas 7 días; los invitados pueden ser cuentas Free |
 | **Responsables** | Por carpeta, de a una o en masa, con distribución imprimible y CSV |
 | **Tareas** | Responsables, vistas y filtro por integrante, impresión y recordatorios a cada responsable |
-| **Calendario** | Eventos vinculados a carpetas, filtro por responsable e impresión |
+| **Calendario** | Eventos con carpeta a sus responsables, sin carpeta a todos, «Solo para mí» privado; filtro e impresión |
 | **Avisos** | Regla del equipo, de cada carpeta y de cada integrante |
 | **Visibilidad** | Todos ven todo o cada uno ve lo suyo; propietario y administradores ven todo |
 | **Migración** | Al unirse, migrar lo propio, migrarlo archivado o borrarlo |
