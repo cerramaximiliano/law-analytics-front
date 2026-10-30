@@ -240,28 +240,11 @@ En cada causa, la pestaña de historial muestra quién hizo cada cambio.
 Cualquier integrante que no sea el propietario puede salir desde **Mi equipo → Abandonar equipo**. Lo que cargó queda
 en el equipo y la persona vuelve a ser un usuario individual. Después puede aceptar otra invitación o contratar un plan.
 
-El propietario no puede abandonar su equipo: tiene que transferirlo o eliminarlo.
+El propietario no puede abandonar su equipo. Si deja de usarlo, puede eliminarlo (ver sección 11).
 
 ---
 
-## 11. Transferir la titularidad
-
-El propietario puede pasarle el equipo a un integrante activo. Al transferir:
-
-- El nuevo propietario pasa a ser el titular de **todos** los datos del equipo: causas, contactos, cálculos, notas,
-  eventos, tareas, escritos y seguimientos postales. No cambia quién creó cada cosa ni a quién está asignada cada tarea.
-- El propietario anterior queda en el equipo como **Administrador**.
-- A partir de ese momento rigen el plan, los límites y el cupo del nuevo propietario.
-
-Requisitos: el nuevo propietario tiene que tener un **plan pago**, y los datos y los integrantes del equipo tienen que
-entrar en los límites de su plan. Si algo no entra, el sistema avisa qué límite se excede y no cambia nada.
-
-> **ℹ️ La opción todavía no está en la pantalla.** Si necesitás transferir el equipo, escribinos a
-> soporte@lawanalytics.app desde la cuenta del propietario, indicando a qué integrante, y lo hacemos con vos.
-
----
-
-## 12. Eliminar el equipo
+## 11. Eliminar el equipo
 
 Solo el propietario. Al eliminarlo:
 
@@ -271,7 +254,7 @@ Solo el propietario. Al eliminarlo:
 
 ---
 
-## 13. Tu plan y el equipo
+## 12. Tu plan y el equipo
 
 - **Un solo plan cubre a todo el equipo**: el del propietario. Los integrantes no pagan.
 - **Mejorar el plan** amplía el cupo de integrantes y los límites al instante.
@@ -282,7 +265,7 @@ Solo el propietario. Al eliminarlo:
 
 ---
 
-## 14. Consejos para estudios
+## 13. Consejos para estudios
 
 - Cargá las credenciales PJN o SCBA en la cuenta del propietario: así las causas de todo el estudio entran solas al equipo.
 - Asigná cada tarea a su abogado y pedile a cada uno que trabaje desde **Mis tareas**.
@@ -304,7 +287,6 @@ Solo el propietario. Al eliminarlo:
 | **Tareas** | Responsables, vistas «Mis tareas / Todas / Sin asignar» y recordatorios a cada responsable |
 | **Avisos** | Novedades de las causas a todos los integrantes, con sus preferencias |
 | **Migración** | Al unirse, migrar lo propio, migrarlo archivado o borrarlo |
-| **Titularidad** | Transferible a un integrante con plan pago; los datos pasan con ella |
 | **Un equipo por persona** | Para cambiar de equipo, primero hay que salir |
 
 ---
@@ -323,7 +305,6 @@ Solo el propietario. Al eliminarlo:
 - responsables
 - notificaciones
 - migración
-- transferencia de titularidad
 
 ### Categoría
 
