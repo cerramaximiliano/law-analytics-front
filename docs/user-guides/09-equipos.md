@@ -3,8 +3,9 @@
 ## Descripción general
 
 Equipos te permite trabajar con otros abogados y colaboradores de tu estudio sobre las mismas causas, contactos,
-calendario, tareas, escritos y seguimientos postales. Todos ven lo mismo, cada uno con los permisos de su rol, y cada
-integrante recibe las novedades de las causas y tiene su propia vista de tareas.
+calendario, tareas, escritos y seguimientos postales. Cada uno trabaja con los permisos de su rol, las carpetas se
+reparten entre responsables, los avisos llegan a quien corresponde y el propietario decide si todos ven todo o cada uno
+ve lo suyo.
 
 Esta guía cubre todo lo que comprende la función: quién puede crear un equipo, cómo invitar, qué puede hacer cada rol,
 cómo se reparte el trabajo, a quién le llegan los avisos y qué pasa con el plan y los datos.
@@ -15,8 +16,9 @@ cómo se reparte el trabajo, a quién le llegan los avisos y qué pasa con el pl
 - Crear un equipo e invitar integrantes
 - Elegir el rol adecuado para cada persona
 - Unirte a un equipo desde una invitación, con o sin datos propios
-- Repartir el trabajo con tareas asignadas
-- Saber qué avisos recibe cada integrante
+- Repartir carpetas y tareas entre responsables, e imprimir la distribución
+- Configurar a quién le llegan los avisos
+- Decidir qué ve cada integrante
 - Gestionar integrantes, salir del equipo o eliminarlo
 - Conocer cómo se relaciona el equipo con tu plan
 
@@ -40,11 +42,14 @@ la cuenta del propietario y cuenta contra los límites de su plan. Cada recurso 
 | **Causas** | Todas las del propietario, incluidas las que ya tenía antes de crear el equipo y las que trae la sincronización con PJN o SCBA |
 | **Contactos, cálculos y notas** | Compartidos |
 | **Calendario** | Eventos compartidos |
-| **Tareas** | Compartidas, con responsables y vista «Mis tareas» (ver sección 7) |
+| **Tareas** | Compartidas, con responsables y vista «Mis tareas» (ver sección 8) |
 | **Escritos** | Compartidos: cada integrante ve y edita los escritos del equipo según su rol |
 | **Seguimiento postal** | Compartido |
 | **Conectores de IA** (Claude, ChatGPT) | Un integrante conectado ve las causas del equipo y nada de otros usuarios |
 | **Credenciales PJN y SCBA** | Solo el propietario las carga y las ve; las causas que traen son de todo el equipo |
+
+Por defecto todos ven todo. El propietario puede restringir carpetas, tareas y eventos para que cada uno vea solo lo
+suyo (sección 11).
 
 ---
 
@@ -145,6 +150,9 @@ Tenés que salir del equipo actual antes de aceptar la nueva invitación.
 | Remover integrantes | ✅ | ✅ | ❌ | ❌ |
 | Invitar como Administrador | ✅ | ❌ | ❌ | ❌ |
 | Cambiar el rol de un integrante | ✅ | ❌ | ❌ | ❌ |
+| Asignar responsables a carpetas | ✅ | ✅ | ✅ | ❌ |
+| Configurar avisos y qué ve cada integrante | ✅ | ✅ | ❌ | ❌ |
+| Ver siempre todo el equipo | ✅ | ✅ | Según configuración | Según configuración |
 | Cargar credenciales PJN y SCBA | ✅ | ❌ | ❌ | ❌ |
 | Eliminar el equipo | ✅ | ❌ | ❌ | ❌ |
 | Salir del equipo | — | ✅ | ✅ | ✅ |
@@ -162,9 +170,51 @@ Seguimiento postal.
 
 ---
 
-## 7. Repartir el trabajo: tareas con responsables
+## 7. Responsables de las carpetas
 
-Las tareas del equipo son de todos, pero cada una puede tener uno o varios **responsables**.
+Cada carpeta puede tener uno o varios **responsables**: el propietario o integrantes del equipo. Sirven para repartir el
+trabajo, para que cada uno encuentre lo suyo y para decidir a quién le llegan los avisos (sección 10).
+
+### Asignar en una carpeta
+
+1. Abrí la carpeta. Debajo de las pestañas está la franja **Responsables**.
+2. Hacé clic en **Editar**, elegí uno o más integrantes y guardá.
+
+Pueden asignar el propietario, los Administradores y los Editores. El Visualizador ve los responsables pero no los cambia.
+
+### Asignar de a muchas
+
+1. En **Carpetas**, marcá las carpetas en la tabla.
+2. Hacé clic en **Asignar responsable (N)**.
+3. Elegí a quién y cómo:
+
+| Modo | Qué hace |
+| --- | --- |
+| **Reemplazar** | Las carpetas quedan solo con los integrantes elegidos. Sin elegir a nadie, quedan sin responsable |
+| **Agregar** | Suma los elegidos a los responsables que ya tenían |
+| **Quitar** | Saca a los elegidos de esas carpetas |
+
+Se pueden asignar hasta 500 carpetas por vez.
+
+### Encontrar lo tuyo
+
+En **Carpetas** hay un selector **Mis carpetas / Todas / Sin responsable** y una columna **Responsable** con las
+iniciales de cada uno. «Sin responsable» sirve para ver qué falta repartir.
+
+### Distribución de responsables
+
+En **Configuración → Perfil → Mi equipo**, la tarjeta **Distribución de responsables** muestra las carpetas activas
+agrupadas por integrante, con la cantidad de cada uno, y al final las que no tienen responsable. Una carpeta con varios
+responsables aparece en cada uno.
+
+- **Imprimir**: abre la impresión del listado completo, con el nombre del equipo y la fecha.
+- **Descargar CSV**: baja la planilla con responsable, email, carátula, jurisdicción, fuero y expediente.
+
+---
+
+## 8. Tareas con responsables
+
+Las tareas del equipo pueden tener uno o varios **responsables**, o ninguno.
 
 ### Asignar
 
@@ -172,45 +222,129 @@ Las tareas del equipo son de todos, pero cada una puede tener uno o varios **res
 2. En **Responsables**, elegí al propietario o a uno o más integrantes.
 3. Guardá. Si no elegís a nadie, la tarea queda **Sin asignar**.
 
-### Ver lo tuyo
+Una tarea puede estar vinculada a una carpeta o no. Las tareas sin carpeta también se pueden asignar.
 
-En **Tareas** tenés un selector con tres vistas:
+### Ver y filtrar
 
-| Vista | Qué muestra |
+En **Tareas** tenés un selector con tres vistas y un filtro por integrante:
+
+| Control | Qué muestra |
 | --- | --- |
-| **Mis tareas** | Las tareas en las que sos responsable. Es la vista inicial de los integrantes |
-| **Todas** | Todas las tareas del equipo. Es la vista inicial del propietario |
-| **Sin asignar** | Las tareas que todavía no tienen responsable |
+| **Mis tareas** | Las asignadas a vos y las que creaste sin responsable. Es la vista inicial de los integrantes |
+| **Todas** | Todas las tareas que podés ver. Es la vista inicial del propietario |
+| **Sin asignar** | Las que todavía no tienen responsable |
+| **Responsable: …** | Las asignadas a un integrante en particular |
 
-La columna **Responsable** muestra las iniciales de cada asignado; al pasar el mouse ves el nombre. En el tablero, el
-recuadro **Tareas próximas** de cada integrante muestra sus propias tareas.
+La columna **Responsable** muestra las iniciales de cada asignado. En el tablero, el recuadro **Tareas próximas** de
+cada integrante muestra sus propias tareas.
+
+**Imprimir** genera la lista agrupada por responsable (tarea, vencimiento, prioridad, estado y carpeta), con «Sin
+asignar» al final. Si elegiste un integrante, imprime solo las suyas.
 
 ### Recordatorios
 
-Los recordatorios de vencimiento, por correo y en el navegador, le llegan **a cada responsable**. Si la tarea no tiene
-responsables, le llega al propietario.
+Los recordatorios de vencimiento, por correo y en el navegador, le llegan **a cada responsable**, con sus propias
+preferencias. Si la tarea no tiene responsables, le llega **a quien la creó**.
 
 El Editor puede editar una tarea pero no borrarla. El Administrador y el Propietario pueden borrarla.
 
 ---
 
-## 8. Avisos de las causas
+## 9. Calendario y eventos
 
-Las novedades de las causas del equipo le llegan **a todos los integrantes activos**, no solo al propietario:
+Al crear o editar un evento podés vincularlo a una carpeta con el campo **Carpeta**. Ese vínculo decide a quién le
+llegan sus recordatorios:
 
-- Movimientos nuevos de las causas (PJN, Provincia de Buenos Aires, CABA y las demás jurisdicciones disponibles).
-- Cédulas y notificaciones electrónicas.
-- Altas y bajas de causas que trae la sincronización con PJN o SCBA.
-- Avisos de verificación de causas y del estado de las credenciales.
+| Evento | Recordatorio a |
+| --- | --- |
+| Vinculado a una carpeta | Quienes reciben los avisos de esa carpeta (sección 10) |
+| Sin carpeta | Quien lo creó |
 
-Cada integrante recibe los avisos **según sus propias preferencias de notificación**: modo inmediato o resumen diario, y
-qué tipos de aviso quiere. Si alguien apaga un tipo de aviso, los demás lo siguen recibiendo.
-
-La campana de notificaciones de cada integrante muestra sus propios avisos.
+En el **Calendario**, el selector **Responsable** muestra solo los eventos de un integrante (los de sus carpetas y los
+que creó sin carpeta) o los que no tienen responsable. **Imprimir** genera la lista del período que estás viendo,
+agrupada por responsable, con fecha, título y carpeta.
 
 ---
 
-## 9. Gestionar integrantes
+## 10. Avisos de las causas
+
+Las novedades de las carpetas del equipo (movimientos nuevos en cualquier jurisdicción, cédulas y notificaciones
+electrónicas, y recordatorios de los eventos vinculados) se reparten según tres reglas. Las configuran el propietario o
+un Administrador.
+
+### Regla del equipo
+
+En **Mi equipo → Avisos del equipo**:
+
+| Regla | A quién |
+| --- | --- |
+| **Todos los integrantes** (predeterminada) | A todo el equipo |
+| **Solo los responsables de cada carpeta** | A los responsables de cada carpeta. Si una carpeta no tiene responsables, a todos |
+
+### Regla de una carpeta
+
+En la franja de la carpeta, **Avisos de esta carpeta** puede quedar en **Según el equipo** (sigue la regla anterior) o
+tener la suya: **Solo responsables** o **Todos**.
+
+### Excepción por integrante
+
+En la misma tarjeta, cada integrante puede tener su modo:
+
+| Modo | Qué recibe |
+| --- | --- |
+| **Según cada carpeta** (predeterminado) | Lo que diga la regla de cada carpeta |
+| **Todo** | Todos los avisos del equipo |
+| **Solo lo mío** | Solo los de las carpetas donde es responsable |
+
+Nunca se pierde un aviso: si las reglas dejaran una novedad sin destinatario, le llega al propietario.
+
+### Lo que va a todo el equipo
+
+Las altas y bajas de causas que trae la sincronización con PJN o SCBA, la verificación de causas y el estado de las
+credenciales le llegan a todo el equipo, sin estas reglas.
+
+### Preferencias personales
+
+Cada integrante recibe sus avisos con **sus propias preferencias**: modo inmediato o resumen diario a las 19 h, y qué
+tipos quiere recibir. Los recordatorios de tareas y eventos salen cada mañana, a las 9 h. La campana de notificaciones
+muestra los avisos de cada uno.
+
+---
+
+## 11. Qué ve cada integrante
+
+El propietario o un Administrador deciden si todos ven todo el equipo o si cada uno ve solo lo suyo. Se configura en
+**Mi equipo → Qué ve cada integrante**.
+
+| Regla | Qué pasa |
+| --- | --- |
+| **Todos ven todo** (predeterminada) | Cada integrante ve todas las carpetas, tareas y eventos del equipo |
+| **Cada integrante ve solo lo suyo** | Cada uno ve solo lo suyo (ver abajo) |
+
+Además se puede hacer una excepción por persona: por ejemplo, que todos vean todo salvo un pasante, o que cada uno vea
+solo lo suyo salvo un socio.
+
+**«Lo suyo»** es:
+
+- **Carpetas** donde es responsable o que creó.
+- **Tareas** asignadas a él, creadas por él o de sus carpetas.
+- **Eventos** que creó o de sus carpetas.
+- Lo que cuelga de sus carpetas: movimientos, documentos, tareas y eventos.
+
+El propietario y los Administradores **siempre ven todo**, porque administran el equipo.
+
+La restricción es real, no solo de pantalla: si alguien abre por enlace una carpeta que no le corresponde, ve el aviso
+«Este recurso no está asignado a vos». Tampoco puede cambiar sus responsables, y no recibe avisos de las carpetas que no
+ve. También se aplica a los conectores de IA (Claude y ChatGPT).
+
+Los contactos, cálculos, notas, escritos y seguimientos postales siguen compartidos con todo el equipo.
+
+> **💡 Para estudios**: combiná «Cada integrante ve solo lo suyo» con la distribución de responsables. Cada abogado
+> trabaja con sus carpetas, recibe solo sus novedades, y los socios conservan la vista completa.
+
+---
+
+## 12. Gestionar integrantes
 
 ### Cambiar el rol
 
@@ -235,16 +369,16 @@ En cada causa, la pestaña de historial muestra quién hizo cada cambio.
 
 ---
 
-## 10. Salir del equipo
+## 13. Salir del equipo
 
 Cualquier integrante que no sea el propietario puede salir desde **Mi equipo → Abandonar equipo**. Lo que cargó queda
 en el equipo y la persona vuelve a ser un usuario individual. Después puede aceptar otra invitación o contratar un plan.
 
-El propietario no puede abandonar su equipo. Si deja de usarlo, puede eliminarlo (ver sección 11).
+El propietario no puede abandonar su equipo. Si deja de usarlo, puede eliminarlo (ver sección 14).
 
 ---
 
-## 11. Eliminar el equipo
+## 14. Eliminar el equipo
 
 Solo el propietario. Al eliminarlo:
 
@@ -254,7 +388,7 @@ Solo el propietario. Al eliminarlo:
 
 ---
 
-## 12. Tu plan y el equipo
+## 15. Tu plan y el equipo
 
 - **Un solo plan cubre a todo el equipo**: el del propietario. Los integrantes no pagan.
 - **Mejorar el plan** amplía el cupo de integrantes y los límites al instante.
@@ -265,11 +399,15 @@ Solo el propietario. Al eliminarlo:
 
 ---
 
-## 13. Consejos para estudios
+## 16. Consejos para estudios
 
 - Cargá las credenciales PJN o SCBA en la cuenta del propietario: así las causas de todo el estudio entran solas al equipo.
+- Repartí las carpetas con **Asignar responsable** desde el listado (por fuero o jurisdicción) y revisá la tarjeta
+  **Distribución de responsables**.
+- Si cada abogado lleva sus causas, poné los avisos en **Solo los responsables** y, si querés reserva, la visibilidad en
+  **Cada integrante ve solo lo suyo**.
 - Asigná cada tarea a su abogado y pedile a cada uno que trabaje desde **Mis tareas**.
-- Revisá **Sin asignar** una vez por semana para que nada quede sin dueño.
+- Revisá **Sin asignar** y **Sin responsable** una vez por semana para que nada quede sin dueño.
 - Pedile a cada integrante que ajuste sus preferencias de notificación: el que quiere todo al instante, modo inmediato;
   el que prefiere un resumen, el resumen diario.
 - Usá Editor para quien trabaja las causas y reservá Administrador para los socios.
@@ -284,8 +422,11 @@ Solo el propietario. Al eliminarlo:
 | **Datos compartidos** | Causas, contactos, cálculos, notas, calendario, tareas, escritos y seguimiento postal |
 | **Roles** | Propietario, Administrador, Editor y Visualizador |
 | **Invitaciones** | Por correo, válidas 7 días; los invitados pueden ser cuentas Free |
-| **Tareas** | Responsables, vistas «Mis tareas / Todas / Sin asignar» y recordatorios a cada responsable |
-| **Avisos** | Novedades de las causas a todos los integrantes, con sus preferencias |
+| **Responsables** | Por carpeta, de a una o en masa, con distribución imprimible y CSV |
+| **Tareas** | Responsables, vistas y filtro por integrante, impresión y recordatorios a cada responsable |
+| **Calendario** | Eventos vinculados a carpetas, filtro por responsable e impresión |
+| **Avisos** | Regla del equipo, de cada carpeta y de cada integrante |
+| **Visibilidad** | Todos ven todo o cada uno ve lo suyo; propietario y administradores ven todo |
 | **Migración** | Al unirse, migrar lo propio, migrarlo archivado o borrarlo |
 | **Un equipo por persona** | Para cambiar de equipo, primero hay que salir |
 
@@ -303,6 +444,8 @@ Solo el propietario. Al eliminarlo:
 - invitaciones
 - tareas asignadas
 - responsables
+- distribución
+- visibilidad
 - notificaciones
 - migración
 
