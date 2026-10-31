@@ -17,6 +17,7 @@ import { Refresh, CloseCircle, Sms, Clock } from "iconsax-react";
 import { useDispatch } from "store";
 import { cancelInvitation, resendInvitation } from "store/reducers/teams";
 import { TeamInvitation, ROLE_CONFIG } from "types/teams";
+import { openSnackbar } from "store/reducers/snackbar";
 import { useTeam } from "contexts/TeamContext";
 import RoleBadge from "./RoleBadge";
 import ConfirmDialog from "components/dialogs/ConfirmDialog";
@@ -33,24 +34,42 @@ export default function PendingInvitationsList({ onInvitationUpdated }: PendingI
 
 	const [selectedInvitation, setSelectedInvitation] = useState<TeamInvitation | null>(null);
 	const [confirmCancel, setConfirmCancel] = useState(false);
+	// Reenviar también pide confirmación: en el celular un toque sin querer mandaba el correo (31/10/2026).
+	const [confirmResend, setConfirmResend] = useState(false);
 	const [isUpdating, setIsUpdating] = useState(false);
 
 	const pendingInvitations = activeTeam?.invitations?.filter((i) => i.status === "pending") || [];
 
-	const handleResend = async (invitation: TeamInvitation) => {
-		if (!activeTeam) return;
+	const handleResendClick = (invitation: TeamInvitation) => {
+		setSelectedInvitation(invitation);
+		setConfirmResend(true);
+	};
+
+	const handleConfirmResend = async () => {
+		if (!activeTeam || !selectedInvitation) return;
 
 		setIsUpdating(true);
+		setConfirmResend(false);
 
 		try {
-			const result = await dispatch(resendInvitation(activeTeam._id, invitation._id) as any);
+			const result = await dispatch(resendInvitation(activeTeam._id, selectedInvitation._id) as any);
 
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: result.success ? "Invitación reenviada" : result.message || "No se pudo reenviar la invitación",
+					variant: "alert",
+					alert: { color: result.success ? "success" : "warning" },
+					close: true,
+				}),
+			);
 			if (result.success) {
 				await refreshActiveTeam();
 				onInvitationUpdated?.();
 			}
 		} finally {
 			setIsUpdating(false);
+			setSelectedInvitation(null);
 		}
 	};
 
@@ -171,7 +190,7 @@ export default function PendingInvitationsList({ onInvitationUpdated }: PendingI
 								{canManageMembers && (
 									<Stack direction="row" spacing={0.5} justifyContent="flex-end" sx={{ flexShrink: 0, ml: { sm: 1 } }}>
 										<Tooltip title="Reenviar invitación">
-											<IconButton size="small" onClick={() => handleResend(invitation)} disabled={isUpdating} sx={actionBtnSx}>
+											<IconButton size="small" onClick={() => handleResendClick(invitation)} disabled={isUpdating} sx={actionBtnSx}>
 												<Refresh size={18} />
 											</IconButton>
 										</Tooltip>
@@ -187,6 +206,18 @@ export default function PendingInvitationsList({ onInvitationUpdated }: PendingI
 					})}
 				</List>
 			</Paper>
+
+			<ConfirmDialog
+				open={confirmResend}
+				title="Reenviar invitación"
+				content={`Se va a enviar de nuevo el correo de invitación a ${selectedInvitation?.email}.`}
+				confirmText="Reenviar"
+				onConfirm={handleConfirmResend}
+				onCancel={() => {
+					setConfirmResend(false);
+					setSelectedInvitation(null);
+				}}
+			/>
 
 			{/* Confirm Cancel Dialog */}
 			<ConfirmDialog
