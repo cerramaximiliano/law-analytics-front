@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
 import {
+	Alert,
 	Box,
 	Button,
 	Grid,
@@ -31,7 +32,9 @@ import { CloseSquare, Lock, People, Crown, InfoCircle, Warning2 } from "iconsax-
 // project-imports
 import PlanCard from "components/cards/PlanCard";
 import ApiService, { Plan, ResourceLimit, PlanFeature } from "store/reducers/ApiService";
-import { dispatch } from "store";
+import { useSelector } from "react-redux";
+import { dispatch, RootState } from "store";
+import { extraFoldersEndingText, purchasedExtraFolderBlocks } from "utils/extraFoldersNotice";
 import { openSnackbar } from "store/reducers/snackbar";
 import { fetchCurrentSubscription } from "store/reducers/auth";
 import TabLegalDocuments from "./TabPanel";
@@ -96,6 +99,15 @@ const Pricing = () => {
 	// pago). Con plan pago el add-on se suma desde su tarjeta y los CTAs de cambio de
 	// plan no cambian.
 	const addonCheckout = usePlanCheckoutAddon();
+
+	// Bloques de Causas adicionales (solo Premium): los diálogos de bajar de plan y de baja
+	// avisan que terminan. Se leen de Redux (auth.subscription trae los add-ons).
+	const reduxSubscription = useSelector((state: RootState) => state.auth.subscription);
+	const extraFoldersNote = (reason: "downgrade" | "cancellation") =>
+		extraFoldersEndingText(purchasedExtraFolderBlocks(reduxSubscription), {
+			endDate: currentSubscription?.currentPeriodEnd || reduxSubscription?.currentPeriodEnd,
+			reason,
+		});
 
 	// Función helper para actualizar el estado de la suscripción sin recargar la página
 	const updateSubscriptionState = (
@@ -1774,6 +1786,11 @@ const Pricing = () => {
 					</Stack>
 				</Box>
 				<DialogContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+					{targetPlanId && targetPlanId !== "premium" && extraFoldersNote(targetPlanId === "free" ? "cancellation" : "downgrade") && (
+						<Alert severity="warning" sx={{ mb: 2 }} data-testid="downgrade-extra-folders-note">
+							{extraFoldersNote(targetPlanId === "free" ? "cancellation" : "downgrade")}
+						</Alert>
+					)}
 					<FormControl component="fieldset" sx={{ width: "100%" }}>
 						<RadioGroup
 							aria-label="opciones-downgrade"
@@ -1954,6 +1971,11 @@ const Pricing = () => {
 									<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>
 										• No se realizarán más cargos automáticos
 									</Typography>
+									{extraFoldersNote("cancellation") && (
+										<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+											• {extraFoldersNote("cancellation")}
+										</Typography>
+									)}
 								</Stack>
 							</Stack>
 						</Box>

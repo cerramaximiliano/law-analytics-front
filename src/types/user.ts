@@ -63,11 +63,13 @@ export interface Subscription {
 	plan: "free" | "standard" | "pro" | "premium";
 	status: "active" | "canceled" | "past_due" | "trialing" | "incomplete" | "unpaid" | "incomplete_expired";
 	addons?: Array<{
-		key: "mcp_access";
+		key: "mcp_access" | "extra_folders";
 		status: "active" | "past_due" | "canceled" | "incomplete";
 		stripeSubscriptionItemId?: string;
 		stripePriceId?: string;
 		currentPeriodEnd?: string;
+		/** extra_folders: bloques comprados (sin el campo cuenta 1). */
+		quantity?: number;
 	}>;
 	currentPeriodStart: Date;
 	currentPeriodEnd: Date;
