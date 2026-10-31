@@ -1,6 +1,6 @@
 // sections/apps/teams/RoleBadge.tsx
 import { Chip, ChipProps } from "@mui/material";
-import { TeamRole, ROLE_CONFIG } from "types/teams";
+import { TeamRole, ROLE_CONFIG, ADMIN_CHIP_TEXT_COLOR } from "types/teams";
 
 interface RoleBadgeProps {
 	role: TeamRole | "owner";
@@ -24,6 +24,7 @@ export default function RoleBadge({ role, size = "small", variant = "filled" }: 
 			sx={{
 				fontWeight: 500,
 				minWidth: 90,
+				...(role === "admin" && { color: ADMIN_CHIP_TEXT_COLOR }),
 			}}
 		/>
 	);

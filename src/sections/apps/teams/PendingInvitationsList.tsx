@@ -5,7 +5,6 @@ import {
 	List,
 	ListItem,
 	ListItemText,
-	ListItemSecondaryAction,
 	IconButton,
 	Typography,
 	Tooltip,
@@ -21,6 +20,8 @@ import { TeamInvitation, ROLE_CONFIG } from "types/teams";
 import { useTeam } from "contexts/TeamContext";
 import RoleBadge from "./RoleBadge";
 import ConfirmDialog from "components/dialogs/ConfirmDialog";
+
+const actionBtnSx = { width: { xs: 44, sm: 30 }, height: { xs: 44, sm: 30 } };
 
 interface PendingInvitationsListProps {
 	onInvitationUpdated?: () => void;
@@ -117,7 +118,7 @@ export default function PendingInvitationsList({ onInvitationUpdated }: PendingI
 
 	return (
 		<>
-			<Paper variant="outlined" sx={{ p: 2 }}>
+			<Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 } }}>
 				<Typography variant="subtitle1" fontWeight={600} gutterBottom>
 					Invitaciones Pendientes ({pendingInvitations.length})
 				</Typography>
@@ -131,6 +132,9 @@ export default function PendingInvitationsList({ onInvitationUpdated }: PendingI
 							<ListItem
 								key={invitation._id}
 								sx={{
+									flexDirection: { xs: "column", sm: "row" },
+									alignItems: { xs: "stretch", sm: "center" },
+									px: { xs: 0.5, sm: 2 },
 									bgcolor: expired ? "action.disabledBackground" : "transparent",
 									borderRadius: 1,
 									mb: 0.5,
@@ -138,17 +142,17 @@ export default function PendingInvitationsList({ onInvitationUpdated }: PendingI
 							>
 								<ListItemText
 									primary={
-										<Stack direction="row" alignItems="center" spacing={1}>
-											<Sms size={16} />
-											<Typography variant="body2" fontWeight={500}>
+										<Stack direction="row" alignItems="center" flexWrap="wrap" gap={1}>
+											<Sms size={16} style={{ flexShrink: 0 }} />
+											<Typography variant="body2" fontWeight={500} sx={{ minWidth: 0, overflowWrap: "anywhere" }}>
 												{invitation.email}
 											</Typography>
 											<RoleBadge role={invitation.role} size="small" />
 										</Stack>
 									}
 									secondary={
-										<Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
-											<Clock size={14} />
+										<Stack direction="row" alignItems="center" flexWrap="wrap" gap={1} sx={{ mt: 0.5 }}>
+											<Clock size={14} style={{ flexShrink: 0 }} />
 											<Typography variant="caption" color="text.secondary">
 												Enviada: {formatDate(invitation.sentAt)}
 											</Typography>
@@ -165,20 +169,18 @@ export default function PendingInvitationsList({ onInvitationUpdated }: PendingI
 									}
 								/>
 								{canManageMembers && (
-									<ListItemSecondaryAction>
-										<Stack direction="row" spacing={0.5}>
-											<Tooltip title="Reenviar invitación">
-												<IconButton size="small" onClick={() => handleResend(invitation)} disabled={isUpdating}>
-													<Refresh size={18} />
-												</IconButton>
-											</Tooltip>
-											<Tooltip title="Cancelar invitación">
-												<IconButton size="small" color="error" onClick={() => handleCancelClick(invitation)} disabled={isUpdating}>
-													<CloseCircle size={18} />
-												</IconButton>
-											</Tooltip>
-										</Stack>
-									</ListItemSecondaryAction>
+									<Stack direction="row" spacing={0.5} justifyContent="flex-end" sx={{ flexShrink: 0, ml: { sm: 1 } }}>
+										<Tooltip title="Reenviar invitación">
+											<IconButton size="small" onClick={() => handleResend(invitation)} disabled={isUpdating} sx={actionBtnSx}>
+												<Refresh size={18} />
+											</IconButton>
+										</Tooltip>
+										<Tooltip title="Cancelar invitación">
+											<IconButton size="small" color="error" onClick={() => handleCancelClick(invitation)} disabled={isUpdating} sx={actionBtnSx}>
+												<CloseCircle size={18} />
+											</IconButton>
+										</Tooltip>
+									</Stack>
 								)}
 							</ListItem>
 						);

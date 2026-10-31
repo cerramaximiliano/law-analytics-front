@@ -30,6 +30,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 import { useTeam } from "contexts/TeamContext";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import { getTeamAssignees } from "utils/teamAssignees";
+import { stackedTableSx, wrapOnMobileSx } from "./stackedTableSx";
 
 export type TeamVisibilityMode = "todo" | "propio";
 
@@ -173,7 +174,7 @@ export default function TeamVisibilityCard() {
 	} as const;
 
 	return (
-		<Paper variant="outlined" sx={{ p: 2, borderRadius: 2, borderColor: alpha(BRAND_BLUE, 0.14) }}>
+		<Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, borderColor: alpha(BRAND_BLUE, 0.14) }}>
 			<Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
 				<Eye size={18} />
 				<Typography variant="subtitle2" fontWeight={600}>
@@ -219,7 +220,7 @@ export default function TeamVisibilityCard() {
 					<Box>
 						<Typography sx={{ ...headCellSx, mb: 0.5 }}>Por integrante</Typography>
 						<TableContainer>
-							<Table size="small">
+							<Table size="small" sx={stackedTableSx}>
 								<TableHead>
 									<TableRow>
 										<TableCell sx={headCellSx}>Integrante</TableCell>
@@ -235,12 +236,12 @@ export default function TeamVisibilityCard() {
 														{a.initials}
 													</Avatar>
 													<Box sx={{ minWidth: 0 }}>
-														<Typography variant="body2" fontWeight={500} noWrap>
+														<Typography variant="body2" fontWeight={500} noWrap sx={wrapOnMobileSx}>
 															{a.name}
 															{a.isOwner ? " · Propietario" : roleById.get(a.id) === "admin" ? " · Administrador" : ""}
 														</Typography>
 														{a.email && a.email !== a.name && (
-															<Typography variant="caption" color="text.secondary" noWrap component="div">
+															<Typography variant="caption" color="text.secondary" noWrap component="div" sx={wrapOnMobileSx}>
 																{a.email}
 															</Typography>
 														)}

@@ -8,6 +8,7 @@ import { useTeam } from "contexts/TeamContext";
 import { fetchGroupFoldersForDistribution } from "store/reducers/folder";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import { getTeamAssignees } from "utils/teamAssignees";
+import { wrapOnMobileSx } from "./stackedTableSx";
 import {
 	buildDistributionCsv,
 	buildPrintHtml,
@@ -96,7 +97,7 @@ export default function TeamResponsablesDistributionCard() {
 	} as const;
 
 	return (
-		<Paper variant="outlined" sx={{ p: 2, borderRadius: 2, borderColor: alpha(BRAND_BLUE, 0.14) }}>
+		<Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, borderColor: alpha(BRAND_BLUE, 0.14) }}>
 			<Stack direction={{ xs: "column", sm: "row" }} alignItems={{ xs: "flex-start", sm: "center" }} spacing={1} sx={{ mb: 0.5 }}>
 				<Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1 }}>
 					<People size={18} />
@@ -179,13 +180,13 @@ export default function TeamResponsablesDistributionCard() {
 											variant="body2"
 											fontWeight={600}
 											noWrap
-											sx={isNone ? { fontStyle: "italic", color: "text.secondary" } : undefined}
+											sx={isNone ? { fontStyle: "italic", color: "text.secondary" } : wrapOnMobileSx}
 										>
 											{g.label}
 											{g.isOwner ? " · Propietario" : ""}
 										</Typography>
 										{g.email && g.email !== g.label && (
-											<Typography variant="caption" color="text.secondary" noWrap component="div">
+											<Typography variant="caption" color="text.secondary" noWrap component="div" sx={wrapOnMobileSx}>
 												{g.email}
 											</Typography>
 										)}
@@ -196,9 +197,9 @@ export default function TeamResponsablesDistributionCard() {
 								</Stack>
 								{g.items.length > 0 && (
 									<>
-										<Stack component="ul" spacing={0.25} sx={{ m: 0, pl: isNone ? 2.5 : 7 }}>
+										<Stack component="ul" spacing={0.25} sx={{ m: 0, pl: isNone ? 2.5 : { xs: 2.5, sm: 7 } }}>
 											{visible.map((f) => (
-												<Typography component="li" key={f._id} variant="body2" sx={{ fontSize: "0.82rem" }}>
+												<Typography component="li" key={f._id} variant="body2" sx={{ fontSize: "0.82rem", overflowWrap: "anywhere" }}>
 													{f.folderName || "Sin carátula"}
 													{folderExpediente(f) && (
 														<Typography component="span" variant="caption" color="text.secondary">
@@ -214,7 +215,7 @@ export default function TeamResponsablesDistributionCard() {
 												size="small"
 												onClick={() => setExpanded((prev) => ({ ...prev, [g.key]: !isOpen }))}
 												endIcon={isOpen ? <ArrowUp2 size={14} /> : <ArrowDown2 size={14} />}
-												sx={{ textTransform: "none", ml: isNone ? 1.5 : 6, mt: 0.5, color: BRAND_BLUE, fontSize: "0.75rem" }}
+												sx={{ textTransform: "none", ml: isNone ? 1.5 : { xs: 1.5, sm: 6 }, mt: 0.5, color: BRAND_BLUE, fontSize: "0.75rem" }}
 											>
 												{isOpen ? "Ver menos" : `Ver ${hidden} más`}
 											</Button>

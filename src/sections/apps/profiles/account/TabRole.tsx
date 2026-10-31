@@ -201,7 +201,7 @@ const TabRole = () => {
 						{rightSlot}
 					</Stack>
 				</Box>
-				<Box sx={{ p: { xs: 2, sm: 2.5 } }}>{children}</Box>
+				<Box sx={{ p: { xs: 1.5, sm: 2.5 } }}>{children}</Box>
 			</Box>
 		);
 	};
