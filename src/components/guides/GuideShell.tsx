@@ -7,6 +7,7 @@ import {
 	Button,
 	Typography,
 	Box,
+	LinearProgress,
 	Stack,
 	Step,
 	Stepper,
@@ -167,7 +168,7 @@ const GuideShell: React.FC<GuideShellProps> = ({ open, onClose, icon, eyebrow = 
 								letterSpacing: "-0.005em",
 								overflow: "hidden",
 								textOverflow: "ellipsis",
-								whiteSpace: "nowrap",
+								whiteSpace: { xs: "normal", sm: "nowrap" },
 							}}
 						>
 							{subtitle}
@@ -177,51 +178,67 @@ const GuideShell: React.FC<GuideShellProps> = ({ open, onClose, icon, eyebrow = 
 			</DialogTitle>
 
 			{/* ─── Stepper + Content ─── */}
-			<DialogContent sx={{ p: 0 }}>
-				<Box
-					sx={{
-						px: { xs: 1.5, sm: 3 },
-						pt: 2.5,
-						pb: 1.5,
-						bgcolor: alpha(BRAND_BLUE, isDark ? 0.025 : 0.015),
-						borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.12 : 0.07)}`,
-					}}
-				>
-					<Stepper
-						activeStep={activeStep}
-						alternativeLabel
+			<DialogContent sx={{ p: 0, overflowX: "hidden" }}>
+				{/* En pantalla chica los pasos no entran: una barra de progreso y el «Paso n de N» del contenido */}
+				{fullScreen ? (
+					<LinearProgress
+						variant="determinate"
+						value={((activeStep + 1) / steps.length) * 100}
+						aria-label={`Paso ${activeStep + 1} de ${steps.length}`}
 						sx={{
-							"& .MuiStepLabel-label": {
-								fontSize: "0.72rem",
-								letterSpacing: "-0.005em",
-								mt: 0.75,
-								"&.Mui-active": { color: BRAND_BLUE, fontWeight: 600 },
-								"&.Mui-completed": { color: "text.primary", fontWeight: 500 },
-							},
-							"& .MuiStepIcon-root": {
-								color: alpha(BRAND_BLUE, isDark ? 0.2 : 0.16),
-								"&.Mui-active": { color: BRAND_BLUE },
-								"&.Mui-completed": { color: BRAND_BLUE },
-							},
-							"& .MuiStepConnector-line": {
-								borderColor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.12),
-							},
+							height: 4,
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.12),
+							"& .MuiLinearProgress-bar": { bgcolor: BRAND_BLUE },
+						}}
+					/>
+				) : (
+					<Box
+						sx={{
+							px: 3,
+							pt: 2.5,
+							pb: 1.5,
+							overflowX: "auto",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.025 : 0.015),
+							borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.12 : 0.07)}`,
 						}}
 					>
-						{steps.map((step, idx) => (
-							<Step key={idx}>
-								<StepLabel>{step.title}</StepLabel>
-							</Step>
-						))}
-					</Stepper>
-				</Box>
+						<Stepper
+							activeStep={activeStep}
+							alternativeLabel
+							sx={{
+								"& .MuiStepLabel-label": {
+									fontSize: "0.72rem",
+									letterSpacing: "-0.005em",
+									mt: 0.75,
+									"&.Mui-active": { color: BRAND_BLUE, fontWeight: 600 },
+									"&.Mui-completed": { color: "text.primary", fontWeight: 500 },
+								},
+								"& .MuiStepIcon-root": {
+									color: alpha(BRAND_BLUE, isDark ? 0.2 : 0.16),
+									"&.Mui-active": { color: BRAND_BLUE },
+									"&.Mui-completed": { color: BRAND_BLUE },
+								},
+								"& .MuiStepConnector-line": {
+									borderColor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.12),
+								},
+							}}
+						>
+							{steps.map((step, idx) => (
+								<Step key={idx}>
+									<StepLabel>{step.title}</StepLabel>
+								</Step>
+							))}
+						</Stepper>
+					</Box>
+				)}
 
 				<Box
 					sx={{
 						p: { xs: 2, sm: 3 },
-						minHeight: 400,
-						maxHeight: { xs: "calc(100vh - 280px)", md: 500 },
-						overflowY: "auto",
+						minHeight: { xs: 0, md: 400 },
+						maxHeight: { xs: "none", md: 500 },
+						overflowY: { xs: "visible", md: "auto" },
+						overflowWrap: "break-word",
 					}}
 				>
 					{/* Title del paso */}

@@ -385,7 +385,7 @@ export const LimitsContent = () => {
 				<Typography variant="h3">Guía de Límites y Almacenamiento</Typography>
 			</Box>
 
-			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
+			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3, pb: 1, overflowX: "auto" }}>
 				{steps.map((step, index) => (
 					<Step key={index}>
 						<StepLabel>{step.title}</StepLabel>
