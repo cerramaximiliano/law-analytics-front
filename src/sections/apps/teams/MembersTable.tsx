@@ -24,14 +24,23 @@ import {
 import { More, UserMinus, ShieldTick, Edit2, Eye, Crown } from "iconsax-react";
 import { useDispatch, useSelector } from "store";
 import { updateMemberRole, removeMember } from "store/reducers/teams";
-import { TeamMember, TeamRole, ROLE_CONFIG } from "types/teams";
+import { TeamMember, TeamRole, ROLE_CONFIG, ADMIN_CHIP_TEXT_COLOR } from "types/teams";
 import { useTeam } from "contexts/TeamContext";
 import RoleBadge from "./RoleBadge";
+import { MOBILE_ONLY, stackedRowSx, stackedTableSx } from "./stackedTableSx";
 import ConfirmDialog from "components/dialogs/ConfirmDialog";
 
 interface MembersTableProps {
 	onMemberUpdated?: () => void;
 }
+
+// En mobile, cada fila: nombre y correo arriba; rol y acciones abajo.
+const membersTableSx = {
+	[MOBILE_ONLY]: {
+		...stackedTableSx[MOBILE_ONLY],
+		"& tbody tr": { ...stackedRowSx, display: "grid", gridTemplateColumns: "1fr auto", alignItems: "center" },
+	},
+};
 
 // Skeleton row component for loading state
 const MemberRowSkeleton = () => (
@@ -192,8 +201,8 @@ export default function MembersTable({ onMemberUpdated }: MembersTableProps) {
 
 	return (
 		<>
-			<TableContainer component={Paper} variant="outlined">
-				<Table size="small">
+			<TableContainer component={Paper} variant="outlined" sx={{ px: { xs: 1.25, sm: 0 } }}>
+				<Table size="small" sx={membersTableSx}>
 					<TableHead>
 						<TableRow>
 							<TableCell>Miembro</TableCell>
@@ -210,22 +219,30 @@ export default function MembersTable({ onMemberUpdated }: MembersTableProps) {
 
 							return (
 								<TableRow key={member.userId} hover>
-									<TableCell>
+									<TableCell sx={{ gridColumn: "1 / -1" }}>
 										<Stack direction="row" alignItems="center" spacing={1.5}>
 											<Avatar src={member.avatar} sx={{ width: 32, height: 32 }}>
 												{fullName ? fullName[0].toUpperCase() : member.email?.[0]?.toUpperCase() || "?"}
 											</Avatar>
-											<Box>
+											<Box sx={{ minWidth: 0 }}>
 												<Typography variant="body2" fontWeight={500}>
 													{fullName || "Sin nombre"}
 													{isCurrentUser && (
 														<Chip label="Tú" size="small" color="primary" variant="outlined" sx={{ ml: 1, height: 20, fontSize: 10 }} />
 													)}
 												</Typography>
+												{/* En mobile no hay columna de email: va debajo del nombre */}
+												<Typography
+													variant="caption"
+													color="text.secondary"
+													sx={{ display: { xs: "block", sm: "none" }, overflowWrap: "anywhere" }}
+												>
+													{member.email || "-"}
+												</Typography>
 											</Box>
 										</Stack>
 									</TableCell>
-									<TableCell>
+									<TableCell sx={{ display: { xs: "none !important", sm: "table-cell !important" } }}>
 										<Typography variant="body2" color="text.secondary">
 											{member.email || "-"}
 										</Typography>
@@ -239,7 +256,12 @@ export default function MembersTable({ onMemberUpdated }: MembersTableProps) {
 									<TableCell align="right">
 										{canEdit && (
 											<Tooltip title="Opciones">
-												<IconButton size="small" onClick={(e) => handleMenuOpen(e, member as unknown as TeamMember)} disabled={isUpdating}>
+												<IconButton
+													size="small"
+													onClick={(e) => handleMenuOpen(e, member as unknown as TeamMember)}
+													disabled={isUpdating}
+													sx={{ width: { xs: 44, sm: 30 }, height: { xs: 44, sm: 30 } }}
+												>
 													<More size={18} style={{ transform: "rotate(90deg)" }} />
 												</IconButton>
 											</Tooltip>
@@ -264,7 +286,7 @@ export default function MembersTable({ onMemberUpdated }: MembersTableProps) {
 							<ShieldTick size={18} />
 						</ListItemIcon>
 						<ListItemText>
-							<Chip label={ROLE_CONFIG.admin.label} color={ROLE_CONFIG.admin.color} size="small" />
+							<Chip label={ROLE_CONFIG.admin.label} color={ROLE_CONFIG.admin.color} size="small" sx={{ color: ADMIN_CHIP_TEXT_COLOR }} />
 						</ListItemText>
 					</MenuItem>
 				)}

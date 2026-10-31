@@ -30,6 +30,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 import { useTeam } from "contexts/TeamContext";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import { getTeamAssignees } from "utils/teamAssignees";
+import { stackedTableSx, wrapOnMobileSx } from "./stackedTableSx";
 
 export type TeamDefaultPolicy = "todos" | "responsables";
 export type TeamMemberNotificationMode = "segun_carpeta" | "todo" | "solo_lo_mio";
@@ -162,7 +163,7 @@ export default function TeamNotificationsCard() {
 	} as const;
 
 	return (
-		<Paper variant="outlined" sx={{ p: 2, borderRadius: 2, borderColor: alpha(BRAND_BLUE, 0.14) }}>
+		<Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, borderColor: alpha(BRAND_BLUE, 0.14) }}>
 			<Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
 				<Notification size={18} />
 				<Typography variant="subtitle2" fontWeight={600}>
@@ -211,7 +212,7 @@ export default function TeamNotificationsCard() {
 							carpetas donde es responsable.
 						</Typography>
 						<TableContainer>
-							<Table size="small">
+							<Table size="small" sx={stackedTableSx}>
 								<TableHead>
 									<TableRow>
 										<TableCell sx={headCellSx}>Integrante</TableCell>
@@ -227,12 +228,12 @@ export default function TeamNotificationsCard() {
 														{a.initials}
 													</Avatar>
 													<Box sx={{ minWidth: 0 }}>
-														<Typography variant="body2" fontWeight={500} noWrap>
+														<Typography variant="body2" fontWeight={500} noWrap sx={wrapOnMobileSx}>
 															{a.name}
 															{a.isOwner ? " · Propietario" : ""}
 														</Typography>
 														{a.email && a.email !== a.name && (
-															<Typography variant="caption" color="text.secondary" noWrap component="div">
+															<Typography variant="caption" color="text.secondary" noWrap component="div" sx={wrapOnMobileSx}>
 																{a.email}
 															</Typography>
 														)}

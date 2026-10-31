@@ -18,7 +18,7 @@ import { Add, CloseCircle, Send2 } from "iconsax-react";
 import { useDispatch } from "store";
 import { sendInvitations } from "store/reducers/teams";
 import { trackActivity } from "utils/productAnalytics";
-import { TeamRole, ROLE_CONFIG, SendInvitationRequest } from "types/teams";
+import { TeamRole, ROLE_CONFIG, ADMIN_CHIP_TEXT_COLOR, SendInvitationRequest } from "types/teams";
 import { useTeam, useTeamsFeature } from "contexts/TeamContext";
 
 interface InviteEntry {
@@ -189,7 +189,7 @@ export default function InviteMembersForm({ onSuccess }: InviteMembersFormProps)
 	}
 
 	return (
-		<Paper variant="outlined" sx={{ p: 2 }}>
+		<Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 } }}>
 			<Typography variant="subtitle1" fontWeight={600} gutterBottom>
 				Invitar Miembros
 			</Typography>
@@ -212,7 +212,7 @@ export default function InviteMembersForm({ onSuccess }: InviteMembersFormProps)
 
 			<Stack spacing={2}>
 				{invites.map((invite, index) => (
-					<Stack key={index} direction="row" spacing={1} alignItems="center">
+					<Stack key={index} direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ xs: "stretch", sm: "center" }}>
 						<TextField
 							label="Email"
 							type="email"
@@ -224,7 +224,7 @@ export default function InviteMembersForm({ onSuccess }: InviteMembersFormProps)
 							disabled={isSubmitting}
 						/>
 
-						<FormControl size="small" sx={{ minWidth: 140 }}>
+						<FormControl size="small" sx={{ minWidth: { sm: 140 } }}>
 							<InputLabel>Rol</InputLabel>
 							<Select
 								value={invite.role}
@@ -235,7 +235,7 @@ export default function InviteMembersForm({ onSuccess }: InviteMembersFormProps)
 							>
 								{userRole === "owner" && (
 									<MenuItem value="admin">
-										<Chip label={ROLE_CONFIG.admin.label} color={ROLE_CONFIG.admin.color} size="small" />
+										<Chip label={ROLE_CONFIG.admin.label} color={ROLE_CONFIG.admin.color} size="small" sx={{ color: ADMIN_CHIP_TEXT_COLOR }} />
 									</MenuItem>
 								)}
 								<MenuItem value="editor">
@@ -248,14 +248,20 @@ export default function InviteMembersForm({ onSuccess }: InviteMembersFormProps)
 						</FormControl>
 
 						{invites.length > 1 && (
-							<IconButton size="small" onClick={() => handleRemoveInvite(index)} disabled={isSubmitting} color="error">
+							<IconButton
+								size="small"
+								onClick={() => handleRemoveInvite(index)}
+								disabled={isSubmitting}
+								color="error"
+								sx={{ alignSelf: { xs: "flex-end", sm: "center" } }}
+							>
 								<CloseCircle size={18} />
 							</IconButton>
 						)}
 					</Stack>
 				))}
 
-				<Stack direction="row" spacing={2} justifyContent="space-between">
+				<Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 1, sm: 2 }} justifyContent="space-between">
 					<Button
 						variant="outlined"
 						size="small"

@@ -55,15 +55,15 @@ const AccountProfile = () => {
 		"& .MuiTab-root": {
 			textTransform: "none",
 			fontWeight: 600,
-			fontSize: "0.85rem",
+			fontSize: { xs: "0.78rem", sm: "0.85rem" },
 			letterSpacing: "-0.005em",
 			color: "text.secondary",
 			minHeight: 44,
 			py: 1,
-			px: { xs: 1, sm: 2 },
+			px: { xs: 0.5, sm: 2 },
 			minWidth: { xs: 0, sm: 90 },
 			"& .MuiTab-iconWrapper": {
-				// En mobile, sin ícono para que las pestañas entren sin desplazarlas
+				// En mobile, sin ícono para que las pestañas entren sin desplazarlas (también las cuatro)
 				display: { xs: "none", sm: "inline-flex" },
 				color: "text.secondary",
 				transition: "color 0.15s ease",

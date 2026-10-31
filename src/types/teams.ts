@@ -126,6 +126,9 @@ export const TEAM_PERMISSIONS: Record<TeamRole, readonly TeamAction[]> = {
 	viewer: ["read"],
 } as const;
 
+// Texto del chip de administrador: el fondo amarillo del tema no se lee con el texto blanco por defecto
+export const ADMIN_CHIP_TEXT_COLOR = "#4a3500";
+
 // Role display names and colors for UI
 export const ROLE_CONFIG: Record<TeamRole | "owner", { label: string; color: "error" | "warning" | "info" | "success" }> = {
 	owner: { label: "Propietario", color: "error" },
