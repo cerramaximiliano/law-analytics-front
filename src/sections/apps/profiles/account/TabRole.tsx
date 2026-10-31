@@ -108,6 +108,7 @@ const TabRole = () => {
 		border: `1px solid ${alpha(errorColor, isDark ? 0.32 : 0.22)}`,
 		px: 1.75,
 		py: 0.5,
+		minHeight: { xs: 44, sm: 0 },
 		fontSize: "0.78rem",
 		"&:hover": {
 			bgcolor: alpha(errorColor, isDark ? 0.14 : 0.08),
@@ -119,6 +120,8 @@ const TabRole = () => {
 		height: 30,
 		borderRadius: 1,
 		color: "text.secondary",
+		// Área táctil de 44 px en mobile sin cambiar el tamaño visible
+		"&::after": { content: '""', position: "absolute", inset: { xs: -7, sm: 0 } },
 		"&:hover": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) },
 	};
 
@@ -280,7 +283,7 @@ const TabRole = () => {
 						position: "relative",
 						overflow: "hidden",
 						borderRadius: 2,
-						p: { xs: 3, md: 4 },
+						p: { xs: 2, sm: 3, md: 4 },
 						bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
 						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)}`,
 					}}
@@ -342,31 +345,30 @@ const TabRole = () => {
 									Miembro de equipo
 								</Typography>
 							</Stack>
-							<Stack direction="row" alignItems="center" spacing={0.875}>
-								<Typography
-									sx={{
-										fontSize: { xs: "1.25rem", md: "1.4rem" },
-										fontWeight: 600,
-										letterSpacing: "-0.015em",
-										color: "text.primary",
-										textAlign: "center",
-									}}
-								>
-									Sos parte de {activeTeam?.name}
-								</Typography>
+							{/* El ícono va en línea con el texto para que el título con varias líneas quede centrado */}
+							<Typography
+								sx={{
+									fontSize: { xs: "1.25rem", md: "1.4rem" },
+									fontWeight: 600,
+									letterSpacing: "-0.015em",
+									color: "text.primary",
+									textAlign: "center",
+								}}
+							>
+								Sos parte de {activeTeam?.name}
 								<Tooltip title="Ver guía de equipos">
-									<IconButton onClick={() => setGuideOpen(true)} sx={iconBtnSx}>
+									<IconButton onClick={() => setGuideOpen(true)} sx={{ ...iconBtnSx, ml: 0.5, my: -0.5, verticalAlign: "middle" }}>
 										<InfoCircle size={16} variant="Bulk" />
 									</IconButton>
 								</Tooltip>
-							</Stack>
+							</Typography>
 						</Stack>
 
 						<Box
 							sx={{
 								width: "100%",
 								maxWidth: 520,
-								p: 2,
+								p: { xs: 1.5, sm: 2 },
 								borderRadius: 1.5,
 								bgcolor: "background.paper",
 								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
@@ -416,7 +418,7 @@ const TabRole = () => {
 
 						<Box
 							sx={{
-								p: 1.75,
+								p: { xs: 1.25, sm: 1.75 },
 								borderRadius: 1.25,
 								bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
 								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
@@ -457,7 +459,7 @@ const TabRole = () => {
 						position: "relative",
 						overflow: "hidden",
 						borderRadius: 2,
-						p: { xs: 3, md: 4 },
+						p: { xs: 2, sm: 3, md: 4 },
 						bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
 						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)}`,
 						textAlign: "center",
@@ -545,7 +547,7 @@ const TabRole = () => {
 						position: "relative",
 						overflow: "hidden",
 						borderRadius: 2,
-						p: { xs: 3, md: 4 },
+						p: { xs: 2, sm: 3, md: 4 },
 						bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
 						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)}`,
 						textAlign: "center",
@@ -642,7 +644,7 @@ const TabRole = () => {
 						position: "relative",
 						overflow: "hidden",
 						borderRadius: 2,
-						p: { xs: 3, md: 4 },
+						p: { xs: 2, sm: 3, md: 4 },
 						bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
 						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)}`,
 						textAlign: "center",

@@ -60,8 +60,11 @@ const AccountProfile = () => {
 			color: "text.secondary",
 			minHeight: 44,
 			py: 1,
-			px: 2,
+			px: { xs: 1, sm: 2 },
+			minWidth: { xs: 0, sm: 90 },
 			"& .MuiTab-iconWrapper": {
+				// En mobile, sin ícono para que las pestañas entren sin desplazarlas
+				display: { xs: "none", sm: "inline-flex" },
 				color: "text.secondary",
 				transition: "color 0.15s ease",
 			},
@@ -80,12 +83,13 @@ const AccountProfile = () => {
 			content={false}
 			sx={{ borderRadius: 2, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`, p: 0 }}
 		>
-			<Box sx={{ px: { xs: 1.5, sm: 2 }, pt: 1, borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
+			<Box sx={{ px: { xs: 1, sm: 2 }, pt: 1, borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
 				<Tabs
 					value={value}
 					onChange={handleChange}
 					variant="scrollable"
 					scrollButtons="auto"
+					allowScrollButtonsMobile
 					aria-label="account profile tab"
 					sx={brandTabsSx}
 				>
@@ -121,7 +125,7 @@ const AccountProfile = () => {
 					)}
 				</Tabs>
 			</Box>
-			<Box sx={{ p: { xs: 2, sm: 2.5 } }}>
+			<Box sx={{ p: { xs: 1.5, sm: 2.5 } }}>
 				<Outlet />
 			</Box>
 		</MainCard>
