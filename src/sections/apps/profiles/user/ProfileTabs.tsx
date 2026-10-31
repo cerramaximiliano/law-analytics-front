@@ -85,7 +85,7 @@ const ProfileTabs = ({ focusInput }: Props) => {
 	const calculosCount = shouldUseTeamStats ? teamStats?.counts?.calculators || 0 : userStats?.counts?.calculators || 0;
 
 	const formatBytes = (bytes: number): string => {
-		if (bytes === 0) return "0 Bytes";
+		if (!bytes || bytes <= 0 || !isFinite(bytes)) return "0 Bytes";
 		const k = 1024;
 		const sizes = ["Bytes", "KB", "MB", "GB"];
 		const i = Math.floor(Math.log(bytes) / Math.log(k));
