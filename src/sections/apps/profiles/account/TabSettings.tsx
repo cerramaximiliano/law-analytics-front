@@ -41,6 +41,7 @@ import { ROLE_CONFIG } from "types/teams";
 import ResourceUsageWidget from "sections/widget/chart/ResourceUsageWidget";
 import McpAddonCard from "sections/mcp/McpAddonCard";
 import McpSectionShell from "sections/mcp/McpSectionShell";
+import ExtraFoldersSection from "sections/addons/ExtraFoldersSection";
 import AiSparklesIcon from "components/icons/AiSparklesIcon";
 import useMcpAddon from "hooks/useMcpAddon";
 import { MCP_ADDON_NAME, isMcpAddonVisible } from "utils/mcpAddonState";
@@ -1610,6 +1611,9 @@ const TabSubscription = () => {
 					</McpSectionShell>
 				</Grid>
 			)}
+
+			{/* Add-on «Causas adicionales» (solo Premium): la sección decide si se muestra. */}
+			{subscription.plan !== "free" && <ExtraFoldersSection />}
 
 			{/* Métodos de pago */}
 			{subscription.plan !== "free" && (
