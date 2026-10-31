@@ -15,6 +15,7 @@ import MainCard from "components/MainCard";
 import { Plan } from "store/reducers/ApiService";
 import { cleanPlanDisplayName, getPlanPricing } from "utils/planPricingUtils";
 import dayjs from "utils/dayjs-config";
+import ExtraFoldersPlanNote, { EXTRA_FOLDERS_PLAN_ID } from "components/cards/ExtraFoldersPlanNote";
 
 // ============================== TOKENS ============================== //
 // Mantener en sync con pages/plans.tsx y sections/landing/Planes.tsx.
@@ -489,6 +490,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
 									</Typography>
 								)}
 							</Stack>
+							{!compact && plan.planId === EXTRA_FOLDERS_PLAN_ID && <ExtraFoldersPlanNote />}
 						</Box>
 					)}
 

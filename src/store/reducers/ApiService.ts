@@ -119,8 +119,11 @@ export const DEFAULT_PUBLIC_INTEGRATIONS: PublicIntegrations = {
 
 export type AddonKey = "mcp_access";
 
+/** Add-ons con flujo de compra propio (no pasan por /addons/*): extra_folders se compra por cantidad. */
+export type QuantityAddonKey = "extra_folders";
+
 export interface PublicAddon {
-	key: AddonKey;
+	key: AddonKey | QuantityAddonKey;
 	displayName: string;
 	description: string;
 	/** Precio mensual en moneda real (no centavos). null si Stripe no devolvió precio. */
@@ -134,9 +137,59 @@ export interface PublicAddon {
 	requiredPlans: string[];
 	/** Si el user no está en uno de estos planes, debe upgradear primero. */
 	requiresIntegrationsAny: string[];
+	/** Solo extra_folders: lo que suma cada bloque (causas activas y MB). */
+	block?: { folders: number; storage: number };
 }
 
 export const DEFAULT_PUBLIC_ADDONS: PublicAddon[] = [];
+
+/** GET /api/subscriptions/extra-folders — add-on «Causas adicionales» (bloques de +250 causas / +100 MB, solo Premium). */
+export interface ExtraFoldersStatus {
+	key: QuantityAddonKey;
+	block: { folders: number; storage: number };
+	maxBlocks: number;
+	/** null si Stripe no devolvió precio (no se ofrece comprar). */
+	price: { amount: number; currency: string; interval: string } | null;
+	requiredPlans: string[];
+	plan: string;
+	blocks: {
+		/** Bloques pagos vigentes. */
+		purchased: number;
+		/** Bloques con los que renueva si hay una baja programada; null si no hay cambio. */
+		scheduled: number | null;
+		scheduledAt: string | null;
+		/** Bloques regalados por el equipo (grant del admin). */
+		granted: number;
+		/** Bloques que cuentan hoy para el límite. */
+		counted: number;
+	};
+	folders: { used: number; plan: number; extra: number; limit: number };
+	storage: { usedMB: number; plan: number; extra: number; limit: number };
+	eligible: boolean;
+	eligibilityReason: "paid_plan_required" | "premium_required" | "subscription_inactive" | "subscription_canceling" | "plan_change_scheduled" | null;
+	publicAvailable: boolean;
+	availabilityReason: string | null;
+	maintenanceMessage: string | null;
+	purchaseBypass: { reason: string } | null;
+	canIncrease: boolean;
+	canDecrease: boolean;
+	nextBillingDate: string | null;
+	/** Gracia abierta por bajar bloques: hasta esa fecha no se archiva nada. */
+	grace: { expiresAt: string } | null;
+}
+
+/** PUT /api/subscriptions/extra-folders. Errores de negocio → success:false + code (400/402/404/409). */
+export interface SetExtraFoldersResult {
+	success: boolean;
+	result?: "increased" | "reduction_scheduled" | "reduction_cancelled" | "unchanged";
+	blocks?: number;
+	previousBlocks?: number;
+	effectiveAt?: string | null;
+	newFolderLimit?: number;
+	foldersOverLimit?: number;
+	code?: string;
+	message?: string;
+}
 
 /** Resultado de `ApiService.addAddon` (POST /api/subscriptions/addons/checkout). */
 export interface AddAddonResult {
@@ -1048,6 +1101,33 @@ class ApiService {
 			if (axios.isAxiosError(error) && error.response?.data && typeof error.response.data === "object") {
 				const data = error.response.data as Record<string, any>;
 				if (data.code) return { ...data, success: false } as RemoveAddonResult;
+			}
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/** Estado del add-on «Causas adicionales» del usuario (bloques, uso y límite, precio, qué puede hacer). */
+	static async getExtraFolders(): Promise<ExtraFoldersStatus> {
+		try {
+			const response = await axios.get(`${API_BASE_URL}/api/subscriptions/extra-folders`, { withCredentials: true });
+			return response.data.addon;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Fija la cantidad total de bloques comprados. Subir cobra el prorrateo en el momento (402 si la
+	 * tarjeta falla, sin cargo); bajar o 0 se aplica al fin del período; la misma cantidad deshace una baja.
+	 */
+	static async setExtraFolders(blocks: number): Promise<SetExtraFoldersResult> {
+		try {
+			const response = await axios.put(`${API_BASE_URL}/api/subscriptions/extra-folders`, { blocks }, { withCredentials: true });
+			return response.data;
+		} catch (error) {
+			if (axios.isAxiosError(error) && error.response?.data && typeof error.response.data === "object") {
+				const data = error.response.data as Record<string, any>;
+				if (data.code) return { ...data, success: false } as SetExtraFoldersResult;
 			}
 			throw this.handleAxiosError(error);
 		}

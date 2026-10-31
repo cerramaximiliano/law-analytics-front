@@ -18,6 +18,7 @@ import { getCurrentEnvironment, getPlanPricing } from "utils/planPricingUtils";
 import { usePublicIntegrations } from "hooks/usePublicIntegrations";
 import { withDynamicIntegrations } from "utils/landingIntegrations";
 import { PLANES_RESPALDO } from "data/planesRespaldo";
+import ExtraFoldersPlanNote, { EXTRA_FOLDERS_PLAN_ID } from "components/cards/ExtraFoldersPlanNote";
 import dayjs from "utils/dayjs-config";
 
 // ============================== TOKENS ============================== //
@@ -596,6 +597,8 @@ const Planes = () => {
 														</Typography>
 													</Box>
 												))}
+
+												{plan.id === EXTRA_FOLDERS_PLAN_ID && <ExtraFoldersPlanNote />}
 
 												{/* Link siempre presente — apunta a la comparación full en /plans
 												donde están todas las features, límites y diferencias detalladas. */}
