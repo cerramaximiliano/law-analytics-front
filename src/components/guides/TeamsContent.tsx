@@ -107,13 +107,19 @@ export const TeamsContent = () => {
 							<Box display="flex" alignItems="center">
 								<TickCircle size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
 								<Typography>
-									<strong>Plan Estándar:</strong> Hasta 5 miembros (incluido el propietario), 50 causas, 1 GB almacenamiento
+									<strong>Plan Estándar:</strong> Hasta 5 miembros (incluido el propietario), 50 causas, 100 MB almacenamiento
+								</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<TickCircle size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
+								<Typography>
+									<strong>Plan Pro:</strong> Hasta 8 miembros (incluido el propietario), 200 causas, 150 MB almacenamiento
 								</Typography>
 							</Box>
 							<Box display="flex" alignItems="center">
 								<TickCircle size={20} style={{ marginRight: "8px", color: theme.palette.success.main }} />
 								<Typography>
-									<strong>Plan Premium:</strong> Hasta 10 miembros (incluido el propietario), 500 causas, 10 GB almacenamiento
+									<strong>Plan Premium:</strong> Hasta 10 miembros (incluido el propietario), 500 causas, 200 MB almacenamiento
 								</Typography>
 							</Box>
 						</Stack>

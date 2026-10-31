@@ -90,7 +90,7 @@ const IntroductionContent = () => {
 						<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
 							Límites de Almacenamiento
 						</Typography>
-						<Typography variant="body2">Controlan el espacio total que utilizas (archivados + archivos)</Typography>
+						<Typography variant="body2">Controlan el espacio que ocupan tus elementos archivados</Typography>
 					</Paper>
 				</Grid>
 			</Grid>
@@ -115,16 +115,25 @@ const PlansComparisonContent = () => {
 			folders: 50,
 			calculators: 20,
 			contacts: 100,
-			storage: "1 GB",
+			storage: "100 MB",
 			color: "primary",
 			recommended: true,
+		},
+		{
+			name: "Plan Pro",
+			folders: 200,
+			calculators: 100,
+			contacts: 500,
+			storage: "150 MB",
+			color: "primary",
+			recommended: false,
 		},
 		{
 			name: "Plan Premium",
 			folders: 500,
 			calculators: 200,
 			contacts: 1000,
-			storage: "5 GB",
+			storage: "200 MB",
 			color: "secondary",
 			recommended: false,
 		},
@@ -133,7 +142,7 @@ const PlansComparisonContent = () => {
 	return (
 		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
-				Compara los límites y características de cada plan para elegir el que mejor se adapte a tus necesidades:
+				Compara los límites y características de cada plan para elegir el que mejor se adapte a tus necesidades. En Premium puedes sumar bloques de «Causas adicionales» (+250 causas y +100 MB por bloque) desde Cuenta → Suscripción.
 			</Typography>
 
 			<TableContainer component={Paper}>
@@ -337,6 +346,7 @@ const StorageSystemContent = () => {
 	const storageItems = [
 		{ type: "Contacto", size: "2 KB", equivalent: "~500 contactos = 1 MB", icon: Profile2User },
 		{ type: "Carpeta", size: "10 KB", equivalent: "~100 carpetas = 1 MB", icon: FolderOpen },
+		{ type: "Carpeta vinculada a una causa", size: "50 KB", equivalent: "~20 carpetas = 1 MB", icon: FolderOpen },
 		{ type: "Calculadora", size: "5 KB", equivalent: "~200 calculadoras = 1 MB", icon: Calculator },
 		{ type: "Archivo PDF", size: "Variable", equivalent: "Según tamaño real", icon: DocumentText },
 	];
@@ -344,7 +354,7 @@ const StorageSystemContent = () => {
 	return (
 		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
-				El sistema de almacenamiento cuenta TODOS tus elementos (activos + archivados + archivos adjuntos). Aquí está el desglose:
+				El almacenamiento cuenta solo tus elementos archivados, con un tamaño estimado por tipo. Los elementos activos y los archivos adjuntos no ocupan almacenamiento. Aquí está el desglose:
 			</Typography>
 
 			<TableContainer component={Paper}>
@@ -378,17 +388,17 @@ const StorageSystemContent = () => {
 
 			<Paper sx={{ p: 3, bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
 				<Typography variant="h6" gutterBottom>
-					Ejemplo de Cálculo - Plan Standard (1 GB)
+					Ejemplo de Cálculo - Plan Standard (100 MB)
 				</Typography>
 				<Stack spacing={1} mt={2}>
-					<Typography variant="body2">• 30 carpetas activas = 300 KB</Typography>
+					<Typography variant="body2">• 30 carpetas activas = no ocupan</Typography>
 					<Typography variant="body2">• 70 carpetas archivadas = 700 KB</Typography>
-					<Typography variant="body2">• 50 contactos = 100 KB</Typography>
-					<Typography variant="body2">• 10 calculadoras = 50 KB</Typography>
-					<Typography variant="body2">• 5 PDFs (2 MB c/u) = 10 MB</Typography>
+					<Typography variant="body2">• 20 carpetas archivadas vinculadas a una causa = 1 MB</Typography>
+					<Typography variant="body2">• 50 contactos archivados = 100 KB</Typography>
+					<Typography variant="body2">• 10 calculadoras archivadas = 50 KB</Typography>
 					<Box sx={{ borderTop: 1, borderColor: "divider", pt: 1, mt: 1 }}>
 						<Typography variant="subtitle1" fontWeight="bold">
-							Total: 11.15 MB de 1,024 MB (1.1%)
+							Total: 1.81 MB de 100 MB (1.8%)
 						</Typography>
 					</Box>
 				</Stack>
@@ -464,7 +474,7 @@ const GracePeriodContent = () => {
 									2. Problema temporal con el pago
 								</Typography>
 								<Typography variant="body2" color="text.secondary">
-									7-14 días típicamente para resolver el problema
+									Tienes 15 días para resolver el problema
 								</Typography>
 							</Box>
 							<Box>
@@ -508,7 +518,7 @@ const GracePeriodContent = () => {
 							Después del período de gracia:
 						</Typography>
 						<Typography variant="body2" color="error.main">
-							❌ No puedes crear nuevas carpetas hasta reducir a 50
+							❌ Las carpetas que excedan el límite se archivan automáticamente
 						</Typography>
 					</Box>
 				</Stack>
@@ -566,26 +576,26 @@ const OptimizationTipsContent = () => {
 				<Grid item xs={12} md={6}>
 					<Paper sx={{ p: 3, height: "100%" }}>
 						<Typography variant="h6" gutterBottom color="primary">
-							💾 Gestión de Archivos
+							💾 Gestión del Almacenamiento
 						</Typography>
 						<List dense>
 							<ListItem>
 								<ListItemIcon>
 									<ArrowRight2 size={18} />
 								</ListItemIcon>
-								<ListItemText primary="Comprime PDFs grandes antes de subir" />
+								<ListItemText primary="Solo lo archivado ocupa almacenamiento" />
 							</ListItem>
 							<ListItem>
 								<ListItemIcon>
 									<ArrowRight2 size={18} />
 								</ListItemIcon>
-								<ListItemText primary="Elimina archivos duplicados regularmente" />
+								<ListItemText primary="Elimina lo archivado que ya no necesites" />
 							</ListItem>
 							<ListItem>
 								<ListItemIcon>
 									<ArrowRight2 size={18} />
 								</ListItemIcon>
-								<ListItemText primary="Usa enlaces externos para archivos muy grandes" />
+								<ListItemText primary="Revisa tu uso en Cuenta → Suscripción" />
 							</ListItem>
 							<ListItem>
 								<ListItemIcon>
