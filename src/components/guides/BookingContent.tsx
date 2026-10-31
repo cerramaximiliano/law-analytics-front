@@ -758,7 +758,7 @@ export const BookingContent = () => {
 				<Typography variant="h3">Guía del Sistema de Citas</Typography>
 			</Box>
 
-			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
+			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3, pb: 1, overflowX: "auto" }}>
 				{steps.map((step, index) => (
 					<Step key={index}>
 						<StepLabel>{step.title}</StepLabel>

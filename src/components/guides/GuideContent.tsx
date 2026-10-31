@@ -307,7 +307,7 @@ export const LaboralContent = () => {
 				<Typography variant="h3">Guía de Calculadora Laboral</Typography>
 			</Box>
 
-			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
+			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3, pb: 1, overflowX: "auto" }}>
 				{steps.map((step, index) => (
 					<Step key={index}>
 						<StepLabel>{step.title}</StepLabel>
@@ -478,7 +478,7 @@ export const InteresesContent = () => {
 				<Typography variant="h3">Guía de Calculadora de Intereses</Typography>
 			</Box>
 
-			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
+			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3, pb: 1, overflowX: "auto" }}>
 				{steps.map((step, index) => (
 					<Step key={index}>
 						<StepLabel>{step.title}</StepLabel>
@@ -764,7 +764,7 @@ export const ContactsContent = () => {
 				<Typography variant="h3">Guía de Contactos</Typography>
 			</Box>
 
-			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
+			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3, pb: 1, overflowX: "auto" }}>
 				{steps.map((step, index) => (
 					<Step key={index}>
 						<StepLabel>{step.title}</StepLabel>
@@ -905,7 +905,7 @@ export const FoldersContent = () => {
 				<Typography variant="h3">Guía de Carpetas</Typography>
 			</Box>
 
-			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
+			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3, pb: 1, overflowX: "auto" }}>
 				{steps.map((step, index) => (
 					<Step key={index}>
 						<StepLabel>{step.title}</StepLabel>
@@ -1101,7 +1101,7 @@ export const CalendarContent = () => {
 				<Typography variant="h3">Guía del Calendario</Typography>
 			</Box>
 
-			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
+			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3, pb: 1, overflowX: "auto" }}>
 				{steps.map((step, index) => (
 					<Step key={index}>
 						<StepLabel>{step.title}</StepLabel>
@@ -1363,7 +1363,7 @@ export const TasksContent = () => {
 				<Typography variant="h3">Guía de Tareas</Typography>
 			</Box>
 
-			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
+			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3, pb: 1, overflowX: "auto" }}>
 				{steps.map((step, index) => (
 					<Step key={index}>
 						<StepLabel>{step.title}</StepLabel>
@@ -1611,7 +1611,7 @@ export const AnalyticsContent = () => {
 				Guía del Panel de Analíticas
 			</Typography>
 
-			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
+			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3, pb: 1, overflowX: "auto" }}>
 				{steps.map((step, index) => (
 					<Step key={index}>
 						<StepLabel>{step.title}</StepLabel>
