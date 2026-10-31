@@ -39,6 +39,7 @@ const SUBSCRIPTION_PATH = MCP_SUBSCRIPTION_PATH;
 const PAYMENT_FAILED_MESSAGES: Record<string, string> = {
 	PAYMENT_REQUIRES_ACTION: "Tu banco pidió verificar el pago y no se pudo completar. No se realizó ningún cargo.",
 	CARD_DECLINED: "La tarjeta fue rechazada. No se realizó ningún cargo.",
+	PAYMENT_METHOD_REQUIRED: "No tenés un medio de pago cargado. No se realizó ningún cargo.",
 };
 
 interface Options {
@@ -135,6 +136,7 @@ const useMcpAddonActions = ({ location, onActivated }: Options) => {
 			}
 			case "PAYMENT_REQUIRES_ACTION":
 			case "CARD_DECLINED":
+			case "PAYMENT_METHOD_REQUIRED":
 				// El mensaje de Stripe viene en inglés: usamos el nuestro.
 				setDialogError({
 					severity: "error",

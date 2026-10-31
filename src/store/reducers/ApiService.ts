@@ -201,8 +201,8 @@ export interface AddAddonResult {
 	/**
 	 * Código de negocio cuando `success:false` (hub `addAddon`):
 	 *  - 400 LEGAL_ACCEPTANCE_REQUIRED (+ privacyVersion, privacyUrl): aceptar la política vigente.
-	 *  - 402 CARD_DECLINED / PAYMENT_REQUIRES_ACTION: el cobro del prorrateo falló o el banco pidió
-	 *    verificación (3DS). El hub usa `error_if_incomplete`: NO se agrega el add-on ni se cobra nada.
+	 *  - 402 CARD_DECLINED / PAYMENT_REQUIRES_ACTION / PAYMENT_METHOD_REQUIRED: el cobro del prorrateo falló,
+	 *    el banco pidió verificación (3DS) o no hay medio de pago. El hub usa `error_if_incomplete`: NO se agrega el add-on ni se cobra nada.
 	 *  - 409 ADDON_NOT_AVAILABLE (+ reason: not_public|maintenance|config_unavailable),
 	 *    SUBSCRIPTION_NOT_ACTIVE (+ subscriptionStatus), SUBSCRIPTION_CANCELING,
 	 *    PAID_PLAN_REQUIRED, NO_PAID_SUBSCRIPTION.
