@@ -86,8 +86,10 @@ const FeedbackWidget: React.FC = () => {
 						onClick={() => setOpen(true)}
 						sx={{
 							position: "fixed",
-							bottom: { xs: 16, md: 24 },
-							right: { xs: 16, md: 24 },
+							width: { xs: 48, md: 56 },
+							height: { xs: 48, md: 56 },
+							bottom: { xs: 12, md: 24 },
+							right: { xs: 12, md: 24 },
 							zIndex: theme.zIndex.speedDial,
 						}}
 					>

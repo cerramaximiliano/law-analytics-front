@@ -52,6 +52,8 @@ const Footer = () => {
 					alignItems="center"
 					sx={{
 						"& a": {
+							display: "inline-block",
+							py: { xs: 1.5, md: 0 },
 							fontSize: "0.72rem",
 							color: "text.secondary",
 							textDecoration: "none",
