@@ -52,7 +52,7 @@ export const LimitsContent = () => {
 									<strong>Límites de Cantidad:</strong> Controlan cuántos elementos activos puedes tener
 								</li>
 								<li>
-									<strong>Límites de Almacenamiento:</strong> Controlan el espacio total que utilizas
+									<strong>Límites de Almacenamiento:</strong> Controlan el espacio que ocupan tus elementos archivados
 								</li>
 							</ul>
 						</Typography>
@@ -161,7 +161,7 @@ export const LimitsContent = () => {
 								<Typography variant="body2">• 5 Carpetas activas</Typography>
 								<Typography variant="body2">• 3 Calculadoras activas</Typography>
 								<Typography variant="body2">• 10 Contactos activos</Typography>
-								<Typography variant="body2">• 50 MB de almacenamiento total</Typography>
+								<Typography variant="body2">• 50 MB de almacenamiento</Typography>
 								<Typography variant="caption" color="text.secondary">
 									Ideal para: Profesionales independientes comenzando
 								</Typography>
@@ -176,9 +176,24 @@ export const LimitsContent = () => {
 								<Typography variant="body2">• 50 Carpetas activas</Typography>
 								<Typography variant="body2">• 20 Calculadoras activas</Typography>
 								<Typography variant="body2">• 100 Contactos activos</Typography>
-								<Typography variant="body2">• 1 GB de almacenamiento total</Typography>
+								<Typography variant="body2">• 100 MB de almacenamiento</Typography>
 								<Typography variant="caption" color="text.secondary">
 									Ideal para: Pequeños despachos o estudios jurídicos
+								</Typography>
+							</Stack>
+						</Paper>
+
+						<Paper sx={{ p: 2, bgcolor: alpha(theme.palette.warning.lighter, 0.1) }}>
+							<Typography variant="h6" color="warning.dark" gutterBottom>
+								Plan Pro
+							</Typography>
+							<Stack spacing={1}>
+								<Typography variant="body2">• 200 Carpetas activas</Typography>
+								<Typography variant="body2">• 100 Calculadoras activas</Typography>
+								<Typography variant="body2">• 500 Contactos activos</Typography>
+								<Typography variant="body2">• 150 MB de almacenamiento</Typography>
+								<Typography variant="caption" color="text.secondary">
+									Ideal para: Estudios en crecimiento
 								</Typography>
 							</Stack>
 						</Paper>
@@ -191,7 +206,10 @@ export const LimitsContent = () => {
 								<Typography variant="body2">• 500 Carpetas activas</Typography>
 								<Typography variant="body2">• 200 Calculadoras activas</Typography>
 								<Typography variant="body2">• 1,000 Contactos activos</Typography>
-								<Typography variant="body2">• 5 GB de almacenamiento total</Typography>
+								<Typography variant="body2">• 200 MB de almacenamiento</Typography>
+								<Typography variant="body2">
+									• Opcional: bloques de «Causas adicionales» (+250 causas y +100 MB por bloque)
+								</Typography>
 								<Typography variant="caption" color="text.secondary">
 									Ideal para: Firmas grandes con múltiples casos
 								</Typography>
@@ -205,7 +223,7 @@ export const LimitsContent = () => {
 			title: "Sistema de Almacenamiento",
 			content: (
 				<>
-					<Typography paragraph>El almacenamiento total incluye TODOS tus datos (activos + archivados):</Typography>
+					<Typography paragraph>El almacenamiento cuenta solo tus elementos archivados, con un tamaño estimado por tipo:</Typography>
 
 					<Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
 						<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
@@ -225,6 +243,12 @@ export const LimitsContent = () => {
 								</Typography>
 							</Box>
 							<Box display="flex" justifyContent="space-between">
+								<Typography variant="body2">Carpeta vinculada a una causa:</Typography>
+								<Typography variant="body2" color="text.secondary">
+									~50 KB (20 carpetas = 1 MB)
+								</Typography>
+							</Box>
+							<Box display="flex" justifyContent="space-between">
 								<Typography variant="body2">Calculadora:</Typography>
 								<Typography variant="body2" color="text.secondary">
 									~5 KB (200 calculadoras = 1 MB)
@@ -233,7 +257,7 @@ export const LimitsContent = () => {
 							<Box display="flex" justifyContent="space-between">
 								<Typography variant="body2">Archivos PDF/Imágenes:</Typography>
 								<Typography variant="body2" color="text.secondary">
-									Según tamaño real del archivo
+									No ocupan almacenamiento
 								</Typography>
 							</Box>
 						</Stack>
@@ -282,7 +306,7 @@ export const LimitsContent = () => {
 							</Box>
 							<Box display="flex" alignItems="center">
 								<ArrowRight2 size={18} style={{ marginRight: "8px", color: theme.palette.info.main }} />
-								<Typography variant="body2">Dura 15 días desde que se aplica el cambio de plan</Typography>
+								<Typography variant="body2">Dura 15 días desde que se aplica el cambio de plan o desde el problema de pago</Typography>
 							</Box>
 						</Stack>
 					</Paper>
@@ -295,7 +319,8 @@ export const LimitsContent = () => {
 						<ul style={{ marginTop: "8px" }}>
 							<li>Tienes 15 días de gracia para archivar 50 carpetas</li>
 							<li>Puedes seguir usando tus 100 carpetas durante este tiempo</li>
-							<li>Recibes recordatorios diarios del estado</li>
+							<li>Recibes recordatorios por email antes del vencimiento</li>
+							<li>Al vencer, las carpetas que excedan el límite se archivan automáticamente</li>
 						</ul>
 					</Alert>
 				</>
@@ -323,12 +348,12 @@ export const LimitsContent = () => {
 
 						<Paper sx={{ p: 2, bgcolor: alpha(theme.palette.info.lighter, 0.1) }}>
 							<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-								2. Gestiona archivos inteligentemente
+								2. Gestiona tu almacenamiento
 							</Typography>
 							<Stack spacing={1}>
-								<Typography variant="body2">• Comprime PDFs grandes antes de subirlos</Typography>
-								<Typography variant="body2">• Elimina duplicados</Typography>
-								<Typography variant="body2">• Usa enlaces externos para archivos muy grandes</Typography>
+								<Typography variant="body2">• Solo lo archivado ocupa almacenamiento</Typography>
+								<Typography variant="body2">• Elimina lo archivado que ya no necesites</Typography>
+								<Typography variant="body2">• Revisa tu uso en Cuenta → Suscripción</Typography>
 							</Stack>
 						</Paper>
 
