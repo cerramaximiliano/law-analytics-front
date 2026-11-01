@@ -187,6 +187,8 @@ export interface SetExtraFoldersResult {
 	effectiveAt?: string | null;
 	newFolderLimit?: number;
 	foldersOverLimit?: number;
+	/** Causas archivadas por una baja de bloques que volvieron a estar activas al recomprar. */
+	unarchivedFolders?: number;
 	code?: string;
 	message?: string;
 }

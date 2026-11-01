@@ -27,7 +27,7 @@ export interface ArchivedSummary {
 const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 
 /** Motivos de archivado que cuentan como "por el plan" (hub models/Folder.js archivedReason). */
-export const PLAN_ARCHIVED_REASONS = ["plan_limit", "plan_downgrade", "auto_archived_limit_exceeded"];
+export const PLAN_ARCHIVED_REASONS = ["plan_limit", "plan_downgrade", "auto_archived_limit_exceeded", "extra_folders_reduced"];
 
 export const isPlanArchivedReason = (reason: string | null | undefined): boolean => !!reason && PLAN_ARCHIVED_REASONS.includes(reason);
 

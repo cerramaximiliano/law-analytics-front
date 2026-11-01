@@ -45,6 +45,7 @@ const ARCHIVED_REASON_LABEL: Record<string, string> = {
 	plan_limit: "Límite del plan",
 	plan_downgrade: "Cambio de plan",
 	auto_archived_limit_exceeded: "Límite del plan",
+	extra_folders_reduced: "Baja de bloques",
 	"Plan downgrade - automatic archiving": "Cambio de plan",
 };
 
