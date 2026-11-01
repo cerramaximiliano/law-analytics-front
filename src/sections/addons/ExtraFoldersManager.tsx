@@ -50,6 +50,9 @@ const formatDate = (iso: string | null | undefined) => (iso ? dayjs(iso).format(
 export const blocksLabel = (n: number) => (n === 1 ? "1 bloque" : `${n} bloques`);
 export const limitLabel = (n: number) => (n < 0 ? "ilimitadas" : n.toLocaleString("es-AR"));
 
+const unarchivedLabel = (n = 0) =>
+	n === 0 ? "" : n === 1 ? " Volvió a estar activa 1 causa archivada." : ` Volvieron a estar activas ${n.toLocaleString("es-AR")} causas archivadas.`;
+
 /** Bloques con los que renueva: la baja programada si hay, si no los vigentes. */
 export function renewalBlocks(status: ExtraFoldersStatus): number {
 	return status.blocks.scheduled ?? status.blocks.purchased;
@@ -128,7 +131,7 @@ const ExtraFoldersManager = ({ status, onChanged }: ExtraFoldersManagerProps) =>
 			setPending(null);
 			notify(
 				res.result === "increased"
-					? `Listo: ahora tenés ${blocksLabel(pending.blocks)} de ${EXTRA_FOLDERS_NAME.toLowerCase()}.`
+					? `Listo: ahora tenés ${blocksLabel(pending.blocks)} de ${EXTRA_FOLDERS_NAME.toLowerCase()}.${unarchivedLabel(res.unarchivedFolders)}`
 					: res.message || "Cambio aplicado.",
 				"success",
 			);

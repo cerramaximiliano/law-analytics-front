@@ -105,6 +105,20 @@ describe("ExtraFoldersSection", () => {
 		expect(mockDispatch).toHaveBeenCalledWith({ type: "refresh" });
 	});
 
+	it("al recomprar avisa cuántas causas archivadas volvieron", async () => {
+		mockGet.mockResolvedValue(status());
+		mockSet.mockResolvedValue({ success: true, result: "increased", blocks: 2, unarchivedFolders: 40 });
+		const { openSnackbar } = await import("store/reducers/snackbar");
+		render(<ExtraFoldersSection />);
+		await screen.findByTestId("extra-folders-section");
+		fireEvent.click(screen.getByLabelText("Sumar un bloque"));
+		fireEvent.click(screen.getByTestId("extra-folders-apply"));
+		fireEvent.click(await screen.findByTestId("extra-folders-confirm"));
+		await waitFor(() =>
+			expect(openSnackbar).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining("Volvieron a estar activas 40 causas archivadas.") })),
+		);
+	});
+
 	it("tarjeta rechazada: el error queda en el diálogo", async () => {
 		mockGet.mockResolvedValue(status());
 		mockSet.mockResolvedValue({ success: false, code: "CARD_DECLINED", message: "Tarjeta rechazada. No se realizó ningún cargo." });
