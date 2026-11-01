@@ -3,12 +3,17 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 // types
 import { MenuProps } from "types/menu";
 
+// El menú arranca como lo va a dejar MainLayout (mismo corte que theme.breakpoints.down("xl")). Si naciera cerrado,
+// en pantallas grandes se abre recién al montar y empuja todo el panel: CLS 0,83 a 1920 px (medido el 30/10, ver
+// la-ads/analysis/2026-10-30-revision-primer-minuto-funciones-verificacion.md).
+const drawerInicial = () => typeof window !== "undefined" && !!window.matchMedia && !window.matchMedia("(max-width:1439.95px)").matches;
+
 // initial state
 const initialState: MenuProps = {
 	openItem: ["dashboard"],
 	openComponent: "buttons",
 	selectedID: null,
-	drawerOpen: false,
+	drawerOpen: drawerInicial(),
 	componentDrawerOpen: true,
 	menu: {},
 	error: null,
