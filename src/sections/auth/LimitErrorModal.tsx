@@ -24,7 +24,9 @@ import { ArrowRight, Crown, Lock } from "iconsax-react";
 
 // project-imports
 import PlanCard from "components/cards/PlanCard";
-import ApiService, { Plan } from "store/reducers/ApiService";
+import ApiService, { type ExtraFoldersStatus, Plan } from "store/reducers/ApiService";
+import { useTeam } from "contexts/TeamContext";
+import ExtraFoldersManager, { extraFoldersSubtitle, isExtraFoldersVisible } from "sections/addons/ExtraFoldersManager";
 
 // ============================== TOKENS ============================== //
 const BRAND_BLUE = "#3A7BFF";
@@ -66,6 +68,15 @@ const formatPlanName = (raw: string): string => {
 	return PLAN_LABELS[key] ?? raw;
 };
 
+/**
+ * ¿El tope se resuelve con bloques de «Causas adicionales»? Solo causas o almacenamiento en Premium.
+ * El 403 del hub trae el recurso únicamente en el mensaje; las pantallas que validan antes, en `resourceType`.
+ */
+export const isExtraFoldersLimit = (limitInfo: LimitInfo | undefined, message: string): boolean => {
+	if (!limitInfo || !/premium/i.test(limitInfo.plan || "")) return false;
+	return /carpeta|causa|expediente|almacenamiento|folders|storage/i.test(`${limitInfo.resourceType || ""} ${message || ""}`);
+};
+
 export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({ open, onClose, message, limitInfo, featureInfo }) => {
 	const navigate = useNavigate();
 	const theme = useTheme();
@@ -75,6 +86,29 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({ open, onClose,
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
+	const [extraFolders, setExtraFolders] = useState<ExtraFoldersStatus | null>(null);
+	const [extraFoldersLoading, setExtraFoldersLoading] = useState(false);
+
+	// En un equipo el plan es del dueño: un miembro no puede sumarle bloques.
+	const { isTeamMode, isOwner } = useTeam();
+	const offersExtraFolders = isExtraFoldersLimit(limitInfo, message) && (!isTeamMode || isOwner);
+	const showExtraFolders = offersExtraFolders && isExtraFoldersVisible(extraFolders);
+
+	useEffect(() => {
+		if (!open || !offersExtraFolders) {
+			setExtraFolders(null);
+			return;
+		}
+		let cancelled = false;
+		setExtraFoldersLoading(true);
+		ApiService.getExtraFolders()
+			.then((status) => !cancelled && setExtraFolders(status))
+			.catch(() => !cancelled && setExtraFolders(null)) // fail-soft: quedan los planes
+			.finally(() => !cancelled && setExtraFoldersLoading(false));
+		return () => {
+			cancelled = true;
+		};
+	}, [open, offersExtraFolders]);
 
 	// Cargar planes al abrir
 	useEffect(() => {
@@ -144,7 +178,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({ open, onClose,
 					<Typography sx={{ fontSize: "0.95rem", color: "text.primary", letterSpacing: "-0.005em", mb: 1 }}>{message}</Typography>
 					<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
 						<Typography variant="body2" sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}>
-							{limitInfo.resourceType} — uso actual
+							{limitInfo.resourceType ? `${limitInfo.resourceType} — uso actual` : "Uso actual"}
 						</Typography>
 						<Typography
 							sx={{
@@ -229,7 +263,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({ open, onClose,
 
 	// Render del listado de planes — todos usan PlanCard, consistente con plans.tsx
 	const renderPlansList = () => {
-		if (loading) {
+		if (loading || extraFoldersLoading) {
 			return (
 				<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "200px" }}>
 					<CircularProgress sx={{ color: BRAND_BLUE }} />
@@ -319,14 +353,18 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({ open, onClose,
 						</Typography>
 					</Stack>
 					<Typography sx={{ fontSize: "0.875rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
-						Actualizá tu plan para continuar
+						{showExtraFolders && extraFolders ? extraFoldersSubtitle(extraFolders) : "Actualizá tu plan para continuar"}
 					</Typography>
 				</Stack>
 			</DialogTitle>
 
 			<DialogContent sx={{ p: 3 }}>
 				{getContentMessage()}
-				{renderPlansList()}
+				{showExtraFolders && extraFolders ? (
+					<ExtraFoldersManager status={extraFolders} onChanged={onClose} atLimit />
+				) : (
+					renderPlansList()
+				)}
 			</DialogContent>
 
 			<Divider />

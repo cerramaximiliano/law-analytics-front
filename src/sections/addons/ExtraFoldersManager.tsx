@@ -62,9 +62,11 @@ export function folderLimitWith(status: ExtraFoldersStatus, blocks: number): num
 }
 
 /** Cantidad inicial del selector: sin bloques y con la compra habilitada, arranca en 1 para ofrecer el primero. */
-export function initialTarget(status: ExtraFoldersStatus): number {
+export function initialTarget(status: ExtraFoldersStatus, suggestNextBlock = false): number {
 	const renewal = renewalBlocks(status);
-	return renewal === 0 && status.blocks.purchased === 0 && status.canIncrease ? 1 : renewal;
+	if (!status.canIncrease || renewal < status.blocks.purchased) return renewal;
+	if (renewal === 0 || suggestNextBlock) return Math.min(status.blocks.purchased + 1, status.maxBlocks);
+	return renewal;
 }
 
 export function isExtraFoldersVisible(status: ExtraFoldersStatus | null): boolean {
@@ -84,19 +86,21 @@ interface ExtraFoldersManagerProps {
 	status: ExtraFoldersStatus;
 	/** Se llama después de un cambio aplicado, con el hub ya actualizado. */
 	onChanged: () => Promise<void> | void;
+	/** Modal de límite alcanzado: el uso ya está a la vista y el selector arranca con un bloque más. */
+	atLimit?: boolean;
 }
 
-const ExtraFoldersManager = ({ status, onChanged }: ExtraFoldersManagerProps) => {
+const ExtraFoldersManager = ({ status, onChanged, atLimit = false }: ExtraFoldersManagerProps) => {
 	const theme = useTheme();
 	const dispatch = useDispatch();
-	const [target, setTarget] = useState(() => initialTarget(status));
+	const [target, setTarget] = useState(() => initialTarget(status, atLimit));
 	const [pending, setPending] = useState<Pending | null>(null);
 	const [busy, setBusy] = useState(false);
 	const [dialogError, setDialogError] = useState<string | null>(null);
 
 	useEffect(() => {
-		setTarget(initialTarget(status));
-	}, [status]);
+		setTarget(initialTarget(status, atLimit));
+	}, [status, atLimit]);
 
 	const renewal = renewalBlocks(status);
 	const purchased = status.blocks.purchased;
@@ -162,22 +166,24 @@ const ExtraFoldersManager = ({ status, onChanged }: ExtraFoldersManagerProps) =>
 	return (
 		<>
 			<Stack spacing={2} data-testid="extra-folders-section">
-				<Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-					{statBox(
-						"Causas activas",
-						`${status.folders.used.toLocaleString("es-AR")} / ${limitLabel(status.folders.limit)}`,
-						status.folders.extra > 0
-							? `${limitLabel(status.folders.plan)} del plan + ${status.folders.extra.toLocaleString("es-AR")} adicionales`
-							: "Límite de tu plan",
-					)}
-					{statBox(
-						"Almacenamiento",
-						`${limitLabel(status.storage.limit)} MB`,
-						status.storage.extra > 0
-							? `${limitLabel(status.storage.plan)} MB del plan + ${status.storage.extra} MB adicionales`
-							: "Límite de tu plan",
-					)}
-				</Stack>
+				{!atLimit && (
+					<Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+						{statBox(
+							"Causas activas",
+							`${status.folders.used.toLocaleString("es-AR")} / ${limitLabel(status.folders.limit)}`,
+							status.folders.extra > 0
+								? `${limitLabel(status.folders.plan)} del plan + ${status.folders.extra.toLocaleString("es-AR")} adicionales`
+								: "Límite de tu plan",
+						)}
+						{statBox(
+							"Almacenamiento",
+							`${limitLabel(status.storage.limit)} MB`,
+							status.storage.extra > 0
+								? `${limitLabel(status.storage.plan)} MB del plan + ${status.storage.extra} MB adicionales`
+								: "Límite de tu plan",
+						)}
+					</Stack>
+				)}
 
 				{status.blocks.granted > 0 && (
 					<Alert severity="info" variant="outlined">
