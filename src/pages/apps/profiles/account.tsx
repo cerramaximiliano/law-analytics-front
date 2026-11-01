@@ -21,9 +21,10 @@ const AccountProfile = () => {
 	const isDark = theme.palette.mode === "dark";
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
-	const { isTeamMode, isOwner } = useTeam();
+	// Integraciones (cuentas PJN, SCBA y MEV): en equipo, la ven y gestionan owner y admin (2/11/2026).
+	const { isTeamMode, isOwner, isAdmin } = useTeam();
 
-	const showPjnTab = !isTeamMode || isOwner;
+	const showPjnTab = !isTeamMode || isOwner || isAdmin;
 
 	const tabPaths = [
 		"/apps/profiles/account/my-account",
@@ -78,11 +79,7 @@ const AccountProfile = () => {
 	};
 
 	return (
-		<MainCard
-			border={false}
-			content={false}
-			sx={{ borderRadius: 2, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`, p: 0 }}
-		>
+		<MainCard border={false} content={false} sx={{ borderRadius: 2, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`, p: 0 }}>
 			<Box sx={{ px: { xs: 1, sm: 2 }, pt: 1, borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
 				<Tabs
 					value={value}

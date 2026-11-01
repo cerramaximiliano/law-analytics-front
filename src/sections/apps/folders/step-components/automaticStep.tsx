@@ -1747,12 +1747,14 @@ const AutomaticStep = () => {
 												fullWidth
 												size="small"
 											>
-												<ToggleButton value="connect" sx={toggleButtonSx}>
-													<Stack direction="row" alignItems="center" spacing={0.875}>
-														<Link1 size={16} variant="Bulk" />
-														<Typography sx={{ fontSize: "0.82rem", fontWeight: 600 }}>Conectar mi cuenta</Typography>
-													</Stack>
-												</ToggleButton>
+												{canManageCredentials && (
+													<ToggleButton value="connect" sx={toggleButtonSx}>
+														<Stack direction="row" alignItems="center" spacing={0.875}>
+															<Link1 size={16} variant="Bulk" />
+															<Typography sx={{ fontSize: "0.82rem", fontWeight: 600 }}>Conectar mi cuenta</Typography>
+														</Stack>
+													</ToggleButton>
+												)}
 												<ToggleButton value="single" sx={toggleButtonSx}>
 													<Stack direction="row" alignItems="center" spacing={0.875}>
 														<DocumentText1 size={16} variant="Bulk" />
