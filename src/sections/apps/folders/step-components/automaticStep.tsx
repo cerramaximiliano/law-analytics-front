@@ -1,4 +1,5 @@
 import React from "react";
+import { useTeam } from "contexts/TeamContext";
 import {
 	Grid,
 	Stack,
@@ -275,7 +276,13 @@ const AutomaticStep = () => {
 
 	// Modo de importación Buenos Aires: conectar cuenta SCBA o importar expediente individual.
 	// Mismo patrón que `pjnImportMode`.
-	const [baImportMode, setBaImportMode] = useState<BaImportMode>((values.baImportMode as BaImportMode) || "connect");
+	// Equipos (2/11/2026): la cuenta SCBA/MEV es del equipo y la gestionan owner y admin; editor y
+	// visualizador no ven «Conectar mi cuenta» ni cargan credenciales por causa.
+	const { isTeamMode: teamMode, isOwner: teamIsOwner, isAdmin: teamIsAdmin } = useTeam();
+	const canManageCredentials = !teamMode || teamIsOwner || teamIsAdmin;
+	const [baImportMode, setBaImportMode] = useState<BaImportMode>(
+		(values.baImportMode as BaImportMode) || (canManageCredentials ? "connect" : "single"),
+	);
 	const [showMevPassword, setShowMevPassword] = useState(false);
 
 	// Estado para errores de EJE (CABA)
@@ -1541,12 +1548,14 @@ const AutomaticStep = () => {
 												fullWidth
 												size="small"
 											>
-												<ToggleButton value="connect" sx={toggleButtonSx}>
-													<Stack direction="row" alignItems="center" spacing={0.875}>
-														<Link1 size={16} variant="Bulk" />
-														<Typography sx={{ fontSize: "0.82rem", fontWeight: 600 }}>Conectar mi cuenta</Typography>
-													</Stack>
-												</ToggleButton>
+												{canManageCredentials && (
+													<ToggleButton value="connect" sx={toggleButtonSx}>
+														<Stack direction="row" alignItems="center" spacing={0.875}>
+															<Link1 size={16} variant="Bulk" />
+															<Typography sx={{ fontSize: "0.82rem", fontWeight: 600 }}>Conectar mi cuenta</Typography>
+														</Stack>
+													</ToggleButton>
+												)}
 												<ToggleButton value="single" sx={toggleButtonSx}>
 													<Stack direction="row" alignItems="center" spacing={0.875}>
 														<DocumentText1 size={16} variant="Bulk" />
@@ -2488,7 +2497,14 @@ const AutomaticStep = () => {
 										{renderNotice("El expediente debe ser de acceso público.", "warning")}
 									</Grid>
 
-									{!values.hasGlobalMevCred ? (
+									{!values.hasGlobalMevCred && !canManageCredentials ? (
+										<Grid item xs={12}>
+											{renderNotice(
+												"El equipo todavía no tiene conectada su cuenta del portal MEV. Pedile al propietario o a un administrador que la conecte desde Perfil → Integraciones; después vas a poder agregar esta causa sin cargar credenciales.",
+												"warning",
+											)}
+										</Grid>
+									) : !values.hasGlobalMevCred ? (
 										<>
 											{/* Credenciales del portal MEV del usuario (obligatorias): el scraping
 										    de esta causa usa la cuenta del usuario, sin fallback al sistema. */}

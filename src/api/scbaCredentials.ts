@@ -6,6 +6,7 @@
  */
 
 import axios, { AxiosError } from "axios";
+import { teamHeaders } from "api/teamHeaders";
 import type { ScbaStatusReason } from "utils/scbaBindingState";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
@@ -151,7 +152,7 @@ class ScbaCredentialsService {
 			const response = await axios.post(
 				`${BASE_URL}/api/scba-credentials`,
 				{ username, password, causaId: causaId || null },
-				{ withCredentials: true },
+				{ withCredentials: true, headers: teamHeaders() },
 			);
 			return response.data;
 		} catch (error) {
@@ -187,6 +188,7 @@ class ScbaCredentialsService {
 		try {
 			const response = await axios.get(`${BASE_URL}/api/scba-credentials`, {
 				withCredentials: true,
+				headers: teamHeaders(),
 			});
 			return response.data;
 		} catch (error) {
@@ -217,7 +219,7 @@ class ScbaCredentialsService {
 	 */
 	async requestSync(): Promise<GenericScbaResponse> {
 		try {
-			const response = await axios.post(`${BASE_URL}/api/scba-credentials/sync`, {}, { withCredentials: true });
+			const response = await axios.post(`${BASE_URL}/api/scba-credentials/sync`, {}, { withCredentials: true, headers: teamHeaders() });
 			return response.data;
 		} catch (error) {
 			const axiosError = error as AxiosError<any>;
@@ -247,7 +249,10 @@ class ScbaCredentialsService {
 	 */
 	async getExcludedCausas(): Promise<{ success: boolean; data?: ScbaExcludedCausa[]; error?: string }> {
 		try {
-			const response = await axios.get(`${BASE_URL}/api/scba-credentials/excluded-causas`, { withCredentials: true });
+			const response = await axios.get(`${BASE_URL}/api/scba-credentials/excluded-causas`, {
+				withCredentials: true,
+				headers: teamHeaders(),
+			});
 			return response.data;
 		} catch (error) {
 			const axiosError = error as AxiosError<any>;
@@ -261,7 +266,10 @@ class ScbaCredentialsService {
 	 */
 	async restoreExcludedCausa(key: { scbaIdCausa: string; scbaIdOrganismo: string }): Promise<GenericScbaResponse> {
 		try {
-			const response = await axios.post(`${BASE_URL}/api/scba-credentials/excluded-causas/restore`, key, { withCredentials: true });
+			const response = await axios.post(`${BASE_URL}/api/scba-credentials/excluded-causas/restore`, key, {
+				withCredentials: true,
+				headers: teamHeaders(),
+			});
 			return response.data;
 		} catch (error) {
 			const axiosError = error as AxiosError<any>;
@@ -283,7 +291,7 @@ class ScbaCredentialsService {
 	 */
 	async getUnlinkImpact(): Promise<{ success: boolean; data?: ScbaUnlinkImpact; error?: string }> {
 		try {
-			const response = await axios.get(`${BASE_URL}/api/scba-credentials/unlink-impact`, { withCredentials: true });
+			const response = await axios.get(`${BASE_URL}/api/scba-credentials/unlink-impact`, { withCredentials: true, headers: teamHeaders() });
 			return response.data;
 		} catch (error) {
 			const axiosError = error as AxiosError<any>;
@@ -301,6 +309,7 @@ class ScbaCredentialsService {
 			const response = await axios.delete(`${BASE_URL}/api/scba-credentials/${id}`, {
 				data: { mode },
 				withCredentials: true,
+				headers: teamHeaders(),
 			});
 			return response.data;
 		} catch (error) {

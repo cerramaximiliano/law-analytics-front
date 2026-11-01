@@ -8,6 +8,7 @@
  */
 
 import axios, { AxiosError } from "axios";
+import { teamHeaders } from "api/teamHeaders";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
@@ -86,7 +87,7 @@ class MevCredentialsService {
 	/** Estado de las credenciales MEV del usuario (global + por causa). */
 	async getCredentialsStatus(): Promise<GetMevCredentialsResponse> {
 		try {
-			const response = await axios.get(`${BASE_URL}/api/mev-credentials`, { withCredentials: true });
+			const response = await axios.get(`${BASE_URL}/api/mev-credentials`, { withCredentials: true, headers: teamHeaders() });
 			return response.data;
 		} catch (error) {
 			const e = error as AxiosError<any>;
@@ -97,7 +98,10 @@ class MevCredentialsService {
 	/** Credencial específica de una causa. */
 	async getCredentialsForCausa(causaId: string): Promise<GetMevCredentialsResponse> {
 		try {
-			const response = await axios.get(`${BASE_URL}/api/mev-credentials/causa/${causaId}`, { withCredentials: true });
+			const response = await axios.get(`${BASE_URL}/api/mev-credentials/causa/${causaId}`, {
+				withCredentials: true,
+				headers: teamHeaders(),
+			});
 			return response.data;
 		} catch (error) {
 			const e = error as AxiosError<any>;
@@ -114,7 +118,7 @@ class MevCredentialsService {
 			const response = await axios.post(
 				`${BASE_URL}/api/mev-credentials`,
 				{ username, password, causaId: causaId || null },
-				{ withCredentials: true },
+				{ withCredentials: true, headers: teamHeaders() },
 			);
 			return response.data;
 		} catch (error) {
@@ -131,7 +135,10 @@ class MevCredentialsService {
 	 */
 	async getUnlinkImpact(id: string): Promise<{ success: boolean; data?: MevUnlinkImpact; error?: string }> {
 		try {
-			const response = await axios.get(`${BASE_URL}/api/mev-credentials/${id}/unlink-impact`, { withCredentials: true });
+			const response = await axios.get(`${BASE_URL}/api/mev-credentials/${id}/unlink-impact`, {
+				withCredentials: true,
+				headers: teamHeaders(),
+			});
 			return response.data;
 		} catch (error) {
 			const e = error as AxiosError<any>;
@@ -142,7 +149,7 @@ class MevCredentialsService {
 	/** Elimina una credencial por id. */
 	async deleteCredentials(id: string): Promise<GenericMevCredResponse> {
 		try {
-			const response = await axios.delete(`${BASE_URL}/api/mev-credentials/${id}`, { withCredentials: true });
+			const response = await axios.delete(`${BASE_URL}/api/mev-credentials/${id}`, { withCredentials: true, headers: teamHeaders() });
 			return response.data;
 		} catch (error) {
 			const e = error as AxiosError<any>;
@@ -157,7 +164,11 @@ class MevCredentialsService {
 	/** Habilita/deshabilita una credencial (toggle). */
 	async toggleCredentials(id: string): Promise<GenericMevCredResponse> {
 		try {
-			const response = await axios.patch(`${BASE_URL}/api/mev-credentials/${id}/toggle`, {}, { withCredentials: true });
+			const response = await axios.patch(
+				`${BASE_URL}/api/mev-credentials/${id}/toggle`,
+				{},
+				{ withCredentials: true, headers: teamHeaders() },
+			);
 			return response.data;
 		} catch (error) {
 			const e = error as AxiosError<any>;
