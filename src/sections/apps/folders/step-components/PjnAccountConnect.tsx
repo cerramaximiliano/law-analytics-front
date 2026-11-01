@@ -76,8 +76,9 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 		const authUser = useSelector((state: any) => state.auth?.user);
 		const pjnSync = useSelector((state: RootState) => state.pjnSync);
 		const folders = useSelector((state: RootState) => state.folder.folders);
-		const { isTeamMode, isOwner } = useTeam();
-		const isTeamMember = isTeamMode && !isOwner;
+		// Equipos (2/11/2026): owner y admin gestionan la credencial del equipo; editor y visualizador solo la ven.
+		const { isTeamMode, isOwner, isAdmin } = useTeam();
+		const isTeamMember = isTeamMode && !isOwner && !isAdmin;
 
 		// Estado del formulario
 		const [cuil, setCuil] = useState("");
@@ -830,8 +831,8 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 		if (isTeamMember) {
 			return (
 				<Alert severity="info" icon={<InfoCircle size={18} />} sx={{ "& .MuiAlert-message": { fontSize: "0.85rem" } }}>
-					La integración PJN es gestionada por el propietario del equipo. Solo el propietario puede vincular, desvincular o iniciar
-					sincronizaciones.
+					La cuenta del PJN del equipo la gestionan el propietario o un administrador: solo ellos pueden vincular, desvincular o iniciar
+					sincronizaciones. Las causas que importa quedan a disposición de todo el equipo.
 				</Alert>
 			);
 		}

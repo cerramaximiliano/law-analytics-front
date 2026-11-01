@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
+	Alert,
 	Box,
 	CircularProgress,
 	Divider,
@@ -18,6 +19,7 @@ import { enqueueSnackbar } from "notistack";
 
 // project-imports
 import MainCard from "components/MainCard";
+import { useTeam } from "contexts/TeamContext";
 import PjnAccountConnect from "sections/apps/folders/step-components/PjnAccountConnect";
 import ScbaAccountConnect from "sections/apps/folders/step-components/ScbaAccountConnect";
 import MevAccountConnect from "sections/apps/profiles/account/MevAccountConnect";
@@ -36,6 +38,14 @@ import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 const TabPjnIntegration = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
+	// Equipos (2/11/2026): las cuentas de portal son del equipo; las gestionan owner y admin.
+	const { isTeamMode, isOwner, isAdmin } = useTeam();
+	const canManageCredentials = !isTeamMode || isOwner || isAdmin;
+	const avisoSoloGestores = (portal: string, extra: string) => (
+		<Alert severity="info" icon={<InfoCircle size={18} />} sx={{ "& .MuiAlert-message": { fontSize: "0.85rem" } }}>
+			La cuenta {portal} del equipo la gestionan el propietario o un administrador. {extra}
+		</Alert>
+	);
 
 	const [serviceAvailable, setServiceAvailable] = useState(true);
 	const [serviceMessage, setServiceMessage] = useState("");
@@ -68,11 +78,14 @@ const TabPjnIntegration = () => {
 	// el tab seleccionado (sharing-friendly + reactivo a back/forward).
 	const handleViewChange = (next: IntegrationView) => {
 		setView(next);
-		setSearchParams(prev => {
-			const params = new URLSearchParams(prev);
-			params.set("view", next);
-			return params;
-		}, { replace: true });
+		setSearchParams(
+			(prev) => {
+				const params = new URLSearchParams(prev);
+				params.set("view", next);
+				return params;
+			},
+			{ replace: true },
+		);
 	};
 
 	const [syncContactsEnabled, setSyncContactsEnabled] = useState(false);
@@ -85,10 +98,7 @@ const TabPjnIntegration = () => {
 
 	const loadPreferences = useCallback(async () => {
 		try {
-			const [prefRes, credRes] = await Promise.all([
-				ApiService.getUserPreferences(),
-				pjnCredentialsService.getCredentialsStatus(),
-			]);
+			const [prefRes, credRes] = await Promise.all([ApiService.getUserPreferences(), pjnCredentialsService.getCredentialsStatus()]);
 			if (prefRes.success && prefRes.data) {
 				setSyncContactsEnabled(prefRes.data.pjn?.syncContactsFromIntervinientes ?? false);
 			}
@@ -305,7 +315,9 @@ const TabPjnIntegration = () => {
 				}}
 			>
 				<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: color }} />
-				<Typography sx={{ fontSize: "0.66rem", fontWeight: 600, color, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>
+				<Typography
+					sx={{ fontSize: "0.66rem", fontWeight: 600, color, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}
+				>
 					{label}
 				</Typography>
 			</Box>
@@ -384,118 +396,118 @@ const TabPjnIntegration = () => {
 							subtitle="Configurá cómo se sincronizan los intervinientes de tus causas del Poder Judicial de la Nación."
 							icon={<People size={16} variant="Bulk" />}
 						>
-					{!serviceAvailable ? (
-						<Box
-							sx={{
-								p: 1.5,
-								borderRadius: 1.25,
-								bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
-								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
-							}}
-						>
-							<Stack direction="row" spacing={1} alignItems="flex-start">
-								<InfoCircle size={16} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
-								<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>
-									{serviceMessage || "La integración con el Poder Judicial de la Nación no está disponible en este momento."}
-								</Typography>
-							</Stack>
-						</Box>
-					) : !prefsLoaded ? (
-						<Stack alignItems="center" sx={{ py: 4 }} spacing={1}>
-							<CircularProgress size={24} sx={{ color: BRAND_BLUE }} />
-							<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
-								Cargando preferencias…
-							</Typography>
-						</Stack>
-					) : (
-						<Stack spacing={1.5}>
-							<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5}>
-								<FormControlLabel
-									control={
-										<Switch
-											checked={syncContactsEnabled}
-											onChange={handleToggleSyncContacts}
-											disabled={syncContactsLoading}
-											sx={switchSx}
-										/>
-									}
-									label={
-										<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
-											Sincronizar intervinientes como contactos
-										</Typography>
-									}
-								/>
-								{syncContactsLoading && <CircularProgress size={18} sx={{ color: BRAND_BLUE, flexShrink: 0 }} />}
-							</Stack>
-							<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-								Los intervinientes (partes y letrados) extraídos de tus causas se crearán automáticamente como contactos en las carpetas
-								vinculadas.
-							</Typography>
-
-							{!syncContactsEnabled && (
+							{!serviceAvailable ? (
 								<Box
 									sx={{
-										p: 1.25,
+										p: 1.5,
 										borderRadius: 1.25,
 										bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
 										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
 									}}
 								>
 									<Stack direction="row" spacing={1} alignItems="flex-start">
-										<InfoCircle size={14} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
-										<Typography sx={{ fontSize: "0.74rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-											Al activarlo, los actores y demandados de tus causas se crearán como contactos. La app detecta contactos existentes con
-											el mismo CUIT para evitar duplicados. Si tenés muchas causas, se pueden crear cientos de contactos nuevos — activá con
-											criterio.
+										<InfoCircle size={16} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
+										<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+											{serviceMessage || "La integración con el Poder Judicial de la Nación no está disponible en este momento."}
 										</Typography>
 									</Stack>
 								</Box>
-							)}
-
-							<Box
-								sx={{
-									p: 1.25,
-									borderRadius: 1.25,
-									bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05),
-									border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
-								}}
-							>
-								<Stack direction="row" spacing={1} alignItems="flex-start">
-									<InfoCircle size={14} variant="Bulk" color={STALE_AMBER} style={{ marginTop: 2, flexShrink: 0 }} />
-									<Typography sx={{ fontSize: "0.74rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-										La cantidad de contactos sincronizados está sujeta a los límites de tu plan actual.
+							) : !prefsLoaded ? (
+								<Stack alignItems="center" sx={{ py: 4 }} spacing={1}>
+									<CircularProgress size={24} sx={{ color: BRAND_BLUE }} />
+									<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+										Cargando preferencias…
 									</Typography>
 								</Stack>
-							</Box>
-
-							<Divider sx={{ my: 0.5 }} />
-
-							<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5}>
-								<FormControlLabel
-									control={
-										<Switch
-											checked={bandejaNotifEnabled}
-											onChange={handleToggleBandejaNotif}
-											disabled={bandejaNotifLoading}
-											sx={switchSx}
+							) : (
+								<Stack spacing={1.5}>
+									<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5}>
+										<FormControlLabel
+											control={
+												<Switch
+													checked={syncContactsEnabled}
+													onChange={handleToggleSyncContacts}
+													disabled={syncContactsLoading}
+													sx={switchSx}
+												/>
+											}
+											label={
+												<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+													Sincronizar intervinientes como contactos
+												</Typography>
+											}
 										/>
-									}
-									label={
-										<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
-											Notificaciones de cédulas (bandeja)
-										</Typography>
-									}
-								/>
-								{bandejaNotifLoading && <CircularProgress size={18} sx={{ color: BRAND_BLUE, flexShrink: 0 }} />}
-							</Stack>
-							<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-								Recibí un email cuando lleguen nuevas cédulas electrónicas a tu bandeja del PJN (se incluyen junto a los movimientos
-								del día).
-							</Typography>
-						</Stack>
-					)}
-				</SectionCard>
-			</Grid>
+										{syncContactsLoading && <CircularProgress size={18} sx={{ color: BRAND_BLUE, flexShrink: 0 }} />}
+									</Stack>
+									<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+										Los intervinientes (partes y letrados) extraídos de tus causas se crearán automáticamente como contactos en las carpetas
+										vinculadas.
+									</Typography>
+
+									{!syncContactsEnabled && (
+										<Box
+											sx={{
+												p: 1.25,
+												borderRadius: 1.25,
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+											}}
+										>
+											<Stack direction="row" spacing={1} alignItems="flex-start">
+												<InfoCircle size={14} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
+												<Typography sx={{ fontSize: "0.74rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+													Al activarlo, los actores y demandados de tus causas se crearán como contactos. La app detecta contactos
+													existentes con el mismo CUIT para evitar duplicados. Si tenés muchas causas, se pueden crear cientos de contactos
+													nuevos — activá con criterio.
+												</Typography>
+											</Stack>
+										</Box>
+									)}
+
+									<Box
+										sx={{
+											p: 1.25,
+											borderRadius: 1.25,
+											bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05),
+											border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+										}}
+									>
+										<Stack direction="row" spacing={1} alignItems="flex-start">
+											<InfoCircle size={14} variant="Bulk" color={STALE_AMBER} style={{ marginTop: 2, flexShrink: 0 }} />
+											<Typography sx={{ fontSize: "0.74rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+												La cantidad de contactos sincronizados está sujeta a los límites de tu plan actual.
+											</Typography>
+										</Stack>
+									</Box>
+
+									<Divider sx={{ my: 0.5 }} />
+
+									<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5}>
+										<FormControlLabel
+											control={
+												<Switch
+													checked={bandejaNotifEnabled}
+													onChange={handleToggleBandejaNotif}
+													disabled={bandejaNotifLoading}
+													sx={switchSx}
+												/>
+											}
+											label={
+												<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+													Notificaciones de cédulas (bandeja)
+												</Typography>
+											}
+										/>
+										{bandejaNotifLoading && <CircularProgress size={18} sx={{ color: BRAND_BLUE, flexShrink: 0 }} />}
+									</Stack>
+									<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+										Recibí un email cuando lleguen nuevas cédulas electrónicas a tu bandeja del PJN (se incluyen junto a los movimientos del
+										día).
+									</Typography>
+								</Stack>
+							)}
+						</SectionCard>
+					</Grid>
 
 					<Grid item xs={12}>
 						<SectionCard
@@ -507,7 +519,7 @@ const TabPjnIntegration = () => {
 							<PlazosAutomaticosConfig />
 						</SectionCard>
 					</Grid>
-			</Grid>
+				</Grid>
 			) : view === "scba" ? (
 				<Grid container spacing={2.5}>
 					<Grid item xs={12} md={6}>
@@ -518,7 +530,11 @@ const TabPjnIntegration = () => {
 							icon={<Link1 size={16} variant="Bulk" />}
 							rightSlot={isScbaConnected !== null ? <StatusPill status={isScbaConnected} /> : undefined}
 						>
-							<ScbaAccountConnect onConnectionStatusChange={(connected) => setIsScbaConnected(connected)} />
+							{canManageCredentials ? (
+								<ScbaAccountConnect onConnectionStatusChange={(connected) => setIsScbaConnected(connected)} />
+							) : (
+								avisoSoloGestores("de la SCBA", "Las causas que importa, públicas y privadas, quedan a disposición de todo el equipo.")
+							)}
 						</SectionCard>
 					</Grid>
 				</Grid>
@@ -530,11 +546,18 @@ const TabPjnIntegration = () => {
 						<SectionCard
 							eyebrow="Integración · MEV"
 							title="Cuenta MEV"
-							subtitle="Vinculá tu cuenta del portal MEV (mev.scba.gov.ar). Con una sola credencial cubrimos todas tus causas de Buenos Aires."
+							subtitle="Vinculá tu cuenta del portal MEV (mev.scba.gov.ar). Sirve para consultar las causas de Buenos Aires, que son públicas; con una sola credencial cubrimos todas las de la cuenta."
 							icon={<Link1 size={16} variant="Bulk" />}
 							rightSlot={isMevConnected !== null ? <StatusPill status={isMevConnected} /> : undefined}
 						>
-							<MevAccountConnect onConnectionStatusChange={(connected) => setIsMevConnected(connected)} />
+							{canManageCredentials ? (
+								<MevAccountConnect onConnectionStatusChange={(connected) => setIsMevConnected(connected)} />
+							) : (
+								avisoSoloGestores(
+									"de la MEV",
+									"Con ella consultamos las causas de Buenos Aires, que son públicas: cualquiera del equipo con permiso de crear puede agregarlas.",
+								)
+							)}
 						</SectionCard>
 					</Grid>
 				</Grid>

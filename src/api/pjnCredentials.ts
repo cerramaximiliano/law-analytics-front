@@ -6,6 +6,7 @@
  */
 
 import axios, { AxiosError } from "axios";
+import { teamHeaders } from "api/teamHeaders";
 import { pjnStatusNotice, PjnStatusReason } from "utils/pjnBindingState";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
@@ -155,7 +156,11 @@ class PjnCredentialsService {
 	 */
 	async linkCredentials(cuil: string, password: string): Promise<LinkCredentialsResponse> {
 		try {
-			const response = await axios.post(`${BASE_URL}/api/pjn-credentials`, { cuil, password }, { withCredentials: true });
+			const response = await axios.post(
+				`${BASE_URL}/api/pjn-credentials`,
+				{ cuil, password },
+				{ withCredentials: true, headers: teamHeaders() },
+			);
 			return response.data;
 		} catch (error) {
 			const axiosError = error as AxiosError<any>;
@@ -189,7 +194,11 @@ class PjnCredentialsService {
 		scope: "global" | "folder",
 		folderId?: string,
 	): Promise<{ success: boolean; bannerDismiss?: { global: boolean; folderIds: string[] } }> {
-		const response = await axios.post(`${BASE_URL}/api/pjn-credentials/banner-dismiss`, { scope, folderId }, { withCredentials: true });
+		const response = await axios.post(
+			`${BASE_URL}/api/pjn-credentials/banner-dismiss`,
+			{ scope, folderId },
+			{ withCredentials: true, headers: teamHeaders() },
+		);
 		return response.data;
 	}
 
@@ -197,6 +206,7 @@ class PjnCredentialsService {
 		try {
 			const response = await axios.get(`${BASE_URL}/api/pjn-credentials`, {
 				withCredentials: true,
+				headers: teamHeaders(),
 			});
 			return response.data;
 		} catch (error) {
@@ -238,6 +248,7 @@ class PjnCredentialsService {
 		try {
 			const response = await axios.get(`${BASE_URL}/api/pjn-credentials/impact`, {
 				withCredentials: true,
+				headers: teamHeaders(),
 			});
 			return response.data;
 		} catch (error) {
@@ -258,6 +269,7 @@ class PjnCredentialsService {
 			const response = await axios.delete(`${BASE_URL}/api/pjn-credentials`, {
 				data: { mode },
 				withCredentials: true,
+				headers: teamHeaders(),
 			});
 			return response.data;
 		} catch (error) {
@@ -275,7 +287,11 @@ class PjnCredentialsService {
 	 */
 	async toggleCredentials(enabled: boolean): Promise<GenericResponse> {
 		try {
-			const response = await axios.patch(`${BASE_URL}/api/pjn-credentials/toggle`, { enabled }, { withCredentials: true });
+			const response = await axios.patch(
+				`${BASE_URL}/api/pjn-credentials/toggle`,
+				{ enabled },
+				{ withCredentials: true, headers: teamHeaders() },
+			);
 			return response.data;
 		} catch (error) {
 			const axiosError = error as AxiosError<any>;
@@ -294,7 +310,7 @@ class PjnCredentialsService {
 			const response = await axios.patch(
 				`${BASE_URL}/api/pjn-credentials/bandeja-notifications`,
 				{ bandejaNotificationsEnabled },
-				{ withCredentials: true },
+				{ withCredentials: true, headers: teamHeaders() },
 			);
 			return response.data;
 		} catch (error) {
@@ -312,7 +328,11 @@ class PjnCredentialsService {
 	 */
 	async updatePassword(newPassword: string): Promise<GenericResponse> {
 		try {
-			const response = await axios.patch(`${BASE_URL}/api/pjn-credentials/password`, { password: newPassword }, { withCredentials: true });
+			const response = await axios.patch(
+				`${BASE_URL}/api/pjn-credentials/password`,
+				{ password: newPassword },
+				{ withCredentials: true, headers: teamHeaders() },
+			);
 			return response.data;
 		} catch (error) {
 			const axiosError = error as AxiosError<any>;
@@ -328,7 +348,7 @@ class PjnCredentialsService {
 	 */
 	async requestSync(): Promise<GenericResponse> {
 		try {
-			const response = await axios.post(`${BASE_URL}/api/pjn-credentials/sync`, {}, { withCredentials: true });
+			const response = await axios.post(`${BASE_URL}/api/pjn-credentials/sync`, {}, { withCredentials: true, headers: teamHeaders() });
 			return response.data;
 		} catch (error) {
 			const axiosError = error as AxiosError<any>;
@@ -355,6 +375,7 @@ class PjnCredentialsService {
 		try {
 			const response = await axios.get(`${BASE_URL}/api/pjn-credentials/history`, {
 				withCredentials: true,
+				headers: teamHeaders(),
 			});
 			return response.data;
 		} catch (error) {
