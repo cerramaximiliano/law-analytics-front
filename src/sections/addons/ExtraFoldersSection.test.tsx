@@ -173,9 +173,90 @@ describe("ExtraFoldersPlanNote", () => {
 		expect(screen.getByTestId("extra-folders-plan-note").textContent).toContain("+250 causas y +100 MB por US$ 9/mes");
 	});
 
+	it("sin Premium activo solo informa: no consulta al hub ni ofrece comprar", () => {
+		mockPublicAddons = [addon];
+		render(<ExtraFoldersPlanNote />);
+		expect(screen.getByTestId("extra-folders-plan-note").textContent).toContain("Con Premium podés sumar bloques");
+		expect(screen.queryByTestId("extra-folders-plan-note-action")).toBeNull();
+		expect(mockGet).not.toHaveBeenCalled();
+	});
+
 	it("con la venta cerrada no aparece", () => {
 		mockPublicAddons = [{ ...addon, available: false }];
 		const { container } = render(<ExtraFoldersPlanNote />);
 		expect(container.innerHTML).toBe("");
+	});
+
+	const noBlocks = { purchased: 0, scheduled: null, scheduledAt: null, granted: 0, counted: 0 };
+
+	it("Premium sin bloques: compra desde la tarjeta, confirma, refresca y cierra el diálogo", async () => {
+		mockPublicAddons = [addon];
+		mockGet.mockResolvedValue(status({ blocks: noBlocks, folders: { used: 100, plan: 500, extra: 0, limit: 500 } }));
+		mockSet.mockResolvedValue({ success: true, result: "increased", blocks: 1 });
+		render(<ExtraFoldersPlanNote canManage />);
+
+		const action = await screen.findByTestId("extra-folders-plan-note-action");
+		expect(action.textContent).toBe("Sumar bloques");
+		expect(screen.getByTestId("extra-folders-plan-note").textContent).toContain("Sumá bloques de +250 causas");
+		fireEvent.click(action);
+
+		// Sin bloques el selector arranca en 1: lo primero que ve es lo que va a comprar.
+		expect((await screen.findByTestId("extra-folders-target")).textContent).toBe("1 bloque");
+		expect(screen.getByTestId("extra-folders-apply").textContent).toBe("Sumar bloques");
+		fireEvent.click(screen.getByTestId("extra-folders-apply"));
+		expect(await screen.findByText(/tu límite sube a 750 causas activas/)).toBeTruthy();
+		fireEvent.click(screen.getByTestId("extra-folders-confirm"));
+
+		await waitFor(() => expect(mockSet).toHaveBeenCalledWith(1));
+		await waitFor(() => expect(mockGet).toHaveBeenCalledTimes(2));
+		expect(mockDispatch).toHaveBeenCalledWith({ type: "refresh" });
+		await waitFor(() => expect(screen.queryByTestId("extra-folders-section")).toBeNull());
+	});
+
+	it("Premium con bloques: muestra el total y permite administrarlos", async () => {
+		mockPublicAddons = [addon];
+		mockGet.mockResolvedValue(
+			status({
+				blocks: { purchased: 2, scheduled: null, scheduledAt: null, granted: 0, counted: 2 },
+				folders: { used: 600, plan: 500, extra: 500, limit: 1000 },
+			}),
+		);
+		render(<ExtraFoldersPlanNote canManage />);
+		const action = await screen.findByTestId("extra-folders-plan-note-action");
+		expect(action.textContent).toBe("Administrar bloques");
+		expect(screen.getByTestId("extra-folders-plan-note").textContent).toContain("Tenés 2 bloques: 1.000 causas activas en total.");
+	});
+
+	it("Premium con baja programada y sin bloques: muestra el motivo y no ofrece comprar", async () => {
+		mockPublicAddons = [addon];
+		mockGet.mockResolvedValue(
+			status({
+				blocks: noBlocks,
+				eligible: false,
+				eligibilityReason: "subscription_canceling",
+				canIncrease: false,
+				canDecrease: false,
+			}),
+		);
+		render(<ExtraFoldersPlanNote canManage />);
+		await waitFor(() => expect(screen.getByTestId("extra-folders-plan-note").textContent).toContain("programada para cancelarse"));
+		expect(screen.queryByTestId("extra-folders-plan-note-action")).toBeNull();
+	});
+
+	it("Premium con venta cerrada y sin bypass ni bloques: no aparece", async () => {
+		mockPublicAddons = [{ ...addon, available: false }];
+		mockGet.mockResolvedValue(status({ blocks: noBlocks, publicAvailable: false, canIncrease: false, canDecrease: false }));
+		const { container } = render(<ExtraFoldersPlanNote canManage />);
+		await waitFor(() => expect(mockGet).toHaveBeenCalled());
+		expect(container.innerHTML).toBe("");
+	});
+
+	it("si el hub falla queda el texto, sin botón", async () => {
+		mockPublicAddons = [addon];
+		mockGet.mockRejectedValue(new Error("red"));
+		render(<ExtraFoldersPlanNote canManage />);
+		await waitFor(() => expect(mockGet).toHaveBeenCalled());
+		expect(screen.getByTestId("extra-folders-plan-note").textContent).toContain("Sumá bloques");
+		expect(screen.queryByTestId("extra-folders-plan-note-action")).toBeNull();
 	});
 });

@@ -89,6 +89,8 @@ export interface PlanCardProps {
 	dataTestId?: string;
 	/** Contenido extra justo arriba del CTA (p. ej. el checkbox del add-on al contratar el plan). */
 	beforeCta?: ReactNode;
+	/** Cambia cuando cambia la suscripción (baja, reactivación): recarga el estado de «Causas adicionales». */
+	addonStateKey?: string | null;
 }
 
 // ============================== COMPONENT ============================== //
@@ -108,6 +110,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
 	hideFeatures,
 	dataTestId,
 	beforeCta,
+	addonStateKey,
 }) => {
 	// Default de hideFeatures: en compact se ocultan (modal no es lugar para
 	// listas largas); en non-compact se muestran.
@@ -490,7 +493,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
 									</Typography>
 								)}
 							</Stack>
-							{!compact && plan.planId === EXTRA_FOLDERS_PLAN_ID && <ExtraFoldersPlanNote />}
+							{!compact && plan.planId === EXTRA_FOLDERS_PLAN_ID && <ExtraFoldersPlanNote key={addonStateKey} canManage={isCurrent} />}
 						</Box>
 					)}
 
