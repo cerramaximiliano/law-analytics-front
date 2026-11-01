@@ -284,6 +284,20 @@ const AutomaticStep = () => {
 		(values.baImportMode as BaImportMode) || (canManageCredentials ? "connect" : "single"),
 	);
 	const [showMevPassword, setShowMevPassword] = useState(false);
+	// Equipos: quien no gestiona credenciales nunca queda en «Conectar mi cuenta» (los valores iniciales
+	// del formulario pueden traer ese modo; el selector ya no lo muestra).
+	useEffect(() => {
+		if (canManageCredentials) return;
+		if (baImportMode === "connect") {
+			setBaImportMode("single");
+			setFieldValue("baImportMode", "single");
+		}
+		if (pjnImportMode === "connect") {
+			setPjnImportMode("single");
+			setFieldValue("pjnImportMode", "single");
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [canManageCredentials, baImportMode, pjnImportMode]);
 
 	// Estado para errores de EJE (CABA)
 	const [cuijError, setCuijError] = useState("");
