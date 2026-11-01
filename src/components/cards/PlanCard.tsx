@@ -130,8 +130,9 @@ const PlanCard: React.FC<PlanCardProps> = ({
 		return visibility === currentEnv;
 	};
 
+	// Un cupo en 0 (miembros de equipo en Free) no se lista con tilde verde (1/11/2026).
 	const allVisibleResources = plan.resourceLimits
-		.filter((r) => isVisibleInCurrentEnv(r.visibility))
+		.filter((r) => isVisibleInCurrentEnv(r.visibility) && r.limit !== 0)
 		.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
 	const visibleResources = compact ? allVisibleResources.slice(0, maxResourcesCompact) : allVisibleResources;
 	const truncatedResourcesCount = compact ? allVisibleResources.length - visibleResources.length : 0;
