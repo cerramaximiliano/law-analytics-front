@@ -1595,6 +1595,7 @@ const Pricing = () => {
 								contextMessage={contextMessage}
 								showInactiveOverlay={isInactive}
 								dataTestId={`sub-plan-card-${plan.planId}`}
+								addonStateKey={mcpSubscriptionKey}
 								beforeCta={
 									offerAddonHere ? (
 										<PlanCheckoutAddonOption
