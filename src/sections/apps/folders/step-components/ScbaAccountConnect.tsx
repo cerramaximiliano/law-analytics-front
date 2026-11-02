@@ -32,8 +32,15 @@ import { enqueueSnackbar } from "notistack";
 import { Zoom } from "@mui/material";
 import LogoLoader from "components/logo/LogoLoader";
 import { PopupTransition } from "components/@extended/Transitions";
-import scbaCredentialsService, { ScbaCredentialsData, ScbaUnlinkImpact, ScbaResyncPreview } from "api/scbaCredentials";
+import scbaCredentialsService, {
+	ScbaCredentialsData,
+	ScbaUnlinkImpact,
+	ScbaResyncPreview,
+	ScbaCredentialSummary,
+	ScbaCredentialsQuota,
+} from "api/scbaCredentials";
 import PortalResyncDialog, { ResyncSelection } from "./PortalResyncDialog";
+import ScbaAccountsList from "./ScbaAccountsList";
 import { dispatch as storeDispatch } from "store";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { fetchUserStats, incrementUserStat } from "store/reducers/userStats";
@@ -96,6 +103,9 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		const [isUnlinking, setIsUnlinking] = useState(false);
 
 		// Re-sincronizar (2/11/2026): diálogo con vista previa (papelera, exclusiones anteriores, bajas) antes de pedir el sync
+		// Varias cuentas por usuario (Premium, 2/11/2026)
+		const [multiCredentials, setMultiCredentials] = useState<ScbaCredentialSummary[]>([]);
+		const [multiQuota, setMultiQuota] = useState<ScbaCredentialsQuota | null>(null);
 		const [resyncOpen, setResyncOpen] = useState(false);
 		const [resyncPreview, setResyncPreview] = useState<ScbaResyncPreview | null>(null);
 		const [resyncError, setResyncError] = useState<string | null>(null);
@@ -170,6 +180,8 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 			try {
 				const response = await scbaCredentialsService.getCredentialsStatus();
 				setServiceAvailable(response.serviceAvailable);
+				setMultiCredentials(response.credentials || []);
+				setMultiQuota(response.quota || null);
 				setServiceMessage(response.serviceMessage || "");
 				onServiceAvailableChange?.(response.serviceAvailable, response.serviceMessage || undefined);
 
@@ -1013,6 +1025,23 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 						)}
 					</Stack>
 				</Box>
+			);
+		}
+
+		// Premium con el interruptor encendido y al menos una cuenta: lista de cuentas (una por abogado).
+		if (hasCredentials && multiQuota && multiQuota.max > 1) {
+			return (
+				<>
+					<ScbaAccountsList
+						credentials={multiCredentials}
+						quota={multiQuota}
+						onChanged={async () => {
+							await loadCredentialsStatus();
+						}}
+					/>
+					{unlinkDialog}
+					{resyncDialog}
+				</>
 			);
 		}
 
