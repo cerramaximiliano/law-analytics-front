@@ -79,20 +79,25 @@ const MevAccountsList = ({ credentials, quota, onChanged }: Props) => {
 	const { activeTeam } = useTeam();
 	const authUser = useSelector((state: any) => state.auth?.user);
 
-	// Abogados elegibles como titular: el propietario (cuenta del equipo) y los integrantes activos.
+	// Abogados elegibles como titular: el propietario del equipo (la cuenta) y los integrantes activos; sin equipo, el usuario.
+	// `members[].userId` puede venir poblado (objeto con nombre y correo) o como id.
 	const abogados = useMemo(() => {
-		const ownerId = String(authUser?._id || authUser?.id || "");
 		const list: { id: string; label: string }[] = [];
-		if (ownerId)
-			list.push({
-				id: ownerId,
-				label: [authUser?.firstName, authUser?.lastName].filter(Boolean).join(" ") || authUser?.email || "Propietario",
-			});
-		for (const m of activeTeam?.members || []) {
-			if (m.status !== "active") continue;
-			const id = String((m as any).userId?._id || m.userId);
-			if (!id || list.some((x) => x.id === id)) continue;
-			list.push({ id, label: [m.firstName, m.lastName].filter(Boolean).join(" ") || m.email });
+		const add = (id?: string | null, label?: string | null) => {
+			if (!id || list.some((x) => x.id === String(id))) return;
+			list.push({ id: String(id), label: label || "Integrante" });
+		};
+		const nombre = (o?: { firstName?: string; lastName?: string; email?: string } | null) =>
+			o ? [o.firstName, o.lastName].filter(Boolean).join(" ") || o.email || null : null;
+		if (activeTeam) {
+			add(activeTeam.owner, nombre(activeTeam.ownerInfo) || "Propietario");
+			for (const m of activeTeam.members || []) {
+				if (m.status !== "active") continue;
+				const populated = typeof (m as any).userId === "object" ? (m as any).userId : null;
+				add(populated?._id || (m.userId as string), nombre(populated) || nombre(m));
+			}
+		} else {
+			add(authUser?._id || authUser?.id, nombre(authUser) || "Mi cuenta");
 		}
 		return list;
 	}, [activeTeam, authUser]);
