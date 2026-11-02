@@ -18,7 +18,6 @@ import {
 	LinearProgress,
 	IconButton,
 	InputAdornment,
-	Divider,
 	Card,
 	CardContent,
 	Dialog,
@@ -38,10 +37,10 @@ import { incrementUserStat, fetchUserStats } from "store/reducers/userStats";
 import { pjnSyncStarted, pjnSyncReset, pjnSyncCompleted, pjnSyncError, pjnCredentialsInvalidated } from "store/reducers/pjnSync";
 import LogoLoader from "components/logo/LogoLoader";
 import { PopupTransition } from "components/@extended/Transitions";
-import Avatar from "components/@extended/Avatar";
 import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import PjnGuardedButton from "components/PjnGuardedButton";
-import pjnCredentialsService, { PjnCredentialsStatus, UnlinkImpact } from "api/pjnCredentials";
+import pjnCredentialsService, { PjnCredentialsStatus, UnlinkImpact, PjnResyncPreview } from "api/pjnCredentials";
+import PjnResyncDialog from "./PjnResyncDialog";
 import { useTeam } from "contexts/TeamContext";
 import { trackActivity } from "utils/productAnalytics";
 
@@ -105,6 +104,12 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 		const [unlinkImpact, setUnlinkImpact] = useState<UnlinkImpact | null>(null);
 		const [isLoadingImpact, setIsLoadingImpact] = useState(false);
 		const [isUnlinking, setIsUnlinking] = useState(false);
+		// Re-sincronizar (2/11/2026): diálogo con vista previa antes de pedir el sync desde cero
+		const [resyncOpen, setResyncOpen] = useState(false);
+		const [resyncPreview, setResyncPreview] = useState<PjnResyncPreview | null>(null);
+		const [resyncError, setResyncError] = useState<string | null>(null);
+		const [isLoadingResync, setIsLoadingResync] = useState(false);
+		const [isResyncing, setIsResyncing] = useState(false);
 
 		// Muestra el resumen de pasos completados brevemente después de que el sync termina
 		const [showCompletionSummary, setShowCompletionSummary] = useState(false);
@@ -475,18 +480,55 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 			isConnected: () => hasCredentials,
 		}));
 
-		// Solicitar re-sincronización
+		// Re-sincronizar: abre el diálogo y carga la vista previa (papelera, bajas, cupo, última sync)
 		const handleResync = async () => {
+			setResyncOpen(true);
+			setResyncError(null);
+			setIsLoadingResync(true);
 			try {
-				const response = await pjnCredentialsService.requestSync();
+				const response = await pjnCredentialsService.getResyncPreview();
+				if (response.success && response.data) setResyncPreview(response.data);
+				else {
+					setResyncPreview(null);
+					setResyncError(response.error || "No se pudo preparar la re-sincronización");
+				}
+			} catch {
+				setResyncPreview(null);
+				setResyncError("Error de conexión. Intente nuevamente.");
+			} finally {
+				setIsLoadingResync(false);
+			}
+		};
+
+		// Confirmación del diálogo: restaura las elegidas y pide el sync desde cero
+		const handleResyncConfirm = async (restoreFolderIds: string[]) => {
+			setIsResyncing(true);
+			try {
+				const response = await pjnCredentialsService.requestResync(restoreFolderIds);
 
 				if (response.success) {
-					enqueueSnackbar("Sincronización iniciada", {
+					const restauradas = response.data?.restore?.restored?.length || 0;
+					const archivadas = response.data?.restore?.archivedByLimit?.length || 0;
+					const detalle =
+						restauradas || archivadas
+							? ` · ${restauradas + archivadas} carpeta${restauradas + archivadas === 1 ? "" : "s"} de vuelta${
+									archivadas ? ` (${archivadas} archivada${archivadas === 1 ? "" : "s"} por el cupo)` : ""
+							  }`
+							: "";
+					enqueueSnackbar(`Sincronización iniciada${detalle}`, {
 						variant: "info",
 						anchorOrigin: { vertical: "bottom", horizontal: "right" },
 						TransitionComponent: Zoom,
-						autoHideDuration: 3000,
+						autoHideDuration: 4000,
 					});
+					setResyncOpen(false);
+					if (restauradas || archivadas) {
+						const uid = authUser?._id || authUser?.id;
+						if (uid) {
+							storeDispatch(getFoldersByUserId(uid, true) as any);
+							storeDispatch(fetchUserStats() as any);
+						}
+					}
 
 					// Mostrar UI de sync mientras el WS no llegue con el evento "started".
 					// force=true: acción explícita del usuario, ignora el grace period del reducer.
@@ -506,6 +548,8 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 					TransitionComponent: Zoom,
 					autoHideDuration: 4000,
 				});
+			} finally {
+				setIsResyncing(false);
 			}
 		};
 
@@ -603,6 +647,17 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 		// Dialog de confirmación de desvinculación — brand sober destructive
 		const isDarkDialog = theme.palette.mode === "dark";
 		const errorColor = theme.palette.error.main;
+		const resyncDialog = (
+			<PjnResyncDialog
+				open={resyncOpen}
+				loading={isLoadingResync}
+				submitting={isResyncing}
+				preview={resyncPreview}
+				error={resyncError}
+				onClose={() => setResyncOpen(false)}
+				onConfirm={handleResyncConfirm}
+			/>
+		);
 		const unlinkDialog = (
 			<Dialog
 				open={unlinkDialogOpen}
@@ -1049,6 +1104,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 			return (
 				<>
 					{unlinkDialog}
+					{resyncDialog}
 					<Stack spacing={2}>
 						<Box
 							sx={{
