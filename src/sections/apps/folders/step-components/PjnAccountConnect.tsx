@@ -39,8 +39,15 @@ import LogoLoader from "components/logo/LogoLoader";
 import { PopupTransition } from "components/@extended/Transitions";
 import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import PjnGuardedButton from "components/PjnGuardedButton";
-import pjnCredentialsService, { PjnCredentialsStatus, UnlinkImpact, PjnResyncPreview } from "api/pjnCredentials";
+import pjnCredentialsService, {
+	PjnCredentialsStatus,
+	UnlinkImpact,
+	PjnResyncPreview,
+	PjnCredentialSummary,
+	PjnCredentialsQuota,
+} from "api/pjnCredentials";
 import PortalResyncDialog from "./PortalResyncDialog";
+import PjnAccountsList from "./PjnAccountsList";
 import { useTeam } from "contexts/TeamContext";
 import { trackActivity } from "utils/productAnalytics";
 
@@ -105,6 +112,9 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 		const [isLoadingImpact, setIsLoadingImpact] = useState(false);
 		const [isUnlinking, setIsUnlinking] = useState(false);
 		// Re-sincronizar (2/11/2026): diálogo con vista previa antes de pedir el sync desde cero
+		// Varias cuentas por usuario (Premium, 2/11/2026): el hub informa todas las credenciales y el cupo
+		const [multiCredentials, setMultiCredentials] = useState<PjnCredentialSummary[]>([]);
+		const [multiQuota, setMultiQuota] = useState<PjnCredentialsQuota | null>(null);
 		const [resyncOpen, setResyncOpen] = useState(false);
 		const [resyncPreview, setResyncPreview] = useState<PjnResyncPreview | null>(null);
 		const [resyncError, setResyncError] = useState<string | null>(null);
@@ -319,6 +329,8 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 			try {
 				const response = await pjnCredentialsService.getCredentialsStatus();
 				setServiceAvailable(response.serviceAvailable);
+				setMultiCredentials(response.credentials || []);
+				setMultiQuota(response.quota || null);
 				setServiceMessage(response.serviceMessage || "");
 				onServiceAvailableChange?.(response.serviceAvailable, response.serviceMessage);
 
@@ -1050,6 +1062,23 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 						</Stack>
 					</CardContent>
 				</Card>
+			);
+		}
+
+		// Premium con el interruptor encendido y al menos una cuenta: lista de cuentas (una por abogado).
+		if (hasCredentials && multiQuota && multiQuota.max > 1) {
+			return (
+				<>
+					<PjnAccountsList
+						credentials={multiCredentials}
+						quota={multiQuota}
+						onChanged={async () => {
+							await loadCredentialsStatus(true);
+						}}
+					/>
+					{unlinkDialog}
+					{resyncDialog}
+				</>
 			);
 		}
 

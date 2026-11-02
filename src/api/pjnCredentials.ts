@@ -93,6 +93,7 @@ export interface PjnSyncHistoryEntry {
 
 export interface LinkCredentialsResponse {
 	success: boolean;
+	code?: string;
 	message?: string;
 	data?: {
 		id: string;
@@ -105,9 +106,36 @@ export interface LinkCredentialsResponse {
 	error?: string;
 }
 
+/** Varias cuentas por usuario (Premium, 2/11/2026) */
+export interface PjnCredentialSummary {
+	id: string;
+	cuil?: string | null;
+	etiqueta?: string;
+	abogadoUserId?: string | null;
+	enabled: boolean;
+	verified: boolean;
+	isValid: boolean;
+	syncStatus: string;
+	lastSync: string | null;
+	credentialInvalid?: boolean;
+	consecutiveErrors?: number;
+	createdAt?: string;
+	principal?: boolean;
+}
+
+export interface PjnCredentialsQuota {
+	max: number;
+	used: number;
+	premium: boolean;
+	plan?: string;
+	reason: null | "disabled" | "premium_required" | "subscription_inactive";
+}
+
 export interface GetCredentialsStatusResponse {
 	success: boolean;
 	hasCredentials: boolean;
+	credentials?: PjnCredentialSummary[];
+	quota?: PjnCredentialsQuota;
 	serviceAvailable: boolean;
 	serviceMessage?: string;
 	data?: PjnCredentialsStatus;
@@ -130,6 +158,7 @@ export interface GetSyncHistoryResponse {
 
 export interface GenericResponse {
 	success: boolean;
+	code?: string;
 	message?: string;
 	error?: string;
 	data?: any;
@@ -176,11 +205,15 @@ class PjnCredentialsService {
 	 * @param cuil - CUIL del usuario (con o sin guiones)
 	 * @param password - Contraseña del portal PJN
 	 */
-	async linkCredentials(cuil: string, password: string): Promise<LinkCredentialsResponse> {
+	async linkCredentials(
+		cuil: string,
+		password: string,
+		extra: { etiqueta?: string; abogadoUserId?: string | null } = {},
+	): Promise<LinkCredentialsResponse> {
 		try {
 			const response = await axios.post(
 				`${BASE_URL}/api/pjn-credentials`,
-				{ cuil, password },
+				{ cuil, password, ...extra },
 				{ withCredentials: true, headers: teamHeaders() },
 			);
 			return response.data;
@@ -266,6 +299,83 @@ class PjnCredentialsService {
 	/**
 	 * Obtiene el impacto de desvincular las credenciales PJN
 	 */
+	// ---- Varias cuentas por usuario (Premium, 2/11/2026): mismas acciones, por credencial ----
+	async updateCredential(id: string, body: { etiqueta?: string; abogadoUserId?: string | null }): Promise<GenericResponse> {
+		try {
+			const response = await axios.put(`${BASE_URL}/api/pjn-credentials/${id}`, body, { withCredentials: true, headers: teamHeaders() });
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "No se pudo editar la cuenta" };
+		}
+	}
+
+	async getUnlinkImpactById(id: string): Promise<{ success: boolean; data?: UnlinkImpact; error?: string }> {
+		try {
+			const response = await axios.get(`${BASE_URL}/api/pjn-credentials/${id}/impact`, { withCredentials: true, headers: teamHeaders() });
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "No se pudo analizar el impacto" };
+		}
+	}
+
+	async unlinkCredentialById(id: string, mode: "delete" | "keep" = "keep"): Promise<GenericResponse> {
+		try {
+			const response = await axios.delete(`${BASE_URL}/api/pjn-credentials/${id}`, {
+				data: { mode },
+				withCredentials: true,
+				headers: teamHeaders(),
+			});
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "No se pudo desvincular la cuenta" };
+		}
+	}
+
+	async toggleCredentialById(id: string, enabled: boolean): Promise<GenericResponse> {
+		try {
+			const response = await axios.patch(
+				`${BASE_URL}/api/pjn-credentials/${id}/toggle`,
+				{ enabled },
+				{ withCredentials: true, headers: teamHeaders() },
+			);
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "No se pudo cambiar el estado" };
+		}
+	}
+
+	async updatePasswordById(id: string, password: string): Promise<GenericResponse> {
+		try {
+			const response = await axios.patch(
+				`${BASE_URL}/api/pjn-credentials/${id}/password`,
+				{ password },
+				{ withCredentials: true, headers: teamHeaders() },
+			);
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "No se pudo actualizar la contraseña" };
+		}
+	}
+
+	async requestSyncById(id: string): Promise<GenericResponse> {
+		try {
+			const response = await axios.post(
+				`${BASE_URL}/api/pjn-credentials/${id}/sync`,
+				{},
+				{ withCredentials: true, headers: teamHeaders() },
+			);
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "No se pudo iniciar la sincronización" };
+		}
+	}
+
 	async getUnlinkImpact(): Promise<{ success: boolean; data?: UnlinkImpact; error?: string }> {
 		try {
 			const response = await axios.get(`${BASE_URL}/api/pjn-credentials/impact`, {
