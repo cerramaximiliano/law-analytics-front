@@ -129,6 +129,49 @@ export interface GenericScbaResponse {
 	scbaSiteStatus?: ScbaSiteStatusSnapshot;
 }
 
+/** Vista previa de «Re-sincronizar» (GET /api/scba-credentials/resync-preview) */
+export interface ScbaResyncPreview {
+	enabled: boolean;
+	syncStatus: string;
+	syncInProgress: boolean;
+	lastSync: string | null;
+	lastSyncSummary: { date: string; totalCausas: number; newFolders?: number } | null;
+	trashed: {
+		count: number;
+		folders: {
+			_id: string;
+			folderName: string;
+			expediente: string | null;
+			causaType: string | null;
+			archived: boolean;
+			deletedAt?: string | null;
+		}[];
+	};
+	excluded: {
+		count: number;
+		causas: {
+			key: { scbaIdCausa: string; scbaIdOrganismo: string };
+			folderName: string;
+			expediente: string | null;
+			organismo: string | null;
+			excludedAt?: string | null;
+			causaExists: boolean;
+		}[];
+	};
+	removed: {
+		count: number;
+		folders: {
+			_id: string;
+			folderName: string;
+			expediente: string | null;
+			causaType: string | null;
+			archived: boolean;
+			listRemovedAt?: string | null;
+		}[];
+	};
+	quota: { remaining: number | null };
+}
+
 export interface ScbaUnlinkImpact {
 	folders: {
 		total: number;
@@ -217,6 +260,38 @@ class ScbaCredentialsService {
 	/**
 	 * Solicita una nueva sincronización de causas
 	 */
+	/** Vista previa de «Re-sincronizar»: papelera, exclusiones anteriores, bajas, cupo y última sync. */
+	async getResyncPreview(): Promise<{ success: boolean; data?: ScbaResyncPreview; error?: string }> {
+		try {
+			const response = await axios.get(`${BASE_URL}/api/scba-credentials/resync-preview`, {
+				withCredentials: true,
+				headers: teamHeaders(),
+			});
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "No se pudo preparar la re-sincronización" };
+		}
+	}
+
+	/** Re-sincroniza y trae de vuelta lo elegido (carpetas de la papelera y exclusiones anteriores). */
+	async requestResync(body: {
+		restoreFolderIds: string[];
+		restoreExcluded: { scbaIdCausa: string; scbaIdOrganismo: string }[];
+	}): Promise<GenericScbaResponse> {
+		try {
+			const response = await axios.post(`${BASE_URL}/api/scba-credentials/resync`, body, { withCredentials: true, headers: teamHeaders() });
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			const data = axiosError.response?.data;
+			if (axiosError.response?.status === 503 && data?.code === "SCBA_MAINTENANCE") {
+				return { success: false, code: "SCBA_MAINTENANCE", error: data.error, scbaSiteStatus: data.scbaSiteStatus };
+			}
+			return { success: false, error: data?.error || "Error al solicitar la re-sincronización", data: data?.currentProgress };
+		}
+	}
+
 	async requestSync(): Promise<GenericScbaResponse> {
 		try {
 			const response = await axios.post(`${BASE_URL}/api/scba-credentials/sync`, {}, { withCredentials: true, headers: teamHeaders() });

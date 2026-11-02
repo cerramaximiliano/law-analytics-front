@@ -40,7 +40,7 @@ import { PopupTransition } from "components/@extended/Transitions";
 import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import PjnGuardedButton from "components/PjnGuardedButton";
 import pjnCredentialsService, { PjnCredentialsStatus, UnlinkImpact, PjnResyncPreview } from "api/pjnCredentials";
-import PjnResyncDialog from "./PjnResyncDialog";
+import PortalResyncDialog from "./PortalResyncDialog";
 import { useTeam } from "contexts/TeamContext";
 import { trackActivity } from "utils/productAnalytics";
 
@@ -501,7 +501,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 		};
 
 		// Confirmación del diálogo: restaura las elegidas y pide el sync desde cero
-		const handleResyncConfirm = async (restoreFolderIds: string[]) => {
+		const handleResyncConfirm = async ({ restoreFolderIds }: { restoreFolderIds: string[] }) => {
 			setIsResyncing(true);
 			try {
 				const response = await pjnCredentialsService.requestResync(restoreFolderIds);
@@ -648,8 +648,9 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 		const isDarkDialog = theme.palette.mode === "dark";
 		const errorColor = theme.palette.error.main;
 		const resyncDialog = (
-			<PjnResyncDialog
+			<PortalResyncDialog
 				open={resyncOpen}
+				title="Re-sincronizar con el Poder Judicial"
 				loading={isLoadingResync}
 				submitting={isResyncing}
 				preview={resyncPreview}

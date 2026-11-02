@@ -1,5 +1,5 @@
 /**
- * Diálogo «Re-sincronizar» de la cuenta PJN (2/11/2026, la-ads §2.2).
+ * Diálogo «Re-sincronizar» de una cuenta de portal (PJN y SCBA; 2/11/2026, la-ads §2.2).
  *
  * Antes de hacer nada muestra qué va a pasar: las carpetas eliminadas que se pueden traer de vuelta (casilla
  * opcional, apagada por defecto), las causas que ya no figuran en el portal (solo informativo: siguen en
@@ -26,35 +26,92 @@ import {
 	Typography,
 } from "@mui/material";
 import { Refresh2 } from "iconsax-react";
-import type { PjnResyncPreview } from "api/pjnCredentials";
+export interface ResyncPreviewFolder {
+	_id: string;
+	folderName: string;
+	expediente: string | null;
+	archived: boolean;
+	deletedAt?: string | null;
+	listRemovedAt?: string | null;
+}
+
+/** Exclusión anterior a la papelera (SCBA, S4): la carpeta ya no existe; el worker la recrea al restaurar. */
+export interface ResyncExcludedCausa {
+	key: { scbaIdCausa: string; scbaIdOrganismo: string };
+	folderName: string;
+	expediente: string | null;
+	excludedAt?: string | null;
+}
+
+export interface ResyncPreview {
+	syncInProgress: boolean;
+	lastSync: string | null;
+	trashed: { count: number; folders: ResyncPreviewFolder[] };
+	excluded?: { count: number; causas: ResyncExcludedCausa[] };
+	removed: { count: number; folders: ResyncPreviewFolder[] };
+	quota: { remaining: number | null };
+}
+
+export interface ResyncSelection {
+	restoreFolderIds: string[];
+	restoreExcluded: { scbaIdCausa: string; scbaIdOrganismo: string }[];
+}
 
 interface Props {
 	open: boolean;
+	title: string;
 	loading: boolean;
 	submitting: boolean;
-	preview: PjnResyncPreview | null;
+	preview: ResyncPreview | null;
 	error?: string | null;
 	onClose: () => void;
-	onConfirm: (restoreFolderIds: string[]) => void;
+	onConfirm: (selection: ResyncSelection) => void;
 }
 
 const fecha = (v?: string | null) =>
 	v ? new Date(v).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }) : null;
 
-const PjnResyncDialog = ({ open, loading, submitting, preview, error, onClose, onConfirm }: Props) => {
+const PortalResyncDialog = ({ open, title, loading, submitting, preview, error, onClose, onConfirm }: Props) => {
 	const [restaurar, setRestaurar] = useState(false);
 	const [elegidas, setElegidas] = useState<Set<string>>(new Set());
+	const exclKey = (k: { scbaIdCausa: string; scbaIdOrganismo: string }) => `excl:${k.scbaIdCausa}|${k.scbaIdOrganismo}`;
 
 	// Cada vez que se abre arranca con la casilla apagada y todas las eliminadas preseleccionadas (para cuando se enciende)
 	useEffect(() => {
 		if (!open) return;
 		setRestaurar(false);
-		setElegidas(new Set((preview?.trashed.folders || []).map((f) => f._id)));
+		setElegidas(
+			new Set([...(preview?.trashed.folders || []).map((f) => f._id), ...(preview?.excluded?.causas || []).map((c) => exclKey(c.key))]),
+		);
 	}, [open, preview]);
 
-	const eliminadas = preview?.trashed.folders || [];
+	const eliminadas = useMemo(
+		() => [
+			...(preview?.trashed.folders || []).map((f) => ({
+				id: f._id,
+				folderName: f.folderName,
+				expediente: f.expediente,
+				fecha: f.deletedAt,
+				archived: f.archived,
+				anterior: false,
+			})),
+			...(preview?.excluded?.causas || []).map((c) => ({
+				id: exclKey(c.key),
+				folderName: c.folderName,
+				expediente: c.expediente,
+				fecha: c.excludedAt,
+				archived: false,
+				anterior: true,
+			})),
+		],
+		[preview],
+	);
 	const bajas = preview?.removed.folders || [];
-	const seleccionadas = useMemo(() => (restaurar ? eliminadas.filter((f) => elegidas.has(f._id)) : []), [restaurar, eliminadas, elegidas]);
+	const seleccionadas = useMemo(() => (restaurar ? eliminadas.filter((f) => elegidas.has(f.id)) : []), [restaurar, eliminadas, elegidas]);
+	const seleccion = (): ResyncSelection => ({
+		restoreFolderIds: seleccionadas.filter((f) => !f.anterior).map((f) => f.id),
+		restoreExcluded: (preview?.excluded?.causas || []).filter((c) => elegidas.has(exclKey(c.key))).map((c) => c.key),
+	});
 	const cupo = preview?.quota.remaining;
 	const activasARestaurar = seleccionadas.filter((f) => !f.archived).length;
 	const sinCupo = typeof cupo === "number" && activasARestaurar > cupo;
@@ -70,7 +127,7 @@ const PjnResyncDialog = ({ open, loading, submitting, preview, error, onClose, o
 	return (
 		<Dialog open={open} onClose={() => !submitting && onClose()} maxWidth="sm" fullWidth>
 			<DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, fontSize: "1rem" }}>
-				<Refresh2 size={20} /> Re-sincronizar con el Poder Judicial
+				<Refresh2 size={20} /> {title}
 			</DialogTitle>
 			<DialogContent dividers>
 				{loading && (
@@ -105,14 +162,14 @@ const PjnResyncDialog = ({ open, loading, submitting, preview, error, onClose, o
 								/>
 								<List dense disablePadding sx={{ maxHeight: 180, overflowY: "auto", pl: 1 }}>
 									{eliminadas.map((f) => (
-										<ListItem key={f._id} disablePadding sx={{ opacity: restaurar ? 1 : 0.55 }}>
+										<ListItem key={f.id} disablePadding sx={{ opacity: restaurar ? 1 : 0.55 }}>
 											<ListItemIcon sx={{ minWidth: 32 }}>
 												<Checkbox
 													edge="start"
 													size="small"
 													disabled={!restaurar}
-													checked={restaurar && elegidas.has(f._id)}
-													onChange={() => toggle(f._id)}
+													checked={restaurar && elegidas.has(f.id)}
+													onChange={() => toggle(f.id)}
 												/>
 											</ListItemIcon>
 											<ListItemText
@@ -121,8 +178,9 @@ const PjnResyncDialog = ({ open, loading, submitting, preview, error, onClose, o
 												primary={f.folderName}
 												secondary={[
 													f.expediente,
-													f.deletedAt ? `eliminada el ${fecha(f.deletedAt)}` : null,
+													f.fecha ? `eliminada el ${fecha(f.fecha)}` : null,
 													f.archived ? "archivada" : null,
+													f.anterior ? "la carpeta se vuelve a crear" : null,
 												]
 													.filter(Boolean)
 													.join(" · ")}
@@ -175,7 +233,7 @@ const PjnResyncDialog = ({ open, loading, submitting, preview, error, onClose, o
 				</Button>
 				<Button
 					variant="contained"
-					onClick={() => onConfirm(seleccionadas.map((f) => f._id))}
+					onClick={() => onConfirm(seleccion())}
 					disabled={loading || submitting || !preview || preview.syncInProgress || !!error}
 					startIcon={submitting ? <CircularProgress size={14} color="inherit" /> : <Refresh2 size={16} />}
 					data-testid="pjn-resync-confirm"
@@ -187,4 +245,4 @@ const PjnResyncDialog = ({ open, loading, submitting, preview, error, onClose, o
 	);
 };
 
-export default PjnResyncDialog;
+export default PortalResyncDialog;
