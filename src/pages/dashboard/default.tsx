@@ -38,8 +38,10 @@ import { useTeam } from "contexts/TeamContext";
 import { readTeamHint } from "utils/teamHint";
 import { useUpcomingDeadlines } from "hooks/useUpcomingDeadlines";
 
-// Oferta de la app (Android y computadora), cargada aparte.
-const DashboardAppCard = lazy(() => import("components/app-download/DashboardAppCard"));
+// Oferta de la app (Android y computadora), cargada aparte. Se pide junto con la página: pedida al renderizar,
+// llegaba con las tarjetas ya pintadas y las empujaba hacia abajo.
+const dashboardAppCardChunk = import("components/app-download/DashboardAppCard");
+const DashboardAppCard = lazy(() => dashboardAppCardChunk);
 
 // Key para sessionStorage (evitar multiples incrementos por sesion)
 const ONBOARDING_SESSION_KEY = "onboarding_session_checked";
@@ -183,6 +185,11 @@ const DashboardDefault = () => {
 			if (onboardingOverride === "skip") return false;
 		}
 
+		// Mientras no se sabe, no: si las estadísticas llegan primero, el esqueleto del saludo se iba y volvía.
+		if (onboardingLoading) {
+			return false;
+		}
+
 		if (onboardingStatus?.onboardingComplete || onboardingStatus?.dismissed) {
 			return false;
 		}
@@ -192,7 +199,7 @@ const DashboardDefault = () => {
 		}
 
 		return true;
-	}, [onboardingStatus, dashboardData, onboardingOverride, isAdmin]);
+	}, [onboardingStatus, onboardingLoading, dashboardData, onboardingOverride, isAdmin]);
 
 	// Estado combinado de carga (ambos deben estar listos)
 	const isFullyLoading = isLoading || onboardingLoading;

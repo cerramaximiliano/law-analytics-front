@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 // material-ui
 import { Box, IconButton, Link, Stack, Typography } from "@mui/material";
@@ -27,10 +27,7 @@ import {
  * causa. Android: insignia. Computadora: insignia y QR. iPhone: no se muestra.
  */
 const DashboardAppCard = () => {
-	const [platform, setPlatform] = useState<DevicePlatform | null>(null);
-	useEffect(() => {
-		if (shouldShowDashboardAppCard()) setPlatform(devicePlatform());
-	}, []);
+	const [platform, setPlatform] = useState<DevicePlatform | null>(() => (shouldShowDashboardAppCard() ? devicePlatform() : null));
 	if (!platform) return null;
 
 	const close = () => {

@@ -77,32 +77,36 @@ const MainLayout = () => {
 					    con zIndex:1 para garantizar que no captura clicks. Dos capas:
 					    blob brand-blue (presencia) + dot grid (textura ambient). */}
 					<Box aria-hidden sx={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
-						{/* Blob brand-blue arriba a la derecha — el elemento más visible */}
-						<Box
-							sx={{
-								position: "absolute",
-								top: { xs: "-10%", md: "-15%" },
-								right: { xs: "-25%", md: "-10%" },
-								width: { xs: 380, md: 620 },
-								height: { xs: 380, md: 620 },
-								borderRadius: "50%",
-								background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.11)} 0%, transparent 65%)`,
-								filter: "blur(70px)",
-							}}
-						/>
-						{/* Blob secundario abajo a la izquierda — más suave, balance compositivo */}
-						<Box
-							sx={{
-								position: "absolute",
-								bottom: { xs: "-15%", md: "-18%" },
-								left: { xs: "-30%", md: "-12%" },
-								width: { xs: 420, md: 720 },
-								height: { xs: 420, md: 720 },
-								borderRadius: "50%",
-								background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.1 : 0.07)} 0%, transparent 65%)`,
-								filter: "blur(85px)",
-							}}
-						/>
+						{/* Los blobs se ubican contra la primera pantalla, no contra el alto de la columna: con porcentajes del
+						    alto se movían cada vez que el contenido crecía, y eso contaba como salto (CLS 0,85 en el teléfono). */}
+						<Box sx={{ position: "absolute", top: 0, left: 0, right: 0, height: "100vh" }}>
+							{/* Blob brand-blue arriba a la derecha — el elemento más visible */}
+							<Box
+								sx={{
+									position: "absolute",
+									top: { xs: "-10%", md: "-15%" },
+									right: { xs: "-25%", md: "-10%" },
+									width: { xs: 380, md: 620 },
+									height: { xs: 380, md: 620 },
+									borderRadius: "50%",
+									background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.11)} 0%, transparent 65%)`,
+									filter: "blur(70px)",
+								}}
+							/>
+							{/* Blob secundario abajo a la izquierda — más suave, balance compositivo */}
+							<Box
+								sx={{
+									position: "absolute",
+									bottom: { xs: "-15%", md: "-18%" },
+									left: { xs: "-30%", md: "-12%" },
+									width: { xs: 420, md: 720 },
+									height: { xs: 420, md: 720 },
+									borderRadius: "50%",
+									background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.1 : 0.07)} 0%, transparent 65%)`,
+									filter: "blur(85px)",
+								}}
+							/>
+						</Box>
 						{/* Dot grid ambient */}
 						<Box
 							sx={{
