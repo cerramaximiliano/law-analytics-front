@@ -14,6 +14,10 @@ const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 export interface MevCredentialData {
 	id: string;
+	/** Varias cuentas por usuario (Premium, 2/11/2026) */
+	etiqueta?: string;
+	abogadoUserId?: string | null;
+	createdBy?: string | null;
 	// Usuario del portal (solo la credencial de la cuenta lo expone; la contraseña nunca viaja).
 	username?: string | null;
 	causaId?: string | null;
@@ -36,12 +40,23 @@ export interface MevCredentialData {
 	updatedAt: string;
 }
 
+/** Cupo de cuentas MEV del dueño: `max` 1 salvo Premium con el interruptor encendido. */
+export interface MevCredentialsQuota {
+	max: number;
+	used: number;
+	premium: boolean;
+	plan?: string;
+	reason: null | "disabled" | "premium_required" | "subscription_inactive";
+}
+
 export interface GetMevCredentialsResponse {
 	success: boolean;
 	data?: {
 		hasCredentials: boolean;
 		global: MevCredentialData | null;
 		perCausa: MevCredentialData[];
+		credentials?: MevCredentialData[];
+		quota?: MevCredentialsQuota;
 		total?: number;
 	};
 	error?: string;
@@ -50,6 +65,8 @@ export interface GetMevCredentialsResponse {
 export interface SaveMevCredentialsResponse {
 	success: boolean;
 	message?: string;
+	code?: string;
+	quota?: { max: number; used: number };
 	data?: {
 		id: string;
 		isGlobal: boolean;
@@ -113,11 +130,16 @@ class MevCredentialsService {
 	 * Guarda/actualiza credenciales MEV. Sin causaId → credencial de la cuenta del
 	 * usuario (cubre todas sus causas). Con causaId → credencial específica de la causa.
 	 */
-	async saveCredentials(username: string, password: string, causaId?: string | null): Promise<SaveMevCredentialsResponse> {
+	async saveCredentials(
+		username: string,
+		password: string,
+		causaId?: string | null,
+		extra: { etiqueta?: string; abogadoUserId?: string | null } = {},
+	): Promise<SaveMevCredentialsResponse> {
 		try {
 			const response = await axios.post(
 				`${BASE_URL}/api/mev-credentials`,
-				{ username, password, causaId: causaId || null },
+				{ username, password, causaId: causaId || null, ...extra },
 				{ withCredentials: true, headers: teamHeaders() },
 			);
 			return response.data;
@@ -133,6 +155,17 @@ class MevCredentialsService {
 	 * Impacto de desvincular una credencial (cuántas causas dejarán de seguirse).
 	 * MEV no borra carpetas: solo pausa el seguimiento (folders → 'missing').
 	 */
+	/** Edita etiqueta y abogado titular de una cuenta (Premium, varias cuentas). */
+	async updateCredential(id: string, body: { etiqueta?: string; abogadoUserId?: string | null }): Promise<GenericMevCredResponse> {
+		try {
+			const response = await axios.put(`${BASE_URL}/api/mev-credentials/${id}`, body, { withCredentials: true, headers: teamHeaders() });
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "No se pudo editar la cuenta" };
+		}
+	}
+
 	async getUnlinkImpact(id: string): Promise<{ success: boolean; data?: MevUnlinkImpact; error?: string }> {
 		try {
 			const response = await axios.get(`${BASE_URL}/api/mev-credentials/${id}/unlink-impact`, {

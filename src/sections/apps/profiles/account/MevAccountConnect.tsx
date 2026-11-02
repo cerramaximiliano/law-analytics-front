@@ -23,7 +23,8 @@ import { useSelector } from "react-redux";
 import { dispatch as storeDispatch } from "store";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { BRAND_BLUE } from "themes/dashboardTokens";
-import mevCredentialsService, { MevCredentialData, MevUnlinkImpact } from "api/mevCredentials";
+import mevCredentialsService, { MevCredentialData, MevCredentialsQuota, MevUnlinkImpact } from "api/mevCredentials";
+import MevAccountsList from "./MevAccountsList";
 
 type ConnectionStatus = "connected" | "error" | "disconnected" | null;
 
@@ -86,6 +87,9 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 
 	const [loading, setLoading] = useState(true);
 	const [global, setGlobal] = useState<MevCredentialData | null>(null);
+	// Varias cuentas por usuario (Premium, 2/11/2026): el hub informa todas las de cuenta y el cupo
+	const [credentials, setCredentials] = useState<MevCredentialData[]>([]);
+	const [quota, setQuota] = useState<MevCredentialsQuota | null>(null);
 
 	// Formulario de la credencial de la cuenta
 	const [editing, setEditing] = useState(false);
@@ -117,6 +121,8 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 			const res = await mevCredentialsService.getCredentialsStatus();
 			const g = res.success && res.data ? res.data.global : null;
 			setGlobal(g);
+			setCredentials(res.success && res.data ? res.data.credentials || [] : []);
+			setQuota(res.success && res.data ? res.data.quota || null : null);
 			reportOverall(g);
 		} catch {
 			setGlobal(null);
@@ -347,6 +353,26 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 		);
 	};
 
+	// Premium con el interruptor encendido: lista de cuentas (una por abogado) en vez de la tarjeta única.
+	if (quota && quota.max > 1) {
+		return (
+			<MevAccountsList
+				credentials={credentials}
+				quota={quota}
+				onChanged={async () => {
+					await fetchStatus();
+					refreshFolders();
+				}}
+			/>
+		);
+	}
+	// Fuera de Premium: tarjeta única con una invitación discreta a Premium.
+	const premiumHint = quota?.reason === "premium_required" && (
+		<Typography sx={{ fontSize: "0.74rem", color: "text.secondary" }}>
+			Con Premium podés conectar hasta 10 cuentas MEV, una por abogado del estudio.
+		</Typography>
+	);
+
 	// Con credencial cargada y sin editar → tarjeta; si no → formulario.
 	const showForm = editing || !global;
 	const impactWarn = unlinkImpact && unlinkImpact.folders.total > 0;
@@ -355,6 +381,7 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 	return (
 		<>
 			{showForm ? renderForm() : global ? renderGlobalCard(global) : renderForm()}
+			{premiumHint}
 
 			{/* ===== Diálogo de impacto de desvinculación ===== */}
 			<Dialog open={unlinkOpen} onClose={closeUnlink} maxWidth="xs" fullWidth>
