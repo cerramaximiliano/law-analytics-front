@@ -135,6 +135,28 @@ export interface GenericResponse {
 	data?: any;
 }
 
+export interface PjnResyncFolder {
+	_id: string;
+	folderName: string;
+	expediente: string | null;
+	causaType: string | null;
+	archived: boolean;
+	deletedAt?: string | null;
+	listRemovedAt?: string | null;
+}
+
+/** Vista previa de «Re-sincronizar» (GET /api/pjn-credentials/resync-preview) */
+export interface PjnResyncPreview {
+	enabled: boolean;
+	syncStatus: string;
+	syncInProgress: boolean;
+	lastSync: string | null;
+	lastSyncSummary: { date: string; totalCausas: number; newFolders?: number; type?: string } | null;
+	trashed: { count: number; folders: PjnResyncFolder[] };
+	removed: { count: number; folders: PjnResyncFolder[] };
+	quota: { remaining: number | null };
+}
+
 export interface UnlinkImpact {
 	folders: {
 		total: number;
@@ -340,6 +362,44 @@ class PjnCredentialsService {
 				success: false,
 				error: axiosError.response?.data?.error || "Error al actualizar contraseña",
 			};
+		}
+	}
+
+	/**
+	 * Vista previa de «Re-sincronizar»: carpetas eliminadas que se pueden traer de vuelta, causas que ya no
+	 * figuran en el portal, cupo y última sincronización.
+	 */
+	async getResyncPreview(): Promise<{ success: boolean; data?: PjnResyncPreview; error?: string }> {
+		try {
+			const response = await axios.get(`${BASE_URL}/api/pjn-credentials/resync-preview`, { withCredentials: true, headers: teamHeaders() });
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "No se pudo preparar la re-sincronización" };
+		}
+	}
+
+	/**
+	 * Re-sincroniza desde cero y, si se pasan ids, trae de vuelta esas carpetas de la papelera.
+	 */
+	async requestResync(restoreFolderIds: string[] = []): Promise<GenericResponse> {
+		try {
+			const response = await axios.post(
+				`${BASE_URL}/api/pjn-credentials/resync`,
+				{ restoreFolderIds },
+				{ withCredentials: true, headers: teamHeaders() },
+			);
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			if (axiosError.response?.status === 409 || axiosError.response?.status === 400) {
+				return {
+					success: false,
+					error: axiosError.response.data?.error || "No se puede iniciar sincronización",
+					data: axiosError.response.data?.currentProgress,
+				};
+			}
+			return { success: false, error: axiosError.response?.data?.error || "Error al solicitar la re-sincronización" };
 		}
 	}
 
