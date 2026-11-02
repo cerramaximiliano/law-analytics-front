@@ -417,11 +417,11 @@ class ScbaCredentialsService {
 		}
 	}
 
-	async toggleCredentialById(id: string): Promise<GenericScbaResponse> {
+	async toggleCredentialById(id: string, enabled: boolean): Promise<GenericScbaResponse> {
 		try {
 			const response = await axios.patch(
 				`${BASE_URL}/api/scba-credentials/${id}/toggle`,
-				{},
+				{ enabled },
 				{ withCredentials: true, headers: teamHeaders() },
 			);
 			return response.data;
