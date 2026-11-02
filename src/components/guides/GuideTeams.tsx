@@ -471,7 +471,11 @@ const ManagementContent = () => (
 				<>Un solo plan cubre a todo el equipo: el del propietario</>,
 				<>Mejorar el plan amplía el cupo y los límites al instante</>,
 				<>Bajar de plan se bloquea si el equipo no entra; para pasar a Gratuito, primero eliminá el equipo</>,
-				<>Si un pago falla y vence el período de gracia, el equipo se suspende hasta regularizarlo; los datos no se pierden</>,
+				<>
+					Si el plan pasa a Gratuito, el equipo sigue durante el período de gracia y al vencer se elimina: todo vuelve a la cuenta del
+					propietario, nada se borra
+				</>,
+				<>Si el plan nuevo admite menos integrantes, al vencer la gracia se suspenden solo los que sobran</>,
 			]}
 		/>
 	</Stack>
