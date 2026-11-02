@@ -293,9 +293,9 @@ class ScbaCredentialsService {
 	 * Solicita una nueva sincronización de causas
 	 */
 	/** Vista previa de «Re-sincronizar»: papelera, exclusiones anteriores, bajas, cupo y última sync. */
-	async getResyncPreview(): Promise<{ success: boolean; data?: ScbaResyncPreview; error?: string }> {
+	async getResyncPreview(credentialId?: string): Promise<{ success: boolean; data?: ScbaResyncPreview; error?: string }> {
 		try {
-			const response = await axios.get(`${BASE_URL}/api/scba-credentials/resync-preview`, {
+			const response = await axios.get(`${BASE_URL}/api/scba-credentials${credentialId ? `/${credentialId}` : ""}/resync-preview`, {
 				withCredentials: true,
 				headers: teamHeaders(),
 			});
@@ -307,12 +307,18 @@ class ScbaCredentialsService {
 	}
 
 	/** Re-sincroniza y trae de vuelta lo elegido (carpetas de la papelera y exclusiones anteriores). */
-	async requestResync(body: {
-		restoreFolderIds: string[];
-		restoreExcluded: { scbaIdCausa: string; scbaIdOrganismo: string }[];
-	}): Promise<GenericScbaResponse> {
+	async requestResync(
+		body: {
+			restoreFolderIds: string[];
+			restoreExcluded: { scbaIdCausa: string; scbaIdOrganismo: string }[];
+		},
+		credentialId?: string,
+	): Promise<GenericScbaResponse> {
 		try {
-			const response = await axios.post(`${BASE_URL}/api/scba-credentials/resync`, body, { withCredentials: true, headers: teamHeaders() });
+			const response = await axios.post(`${BASE_URL}/api/scba-credentials${credentialId ? `/${credentialId}` : ""}/resync`, body, {
+				withCredentials: true,
+				headers: teamHeaders(),
+			});
 			return response.data;
 		} catch (error) {
 			const axiosError = error as AxiosError<any>;

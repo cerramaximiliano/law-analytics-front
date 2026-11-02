@@ -31,7 +31,7 @@ import {
 	alpha,
 	useTheme,
 } from "@mui/material";
-import { Add, Edit2, Key, Link1, PauseCircle, PlayCircle, Refresh2, Trash } from "iconsax-react";
+import { Add, Edit2, Key, Link1, PauseCircle, PlayCircle, Refresh2, Trash, ArrowRotateLeft } from "iconsax-react";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
 import { BRAND_BLUE } from "themes/dashboardTokens";
@@ -63,9 +63,11 @@ interface Props {
 	credentials: ScbaCredentialSummary[];
 	quota: ScbaCredentialsQuota;
 	onChanged: () => Promise<void> | void;
+	/** Abre «Re-sincronizar» (vista previa de papelera y bajas) para esa cuenta; lo provee el componente padre */
+	onResync?: (c: ScbaCredentialSummary) => void;
 }
 
-const ScbaAccountsList = ({ credentials, quota, onChanged }: Props) => {
+const ScbaAccountsList = ({ credentials, quota, onChanged, onResync }: Props) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const { enqueueSnackbar } = useSnackbar();
@@ -285,6 +287,15 @@ const ScbaAccountsList = ({ credentials, quota, onChanged }: Props) => {
 										</IconButton>
 									</span>
 								</Tooltip>
+								{onResync && (
+									<Tooltip title="Re-sincronizar desde cero (y traer carpetas de la papelera)">
+										<span>
+											<IconButton size="small" disabled={busy || !c.enabled} onClick={() => onResync(c)}>
+												<ArrowRotateLeft size={16} />
+											</IconButton>
+										</span>
+									</Tooltip>
+								)}
 								<Tooltip title="Editar etiqueta y abogado">
 									<IconButton size="small" onClick={() => openMeta(c)}>
 										<Edit2 size={16} />

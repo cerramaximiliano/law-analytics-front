@@ -107,6 +107,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		const [multiCredentials, setMultiCredentials] = useState<ScbaCredentialSummary[]>([]);
 		const [multiQuota, setMultiQuota] = useState<ScbaCredentialsQuota | null>(null);
 		const [resyncOpen, setResyncOpen] = useState(false);
+		const [resyncCredentialId, setResyncCredentialId] = useState<string | null>(null);
 		const [resyncPreview, setResyncPreview] = useState<ScbaResyncPreview | null>(null);
 		const [resyncError, setResyncError] = useState<string | null>(null);
 		const [isLoadingResync, setIsLoadingResync] = useState(false);
@@ -479,12 +480,13 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		}));
 
 		// Re-sincronizar: abre el diálogo y carga la vista previa
-		const handleResync = async () => {
+		const handleResync = async (credentialId?: string) => {
+			setResyncCredentialId(credentialId || null);
 			setResyncOpen(true);
 			setResyncError(null);
 			setIsLoadingResync(true);
 			try {
-				const response = await scbaCredentialsService.getResyncPreview();
+				const response = await scbaCredentialsService.getResyncPreview(credentialId);
 				if (response.success && response.data) setResyncPreview(response.data);
 				else {
 					setResyncPreview(null);
@@ -502,7 +504,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		const handleResyncConfirm = async (selection: ResyncSelection) => {
 			setIsResyncing(true);
 			try {
-				const response = await scbaCredentialsService.requestResync(selection);
+				const response = await scbaCredentialsService.requestResync(selection, resyncCredentialId || undefined);
 				if (!response.success && response.code === "SCBA_MAINTENANCE") {
 					if (response.scbaSiteStatus) {
 						dispatch(scbaSiteStatusUpdated(response.scbaSiteStatus));
@@ -1035,6 +1037,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 					<ScbaAccountsList
 						credentials={multiCredentials}
 						quota={multiQuota}
+						onResync={(c) => handleResync(c.id)}
 						onChanged={async () => {
 							await loadCredentialsStatus();
 						}}
@@ -1141,7 +1144,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 								<span>
 									<IconButton
 										size="small"
-										onClick={handleResync}
+										onClick={() => handleResync()}
 										disabled={!credentialsStatus.enabled || isPortalDown || adminPaused}
 										sx={{
 											color: "text.secondary",
