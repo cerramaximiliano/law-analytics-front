@@ -455,6 +455,16 @@ const ManagementContent = () => (
 			]}
 		/>
 		<Section
+			title="Varias cuentas por portal (Premium)"
+			color="success"
+			items={[
+				<>Hasta una cuenta de PJN, SCBA y MEV por abogado (tope: el cupo de integrantes del plan); con otros planes, una por portal</>,
+				<>Cada cuenta lleva etiqueta y abogado titular: sus carpetas nacen con ese responsable y sus avisos le llegan a él</>,
+				<>Por cuenta: sincronizar, cambiar la contraseña, pausar, editar y desvincular; una causa compartida tiene una sola carpeta</>,
+				<>Si dejás Premium, en el período de gracia desvinculá las cuentas de más (queda una por portal)</>,
+			]}
+		/>
+		<Section
 			title="Tu plan y el equipo"
 			color="warning"
 			items={[
