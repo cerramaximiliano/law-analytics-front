@@ -234,14 +234,14 @@ const RolesContent = () => (
 		<Grid container spacing={2}>
 			<Grid item xs={12} md={6}>
 				<Card icon={<Crown1 size={24} />} title="Propietario" color="warning">
-					Dueño del equipo y de sus datos; su plan define los cupos. Hace todo, incluido cambiar roles, invitar Administradores, cargar
-					credenciales PJN y SCBA y eliminar el equipo. Siempre ve todo.
+					Dueño del equipo y de sus datos; su plan define los cupos. Hace todo, incluido cambiar roles, invitar Administradores, conectar
+					las cuentas PJN, SCBA y MEV del estudio y eliminar el equipo. Siempre ve todo.
 				</Card>
 			</Grid>
 			<Grid item xs={12} md={6}>
 				<Card icon={<ShieldTick size={24} />} title="Administrador" color="primary">
-					Para socios. Crea, edita y borra; invita y remueve integrantes; asigna responsables y configura avisos y qué ve cada integrante.
-					Siempre ve todo.
+					Para socios. Crea, edita y borra; invita y remueve integrantes; asigna responsables, configura avisos y qué ve cada integrante, y
+					conecta las cuentas de los portales (PJN, SCBA y MEV). Siempre ve todo.
 				</Card>
 			</Grid>
 			<Grid item xs={12} md={6}>
@@ -376,8 +376,9 @@ const NotificationsContent = () => (
 		<Alert severity="info">
 			<Typography>
 				Nunca se pierde un aviso: si las reglas dejan una novedad sin destinatario, le llega al propietario. Las altas y bajas de la
-				sincronización, la verificación de causas y el estado de credenciales van a todo el equipo. Cada integrante recibe sus avisos con
-				sus preferencias (inmediato o resumen de las 19 h); los recordatorios de tareas y eventos salen a las 9 h.
+				sincronización y la verificación de causas van a todo el equipo; el estado de las cuentas PJN y SCBA le llega al propietario, y el
+				de MEV a todo el equipo. Cada integrante recibe sus avisos con sus preferencias (inmediato o resumen de las 19 h); los recordatorios
+				de tareas y eventos salen a las 9 h.
 			</Typography>
 		</Alert>
 	</Stack>
@@ -456,7 +457,10 @@ const TipsContent = () => (
 			title="Para estudios"
 			color="success"
 			items={[
-				<>Cargá las credenciales PJN o SCBA en la cuenta del propietario: las causas del estudio entran solas al equipo</>,
+				<>
+					Conectá las cuentas PJN, SCBA y MEV del estudio desde Integraciones (propietario o Administrador): las causas de PJN y SCBA entran
+					solas al equipo y las de MEV se agregan por número y se consultan con la cuenta del equipo
+				</>,
 				<>Repartí las carpetas por juzgado o fuero con «Asignar responsable» y revisá la Distribución de responsables</>,
 				<>
 					Si cada abogado lleva sus causas, poné los avisos en «Solo los responsables»; si querés reserva, «Cada integrante ve solo lo suyo»

@@ -19,6 +19,7 @@ cómo se reparte el trabajo, a quién le llegan los avisos y qué pasa con el pl
 - Repartir carpetas y tareas entre responsables, e imprimir la distribución
 - Configurar a quién le llegan los avisos
 - Decidir qué ve cada integrante
+- Conectar las cuentas de los portales (PJN, SCBA y MEV) del estudio
 - Gestionar integrantes, salir del equipo o eliminarlo
 - Conocer cómo se relaciona el equipo con tu plan
 
@@ -37,16 +38,16 @@ la cuenta del propietario y cuenta contra los límites de su plan. Cada recurso 
 
 ### Qué se comparte
 
-| Sección | En el equipo |
-| --- | --- |
-| **Causas** | Todas las del propietario, incluidas las que ya tenía antes de crear el equipo y las que trae la sincronización con PJN o SCBA |
-| **Contactos, cálculos y notas** | Compartidos |
-| **Calendario** | Eventos compartidos |
-| **Tareas** | Compartidas, con responsables y vista «Mis tareas» (ver sección 8) |
-| **Escritos** | Compartidos: cada integrante ve y edita los escritos del equipo según su rol |
-| **Seguimiento postal** | Compartido |
-| **Conectores de IA** (Claude, ChatGPT) | Un integrante conectado ve las causas del equipo y nada de otros usuarios |
-| **Credenciales PJN y SCBA** | Solo el propietario las carga y las ve; las causas que traen son de todo el equipo |
+| Sección                                       | En el equipo                                                                                                                                                                                            |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Causas**                                    | Todas las del propietario, incluidas las que ya tenía antes de crear el equipo y las que trae la sincronización con PJN o SCBA                                                                          |
+| **Contactos, cálculos y notas**               | Compartidos                                                                                                                                                                                             |
+| **Calendario**                                | Eventos compartidos                                                                                                                                                                                     |
+| **Tareas**                                    | Compartidas, con responsables y vista «Mis tareas» (ver sección 8)                                                                                                                                      |
+| **Escritos**                                  | Compartidos: cada integrante ve y edita los escritos del equipo según su rol                                                                                                                            |
+| **Seguimiento postal**                        | Compartido                                                                                                                                                                                              |
+| **Conectores de IA** (Claude, ChatGPT)        | Un integrante conectado ve las causas del equipo y nada de otros usuarios                                                                                                                               |
+| **Cuentas de los portales (PJN, SCBA y MEV)** | Son del equipo. Las conectan y gestionan el propietario o un Administrador; las causas que traen PJN y SCBA son de todo el equipo, y las de MEV las agrega cualquiera con permiso de crear (sección 12) |
 
 Por defecto todos ven todo. El propietario puede restringir carpetas, tareas y eventos para que cada uno vea solo lo
 suyo (sección 11).
@@ -57,12 +58,12 @@ suyo (sección 11).
 
 Para **crear** un equipo necesitás un plan pago: Estándar, Pro o Premium. El plan Free no puede crear equipos.
 
-| Plan | Integrantes del equipo | Invitados posibles |
-| --- | --- | --- |
-| **Free** | No disponible | — |
-| **Estándar** | 5 | 4 |
-| **Pro** | 8 | 7 |
-| **Premium** | 10 | 9 |
+| Plan         | Integrantes del equipo | Invitados posibles |
+| ------------ | ---------------------- | ------------------ |
+| **Free**     | No disponible          | —                  |
+| **Estándar** | 5                      | 4                  |
+| **Pro**      | 8                      | 7                  |
+| **Premium**  | 10                     | 9                  |
 
 > **💡 El cupo incluye al propietario.** En Premium, por ejemplo, sos vos más nueve invitados.
 
@@ -140,29 +141,30 @@ Tenés que salir del equipo actual antes de aceptar la nueva invitación.
 
 ## 6. Roles y permisos
 
-| Acción | Propietario | Administrador | Editor | Visualizador |
-| --- | :---: | :---: | :---: | :---: |
-| Ver causas, contactos, calendario, tareas, escritos y envíos | ✅ | ✅ | ✅ | ✅ |
-| Crear | ✅ | ✅ | ✅ | ❌ |
-| Editar, también lo que cargaron otros | ✅ | ✅ | ✅ | ❌ |
-| Eliminar | ✅ | ✅ | ❌ | ❌ |
-| Invitar, reenviar y cancelar invitaciones | ✅ | ✅ | ❌ | ❌ |
-| Remover integrantes | ✅ | ✅ | ❌ | ❌ |
-| Invitar como Administrador | ✅ | ❌ | ❌ | ❌ |
-| Cambiar el rol de un integrante | ✅ | ❌ | ❌ | ❌ |
-| Asignar responsables a carpetas | ✅ | ✅ | ✅ | ❌ |
-| Configurar avisos y qué ve cada integrante | ✅ | ✅ | ❌ | ❌ |
-| Ver siempre todo el equipo | ✅ | ✅ | Según configuración | Según configuración |
-| Cargar credenciales PJN y SCBA | ✅ | ❌ | ❌ | ❌ |
-| Eliminar el equipo | ✅ | ❌ | ❌ | ❌ |
-| Salir del equipo | — | ✅ | ✅ | ✅ |
+| Acción                                                        | Propietario | Administrador |       Editor        |    Visualizador     |
+| ------------------------------------------------------------- | :---------: | :-----------: | :-----------------: | :-----------------: |
+| Ver causas, contactos, calendario, tareas, escritos y envíos  |     ✅      |      ✅       |         ✅          |         ✅          |
+| Crear                                                         |     ✅      |      ✅       |         ✅          |         ❌          |
+| Editar, también lo que cargaron otros                         |     ✅      |      ✅       |         ✅          |         ❌          |
+| Eliminar                                                      |     ✅      |      ✅       |         ❌          |         ❌          |
+| Invitar, reenviar y cancelar invitaciones                     |     ✅      |      ✅       |         ❌          |         ❌          |
+| Remover integrantes                                           |     ✅      |      ✅       |         ❌          |         ❌          |
+| Invitar como Administrador                                    |     ✅      |      ❌       |         ❌          |         ❌          |
+| Cambiar el rol de un integrante                               |     ✅      |      ❌       |         ❌          |         ❌          |
+| Asignar responsables a carpetas                               |     ✅      |      ✅       |         ✅          |         ❌          |
+| Configurar avisos y qué ve cada integrante                    |     ✅      |      ✅       |         ❌          |         ❌          |
+| Ver siempre todo el equipo                                    |     ✅      |      ✅       | Según configuración | Según configuración |
+| Conectar y gestionar las cuentas PJN, SCBA y MEV (sección 12) |     ✅      |      ✅       |         ❌          |         ❌          |
+| Eliminar el equipo                                            |     ✅      |      ❌       |         ❌          |         ❌          |
+| Salir del equipo                                              |      —      |      ✅       |         ✅          |         ✅          |
 
 Los botones siguen al rol: quien no puede eliminar no ve el botón **Eliminar**, por ejemplo en Escritos o en
 Seguimiento postal.
 
 ### Cuándo usar cada rol
 
-- **Administrador**: socios o personas de confianza que también gestionan el equipo. Ven el cupo y las invitaciones.
+- **Administrador**: socios o personas de confianza que también gestionan el equipo. Ven el cupo y las invitaciones y
+  conectan las cuentas de los portales.
 - **Editor**: abogados y colaboradores que trabajan las causas a diario. Cargan y editan, pero no borran.
 - **Visualizador**: pasantes, consultores o quien solo necesita consultar.
 
@@ -174,6 +176,9 @@ Seguimiento postal.
 
 Cada carpeta puede tener uno o varios **responsables**: el propietario o integrantes del equipo. Sirven para repartir el
 trabajo, para que cada uno encuentre lo suyo y para decidir a quién le llegan los avisos (sección 10).
+
+Cuando alguien crea una carpeta dentro del equipo, **queda como responsable de esa carpeta** salvo que elija a otros en el
+mismo formulario. El propietario y los Administradores pueden cambiarlo después.
 
 ### Asignar en una carpeta
 
@@ -195,11 +200,11 @@ los Administradores y los Editores; el Visualizador solo ve las iniciales.
 2. Hacé clic en **Asignar responsable (N)**.
 3. Elegí a quién y cómo:
 
-| Modo | Qué hace |
-| --- | --- |
+| Modo           | Qué hace                                                                                          |
+| -------------- | ------------------------------------------------------------------------------------------------- |
 | **Reemplazar** | Las carpetas quedan solo con los integrantes elegidos. Sin elegir a nadie, quedan sin responsable |
-| **Agregar** | Suma los elegidos a los responsables que ya tenían |
-| **Quitar** | Saca a los elegidos de esas carpetas |
+| **Agregar**    | Suma los elegidos a los responsables que ya tenían                                                |
+| **Quitar**     | Saca a los elegidos de esas carpetas                                                              |
 
 Se pueden asignar hasta 500 carpetas por vez.
 
@@ -236,12 +241,12 @@ Una tarea puede estar vinculada a una carpeta o no. Las tareas sin carpeta tambi
 
 En **Tareas** tenés un selector con tres vistas y un filtro por integrante:
 
-| Control | Qué muestra |
-| --- | --- |
-| **Mis tareas** | Las asignadas a vos y las que creaste sin responsable. Es la vista inicial de los integrantes |
-| **Todas** | Todas las tareas que podés ver. Es la vista inicial del propietario |
-| **Sin asignar** | Las que todavía no tienen responsable |
-| **Responsable: …** | Las asignadas a un integrante en particular |
+| Control            | Qué muestra                                                                                   |
+| ------------------ | --------------------------------------------------------------------------------------------- |
+| **Mis tareas**     | Las asignadas a vos y las que creaste sin responsable. Es la vista inicial de los integrantes |
+| **Todas**          | Todas las tareas que podés ver. Es la vista inicial del propietario                           |
+| **Sin asignar**    | Las que todavía no tienen responsable                                                         |
+| **Responsable: …** | Las asignadas a un integrante en particular                                                   |
 
 La columna **Responsable** muestra las iniciales de cada asignado. En el tablero, el recuadro **Tareas próximas** de
 cada integrante muestra sus propias tareas.
@@ -263,11 +268,11 @@ El Editor puede editar una tarea pero no borrarla. El Administrador y el Propiet
 Al crear o editar un evento podés vincularlo a una carpeta con el campo **Carpeta**. Ese vínculo decide a quién le
 llegan sus recordatorios:
 
-| Evento | Lo ve y recibe el recordatorio |
-| --- | --- |
-| Vinculado a una carpeta | Los **responsables de esa carpeta**. Si la carpeta no tiene responsables, todo el equipo |
-| Sin carpeta | **Todo el equipo** |
-| Marcado **Solo para mí** | Solo quien lo creó, aunque tenga carpeta |
+| Evento                   | Lo ve y recibe el recordatorio                                                           |
+| ------------------------ | ---------------------------------------------------------------------------------------- |
+| Vinculado a una carpeta  | Los **responsables de esa carpeta**. Si la carpeta no tiene responsables, todo el equipo |
+| Sin carpeta              | **Todo el equipo**                                                                       |
+| Marcado **Solo para mí** | Solo quien lo creó, aunque tenga carpeta                                                 |
 
 **Solo para mí** es una casilla del formulario del evento, visible dentro de un equipo. Sirve para la agenda personal:
 nadie más lo ve en el calendario ni recibe su aviso, con ningún rol. Los eventos que el propietario tenía antes de crear
@@ -289,10 +294,10 @@ un Administrador.
 
 En **Mi equipo → Avisos del equipo**:
 
-| Regla | A quién |
-| --- | --- |
-| **Todos los integrantes** (predeterminada) | A todo el equipo |
-| **Solo los responsables de cada carpeta** | A los responsables de cada carpeta. Si una carpeta no tiene responsables, a todos |
+| Regla                                      | A quién                                                                           |
+| ------------------------------------------ | --------------------------------------------------------------------------------- |
+| **Todos los integrantes** (predeterminada) | A todo el equipo                                                                  |
+| **Solo los responsables de cada carpeta**  | A los responsables de cada carpeta. Si una carpeta no tiene responsables, a todos |
 
 ### Regla de una carpeta
 
@@ -303,18 +308,19 @@ tener la suya: **Solo responsables** o **Todos**.
 
 En la misma tarjeta, cada integrante puede tener su modo:
 
-| Modo | Qué recibe |
-| --- | --- |
-| **Según cada carpeta** (predeterminado) | Lo que diga la regla de cada carpeta |
-| **Todo** | Todos los avisos del equipo |
-| **Solo lo mío** | Solo los de las carpetas donde es responsable |
+| Modo                                    | Qué recibe                                    |
+| --------------------------------------- | --------------------------------------------- |
+| **Según cada carpeta** (predeterminado) | Lo que diga la regla de cada carpeta          |
+| **Todo**                                | Todos los avisos del equipo                   |
+| **Solo lo mío**                         | Solo los de las carpetas donde es responsable |
 
 Nunca se pierde un aviso: si las reglas dejaran una novedad sin destinatario, le llega al propietario.
 
 ### Lo que va a todo el equipo
 
-Las altas y bajas de causas que trae la sincronización con PJN o SCBA, la verificación de causas y el estado de las
-credenciales le llegan a todo el equipo, sin estas reglas.
+Las altas y bajas de causas que trae la sincronización con PJN o SCBA y la verificación de causas le llegan a todo el
+equipo, sin estas reglas. Los avisos sobre el estado de las cuentas de los portales (contraseña vencida, usuario
+rechazado) le llegan al propietario en PJN y SCBA, y a todo el equipo en MEV.
 
 ### Qué ve un integrante
 
@@ -334,10 +340,10 @@ muestra los avisos de cada uno.
 El propietario o un Administrador deciden si todos ven todo el equipo o si cada uno ve solo lo suyo. Se configura en
 **Mi equipo → Qué ve cada integrante**.
 
-| Regla | Qué pasa |
-| --- | --- |
+| Regla                               | Qué pasa                                                           |
+| ----------------------------------- | ------------------------------------------------------------------ |
 | **Todos ven todo** (predeterminada) | Cada integrante ve todas las carpetas, tareas y eventos del equipo |
-| **Cada integrante ve solo lo suyo** | Cada uno ve solo lo suyo (ver abajo) |
+| **Cada integrante ve solo lo suyo** | Cada uno ve solo lo suyo (ver abajo)                               |
 
 Además se puede hacer una excepción por persona: por ejemplo, que todos vean todo salvo un pasante, o que cada uno vea
 solo lo suyo salvo un socio.
@@ -362,7 +368,29 @@ Los contactos, cálculos, notas, escritos y seguimientos postales siguen compart
 
 ---
 
-## 12. Gestionar integrantes
+## 12. Cuentas de los portales (PJN, SCBA y MEV)
+
+Las cuentas de los portales son **del equipo**, no de cada integrante. Las conectan y gestionan el **propietario** o un
+**Administrador** desde **Configuración → Perfil → Integraciones**; los Editores y Visualizadores no ven esa pestaña ni
+cargan credenciales propias.
+
+| Portal   | Qué hace la cuenta                                                                                                                             | Quién la conecta            |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| **PJN**  | Importa las causas de «Mis Causas» del titular (públicas y reservadas) y las mantiene al día                                                   | Propietario o Administrador |
+| **SCBA** | Importa las causas del domicilio electrónico (públicas y privadas) y las mantiene al día                                                       | Propietario o Administrador |
+| **MEV**  | Solo consulta: las causas de la Provincia son públicas y cualquiera con permiso de crear las agrega por número; la cuenta del equipo las sigue | Propietario o Administrador |
+
+- Las causas que importan PJN y SCBA quedan en el equipo como cualquier otra carpeta.
+- Al agregar una causa de la MEV, el formulario avisa «Usaremos tu cuenta MEV vinculada» y no pide credenciales. Si el equipo
+  todavía no conectó su cuenta MEV, pide que lo haga el propietario o un Administrador.
+- Una carpeta MEV sobre una causa que ya está en Law||Analytics nace con el estado real de la cuenta del equipo (válida,
+  vencida, rechazada); sobre una causa nueva, queda «pendiente» unos minutos hasta que se verifica.
+- Hoy el equipo tiene **una cuenta por portal**, la del propietario. Si un integrante tenía su propia cuenta conectada antes de
+  unirse, dentro del equipo no se usa.
+
+---
+
+## 13. Gestionar integrantes
 
 ### Cambiar el rol
 
@@ -387,16 +415,16 @@ En cada causa, la pestaña de historial muestra quién hizo cada cambio.
 
 ---
 
-## 13. Salir del equipo
+## 14. Salir del equipo
 
 Cualquier integrante que no sea el propietario puede salir desde **Mi equipo → Abandonar equipo**. Lo que cargó queda
 en el equipo y la persona vuelve a ser un usuario individual. Después puede aceptar otra invitación o contratar un plan.
 
-El propietario no puede abandonar su equipo. Si deja de usarlo, puede eliminarlo (ver sección 14).
+El propietario no puede abandonar su equipo. Si deja de usarlo, puede eliminarlo (ver sección 15).
 
 ---
 
-## 14. Eliminar el equipo
+## 15. Eliminar el equipo
 
 Solo el propietario. Al eliminarlo:
 
@@ -406,7 +434,7 @@ Solo el propietario. Al eliminarlo:
 
 ---
 
-## 15. Tu plan y el equipo
+## 16. Tu plan y el equipo
 
 - **Un solo plan cubre a todo el equipo**: el del propietario. Los integrantes no pagan.
 - **Mejorar el plan** amplía el cupo de integrantes y los límites al instante.
@@ -417,9 +445,10 @@ Solo el propietario. Al eliminarlo:
 
 ---
 
-## 16. Consejos para estudios
+## 17. Consejos para estudios
 
-- Cargá las credenciales PJN o SCBA en la cuenta del propietario: así las causas de todo el estudio entran solas al equipo.
+- Conectá las cuentas PJN, SCBA y MEV del estudio desde **Integraciones** (propietario o Administrador): las causas de PJN y
+  SCBA entran solas al equipo y las de MEV se agregan por número y se consultan con la cuenta del equipo.
 - Repartí las carpetas con **Asignar responsable** desde el listado (por fuero o jurisdicción) y revisá la tarjeta
   **Distribución de responsables**.
 - Si cada abogado lleva sus causas, poné los avisos en **Solo los responsables** y, si querés reserva, la visibilidad en
@@ -434,19 +463,20 @@ Solo el propietario. Al eliminarlo:
 
 ## Resumen
 
-| Característica | Descripción |
-| --- | --- |
-| **Planes** | Estándar 5, Pro 8 y Premium 10 integrantes, incluido el propietario |
-| **Datos compartidos** | Causas, contactos, cálculos, notas, calendario, tareas, escritos y seguimiento postal |
-| **Roles** | Propietario, Administrador, Editor y Visualizador |
-| **Invitaciones** | Por correo, válidas 7 días; los invitados pueden ser cuentas Free |
-| **Responsables** | Por carpeta, de a una o en masa, con distribución imprimible y CSV |
-| **Tareas** | Responsables, vistas y filtro por integrante, impresión y recordatorios a cada responsable |
-| **Calendario** | Eventos con carpeta a sus responsables, sin carpeta a todos, «Solo para mí» privado; filtro e impresión |
-| **Avisos** | Regla del equipo, de cada carpeta y de cada integrante |
-| **Visibilidad** | Todos ven todo o cada uno ve lo suyo; propietario y administradores ven todo |
-| **Migración** | Al unirse, migrar lo propio, migrarlo archivado o borrarlo |
-| **Un equipo por persona** | Para cambiar de equipo, primero hay que salir |
+| Característica            | Descripción                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Planes**                | Estándar 5, Pro 8 y Premium 10 integrantes, incluido el propietario                                     |
+| **Datos compartidos**     | Causas, contactos, cálculos, notas, calendario, tareas, escritos y seguimiento postal                   |
+| **Roles**                 | Propietario, Administrador, Editor y Visualizador                                                       |
+| **Invitaciones**          | Por correo, válidas 7 días; los invitados pueden ser cuentas Free                                       |
+| **Responsables**          | Por carpeta, de a una o en masa, con distribución imprimible y CSV                                      |
+| **Tareas**                | Responsables, vistas y filtro por integrante, impresión y recordatorios a cada responsable              |
+| **Calendario**            | Eventos con carpeta a sus responsables, sin carpeta a todos, «Solo para mí» privado; filtro e impresión |
+| **Avisos**                | Regla del equipo, de cada carpeta y de cada integrante                                                  |
+| **Visibilidad**           | Todos ven todo o cada uno ve lo suyo; propietario y administradores ven todo                            |
+| **Cuentas de portal**     | PJN, SCBA y MEV son del equipo; las conectan el propietario o un Administrador                          |
+| **Migración**             | Al unirse, migrar lo propio, migrarlo archivado o borrarlo                                              |
+| **Un equipo por persona** | Para cambiar de equipo, primero hay que salir                                                           |
 
 ---
 
@@ -466,6 +496,8 @@ Solo el propietario. Al eliminarlo:
 - visibilidad
 - notificaciones
 - migración
+- cuentas de portal
+- credenciales
 
 ### Categoría
 
