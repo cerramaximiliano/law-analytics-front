@@ -303,7 +303,7 @@ const ScbaAccountsList = ({ credentials, quota, onChanged }: Props) => {
 											onClick={() =>
 												accion(
 													c,
-													() => scbaCredentialsService.toggleCredentialById(c.id),
+													() => scbaCredentialsService.toggleCredentialById(c.id, !c.enabled),
 													c.enabled ? "Cuenta pausada" : "Cuenta reanudada",
 												)
 											}
