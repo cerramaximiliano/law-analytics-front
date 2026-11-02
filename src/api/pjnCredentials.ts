@@ -479,9 +479,13 @@ class PjnCredentialsService {
 	 * Vista previa de «Re-sincronizar»: carpetas eliminadas que se pueden traer de vuelta, causas que ya no
 	 * figuran en el portal, cupo y última sincronización.
 	 */
-	async getResyncPreview(): Promise<{ success: boolean; data?: PjnResyncPreview; error?: string }> {
+	async getResyncPreview(credentialId?: string): Promise<{ success: boolean; data?: PjnResyncPreview; error?: string }> {
 		try {
-			const response = await axios.get(`${BASE_URL}/api/pjn-credentials/resync-preview`, { withCredentials: true, headers: teamHeaders() });
+			// Con varias cuentas (2/11/2026) se re-sincroniza una credencial puntual; sin id, la principal.
+			const response = await axios.get(`${BASE_URL}/api/pjn-credentials${credentialId ? `/${credentialId}` : ""}/resync-preview`, {
+				withCredentials: true,
+				headers: teamHeaders(),
+			});
 			return response.data;
 		} catch (error) {
 			const axiosError = error as AxiosError<any>;
@@ -492,10 +496,10 @@ class PjnCredentialsService {
 	/**
 	 * Re-sincroniza desde cero y, si se pasan ids, trae de vuelta esas carpetas de la papelera.
 	 */
-	async requestResync(restoreFolderIds: string[] = []): Promise<GenericResponse> {
+	async requestResync(restoreFolderIds: string[] = [], credentialId?: string): Promise<GenericResponse> {
 		try {
 			const response = await axios.post(
-				`${BASE_URL}/api/pjn-credentials/resync`,
+				`${BASE_URL}/api/pjn-credentials${credentialId ? `/${credentialId}` : ""}/resync`,
 				{ restoreFolderIds },
 				{ withCredentials: true, headers: teamHeaders() },
 			);

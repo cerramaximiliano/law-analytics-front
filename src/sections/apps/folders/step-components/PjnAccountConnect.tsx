@@ -116,6 +116,8 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 		const [multiCredentials, setMultiCredentials] = useState<PjnCredentialSummary[]>([]);
 		const [multiQuota, setMultiQuota] = useState<PjnCredentialsQuota | null>(null);
 		const [resyncOpen, setResyncOpen] = useState(false);
+		// Con varias cuentas: la credencial que se re-sincroniza (null = la principal)
+		const [resyncCredentialId, setResyncCredentialId] = useState<string | null>(null);
 		const [resyncPreview, setResyncPreview] = useState<PjnResyncPreview | null>(null);
 		const [resyncError, setResyncError] = useState<string | null>(null);
 		const [isLoadingResync, setIsLoadingResync] = useState(false);
@@ -493,12 +495,13 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 		}));
 
 		// Re-sincronizar: abre el diálogo y carga la vista previa (papelera, bajas, cupo, última sync)
-		const handleResync = async () => {
+		const handleResync = async (credentialId?: string) => {
+			setResyncCredentialId(credentialId || null);
 			setResyncOpen(true);
 			setResyncError(null);
 			setIsLoadingResync(true);
 			try {
-				const response = await pjnCredentialsService.getResyncPreview();
+				const response = await pjnCredentialsService.getResyncPreview(credentialId);
 				if (response.success && response.data) setResyncPreview(response.data);
 				else {
 					setResyncPreview(null);
@@ -516,7 +519,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 		const handleResyncConfirm = async ({ restoreFolderIds }: { restoreFolderIds: string[] }) => {
 			setIsResyncing(true);
 			try {
-				const response = await pjnCredentialsService.requestResync(restoreFolderIds);
+				const response = await pjnCredentialsService.requestResync(restoreFolderIds, resyncCredentialId || undefined);
 
 				if (response.success) {
 					const restauradas = response.data?.restore?.restored?.length || 0;
@@ -1072,6 +1075,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 					<PjnAccountsList
 						credentials={multiCredentials}
 						quota={multiQuota}
+						onResync={(c) => handleResync(c.id)}
 						onChanged={async () => {
 							await loadCredentialsStatus(true);
 						}}
@@ -1177,7 +1181,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 										<span>
 											<IconButton
 												size="small"
-												onClick={handleResync}
+												onClick={() => handleResync()}
 												disabled={!credentialsStatus.enabled || isCredentialError}
 												data-testid="pjn-resync-btn"
 												sx={{
@@ -1254,7 +1258,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 										variant="outlined"
 										size="small"
 										startIcon={<Refresh2 size={14} />}
-										onClick={handleResync}
+										onClick={() => handleResync()}
 										disabled={!credentialsStatus.enabled}
 										data-testid="pjn-resync-retry-btn"
 										sx={{
@@ -1308,7 +1312,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 										variant="outlined"
 										size="small"
 										startIcon={<Refresh2 size={14} />}
-										onClick={handleResync}
+										onClick={() => handleResync()}
 										sx={{
 											alignSelf: "flex-start",
 											textTransform: "none",
