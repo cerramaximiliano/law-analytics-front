@@ -486,8 +486,15 @@ Solo el propietario. Al eliminarlo:
 - **Mejorar el plan** amplía el cupo de integrantes y los límites al instante.
 - **Bajar de plan** se bloquea si el equipo no entra en el plan nuevo: hay que remover integrantes antes. Para pasar a
   Free primero hay que eliminar el equipo.
-- **Si un pago falla** y vence el período de gracia, el equipo se suspende hasta regularizar el plan. Los datos no se
-  pierden.
+- **Si la suscripción se cancela o un pago no se recupera** y el plan pasa a Gratuito (que no admite equipos), el equipo
+  sigue funcionando durante el **período de gracia**. El propietario ve una alerta y recibe un recordatorio. Al vencer la
+  gracia, el equipo **se elimina**: los integrantes dejan de ver las carpetas compartidas y las carpetas, cálculos,
+  contactos, notas, eventos y tareas vuelven a la cuenta del propietario. Nada se borra. Si volvés a un plan con equipos,
+  creás uno nuevo e invitás otra vez.
+- **Si el plan nuevo admite equipos pero con menos integrantes** (por ejemplo, de Premium a Estándar), al vencer la gracia
+  se suspenden solo los integrantes que sobran, empezando por los menos activos.
+- **Cuentas de portal**: fuera de Premium queda una por portal (ver la sección 12). Al vencer la gracia, se conserva la
+  principal de cada portal.
 
 ---
 
