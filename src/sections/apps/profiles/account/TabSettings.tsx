@@ -439,16 +439,21 @@ const TabSubscription = () => {
 		const autoArchiveScheduled = subscription?.downgradeGracePeriod?.autoArchiveScheduled;
 		// Plan destino de la gracia: free en una cancelación, standard/pro en un downgrade entre pagos.
 		const targetLabel = getPlanName(subscription?.downgradeGracePeriod?.targetPlan || "free").replace(/^Plan /, "plan ");
+		// Cuentas de portal (2/11/2026): solo Premium admite varias por portal; al vencer la gracia queda la principal.
+		const cuentasPortal =
+			subscription?.downgradeGracePeriod?.previousPlan === "premium" && subscription?.downgradeGracePeriod?.targetPlan !== "premium"
+				? " Si tenés más de una cuenta de portal (PJN, SCBA o MEV), desvinculá las de más desde Integraciones: al vencer la gracia queda solo la cuenta principal de cada portal."
+				: "";
 
 		switch (status) {
 			case "future":
-				return `Tras el cambio de plan, tenés hasta el ${formattedDate} para archivar el contenido que exceda los límites del ${targetLabel}.`;
+				return `Tras el cambio de plan, tenés hasta el ${formattedDate} para archivar el contenido que exceda los límites del ${targetLabel}.${cuentasPortal}`;
 			case "today":
 				if (processedAt && !autoArchiveScheduled) {
 					const processedDate = dayjs(processedAt).format("D [de] MMMM [de] YYYY [a las] HH:mm");
 					return `El archivado automático del contenido que excedía los límites del ${targetLabel} se realizó el ${processedDate}.`;
 				}
-				return `Hoy es el último día para archivar el contenido que exceda los límites del ${targetLabel}. El sistema archivará automáticamente el contenido excedente al finalizar el día.`;
+				return `Hoy es el último día para archivar el contenido que exceda los límites del ${targetLabel}. El sistema archivará automáticamente el contenido excedente al finalizar el día.${cuentasPortal}`;
 			case "past":
 				if (processedAt) {
 					const processedDate = dayjs(processedAt).format("D [de] MMMM [de] YYYY [a las] HH:mm");
@@ -456,7 +461,7 @@ const TabSubscription = () => {
 				}
 				return `El período de gracia finalizó el ${formattedDate}. El contenido que excedía los límites del ${targetLabel} ha sido archivado automáticamente.`;
 			default:
-				return `Tras el cambio de plan, tenés hasta el ${formattedDate} para archivar el contenido que exceda los límites del ${targetLabel}.`;
+				return `Tras el cambio de plan, tenés hasta el ${formattedDate} para archivar el contenido que exceda los límites del ${targetLabel}.${cuentasPortal}`;
 		}
 	};
 
@@ -490,7 +495,11 @@ const TabSubscription = () => {
 		if (subscription.status === "past_due" || subscription.status === "unpaid") {
 			gracePeriodType = "payment_failed";
 			targetPlan = subscription.plan;
-		} else if (subscription.cancelAtPeriodEnd === true && subscription.currentPeriodEnd && new Date(subscription.currentPeriodEnd) > new Date()) {
+		} else if (
+			subscription.cancelAtPeriodEnd === true &&
+			subscription.currentPeriodEnd &&
+			new Date(subscription.currentPeriodEnd) > new Date()
+		) {
 			// Baja programada todavía vigente: el plan NO cambió. La gracia que el backend
 			// ya creó (expiresAt = fin de período + N días) arranca cuando termine el período.
 			gracePeriodType = "cancellation";
@@ -786,9 +795,7 @@ const TabSubscription = () => {
 		return (
 			<Stack alignItems="center" justifyContent="center" spacing={1.25} sx={{ py: 8 }}>
 				<CircularProgress size={32} sx={{ color: BRAND_BLUE }} />
-				<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
-					Cargando suscripción…
-				</Typography>
+				<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>Cargando suscripción…</Typography>
 			</Stack>
 		);
 	}
@@ -865,7 +872,15 @@ const TabSubscription = () => {
 								}}
 							>
 								<Stack spacing={0.875}>
-									<Typography sx={{ fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
+									<Typography
+										sx={{
+											fontSize: "0.62rem",
+											fontWeight: 600,
+											letterSpacing: "0.08em",
+											textTransform: "uppercase",
+											color: "text.secondary",
+										}}
+									>
 										Equipo
 									</Typography>
 									<Typography sx={{ fontSize: "1.1rem", fontWeight: 700, letterSpacing: "-0.015em", color: BRAND_BLUE }}>
@@ -890,7 +905,15 @@ const TabSubscription = () => {
 								}}
 							>
 								<Stack spacing={0.875}>
-									<Typography sx={{ fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
+									<Typography
+										sx={{
+											fontSize: "0.62rem",
+											fontWeight: 600,
+											letterSpacing: "0.08em",
+											textTransform: "uppercase",
+											color: "text.secondary",
+										}}
+									>
 										Plan del equipo
 									</Typography>
 									<Stack direction="row" spacing={1} alignItems="center">
@@ -1000,167 +1023,216 @@ const TabSubscription = () => {
 	return (
 		<Grid container spacing={2.5}>
 			<Grid item xs={12} md={8}>
-			{/* Detalles de suscripción */}
-			<SectionCard
-				eyebrow="Tu suscripción"
-				title="Detalles del plan"
-				subtitle="Plan actual, renovación y acciones"
-				icon={<Crown size={16} variant="Bulk" />}
-				rightSlot={getStatusPill(subscription.status)}
-			>
-				<Grid container spacing={2.5}>
-					<Grid item xs={12} md={6}>
-						<Stack spacing={1.5}>
-							<Stack spacing={0.25}>
-								<Typography sx={{ fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
-									Plan actual
-								</Typography>
-								<Typography sx={{ fontSize: "1.5rem", fontWeight: 700, letterSpacing: "-0.02em", color: BRAND_BLUE }}>
-									{getPlanName(subscription.plan)}
-								</Typography>
-							</Stack>
+				{/* Detalles de suscripción */}
+				<SectionCard
+					eyebrow="Tu suscripción"
+					title="Detalles del plan"
+					subtitle="Plan actual, renovación y acciones"
+					icon={<Crown size={16} variant="Bulk" />}
+					rightSlot={getStatusPill(subscription.status)}
+				>
+					<Grid container spacing={2.5}>
+						<Grid item xs={12} md={6}>
+							<Stack spacing={1.5}>
+								<Stack spacing={0.25}>
+									<Typography
+										sx={{
+											fontSize: "0.62rem",
+											fontWeight: 600,
+											letterSpacing: "0.08em",
+											textTransform: "uppercase",
+											color: "text.secondary",
+										}}
+									>
+										Plan actual
+									</Typography>
+									<Typography sx={{ fontSize: "1.5rem", fontWeight: 700, letterSpacing: "-0.02em", color: BRAND_BLUE }}>
+										{getPlanName(subscription.plan)}
+									</Typography>
+								</Stack>
 
-							{hasRenewalDate && !subscription.cancelAtPeriodEnd && (
-								<Box
-									sx={{
-										p: 1.25,
-										borderRadius: 1.25,
-										bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
-										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
-									}}
-								>
-									<Stack direction="row" spacing={0.75} alignItems="center">
-										<Refresh size={14} variant="Bulk" color={BRAND_BLUE} />
-										<Typography sx={{ fontSize: "0.8rem", color: "text.primary", fontWeight: 500, letterSpacing: "-0.005em" }}>
-											Se renovará el {formatDate(subscription.currentPeriodEnd)}
-										</Typography>
-									</Stack>
-								</Box>
-							)}
-
-							{subscription.cancelAtPeriodEnd && (
-								<>
+								{hasRenewalDate && !subscription.cancelAtPeriodEnd && (
 									<Box
 										sx={{
 											p: 1.25,
 											borderRadius: 1.25,
-											bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05),
-											border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
 										}}
 									>
 										<Stack direction="row" spacing={0.75} alignItems="center">
-											<Warning2 size={14} variant="Bulk" color={STALE_AMBER} />
+											<Refresh size={14} variant="Bulk" color={BRAND_BLUE} />
 											<Typography sx={{ fontSize: "0.8rem", color: "text.primary", fontWeight: 500, letterSpacing: "-0.005em" }}>
-												{new Date(subscription.currentPeriodEnd) < new Date()
-													? `Tu suscripción terminó el ${formatDate(subscription.currentPeriodEnd)}`
-													: `Tu suscripción terminará el ${formatDate(subscription.currentPeriodEnd)}`}
+												Se renovará el {formatDate(subscription.currentPeriodEnd)}
 											</Typography>
 										</Stack>
 									</Box>
-									{isDowngradeGracePeriodActive() && (
+								)}
+
+								{subscription.cancelAtPeriodEnd && (
+									<>
 										<Box
 											sx={{
-												p: 1.5,
+												p: 1.25,
 												borderRadius: 1.25,
-												bgcolor: alpha(STALE_AMBER, isDark ? 0.08 : 0.04),
+												bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05),
 												border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
 											}}
 										>
-											<Stack direction="row" spacing={1} alignItems="flex-start">
-												<Timer1 size={16} variant="Bulk" color={STALE_AMBER} style={{ marginTop: 2, flexShrink: 0 }} />
-												<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-													{getGracePeriodMessage(subscription.downgradeGracePeriod?.expiresAt || subscription.currentPeriodEnd)}
+											<Stack direction="row" spacing={0.75} alignItems="center">
+												<Warning2 size={14} variant="Bulk" color={STALE_AMBER} />
+												<Typography sx={{ fontSize: "0.8rem", color: "text.primary", fontWeight: 500, letterSpacing: "-0.005em" }}>
+													{new Date(subscription.currentPeriodEnd) < new Date()
+														? `Tu suscripción terminó el ${formatDate(subscription.currentPeriodEnd)}`
+														: `Tu suscripción terminará el ${formatDate(subscription.currentPeriodEnd)}`}
 												</Typography>
 											</Stack>
 										</Box>
-									)}
-								</>
-							)}
+										{isDowngradeGracePeriodActive() && (
+											<Box
+												sx={{
+													p: 1.5,
+													borderRadius: 1.25,
+													bgcolor: alpha(STALE_AMBER, isDark ? 0.08 : 0.04),
+													border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+												}}
+											>
+												<Stack direction="row" spacing={1} alignItems="flex-start">
+													<Timer1 size={16} variant="Bulk" color={STALE_AMBER} style={{ marginTop: 2, flexShrink: 0 }} />
+													<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+														{getGracePeriodMessage(subscription.downgradeGracePeriod?.expiresAt || subscription.currentPeriodEnd)}
+													</Typography>
+												</Stack>
+											</Box>
+										)}
+									</>
+								)}
 
-							{nextPlan && (
-								<Box
-									sx={{
-										p: 1.25,
-										borderRadius: 1.25,
-										bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
-										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
-									}}
-								>
-									<Stack direction="row" spacing={0.75} alignItems="center" justifyContent="space-between" flexWrap="wrap" useFlexGap>
-										<Stack direction="row" spacing={0.75} alignItems="center">
-											<InfoCircle size={14} variant="Bulk" color={BRAND_BLUE} />
-											<Typography sx={{ fontSize: "0.8rem", color: "text.primary", fontWeight: 500, letterSpacing: "-0.005em" }}>
-												Cambiarás al {getPlanName(nextPlan)}
-												{nextPlanDate ? ` el ${formatDate(nextPlanDate)}` : " en la próxima renovación"}.
-											</Typography>
+								{nextPlan && (
+									<Box
+										sx={{
+											p: 1.25,
+											borderRadius: 1.25,
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+											border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+										}}
+									>
+										<Stack direction="row" spacing={0.75} alignItems="center" justifyContent="space-between" flexWrap="wrap" useFlexGap>
+											<Stack direction="row" spacing={0.75} alignItems="center">
+												<InfoCircle size={14} variant="Bulk" color={BRAND_BLUE} />
+												<Typography sx={{ fontSize: "0.8rem", color: "text.primary", fontWeight: 500, letterSpacing: "-0.005em" }}>
+													Cambiarás al {getPlanName(nextPlan)}
+													{nextPlanDate ? ` el ${formatDate(nextPlanDate)}` : " en la próxima renovación"}.
+												</Typography>
+											</Stack>
+											<Button
+												size="small"
+												onClick={handleCancelScheduledChange}
+												disabled={cancelChangeLoading}
+												startIcon={cancelChangeLoading ? <CircularProgress size={12} color="inherit" /> : undefined}
+												sx={{ fontSize: "0.72rem", textTransform: "none", py: 0 }}
+											>
+												Cancelar cambio
+											</Button>
 										</Stack>
-										<Button
-											size="small"
-											onClick={handleCancelScheduledChange}
-											disabled={cancelChangeLoading}
-											startIcon={cancelChangeLoading ? <CircularProgress size={12} color="inherit" /> : undefined}
-											sx={{ fontSize: "0.72rem", textTransform: "none", py: 0 }}
-										>
-											Cancelar cambio
-										</Button>
-									</Stack>
-								</Box>
-							)}
-						</Stack>
+									</Box>
+								)}
+							</Stack>
+						</Grid>
+
+						<Grid item xs={12} md={6}>
+							<Stack spacing={1.25} alignItems={{ xs: "stretch", md: "flex-end" }} sx={{ height: "100%", justifyContent: "center" }}>
+								<Button variant="contained" onClick={handleChangePlan} sx={brandPrimarySx}>
+									Cambiar plan
+								</Button>
+								{showCancelButton && (
+									<Button onClick={handleOpenCancelDialog} sx={destructiveGhostBtnSx}>
+										Cancelar suscripción
+									</Button>
+								)}
+								{showReactivateButton && (
+									<Button
+										onClick={handleReactivateSubscription}
+										disabled={reactivateLoading}
+										startIcon={reactivateLoading ? <CircularProgress size={14} color="inherit" /> : <Refresh size={14} variant="Linear" />}
+										sx={greenGhostBtnSx}
+									>
+										Reactivar
+									</Button>
+								)}
+							</Stack>
+						</Grid>
 					</Grid>
 
-					<Grid item xs={12} md={6}>
-						<Stack spacing={1.25} alignItems={{ xs: "stretch", md: "flex-end" }} sx={{ height: "100%", justifyContent: "center" }}>
-							<Button variant="contained" onClick={handleChangePlan} sx={brandPrimarySx}>
-								Cambiar plan
-							</Button>
-							{showCancelButton && (
-								<Button onClick={handleOpenCancelDialog} sx={destructiveGhostBtnSx}>
-									Cancelar suscripción
-								</Button>
-							)}
-							{showReactivateButton && (
-								<Button
-									onClick={handleReactivateSubscription}
-									disabled={reactivateLoading}
-									startIcon={reactivateLoading ? <CircularProgress size={14} color="inherit" /> : <Refresh size={14} variant="Linear" />}
-									sx={greenGhostBtnSx}
-								>
-									Reactivar
-								</Button>
-							)}
-						</Stack>
-					</Grid>
-				</Grid>
-
-				{subscription.plan !== "free" && (
-					<Box sx={{ mt: 2, p: 1.5, borderRadius: 1.5, bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03), border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}` }}>
-						<Typography sx={{ fontSize: "0.6rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary", mb: 0.75 }}>
-							Información de la suscripción
-						</Typography>
-						<Stack spacing={0.625}>
-							<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
-								<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em", flexShrink: 0 }}>Cliente</Typography>
-								<Typography sx={{ fontSize: "0.72rem", color: "text.primary", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-									{getStripeValue(subscription.stripeCustomerId)}
-								</Typography>
+					{subscription.plan !== "free" && (
+						<Box
+							sx={{
+								mt: 2,
+								p: 1.5,
+								borderRadius: 1.5,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+							}}
+						>
+							<Typography
+								sx={{
+									fontSize: "0.6rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+									mb: 0.75,
+								}}
+							>
+								Información de la suscripción
+							</Typography>
+							<Stack spacing={0.625}>
+								<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+									<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em", flexShrink: 0 }}>
+										Cliente
+									</Typography>
+									<Typography
+										sx={{
+											fontSize: "0.72rem",
+											color: "text.primary",
+											fontFamily: "monospace",
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											whiteSpace: "nowrap",
+										}}
+									>
+										{getStripeValue(subscription.stripeCustomerId)}
+									</Typography>
+								</Stack>
+								<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+									<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em", flexShrink: 0 }}>
+										Suscripción
+									</Typography>
+									<Typography
+										sx={{
+											fontSize: "0.72rem",
+											color: "text.primary",
+											fontFamily: "monospace",
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											whiteSpace: "nowrap",
+										}}
+									>
+										{getStripeValue(subscription.stripeSubscriptionId)}
+									</Typography>
+								</Stack>
+								<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+									<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em", flexShrink: 0 }}>
+										Inicio
+									</Typography>
+									<Typography sx={{ fontSize: "0.72rem", color: "text.primary", fontVariantNumeric: "tabular-nums" }}>
+										{formatDate(subscription.currentPeriodStart)}
+									</Typography>
+								</Stack>
 							</Stack>
-							<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
-								<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em", flexShrink: 0 }}>Suscripción</Typography>
-								<Typography sx={{ fontSize: "0.72rem", color: "text.primary", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-									{getStripeValue(subscription.stripeSubscriptionId)}
-								</Typography>
-							</Stack>
-							<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
-								<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em", flexShrink: 0 }}>Inicio</Typography>
-								<Typography sx={{ fontSize: "0.72rem", color: "text.primary", fontVariantNumeric: "tabular-nums" }}>
-									{formatDate(subscription.currentPeriodStart)}
-								</Typography>
-							</Stack>
-						</Stack>
-					</Box>
-				)}
-			</SectionCard>
+						</Box>
+					)}
+				</SectionCard>
 			</Grid>
 
 			{/* Uso de recursos */}
@@ -1239,9 +1311,7 @@ const TabSubscription = () => {
 									renderLimitRow(limitNames[key] || key, value, key === "storage" ? "MB" : undefined, idx === entries.length - 1),
 								);
 							}
-							return (
-								<Typography sx={{ p: 1.5, fontSize: "0.78rem", color: "text.secondary" }}>No hay límites disponibles</Typography>
-							);
+							return <Typography sx={{ p: 1.5, fontSize: "0.78rem", color: "text.secondary" }}>No hay límites disponibles</Typography>;
 						})()}
 					</Box>
 				</SectionCard>
@@ -1296,7 +1366,12 @@ const TabSubscription = () => {
 									})
 									.sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99));
 								return items.map((feature: any, idx: number) =>
-									renderFeatureRow(feature.displayName || feature.description || feature.name, feature.enabled, idx === items.length - 1, idx),
+									renderFeatureRow(
+										feature.displayName || feature.description || feature.name,
+										feature.enabled,
+										idx === items.length - 1,
+										idx,
+									),
 								);
 							}
 							if (subscription?.featureDetails) {
@@ -1338,269 +1413,329 @@ const TabSubscription = () => {
 			{/* Período de gracia */}
 			{isInGracePeriod() && gracePeriodInfo && (
 				<Grid item xs={12}>
-				<SectionCard
-					eyebrow="Período de gracia"
-					title={gracePeriodInfo.title}
-					subtitle="Plazo para ajustar tus datos a los nuevos límites"
-					icon={<Timer1 size={16} variant="Bulk" />}
-					tone="amber"
-				>
-					{gracePeriodInfo.expiryDate && getGracePeriodStatus(gracePeriodInfo.expiryDate) === "past" ? (
-						<Box sx={{ p: 1.75, borderRadius: 1.25, bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04), border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}` }}>
-							<Stack direction="row" spacing={1} alignItems="flex-start">
-								<InfoCircle size={16} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
-								<Stack spacing={0.5}>
-									<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
-										Período de gracia finalizado
-									</Typography>
-									<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-										El período finalizó el {gracePeriodInfo.expiryFormatted}. El contenido que excedía los límites de tu{" "}
-										{gracePeriodInfo.willDowngradeToFreePlan ? "plan gratuito" : "plan actual"} ha sido archivado automáticamente.
-									</Typography>
-								</Stack>
-							</Stack>
-						</Box>
-					) : (
-						<Box sx={{ p: 1.75, borderRadius: 1.25, bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05), border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}` }}>
-							<Stack direction="row" spacing={1} alignItems="flex-start">
-								<Warning2 size={16} variant="Bulk" color={STALE_AMBER} style={{ marginTop: 2, flexShrink: 0 }} />
-								<Stack spacing={0.5}>
-									<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
-										{gracePeriodInfo.gracePeriodType === "payment_failed"
-											? `Tu último pago no pudo procesarse`
-											: gracePeriodInfo.gracePeriodType === "cancellation"
-											? `Tu plan ${gracePeriodInfo.previousPlanName} cambiará al Plan Gratuito el ${gracePeriodInfo.cancellationFormatted}`
-											: gracePeriodInfo.willDowngradeToFreePlan
-											? `Tu plan ${gracePeriodInfo.previousPlanName} cambió al Plan Gratuito el ${gracePeriodInfo.cancellationFormatted}`
-											: `Tu plan cambió de ${gracePeriodInfo.previousPlanName} a ${gracePeriodInfo.currentPlanName}`}
-									</Typography>
-									<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-										{gracePeriodInfo.gracePeriodType === "payment_failed"
-											? `Actualizá tu medio de pago para conservar tu ${gracePeriodInfo.currentPlanName}. Si el pago no se regulariza, tu cuenta pasará a los límites del Plan Gratuito.`
-											: gracePeriodInfo.gracePeriodType === "cancellation"
-											? gracePeriodInfo.graceEndKnown
-												? `Hasta esa fecha seguís con todas las funciones de tu plan. Después tendrás hasta el ${gracePeriodInfo.expiryFormatted} para ajustar tus datos a los límites del Plan Gratuito antes de que se archive automáticamente el contenido excedente.`
-												: `Hasta esa fecha seguís con todas las funciones de tu plan. Después tendrás un período de gracia para ajustar tus datos a los límites del Plan Gratuito antes de que se archive automáticamente el contenido excedente.`
-											: `Tenés hasta el ${gracePeriodInfo.expiryFormatted} para ajustar tus datos a los nuevos límites antes de que se archive automáticamente el contenido excedente.`}
-									</Typography>
-								</Stack>
-							</Stack>
-						</Box>
-					)}
-
-					<Grid container spacing={2} sx={{ mt: 1 }}>
-						{[
-							{ label: "Plan anterior", value: gracePeriodInfo.previousPlanName, icon: <ReceiptItem size={18} variant="Bulk" />, color: BRAND_BLUE },
-							{
-								label: "Fecha límite",
-								value: gracePeriodInfo.expiryFormatted,
-								icon: <Calendar size={18} variant="Bulk" />,
-								color: errorColor,
-							},
-							{
-								label: "Días restantes",
-								value: `${gracePeriodInfo.daysRemaining} ${gracePeriodInfo.daysRemaining === 1 ? "día" : "días"}`,
-								icon: <Timer1 size={18} variant="Bulk" />,
-								color: gracePeriodInfo.isExpiringSoon ? errorColor : STALE_AMBER,
-								badge: gracePeriodInfo.isExpiringSoon ? <BrandPill color={errorColor} label="Expira pronto" /> : null,
-							},
-						].map((card, idx) => (
-							<Grid item xs={12} sm={4} key={idx}>
-								<Box
-									sx={{
-										p: 2,
-										borderRadius: 1.5,
-										bgcolor: "background.paper",
-										border: `1px solid ${alpha(card.color, isDark ? 0.22 : 0.14)}`,
-										height: "100%",
-										textAlign: "center",
-									}}
-								>
-									<Stack spacing={1} alignItems="center">
-										<Box
-											sx={{
-												width: 40,
-												height: 40,
-												borderRadius: 1,
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												bgcolor: alpha(card.color, isDark ? 0.16 : 0.08),
-												border: `1px solid ${alpha(card.color, isDark ? 0.28 : 0.18)}`,
-												color: card.color,
-											}}
-										>
-											{card.icon}
-										</Box>
-										<Typography sx={{ fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
-											{card.label}
+					<SectionCard
+						eyebrow="Período de gracia"
+						title={gracePeriodInfo.title}
+						subtitle="Plazo para ajustar tus datos a los nuevos límites"
+						icon={<Timer1 size={16} variant="Bulk" />}
+						tone="amber"
+					>
+						{gracePeriodInfo.expiryDate && getGracePeriodStatus(gracePeriodInfo.expiryDate) === "past" ? (
+							<Box
+								sx={{
+									p: 1.75,
+									borderRadius: 1.25,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+								}}
+							>
+								<Stack direction="row" spacing={1} alignItems="flex-start">
+									<InfoCircle size={16} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
+									<Stack spacing={0.5}>
+										<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+											Período de gracia finalizado
 										</Typography>
-										<Typography sx={{ fontSize: "1rem", fontWeight: 700, color: "text.primary", letterSpacing: "-0.015em", fontVariantNumeric: "tabular-nums" }}>
-											{card.value}
+										<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+											El período finalizó el {gracePeriodInfo.expiryFormatted}. El contenido que excedía los límites de tu{" "}
+											{gracePeriodInfo.willDowngradeToFreePlan ? "plan gratuito" : "plan actual"} ha sido archivado automáticamente.
 										</Typography>
-										{card.badge}
 									</Stack>
-								</Box>
-							</Grid>
-						))}
-					</Grid>
+								</Stack>
+							</Box>
+						) : (
+							<Box
+								sx={{
+									p: 1.75,
+									borderRadius: 1.25,
+									bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05),
+									border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+								}}
+							>
+								<Stack direction="row" spacing={1} alignItems="flex-start">
+									<Warning2 size={16} variant="Bulk" color={STALE_AMBER} style={{ marginTop: 2, flexShrink: 0 }} />
+									<Stack spacing={0.5}>
+										<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+											{gracePeriodInfo.gracePeriodType === "payment_failed"
+												? `Tu último pago no pudo procesarse`
+												: gracePeriodInfo.gracePeriodType === "cancellation"
+												? `Tu plan ${gracePeriodInfo.previousPlanName} cambiará al Plan Gratuito el ${gracePeriodInfo.cancellationFormatted}`
+												: gracePeriodInfo.willDowngradeToFreePlan
+												? `Tu plan ${gracePeriodInfo.previousPlanName} cambió al Plan Gratuito el ${gracePeriodInfo.cancellationFormatted}`
+												: `Tu plan cambió de ${gracePeriodInfo.previousPlanName} a ${gracePeriodInfo.currentPlanName}`}
+										</Typography>
+										<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+											{gracePeriodInfo.gracePeriodType === "payment_failed"
+												? `Actualizá tu medio de pago para conservar tu ${gracePeriodInfo.currentPlanName}. Si el pago no se regulariza, tu cuenta pasará a los límites del Plan Gratuito.`
+												: gracePeriodInfo.gracePeriodType === "cancellation"
+												? gracePeriodInfo.graceEndKnown
+													? `Hasta esa fecha seguís con todas las funciones de tu plan. Después tendrás hasta el ${gracePeriodInfo.expiryFormatted} para ajustar tus datos a los límites del Plan Gratuito antes de que se archive automáticamente el contenido excedente.`
+													: `Hasta esa fecha seguís con todas las funciones de tu plan. Después tendrás un período de gracia para ajustar tus datos a los límites del Plan Gratuito antes de que se archive automáticamente el contenido excedente.`
+												: `Tenés hasta el ${gracePeriodInfo.expiryFormatted} para ajustar tus datos a los nuevos límites antes de que se archive automáticamente el contenido excedente.`}
+										</Typography>
+									</Stack>
+								</Stack>
+							</Box>
+						)}
 
-					<Box sx={{ mt: 2, p: 1.75, borderRadius: 1.5, bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03), border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}` }}>
-						<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em", mb: 0.5 }}>
-							{gracePeriodInfo.expiryDate && getGracePeriodStatus(gracePeriodInfo.expiryDate) === "past"
-								? "Archivado automático completado"
-								: "¿Qué ocurre después?"}
-						</Typography>
-						<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty", mb: 0.625 }}>
-							El sistema archivará automáticamente los elementos que excedan los límites de tu{" "}
-							{gracePeriodInfo.willDowngradeToFreePlan ? "nuevo plan gratuito" : "plan actual"}.
-						</Typography>
-						<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-							Para evitar pérdida de acceso a tus datos importantes, revisá y ajustá manualmente tu contenido antes del vencimiento.
-						</Typography>
-
-						<Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ mt: 2 }} justifyContent="center" flexWrap="wrap" useFlexGap>
+						<Grid container spacing={2} sx={{ mt: 1 }}>
 							{[
-								{ label: "Gestionar carpetas", to: "/apps/folders/list" },
-								{ label: "Gestionar cálculos", to: "/apps/calc/labor" },
-								{ label: "Gestionar contactos", to: "/apps/customer/customer-list" },
-							].map((cta) => (
-								<Button key={cta.to} variant="contained" onClick={() => navigate(cta.to)} sx={{ ...brandPrimarySx, minWidth: 180 }}>
-									{cta.label}
-								</Button>
+								{
+									label: "Plan anterior",
+									value: gracePeriodInfo.previousPlanName,
+									icon: <ReceiptItem size={18} variant="Bulk" />,
+									color: BRAND_BLUE,
+								},
+								{
+									label: "Fecha límite",
+									value: gracePeriodInfo.expiryFormatted,
+									icon: <Calendar size={18} variant="Bulk" />,
+									color: errorColor,
+								},
+								{
+									label: "Días restantes",
+									value: `${gracePeriodInfo.daysRemaining} ${gracePeriodInfo.daysRemaining === 1 ? "día" : "días"}`,
+									icon: <Timer1 size={18} variant="Bulk" />,
+									color: gracePeriodInfo.isExpiringSoon ? errorColor : STALE_AMBER,
+									badge: gracePeriodInfo.isExpiringSoon ? <BrandPill color={errorColor} label="Expira pronto" /> : null,
+								},
+							].map((card, idx) => (
+								<Grid item xs={12} sm={4} key={idx}>
+									<Box
+										sx={{
+											p: 2,
+											borderRadius: 1.5,
+											bgcolor: "background.paper",
+											border: `1px solid ${alpha(card.color, isDark ? 0.22 : 0.14)}`,
+											height: "100%",
+											textAlign: "center",
+										}}
+									>
+										<Stack spacing={1} alignItems="center">
+											<Box
+												sx={{
+													width: 40,
+													height: 40,
+													borderRadius: 1,
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													bgcolor: alpha(card.color, isDark ? 0.16 : 0.08),
+													border: `1px solid ${alpha(card.color, isDark ? 0.28 : 0.18)}`,
+													color: card.color,
+												}}
+											>
+												{card.icon}
+											</Box>
+											<Typography
+												sx={{
+													fontSize: "0.62rem",
+													fontWeight: 600,
+													letterSpacing: "0.08em",
+													textTransform: "uppercase",
+													color: "text.secondary",
+												}}
+											>
+												{card.label}
+											</Typography>
+											<Typography
+												sx={{
+													fontSize: "1rem",
+													fontWeight: 700,
+													color: "text.primary",
+													letterSpacing: "-0.015em",
+													fontVariantNumeric: "tabular-nums",
+												}}
+											>
+												{card.value}
+											</Typography>
+											{card.badge}
+										</Stack>
+									</Box>
+								</Grid>
 							))}
-						</Stack>
-					</Box>
-				</SectionCard>
+						</Grid>
+
+						<Box
+							sx={{
+								mt: 2,
+								p: 1.75,
+								borderRadius: 1.5,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+							}}
+						>
+							<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em", mb: 0.5 }}>
+								{gracePeriodInfo.expiryDate && getGracePeriodStatus(gracePeriodInfo.expiryDate) === "past"
+									? "Archivado automático completado"
+									: "¿Qué ocurre después?"}
+							</Typography>
+							<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty", mb: 0.625 }}>
+								El sistema archivará automáticamente los elementos que excedan los límites de tu{" "}
+								{gracePeriodInfo.willDowngradeToFreePlan ? "nuevo plan gratuito" : "plan actual"}.
+							</Typography>
+							<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+								Para evitar pérdida de acceso a tus datos importantes, revisá y ajustá manualmente tu contenido antes del vencimiento.
+							</Typography>
+
+							<Stack
+								direction={{ xs: "column", sm: "row" }}
+								spacing={1.25}
+								sx={{ mt: 2 }}
+								justifyContent="center"
+								flexWrap="wrap"
+								useFlexGap
+							>
+								{[
+									{ label: "Gestionar carpetas", to: "/apps/folders/list" },
+									{ label: "Gestionar cálculos", to: "/apps/calc/labor" },
+									{ label: "Gestionar contactos", to: "/apps/customer/customer-list" },
+								].map((cta) => (
+									<Button key={cta.to} variant="contained" onClick={() => navigate(cta.to)} sx={{ ...brandPrimarySx, minWidth: 180 }}>
+										{cta.label}
+									</Button>
+								))}
+							</Stack>
+						</Box>
+					</SectionCard>
 				</Grid>
 			)}
 
 			{/* Comparación de límites */}
 			{isDowngradeGracePeriodActive() && gracePeriodInfo && (
 				<Grid item xs={12}>
-				<SectionCard
-					eyebrow="Comparativa"
-					title="Comparación de límites"
-					subtitle="Revisá los cambios en los límites para evitar pérdida de acceso"
-					icon={<ReceiptText size={16} variant="Bulk" />}
-				>
-					<TableContainer
-						sx={{
-							borderRadius: 1.5,
-							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`,
-						}}
+					<SectionCard
+						eyebrow="Comparativa"
+						title="Comparación de límites"
+						subtitle="Revisá los cambios en los límites para evitar pérdida de acceso"
+						icon={<ReceiptText size={16} variant="Bulk" />}
 					>
-						<Table sx={tableSx} size="small">
-							<TableHead>
-								<TableRow>
-									<TableCell>Recurso</TableCell>
-									<TableCell align="center">
-										<Stack spacing={0.125} alignItems="center">
-											<Typography sx={{ fontSize: "0.72rem", fontWeight: 600, color: BRAND_BLUE, letterSpacing: "-0.005em", textTransform: "none" }}>
-												{gracePeriodInfo.previousPlanName}
-											</Typography>
-											<Typography sx={{ fontSize: "0.62rem", color: "text.secondary", textTransform: "none", letterSpacing: "0.04em" }}>
-												Anterior
-											</Typography>
-										</Stack>
-									</TableCell>
-									<TableCell align="center">
-										<Stack spacing={0.125} alignItems="center">
-											<Typography sx={{ fontSize: "0.72rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "-0.005em", textTransform: "none" }}>
-												{gracePeriodInfo.targetPlanName}
-											</Typography>
-											<Typography sx={{ fontSize: "0.62rem", color: "text.secondary", textTransform: "none", letterSpacing: "0.04em" }}>
-												Nuevo
-											</Typography>
-										</Stack>
-									</TableCell>
-								</TableRow>
-							</TableHead>
-							<TableBody>
-								{[
-									{
-										label: "Carpetas",
-										prev: (() => {
-											const l = getPlanLimits(subscription.downgradeGracePeriod?.previousPlan || subscription.plan);
-											return l.folders === 999999 ? "Ilimitadas" : String(l.folders);
-										})(),
-										next: (() => {
-											const t = subscription.downgradeGracePeriod?.targetPlan || "free";
-											const l = getPlanLimits(t);
-											return l.folders === 999999 ? "Ilimitadas" : String(l.folders);
-										})(),
-									},
-									{
-										label: "Cálculos",
-										prev: (() => {
-											const l = getPlanLimits(subscription.downgradeGracePeriod?.previousPlan || subscription.plan);
-											return l.calculators === 999999 ? "Ilimitados" : String(l.calculators);
-										})(),
-										next: (() => {
-											const t = subscription.downgradeGracePeriod?.targetPlan || "free";
-											const l = getPlanLimits(t);
-											return l.calculators === 999999 ? "Ilimitados" : String(l.calculators);
-										})(),
-									},
-									{
-										label: "Contactos",
-										prev: (() => {
-											const l = getPlanLimits(subscription.downgradeGracePeriod?.previousPlan || subscription.plan);
-											return l.contacts === 999999 ? "Ilimitados" : String(l.contacts);
-										})(),
-										next: (() => {
-											const t = subscription.downgradeGracePeriod?.targetPlan || "free";
-											const l = getPlanLimits(t);
-											return l.contacts === 999999 ? "Ilimitados" : String(l.contacts);
-										})(),
-									},
-									{
-										label: "Almacenamiento",
-										prev: (() => {
-											const l = getPlanLimits(subscription.downgradeGracePeriod?.previousPlan || subscription.plan);
-											return l.storage >= 1024 ? `${l.storage / 1024} GB` : `${l.storage} MB`;
-										})(),
-										next: (() => {
-											const t = subscription.downgradeGracePeriod?.targetPlan || "free";
-											const l = getPlanLimits(t);
-											return l.storage >= 1024 ? `${l.storage / 1024} GB` : `${l.storage} MB`;
-										})(),
-									},
-								].map((row) => (
-									<TableRow key={row.label}>
-										<TableCell sx={{ fontWeight: 500 }}>{row.label}</TableCell>
-										<TableCell align="center" sx={{ fontWeight: 600, color: BRAND_BLUE, fontVariantNumeric: "tabular-nums" }}>
-											{row.prev}
+						<TableContainer
+							sx={{
+								borderRadius: 1.5,
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`,
+							}}
+						>
+							<Table sx={tableSx} size="small">
+								<TableHead>
+									<TableRow>
+										<TableCell>Recurso</TableCell>
+										<TableCell align="center">
+											<Stack spacing={0.125} alignItems="center">
+												<Typography
+													sx={{ fontSize: "0.72rem", fontWeight: 600, color: BRAND_BLUE, letterSpacing: "-0.005em", textTransform: "none" }}
+												>
+													{gracePeriodInfo.previousPlanName}
+												</Typography>
+												<Typography sx={{ fontSize: "0.62rem", color: "text.secondary", textTransform: "none", letterSpacing: "0.04em" }}>
+													Anterior
+												</Typography>
+											</Stack>
 										</TableCell>
-										<TableCell align="center" sx={{ fontWeight: 600, color: STALE_AMBER, fontVariantNumeric: "tabular-nums" }}>
-											{row.next}
+										<TableCell align="center">
+											<Stack spacing={0.125} alignItems="center">
+												<Typography
+													sx={{
+														fontSize: "0.72rem",
+														fontWeight: 600,
+														color: STALE_AMBER,
+														letterSpacing: "-0.005em",
+														textTransform: "none",
+													}}
+												>
+													{gracePeriodInfo.targetPlanName}
+												</Typography>
+												<Typography sx={{ fontSize: "0.62rem", color: "text.secondary", textTransform: "none", letterSpacing: "0.04em" }}>
+													Nuevo
+												</Typography>
+											</Stack>
 										</TableCell>
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</TableContainer>
-					<Box
-						sx={{
-							mt: 1.5,
-							p: 1.5,
-							borderRadius: 1.25,
-							bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
-							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
-						}}
-					>
-						<Stack direction="row" spacing={1} alignItems="flex-start">
-							<InfoCircle size={16} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
-							<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-								<Box component="span" sx={{ fontWeight: 600 }}>
-									Recomendación:
-								</Box>{" "}
-								Para evitar la pérdida automática de datos, ajustá manualmente tus recursos a los nuevos límites antes de que finalice el
-								período de gracia.
-							</Typography>
-						</Stack>
-					</Box>
-				</SectionCard>
+								</TableHead>
+								<TableBody>
+									{[
+										{
+											label: "Carpetas",
+											prev: (() => {
+												const l = getPlanLimits(subscription.downgradeGracePeriod?.previousPlan || subscription.plan);
+												return l.folders === 999999 ? "Ilimitadas" : String(l.folders);
+											})(),
+											next: (() => {
+												const t = subscription.downgradeGracePeriod?.targetPlan || "free";
+												const l = getPlanLimits(t);
+												return l.folders === 999999 ? "Ilimitadas" : String(l.folders);
+											})(),
+										},
+										{
+											label: "Cálculos",
+											prev: (() => {
+												const l = getPlanLimits(subscription.downgradeGracePeriod?.previousPlan || subscription.plan);
+												return l.calculators === 999999 ? "Ilimitados" : String(l.calculators);
+											})(),
+											next: (() => {
+												const t = subscription.downgradeGracePeriod?.targetPlan || "free";
+												const l = getPlanLimits(t);
+												return l.calculators === 999999 ? "Ilimitados" : String(l.calculators);
+											})(),
+										},
+										{
+											label: "Contactos",
+											prev: (() => {
+												const l = getPlanLimits(subscription.downgradeGracePeriod?.previousPlan || subscription.plan);
+												return l.contacts === 999999 ? "Ilimitados" : String(l.contacts);
+											})(),
+											next: (() => {
+												const t = subscription.downgradeGracePeriod?.targetPlan || "free";
+												const l = getPlanLimits(t);
+												return l.contacts === 999999 ? "Ilimitados" : String(l.contacts);
+											})(),
+										},
+										{
+											label: "Almacenamiento",
+											prev: (() => {
+												const l = getPlanLimits(subscription.downgradeGracePeriod?.previousPlan || subscription.plan);
+												return l.storage >= 1024 ? `${l.storage / 1024} GB` : `${l.storage} MB`;
+											})(),
+											next: (() => {
+												const t = subscription.downgradeGracePeriod?.targetPlan || "free";
+												const l = getPlanLimits(t);
+												return l.storage >= 1024 ? `${l.storage / 1024} GB` : `${l.storage} MB`;
+											})(),
+										},
+									].map((row) => (
+										<TableRow key={row.label}>
+											<TableCell sx={{ fontWeight: 500 }}>{row.label}</TableCell>
+											<TableCell align="center" sx={{ fontWeight: 600, color: BRAND_BLUE, fontVariantNumeric: "tabular-nums" }}>
+												{row.prev}
+											</TableCell>
+											<TableCell align="center" sx={{ fontWeight: 600, color: STALE_AMBER, fontVariantNumeric: "tabular-nums" }}>
+												{row.next}
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</TableContainer>
+						<Box
+							sx={{
+								mt: 1.5,
+								p: 1.5,
+								borderRadius: 1.25,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+							}}
+						>
+							<Stack direction="row" spacing={1} alignItems="flex-start">
+								<InfoCircle size={16} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
+								<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+									<Box component="span" sx={{ fontWeight: 600 }}>
+										Recomendación:
+									</Box>{" "}
+									Para evitar la pérdida automática de datos, ajustá manualmente tus recursos a los nuevos límites antes de que finalice el
+									período de gracia.
+								</Typography>
+							</Stack>
+						</Box>
+					</SectionCard>
 				</Grid>
 			)}
 
@@ -1624,23 +1759,189 @@ const TabSubscription = () => {
 			{/* Métodos de pago */}
 			{subscription.plan !== "free" && (
 				<Grid item xs={12} md={6}>
+					<SectionCard
+						eyebrow="Pagos"
+						title="Métodos de pago"
+						subtitle="Tarjetas asociadas a tu suscripción"
+						icon={<CardSend size={16} variant="Bulk" />}
+						rightSlot={
+							paymentMethods.length > 0 ? (
+								<BrandPill
+									color={BRAND_BLUE}
+									label={`${paymentMethods.length} ${paymentMethods.length === 1 ? "método" : "métodos"}`}
+									dot={false}
+								/>
+							) : undefined
+						}
+					>
+						{paymentMethodsLoading ? (
+							<Stack alignItems="center" sx={{ py: 4 }} spacing={1}>
+								<CircularProgress size={24} sx={{ color: BRAND_BLUE }} />
+								<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>Cargando métodos de pago…</Typography>
+							</Stack>
+						) : paymentMethodsError ? (
+							<Box
+								sx={{
+									p: 1.5,
+									borderRadius: 1.25,
+									bgcolor: alpha(errorColor, isDark ? 0.08 : 0.04),
+									border: `1px solid ${alpha(errorColor, isDark ? 0.32 : 0.22)}`,
+								}}
+							>
+								<Stack direction="row" spacing={1} alignItems="center">
+									<Warning2 size={16} variant="Bulk" color={errorColor} />
+									<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+										{paymentMethodsError}
+									</Typography>
+								</Stack>
+							</Box>
+						) : paymentMethods.length === 0 ? (
+							<Stack alignItems="center" spacing={1} sx={{ py: 4, textAlign: "center" }}>
+								<Box
+									sx={{
+										width: 48,
+										height: 48,
+										borderRadius: 1.5,
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+										color: BRAND_BLUE,
+									}}
+								>
+									<CardSend size={22} variant="Bulk" />
+								</Box>
+								<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+									Sin métodos de pago
+								</Typography>
+								<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", maxWidth: 360, textWrap: "pretty" }}>
+									Los métodos de pago se agregan automáticamente al suscribirte a un plan.
+								</Typography>
+							</Stack>
+						) : (
+							<>
+								<TableContainer sx={{ borderRadius: 1.5, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}` }}>
+									<Table sx={tableSx} size="small">
+										<TableHead>
+											<TableRow>
+												<TableCell>Tipo de tarjeta</TableCell>
+												<TableCell>Número</TableCell>
+												<TableCell>Vencimiento</TableCell>
+												<TableCell>Estado</TableCell>
+												<TableCell align="center">Acciones</TableCell>
+											</TableRow>
+										</TableHead>
+										<TableBody>
+											{paymentMethods.slice(0, showAllPaymentMethods ? paymentMethods.length : 3).map((method) => {
+												const isDefault = defaultPaymentMethod?.id === method.id;
+												return (
+													<TableRow key={method.id}>
+														<TableCell sx={{ fontWeight: 500 }}>
+															{method.card?.brand ? method.card.brand.charAt(0).toUpperCase() + method.card.brand.slice(1) : "Tarjeta"}
+														</TableCell>
+														<TableCell sx={{ fontFamily: "monospace" }}>•••• {method.card?.last4 || "****"}</TableCell>
+														<TableCell sx={{ fontVariantNumeric: "tabular-nums" }}>
+															{method.card?.exp_month && method.card?.exp_year
+																? `${String(method.card.exp_month).padStart(2, "0")}/${method.card.exp_year}`
+																: "—"}
+														</TableCell>
+														<TableCell>
+															<BrandPill
+																color={isDefault ? LIVE_GREEN : theme.palette.text.secondary}
+																label={isDefault ? "Predeterminado" : "Disponible"}
+																dot={isDefault}
+															/>
+														</TableCell>
+														<TableCell align="center">
+															{!isDefault && (
+																<Button
+																	size="small"
+																	onClick={() => handleChangePaymentMethod(method.id)}
+																	disabled={changingPaymentMethod}
+																	startIcon={changingPaymentMethod ? <CircularProgress size={12} color="inherit" /> : undefined}
+																	sx={{ ...ghostBtnSx, fontSize: "0.72rem", py: 0.5, px: 1.25 }}
+																>
+																	Hacer predeterminada
+																</Button>
+															)}
+														</TableCell>
+													</TableRow>
+												);
+											})}
+										</TableBody>
+									</Table>
+								</TableContainer>
+
+								{paymentMethods.length > 5 && (
+									<Stack direction="row" justifyContent="center" sx={{ mt: 1.5 }}>
+										<Button onClick={() => setShowAllPaymentMethods(!showAllPaymentMethods)} sx={ghostBtnSx}>
+											{showAllPaymentMethods ? "Ver menos" : "Ver todas"}
+										</Button>
+									</Stack>
+								)}
+
+								<Box
+									sx={{
+										mt: 2,
+										p: 1.5,
+										borderRadius: 1.25,
+										bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
+									}}
+								>
+									<Stack direction="row" spacing={1} alignItems="flex-start">
+										<InfoCircle size={14} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
+										<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+											<Box component="span" sx={{ fontWeight: 600 }}>
+												Nota:
+											</Box>{" "}
+											El método de pago predeterminado se utilizará para los cargos automáticos de tu suscripción.
+										</Typography>
+									</Stack>
+								</Box>
+							</>
+						)}
+
+						<Stack alignItems="center" spacing={1} sx={{ mt: 2.5 }}>
+							<Button
+								variant="contained"
+								onClick={handleOpenBillingPortal}
+								disabled={openingBillingPortal}
+								startIcon={openingBillingPortal ? <CircularProgress size={14} color="inherit" /> : <CardSend size={15} variant="Linear" />}
+								sx={{ ...brandPrimarySx, minWidth: 250 }}
+							>
+								{openingBillingPortal ? "Abriendo portal…" : "Gestionar métodos de pago"}
+							</Button>
+							<Typography
+								sx={{ fontSize: "0.72rem", color: "text.secondary", textAlign: "center", maxWidth: 400, letterSpacing: "-0.005em" }}
+							>
+								Se abrirá el portal seguro de Stripe donde podrás agregar, eliminar o actualizar tus métodos de pago.
+							</Typography>
+						</Stack>
+					</SectionCard>
+				</Grid>
+			)}
+
+			{/* Historial de facturación */}
+			<Grid item xs={12} md={subscription.plan !== "free" ? 6 : 12}>
 				<SectionCard
-					eyebrow="Pagos"
-					title="Métodos de pago"
-					subtitle="Tarjetas asociadas a tu suscripción"
-					icon={<CardSend size={16} variant="Bulk" />}
+					eyebrow="Facturación"
+					title="Historial de facturación"
+					subtitle="Facturas y cargos de tu cuenta"
+					icon={<ReceiptText size={16} variant="Bulk" />}
 					rightSlot={
-						paymentMethods.length > 0 ? (
-							<BrandPill color={BRAND_BLUE} label={`${paymentMethods.length} ${paymentMethods.length === 1 ? "método" : "métodos"}`} dot={false} />
+						payments.length > 0 ? (
+							<BrandPill color={BRAND_BLUE} label={`${payments.length} ${payments.length === 1 ? "factura" : "facturas"}`} dot={false} />
 						) : undefined
 					}
 				>
-					{paymentMethodsLoading ? (
+					{paymentsLoading ? (
 						<Stack alignItems="center" sx={{ py: 4 }} spacing={1}>
 							<CircularProgress size={24} sx={{ color: BRAND_BLUE }} />
-							<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>Cargando métodos de pago…</Typography>
+							<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>Cargando facturas…</Typography>
 						</Stack>
-					) : paymentMethodsError ? (
+					) : paymentsError ? (
 						<Box
 							sx={{
 								p: 1.5,
@@ -1651,11 +1952,11 @@ const TabSubscription = () => {
 						>
 							<Stack direction="row" spacing={1} alignItems="center">
 								<Warning2 size={16} variant="Bulk" color={errorColor} />
-								<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>{paymentMethodsError}</Typography>
+								<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>{paymentsError}</Typography>
 							</Stack>
 						</Box>
-					) : paymentMethods.length === 0 ? (
-						<Stack alignItems="center" spacing={1} sx={{ py: 4, textAlign: "center" }}>
+					) : payments.length === 0 ? (
+						<Stack alignItems="center" spacing={1.25} sx={{ py: 4, textAlign: "center" }}>
 							<Box
 								sx={{
 									width: 48,
@@ -1669,14 +1970,15 @@ const TabSubscription = () => {
 									color: BRAND_BLUE,
 								}}
 							>
-								<CardSend size={22} variant="Bulk" />
+								<ReceiptText size={22} variant="Bulk" />
 							</Box>
 							<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
-								Sin métodos de pago
+								Sin facturas todavía
 							</Typography>
-							<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", maxWidth: 360, textWrap: "pretty" }}>
-								Los métodos de pago se agregan automáticamente al suscribirte a un plan.
-							</Typography>
+							<Typography sx={{ fontSize: "0.78rem", color: "text.secondary" }}>No se encontraron facturas para esta cuenta.</Typography>
+							<Button size="small" onClick={handleChangePlan} sx={ghostBtnSx}>
+								Explorar planes
+							</Button>
 						</Stack>
 					) : (
 						<>
@@ -1684,253 +1986,104 @@ const TabSubscription = () => {
 								<Table sx={tableSx} size="small">
 									<TableHead>
 										<TableRow>
-											<TableCell>Tipo de tarjeta</TableCell>
 											<TableCell>Número</TableCell>
-											<TableCell>Vencimiento</TableCell>
+											<TableCell>Fecha</TableCell>
+											<TableCell>Importe</TableCell>
 											<TableCell>Estado</TableCell>
 											<TableCell align="center">Acciones</TableCell>
 										</TableRow>
 									</TableHead>
 									<TableBody>
-										{paymentMethods.slice(0, showAllPaymentMethods ? paymentMethods.length : 3).map((method) => {
-											const isDefault = defaultPaymentMethod?.id === method.id;
-											return (
-												<TableRow key={method.id}>
-													<TableCell sx={{ fontWeight: 500 }}>
-														{method.card?.brand ? method.card.brand.charAt(0).toUpperCase() + method.card.brand.slice(1) : "Tarjeta"}
-													</TableCell>
-													<TableCell sx={{ fontFamily: "monospace" }}>•••• {method.card?.last4 || "****"}</TableCell>
-													<TableCell sx={{ fontVariantNumeric: "tabular-nums" }}>
-														{method.card?.exp_month && method.card?.exp_year
-															? `${String(method.card.exp_month).padStart(2, "0")}/${method.card.exp_year}`
-															: "—"}
-													</TableCell>
-													<TableCell>
-														<BrandPill
-															color={isDefault ? LIVE_GREEN : theme.palette.text.secondary}
-															label={isDefault ? "Predeterminado" : "Disponible"}
-															dot={isDefault}
-														/>
-													</TableCell>
-													<TableCell align="center">
-														{!isDefault && (
-															<Button
-																size="small"
-																onClick={() => handleChangePaymentMethod(method.id)}
-																disabled={changingPaymentMethod}
-																startIcon={changingPaymentMethod ? <CircularProgress size={12} color="inherit" /> : undefined}
-																sx={{ ...ghostBtnSx, fontSize: "0.72rem", py: 0.5, px: 1.25 }}
-															>
-																Hacer predeterminada
-															</Button>
-														)}
-													</TableCell>
-												</TableRow>
-											);
-										})}
+										{payments.slice(0, showAllPayments ? payments.length : 3).map((payment) => (
+											<TableRow key={payment.id}>
+												<TableCell sx={{ fontFamily: "monospace", fontSize: "0.78rem" }}>
+													{payment.invoiceNumber || payment.receiptNumber || payment.invoiceId || "N/A"}
+												</TableCell>
+												<TableCell sx={{ fontVariantNumeric: "tabular-nums" }}>{formatDate(payment.createdAt)}</TableCell>
+												<TableCell sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+													{formatAmount(payment.amount, payment.currency)}
+												</TableCell>
+												<TableCell>{getPaymentStatusPill(payment.status)}</TableCell>
+												<TableCell align="center">
+													<Button
+														size="small"
+														onClick={() => handleViewInvoice(payment)}
+														sx={{ ...ghostBtnSx, fontSize: "0.72rem", py: 0.5, px: 1.25 }}
+													>
+														Ver
+													</Button>
+												</TableCell>
+											</TableRow>
+										))}
 									</TableBody>
 								</Table>
 							</TableContainer>
 
-							{paymentMethods.length > 5 && (
+							{payments.length > 3 && (
 								<Stack direction="row" justifyContent="center" sx={{ mt: 1.5 }}>
-									<Button onClick={() => setShowAllPaymentMethods(!showAllPaymentMethods)} sx={ghostBtnSx}>
-										{showAllPaymentMethods ? "Ver menos" : "Ver todas"}
+									<Button onClick={() => setShowAllPayments(!showAllPayments)} sx={ghostBtnSx}>
+										{showAllPayments ? "Ver menos" : "Ver todas"}
 									</Button>
 								</Stack>
 							)}
-
-							<Box sx={{ mt: 2, p: 1.5, borderRadius: 1.25, bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04), border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}` }}>
-								<Stack direction="row" spacing={1} alignItems="flex-start">
-									<InfoCircle size={14} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
-									<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-										<Box component="span" sx={{ fontWeight: 600 }}>
-											Nota:
-										</Box>{" "}
-										El método de pago predeterminado se utilizará para los cargos automáticos de tu suscripción.
-									</Typography>
-								</Stack>
-							</Box>
 						</>
 					)}
-
-					<Stack alignItems="center" spacing={1} sx={{ mt: 2.5 }}>
-						<Button
-							variant="contained"
-							onClick={handleOpenBillingPortal}
-							disabled={openingBillingPortal}
-							startIcon={openingBillingPortal ? <CircularProgress size={14} color="inherit" /> : <CardSend size={15} variant="Linear" />}
-							sx={{ ...brandPrimarySx, minWidth: 250 }}
-						>
-							{openingBillingPortal ? "Abriendo portal…" : "Gestionar métodos de pago"}
-						</Button>
-						<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", textAlign: "center", maxWidth: 400, letterSpacing: "-0.005em" }}>
-							Se abrirá el portal seguro de Stripe donde podrás agregar, eliminar o actualizar tus métodos de pago.
-						</Typography>
-					</Stack>
 				</SectionCard>
-				</Grid>
-			)}
-
-			{/* Historial de facturación */}
-			<Grid item xs={12} md={subscription.plan !== "free" ? 6 : 12}>
-			<SectionCard
-				eyebrow="Facturación"
-				title="Historial de facturación"
-				subtitle="Facturas y cargos de tu cuenta"
-				icon={<ReceiptText size={16} variant="Bulk" />}
-				rightSlot={
-					payments.length > 0 ? (
-						<BrandPill color={BRAND_BLUE} label={`${payments.length} ${payments.length === 1 ? "factura" : "facturas"}`} dot={false} />
-					) : undefined
-				}
-			>
-				{paymentsLoading ? (
-					<Stack alignItems="center" sx={{ py: 4 }} spacing={1}>
-						<CircularProgress size={24} sx={{ color: BRAND_BLUE }} />
-						<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>Cargando facturas…</Typography>
-					</Stack>
-				) : paymentsError ? (
-					<Box
-						sx={{
-							p: 1.5,
-							borderRadius: 1.25,
-							bgcolor: alpha(errorColor, isDark ? 0.08 : 0.04),
-							border: `1px solid ${alpha(errorColor, isDark ? 0.32 : 0.22)}`,
-						}}
-					>
-						<Stack direction="row" spacing={1} alignItems="center">
-							<Warning2 size={16} variant="Bulk" color={errorColor} />
-							<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>{paymentsError}</Typography>
-						</Stack>
-					</Box>
-				) : payments.length === 0 ? (
-					<Stack alignItems="center" spacing={1.25} sx={{ py: 4, textAlign: "center" }}>
-						<Box
-							sx={{
-								width: 48,
-								height: 48,
-								borderRadius: 1.5,
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08),
-								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
-								color: BRAND_BLUE,
-							}}
-						>
-							<ReceiptText size={22} variant="Bulk" />
-						</Box>
-						<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
-							Sin facturas todavía
-						</Typography>
-						<Typography sx={{ fontSize: "0.78rem", color: "text.secondary" }}>
-							No se encontraron facturas para esta cuenta.
-						</Typography>
-						<Button size="small" onClick={handleChangePlan} sx={ghostBtnSx}>
-							Explorar planes
-						</Button>
-					</Stack>
-				) : (
-					<>
-						<TableContainer sx={{ borderRadius: 1.5, border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}` }}>
-							<Table sx={tableSx} size="small">
-								<TableHead>
-									<TableRow>
-										<TableCell>Número</TableCell>
-										<TableCell>Fecha</TableCell>
-										<TableCell>Importe</TableCell>
-										<TableCell>Estado</TableCell>
-										<TableCell align="center">Acciones</TableCell>
-									</TableRow>
-								</TableHead>
-								<TableBody>
-									{payments.slice(0, showAllPayments ? payments.length : 3).map((payment) => (
-										<TableRow key={payment.id}>
-											<TableCell sx={{ fontFamily: "monospace", fontSize: "0.78rem" }}>
-												{payment.invoiceNumber || payment.receiptNumber || payment.invoiceId || "N/A"}
-											</TableCell>
-											<TableCell sx={{ fontVariantNumeric: "tabular-nums" }}>{formatDate(payment.createdAt)}</TableCell>
-											<TableCell sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-												{formatAmount(payment.amount, payment.currency)}
-											</TableCell>
-											<TableCell>{getPaymentStatusPill(payment.status)}</TableCell>
-											<TableCell align="center">
-												<Button size="small" onClick={() => handleViewInvoice(payment)} sx={{ ...ghostBtnSx, fontSize: "0.72rem", py: 0.5, px: 1.25 }}>
-													Ver
-												</Button>
-											</TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						</TableContainer>
-
-						{payments.length > 3 && (
-							<Stack direction="row" justifyContent="center" sx={{ mt: 1.5 }}>
-								<Button onClick={() => setShowAllPayments(!showAllPayments)} sx={ghostBtnSx}>
-									{showAllPayments ? "Ver menos" : "Ver todas"}
-								</Button>
-							</Stack>
-						)}
-					</>
-				)}
-			</SectionCard>
 			</Grid>
 
 			{/* CTA: Explorar planes */}
 			<Grid item xs={12}>
-			<Box
-				sx={{
-					position: "relative",
-					overflow: "hidden",
-					borderRadius: 2,
-					p: { xs: 3, md: 4 },
-					bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
-					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)}`,
-					textAlign: "center",
-				}}
-			>
 				<Box
 					sx={{
-						position: "absolute",
-						top: -80,
-						left: "50%",
-						transform: "translateX(-50%)",
-						width: 360,
-						height: 360,
-						borderRadius: "50%",
-						background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)} 0%, transparent 70%)`,
-						pointerEvents: "none",
+						position: "relative",
+						overflow: "hidden",
+						borderRadius: 2,
+						p: { xs: 3, md: 4 },
+						bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.12)}`,
+						textAlign: "center",
 					}}
-				/>
-				<Stack spacing={1.5} alignItems="center" sx={{ position: "relative" }}>
+				>
 					<Box
 						sx={{
-							width: 52,
-							height: 52,
-							borderRadius: 1.5,
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
-							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
-							color: BRAND_BLUE,
+							position: "absolute",
+							top: -80,
+							left: "50%",
+							transform: "translateX(-50%)",
+							width: 360,
+							height: 360,
+							borderRadius: "50%",
+							background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)} 0%, transparent 70%)`,
+							pointerEvents: "none",
 						}}
-					>
-						<Crown size={24} variant="Bulk" />
-					</Box>
-					<Typography sx={{ fontSize: "1.1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary", textWrap: "balance" }}>
-						¿Necesitás más recursos o características?
-					</Typography>
-					<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", maxWidth: 600, letterSpacing: "-0.005em", textWrap: "pretty" }}>
-						Explorá nuestros planes y encontrá la opción perfecta para tu estudio. Todos incluyen soporte y actualizaciones regulares.
-					</Typography>
-					<Button variant="contained" onClick={handleChangePlan} sx={{ ...brandPrimarySx, mt: 0.5 }}>
-						Explorar planes
-					</Button>
-				</Stack>
-			</Box>
+					/>
+					<Stack spacing={1.5} alignItems="center" sx={{ position: "relative" }}>
+						<Box
+							sx={{
+								width: 52,
+								height: 52,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+								color: BRAND_BLUE,
+							}}
+						>
+							<Crown size={24} variant="Bulk" />
+						</Box>
+						<Typography sx={{ fontSize: "1.1rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary", textWrap: "balance" }}>
+							¿Necesitás más recursos o características?
+						</Typography>
+						<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", maxWidth: 600, letterSpacing: "-0.005em", textWrap: "pretty" }}>
+							Explorá nuestros planes y encontrá la opción perfecta para tu estudio. Todos incluyen soporte y actualizaciones regulares.
+						</Typography>
+						<Button variant="contained" onClick={handleChangePlan} sx={{ ...brandPrimarySx, mt: 0.5 }}>
+							Explorar planes
+						</Button>
+					</Stack>
+				</Box>
 			</Grid>
 
 			{/* Dialog cancelar */}
@@ -1975,7 +2128,9 @@ const TabSubscription = () => {
 						<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
 							<Stack direction="row" spacing={0.75} alignItems="center">
 								<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: errorColor }} />
-								<Typography sx={{ fontSize: "0.6rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
+								<Typography
+									sx={{ fontSize: "0.6rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}
+								>
 									Cancelar suscripción
 								</Typography>
 							</Stack>
@@ -1985,7 +2140,11 @@ const TabSubscription = () => {
 						</Stack>
 						<IconButton
 							onClick={handleCloseCancelDialog}
-							sx={{ color: "text.secondary", borderRadius: 1, "&:hover": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) } }}
+							sx={{
+								color: "text.secondary",
+								borderRadius: 1,
+								"&:hover": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.08) },
+							}}
 							aria-label="cerrar"
 						>
 							<CloseSquare size={20} variant="Linear" />
@@ -2058,8 +2217,8 @@ const TabSubscription = () => {
 								<Stack direction="row" spacing={1} alignItems="flex-start">
 									<InfoCircle size={16} variant="Bulk" color={STALE_AMBER} style={{ marginTop: 2, flexShrink: 0 }} />
 									<Typography sx={{ fontSize: "0.8rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-										Después de cancelar tendrás acceso limitado a tus recursos. Archivá o exportá los datos importantes antes de que finalice tu
-										suscripción.
+										Después de cancelar tendrás acceso limitado a tus recursos. Archivá o exportá los datos importantes antes de que
+										finalice tu suscripción.
 									</Typography>
 								</Stack>
 							</Box>
