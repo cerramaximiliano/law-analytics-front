@@ -411,6 +411,29 @@ archivadas). Antes de hacer nada muestra qué va a pasar:
 La sincronización corre en segundo plano (PJN suele tardar uno o dos minutos; SCBA menos) y, al terminar, llega el resumen por
 correo como siempre.
 
+### Varias cuentas por portal (plan Premium)
+
+Con el plan **Premium**, el estudio puede conectar **más de una cuenta por portal**: hasta una por abogado (el tope es el cupo de
+integrantes del plan, 10). Sirve para que cada abogado importe las causas de **su** «Mis Causas» del PJN o de **su** domicilio
+electrónico de la SCBA, y para que la MEV reparta las consultas entre varias cuentas y el portal no bloquee por exceso de uso.
+Con los demás planes, cada portal tiene una sola cuenta, como siempre: cargar otra reemplaza a la anterior.
+
+Lo gestionan el **propietario** o un **Administrador** desde **Integraciones**, donde cada portal muestra la lista de cuentas:
+
+- **Agregar cuenta**: usuario y contraseña del portal, más una **etiqueta** (por ejemplo, «Dra. Pérez») y un **abogado titular**
+  (el propietario o un integrante activo). Las carpetas que importe esa cuenta nacen con el abogado titular como responsable.
+- Por cuenta: **sincronizar ahora**, **cambiar la contraseña** (cargando de nuevo la misma cuenta), **pausar / reanudar**,
+  **editar** etiqueta y abogado, y **desvincular**.
+- **Avisos**: los problemas de una cuenta (contraseña vencida, rechazo del portal) se avisan al abogado titular de esa cuenta; si no
+  tiene, al propietario.
+- **Una causa, una carpeta**: si dos abogados comparten una causa, el equipo tiene una sola carpeta para ella. Al desvincular una
+  cuenta, solo se tocan las carpetas que ninguna otra cuenta del estudio cubre; el diálogo te muestra cuántas son y te deja
+  conservarlas o eliminarlas.
+- La **principal** (la más antigua de las activas) es la que ve la app de Android, que todavía muestra una sola cuenta por portal.
+
+Si el estudio deja Premium, durante el **período de gracia** hay que desvincular las cuentas de más (queda una por portal) y
+ajustar las carpetas al nuevo plan; al vencer la gracia, la app lo hace sola.
+
 ---
 
 ## 13. Gestionar integrantes
