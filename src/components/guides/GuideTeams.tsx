@@ -439,6 +439,22 @@ const ManagementContent = () => (
 			</Grid>
 		</Grid>
 		<Section
+			title="Cuentas de los portales (PJN, SCBA y MEV)"
+			color="primary"
+			items={[
+				<>Son del equipo: las conectan y gestionan el propietario o un Administrador desde Integraciones</>,
+				<>
+					Eliminar una carpeta que importó PJN o SCBA no la pierde: sale de los listados, del cupo y de los avisos, pero sigue
+					actualizándose y se trae de vuelta desde «Re-sincronizar»
+				</>,
+				<>
+					«Re-sincronizar» relee la cuenta del portal, agrega lo nuevo (archivado si supera el cupo) y antes muestra qué eliminaste y qué ya
+					no figura en el portal
+				</>,
+				<>Las carpetas de la MEV y las creadas a mano se eliminan como siempre; una causa MEV se vuelve a agregar por número</>,
+			]}
+		/>
+		<Section
 			title="Tu plan y el equipo"
 			color="warning"
 			items={[

@@ -388,6 +388,29 @@ cargan credenciales propias.
 - Hoy el equipo tiene **una cuenta por portal**, la del propietario. Si un integrante tenía su propia cuenta conectada antes de
   unirse, dentro del equipo no se usa.
 
+### Eliminar una carpeta que vino de un portal
+
+Cuando eliminás una carpeta que importó la cuenta PJN o SCBA del equipo, **no se pierde**: desaparece de los listados, del cupo
+del plan y de los asistentes de IA, y deja de generar avisos, pero la causa sigue vinculada y actualizándose por detrás. Si
+más adelante la necesitás, la traés de vuelta desde **Re-sincronizar** con todo lo que tenía (tareas, eventos y notas). Las
+carpetas que creaste a mano o por número (incluidas las de la MEV) sí se eliminan como siempre; una causa de la MEV se vuelve a
+agregar buscándola por número.
+
+### Re-sincronizar con el portal
+
+En **Integraciones**, el botón **Re-sincronizar** de PJN y de SCBA (propietario o Administrador) vuelve a leer la lista completa
+de la cuenta del portal y agrega las causas que todavía no están en Law||Analytics (si superan el cupo del plan, quedan
+archivadas). Antes de hacer nada muestra qué va a pasar:
+
+- **Carpetas que eliminaste y podés traer de vuelta**: la casilla viene apagada; marcala y elegí cuáles. Si no entran en el cupo,
+  vuelven archivadas y las desarchivás cuando quieras.
+- **Causas que ya no figuran en tu cuenta del portal**: solo informativo. Siguen en Law||Analytics y se actualizan mientras sean
+  públicas; no se tocan.
+- La fecha de la última sincronización.
+
+La sincronización corre en segundo plano (PJN suele tardar uno o dos minutos; SCBA menos) y, al terminar, llega el resumen por
+correo como siempre.
+
 ---
 
 ## 13. Gestionar integrantes
