@@ -86,9 +86,36 @@ export interface ScbaExcludedCausa {
 	organismoNombre: string | null;
 }
 
+/** Varias cuentas por usuario (Premium, 2/11/2026) */
+export interface ScbaCredentialSummary {
+	id: string;
+	username?: string | null;
+	etiqueta?: string;
+	abogadoUserId?: string | null;
+	enabled: boolean;
+	verified: boolean;
+	isExpired?: boolean;
+	disabledReason?: "user_inactive" | "admin" | null;
+	syncStatus: string;
+	lastSync: string | null;
+	consecutiveErrors?: number;
+	createdAt?: string;
+	principal?: boolean;
+}
+
+export interface ScbaCredentialsQuota {
+	max: number;
+	used: number;
+	premium: boolean;
+	plan?: string;
+	reason: null | "disabled" | "premium_required" | "subscription_inactive";
+}
+
 export interface GetScbaCredentialsStatusResponse {
 	success: boolean;
 	hasCredentials: boolean;
+	credentials?: ScbaCredentialSummary[];
+	quota?: ScbaCredentialsQuota;
 	serviceAvailable: boolean;
 	serviceMessage?: string | null;
 	data: ScbaCredentialsData | null;
@@ -116,7 +143,7 @@ export interface LinkScbaCredentialsResponse {
 	};
 	error?: string;
 	/** Cuando el server bloquea por portal caído. */
-	code?: "SCBA_MAINTENANCE";
+	code?: "SCBA_MAINTENANCE" | string;
 	scbaSiteStatus?: ScbaSiteStatusSnapshot;
 }
 
@@ -125,7 +152,7 @@ export interface GenericScbaResponse {
 	message?: string;
 	error?: string;
 	data?: any;
-	code?: "SCBA_MAINTENANCE";
+	code?: "SCBA_MAINTENANCE" | string;
 	scbaSiteStatus?: ScbaSiteStatusSnapshot;
 }
 
@@ -190,11 +217,16 @@ class ScbaCredentialsService {
 	/**
 	 * Vincula credenciales SCBA a la cuenta del usuario
 	 */
-	async linkCredentials(username: string, password: string, causaId?: string): Promise<LinkScbaCredentialsResponse> {
+	async linkCredentials(
+		username: string,
+		password: string,
+		causaId?: string,
+		extra: { etiqueta?: string; abogadoUserId?: string | null } = {},
+	): Promise<LinkScbaCredentialsResponse> {
 		try {
 			const response = await axios.post(
 				`${BASE_URL}/api/scba-credentials`,
-				{ username, password, causaId: causaId || null },
+				{ username, password, causaId: causaId || null, ...extra },
 				{ withCredentials: true, headers: teamHeaders() },
 			);
 			return response.data;
@@ -364,6 +396,55 @@ class ScbaCredentialsService {
 	 * Análisis previo a desvincular: cuenta cuántos folders/causas se afectarán
 	 * por cada modo. Útil para mostrar diálogo informado en la UI.
 	 */
+	// ---- Varias cuentas por usuario (Premium, 2/11/2026): mismas acciones, por credencial ----
+	async updateCredential(id: string, body: { etiqueta?: string; abogadoUserId?: string | null }): Promise<GenericScbaResponse> {
+		try {
+			const response = await axios.put(`${BASE_URL}/api/scba-credentials/${id}`, body, { withCredentials: true, headers: teamHeaders() });
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "No se pudo editar la cuenta" };
+		}
+	}
+
+	async getUnlinkImpactById(id: string): Promise<{ success: boolean; data?: ScbaUnlinkImpact; error?: string }> {
+		try {
+			const response = await axios.get(`${BASE_URL}/api/scba-credentials/${id}/impact`, { withCredentials: true, headers: teamHeaders() });
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "No se pudo analizar el impacto" };
+		}
+	}
+
+	async toggleCredentialById(id: string): Promise<GenericScbaResponse> {
+		try {
+			const response = await axios.patch(
+				`${BASE_URL}/api/scba-credentials/${id}/toggle`,
+				{},
+				{ withCredentials: true, headers: teamHeaders() },
+			);
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "No se pudo cambiar el estado" };
+		}
+	}
+
+	async requestSyncById(id: string): Promise<GenericScbaResponse> {
+		try {
+			const response = await axios.post(
+				`${BASE_URL}/api/scba-credentials/${id}/sync`,
+				{},
+				{ withCredentials: true, headers: teamHeaders() },
+			);
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return { success: false, error: axiosError.response?.data?.error || "No se pudo iniciar la sincronización" };
+		}
+	}
+
 	async getUnlinkImpact(): Promise<{ success: boolean; data?: ScbaUnlinkImpact; error?: string }> {
 		try {
 			const response = await axios.get(`${BASE_URL}/api/scba-credentials/unlink-impact`, { withCredentials: true, headers: teamHeaders() });
