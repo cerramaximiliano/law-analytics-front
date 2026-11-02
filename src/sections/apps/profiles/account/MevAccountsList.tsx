@@ -90,7 +90,9 @@ const MevAccountsList = ({ credentials, quota, onChanged }: Props) => {
 		const nombre = (o?: { firstName?: string; lastName?: string; email?: string } | null) =>
 			o ? [o.firstName, o.lastName].filter(Boolean).join(" ") || o.email || null : null;
 		if (activeTeam) {
-			add(activeTeam.owner, nombre(activeTeam.ownerInfo) || "Propietario");
+			// `owner` puede venir poblado (objeto) o como id
+			const ownerId = typeof (activeTeam as any).owner === "object" ? (activeTeam as any).owner?._id : activeTeam.owner;
+			add(ownerId, nombre(activeTeam.ownerInfo) || nombre((activeTeam as any).owner) || "Propietario");
 			for (const m of activeTeam.members || []) {
 				if (m.status !== "active") continue;
 				const populated = typeof (m as any).userId === "object" ? (m as any).userId : null;
