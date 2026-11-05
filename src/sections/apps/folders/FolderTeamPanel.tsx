@@ -64,7 +64,8 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 	const canEditResponsables = userRole === "owner" || userRole === "admin" || userRole === "editor";
 	const canEditPolicy = isAdmin;
 
-	const assignableMembers = useMemo(() => getTeamAssignees(activeTeam), [activeTeam]);
+	// Incluye previstos e invitados (responsables de carpetas antes de aceptar, 5/11/2026).
+	const assignableMembers = useMemo(() => getTeamAssignees(activeTeam, { includeInvitations: true }), [activeTeam]);
 	const currentIds = useMemo(() => responsables || [], [responsables]);
 	const policy: FolderNotificationPolicy = notificationPolicy || "equipo";
 	const policyOption = FOLDER_POLICY_OPTIONS.find((o) => o.value === policy) || FOLDER_POLICY_OPTIONS[0];

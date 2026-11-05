@@ -22,7 +22,7 @@ import { BulkResponsablesMode, updateFoldersResponsablesBulk } from "store/reduc
 import { openSnackbar } from "store/reducers/snackbar";
 import { useTeam } from "contexts/TeamContext";
 import { BRAND_BLUE } from "themes/dashboardTokens";
-import { getTeamAssignees, TeamAssignee } from "utils/teamAssignees";
+import { assigneeTag, getTeamAssignees, TeamAssignee } from "utils/teamAssignees";
 
 interface Props {
 	open: boolean;
@@ -43,7 +43,8 @@ const MODE_OPTIONS: { value: BulkResponsablesMode; label: string; help: string }
 	{ value: "remove", label: "Quitar", help: "Saca a los integrantes elegidos de los responsables." },
 ];
 
-const MAX_FOLDERS = 500;
+// El hub recibe 500 por llamada; el store las manda en lotes. Tope de seguridad de la UI.
+const MAX_FOLDERS = 10000;
 
 const notify = (message: string, color: "success" | "error") =>
 	dispatch(openSnackbar({ open: true, message, variant: "alert", alert: { color }, close: true }));
@@ -51,7 +52,8 @@ const notify = (message: string, color: "success" | "error") =>
 // Asignación masiva de responsables desde el listado de carpetas (solo modo equipo).
 const BulkResponsablesDialog = ({ open, folderIds, onClose, onDone, single }: Props) => {
 	const { activeTeam, getRequestHeaders } = useTeam();
-	const assignableMembers = useMemo(() => getTeamAssignees(activeTeam), [activeTeam]);
+	// Responsables de carpetas: integrantes, previstos (borradores) e invitados vigentes (5/11/2026).
+	const assignableMembers = useMemo(() => getTeamAssignees(activeTeam, { includeInvitations: true }), [activeTeam]);
 
 	const [selected, setSelected] = useState<TeamAssignee[]>([]);
 	const [mode, setMode] = useState<BulkResponsablesMode>("replace");
@@ -103,11 +105,12 @@ const BulkResponsablesDialog = ({ open, folderIds, onClose, onDone, single }: Pr
 								single.folderName ? `«${single.folderName}». ` : ""
 						  }Elegí uno o más integrantes, cambiá los actuales o quitá todos para dejarla sin responsable.`
 						: `${count === 1 ? "1 carpeta seleccionada." : `${count} carpetas seleccionadas.`}`}{" "}
-					Los responsables reciben los avisos de la carpeta cuando la regla es «Solo responsables», y la ven en «Mis carpetas».
+					Los responsables reciben los avisos de la carpeta cuando la regla es «Solo responsables», y la ven en «Mis carpetas». También
+					podés asignar a un integrante previsto o invitado: cuando acepte, las carpetas pasan a su nombre.
 				</Typography>
 				{tooMany && (
 					<Typography variant="body2" color="error" sx={{ mb: 2 }}>
-						Podés asignar hasta {MAX_FOLDERS} carpetas por vez.
+						Podés asignar hasta {MAX_FOLDERS.toLocaleString("es-AR")} carpetas por vez.
 					</Typography>
 				)}
 
@@ -165,6 +168,7 @@ const BulkResponsablesDialog = ({ open, folderIds, onClose, onDone, single }: Pr
 										<Typography variant="body2">
 											{option.name}
 											{option.isOwner ? " · Propietario" : ""}
+											{assigneeTag(option) ? ` · ${assigneeTag(option)}` : ""}
 										</Typography>
 										{option.email && option.email !== option.name && (
 											<Typography variant="caption" color="text.secondary">
@@ -181,7 +185,8 @@ const BulkResponsablesDialog = ({ open, folderIds, onClose, onDone, single }: Pr
 									{...getTagProps({ index })}
 									key={option.id}
 									size="small"
-									label={option.name}
+									label={assigneeTag(option) ? `${option.name} (${assigneeTag(option)})` : option.name}
+									variant={assigneeTag(option) ? "outlined" : "filled"}
 									avatar={
 										<Avatar src={option.avatar} sx={{ fontSize: "0.6rem", fontWeight: 700 }}>
 											{option.initials}

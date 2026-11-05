@@ -7,7 +7,7 @@ import { ArrowDown2, ArrowUp2, DocumentDownload, People, Printer } from "iconsax
 import { useTeam } from "contexts/TeamContext";
 import { fetchGroupFoldersForDistribution } from "store/reducers/folder";
 import { BRAND_BLUE } from "themes/dashboardTokens";
-import { getTeamAssignees } from "utils/teamAssignees";
+import { assigneeTag, getTeamAssignees } from "utils/teamAssignees";
 import { wrapOnMobileSx } from "./stackedTableSx";
 import {
 	buildDistributionCsv,
@@ -32,7 +32,14 @@ const PREVIEW_LIMIT = 5;
 export default function TeamResponsablesDistributionCard() {
 	const { activeTeam } = useTeam();
 	const groupId = activeTeam?._id;
-	const assignees = useMemo(() => getTeamAssignees(activeTeam), [activeTeam]);
+	// Con previstos e invitados, etiquetados, para que la distribución los muestre con nombre (5/11/2026).
+	const assignees = useMemo(
+		() =>
+			getTeamAssignees(activeTeam, { includeInvitations: true }).map((a) =>
+				assigneeTag(a) ? { ...a, name: `${a.name} (${assigneeTag(a)})` } : a,
+			),
+		[activeTeam],
+	);
 
 	const [folders, setFolders] = useState<DistributionFolder[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -215,7 +222,13 @@ export default function TeamResponsablesDistributionCard() {
 												size="small"
 												onClick={() => setExpanded((prev) => ({ ...prev, [g.key]: !isOpen }))}
 												endIcon={isOpen ? <ArrowUp2 size={14} /> : <ArrowDown2 size={14} />}
-												sx={{ textTransform: "none", ml: isNone ? 1.5 : { xs: 1.5, sm: 6 }, mt: 0.5, color: BRAND_BLUE, fontSize: "0.75rem" }}
+												sx={{
+													textTransform: "none",
+													ml: isNone ? 1.5 : { xs: 1.5, sm: 6 },
+													mt: 0.5,
+													color: BRAND_BLUE,
+													fontSize: "0.75rem",
+												}}
 											>
 												{isOpen ? "Ver menos" : `Ver ${hidden} más`}
 											</Button>

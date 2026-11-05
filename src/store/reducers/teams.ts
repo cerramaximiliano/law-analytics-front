@@ -12,6 +12,8 @@ import {
 	AcceptInvitationRequest,
 	VerifyInvitationResponse,
 	AcceptInvitationResponse,
+	DraftInvitationRequest,
+	TeamInvitation,
 } from "types/teams";
 
 // Action types
@@ -454,6 +456,67 @@ export const sendInvitations = (teamId: string, data: SendInvitationsRequest) =>
 			payload: errorMessage,
 		});
 		return { success: false, message: errorMessage };
+	}
+};
+
+// ==============================|| INTEGRANTES PREVISTOS (5/11/2026) ||============================== //
+// Invitaciones en borrador: sin correo hasta que se envían. Después de cada acción se
+// recarga el equipo (getTeamById) para no duplicar lógica de estado.
+
+export const createDraftInvitations = (teamId: string, invitations: DraftInvitationRequest[]) => async () => {
+	try {
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/groups/${teamId}/invitations/drafts`, { invitations });
+		return { success: !!response.data.success, results: response.data.results, message: response.data.message };
+	} catch (error) {
+		const data = axios.isAxiosError(error) ? error.response?.data : null;
+		return { success: false, results: data?.results, message: data?.message || "Error al guardar los integrantes previstos" };
+	}
+};
+
+export const updateDraftInvitation = (teamId: string, invitationId: string, data: Partial<DraftInvitationRequest>) => async () => {
+	try {
+		const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/groups/${teamId}/invitations/${invitationId}`, data);
+		return { success: !!response.data.success, invitation: response.data.invitation, message: response.data.message };
+	} catch (error) {
+		const message = axios.isAxiosError(error)
+			? error.response?.data?.message || "Error al editar el integrante previsto"
+			: "Error desconocido";
+		return { success: false, message };
+	}
+};
+
+export const sendDraftInvitation = (teamId: string, invitationId: string) => async () => {
+	try {
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/groups/${teamId}/invitations/${invitationId}/send`);
+		return {
+			success: !!response.data.success,
+			invitation: response.data.invitation,
+			emailStatus: response.data.emailStatus,
+			message: response.data.message,
+		};
+	} catch (error) {
+		const message = axios.isAxiosError(error) ? error.response?.data?.message || "Error al enviar la invitación" : "Error desconocido";
+		return { success: false, message };
+	}
+};
+
+export const sendAllDraftInvitations = (teamId: string) => async () => {
+	try {
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/groups/${teamId}/invitations/send-all-drafts`);
+		return { success: !!response.data.success, results: response.data.results, message: response.data.message };
+	} catch (error) {
+		const message = axios.isAxiosError(error) ? error.response?.data?.message || "Error al enviar las invitaciones" : "Error desconocido";
+		return { success: false, message };
+	}
+};
+
+/** Listado completo de invitaciones del equipo (trae `assignedFolders` por previsto/invitado). */
+export const fetchTeamInvitations = async (teamId: string): Promise<TeamInvitation[] | null> => {
+	try {
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/groups/${teamId}/invitations`);
+		return response.data.success ? (response.data.invitations as TeamInvitation[]) : null;
+	} catch {
+		return null;
 	}
 };
 

@@ -39,6 +39,8 @@ export type ActivityEventName =
 	// Equipos (29/10/2026): alta del equipo, invitaciones enviadas y aceptadas
 	| "team_create"
 	| "team_invite_send"
+	// Integrantes previstos guardados sin enviar invitación (Equipos, 5/11/2026)
+	| "team_draft_save"
 	| "team_invite_accept"
 	| "onboarding_action"
 	| "web_vitals"

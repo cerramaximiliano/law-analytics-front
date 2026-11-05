@@ -403,29 +403,39 @@ type BulkResponsablesResult =
 	| { success: true; modified: number; folders: { _id: string; responsables: string[]; notificationPolicy?: FolderNotificationPolicy }[] }
 	| { success: false; message: string };
 
+/** El hub acepta hasta 500 carpetas por llamada; de a lotes se llega a cualquier selección. */
+export const BULK_RESPONSABLES_CHUNK = 500;
+
 /**
- * PUT /api/folders/responsables/bulk — asignación masiva (owner, admin y editor; máx. 500,
- * todas del mismo equipo). Aplica al store un PATCH_FOLDER por carpeta devuelta.
+ * PUT /api/folders/responsables/bulk — asignación masiva (owner, admin y editor; todas del
+ * mismo equipo). El hub admite 500 por llamada: selecciones más grandes («Seleccionar todas»,
+ * 5/11/2026) se mandan en lotes secuenciales y se suman los modificados. Aplica al store un
+ * PATCH_FOLDER por carpeta devuelta.
  */
 export const updateFoldersResponsablesBulk =
 	(folderIds: string[], responsables: string[], mode: BulkResponsablesMode, headers?: Record<string, string>) =>
 	async (dispatch: Dispatch): Promise<BulkResponsablesResult> => {
 		try {
-			const response = await axios.put(
-				`${import.meta.env.VITE_BASE_URL}/api/folders/responsables/bulk`,
-				{ folderIds, responsables, mode },
-				{ headers },
-			);
-			if (response.data?.success) {
-				const folders: { _id: string; responsables: string[]; notificationPolicy?: FolderNotificationPolicy }[] = Array.isArray(
-					response.data.folders,
-				)
-					? response.data.folders
-					: [];
-				folders.forEach((folder) => dispatch({ type: PATCH_FOLDER, payload: folder }));
-				return { success: true, modified: Number(response.data.modified ?? folders.length) || 0, folders };
+			const ids = [...new Set(folderIds)];
+			let modified = 0;
+			const folders: { _id: string; responsables: string[]; notificationPolicy?: FolderNotificationPolicy }[] = [];
+			for (let i = 0; i < ids.length; i += BULK_RESPONSABLES_CHUNK) {
+				const chunk = ids.slice(i, i + BULK_RESPONSABLES_CHUNK);
+				const response = await axios.put(
+					`${import.meta.env.VITE_BASE_URL}/api/folders/responsables/bulk`,
+					{ folderIds: chunk, responsables, mode },
+					{ headers },
+				);
+				if (!response.data?.success) {
+					const message = response.data?.message || "No se pudieron asignar los responsables";
+					return i === 0 ? { success: false, message } : { success: false, message: `${message} (se actualizaron ${modified} carpetas antes del error)` };
+				}
+				const got: typeof folders = Array.isArray(response.data.folders) ? response.data.folders : [];
+				got.forEach((folder) => dispatch({ type: PATCH_FOLDER, payload: folder }));
+				folders.push(...got);
+				modified += Number(response.data.modified ?? got.length) || 0;
 			}
-			return { success: false, message: response.data?.message || "No se pudieron asignar los responsables" };
+			return { success: true, modified, folders };
 		} catch (error) {
 			return { success: false, message: folderTeamError(error, "No se pudieron asignar los responsables") };
 		}
@@ -730,7 +740,7 @@ export const getArchivedFoldersByUserId =
 			dispatch({ type: SET_ARCHIVED_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,causaAccessCutoffAt,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate,archivedAt,archivedBy,archivedReason,unarchivedAt";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,causaAccessCutoffAt,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate,archivedAt,archivedBy,archivedReason,unarchivedAt,responsables,groupId,createdBy";
 
 			const params: Record<string, any> = {
 				archived: true,
@@ -778,7 +788,7 @@ export const getArchivedFoldersByGroupId =
 			dispatch({ type: SET_ARCHIVED_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,causaAccessCutoffAt,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate,archivedAt,archivedBy,archivedReason,unarchivedAt";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,causaAccessCutoffAt,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate,archivedAt,archivedBy,archivedReason,unarchivedAt,responsables,groupId,createdBy";
 
 			const params: Record<string, any> = {
 				archived: true,

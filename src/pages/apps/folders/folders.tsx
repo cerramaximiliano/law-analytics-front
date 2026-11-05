@@ -39,6 +39,8 @@ import {
 	CircularProgress,
 	ToggleButton,
 	ToggleButtonGroup,
+	Checkbox,
+	OutlinedInput,
 } from "@mui/material";
 
 import { useFilters, useExpanded, useGlobalFilter, useRowSelect, useSortBy, useTable, usePagination, Row, HeaderProps } from "react-table";
@@ -49,6 +51,8 @@ import ScrollX from "components/ScrollX";
 import IconButton from "components/@extended/IconButton";
 import { PopupTransition } from "components/@extended/Transitions";
 import { IndeterminateCheckbox, HeaderSort, SortingSelect, TablePagination } from "components/third-party/ReactTable";
+import { getTeamAssignees, resolveAssignees } from "utils/teamAssignees";
+import { juzgadoKey, radicacionOrigen, ubicacionActual, ubicacionDetalle } from "utils/radicacion";
 import { CSVLink } from "react-csv";
 import { formatFolderName } from "utils/formatFolderName";
 import {
@@ -145,6 +149,74 @@ import { SCBA_BINDING_COPY, SCBA_PROFILE_PATH } from "utils/scbaBindingState";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 import { usePjnCredentialError } from "hooks/usePjnCredentialError";
 import { useExpedienteChatAccess } from "hooks/useExpedienteChatAccess";
+
+const HIDDEN_COLUMNS_STORAGE_KEY = "la.folders.hiddenColumns.v1";
+const NON_HIDEABLE_COLUMNS = new Set(["selection", "folderName"]);
+
+/** Selector «Columnas» del listado (ocultar / mostrar), con memoria en el navegador. */
+function ColumnasSelect({
+	allColumns,
+	hiddenColumns,
+	setHiddenColumns,
+	selectSx,
+}: {
+	allColumns: any[];
+	hiddenColumns: string[];
+	setHiddenColumns: (ids: string[]) => void;
+	selectSx?: any;
+}) {
+	const options = allColumns.filter(
+		(c) => typeof c.Header === "string" && !NON_HIDEABLE_COLUMNS.has(c.id) && c.id !== "_id" && c.id !== "email",
+	);
+	const visibles = options.filter((c) => !hiddenColumns.includes(c.id)).length;
+	return (
+		<FormControl size="small" sx={{ minWidth: 150 }}>
+			<Select
+				id="folders-columnas"
+				multiple
+				displayEmpty
+				value={hiddenColumns}
+				onChange={(event) => {
+					const value = event.target.value;
+					const next = typeof value === "string" ? value.split(",") : (value as string[]);
+					setHiddenColumns(next);
+					try {
+						localStorage.setItem(HIDDEN_COLUMNS_STORAGE_KEY, JSON.stringify(next));
+					} catch {
+						/* sin memoria local */
+					}
+				}}
+				input={<OutlinedInput />}
+				renderValue={() => (
+					<Typography variant="body2">
+						Columnas: {visibles} de {options.length}
+					</Typography>
+				)}
+				sx={selectSx}
+				MenuProps={{ PaperProps: { style: { maxHeight: 360, width: 240 } } }}
+			>
+				{options.map((column) => (
+					<MenuItem key={column.id} value={column.id} dense sx={{ "&.Mui-selected": { bgcolor: "background.paper" } }}>
+						<Checkbox size="small" checked={!hiddenColumns.includes(column.id)} />
+						<ListItemText primary={column.Header} primaryTypographyProps={{ variant: "body2" }} />
+					</MenuItem>
+				))}
+			</Select>
+		</FormControl>
+	);
+}
+
+/** Columna «Acciones» fija a la derecha (y «Carátula» no), para no perder de vista la causa al desplazarse. */
+const stickyActionsSx = (column: any) =>
+	column?.Header === "Acciones"
+		? {
+				position: "sticky" as const,
+				right: 0,
+				zIndex: 2,
+				bgcolor: "background.paper",
+				boxShadow: "-6px 0 8px -6px rgba(0,0,0,0.18)",
+		  }
+		: undefined;
 
 /**
  * Segunda línea de la columna Jurisdicción / opción del filtro Departamento:
@@ -258,6 +330,15 @@ interface ReactTableProps extends Props {
 	departamentoFilter?: string;
 	onDepartamentoFilterChange?: (event: SelectChangeEvent<string>) => void;
 	uniqueDepartamentos?: string[];
+	/** Radicación (5/11/2026): juzgado de origen (clave fuero|número) y ubicación actual. */
+	juzgadoFilter?: string;
+	onJuzgadoFilterChange?: (event: SelectChangeEvent<string>) => void;
+	uniqueJuzgados?: { value: string; label: string; count: number }[];
+	ubicacionFilter?: string;
+	onUbicacionFilterChange?: (event: SelectChangeEvent<string>) => void;
+	uniqueUbicaciones?: { value: string; count: number }[];
+	/** Nombres de responsables para el CSV (modo equipo). */
+	resolveResponsables?: (ids: string[] | undefined) => string;
 	handleDeleteSelected?: (selectedRows: any[]) => void;
 	/** Equipos: asignación masiva de responsables (recibe cómo limpiar la selección). */
 	handleAssignSelected?: (selectedRows: any[], clearSelection: () => void) => void;
@@ -307,6 +388,13 @@ function ReactTable({
 	departamentoFilter = "all",
 	onDepartamentoFilterChange,
 	uniqueDepartamentos = [],
+	juzgadoFilter = "all",
+	onJuzgadoFilterChange,
+	uniqueJuzgados = [],
+	ubicacionFilter = "all",
+	onUbicacionFilterChange,
+	uniqueUbicaciones = [],
+	resolveResponsables,
 	onBarWidthMeasured,
 	disableRowNavigation = false,
 	disableRowSelection = false,
@@ -410,8 +498,20 @@ function ReactTable({
 		if (jurisdiccionFilter !== "all") count++;
 		if (fueroFilter !== "all") count++;
 		if (departamentoFilter !== "all") count++;
+		if (juzgadoFilter !== "all") count++;
+		if (ubicacionFilter !== "all") count++;
 		return count;
-	}, [folderTypeFilter, statusFilter, parteFilter, movimientosFilter, jurisdiccionFilter, fueroFilter, departamentoFilter]);
+	}, [
+		folderTypeFilter,
+		statusFilter,
+		parteFilter,
+		movimientosFilter,
+		jurisdiccionFilter,
+		fueroFilter,
+		departamentoFilter,
+		juzgadoFilter,
+		ubicacionFilter,
+	]);
 
 	const filterTypes = useMemo(() => renderFilterTypes, []);
 	const sortBy = { id: "folderName", desc: false };
@@ -448,7 +548,7 @@ function ReactTable({
 		page,
 		gotoPage,
 		setPageSize,
-		state: { globalFilter, selectedRowIds, pageIndex, pageSize, expanded, sortBy: tableSortBy },
+		state: { globalFilter, selectedRowIds, pageIndex, pageSize, expanded, sortBy: tableSortBy, hiddenColumns: currentHiddenColumns },
 		preGlobalFilteredRows,
 		setGlobalFilter,
 		setSortBy,
@@ -475,13 +575,25 @@ function ReactTable({
 	);
 
 	useEffect(() => {
-		setHiddenColumns(defaultHiddenColumns);
+		// Columnas elegidas por el usuario (selector «Columnas», 5/11/2026); en móvil manda el default.
+		let stored: string[] | null = null;
+		if (!matchDownSM) {
+			try {
+				const raw = localStorage.getItem(HIDDEN_COLUMNS_STORAGE_KEY);
+				const parsed = raw ? JSON.parse(raw) : null;
+				if (Array.isArray(parsed)) stored = parsed.filter((id) => typeof id === "string");
+			} catch {
+				stored = null;
+			}
+		}
+		const base = stored ? [...new Set([...stored, "email", "_id"])] : defaultHiddenColumns;
+		setHiddenColumns(disableRowSelection && !base.includes("selection") ? [...base, "selection"] : base);
 		setIsColumnsReady(true);
 
 		return () => {
 			setIsColumnsReady(false);
 		};
-	}, [setHiddenColumns, defaultHiddenColumns]);
+	}, [setHiddenColumns, defaultHiddenColumns, matchDownSM, disableRowSelection]);
 
 	// Sincronizar sortBy con Redux cuando cambie
 	useEffect(() => {
@@ -500,6 +612,9 @@ function ReactTable({
 		{ label: "Jurisdicción", key: "jurisdiccion" },
 		{ label: "Departamento / Circunscripción", key: "departamento" },
 		{ label: "Fuero", key: "folderFuero" },
+		{ label: "Juzgado de origen", key: "radicacion" },
+		{ label: "Ubicación actual", key: "ubicacion" },
+		...(resolveResponsables ? [{ label: "Responsable", key: "responsable" }] : []),
 		{ label: "Fecha inicio", key: "initialDateFolder" },
 		{ label: "Fecha cierre", key: "finalDateFolder" },
 		{ label: "Monto", key: "amount" },
@@ -523,6 +638,9 @@ function ReactTable({
 			jurisdiccion: folder.folderJuris?.label || "",
 			departamento: departamentoDe(folder.folderJuris?.item, folder.folderJuris?.label),
 			folderFuero: folder.folderFuero || "",
+			radicacion: radicacionOrigen(folder),
+			ubicacion: ubicacionDetalle(folder) || ubicacionActual(folder),
+			responsable: resolveResponsables ? resolveResponsables((folder as any).responsables) : "",
 			initialDateFolder: folder.initialDateFolder || "",
 			finalDateFolder: folder.finalDateFolder || "",
 			amount: folder.amount ?? "",
@@ -932,6 +1050,26 @@ function ReactTable({
 										</span>
 									</Tooltip>
 								)}
+								{(handleArchiveSelected || handleAssignSelected) && rows.length > 0 && (
+									<Tooltip
+										title={
+											selectedFlatRows.length < rows.length
+												? "Selecciona todas las carpetas que pasan los filtros actuales, no solo la página visible"
+												: "Quita la selección"
+										}
+										placement="top"
+									>
+										<Button
+											variant="text"
+											size="small"
+											onClick={() => toggleAllRowsSelected(selectedFlatRows.length < rows.length)}
+											sx={{ textTransform: "none", color: "text.secondary" }}
+											data-testid="folder-select-all-filtered-btn"
+										>
+											{selectedFlatRows.length < rows.length ? `Seleccionar todas (${rows.length})` : "Quitar selección"}
+										</Button>
+									</Tooltip>
+								)}
 							</Stack>
 
 							{/* Grupo 3: Filtros y ordenamiento */}
@@ -993,6 +1131,13 @@ function ReactTable({
 								>
 									<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns as any} />
 								</Box>
+								{!matchDownSM && (
+									<ColumnasSelect
+										allColumns={allColumns as any}
+										hiddenColumns={currentHiddenColumns || []}
+										setHiddenColumns={setHiddenColumns}
+									/>
+								)}
 							</Stack>
 
 							{/* Grupo 4: Búsqueda y utilidades — alineado a la derecha */}
@@ -1324,6 +1469,46 @@ function ReactTable({
 											</Select>
 										</FormControl>
 									)}
+									{/* Filtro por Juzgado de origen (fuero + número), con conteo */}
+									{onJuzgadoFilterChange && uniqueJuzgados.length > 0 && (
+										<FormControl size="small" sx={{ minWidth: 160 }}>
+											<Select id="juzgado-filter" displayEmpty value={juzgadoFilter} onChange={onJuzgadoFilterChange} sx={filterSelectSx}>
+												<MenuItem value="all">
+													<Typography variant="body2">Juzgado: Todos</Typography>
+												</MenuItem>
+												{uniqueJuzgados.map((j) => (
+													<MenuItem key={j.value} value={j.value}>
+														<Typography variant="body2">
+															{j.label} ({j.count})
+														</Typography>
+													</MenuItem>
+												))}
+											</Select>
+										</FormControl>
+									)}
+									{/* Filtro por Ubicación actual (Juzgado / Cámara / Corte / Otro) */}
+									{onUbicacionFilterChange && uniqueUbicaciones.length > 1 && (
+										<FormControl size="small" sx={{ minWidth: 160 }}>
+											<Select
+												id="ubicacion-filter"
+												displayEmpty
+												value={ubicacionFilter}
+												onChange={onUbicacionFilterChange}
+												sx={filterSelectSx}
+											>
+												<MenuItem value="all">
+													<Typography variant="body2">Ubicación: Todas</Typography>
+												</MenuItem>
+												{uniqueUbicaciones.map((u) => (
+													<MenuItem key={u.value} value={u.value}>
+														<Typography variant="body2">
+															{u.value || "Sin dato"} ({u.count})
+														</Typography>
+													</MenuItem>
+												))}
+											</Select>
+										</FormControl>
+									)}
 								</Stack>
 							</Box>
 						</Collapse>
@@ -1577,7 +1762,7 @@ function ReactTable({
 							{headerGroups.map((headerGroup) => (
 								<TableRow {...headerGroup.getHeaderGroupProps()} sx={{ "& > th:first-of-type": { width: "40px" } }}>
 									{headerGroup.headers.map((column: any) => (
-										<TableCell {...column.getHeaderProps([{ className: column.className }])}>
+										<TableCell {...column.getHeaderProps([{ className: column.className }])} sx={stickyActionsSx(column)}>
 											<HeaderSort column={column} sort />
 										</TableCell>
 									))}
@@ -1638,7 +1823,9 @@ function ReactTable({
 											}}
 										>
 											{row.cells.map((cell) => (
-												<TableCell {...cell.getCellProps([{ className: cell.column.className }])}>{cell.render("Cell")}</TableCell>
+												<TableCell {...cell.getCellProps([{ className: cell.column.className }])} sx={stickyActionsSx(cell.column)}>
+													{cell.render("Cell")}
+												</TableCell>
 											))}
 										</TableRow>
 										<TableRow>
@@ -2035,6 +2222,9 @@ const FoldersLayout = () => {
 	const [jurisdiccionFilter, setJurisdiccionFilter] = useState<string>("all");
 	const [fueroFilter, setFueroFilter] = useState<string>("all");
 	const [departamentoFilter, setDepartamentoFilter] = useState<string>("all");
+	// Radicación (5/11/2026): juzgado de origen (clave fuero|número) y ubicación actual
+	const [juzgadoFilter, setJuzgadoFilter] = useState<string>("all");
+	const [ubicacionFilter, setUbicacionFilter] = useState<string>("all");
 
 	// Estado para pre-seleccionar paso y valores al abrir AddFolder desde los badges
 	const [addFolderInitialStep, setAddFolderInitialStep] = useState<number | undefined>(undefined);
@@ -2210,6 +2400,48 @@ const FoldersLayout = () => {
 		return Array.from(fueros).sort();
 	}, [verifiedFolders]);
 
+	// Juzgados de origen presentes (fuero + número), con conteo; ordenados por fuero y número.
+	const uniqueJuzgados = useMemo(() => {
+		const map = new Map<string, number>();
+		verifiedFolders.forEach((folder: any) => {
+			const k = juzgadoKey(folder);
+			if (k) map.set(k, (map.get(k) || 0) + 1);
+		});
+		const num = (v: string) => (/^\d+$/.test(v) ? parseInt(v, 10) : Number.POSITIVE_INFINITY);
+		return Array.from(map.entries())
+			.map(([value, count]) => {
+				const [fuero, court] = value.split("|");
+				return { value, label: fuero ? `${court} · ${fuero}` : `Juzgado ${court}`, count, fuero, court };
+			})
+			.sort((a, b) => a.fuero.localeCompare(b.fuero, "es") || num(a.court) - num(b.court) || a.court.localeCompare(b.court))
+			.map(({ value, label, count }) => ({ value, label, count }));
+	}, [verifiedFolders]);
+
+	const uniqueUbicaciones = useMemo(() => {
+		const map = new Map<string, number>();
+		verifiedFolders.forEach((folder: any) => {
+			const u = ubicacionActual(folder);
+			map.set(u, (map.get(u) || 0) + 1);
+		});
+		const order = ["Juzgado", "Cámara", "Corte", "Otro", ""];
+		return Array.from(map.entries())
+			.map(([value, count]) => ({ value, count }))
+			.sort((a, b) => order.indexOf(a.value) - order.indexOf(b.value));
+	}, [verifiedFolders]);
+
+	// Responsables con nombre para el CSV (integrantes, previstos e invitados).
+	const teamAssigneesForCsv = useMemo(
+		() => (isTeamMode ? getTeamAssignees(activeTeam, { includeInvitations: true }) : []),
+		[isTeamMode, activeTeam],
+	);
+	const resolveResponsablesForCsv = useCallback(
+		(ids: string[] | undefined) =>
+			resolveAssignees(ids, teamAssigneesForCsv)
+				.map((a) => a.name)
+				.join("; "),
+		[teamAssigneesForCsv],
+	);
+
 	// Filtrar carpetas verificadas por todos los filtros
 	const filteredVerifiedFolders = useMemo(() => {
 		return verifiedFolders.filter((folder: any) => {
@@ -2285,6 +2517,14 @@ const FoldersLayout = () => {
 				return false;
 			}
 
+			// Filtro por juzgado de origen y por ubicación actual (5/11/2026)
+			if (juzgadoFilter !== "all" && juzgadoKey(folder) !== juzgadoFilter) {
+				return false;
+			}
+			if (ubicacionFilter !== "all" && ubicacionActual(folder) !== ubicacionFilter) {
+				return false;
+			}
+
 			// Filtro por movimientos recientes
 			if (movimientosFilter !== "all") {
 				const lastMovement = folder.lastMovementDate ? dayjs(folder.lastMovementDate) : null;
@@ -2320,6 +2560,8 @@ const FoldersLayout = () => {
 		jurisdiccionFilter,
 		departamentoFilter,
 		fueroFilter,
+		juzgadoFilter,
+		ubicacionFilter,
 		movimientosFilter,
 	]);
 
@@ -2856,6 +3098,12 @@ const FoldersLayout = () => {
 
 	const handleFueroFilterChange = useCallback((event: SelectChangeEvent<string>) => {
 		setFueroFilter(event.target.value);
+	}, []);
+	const handleJuzgadoFilterChange = useCallback((event: SelectChangeEvent<string>) => {
+		setJuzgadoFilter(event.target.value);
+	}, []);
+	const handleUbicacionFilterChange = useCallback((event: SelectChangeEvent<string>) => {
+		setUbicacionFilter(event.target.value);
 	}, []);
 
 	const handleUnarchiveSelected = useCallback(
@@ -3780,6 +4028,37 @@ const FoldersLayout = () => {
 				accessor: "folderFuero",
 			},
 			{
+				// Juzgado de origen (y, debajo, la ubicación actual si está en Cámara o Corte).
+				// Reparto por juzgado en equipos (5/11/2026).
+				Header: "Radicación",
+				accessor: "judFolder.courtNumber" as any,
+				sortType: (a: any, b: any) => {
+					const na = parseInt(a.original?.judFolder?.courtNumber, 10);
+					const nb = parseInt(b.original?.judFolder?.courtNumber, 10);
+					if (Number.isNaN(na) && Number.isNaN(nb)) return 0;
+					if (Number.isNaN(na)) return 1;
+					if (Number.isNaN(nb)) return -1;
+					return na - nb;
+				},
+				Cell: ({ row }: { row: any }) => {
+					const origen = radicacionOrigen(row.original);
+					const actual = ubicacionDetalle(row.original);
+					if (!origen && !actual) return null;
+					return (
+						<Stack spacing={0} sx={{ maxWidth: 150 }}>
+							<Typography variant="body2" sx={{ whiteSpace: "nowrap" }}>
+								{origen || "Sin juzgado"}
+							</Typography>
+							{actual && (
+								<Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
+									{actual}
+								</Typography>
+							)}
+						</Stack>
+					);
+				},
+			},
+			{
 				Header: "Estado",
 				accessor: "status",
 				Cell: ({ value }: { value: string }) => (value ? <StatusPill status={value} /> : null),
@@ -4341,6 +4620,13 @@ const FoldersLayout = () => {
 								departamentoFilter={departamentoFilter}
 								onDepartamentoFilterChange={handleDepartamentoFilterChange}
 								uniqueDepartamentos={uniqueDepartamentos}
+								juzgadoFilter={juzgadoFilter}
+								onJuzgadoFilterChange={handleJuzgadoFilterChange}
+								uniqueJuzgados={uniqueJuzgados}
+								ubicacionFilter={ubicacionFilter}
+								onUbicacionFilterChange={handleUbicacionFilterChange}
+								uniqueUbicaciones={uniqueUbicaciones}
+								resolveResponsables={isTeamMode ? resolveResponsablesForCsv : undefined}
 							/>
 						</ScrollX>
 					</Box>
@@ -4566,6 +4852,21 @@ const FoldersLayout = () => {
 						onPageChange={handleArchivedPageChange}
 						onPageSizeChange={handleArchivedPageSizeChange}
 						onSearchChange={handleArchivedSearchChange}
+						showResponsables={isTeamMode}
+						onAssignResponsables={
+							isTeamMode && canEditResponsables
+								? (ids) =>
+										setBulkAssign({
+											open: true,
+											folderIds: ids,
+											// Al terminar, recargar la página actual de archivadas para ver el responsable nuevo
+											clearSelection: () => {
+												if (activeTeam?._id)
+													dispatch(getArchivedFoldersByGroupId(activeTeam._id, archivedPage, archivedPageSize, archivedSearch));
+											},
+										})
+								: undefined
+						}
 					/>
 
 					{/* Guía de causas */}

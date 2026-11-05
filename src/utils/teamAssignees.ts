@@ -13,6 +13,25 @@ export interface TeamAssignee {
 	avatar?: string;
 	initials: string;
 	isOwner: boolean;
+	/** Integrante real o invitación (previsto / invitado) asignable como responsable de carpetas. */
+	kind?: "member" | "invitation";
+	/** Solo para kind = "invitation". */
+	invitationStatus?: "draft" | "pending";
+}
+
+/** Etiqueta corta para un asignable que todavía no es integrante. */
+export function assigneeTag(a: TeamAssignee | undefined | null): string {
+	if (!a || a.kind !== "invitation") return "";
+	return a.invitationStatus === "draft" ? "previsto" : "invitado";
+}
+
+export interface GetTeamAssigneesOptions {
+	/**
+	 * Incluye previstos (borradores) e invitados con invitación vigente. Solo para
+	 * responsables de CARPETAS (el hub los canjea por el usuario al aceptar); tareas y
+	 * eventos no los admiten.
+	 */
+	includeInvitations?: boolean;
 }
 
 type PopulatedUser = { _id?: string; firstName?: string; lastName?: string; email?: string; avatar?: string };
@@ -44,15 +63,15 @@ function toAssignee(raw: unknown, fallback: Partial<PopulatedUser>, isOwner: boo
 	return { id: String(id), name, email, avatar, initials: initialsFrom(fullName, email), isOwner };
 }
 
-/** Owner primero, después los miembros activos. */
-export function getTeamAssignees(team: Team | null | undefined): TeamAssignee[] {
+/** Owner primero, después los miembros activos; con `includeInvitations`, previstos e invitados al final. */
+export function getTeamAssignees(team: Team | null | undefined, options: GetTeamAssigneesOptions = {}): TeamAssignee[] {
 	if (!team) return [];
 	const result: TeamAssignee[] = [];
 	const seen = new Set<string>();
 
 	const owner = toAssignee(team.owner, team.ownerInfo || {}, true);
 	if (owner) {
-		result.push(owner);
+		result.push({ ...owner, kind: "member" });
 		seen.add(owner.id);
 	}
 
@@ -61,7 +80,26 @@ export function getTeamAssignees(team: Team | null | undefined): TeamAssignee[] 
 		const assignee = toAssignee(member.userId, member, false);
 		if (!assignee || seen.has(assignee.id)) continue;
 		seen.add(assignee.id);
-		result.push(assignee);
+		result.push({ ...assignee, kind: "member" });
+	}
+
+	if (options.includeInvitations) {
+		const now = Date.now();
+		for (const inv of team.invitations || []) {
+			const vigente = inv.status === "draft" || (inv.status === "pending" && (!inv.expiresAt || new Date(inv.expiresAt).getTime() > now));
+			if (!vigente || !inv._id || seen.has(inv._id)) continue;
+			seen.add(inv._id);
+			const name = (inv.displayName || "").trim() || inv.email;
+			result.push({
+				id: inv._id,
+				name,
+				email: inv.email,
+				initials: initialsFrom(inv.displayName || "", inv.email),
+				isOwner: false,
+				kind: "invitation",
+				invitationStatus: inv.status === "draft" ? "draft" : "pending",
+			});
+		}
 	}
 
 	return result;

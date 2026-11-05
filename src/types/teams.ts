@@ -18,11 +18,25 @@ export interface TeamInvitation {
 	_id: string;
 	email: string;
 	role: TeamRole;
-	status: "pending" | "accepted" | "rejected" | "expired" | "revoked";
-	expiresAt: string;
-	sentAt: string;
+	// draft = integrante previsto (5/11/2026): cargado sin enviar correo, sin token ni
+	// vencimiento; asignable como responsable de carpetas hasta que acepte.
+	status: "draft" | "pending" | "accepted" | "rejected" | "expired" | "revoked";
+	expiresAt: string | null;
+	sentAt: string | null;
 	invitedBy: string;
 	inviterName?: string;
+	/** Nombre visible del previsto (el reparto lo necesita antes de que exista el usuario). */
+	displayName?: string | null;
+	/** Se completa cuando acepta. */
+	userId?: string | null;
+	/** Carpetas que lo tienen como responsable (solo lo devuelve GET /invitations). */
+	assignedFolders?: number;
+}
+
+export interface DraftInvitationRequest {
+	email: string;
+	role: TeamRole;
+	displayName?: string;
 }
 
 export interface TeamSettings {

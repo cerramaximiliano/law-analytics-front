@@ -3,7 +3,7 @@ import { Avatar, AvatarGroup, Chip, Stack, Tooltip, Typography } from "@mui/mate
 import { alpha } from "@mui/material/styles";
 
 import { useTeam } from "contexts/TeamContext";
-import { getTeamAssignees, resolveAssignees } from "utils/teamAssignees";
+import { assigneeTag, getTeamAssignees, resolveAssignees } from "utils/teamAssignees";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 
 interface Props {
@@ -18,7 +18,14 @@ interface Props {
 // Vacío → "Sin asignar" en gris.
 const TaskAssignees = ({ ids, variant = "avatars", max = 4, emptyLabel = "Sin asignar" }: Props) => {
 	const { activeTeam } = useTeam();
-	const assignees = useMemo(() => resolveAssignees(ids, getTeamAssignees(activeTeam)), [ids, activeTeam]);
+	// Para mostrar se resuelven también los previstos e invitados (responsables de carpetas
+	// antes de aceptar, 5/11/2026); las opciones para asignar tareas siguen sin incluirlos.
+	const assignees = useMemo(() => resolveAssignees(ids, getTeamAssignees(activeTeam, { includeInvitations: true })), [ids, activeTeam]);
+	const tooltipOf = (a: { name: string; email?: string; kind?: string; invitationStatus?: string }) => {
+		const base = a.email && a.email !== a.name ? `${a.name} · ${a.email}` : a.name;
+		const tag = assigneeTag(a as any);
+		return tag ? `${base} (${tag}: todavía no se unió al equipo)` : base;
+	};
 
 	if (assignees.length === 0) {
 		return (
@@ -32,11 +39,11 @@ const TaskAssignees = ({ ids, variant = "avatars", max = 4, emptyLabel = "Sin as
 		return (
 			<Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
 				{assignees.map((a) => (
-					<Tooltip key={a.id} title={a.email && a.email !== a.name ? `${a.name} · ${a.email}` : a.name}>
+					<Tooltip key={a.id} title={tooltipOf(a)}>
 						<Chip
 							size="small"
 							variant="outlined"
-							label={a.name}
+							label={assigneeTag(a) ? `${a.name} · ${assigneeTag(a)}` : a.name}
 							avatar={
 								<Avatar src={a.avatar} sx={{ bgcolor: alpha(BRAND_BLUE, 0.16), color: BRAND_BLUE, fontSize: "0.6rem", fontWeight: 700 }}>
 									{a.initials}
@@ -66,8 +73,8 @@ const TaskAssignees = ({ ids, variant = "avatars", max = 4, emptyLabel = "Sin as
 			}}
 		>
 			{assignees.map((a) => (
-				<Tooltip key={a.id} title={a.email && a.email !== a.name ? `${a.name} · ${a.email}` : a.name}>
-					<Avatar src={a.avatar} alt={a.name}>
+				<Tooltip key={a.id} title={tooltipOf(a)}>
+					<Avatar src={a.avatar} alt={a.name} sx={assigneeTag(a) ? { opacity: 0.75, borderStyle: "dashed !important" } : undefined}>
 						{a.initials}
 					</Avatar>
 				</Tooltip>

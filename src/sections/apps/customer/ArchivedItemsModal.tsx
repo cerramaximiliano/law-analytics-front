@@ -29,10 +29,11 @@ import {
 import { alpha, useTheme } from "@mui/material/styles";
 
 // project-imports
+import TaskAssignees from "sections/apps/tasks/TaskAssignees";
 import { PopupTransition } from "components/@extended/Transitions";
 import EmptyResults from "./EmptyResults";
-import { Archive, CloseSquare, InfoCircle, SearchNormal1, Warning2 } from "iconsax-react";
-import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
+import { Archive, CloseSquare, InfoCircle, SearchNormal1, Warning2, UserEdit } from "iconsax-react";
+import { BRAND_BLUE, LIVE_GREEN } from "themes/dashboardTokens";
 
 /**
  * Contexto del último archivado (hub models/Folder.js archivedReason):
@@ -79,6 +80,10 @@ interface ArchivedItemsModalProps {
 	fetching?: boolean;
 	// Búsqueda server-side: el parent resetea a página 1 y refetchea con el término
 	onSearchChange?: (term: string) => void;
+	// Equipos (5/11/2026): columna Responsable y asignación masiva sobre la selección. Las
+	// archivadas también se asignan; no cuentan para el cupo.
+	showResponsables?: boolean;
+	onAssignResponsables?: (selectedIds: string[]) => void;
 }
 
 // ==============================|| ARCHIVED ITEMS MODAL ||============================== //
@@ -96,6 +101,8 @@ const ArchivedItemsModal = ({
 	onPageSizeChange,
 	fetching = false,
 	onSearchChange,
+	showResponsables = false,
+	onAssignResponsables,
 }: ArchivedItemsModalProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
@@ -134,8 +141,9 @@ const ArchivedItemsModal = ({
 			{ id: "materia", label: "Materia", minWidth: 100 },
 			{ id: "status", label: "Estado", minWidth: 100 },
 			{ id: "archivedContext", label: "Archivada", minWidth: 150 },
+			...(showResponsables ? [{ id: "responsables", label: "Responsable", minWidth: 120 }] : []),
 		];
-	}, [itemType]);
+	}, [itemType, showResponsables]);
 
 	const handleClick = (id: string) => {
 		const idx = selected.indexOf(id);
@@ -550,6 +558,11 @@ const ArchivedItemsModal = ({
 																	{archivedContextLabel(item)}
 																</Typography>
 															</TableCell>
+															{showResponsables && (
+																<TableCell>
+																	<TaskAssignees ids={item.responsables} max={3} emptyLabel="Sin responsable" />
+																</TableCell>
+															)}
 														</>
 													)}
 												</TableRow>
@@ -614,6 +627,18 @@ const ArchivedItemsModal = ({
 				<Button onClick={onClose} disabled={loading} sx={ghostBtnSx}>
 					Cancelar
 				</Button>
+				{onAssignResponsables && (
+					<Button
+						variant="outlined"
+						onClick={() => onAssignResponsables(selected)}
+						disabled={selected.length === 0 || loading}
+						startIcon={<UserEdit size={15} variant="Linear" />}
+						sx={ghostBtnSx}
+						data-testid="archived-assign-responsable-btn"
+					>
+						{`Asignar responsable${selected.length > 0 ? ` (${selected.length})` : ""}`}
+					</Button>
+				)}
 				<Button
 					variant="contained"
 					onClick={handleUnarchive}
