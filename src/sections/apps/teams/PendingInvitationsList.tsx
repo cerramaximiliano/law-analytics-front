@@ -264,14 +264,14 @@ export default function PendingInvitationsList({ onInvitationUpdated }: PendingI
 						</Stack>
 					}
 					secondary={
-						<Stack direction="row" alignItems="center" flexWrap="wrap" gap={1} sx={{ mt: 0.5 }}>
-							<Clock size={14} style={{ flexShrink: 0 }} />
+						<Stack direction="row" alignItems="flex-start" gap={1} sx={{ mt: 0.5 }}>
+							<Clock size={14} style={{ flexShrink: 0, marginTop: 2 }} />
 							{isDraft ? (
 								<Typography variant="caption" color="text.secondary">
 									Sin invitación enviada. Podés asignarle carpetas y mandarla cuando quieras.
 								</Typography>
 							) : (
-								<>
+								<Stack direction="row" alignItems="center" flexWrap="wrap" gap={1}>
 									<Typography variant="caption" color="text.secondary">
 										Enviada: {formatDate(invitation.sentAt)}
 									</Typography>
@@ -284,7 +284,7 @@ export default function PendingInvitationsList({ onInvitationUpdated }: PendingI
 											Expira: {formatDate(invitation.expiresAt)}
 										</Typography>
 									)}
-								</>
+								</Stack>
 							)}
 						</Stack>
 					}

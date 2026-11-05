@@ -165,8 +165,9 @@ function ColumnasSelect({
 	setHiddenColumns: (ids: string[]) => void;
 	selectSx?: any;
 }) {
+	// «Acciones» no se puede ocultar: es la columna fija que motivó el selector.
 	const options = allColumns.filter(
-		(c) => typeof c.Header === "string" && !NON_HIDEABLE_COLUMNS.has(c.id) && c.id !== "_id" && c.id !== "email",
+		(c) => typeof c.Header === "string" && c.Header !== "Acciones" && !NON_HIDEABLE_COLUMNS.has(c.id) && c.id !== "_id" && c.id !== "email",
 	);
 	const visibles = options.filter((c) => !hiddenColumns.includes(c.id)).length;
 	return (
@@ -213,7 +214,11 @@ const stickyActionsSx = (column: any) =>
 				position: "sticky" as const,
 				right: 0,
 				zIndex: 2,
-				bgcolor: "background.paper",
+				// Fondo opaco también en el encabezado (el tema lo deja transparente y se veía
+				// «JURISDICCIÓN» debajo de «ACCIONES», prueba del 5/11).
+				backgroundColor: (theme: any) => theme.palette.background.paper,
+				backgroundImage: "none",
+				"&.MuiTableCell-head": { backgroundColor: (theme: any) => theme.palette.background.paper, zIndex: 3 },
 				boxShadow: "-6px 0 8px -6px rgba(0,0,0,0.18)",
 		  }
 		: undefined;
@@ -516,6 +521,19 @@ function ReactTable({
 	const filterTypes = useMemo(() => renderFilterTypes, []);
 	const sortBy = { id: "folderName", desc: false };
 
+	// Columnas sin información para este usuario (capturas de Silvia, 5/11/2026): si ninguna
+	// carpeta tiene «Parte» definida o fecha de inicio, esas columnas arrancan ocultas en
+	// escritorio (siguen disponibles en «Columnas»). Ahorra ancho para llegar a «Acciones».
+	const emptyColumns = useMemo(() => {
+		const rows = Array.isArray(data) ? (data as any[]) : [];
+		if (rows.length === 0) return [] as string[];
+		const out: string[] = [];
+		if (rows.every((f) => !f?.orderStatus || f.orderStatus === "Sin definir")) out.push("orderStatus");
+		if (rows.every((f) => !f?.initialDateFolder && !f?.judFolder?.initialDateJudFolder && !f?.preFolder?.initialDatePreFolder))
+			out.push("initialDateFolder");
+		return out;
+	}, [data]);
+
 	const defaultHiddenColumns = useMemo(() => {
 		const base = matchDownSM
 			? [
@@ -532,9 +550,9 @@ function ReactTable({
 					"updatedAt",
 					"responsables",
 			  ]
-			: ["email", "_id", "description", "finalDateFolder", "createdAt", "updatedAt"];
+			: ["email", "_id", "description", "finalDateFolder", "createdAt", "updatedAt", ...emptyColumns];
 		return disableRowSelection ? [...base, "selection"] : base;
-	}, [matchDownSM, disableRowSelection]);
+	}, [matchDownSM, disableRowSelection, emptyColumns]);
 
 	const {
 		getTableProps,
@@ -2411,7 +2429,11 @@ const FoldersLayout = () => {
 		return Array.from(map.entries())
 			.map(([value, count]) => {
 				const [fuero, court] = value.split("|");
-				return { value, label: fuero ? `${court} · ${fuero}` : `Juzgado ${court}`, count, fuero, court };
+				// Número → «7 · Seguridad Social»; texto (MEV, SCBA) → el nombre recortado a una línea
+				const esNumero = /^\d+$/.test(court);
+				const corto = court.length > 44 ? `${court.slice(0, 42)}…` : court;
+				const label = esNumero ? (fuero ? `${court} · ${fuero}` : `Juzgado ${court}`) : corto;
+				return { value, label, count, fuero, court };
 			})
 			.sort((a, b) => a.fuero.localeCompare(b.fuero, "es") || num(a.court) - num(b.court) || a.court.localeCompare(b.court))
 			.map(({ value, label, count }) => ({ value, label, count }));
@@ -4011,13 +4033,19 @@ const FoldersLayout = () => {
 					const label: string | undefined = typeof juris === "string" ? juris : juris?.label;
 					const dep = typeof juris === "string" ? "" : departamentoDe(juris?.item, label);
 					if (!label) return null;
+					// Una línea para la provincia y una sola (con puntos suspensivos y tooltip) para el
+					// departamento: antes ocupaba tres líneas y empujaba la tabla (5/11/2026).
 					return (
-						<Stack spacing={0} sx={{ maxWidth: 180 }}>
-							<Typography variant="body2">{label}</Typography>
+						<Stack spacing={0} sx={{ maxWidth: 160 }}>
+							<Typography variant="body2" noWrap>
+								{label}
+							</Typography>
 							{dep && (
-								<Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
-									{dep}
-								</Typography>
+								<Tooltip title={dep} placement="top-start" enterDelay={400}>
+									<Typography variant="caption" color="text.secondary" noWrap sx={{ lineHeight: 1.3, display: "block" }}>
+										{dep}
+									</Typography>
+								</Tooltip>
 							)}
 						</Stack>
 					);

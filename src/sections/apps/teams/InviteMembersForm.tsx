@@ -255,8 +255,9 @@ export default function InviteMembersForm({ onSuccess }: InviteMembersFormProps)
 			)}
 
 			<Stack spacing={2}>
+				{/* Campos en fila cuando hay lugar; en la tarjeta angosta de Mi equipo se envuelven (el Email quedaba sin ancho, 5/11). */}
 				{invites.map((invite, index) => (
-					<Stack key={index} direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ xs: "stretch", sm: "center" }}>
+					<Stack key={index} direction="row" flexWrap="wrap" useFlexGap spacing={1} alignItems="center">
 						<TextField
 							label="Nombre"
 							value={invite.displayName}
@@ -265,7 +266,7 @@ export default function InviteMembersForm({ onSuccess }: InviteMembersFormProps)
 							placeholder="Ana Pérez"
 							disabled={isSubmitting}
 							inputProps={{ maxLength: 80 }}
-							sx={{ minWidth: { sm: 170 } }}
+							sx={{ flex: "1 1 160px", minWidth: 160 }}
 						/>
 						<TextField
 							label="Email"
@@ -273,12 +274,12 @@ export default function InviteMembersForm({ onSuccess }: InviteMembersFormProps)
 							value={invite.email}
 							onChange={(e) => handleChange(index, { email: e.target.value })}
 							size="small"
-							fullWidth
 							placeholder="colaborador@email.com"
 							disabled={isSubmitting}
+							sx={{ flex: "2 1 220px", minWidth: 200 }}
 						/>
 
-						<FormControl size="small" sx={{ minWidth: { sm: 140 } }}>
+						<FormControl size="small" sx={{ flex: "0 1 140px", minWidth: 140 }}>
 							<InputLabel>Rol</InputLabel>
 							<Select
 								value={invite.role}
