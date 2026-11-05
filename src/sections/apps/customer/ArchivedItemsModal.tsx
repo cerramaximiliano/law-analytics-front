@@ -141,6 +141,8 @@ const ArchivedItemsModal = ({
 			{ id: "materia", label: "Materia", minWidth: 100 },
 			{ id: "status", label: "Estado", minWidth: 100 },
 			{ id: "archivedContext", label: "Archivada", minWidth: 150 },
+			// Último movimiento (5/11/2026): para decidir cuál reactivar sin abrirla.
+			{ id: "lastMovementDate", label: "Último mov.", minWidth: 110 },
 			...(showResponsables ? [{ id: "responsables", label: "Responsable", minWidth: 120 }] : []),
 		];
 	}, [itemType, showResponsables]);
@@ -556,6 +558,11 @@ const ArchivedItemsModal = ({
 															<TableCell>
 																<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 																	{archivedContextLabel(item)}
+																</Typography>
+															</TableCell>
+															<TableCell>
+																<Typography sx={{ fontSize: "0.78rem", color: "text.primary", fontVariantNumeric: "tabular-nums" }}>
+																	{item.lastMovementDate ? new Date(item.lastMovementDate).toLocaleDateString("es-AR") : "—"}
 																</Typography>
 															</TableCell>
 															{showResponsables && (

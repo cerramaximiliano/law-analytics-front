@@ -428,7 +428,9 @@ export const updateFoldersResponsablesBulk =
 				);
 				if (!response.data?.success) {
 					const message = response.data?.message || "No se pudieron asignar los responsables";
-					return i === 0 ? { success: false, message } : { success: false, message: `${message} (se actualizaron ${modified} carpetas antes del error)` };
+					return i === 0
+						? { success: false, message }
+						: { success: false, message: `${message} (se actualizaron ${modified} carpetas antes del error)` };
 				}
 				const got: typeof folders = Array.isArray(response.data.folders) ? response.data.folders : [];
 				got.forEach((folder) => dispatch({ type: PATCH_FOLDER, payload: folder }));
@@ -746,6 +748,8 @@ export const getArchivedFoldersByUserId =
 				archived: true,
 				fields,
 				page,
+				// Archivadas ordenadas por último movimiento (5/11/2026): las que más se mueven, primero.
+				sort: "lastMovement",
 			};
 			if (limit !== undefined) {
 				params.limit = limit;
@@ -794,6 +798,8 @@ export const getArchivedFoldersByGroupId =
 				archived: true,
 				fields,
 				page,
+				// Archivadas ordenadas por último movimiento (5/11/2026): las que más se mueven, primero.
+				sort: "lastMovement",
 			};
 			if (limit !== undefined) {
 				params.limit = limit;
