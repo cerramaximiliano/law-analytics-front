@@ -308,12 +308,17 @@ const NotificationPage = () => {
 		}
 
 		// Navegación para movimientos
-		if (notification.sourceType === "movement" && notification.sourceId) {
+		if (notification.sourceType === "movement") {
 			handleMarkAlertAsRead(notification._id);
 			setOpen(false);
-			// Si tiene folderId, usar ese en lugar del sourceId
-			const navigationId = notification.folderId || notification.sourceId;
-			navigate(`/apps/folders/details/${navigationId}`);
+			if (notification.folderId) {
+				navigate(`/apps/folders/details/${notification.folderId}`);
+			} else {
+				// Alerta agrupada ("N movimientos nuevos en M causas") o movimiento sin carpeta
+				// resuelta: el listado de carpetas filtrado por movimientos de hoy. Antes se usaba
+				// el sourceId (id del movimiento) como si fuera una carpeta y la página quedaba rota.
+				navigate("/apps/folders/list?movimientos=today");
+			}
 			return;
 		}
 
