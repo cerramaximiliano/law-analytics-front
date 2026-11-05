@@ -51,7 +51,9 @@ import ScrollX from "components/ScrollX";
 import IconButton from "components/@extended/IconButton";
 import { PopupTransition } from "components/@extended/Transitions";
 import { IndeterminateCheckbox, HeaderSort, SortingSelect, TablePagination } from "components/third-party/ReactTable";
+import axios from "axios";
 import { getTeamAssignees, resolveAssignees } from "utils/teamAssignees";
+import { updateUser } from "store/reducers/auth";
 import { juzgadoKey, radicacionOrigen, ubicacionActual, ubicacionDetalle } from "utils/radicacion";
 import { CSVLink } from "react-csv";
 import { formatFolderName } from "utils/formatFolderName";
@@ -351,6 +353,9 @@ interface ReactTableProps extends Props {
 	uniqueUbicaciones?: { value: string; count: number }[];
 	/** Nombres de responsables para el CSV (modo equipo). */
 	resolveResponsables?: (ids: string[] | undefined) => string;
+	/** Columnas ocultas guardadas en el hub para este usuario (manda sobre el navegador) y cómo guardarlas. */
+	storedHiddenColumns?: string[] | null;
+	onHiddenColumnsChange?: (ids: string[]) => void;
 	handleDeleteSelected?: (selectedRows: any[]) => void;
 	/** Equipos: asignación masiva de responsables (recibe cómo limpiar la selección). */
 	handleAssignSelected?: (selectedRows: any[], clearSelection: () => void) => void;
@@ -407,6 +412,8 @@ function ReactTable({
 	onUbicacionFilterChange,
 	uniqueUbicaciones = [],
 	resolveResponsables,
+	storedHiddenColumns = null,
+	onHiddenColumnsChange,
 	onBarWidthMeasured,
 	disableRowNavigation = false,
 	disableRowSelection = false,
@@ -600,15 +607,20 @@ function ReactTable({
 	);
 
 	useEffect(() => {
-		// Columnas elegidas por el usuario (selector «Columnas», 5/11/2026); en móvil manda el default.
+		// Columnas elegidas por el usuario (selector «Columnas», 5/11/2026): primero las guardadas
+		// en el hub (valen en cualquier navegador), después las del navegador; en móvil manda el default.
 		let stored: string[] | null = null;
 		if (!matchDownSM) {
-			try {
-				const raw = localStorage.getItem(HIDDEN_COLUMNS_STORAGE_KEY);
-				const parsed = raw ? JSON.parse(raw) : null;
-				if (Array.isArray(parsed)) stored = parsed.filter((id) => typeof id === "string");
-			} catch {
-				stored = null;
+			if (Array.isArray(storedHiddenColumns)) {
+				stored = storedHiddenColumns.filter((id) => typeof id === "string");
+			} else {
+				try {
+					const raw = localStorage.getItem(HIDDEN_COLUMNS_STORAGE_KEY);
+					const parsed = raw ? JSON.parse(raw) : null;
+					if (Array.isArray(parsed)) stored = parsed.filter((id) => typeof id === "string");
+				} catch {
+					stored = null;
+				}
 			}
 		}
 		const base = stored ? [...new Set([...stored, "email", "_id"])] : defaultHiddenColumns;
@@ -618,7 +630,14 @@ function ReactTable({
 		return () => {
 			setIsColumnsReady(false);
 		};
-	}, [setHiddenColumns, defaultHiddenColumns, matchDownSM, disableRowSelection]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [
+		setHiddenColumns,
+		defaultHiddenColumns,
+		matchDownSM,
+		disableRowSelection,
+		Array.isArray(storedHiddenColumns) ? storedHiddenColumns.join("|") : "",
+	]);
 
 	// Sincronizar sortBy con Redux cuando cambie
 	useEffect(() => {
@@ -1160,7 +1179,10 @@ function ReactTable({
 									<ColumnasSelect
 										allColumns={allColumns as any}
 										hiddenColumns={currentHiddenColumns || []}
-										setHiddenColumns={setHiddenColumns}
+										setHiddenColumns={(ids) => {
+											setHiddenColumns(ids);
+											onHiddenColumnsChange?.(ids);
+										}}
 									/>
 								)}
 							</Stack>
@@ -2457,6 +2479,26 @@ const FoldersLayout = () => {
 			.map(([value, count]) => ({ value, count }))
 			.sort((a, b) => order.indexOf(a.value) - order.indexOf(b.value));
 	}, [verifiedFolders]);
+
+	// Columnas ocultas por usuario (5/11/2026): se guardan en el hub (PUT /api/auth/update,
+	// uiPreferences.foldersHiddenColumns) con un pequeño retraso para no pegar en cada clic,
+	// y en el store para que el próximo montaje ya las tenga.
+	const storedHiddenColumns = (user as any)?.uiPreferences?.foldersHiddenColumns ?? null;
+	const hiddenColumnsSaveRef = useRef<ReturnType<typeof setTimeout>>();
+	const handleHiddenColumnsChange = useCallback(
+		(ids: string[]) => {
+			clearTimeout(hiddenColumnsSaveRef.current);
+			hiddenColumnsSaveRef.current = setTimeout(async () => {
+				try {
+					await axios.put(`${import.meta.env.VITE_BASE_URL}/api/auth/update`, { uiPreferences: { foldersHiddenColumns: ids } });
+					dispatch(updateUser({ uiPreferences: { ...((user as any)?.uiPreferences || {}), foldersHiddenColumns: ids } }));
+				} catch {
+					/* queda guardado en el navegador igual */
+				}
+			}, 800);
+		},
+		[dispatch, user],
+	);
 
 	// Responsables con nombre para el CSV (integrantes, previstos e invitados).
 	const teamAssigneesForCsv = useMemo(
@@ -4662,6 +4704,8 @@ const FoldersLayout = () => {
 								onUbicacionFilterChange={handleUbicacionFilterChange}
 								uniqueUbicaciones={uniqueUbicaciones}
 								resolveResponsables={isTeamMode ? resolveResponsablesForCsv : undefined}
+								storedHiddenColumns={storedHiddenColumns}
+								onHiddenColumnsChange={handleHiddenColumnsChange}
 							/>
 						</ScrollX>
 					</Box>

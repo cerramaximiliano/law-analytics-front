@@ -50,9 +50,17 @@ export interface UserOnboarding {
 	dismissedAt: string | null;
 }
 
+/** Preferencias de interfaz guardadas por usuario en el hub (valen en cualquier navegador). */
+export type UiPreferences = {
+	/** Ids de columnas ocultas en el listado de carpetas («Columnas», 5/11/2026). */
+	foldersHiddenColumns?: string[];
+	updatedAt?: string | null;
+};
+
 export type UserProfile = {
 	_id?: string;
 	groupId?: string;
+	uiPreferences?: UiPreferences;
 	address?: string;
 	address1?: string;
 	avatar?: string;
