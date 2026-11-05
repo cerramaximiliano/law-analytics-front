@@ -45,7 +45,17 @@ import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import PricingTablesMcpAddon from "sections/mcp/PricingTablesMcpAddon";
 import PlanCheckoutAddonOption from "sections/mcp/PlanCheckoutAddonOption";
 import usePlanCheckoutAddon, { type PlanCheckoutAddonOptions } from "hooks/usePlanCheckoutAddon";
-import { isAddonCompatiblePlan, PLAN_CHECKOUT_ADDON_CODES, planShortName } from "utils/planCheckoutAddon";
+import { addAmounts, isAddonCompatiblePlan, PLAN_CHECKOUT_ADDON_CODES, planShortName } from "utils/planCheckoutAddon";
+import PlanCheckoutBlocksOption from "sections/addons/PlanCheckoutBlocksOption";
+import usePlanCheckoutBlocks from "hooks/usePlanCheckoutBlocks";
+import {
+	BLOCKS_PLAN_ID,
+	blocksMonthlyCost,
+	EXTRA_FOLDERS_KEY,
+	formatPlanBlocksTotal,
+	planCheckoutBlocksErrorMessage,
+	withBlocks,
+} from "utils/planCheckoutBlocks";
 
 // id de la grilla de planes: destino del CTA "Mejorar mi plan" del add-on.
 const PLANS_GRID_ID = "planes-grilla";
@@ -99,6 +109,9 @@ const Pricing = () => {
 	// pago). Con plan pago el add-on se suma desde su tarjeta y los CTAs de cambio de
 	// plan no cambian.
 	const addonCheckout = usePlanCheckoutAddon();
+	// Bloques de «Causas adicionales» en el mismo checkout que Premium (alta): un solo pago
+	// para plan + conector + bloques (utils/planCheckoutBlocks).
+	const planBlocks = usePlanCheckoutBlocks();
 
 	// Bloques de Causas adicionales (solo Premium): los diálogos de bajar de plan y de baja
 	// avisan que terminan. Se leen de Redux (auth.subscription trae los add-ons).
@@ -221,6 +234,27 @@ const Pricing = () => {
 
 		fetchPlans();
 	}, []);
+
+	/**
+	 * Rechazo de los bloques que handleSubscribe devuelve sin avisar (códigos propios del
+	 * checkout con add-on). Avisa, vuelve el selector a 0 y relee el estado. true si lo resolvió.
+	 */
+	const handleBlocksRejection = (res: any, blocksOnly: boolean): boolean => {
+		if (!res || res.success !== false || !res.code || !PLAN_CHECKOUT_ADDON_CODES.has(res.code)) return false;
+		if (!blocksOnly && res.addon !== EXTRA_FOLDERS_KEY) return false;
+		dispatch(
+			openSnackbar({
+				open: true,
+				message: planCheckoutBlocksErrorMessage(res.code, res.reason, res.message),
+				variant: "alert",
+				alert: { color: "info" },
+				close: true,
+			}),
+		);
+		planBlocks.reset();
+		planBlocks.refresh();
+		return true;
+	};
 
 	const handleSubscribe = async (planId: string, discountCode?: string, addonOptions?: PlanCheckoutAddonOptions) => {
 		try {
@@ -1519,6 +1553,32 @@ const Pricing = () => {
 						addonCheckout.offer && !isTeamMember && !userHasPaidPlan && !isCurrentPlan && !isInactive && isAddonCompatiblePlan(plan.planId);
 					const addonPlanName = planShortName(plan.displayName);
 					const addonPlanPrice = pricing.billingPeriod === "monthly" ? pricing.basePrice : null;
+					// Selector de bloques: solo en Premium mensual, mismas condiciones de alta que el conector.
+					const offerBlocksHere =
+						planBlocks.offer &&
+						plan.planId === BLOCKS_PLAN_ID &&
+						pricing.billingPeriod === "monthly" &&
+						!isTeamMember &&
+						!userHasPaidPlan &&
+						!isCurrentPlan &&
+						!isInactive;
+					const blocksHere = offerBlocksHere ? planBlocks.blocks : 0;
+					const blocksCost = blocksMonthlyCost(blocksHere, planBlocks.unitPrice);
+					const planFoldersLimit = plan.resourceLimits?.find((r: ResourceLimit) => r.name === "folders")?.limit ?? null;
+					const blocksTotalLabel = formatPlanBlocksTotal({
+						planPrice: addonPlanPrice,
+						planCurrency: pricing.currency,
+						planFolders: planFoldersLimit,
+						blocks: blocksHere,
+						unitPrice: planBlocks.unitPrice,
+						unitCurrency: planBlocks.unitCurrency,
+						foldersPerBlock: planBlocks.foldersPerBlock,
+					});
+					// Con bloques, el diálogo del conector muestra el total del combo completo.
+					const comboPlanName =
+						blocksHere > 0 ? `${addonPlanName} + ${blocksHere} ${blocksHere === 1 ? "bloque" : "bloques"}` : addonPlanName;
+					const comboPlanPrice =
+						blocksHere > 0 && addonPlanPrice !== null && blocksCost !== null ? addAmounts(addonPlanPrice, blocksCost) : addonPlanPrice;
 
 					const handleCtaClick = () => {
 						if (plan.isActive && !loadingPlanId && !reactivating && !cancelingScheduledChange) {
@@ -1534,11 +1594,24 @@ const Pricing = () => {
 								if (offerAddonHere) {
 									addonCheckout.begin({
 										planId: plan.planId,
-										planName: addonPlanName,
-										planPrice: addonPlanPrice,
+										planName: comboPlanName,
+										planPrice: comboPlanPrice,
 										planCurrency: pricing.currency,
-										proceed: (addonOptions) => handleSubscribe(plan.planId, discountCode, addonOptions),
+										proceed: async (addonOptions) => {
+											if (blocksHere <= 0) return handleSubscribe(plan.planId, discountCode, addonOptions);
+											const res = await handleSubscribe(plan.planId, discountCode, {
+												addons: withBlocks(addonOptions?.addons, blocksHere),
+												acceptedPolicyVersion: addonOptions?.acceptedPolicyVersion ?? null,
+											});
+											// Rechazo de los bloques: lo avisamos acá y el diálogo del conector solo se cierra.
+											if (handleBlocksRejection(res, !addonOptions)) return { success: false, code: "BLOCKS_REJECTED" };
+											return res;
+										},
 									});
+								} else if (blocksHere > 0) {
+									handleSubscribe(plan.planId, discountCode, { addons: withBlocks([], blocksHere), acceptedPolicyVersion: null }).then(
+										(res) => handleBlocksRejection(res, true),
+									);
 								} else {
 									handleSubscribe(plan.planId, discountCode);
 								}
@@ -1597,16 +1670,33 @@ const Pricing = () => {
 								dataTestId={`sub-plan-card-${plan.planId}`}
 								addonStateKey={mcpSubscriptionKey}
 								beforeCta={
-									offerAddonHere ? (
-										<PlanCheckoutAddonOption
-											planId={plan.planId}
-											checked={addonCheckout.isSelected(plan.planId)}
-											onChange={(checked) => addonCheckout.setSelected(plan.planId, checked)}
-											addonPrice={addonCheckout.addonPrice.amount}
-											addonCurrency={addonCheckout.addonPrice.currency}
-											totalLabel={addonCheckout.totalFor(addonPlanName, addonPlanPrice, pricing.currency)}
-											disabled={loadingPlanId !== null}
-										/>
+									offerAddonHere || offerBlocksHere ? (
+										<>
+											{offerBlocksHere && (
+												<PlanCheckoutBlocksOption
+													planId={plan.planId}
+													blocks={blocksHere}
+													maxBlocks={planBlocks.maxBlocks}
+													onChange={planBlocks.setBlocks}
+													unitPrice={planBlocks.unitPrice}
+													unitCurrency={planBlocks.unitCurrency}
+													foldersPerBlock={planBlocks.foldersPerBlock}
+													totalLabel={blocksTotalLabel}
+													disabled={loadingPlanId !== null}
+												/>
+											)}
+											{offerAddonHere && (
+												<PlanCheckoutAddonOption
+													planId={plan.planId}
+													checked={addonCheckout.isSelected(plan.planId)}
+													onChange={(checked) => addonCheckout.setSelected(plan.planId, checked)}
+													addonPrice={addonCheckout.addonPrice.amount}
+													addonCurrency={addonCheckout.addonPrice.currency}
+													totalLabel={addonCheckout.totalFor(comboPlanName, comboPlanPrice, pricing.currency)}
+													disabled={loadingPlanId !== null}
+												/>
+											)}
+										</>
 									) : undefined
 								}
 								cta={{
