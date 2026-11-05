@@ -2018,7 +2018,20 @@ const FoldersLayout = () => {
 	>("all");
 	const [statusFilter, setStatusFilter] = useState<"all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada">("all");
 	const [parteFilter, setParteFilter] = useState<string>("all");
-	const [movimientosFilter, setMovimientosFilter] = useState<"all" | "today" | "week" | "month" | "none">("all");
+	// ?movimientos=today|week|month|none (lo usa la alerta agrupada de movimientos nuevos).
+	const MOVIMIENTOS_FILTROS = ["all", "today", "week", "month", "none"] as const;
+	type MovimientosFiltro = (typeof MOVIMIENTOS_FILTROS)[number];
+	const movimientosParam = searchParams.get("movimientos");
+	const [movimientosFilter, setMovimientosFilter] = useState<MovimientosFiltro>(
+		MOVIMIENTOS_FILTROS.includes(movimientosParam as MovimientosFiltro) ? (movimientosParam as MovimientosFiltro) : "all",
+	);
+	// Si se llega con el parámetro estando ya en la página (otra alerta), aplicarlo.
+	useEffect(() => {
+		if (movimientosParam && MOVIMIENTOS_FILTROS.includes(movimientosParam as MovimientosFiltro)) {
+			setMovimientosFilter(movimientosParam as MovimientosFiltro);
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [movimientosParam]);
 	const [jurisdiccionFilter, setJurisdiccionFilter] = useState<string>("all");
 	const [fueroFilter, setFueroFilter] = useState<string>("all");
 	const [departamentoFilter, setDepartamentoFilter] = useState<string>("all");
