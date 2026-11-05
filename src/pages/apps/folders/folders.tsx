@@ -213,13 +213,20 @@ const stickyActionsSx = (column: any) =>
 		? {
 				position: "sticky" as const,
 				right: 0,
-				zIndex: 2,
-				// Fondo opaco también en el encabezado (el tema lo deja transparente y se veía
-				// «JURISDICCIÓN» debajo de «ACCIONES», prueba del 5/11).
-				backgroundColor: (theme: any) => theme.palette.background.paper,
-				backgroundImage: "none",
-				"&.MuiTableCell-head": { backgroundColor: (theme: any) => theme.palette.background.paper, zIndex: 3 },
-				boxShadow: "-6px 0 8px -6px rgba(0,0,0,0.18)",
+				// «&&» sube la especificidad: el tema pinta las celdas del encabezado con un tinte
+				// semitransparente (rgba 0.035) que ganaba y dejaba ver «JURISDICCIÓN» debajo
+				// de «ACCIONES» (verificado en producción el 5/11).
+				"&&": {
+					backgroundColor: (theme: any) => theme.palette.background.paper,
+					backgroundImage: "none",
+					zIndex: 2,
+					boxShadow: "-6px 0 8px -6px rgba(0,0,0,0.18)",
+				},
+				"&&.MuiTableCell-head": {
+					backgroundColor: (theme: any) => theme.palette.background.paper,
+					backgroundImage: "none",
+					zIndex: 3,
+				},
 		  }
 		: undefined;
 
