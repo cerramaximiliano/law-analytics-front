@@ -1376,11 +1376,12 @@ class ApiService {
 		discountCode?: string,
 		/**
 		 * Add-ons contratados en el mismo checkout (solo alta, usuario sin plan pago):
-		 * `{ addons: ["mcp_access"], acceptedPolicyVersion }`. Rechazos propios: 400
-		 * LEGAL_ACCEPTANCE_REQUIRED (+ privacyVersion/privacyUrl), 409 ADDON_NOT_AVAILABLE
-		 * (+ reason), 409 ADDON_USE_ADDON_FLOW (ya tiene plan pago), 409 ADDON_PRICE_MISMATCH.
+		 * `{ addons: ["mcp_access", { key: "extra_folders", quantity: 5 }], acceptedPolicyVersion }`.
+		 * Rechazos propios: 400 LEGAL_ACCEPTANCE_REQUIRED (+ privacyVersion/privacyUrl), 409
+		 * ADDON_NOT_AVAILABLE (+ reason, addon), 409 ADDON_USE_ADDON_FLOW (ya tiene plan pago),
+		 * 409 ADDON_PRICE_MISMATCH, 400 PREMIUM_REQUIRED / INVALID_ADDON_QUANTITY (bloques).
 		 */
-		addonOptions?: { addons: string[]; acceptedPolicyVersion?: string | null },
+		addonOptions?: { addons: Array<string | { key: string; quantity: number }>; acceptedPolicyVersion?: string | null },
 	): Promise<ApiResponse<{ sessionId?: string; url?: string }> & Record<string, any>> {
 		try {
 			const response = await axios.post<ApiResponse<{ sessionId?: string; url?: string }>>(
@@ -1415,6 +1416,8 @@ class ApiService {
 				privacyVersion: data.privacyVersion,
 				privacyUrl: data.privacyUrl,
 				reason: data.reason,
+				// Qué add-on rechazó el hub (ADDON_NOT_AVAILABLE / PREMIUM_REQUIRED).
+				addon: data.addon,
 			} as any;
 		}
 	}

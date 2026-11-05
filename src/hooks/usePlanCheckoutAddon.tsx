@@ -38,7 +38,8 @@ import {
 } from "utils/planCheckoutAddon";
 
 export interface PlanCheckoutAddonOptions {
-	addons: string[];
+	/** Keys (cantidad 1) o `{ key, quantity }` (bloques de causas, utils/planCheckoutBlocks). */
+	addons: Array<string | { key: string; quantity: number }>;
 	acceptedPolicyVersion: string | null;
 }
 
@@ -50,6 +51,7 @@ export type PlanCheckoutResponse = {
 	privacyVersion?: string;
 	privacyUrl?: string;
 	reason?: string;
+	addon?: string;
 } | void;
 
 export interface BeginCheckoutArgs {

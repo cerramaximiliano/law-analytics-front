@@ -25,7 +25,17 @@ import { openSnackbar } from "store/reducers/snackbar";
 import PlanCheckoutAddonOption from "sections/mcp/PlanCheckoutAddonOption";
 import usePlanCheckoutAddon, { type PlanCheckoutAddonOptions } from "hooks/usePlanCheckoutAddon";
 import { getPlanPricing } from "utils/planPricingUtils";
-import { isAddonCompatiblePlan, PLAN_CHECKOUT_ADDON_CODES, planShortName } from "utils/planCheckoutAddon";
+import { addAmounts, isAddonCompatiblePlan, PLAN_CHECKOUT_ADDON_CODES, planShortName } from "utils/planCheckoutAddon";
+import PlanCheckoutBlocksOption from "sections/addons/PlanCheckoutBlocksOption";
+import usePlanCheckoutBlocks from "hooks/usePlanCheckoutBlocks";
+import {
+	BLOCKS_PLAN_ID,
+	blocksMonthlyCost,
+	EXTRA_FOLDERS_KEY,
+	formatPlanBlocksTotal,
+	planCheckoutBlocksErrorMessage,
+	withBlocks,
+} from "utils/planCheckoutBlocks";
 import { trackActivity } from "utils/productAnalytics";
 
 // ============================== TOKENS ============================== //
@@ -85,6 +95,8 @@ const Plans = () => {
 	// checkout directo (con o sin add-on). El resto de los usuarios sigue yendo al
 	// registro como siempre (los de plan pago cambian de plan desde /suscripciones/tables).
 	const addonCheckout = usePlanCheckoutAddon();
+	// Bloques de «Causas adicionales» en el mismo pago que Premium (utils/planCheckoutBlocks).
+	const planBlocks = usePlanCheckoutBlocks();
 
 	const snackbar = (message: string, color: "success" | "error" | "warning" | "info") =>
 		dispatch(openSnackbar({ open: true, message, variant: "alert", alert: { color }, close: true }));
@@ -253,6 +265,13 @@ const Plans = () => {
 						const pricing = offerAddonHere ? getPlanPricing(plan) : null;
 						const addonPlanName = planShortName(plan.displayName);
 						const addonPlanPrice = pricing && pricing.billingPeriod === "monthly" ? pricing.basePrice : null;
+						const offerBlocksHere = offerAddonHere && planBlocks.offer && plan.planId === BLOCKS_PLAN_ID && addonPlanPrice !== null;
+						const blocksHere = offerBlocksHere ? planBlocks.blocks : 0;
+						const blocksCost = blocksMonthlyCost(blocksHere, planBlocks.unitPrice);
+						const comboPlanName =
+							blocksHere > 0 ? `${addonPlanName} + ${blocksHere} ${blocksHere === 1 ? "bloque" : "bloques"}` : addonPlanName;
+						const comboPlanPrice =
+							blocksHere > 0 && addonPlanPrice !== null && blocksCost !== null ? addAmounts(addonPlanPrice, blocksCost) : addonPlanPrice;
 						if (offerAddonHere) {
 							return (
 								<Grid item xs={12} sm={6} md={4} key={plan.planId}>
@@ -262,15 +281,38 @@ const Plans = () => {
 										animationIdx={idx}
 										dataTestId={`plans-card-${plan.planId}`}
 										beforeCta={
-											<PlanCheckoutAddonOption
-												planId={plan.planId}
-												checked={addonCheckout.isSelected(plan.planId)}
-												onChange={(checked) => addonCheckout.setSelected(plan.planId, checked)}
-												addonPrice={addonCheckout.addonPrice.amount}
-												addonCurrency={addonCheckout.addonPrice.currency}
-												totalLabel={addonCheckout.totalFor(addonPlanName, addonPlanPrice, pricing?.currency)}
-												disabled={loadingPlanId !== null}
-											/>
+											<>
+												{offerBlocksHere && (
+													<PlanCheckoutBlocksOption
+														planId={plan.planId}
+														blocks={blocksHere}
+														maxBlocks={planBlocks.maxBlocks}
+														onChange={planBlocks.setBlocks}
+														unitPrice={planBlocks.unitPrice}
+														unitCurrency={planBlocks.unitCurrency}
+														foldersPerBlock={planBlocks.foldersPerBlock}
+														totalLabel={formatPlanBlocksTotal({
+															planPrice: addonPlanPrice,
+															planCurrency: pricing?.currency,
+															planFolders: plan.resourceLimits?.find((r) => r.name === "folders")?.limit ?? null,
+															blocks: blocksHere,
+															unitPrice: planBlocks.unitPrice,
+															unitCurrency: planBlocks.unitCurrency,
+															foldersPerBlock: planBlocks.foldersPerBlock,
+														})}
+														disabled={loadingPlanId !== null}
+													/>
+												)}
+												<PlanCheckoutAddonOption
+													planId={plan.planId}
+													checked={addonCheckout.isSelected(plan.planId)}
+													onChange={(checked) => addonCheckout.setSelected(plan.planId, checked)}
+													addonPrice={addonCheckout.addonPrice.amount}
+													addonCurrency={addonCheckout.addonPrice.currency}
+													totalLabel={addonCheckout.totalFor(comboPlanName, comboPlanPrice, pricing?.currency)}
+													disabled={loadingPlanId !== null}
+												/>
+											</>
 										}
 										cta={{
 											label: loadingPlanId === plan.planId ? "Procesando..." : "Suscribirme",
@@ -280,10 +322,30 @@ const Plans = () => {
 												trackPlanCTA(plan.planId);
 												addonCheckout.begin({
 													planId: plan.planId,
-													planName: addonPlanName,
-													planPrice: addonPlanPrice,
+													planName: comboPlanName,
+													planPrice: comboPlanPrice,
 													planCurrency: pricing?.currency,
-													proceed: (addonOptions) => startPlanCheckout(plan, addonOptions),
+													proceed: async (addonOptions) => {
+														if (blocksHere <= 0) return startPlanCheckout(plan, addonOptions);
+														const res = await startPlanCheckout(plan, {
+															addons: withBlocks(addonOptions?.addons, blocksHere),
+															acceptedPolicyVersion: addonOptions?.acceptedPolicyVersion ?? null,
+														});
+														// Rechazo de los bloques (devuelto sin aviso): avisar acá y cerrar el diálogo del conector.
+														const blocksOnly = !addonOptions;
+														if (
+															res?.success === false &&
+															res.code &&
+															PLAN_CHECKOUT_ADDON_CODES.has(res.code) &&
+															(blocksOnly || res.addon === EXTRA_FOLDERS_KEY)
+														) {
+															snackbar(planCheckoutBlocksErrorMessage(res.code, res.reason, res.message), "info");
+															planBlocks.reset();
+															planBlocks.refresh();
+															return { success: false, code: "BLOCKS_REJECTED" };
+														}
+														return res;
+													},
 												});
 											},
 											variant: highlighted ? "contained" : "outlined",
