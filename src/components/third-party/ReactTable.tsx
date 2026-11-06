@@ -458,7 +458,8 @@ export const SortingSelect = ({ sortBy, sortDesc, setSortBy, allColumns }: Sorti
 		const {
 			target: { value },
 		} = event;
-		const desc = esColumnaDeFecha(value) ? true : isDescending;
+		// Fechas: lo más reciente primero; el resto, ascendente (A-Z, «sin responsable» al final).
+		const desc = esColumnaDeFecha(value);
 		setSort(value);
 		setIsDescending(desc);
 		setSortBy([{ id: value, desc }]);

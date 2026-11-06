@@ -141,6 +141,15 @@ const ArchivedItemsModal = ({
 
 	useEffect(() => () => clearTimeout(searchDebounceRef.current), []);
 
+	// Al bajar el total (se eliminaron o desarchivaron carpetas, 7/11/2026) la selección apuntaba a
+	// carpetas que ya no están: «Eliminar (1)» y «Desarchivar (1)» seguían activos. Se limpia.
+	const prevTotalRef = useRef<number | undefined>(pagination?.total);
+	useEffect(() => {
+		const total = pagination?.total;
+		if (typeof total === "number" && typeof prevTotalRef.current === "number" && total < prevTotalRef.current) setSelected([]);
+		prevTotalRef.current = total;
+	}, [pagination?.total]);
+
 	const handleSearchChange = (value: string) => {
 		setSearchText(value);
 		if (!onSearchChange) return;
