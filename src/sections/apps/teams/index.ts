@@ -12,3 +12,4 @@ export { default as TeamNotificationsCard } from "./TeamNotificationsCard";
 export { default as TeamVisibilityCard } from "./TeamVisibilityCard";
 export { default as MemberTeamScope } from "./MemberTeamScope";
 export { default as TeamResponsablesDistributionCard } from "./TeamResponsablesDistributionCard";
+export { default as DistributeFoldersDialog } from "./DistributeFoldersDialog";

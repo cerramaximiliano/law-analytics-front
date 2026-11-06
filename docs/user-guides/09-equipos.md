@@ -104,6 +104,21 @@ Qué pasa después:
 
 Pueden invitar el Propietario y los Administradores.
 
+### Integrantes previstos: armar el reparto antes de invitar
+
+Si querés dejar las carpetas repartidas **antes** de que los abogados entren al equipo, cargalos como **previstos**:
+
+1. En **Invitar miembros**, completá nombre, correo y rol de cada uno y hacé clic en **Guardar como previstos**. No se envía
+   ningún correo.
+2. Desde ese momento aparecen en la lista de invitaciones con la etiqueta **Previsto**, y podés asignarles carpetas igual que a
+   un integrante (desde la carpeta, desde el listado o con **Repartir carpetas**).
+3. Cuando tengas todo armado, enviá la invitación desde la misma lista, **una por una** o **todas juntas**. El previsto pasa a
+   **Invitado** y recibe el correo con el enlace.
+4. Al aceptar, sus carpetas ya figuran a su nombre: con «cada uno ve lo suyo» entra directamente a lo que le corresponde.
+
+Podés **editar** el nombre o el correo de un previsto sin perder sus carpetas, y **cancelarlo**: sus carpetas quedan sin ese
+responsable. Los previstos ocupan cupo del plan como una invitación más.
+
 ---
 
 ## 5. Aceptar una invitación
@@ -206,7 +221,35 @@ los Administradores y los Editores; el Visualizador solo ve las iniciales.
 | **Agregar**    | Suma los elegidos a los responsables que ya tenían                                                |
 | **Quitar**     | Saca a los elegidos de esas carpetas                                                              |
 
-Se pueden asignar hasta 500 carpetas por vez.
+No hay tope: con **Seleccionar todas (N)** marcás todas las carpetas que pasan los filtros (por ejemplo, las de un juzgado) y
+las asignás de una vez.
+
+### Repartir carpetas por criterios
+
+Para repartir muchas carpetas de una vez, en **Mi equipo → Distribución de responsables** o en el listado de **Carpetas** hacé
+clic en **Repartir carpetas** (desde el listado, si hay carpetas marcadas el reparto se limita a ellas). El asistente tiene cuatro
+pasos:
+
+1. **Alcance**: activas, archivadas o todas; solo las que no tienen responsable (lo habitual) o también las que ya tienen; y, si
+   querés, un fuero o algunos juzgados. Ves cuántas carpetas entran.
+2. **Criterio**:
+
+   | Criterio            | Qué hace                                                                                                              |
+   | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
+   | **Por juzgado**     | Una tabla con cada juzgado de origen y su cantidad de carpetas; elegís quién se queda con cada uno. **Pre-llenar en partes iguales entre…** reparte los juzgados enteros equilibrando las cantidades, y después podés retocar. |
+   | **Por fuero**       | Igual, pero por fuero.                                                                                                |
+   | **Partes iguales**  | La misma cantidad para cada uno (a lo sumo una de diferencia). Con el orden **por juzgado**, cada uno recibe juzgados enteros cuando se puede. |
+   | **Por cantidades**  | Una cantidad fija para cada uno y, si querés, quién recibe el resto.                                                  |
+   | **Al azar**         | Reparto aleatorio y parejo. La **semilla** permite repetir exactamente el mismo reparto.                              |
+
+3. **Vista previa**: cuántas carpetas se asignan a cada uno y en qué juzgados, cuántas quedan sin asignar y cuántas archivadas
+   entran. Nada se guarda todavía; podés volver atrás y ajustar.
+4. **Aplicar**: se guardan los responsables y ves el resultado. Si incluiste carpetas que ya tenían responsable, elegís antes si
+   **Reemplazar** o **Agregar**.
+
+Las archivadas se reparten igual que las activas: no cuentan para el cupo y cada integrante las ve cuando se activan. Si el
+equipo está en «cada uno ve lo suyo», un Editor solo reparte las carpetas que ve. Pueden repartir el propietario, los
+Administradores y los Editores.
 
 ### Encontrar lo tuyo
 
@@ -215,13 +258,13 @@ iniciales de cada uno. «Sin responsable» sirve para ver qué falta repartir.
 
 ### Distribución de responsables
 
-Para el propietario y los Administradores, en **Configuración → Perfil → Mi equipo**, la tarjeta **Distribución de
-responsables** muestra las carpetas activas
-agrupadas por integrante, con la cantidad de cada uno, y al final las que no tienen responsable. Una carpeta con varios
-responsables aparece en cada uno.
+En **Configuración → Perfil → Mi equipo**, la tarjeta **Distribución de responsables** muestra las carpetas activas agrupadas
+por integrante (también previstos e invitados), con la cantidad de cada uno, el expediente y la radicación («Juz. 7 · Sec. 1»),
+y al final las que no tienen responsable. Una carpeta con varios responsables aparece en cada uno.
 
+- **Repartir carpetas**: abre el asistente de reparto por criterios (ver arriba).
 - **Imprimir**: abre la impresión del listado completo, con el nombre del equipo y la fecha.
-- **Descargar CSV**: baja la planilla con responsable, email, carátula, jurisdicción, fuero y expediente.
+- **Descargar CSV**: baja la planilla con responsable, email, carátula, jurisdicción, fuero, expediente y radicación.
 
 ---
 

@@ -88,17 +88,17 @@ describe("CSV", () => {
 				folderName: "Gómez c/ Pérez",
 				folderJuris: { item: "caba", label: "CABA" },
 				folderFuero: "Civil",
-				judFolder: { numberJudFolder: "1234/2025" },
+				judFolder: { numberJudFolder: "1234/2025", courtNumber: "7", secretaryNumber: "1" },
 				responsables: ["o1", "m1"],
 			},
 			{ _id: "f2", folderName: "Sin dueño", folderJuris: "Salta", responsables: [] },
 		];
 		const groups = groupByResponsable(folders, (f) => f.responsables, assignees);
 		const lines = buildDistributionCsv(groups).split("\r\n");
-		expect(lines[0]).toBe("Responsable,Email,Carátula,Jurisdicción,Fuero,Expediente");
-		expect(lines[1]).toBe("Ana Owner,ana@x.com,Gómez c/ Pérez,CABA,Civil,1234/2025");
-		expect(lines[2]).toBe("Beto Miembro,beto@x.com,Gómez c/ Pérez,CABA,Civil,1234/2025");
-		expect(lines[3]).toBe("Sin responsable,,Sin dueño,Salta,,");
+		expect(lines[0]).toBe("Responsable,Email,Carátula,Jurisdicción,Fuero,Expediente,Radicación");
+		expect(lines[1]).toBe("Ana Owner,ana@x.com,Gómez c/ Pérez,CABA,Civil,1234/2025,Juz. 7 · Sec. 1");
+		expect(lines[2]).toBe("Beto Miembro,beto@x.com,Gómez c/ Pérez,CABA,Civil,1234/2025,Juz. 7 · Sec. 1");
+		expect(lines[3]).toBe("Sin responsable,,Sin dueño,Salta,,,");
 		expect(lines).toHaveLength(4);
 	});
 

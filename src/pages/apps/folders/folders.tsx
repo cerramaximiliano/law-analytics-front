@@ -106,10 +106,12 @@ import {
 	ArrowDown2,
 	ArrowRight2,
 	UserEdit,
+	Hierarchy,
 } from "iconsax-react";
 import PjnCredErrorBanner from "sections/apps/folders/PjnCredErrorBanner";
 import TaskAssignees from "sections/apps/tasks/TaskAssignees";
 import BulkResponsablesDialog from "sections/apps/folders/BulkResponsablesDialog";
+import DistributeFoldersDialog from "sections/apps/teams/DistributeFoldersDialog";
 import { openExpedienteExport } from "utils/expedienteExportTracker";
 import FolderActionsMenu, { FolderCreateKind } from "sections/apps/folders/FolderActionsMenu";
 import { RelacionesIcon, SinVerCount } from "sections/apps/folders/FolderNovedadesIndicators";
@@ -359,6 +361,8 @@ interface ReactTableProps extends Props {
 	handleDeleteSelected?: (selectedRows: any[]) => void;
 	/** Equipos: asignación masiva de responsables (recibe cómo limpiar la selección). */
 	handleAssignSelected?: (selectedRows: any[], clearSelection: () => void) => void;
+	/** Equipos: asistente «Repartir carpetas» (fase 3, 6/11/2026); con selección, se limita a ella. */
+	handleDistribute?: (selectedRows: any[], clearSelection: () => void) => void;
 	onBarWidthMeasured?: (width: number) => void;
 }
 
@@ -370,6 +374,7 @@ function ReactTable({
 	handleArchiveSelected,
 	handleDeleteSelected,
 	handleAssignSelected,
+	handleDistribute,
 	isLoading,
 	handleOpenArchivedModal,
 	handleOpenGuide,
@@ -938,6 +943,23 @@ function ReactTable({
 										</MenuItem>
 									)}
 
+									{/* Equipos: repartir por criterios (con selección, solo esas) */}
+									{handleDistribute && (
+										<MenuItem
+											onClick={() => {
+												handleMobileMenuClose();
+												handleDistribute(selectedFlatRows, () => toggleAllRowsSelected(false));
+											}}
+										>
+											<ListItemIcon>
+												<Hierarchy size={18} />
+											</ListItemIcon>
+											<ListItemText>
+												{Object.keys(selectedRowIds).length > 0 ? `Repartir (${selectedFlatRows.length})` : "Repartir carpetas"}
+											</ListItemText>
+										</MenuItem>
+									)}
+
 									{/* Filtros toggle */}
 									{onFolderTypeFilterChange && (
 										<MenuItem
@@ -1092,6 +1114,28 @@ function ReactTable({
 													: "Asignar responsable"}
 											</Button>
 										</span>
+									</Tooltip>
+								)}
+								{handleDistribute && (
+									<Tooltip
+										title={
+											Object.keys(selectedRowIds).length > 0
+												? "Repartir las carpetas seleccionadas por juzgado, fuero, partes iguales, cantidades o al azar"
+												: "Repartir carpetas del equipo por juzgado, fuero, partes iguales, cantidades o al azar"
+										}
+										placement="top"
+									>
+										<Button
+											variant="outlined"
+											color="secondary"
+											size="small"
+											startIcon={<Hierarchy size={18} />}
+											onClick={() => handleDistribute(selectedFlatRows, () => toggleAllRowsSelected(false))}
+											sx={{ textTransform: "none" }}
+											data-testid="folder-distribute-btn"
+										>
+											{Object.keys(selectedRowIds).length > 0 ? `Repartir (${selectedFlatRows.length})` : "Repartir"}
+										</Button>
 									</Tooltip>
 								)}
 								{(handleArchiveSelected || handleAssignSelected) && rows.length > 0 && (
@@ -2984,6 +3028,16 @@ const FoldersLayout = () => {
 		setBulkAssign({ open: true, folderIds: selectedRows.map((row) => row.original._id), clearSelection });
 	}, []);
 
+	// Equipos: asistente «Repartir carpetas» (fase 3, 6/11/2026). Sin selección reparte el
+	// alcance que se elija en el asistente; con selección, solo esas carpetas.
+	const [distribute, setDistribute] = useState<{ open: boolean; folderIds: string[]; clearSelection?: () => void }>({
+		open: false,
+		folderIds: [],
+	});
+	const handleDistribute = useCallback((selectedRows: Row<any>[], clearSelection: () => void) => {
+		setDistribute({ open: true, folderIds: selectedRows.map((row) => row.original._id), clearSelection });
+	}, []);
+
 	// Estado para diálogo de confirmación de eliminación
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [foldersToDelete, setFoldersToDelete] = useState<Row<any>[]>([]);
@@ -4664,6 +4718,7 @@ const FoldersLayout = () => {
 								handleArchiveSelected={canUpdate ? handleArchiveSelected : undefined}
 								handleDeleteSelected={canDelete ? handleDeleteSelected : undefined}
 								handleAssignSelected={isTeamMode && canEditResponsables ? handleAssignSelected : undefined}
+								handleDistribute={isTeamMode && canEditResponsables ? handleDistribute : undefined}
 								handleOpenGuide={handleOpenGuide}
 								handleOpenArchivedModal={handleOpenArchivedModal}
 								renderRowSubComponent={renderRowSubComponent}
@@ -5240,6 +5295,19 @@ const FoldersLayout = () => {
 							folderIds={bulkAssign.folderIds}
 							onClose={() => setBulkAssign((prev) => ({ ...prev, open: false }))}
 							onDone={() => bulkAssign.clearSelection?.()}
+						/>
+					)}
+
+					{/* Equipos: reparto por criterios */}
+					{isTeamMode && (
+						<DistributeFoldersDialog
+							open={distribute.open}
+							folderIds={distribute.folderIds}
+							onClose={() => setDistribute((prev) => ({ ...prev, open: false }))}
+							onApplied={() => {
+								distribute.clearSelection?.();
+								if (activeTeam?._id) dispatch(getFoldersByGroupId(activeTeam._id));
+							}}
 						/>
 					)}
 

@@ -3,6 +3,7 @@
 import axios from "axios";
 import { Dispatch } from "redux";
 import { FolderData, FolderNotificationPolicy, FolderState, PendingCausa } from "types/folder";
+import { DistributeRequest, DistributeResult, RadicacionSummary } from "types/folderDistribute";
 import { incrementUserStat, updateUserStorage, isFolderLinkedToCausa } from "./userStats";
 
 // Action types
@@ -442,6 +443,39 @@ export const updateFoldersResponsablesBulk =
 			return { success: false, message: folderTeamError(error, "No se pudieron asignar los responsables") };
 		}
 	};
+
+/**
+ * Reparto por criterios (Equipos, fase 3, 6/11/2026). `dryRun: true` devuelve la vista previa
+ * sin escribir; con `false` aplica en el hub (bulkWrite, hasta 10.000 carpetas) y devuelve
+ * `modified`. El hub acota al alcance visible de quien reparte y valida los responsables
+ * (owner, integrantes activos, previstos e invitados). No toca el store: quien llama vuelve a
+ * cargar el listado si aplicó.
+ */
+export const distributeFolderResponsables = async (
+	request: DistributeRequest,
+	headers?: Record<string, string>,
+): Promise<{ success: true; data: DistributeResult } | { success: false; message: string }> => {
+	try {
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/folders/responsables/distribute`, request, { headers });
+		if (response.data?.success && response.data.preview) return { success: true, data: response.data as DistributeResult };
+		return { success: false, message: response.data?.message || "No se pudo repartir las carpetas" };
+	} catch (error) {
+		return { success: false, message: folderTeamError(error, "No se pudo repartir las carpetas") };
+	}
+};
+
+/** Conteos por juzgado, fuero, jurisdicción y ubicación del equipo, con el alcance visible de quien pide. */
+export const fetchRadicacionSummary = async (groupId: string): Promise<RadicacionSummary | null> => {
+	try {
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}/radicacion-summary`, {
+			headers: { "X-Group-Id": groupId },
+		});
+		if (response.data?.success && Array.isArray(response.data.juzgados)) return response.data as RadicacionSummary;
+		return null;
+	} catch {
+		return null;
+	}
+};
 
 /** Carpetas activas del grupo con sus responsables, sin tocar el store (Mi equipo → Distribución). */
 export const fetchGroupFoldersForDistribution = async (

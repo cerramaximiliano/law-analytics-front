@@ -41,6 +41,8 @@ export type ActivityEventName =
 	| "team_invite_send"
 	// Integrantes previstos guardados sin enviar invitación (Equipos, 5/11/2026)
 	| "team_draft_save"
+	// Reparto de carpetas por criterios aplicado desde el asistente (Equipos, 6/11/2026)
+	| "team_distribute_apply"
 	| "team_invite_accept"
 	| "onboarding_action"
 	| "web_vitals"

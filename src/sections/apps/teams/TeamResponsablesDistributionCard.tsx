@@ -2,12 +2,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Avatar, Box, Button, Paper, Skeleton, Stack, Typography } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { ArrowDown2, ArrowUp2, DocumentDownload, People, Printer } from "iconsax-react";
+import { ArrowDown2, ArrowUp2, DocumentDownload, Hierarchy, People, Printer } from "iconsax-react";
 
 import { useTeam } from "contexts/TeamContext";
 import { fetchGroupFoldersForDistribution } from "store/reducers/folder";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import { assigneeTag, getTeamAssignees } from "utils/teamAssignees";
+import DistributeFoldersDialog from "./DistributeFoldersDialog";
 import { wrapOnMobileSx } from "./stackedTableSx";
 import {
 	buildDistributionCsv,
@@ -16,6 +17,7 @@ import {
 	downloadCsv,
 	folderExpediente,
 	folderJurisLabel,
+	folderRadicacion,
 	groupByResponsable,
 	groupSubheading,
 	printHtml,
@@ -30,8 +32,11 @@ const PREVIEW_LIMIT = 5;
 // por responsable, con impresión y CSV. Visible para todos los integrantes. Hace su propia
 // llamada al listado del grupo para no pisar `state.folder.folders`.
 export default function TeamResponsablesDistributionCard() {
-	const { activeTeam } = useTeam();
+	const { activeTeam, userRole } = useTeam();
 	const groupId = activeTeam?._id;
+	// El asistente «Repartir carpetas» (fase 3, 6/11/2026) es para quien puede asignar responsables.
+	const canDistribute = userRole === "owner" || userRole === "admin" || userRole === "editor";
+	const [distributeOpen, setDistributeOpen] = useState(false);
 	// Con previstos e invitados, etiquetados, para que la distribución los muestre con nombre (5/11/2026).
 	const assignees = useMemo(
 		() =>
@@ -81,8 +86,14 @@ export default function TeamResponsablesDistributionCard() {
 				sections: groups.map((g) => ({
 					heading: `${g.label}${g.isOwner ? " (propietario)" : ""}`,
 					subheading: groupSubheading(g, "carpeta", "carpetas"),
-					columns: ["Carátula", "Jurisdicción", "Fuero", "Expediente"],
-					rows: g.items.map((f) => [f.folderName || "", folderJurisLabel(f.folderJuris), f.folderFuero || "", folderExpediente(f)]),
+					columns: ["Carátula", "Jurisdicción", "Fuero", "Expediente", "Radicación"],
+					rows: g.items.map((f) => [
+						f.folderName || "",
+						folderJurisLabel(f.folderJuris),
+						f.folderFuero || "",
+						folderExpediente(f),
+						folderRadicacion(f),
+					]),
 					emptyText: "Sin carpetas",
 				})),
 			}),
@@ -112,7 +123,20 @@ export default function TeamResponsablesDistributionCard() {
 						Distribución de responsables
 					</Typography>
 				</Stack>
-				<Stack direction="row" spacing={1}>
+				<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+					{canDistribute && (
+						<Button
+							size="small"
+							variant="contained"
+							startIcon={<Hierarchy size={16} />}
+							onClick={() => setDistributeOpen(true)}
+							disabled={loading || !!loadError}
+							sx={{ textTransform: "none", bgcolor: BRAND_BLUE, boxShadow: "none", "&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88) } }}
+							data-testid="team-distribute-btn"
+						>
+							Repartir carpetas
+						</Button>
+					)}
 					<Button
 						size="small"
 						variant="outlined"
@@ -139,8 +163,10 @@ export default function TeamResponsablesDistributionCard() {
 			</Stack>
 			<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
 				Carpetas activas del equipo agrupadas por responsable. Una carpeta con varios responsables aparece en cada uno. Los responsables se
-				asignan desde el detalle de la carpeta o, de a varias, desde el listado de carpetas.
+				asignan desde el detalle de la carpeta, de a varias desde el listado o, de una vez, con «Repartir carpetas» (por juzgado, fuero,
+				partes iguales, cantidades o al azar).
 			</Typography>
+			{canDistribute && <DistributeFoldersDialog open={distributeOpen} onClose={() => setDistributeOpen(false)} onApplied={load} />}
 
 			{loading ? (
 				<Stack spacing={1}>
@@ -212,6 +238,12 @@ export default function TeamResponsablesDistributionCard() {
 														<Typography component="span" variant="caption" color="text.secondary">
 															{" "}
 															· {folderExpediente(f)}
+														</Typography>
+													)}
+													{folderRadicacion(f) && (
+														<Typography component="span" variant="caption" color="text.secondary">
+															{" "}
+															· {folderRadicacion(f)}
 														</Typography>
 													)}
 												</Typography>

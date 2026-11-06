@@ -106,8 +106,16 @@ export interface DistributionFolder {
 	folderName?: string;
 	folderJuris?: string | { item?: string; label?: string } | null;
 	folderFuero?: string | null;
-	judFolder?: { numberJudFolder?: string } | null;
+	judFolder?: { numberJudFolder?: string; courtNumber?: string; secretaryNumber?: string } | null;
 	responsables?: string[];
+}
+
+/** «Juz. 7 · Sec. 1» (radicación de origen) o vacío. Mismo formato que el listado de carpetas. */
+export function folderRadicacion(folder: DistributionFolder): string {
+	const juz = String(folder.judFolder?.courtNumber || "").trim();
+	if (!juz) return "";
+	const sec = String(folder.judFolder?.secretaryNumber || "").trim();
+	return sec ? `Juz. ${juz} · Sec. ${sec}` : `Juz. ${juz}`;
 }
 
 export function folderJurisLabel(juris: DistributionFolder["folderJuris"]): string {
@@ -120,7 +128,7 @@ export function folderExpediente(folder: DistributionFolder): string {
 	return folder.judFolder?.numberJudFolder?.trim() || "";
 }
 
-export const DISTRIBUTION_CSV_HEADERS = ["Responsable", "Email", "Carátula", "Jurisdicción", "Fuero", "Expediente"];
+export const DISTRIBUTION_CSV_HEADERS = ["Responsable", "Email", "Carátula", "Jurisdicción", "Fuero", "Expediente", "Radicación"];
 
 export function buildDistributionCsv(groups: ResponsableGroup<DistributionFolder>[]): string {
 	const rows: Cell[][] = [];
@@ -133,6 +141,7 @@ export function buildDistributionCsv(groups: ResponsableGroup<DistributionFolder
 				folderJurisLabel(f.folderJuris),
 				f.folderFuero || "",
 				folderExpediente(f),
+				folderRadicacion(f),
 			]);
 		}
 	}
