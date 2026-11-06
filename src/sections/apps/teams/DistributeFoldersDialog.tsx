@@ -586,22 +586,28 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 
 				{s.type === "random" && (
 					<Stack direction="row" spacing={1} alignItems="center">
-						<TextField
-							size="small"
-							type="number"
-							label="Número de sorteo"
-							value={s.seed}
-							onChange={(e) => patch({ seed: Math.max(1, parseInt(e.target.value, 10) || 1) })}
-							inputProps={{ min: 1 }}
-							sx={{ width: 160 }}
-						/>
-						<Tooltip title="Otro número: otro reparto">
+						<Tooltip
+							title="Asigna un número aleatorio para que con ese número puedas volver a generar el mismo sorteo las veces que quieras."
+							placement="top"
+							arrow
+						>
+							<TextField
+								size="small"
+								type="number"
+								label="Número de sorteo"
+								value={s.seed}
+								onChange={(e) => patch({ seed: Math.max(1, parseInt(e.target.value, 10) || 1) })}
+								inputProps={{ min: 1 }}
+								sx={{ width: 160 }}
+							/>
+						</Tooltip>
+						<Tooltip title="Otro número: otro sorteo">
 							<IconButton size="small" onClick={() => patch({ seed: newSeed() })}>
 								<Shuffle size={18} />
 							</IconButton>
 						</Tooltip>
 						<Typography variant="caption" color="text.secondary">
-							Fija el sorteo: con el mismo número y las mismas carpetas, el reparto sale igual. Anotalo si querés repetirlo.
+							Con el mismo número y las mismas carpetas, el sorteo sale igual. Anotalo si querés repetirlo.
 						</Typography>
 					</Stack>
 				)}
