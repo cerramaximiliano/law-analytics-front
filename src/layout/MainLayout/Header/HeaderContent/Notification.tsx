@@ -27,24 +27,14 @@ import "simplebar-react/dist/simplebar.min.css";
 import MainCard from "components/MainCard";
 import IconButton from "components/@extended/IconButton";
 import Transitions from "components/@extended/Transitions";
-import {
-	TableDocument,
-	CalendarRemove,
-	Gift,
-	MessageText1,
-	Notification,
-	Setting2,
-	Add,
-	TaskSquare,
-	TickCircle,
-} from "iconsax-react";
+import { TableDocument, CalendarRemove, Gift, MessageText1, Notification, Setting2, Add, TaskSquare, TickCircle } from "iconsax-react";
 import Avatar from "components/@extended/Avatar";
 import { ThemeMode } from "types/config";
 import { dispatch, useSelector } from "store";
 import { markAlertAsRead, fetchUserAlerts, deleteAlert, loadMoreAlerts } from "store/reducers/alerts";
 import { Alert } from "types/alert";
 import { useNavigate } from "react-router-dom";
-import { BRAND_BLUE, headerBorder, headerShadow, LIVE_GREEN, LIVE_PULSE_KEYFRAMES, navActiveBg } from "themes/dashboardTokens";
+import { BRAND_BLUE, headerBorder, headerShadow, LIVE_GREEN, LIVE_PULSE_KEYFRAMES, navActiveBg, STALE_AMBER } from "themes/dashboardTokens";
 
 const actionSX = {
 	mt: 0,
@@ -423,11 +413,16 @@ const NotificationPage = () => {
 	const renderItem = (notification: Alert) => {
 		const formatted = getFormattedNotification(notification);
 		const isProcessing = processingIds.has(notification._id);
+		// Seguimiento (6/11/2026): la-notification antepone «Seguimiento:» en las alertas de
+		// movimientos de carpetas marcadas; acá van con franja y título ámbar.
+		const enSeguimiento = notification.sourceType === "movement" && /^Seguimiento:/.test(notification.primaryText || "");
 		return (
 			<ListItemButton
 				key={notification._id}
 				className={`${isProcessing ? "processing" : ""} ${notification.read ? "read" : ""}`}
 				onClick={() => handleNotificationClick(notification)}
+				sx={enSeguimiento ? { boxShadow: `inset 3px 0 0 ${STALE_AMBER}`, bgcolor: alpha(STALE_AMBER, 0.06) } : undefined}
+				data-seguimiento={enSeguimiento ? "true" : undefined}
 			>
 				<ListItemAvatar>
 					<Avatar type={notification.avatarType} color={formatted.avatarColor}>
@@ -442,7 +437,11 @@ const NotificationPage = () => {
 				</ListItemAvatar>
 				<ListItemText
 					primary={
-						<Typography variant={formatted.primaryVariant} color={formatted.typographyColor}>
+						<Typography
+							variant={formatted.primaryVariant}
+							color={formatted.typographyColor}
+							sx={enSeguimiento ? { color: STALE_AMBER, fontWeight: 700 } : undefined}
+						>
 							{formatted.primaryText}
 						</Typography>
 					}
@@ -555,7 +554,13 @@ const NotificationPage = () => {
 			)}
 			{sortedAlerts.length > 3 && (
 				<Stack direction="row" justifyContent="center" sx={{ mt: 1 }}>
-					<Link component="button" variant="h6" color="primary" onClick={toggleShowAll} sx={{ background: "none", border: "none", cursor: "pointer" }}>
+					<Link
+						component="button"
+						variant="h6"
+						color="primary"
+						onClick={toggleShowAll}
+						sx={{ background: "none", border: "none", cursor: "pointer" }}
+					>
 						{showAll ? "Ver menos" : "Ver todas"}
 					</Link>
 				</Stack>
