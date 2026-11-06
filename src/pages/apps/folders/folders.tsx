@@ -57,8 +57,11 @@ import { isResponsableVistaFija, responsableOptions, responsableQueryValue } fro
 import { updateUser } from "store/reducers/auth";
 import { juzgadoCounts, juzgadoKey, juzgadoOptions, radicacionOrigen, ubicacionActual, ubicacionDetalle } from "utils/radicacion";
 import {
+	enPeriodo,
 	INACTIVIDAD_FILTROS,
 	isInactividadFiltro,
+	isIsoDay,
+	PeriodoMovimientos,
 	situacionKey,
 	situacionLabel,
 	situacionOptions,
@@ -346,6 +349,9 @@ interface ReactTableProps extends Props {
 	uniquePartes?: string[];
 	movimientosFilter?: string;
 	onMovimientosFilterChange?: (event: SelectChangeEvent<string>) => void;
+	/** «Período…» de Movimientos (6/11/2026): último movimiento entre dos fechas. */
+	periodo?: PeriodoMovimientos;
+	onPeriodoChange?: (p: PeriodoMovimientos) => void;
 	jurisdiccionFilter?: string;
 	onJurisdiccionFilterChange?: (event: SelectChangeEvent<string>) => void;
 	uniqueJurisdicciones?: string[];
@@ -414,6 +420,8 @@ function ReactTable({
 	uniquePartes = [],
 	movimientosFilter = "all",
 	onMovimientosFilterChange,
+	periodo = { desde: "", hasta: "" },
+	onPeriodoChange,
 	jurisdiccionFilter = "all",
 	onJurisdiccionFilterChange,
 	uniqueJurisdicciones = [],
@@ -568,6 +576,8 @@ function ReactTable({
 		if (rows.every((f) => !f?.orderStatus || f.orderStatus === "Sin definir")) out.push("orderStatus");
 		if (rows.every((f) => !f?.initialDateFolder && !f?.judFolder?.initialDateJudFolder && !f?.preFolder?.initialDatePreFolder))
 			out.push("initialDateFolder");
+		// Situación (6/11/2026): solo la informan PJN y los portales con situación; sin dato, oculta.
+		if (rows.every((f) => !f?.situacion)) out.push("situacion");
 		return out;
 	}, [data]);
 
@@ -1525,8 +1535,34 @@ function ReactTable({
 														<Typography variant="body2">{def.label}</Typography>
 													</MenuItem>
 												))}
+												{onPeriodoChange && (
+													<MenuItem value="periodo">
+														<Typography variant="body2">Período…</Typography>
+													</MenuItem>
+												)}
 											</Select>
 										</FormControl>
+									)}
+									{/* Período (6/11/2026): último movimiento entre dos fechas; se enlaza con ?movimientos=periodo&desde=&hasta= */}
+									{onPeriodoChange && movimientosFilter === "periodo" && (
+										<>
+											<OutlinedInput
+												size="small"
+												type="date"
+												value={periodo.desde}
+												onChange={(e) => onPeriodoChange({ ...periodo, desde: e.target.value })}
+												inputProps={{ "aria-label": "Movimientos desde", max: periodo.hasta || undefined, "data-testid": "periodo-desde" }}
+												sx={{ width: 160, fontSize: "0.8rem" }}
+											/>
+											<OutlinedInput
+												size="small"
+												type="date"
+												value={periodo.hasta}
+												onChange={(e) => onPeriodoChange({ ...periodo, hasta: e.target.value })}
+												inputProps={{ "aria-label": "Movimientos hasta", min: periodo.desde || undefined, "data-testid": "periodo-hasta" }}
+												sx={{ width: 160, fontSize: "0.8rem" }}
+											/>
+										</>
 									)}
 									{/* Filtro por Situación procesal (EN LETRA, EN DESPACHO…), solo si hay dato */}
 									{onSituacionFilterChange && uniqueSituaciones.some((s) => s.value) && (
@@ -2354,8 +2390,9 @@ const FoldersLayout = () => {
 	const [statusFilter, setStatusFilter] = useState<"all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada">("all");
 	const [parteFilter, setParteFilter] = useState<string>("all");
 	// ?movimientos=today|week|month|none (lo usa la alerta agrupada de movimientos nuevos).
-	// También inactive30|90|180|365 («Sin movimiento hace más de…», control del estudio 6/11/2026).
-	const MOVIMIENTOS_FILTROS = ["all", "today", "week", "month", "none"] as const;
+	// También inactive30|90|180|365 («Sin movimiento hace más de…») y periodo (+ ?desde= y ?hasta=),
+	// control del estudio 6/11/2026.
+	const MOVIMIENTOS_FILTROS = ["all", "today", "week", "month", "none", "periodo"] as const;
 	type MovimientosFiltro = (typeof MOVIMIENTOS_FILTROS)[number] | keyof typeof INACTIVIDAD_FILTROS;
 	const esMovimientosFiltro = (v: string | null): v is MovimientosFiltro =>
 		MOVIMIENTOS_FILTROS.includes(v as (typeof MOVIMIENTOS_FILTROS)[number]) || isInactividadFiltro(v);
@@ -2363,10 +2400,18 @@ const FoldersLayout = () => {
 	const [movimientosFilter, setMovimientosFilter] = useState<MovimientosFiltro>(
 		esMovimientosFiltro(movimientosParam) ? movimientosParam : "all",
 	);
+	const periodoDesdeUrl = (p: string | null) => (isIsoDay(p) ? p : "");
+	const [periodo, setPeriodo] = useState<PeriodoMovimientos>({
+		desde: periodoDesdeUrl(searchParams.get("desde")),
+		hasta: periodoDesdeUrl(searchParams.get("hasta")),
+	});
 	// Si se llega con el parámetro estando ya en la página (otra alerta), aplicarlo.
 	useEffect(() => {
 		if (esMovimientosFiltro(movimientosParam)) {
 			setMovimientosFilter(movimientosParam);
+			if (movimientosParam === "periodo") {
+				setPeriodo({ desde: periodoDesdeUrl(searchParams.get("desde")), hasta: periodoDesdeUrl(searchParams.get("hasta")) });
+			}
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [movimientosParam]);
@@ -2717,6 +2762,9 @@ const FoldersLayout = () => {
 					case "none":
 						if (lastMovement) return false;
 						break;
+					case "periodo":
+						if (!enPeriodo(folder, periodo)) return false;
+						break;
 					default:
 						// inactive30|90|180|365: último movimiento conocido y anterior a hoy - N días
 						if (isInactividadFiltro(movimientosFilter) && !sinMovimientoHace(folder, INACTIVIDAD_FILTROS[movimientosFilter].days, today))
@@ -2742,6 +2790,7 @@ const FoldersLayout = () => {
 		ubicacionFilter,
 		situacionFilter,
 		movimientosFilter,
+		periodo,
 	]);
 
 	// Efecto para la carga inicial y cuando cambia el equipo activo
@@ -3316,8 +3365,9 @@ const FoldersLayout = () => {
 	}, []);
 
 	const handleMovimientosFilterChange = useCallback((event: SelectChangeEvent<string>) => {
-		setMovimientosFilter(event.target.value as "all" | "today" | "week" | "month" | "none");
+		setMovimientosFilter(event.target.value as MovimientosFiltro);
 	}, []);
+	const handlePeriodoChange = useCallback((p: PeriodoMovimientos) => setPeriodo(p), []);
 
 	const handleJurisdiccionFilterChange = useCallback((event: SelectChangeEvent<string>) => {
 		setJurisdiccionFilter(event.target.value);
@@ -4908,6 +4958,8 @@ const FoldersLayout = () => {
 								uniquePartes={uniquePartes}
 								movimientosFilter={movimientosFilter}
 								onMovimientosFilterChange={handleMovimientosFilterChange}
+								periodo={periodo}
+								onPeriodoChange={handlePeriodoChange}
 								jurisdiccionFilter={jurisdiccionFilter}
 								onJurisdiccionFilterChange={handleJurisdiccionFilterChange}
 								uniqueJurisdicciones={uniqueJurisdicciones}

@@ -264,7 +264,8 @@ Para revisar qué expedientes de un juzgado están quietos: filtro **Juzgado**, 
 más de 1 mes / 3 meses / 6 meses / 1 año»**, y si hace falta **Situación** («En letra», «En despacho», «Giro»…, el dato que
 publica el PJN para cada expediente). La columna **Situación** también se puede mostrar u ocultar desde «Columnas» y sale en el
 CSV. Las carpetas sin fecha de movimiento conocida no entran en «Sin movimiento hace más de…»; para verlas usá «Sin
-movimientos».
+movimientos». Para un período concreto, elegí **Movimientos → «Período…»** y completá Desde y Hasta: quedan las carpetas cuyo
+último movimiento cae entre esas fechas (los dos extremos incluidos; un extremo vacío no limita).
 
 ### Distribución de responsables
 

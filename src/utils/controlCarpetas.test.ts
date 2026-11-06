@@ -1,8 +1,10 @@
 import dayjs from "dayjs";
 import { describe, expect, it } from "vitest";
 import {
+	enPeriodo,
 	INACTIVIDAD_FILTROS,
 	isInactividadFiltro,
+	isIsoDay,
 	sinMovimientoHace,
 	situacionKey,
 	situacionLabel,
@@ -76,5 +78,26 @@ describe("opciones de juzgado", () => {
 			{ value: "Seguridad Social|2", label: "2 · Seguridad Social", count: 1 },
 			{ value: "Seguridad Social|7", label: "7 · Seguridad Social", count: 2 },
 		]);
+	});
+});
+
+describe("período de movimientos", () => {
+	it("extremos inclusive por día; un extremo vacío no limita; sin fecha no entra", () => {
+		const f = (d?: string) => (d ? { lastMovementDate: `${d}T00:00:00.000Z` } : {});
+		const p = { desde: "2026-09-01", hasta: "2026-09-30" };
+		expect(enPeriodo(f("2026-09-01"), p)).toBe(true);
+		expect(enPeriodo(f("2026-09-30"), p)).toBe(true);
+		expect(enPeriodo(f("2026-08-31"), p)).toBe(false);
+		expect(enPeriodo(f("2026-10-01"), p)).toBe(false);
+		expect(enPeriodo(f("2026-12-01"), { desde: "2026-09-01", hasta: "" })).toBe(true);
+		expect(enPeriodo(f("2026-01-01"), { desde: "", hasta: "2026-09-30" })).toBe(true);
+		expect(enPeriodo(f("2026-05-05"), { desde: "", hasta: "" })).toBe(true);
+		expect(enPeriodo(f(), p)).toBe(false);
+		expect(enPeriodo(f("2026-09-10"), { desde: "no", hasta: "2026-09-30" })).toBe(true);
+	});
+	it("isIsoDay", () => {
+		expect(isIsoDay("2026-11-06")).toBe(true);
+		expect(isIsoDay("06/11/2026")).toBe(false);
+		expect(isIsoDay(null)).toBe(false);
 	});
 });

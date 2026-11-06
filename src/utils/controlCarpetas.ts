@@ -61,3 +61,30 @@ export const sinMovimientoHace = (folder: any, days: number, today: Dayjs = dayj
 	if (!last.isValid()) return false;
 	return last.isBefore(today.subtract(days, "day"));
 };
+
+/** Fecha «YYYY-MM-DD» válida (la que entrega un `<input type="date">`). */
+export const isIsoDay = (s: string | null | undefined): s is string => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ""));
+
+export interface PeriodoMovimientos {
+	desde: string;
+	hasta: string;
+}
+
+/**
+ * Último movimiento dentro del período (ambos extremos inclusive, por día). Un extremo vacío
+ * no limita; con los dos vacíos no filtra. Sin fecha de movimiento no entra.
+ */
+export const enPeriodo = (folder: any, periodo: PeriodoMovimientos | null | undefined): boolean => {
+	const desde = isIsoDay(periodo?.desde) ? periodo!.desde : "";
+	const hasta = isIsoDay(periodo?.hasta) ? periodo!.hasta : "";
+	if (!desde && !hasta) return true;
+	if (!folder?.lastMovementDate) return false;
+	const last = new Date(folder.lastMovementDate);
+	if (Number.isNaN(last.getTime())) return false;
+	// El hub guarda la fecha del movimiento a medianoche UTC: se compara el día UTC, no el local,
+	// para que el 1/9 no caiga en el 31/8 por la zona horaria.
+	const dia = last.toISOString().slice(0, 10);
+	if (desde && dia < desde) return false;
+	if (hasta && dia > hasta) return false;
+	return true;
+};
