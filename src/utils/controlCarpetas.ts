@@ -52,14 +52,25 @@ export const isInactividadFiltro = (v: string | null | undefined): v is Inactivi
 	Object.prototype.hasOwnProperty.call(INACTIVIDAD_FILTROS, v || "");
 
 /**
+ * Días entre el último movimiento y hoy, contando por día calendario. El hub guarda la fecha del
+ * movimiento a medianoche UTC: se toma el día UTC, no el local (en Argentina «6/11 00:00 UTC» es
+ * el 5/11 a las 21:00 y el filtro «Hoy» no mostraba nada, 6/11/2026). null sin fecha válida.
+ */
+export const diasDesdeUltimoMovimiento = (folder: any, hoy: Dayjs = dayjs()): number | null => {
+	if (!folder?.lastMovementDate) return null;
+	const last = new Date(folder.lastMovementDate);
+	if (Number.isNaN(last.getTime())) return null;
+	const dia = last.toISOString().slice(0, 10);
+	return dayjs(hoy.format("YYYY-MM-DD")).diff(dayjs(dia), "day");
+};
+
+/**
  * Carpeta con último movimiento conocido y anterior a `today - days`. Sin fecha de movimiento no
  * cuenta: eso ya lo cubre «Sin movimientos».
  */
 export const sinMovimientoHace = (folder: any, days: number, today: Dayjs = dayjs().startOf("day")): boolean => {
-	if (!folder?.lastMovementDate) return false;
-	const last = dayjs(folder.lastMovementDate);
-	if (!last.isValid()) return false;
-	return last.isBefore(today.subtract(days, "day"));
+	const dias = diasDesdeUltimoMovimiento(folder, today);
+	return dias !== null && dias > days;
 };
 
 /** Fecha «YYYY-MM-DD» válida (la que entrega un `<input type="date">`). */

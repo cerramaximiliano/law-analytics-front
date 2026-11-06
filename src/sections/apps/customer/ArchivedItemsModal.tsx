@@ -95,6 +95,8 @@ interface ArchivedItemsModalProps {
 	juzgadoFilter?: string;
 	juzgadoOptions?: { value: string; label: string; count: number }[];
 	onJuzgadoFilterChange?: (value: string) => void;
+	// Eliminar archivadas (6/11/2026, pedido de Silvia): el parent abre su diálogo de confirmación.
+	onDeleteSelected?: (selectedIds: string[]) => void;
 }
 
 // ==============================|| ARCHIVED ITEMS MODAL ||============================== //
@@ -120,6 +122,7 @@ const ArchivedItemsModal = ({
 	juzgadoFilter = "",
 	juzgadoOptions = [],
 	onJuzgadoFilterChange,
+	onDeleteSelected,
 }: ArchivedItemsModalProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
@@ -714,6 +717,19 @@ const ArchivedItemsModal = ({
 				<Button onClick={onClose} disabled={loading} sx={ghostBtnSx}>
 					Cancelar
 				</Button>
+				{onDeleteSelected && itemType === "folders" && (
+					<Button
+						variant="outlined"
+						color="error"
+						size="small"
+						disabled={selected.length === 0 || loading}
+						onClick={() => onDeleteSelected(selected)}
+						sx={{ textTransform: "none" }}
+						data-testid="archived-delete-btn"
+					>
+						{`Eliminar${selected.length > 0 ? ` (${selected.length})` : ""}`}
+					</Button>
+				)}
 				{onAssignResponsables && (
 					<Button
 						variant="outlined"

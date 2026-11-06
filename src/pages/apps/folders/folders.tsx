@@ -54,9 +54,11 @@ import { IndeterminateCheckbox, HeaderSort, SortingSelect, TablePagination } fro
 import axios from "axios";
 import { getTeamAssignees, resolveAssignees } from "utils/teamAssignees";
 import { isResponsableVistaFija, responsableOptions, responsableQueryValue } from "utils/responsableVista";
+import { FOLDERS_LIST_PREFS_KEY, readListPrefs, writeListPrefs } from "utils/listPrefs";
 import { updateUser } from "store/reducers/auth";
 import { juzgadoCounts, juzgadoKey, juzgadoOptions, radicacionOrigen, ubicacionActual, ubicacionDetalle } from "utils/radicacion";
 import {
+	diasDesdeUltimoMovimiento,
 	enPeriodo,
 	INACTIVIDAD_FILTROS,
 	isInactividadFiltro,
@@ -327,6 +329,8 @@ interface ReactTableProps extends Props {
 	simpleSkeleton?: boolean;
 	skeletonRowCount?: number;
 	initialPageSize?: number;
+	/** Memoria del listado (6/11/2026): clave de sessionStorage para tamaño de página y orden. */
+	prefsKey?: string;
 	pendingCount?: number;
 	invalidCount?: number;
 	onScrollToPending?: () => void;
@@ -412,6 +416,7 @@ function ReactTable({
 	simpleSkeleton = false,
 	skeletonRowCount = 5,
 	initialPageSize = 10,
+	prefsKey,
 	pendingCount = 0,
 	invalidCount = 0,
 	onScrollToPending,
@@ -578,6 +583,11 @@ function ReactTable({
 
 	const filterTypes = useMemo(() => renderFilterTypes, []);
 	const sortBy = { id: "folderName", desc: false };
+	// Tamaño de página y orden guardados en esta pestaña (al volver de una causa se restauran).
+	const savedPrefs = useMemo(
+		() => (prefsKey ? readListPrefs<{ pageSize?: number; sortBy?: { id: string; desc: boolean }[] }>(prefsKey) : {}),
+		[prefsKey],
+	);
 
 	// Columnas sin información para este usuario (capturas de Silvia, 5/11/2026): si ninguna
 	// carpeta tiene «Parte» definida o fecha de inicio, esas columnas arrancan ocultas en
@@ -639,9 +649,9 @@ function ReactTable({
 			filterTypes,
 			initialState: {
 				pageIndex: 0,
-				pageSize: initialPageSize,
+				pageSize: typeof savedPrefs.pageSize === "number" && savedPrefs.pageSize > 0 ? savedPrefs.pageSize : initialPageSize,
 				hiddenColumns: defaultHiddenColumns,
-				sortBy: [sortBy],
+				sortBy: Array.isArray(savedPrefs.sortBy) && savedPrefs.sortBy.length > 0 ? savedPrefs.sortBy : [sortBy],
 			},
 		},
 		useGlobalFilter,
@@ -651,6 +661,10 @@ function ReactTable({
 		usePagination,
 		useRowSelect,
 	);
+
+	useEffect(() => {
+		if (prefsKey) writeListPrefs(prefsKey, { pageSize, sortBy: tableSortBy });
+	}, [prefsKey, pageSize, tableSortBy]);
 
 	useEffect(() => {
 		// Columnas elegidas por el usuario (selector «Columnas», 5/11/2026): primero las guardadas
@@ -1319,7 +1333,12 @@ function ReactTable({
 										},
 									}}
 								>
-									<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns as any} />
+									<SortingSelect
+										sortBy={tableSortBy[0]?.id || sortBy.id}
+										sortDesc={tableSortBy[0]?.desc === true}
+										setSortBy={setSortBy}
+										allColumns={allColumns as any}
+									/>
 								</Box>
 								{!matchDownSM && (
 									<ColumnasSelect
@@ -2477,12 +2496,19 @@ const FoldersLayout = () => {
 	// Loading scoped a la fila: evita el skeleton global cuando se refresca una sola.
 	const [verifyingFolderIds, setVerifyingFolderIds] = useState<Set<string>>(() => new Set());
 
-	// Estados para filtros de carpetas
+	// Estados para filtros de carpetas. Arrancan con lo que quedó en esta pestaña (6/11/2026, pedido
+	// de Silvia: al entrar en una causa y volver, el listado estaba «como restaurado»).
+	const savedFilters = useMemo(
+		() => (readListPrefs<{ filters?: Record<string, any> }>(FOLDERS_LIST_PREFS_KEY).filters || {}) as Record<string, any>,
+		[],
+	);
 	const [folderTypeFilter, setFolderTypeFilter] = useState<
 		"all" | "manual" | "pjn" | "eje" | "mev" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "scba"
-	>("all");
-	const [statusFilter, setStatusFilter] = useState<"all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada">("all");
-	const [parteFilter, setParteFilter] = useState<string>("all");
+	>(savedFilters.folderTypeFilter ?? "all");
+	const [statusFilter, setStatusFilter] = useState<"all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada">(
+		savedFilters.statusFilter ?? "all",
+	);
+	const [parteFilter, setParteFilter] = useState<string>(savedFilters.parteFilter ?? "all");
 	// ?movimientos=today|week|month|none (lo usa la alerta agrupada de movimientos nuevos).
 	// También inactive30|90|180|365 («Sin movimiento hace más de…») y periodo (+ ?desde= y ?hasta=),
 	// control del estudio 6/11/2026.
@@ -2492,13 +2518,18 @@ const FoldersLayout = () => {
 		MOVIMIENTOS_FILTROS.includes(v as (typeof MOVIMIENTOS_FILTROS)[number]) || isInactividadFiltro(v);
 	const movimientosParam = searchParams.get("movimientos");
 	const [movimientosFilter, setMovimientosFilter] = useState<MovimientosFiltro>(
-		esMovimientosFiltro(movimientosParam) ? movimientosParam : "all",
+		esMovimientosFiltro(movimientosParam)
+			? movimientosParam
+			: esMovimientosFiltro(savedFilters.movimientosFilter ?? null)
+			? savedFilters.movimientosFilter
+			: "all",
 	);
 	const periodoDesdeUrl = (p: string | null) => (isIsoDay(p) ? p : "");
-	const [periodo, setPeriodo] = useState<PeriodoMovimientos>({
-		desde: periodoDesdeUrl(searchParams.get("desde")),
-		hasta: periodoDesdeUrl(searchParams.get("hasta")),
-	});
+	const [periodo, setPeriodo] = useState<PeriodoMovimientos>(() =>
+		movimientosParam === "periodo" || !savedFilters.periodo
+			? { desde: periodoDesdeUrl(searchParams.get("desde")), hasta: periodoDesdeUrl(searchParams.get("hasta")) }
+			: { desde: periodoDesdeUrl(savedFilters.periodo.desde), hasta: periodoDesdeUrl(savedFilters.periodo.hasta) },
+	);
 	// Si se llega con el parámetro estando ya en la página (otra alerta), aplicarlo.
 	useEffect(() => {
 		if (esMovimientosFiltro(movimientosParam)) {
@@ -2509,16 +2540,16 @@ const FoldersLayout = () => {
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [movimientosParam]);
-	const [jurisdiccionFilter, setJurisdiccionFilter] = useState<string>("all");
-	const [fueroFilter, setFueroFilter] = useState<string>("all");
-	const [departamentoFilter, setDepartamentoFilter] = useState<string>("all");
+	const [jurisdiccionFilter, setJurisdiccionFilter] = useState<string>(savedFilters.jurisdiccionFilter ?? "all");
+	const [fueroFilter, setFueroFilter] = useState<string>(savedFilters.fueroFilter ?? "all");
+	const [departamentoFilter, setDepartamentoFilter] = useState<string>(savedFilters.departamentoFilter ?? "all");
 	// Radicación (5/11/2026): juzgado de origen (clave fuero|número) y ubicación actual
-	const [juzgadoFilter, setJuzgadoFilter] = useState<string>("all");
-	const [ubicacionFilter, setUbicacionFilter] = useState<string>("all");
+	const [juzgadoFilter, setJuzgadoFilter] = useState<string>(savedFilters.juzgadoFilter ?? "all");
+	const [ubicacionFilter, setUbicacionFilter] = useState<string>(savedFilters.ubicacionFilter ?? "all");
 	// Situación procesal (6/11/2026): "all" | clave normalizada | "__none" (sin dato).
-	const [situacionFilter, setSituacionFilter] = useState<string>("all");
+	const [situacionFilter, setSituacionFilter] = useState<string>(savedFilters.situacionFilter ?? "all");
 	// Seguimiento (6/11/2026): "all" | "si" | "no".
-	const [seguimientoFilter, setSeguimientoFilter] = useState<string>("all");
+	const [seguimientoFilter, setSeguimientoFilter] = useState<string>(savedFilters.seguimientoFilter ?? "all");
 
 	// Estado para pre-seleccionar paso y valores al abrir AddFolder desde los badges
 	const [addFolderInitialStep, setAddFolderInitialStep] = useState<number | undefined>(undefined);
@@ -2552,8 +2583,42 @@ const FoldersLayout = () => {
 	// de un integrante, previsto o invitado). Default «Todas». El filtro lo resuelve el hub
 	// (`?responsable=me|ninguno|<id>`); mientras llega la respuesta se filtra con los
 	// `responsables` que ya trae el listado. Solo afecta la tabla principal.
-	const [responsableVista, setResponsableVista] = useState<string>("todas");
+	const [responsableVista, setResponsableVista] = useState<string>(savedFilters.responsableVista ?? "todas");
 	const [responsableIds, setResponsableIds] = useState<Set<string> | null>(null);
+	// Guardar los filtros en esta pestaña cada vez que cambian (ver savedFilters).
+	useEffect(() => {
+		writeListPrefs(FOLDERS_LIST_PREFS_KEY, {
+			filters: {
+				folderTypeFilter,
+				statusFilter,
+				parteFilter,
+				movimientosFilter,
+				periodo,
+				jurisdiccionFilter,
+				fueroFilter,
+				departamentoFilter,
+				juzgadoFilter,
+				ubicacionFilter,
+				situacionFilter,
+				seguimientoFilter,
+				responsableVista,
+			},
+		});
+	}, [
+		folderTypeFilter,
+		statusFilter,
+		parteFilter,
+		movimientosFilter,
+		periodo,
+		jurisdiccionFilter,
+		fueroFilter,
+		departamentoFilter,
+		juzgadoFilter,
+		ubicacionFilter,
+		situacionFilter,
+		seguimientoFilter,
+		responsableVista,
+	]);
 	const responsablesSignature = useMemo(
 		() => (isTeamMode ? folders.map((f: any) => `${f._id}:${(f.responsables || []).join(",")}`).join("|") : ""),
 		[folders, isTeamMode],
@@ -2846,21 +2911,22 @@ const FoldersLayout = () => {
 
 			// Filtro por movimientos recientes
 			if (movimientosFilter !== "all") {
-				const lastMovement = folder.lastMovementDate ? dayjs(folder.lastMovementDate) : null;
 				const today = dayjs().startOf("day");
+				// Días por día calendario UTC (6/11/2026): «Hoy» no mostraba nada en Argentina.
+				const dias = diasDesdeUltimoMovimiento(folder, today);
 
 				switch (movimientosFilter) {
 					case "today":
-						if (!lastMovement || !lastMovement.isSame(today, "day")) return false;
+						if (dias !== 0) return false;
 						break;
 					case "week":
-						if (!lastMovement || !lastMovement.isAfter(today.subtract(7, "day"))) return false;
+						if (dias === null || dias < 0 || dias >= 7) return false;
 						break;
 					case "month":
-						if (!lastMovement || !lastMovement.isAfter(today.subtract(30, "day"))) return false;
+						if (dias === null || dias < 0 || dias >= 30) return false;
 						break;
 					case "none":
-						if (lastMovement) return false;
+						if (folder.lastMovementDate) return false;
 						break;
 					case "periodo":
 						if (!enPeriodo(folder, periodo)) return false;
@@ -3318,6 +3384,14 @@ const FoldersLayout = () => {
 					`${result.deletedCount} ${result.deletedCount === 1 ? "carpeta eliminada" : "carpetas eliminadas"} correctamente`,
 				);
 				setSnackbarSeverity("success");
+				// Borradas desde el modal de archivadas (6/11/2026): recargar esa lista.
+				if (archivedModalOpen) {
+					if (isTeamMode && activeTeam?._id) {
+						dispatch(getArchivedFoldersByGroupId(activeTeam._id, archivedPage, archivedPageSize, archivedSearch, archivedExtra));
+					} else {
+						dispatch(getArchivedFoldersByUserId(user._id, archivedPage, archivedPageSize, archivedSearch, archivedExtra));
+					}
+				}
 			} else {
 				setSnackbarMessage(result.message || "Error al eliminar carpetas");
 				setSnackbarSeverity("error");
@@ -3332,7 +3406,18 @@ const FoldersLayout = () => {
 			loadingRef.current = false;
 			setFoldersToDelete([]);
 		}
-	}, [user?._id, foldersToDelete, getRequestHeaders]);
+	}, [
+		user?._id,
+		foldersToDelete,
+		getRequestHeaders,
+		archivedModalOpen,
+		isTeamMode,
+		activeTeam?._id,
+		archivedPage,
+		archivedPageSize,
+		archivedSearch,
+		archivedExtra,
+	]);
 
 	const handleCancelDelete = useCallback(() => {
 		setDeleteDialogOpen(false);
@@ -4514,7 +4599,15 @@ const FoldersLayout = () => {
 						{
 							Header: "Responsable",
 							accessor: "responsables",
-							disableSortBy: true,
+							// Ordenar por responsable (pedido de Silvia, 6/11/2026): por los nombres resueltos; sin responsable al final.
+							sortType: (a: Row<any>, b: Row<any>) => {
+								const na = resolveResponsablesForCsv(a.original?.responsables);
+								const nb = resolveResponsablesForCsv(b.original?.responsables);
+								if (!na && !nb) return 0;
+								if (!na) return 1;
+								if (!nb) return -1;
+								return na.localeCompare(nb, "es");
+							},
 							Cell: ({ value, row }: { value?: string[]; row: Row<any> }) =>
 								canEditResponsables ? (
 									// Clic en el responsable: asignar, cambiar o quitar (owner, admin, editor).
@@ -5096,6 +5189,7 @@ const FoldersLayout = () => {
 								handleOpenGuide={handleOpenGuide}
 								handleOpenArchivedModal={handleOpenArchivedModal}
 								renderRowSubComponent={renderRowSubComponent}
+								prefsKey={FOLDERS_LIST_PREFS_KEY}
 								isLoading={isLoader}
 								expandedRowId={expandedRowId}
 								navigate={navigate}
@@ -5374,6 +5468,14 @@ const FoldersLayout = () => {
 						juzgadoFilter={archivedJuzgado}
 						juzgadoOptions={archivedJuzgadoOptions}
 						onJuzgadoFilterChange={handleArchivedJuzgadoChange}
+						onDeleteSelected={
+							canDelete
+								? (ids) => {
+										setFoldersToDelete(ids.map((_id) => ({ original: { _id } })) as unknown as Row<any>[]);
+										setDeleteDialogOpen(true);
+								  }
+								: undefined
+						}
 						onAssignResponsables={
 							isTeamMode && canEditResponsables
 								? (ids) =>

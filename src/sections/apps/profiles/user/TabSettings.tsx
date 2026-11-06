@@ -398,16 +398,46 @@ const TabSettings = () => {
 	};
 
 	const handleJudicialMovementsMode = (_e: React.ChangeEvent<HTMLInputElement>, value: string) => {
+		const mode: "immediate" | "scheduled" = value === "immediate" ? "immediate" : "scheduled";
+		const enabled = preferences.user?.judicialMovements?.enabled ?? true;
 		setPreferences((prev) => ({
 			...prev,
 			user: {
 				...(prev.user as NotificationPreferences["user"]),
-				judicialMovements: {
-					enabled: prev.user?.judicialMovements?.enabled ?? true,
-					mode: value === "immediate" ? "immediate" : "scheduled",
-				},
+				judicialMovements: { enabled, mode },
 			},
 		}));
+		// Se guarda al elegir (6/11/2026): Silvia cambiaba a «inmediata», no apretaba «Guardar cambios»
+		// y al volver estaba en «resumen». El hub acepta el parcial { user: { judicialMovements } }.
+		ApiService.updateNotificationPreferences({
+			user: { judicialMovements: { enabled, mode } },
+		} as unknown as Partial<NotificationPreferences>)
+			.then((response) => {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: response?.success
+							? mode === "immediate"
+								? "Avisos de movimientos: inmediatos. Guardado."
+								: "Avisos de movimientos: resumen al final del día. Guardado."
+							: "No se pudo guardar el modo de aviso",
+						variant: "alert",
+						alert: { color: response?.success ? "success" : "error" },
+						close: true,
+					}),
+				);
+			})
+			.catch(() => {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "No se pudo guardar el modo de aviso",
+						variant: "alert",
+						alert: { color: "error" },
+						close: true,
+					}),
+				);
+			});
 	};
 
 	const handleUserOptionToggle = (option: keyof NotificationPreferences["user"]) => () => {

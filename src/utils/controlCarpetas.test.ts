@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { describe, expect, it } from "vitest";
 import {
+	diasDesdeUltimoMovimiento,
 	enPeriodo,
 	INACTIVIDAD_FILTROS,
 	isInactividadFiltro,
@@ -48,6 +49,13 @@ describe("sin movimiento hace más de N días", () => {
 		expect(sinMovimientoHace({ lastMovementDate: "2026-08-07" }, 90, today)).toBe(true);
 		expect(sinMovimientoHace({}, 30, today)).toBe(false);
 		expect(sinMovimientoHace({ lastMovementDate: "no es fecha" }, 30, today)).toBe(false);
+	});
+	it("cuenta por día UTC: el movimiento de hoy es «hoy» aunque en Argentina la medianoche UTC sea ayer", () => {
+		expect(diasDesdeUltimoMovimiento({ lastMovementDate: "2026-11-06T00:00:00.000Z" }, today)).toBe(0);
+		expect(diasDesdeUltimoMovimiento({ lastMovementDate: "2026-11-05T00:00:00.000Z" }, today)).toBe(1);
+		expect(diasDesdeUltimoMovimiento({ lastMovementDate: "2026-10-07T00:00:00.000Z" }, today)).toBe(30);
+		expect(diasDesdeUltimoMovimiento({}, today)).toBeNull();
+		expect(diasDesdeUltimoMovimiento({ lastMovementDate: "zzz" }, today)).toBeNull();
 	});
 	it("valores del filtro", () => {
 		expect(isInactividadFiltro("inactive90")).toBe(true);

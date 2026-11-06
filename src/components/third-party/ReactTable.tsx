@@ -436,20 +436,32 @@ export const HidingSelect = ({ hiddenColumns, setHiddenColumns, allColumns }: Hi
 
 interface SortingSelectProps {
 	sortBy: string;
+	/** Dirección actual de la tabla (6/11/2026): así el selector refleja un orden restaurado o cambiado desde la cabecera. */
+	sortDesc?: boolean;
 	setSortBy: (sortBy: SortingRule<{}>[]) => void;
 	allColumns: ColumnInstance<{}>[];
 }
 
-export const SortingSelect = ({ sortBy, setSortBy, allColumns }: SortingSelectProps) => {
+/** Columnas de fecha: al elegirlas se ordena de más reciente a más antigua (pedido de Silvia, 6/11/2026). */
+const esColumnaDeFecha = (id: string) => /date|fecha|movement/i.test(id);
+
+export const SortingSelect = ({ sortBy, sortDesc, setSortBy, allColumns }: SortingSelectProps) => {
 	const [sort, setSort] = useState<string>(sortBy);
-	const [isDescending, setIsDescending] = useState<boolean>(false);
+	const [isDescending, setIsDescending] = useState<boolean>(sortDesc === true);
+
+	useEffect(() => {
+		setSort(sortBy);
+		if (sortDesc !== undefined) setIsDescending(sortDesc);
+	}, [sortBy, sortDesc]);
 
 	const handleChange = (event: SelectChangeEvent<string>) => {
 		const {
 			target: { value },
 		} = event;
+		const desc = esColumnaDeFecha(value) ? true : isDescending;
 		setSort(value);
-		setSortBy([{ id: value, desc: isDescending }]);
+		setIsDescending(desc);
+		setSortBy([{ id: value, desc }]);
 	};
 
 	const toggleSortDirection = () => {
