@@ -321,8 +321,15 @@ const ResponsablesContent = () => (
 			color="info"
 			items={[
 				<>
-					En Carpetas: selector <strong>Mis carpetas / Todas / Sin responsable</strong>, filtros por juzgado y fuero, y la columna
-					«Radicación»
+					En Carpetas: selector <strong>Mis carpetas / Todas / Sin responsable</strong> y <strong>De…</strong> (un integrante, previsto o
+					invitado), filtros por juzgado y fuero, y la columna «Radicación»
+				</>,
+				<>
+					Para controlar un juzgado: filtro <strong>Juzgado</strong> + «Sin movimiento hace más de 1, 3, 6 meses o 1 año» +{" "}
+					<strong>Situación</strong> (En letra, En despacho, Giro…), y la columna «Situación»
+				</>,
+				<>
+					En Archivadas: columna «Radicación» y filtros por <strong>juzgado</strong> y por <strong>responsable</strong> junto al buscador
 				</>,
 				<>
 					<Printer size={14} style={{ marginRight: 4 }} />

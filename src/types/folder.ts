@@ -126,6 +126,8 @@ export type FolderData = {
 	listRemovedSource?: "pjn" | "scba" | "mev" | "eje";
 	causaLastSyncDate?: string; // Fecha de última sincronización
 	lastMovementDate?: string; // Fecha del último movimiento
+	/** Situación procesal del expediente PJN, desde la causa (EN LETRA, EN DESPACHO, GIRO…). La agrega el hub al listar (6/11/2026). */
+	situacion?: string;
 	// Campos para selección múltiple de causas (EJE/MEV)
 	pendingCausaIds?: string[]; // IDs de causas pendientes de selección
 	/** IOL-1: la búsqueda superó el tope de resultados; pendingCausaIds es un sample de searchTotalResults. */
@@ -199,6 +201,8 @@ export type FolderState = {
 	folders: FolderData[];
 	archivedFolders: FolderData[];
 	archivedPagination: PaginationInfo;
+	/** Conteo por juzgado de las archivadas (hub `facets.juzgados`), para el filtro del modal (6/11/2026). */
+	archivedFacets?: { juzgados?: { fuero: string; court: string; count: number }[] };
 	selectedFolders: FolderData[];
 	folder: FolderData | null;
 	isLoader: boolean;

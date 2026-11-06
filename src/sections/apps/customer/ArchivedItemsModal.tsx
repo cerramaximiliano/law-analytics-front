@@ -34,6 +34,7 @@ import { PopupTransition } from "components/@extended/Transitions";
 import EmptyResults from "./EmptyResults";
 import { Archive, CloseSquare, InfoCircle, SearchNormal1, Warning2, UserEdit } from "iconsax-react";
 import { BRAND_BLUE, LIVE_GREEN } from "themes/dashboardTokens";
+import { radicacionOrigen, ubicacionDetalle } from "utils/radicacion";
 
 /**
  * Contexto del último archivado (hub models/Folder.js archivedReason):
@@ -84,6 +85,16 @@ interface ArchivedItemsModalProps {
 	// archivadas también se asignan; no cuentan para el cupo.
 	showResponsables?: boolean;
 	onAssignResponsables?: (selectedIds: string[]) => void;
+	// Filtro por responsable (6/11/2026): "" = todos, "ninguno" = sin responsable, o el id de un
+	// integrante / previsto / invitado. Lo resuelve el hub; el parent refetchea en página 1.
+	responsableFilter?: string;
+	responsableOptions?: { id: string; name: string }[];
+	onResponsableFilterChange?: (value: string) => void;
+	// Juzgado de origen (6/11/2026, pedido de Estudio FS Abogados): columna Radicación y filtro
+	// «fuero|número» resuelto por el hub, con las opciones de todas las archivadas (facets).
+	juzgadoFilter?: string;
+	juzgadoOptions?: { value: string; label: string; count: number }[];
+	onJuzgadoFilterChange?: (value: string) => void;
 }
 
 // ==============================|| ARCHIVED ITEMS MODAL ||============================== //
@@ -103,6 +114,12 @@ const ArchivedItemsModal = ({
 	onSearchChange,
 	showResponsables = false,
 	onAssignResponsables,
+	responsableFilter = "",
+	responsableOptions = [],
+	onResponsableFilterChange,
+	juzgadoFilter = "",
+	juzgadoOptions = [],
+	onJuzgadoFilterChange,
 }: ArchivedItemsModalProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
@@ -128,6 +145,10 @@ const ArchivedItemsModal = ({
 		searchDebounceRef.current = setTimeout(() => onSearchChange(value.trim()), 400);
 	};
 
+	const showResponsableFilter = showResponsables && itemType === "folders" && Boolean(onResponsableFilterChange);
+	const showJuzgadoFilter =
+		itemType === "folders" && Boolean(onJuzgadoFilterChange) && (juzgadoOptions.length > 0 || Boolean(juzgadoFilter));
+
 	const columns = useMemo(() => {
 		if (itemType === "contacts") {
 			return [
@@ -139,6 +160,8 @@ const ArchivedItemsModal = ({
 		return [
 			{ id: "folderName", label: "Carátula", minWidth: 170 },
 			{ id: "materia", label: "Materia", minWidth: 100 },
+			// Radicación (6/11/2026): juzgado de origen y, debajo, Cámara / Corte si ya no está en el juzgado.
+			{ id: "radicacion", label: "Radicación", minWidth: 110 },
 			{ id: "status", label: "Estado", minWidth: 100 },
 			{ id: "archivedContext", label: "Archivada", minWidth: 150 },
 			// Último movimiento (5/11/2026): para decidir cuál reactivar sin abrirla.
@@ -421,20 +444,63 @@ const ArchivedItemsModal = ({
 					</Box>
 				)}
 
-				{onSearchChange && (
-					<OutlinedInput
-						size="small"
-						fullWidth
-						value={searchText}
-						onChange={(e) => handleSearchChange(e.target.value)}
-						placeholder={itemType === "contacts" ? "Buscar por nombre, apellido o email…" : "Buscar por carátula o materia…"}
-						startAdornment={
-							<InputAdornment position="start">
-								<SearchNormal1 size={16} color={theme.palette.text.secondary} />
-							</InputAdornment>
-						}
-						sx={{ ...selectSx, mb: 2, flexShrink: 0 }}
-					/>
+				{(onSearchChange || showResponsableFilter || showJuzgadoFilter) && (
+					<Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mb: 2, flexShrink: 0 }}>
+						{onSearchChange && (
+							<OutlinedInput
+								size="small"
+								fullWidth
+								value={searchText}
+								onChange={(e) => handleSearchChange(e.target.value)}
+								placeholder={itemType === "contacts" ? "Buscar por nombre, apellido o email…" : "Buscar por carátula o materia…"}
+								startAdornment={
+									<InputAdornment position="start">
+										<SearchNormal1 size={16} color={theme.palette.text.secondary} />
+									</InputAdornment>
+								}
+								sx={selectSx}
+							/>
+						)}
+						{showJuzgadoFilter && (
+							<FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 190 } }}>
+								<Select
+									value={juzgadoFilter}
+									onChange={(e) => onJuzgadoFilterChange?.(String(e.target.value))}
+									displayEmpty
+									inputProps={{ "aria-label": "Filtrar archivadas por juzgado" }}
+									data-testid="archived-juzgado-filter"
+									sx={selectSx}
+								>
+									<MenuItem value="">Todos los juzgados</MenuItem>
+									{juzgadoOptions.map((o) => (
+										<MenuItem key={o.value} value={o.value}>
+											{o.label} ({o.count})
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+						)}
+						{showResponsableFilter && (
+							<FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 220 } }}>
+								<Select
+									value={responsableFilter}
+									onChange={(e) => onResponsableFilterChange?.(String(e.target.value))}
+									displayEmpty
+									inputProps={{ "aria-label": "Filtrar archivadas por responsable" }}
+									data-testid="archived-responsable-filter"
+									sx={selectSx}
+								>
+									<MenuItem value="">Todos los responsables</MenuItem>
+									<MenuItem value="ninguno">Sin responsable</MenuItem>
+									{responsableOptions.map((o) => (
+										<MenuItem key={o.id} value={o.id}>
+											{o.name}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+						)}
+					</Stack>
 				)}
 
 				<Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, position: "relative" }}>
@@ -465,6 +531,8 @@ const ArchivedItemsModal = ({
 								message={
 									searchText.trim()
 										? `No se encontraron ${itemLabelPlural} para "${searchText.trim()}"`
+										: responsableFilter || juzgadoFilter
+										? `No hay ${itemLabelPlural} archivad${itemType === "contacts" ? "os" : "as"} con ese filtro`
 										: `No hay ${itemLabelPlural} archivad${itemType === "contacts" ? "os" : "as"}`
 								}
 							/>
@@ -551,6 +619,18 @@ const ArchivedItemsModal = ({
 																<Typography sx={{ fontSize: "0.8rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
 																	{item.materia || "—"}
 																</Typography>
+															</TableCell>
+															<TableCell>
+																<Typography
+																	sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em", whiteSpace: "nowrap" }}
+																>
+																	{radicacionOrigen(item) || "—"}
+																</Typography>
+																{ubicacionDetalle(item) && (
+																	<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+																		{ubicacionDetalle(item)}
+																	</Typography>
+																)}
 															</TableCell>
 															<TableCell>
 																<StatusPill value={item.status} />

@@ -102,6 +102,7 @@ const folder = (state = initialFolderState, action: any) => {
 				...state,
 				archivedFolders: action.payload.folders,
 				archivedPagination: action.payload.pagination,
+				archivedFacets: action.payload.facets ?? state.archivedFacets,
 				isArchivedLoader: false,
 			};
 		case GET_FOLDER_BY_ID: {
@@ -769,8 +770,14 @@ export const archiveFolders =
 		}
 	};
 
+/** Filtros del modal de archivadas (6/11/2026). */
+export interface ArchivedListExtra {
+	responsable?: string;
+	juzgado?: string;
+}
+
 export const getArchivedFoldersByUserId =
-	(userId: string, page: number = 1, limit?: number, search?: string) =>
+	(userId: string, page: number = 1, limit?: number, search?: string, extra: ArchivedListExtra = {}) =>
 	async (dispatch: Dispatch) => {
 		try {
 			dispatch({ type: SET_ARCHIVED_FOLDER_LOADING });
@@ -791,6 +798,11 @@ export const getArchivedFoldersByUserId =
 			if (search && search.trim()) {
 				params.search = search.trim();
 			}
+			// Filtros del modal (6/11/2026): responsable (me | ninguno | id) y juzgado (fuero|número). Siempre
+			// se piden los conteos por juzgado para armar el selector con todas las opciones.
+			if (extra.responsable) params.responsable = extra.responsable;
+			if (extra.juzgado) params.juzgado = extra.juzgado;
+			params.facets = "juzgados";
 
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/user/${userId}`, {
 				params,
@@ -801,6 +813,7 @@ export const getArchivedFoldersByUserId =
 					payload: {
 						folders: response.data.folders,
 						pagination: response.data.pagination,
+						facets: response.data.facets,
 					},
 				});
 				return {
@@ -820,7 +833,7 @@ export const getArchivedFoldersByUserId =
 	};
 
 export const getArchivedFoldersByGroupId =
-	(groupId: string, page: number = 1, limit?: number, search?: string) =>
+	(groupId: string, page: number = 1, limit?: number, search?: string, extra: ArchivedListExtra = {}) =>
 	async (dispatch: Dispatch) => {
 		try {
 			dispatch({ type: SET_ARCHIVED_FOLDER_LOADING });
@@ -841,6 +854,11 @@ export const getArchivedFoldersByGroupId =
 			if (search && search.trim()) {
 				params.search = search.trim();
 			}
+			// Filtros del modal (6/11/2026): responsable (me | ninguno | id) y juzgado (fuero|número). Siempre
+			// se piden los conteos por juzgado para armar el selector con todas las opciones.
+			if (extra.responsable) params.responsable = extra.responsable;
+			if (extra.juzgado) params.juzgado = extra.juzgado;
+			params.facets = "juzgados";
 
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}`, {
 				params,
@@ -851,6 +869,7 @@ export const getArchivedFoldersByGroupId =
 					payload: {
 						folders: response.data.folders,
 						pagination: response.data.pagination,
+						facets: response.data.facets,
 					},
 				});
 				return {

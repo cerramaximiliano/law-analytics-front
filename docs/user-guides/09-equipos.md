@@ -254,7 +254,17 @@ Administradores y los Editores.
 ### Encontrar lo tuyo
 
 En **Carpetas** hay un selector **Mis carpetas / Todas / Sin responsable** y una columna **Responsable** con las
-iniciales de cada uno. «Sin responsable» sirve para ver qué falta repartir.
+iniciales de cada uno. «Sin responsable» sirve para ver qué falta repartir. Al lado, **De…** muestra las carpetas a cargo de
+una persona concreta: un integrante, un previsto o un invitado que todavía no aceptó. En **Archivadas** hay una columna
+**Radicación** y filtros por **juzgado** y por **responsable** junto al buscador.
+
+### Controlar un juzgado
+
+Para revisar qué expedientes de un juzgado están quietos: filtro **Juzgado**, después **Movimientos → «Sin movimiento hace
+más de 1 mes / 3 meses / 6 meses / 1 año»**, y si hace falta **Situación** («En letra», «En despacho», «Giro»…, el dato que
+publica el PJN para cada expediente). La columna **Situación** también se puede mostrar u ocultar desde «Columnas» y sale en el
+CSV. Las carpetas sin fecha de movimiento conocida no entran en «Sin movimiento hace más de…»; para verlas usá «Sin
+movimientos».
 
 ### Distribución de responsables
 

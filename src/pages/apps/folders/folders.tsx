@@ -53,8 +53,17 @@ import { PopupTransition } from "components/@extended/Transitions";
 import { IndeterminateCheckbox, HeaderSort, SortingSelect, TablePagination } from "components/third-party/ReactTable";
 import axios from "axios";
 import { getTeamAssignees, resolveAssignees } from "utils/teamAssignees";
+import { isResponsableVistaFija, responsableOptions, responsableQueryValue } from "utils/responsableVista";
 import { updateUser } from "store/reducers/auth";
-import { juzgadoKey, radicacionOrigen, ubicacionActual, ubicacionDetalle } from "utils/radicacion";
+import { juzgadoCounts, juzgadoKey, juzgadoOptions, radicacionOrigen, ubicacionActual, ubicacionDetalle } from "utils/radicacion";
+import {
+	INACTIVIDAD_FILTROS,
+	isInactividadFiltro,
+	situacionKey,
+	situacionLabel,
+	situacionOptions,
+	sinMovimientoHace,
+} from "utils/controlCarpetas";
 import { CSVLink } from "react-csv";
 import { formatFolderName } from "utils/formatFolderName";
 import {
@@ -335,7 +344,7 @@ interface ReactTableProps extends Props {
 	parteFilter?: string;
 	onParteFilterChange?: (event: SelectChangeEvent<string>) => void;
 	uniquePartes?: string[];
-	movimientosFilter?: "all" | "today" | "week" | "month" | "none";
+	movimientosFilter?: string;
 	onMovimientosFilterChange?: (event: SelectChangeEvent<string>) => void;
 	jurisdiccionFilter?: string;
 	onJurisdiccionFilterChange?: (event: SelectChangeEvent<string>) => void;
@@ -353,6 +362,10 @@ interface ReactTableProps extends Props {
 	ubicacionFilter?: string;
 	onUbicacionFilterChange?: (event: SelectChangeEvent<string>) => void;
 	uniqueUbicaciones?: { value: string; count: number }[];
+	/** Situación procesal del expediente (6/11/2026): EN LETRA, EN DESPACHO… desde la causa. */
+	situacionFilter?: string;
+	onSituacionFilterChange?: (event: SelectChangeEvent<string>) => void;
+	uniqueSituaciones?: { value: string; label: string; count: number }[];
 	/** Nombres de responsables para el CSV (modo equipo). */
 	resolveResponsables?: (ids: string[] | undefined) => string;
 	/** Columnas ocultas guardadas en el hub para este usuario (manda sobre el navegador) y cómo guardarlas. */
@@ -416,6 +429,9 @@ function ReactTable({
 	ubicacionFilter = "all",
 	onUbicacionFilterChange,
 	uniqueUbicaciones = [],
+	situacionFilter = "all",
+	onSituacionFilterChange,
+	uniqueSituaciones = [],
 	resolveResponsables,
 	storedHiddenColumns = null,
 	onHiddenColumnsChange,
@@ -524,6 +540,7 @@ function ReactTable({
 		if (departamentoFilter !== "all") count++;
 		if (juzgadoFilter !== "all") count++;
 		if (ubicacionFilter !== "all") count++;
+		if (situacionFilter !== "all") count++;
 		return count;
 	}, [
 		folderTypeFilter,
@@ -535,6 +552,7 @@ function ReactTable({
 		departamentoFilter,
 		juzgadoFilter,
 		ubicacionFilter,
+		situacionFilter,
 	]);
 
 	const filterTypes = useMemo(() => renderFilterTypes, []);
@@ -663,6 +681,7 @@ function ReactTable({
 		{ label: "Fuero", key: "folderFuero" },
 		{ label: "Juzgado de origen", key: "radicacion" },
 		{ label: "Ubicación actual", key: "ubicacion" },
+		{ label: "Situación", key: "situacion" },
 		...(resolveResponsables ? [{ label: "Responsable", key: "responsable" }] : []),
 		{ label: "Fecha inicio", key: "initialDateFolder" },
 		{ label: "Fecha cierre", key: "finalDateFolder" },
@@ -689,6 +708,7 @@ function ReactTable({
 			folderFuero: folder.folderFuero || "",
 			radicacion: radicacionOrigen(folder),
 			ubicacion: ubicacionDetalle(folder) || ubicacionActual(folder),
+			situacion: (folder as any).situacion ? situacionLabel((folder as any).situacion) : "",
 			responsable: resolveResponsables ? resolveResponsables((folder as any).responsables) : "",
 			initialDateFolder: folder.initialDateFolder || "",
 			finalDateFolder: folder.finalDateFolder || "",
@@ -1499,6 +1519,35 @@ function ReactTable({
 												<MenuItem value="none">
 													<Typography variant="body2">Sin movimientos</Typography>
 												</MenuItem>
+												{/* Control del estudio (6/11/2026): expedientes quietos hace más de N días */}
+												{Object.entries(INACTIVIDAD_FILTROS).map(([value, def]) => (
+													<MenuItem key={value} value={value}>
+														<Typography variant="body2">{def.label}</Typography>
+													</MenuItem>
+												))}
+											</Select>
+										</FormControl>
+									)}
+									{/* Filtro por Situación procesal (EN LETRA, EN DESPACHO…), solo si hay dato */}
+									{onSituacionFilterChange && uniqueSituaciones.some((s) => s.value) && (
+										<FormControl size="small" sx={{ minWidth: 160 }}>
+											<Select
+												id="situacion-filter"
+												displayEmpty
+												value={situacionFilter}
+												onChange={onSituacionFilterChange}
+												sx={filterSelectSx}
+											>
+												<MenuItem value="all">
+													<Typography variant="body2">Situación: Todas</Typography>
+												</MenuItem>
+												{uniqueSituaciones.map((s) => (
+													<MenuItem key={s.value || "__none"} value={s.value || "__none"}>
+														<Typography variant="body2">
+															{s.label} ({s.count})
+														</Typography>
+													</MenuItem>
+												))}
 											</Select>
 										</FormControl>
 									)}
@@ -2262,6 +2311,14 @@ const FoldersLayout = () => {
 	const [archivedPage, setArchivedPage] = useState(1);
 	const [archivedPageSize, setArchivedPageSize] = useState(10);
 	const [archivedSearch, setArchivedSearch] = useState("");
+	// Equipos: filtro por responsable del modal de archivadas ("" = todos, "ninguno", o un id).
+	const [archivedResponsable, setArchivedResponsable] = useState("");
+	// Juzgado de origen del modal de archivadas ("" = todos, o «fuero|número»), 6/11/2026.
+	const [archivedJuzgado, setArchivedJuzgado] = useState("");
+	const archivedExtra = useMemo(
+		() => ({ responsable: archivedResponsable, juzgado: archivedJuzgado }),
+		[archivedResponsable, archivedJuzgado],
+	);
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [menuRowId, setMenuRowId] = useState<string | null>(null);
@@ -2297,16 +2354,19 @@ const FoldersLayout = () => {
 	const [statusFilter, setStatusFilter] = useState<"all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada">("all");
 	const [parteFilter, setParteFilter] = useState<string>("all");
 	// ?movimientos=today|week|month|none (lo usa la alerta agrupada de movimientos nuevos).
+	// También inactive30|90|180|365 («Sin movimiento hace más de…», control del estudio 6/11/2026).
 	const MOVIMIENTOS_FILTROS = ["all", "today", "week", "month", "none"] as const;
-	type MovimientosFiltro = (typeof MOVIMIENTOS_FILTROS)[number];
+	type MovimientosFiltro = (typeof MOVIMIENTOS_FILTROS)[number] | keyof typeof INACTIVIDAD_FILTROS;
+	const esMovimientosFiltro = (v: string | null): v is MovimientosFiltro =>
+		MOVIMIENTOS_FILTROS.includes(v as (typeof MOVIMIENTOS_FILTROS)[number]) || isInactividadFiltro(v);
 	const movimientosParam = searchParams.get("movimientos");
 	const [movimientosFilter, setMovimientosFilter] = useState<MovimientosFiltro>(
-		MOVIMIENTOS_FILTROS.includes(movimientosParam as MovimientosFiltro) ? (movimientosParam as MovimientosFiltro) : "all",
+		esMovimientosFiltro(movimientosParam) ? movimientosParam : "all",
 	);
 	// Si se llega con el parámetro estando ya en la página (otra alerta), aplicarlo.
 	useEffect(() => {
-		if (movimientosParam && MOVIMIENTOS_FILTROS.includes(movimientosParam as MovimientosFiltro)) {
-			setMovimientosFilter(movimientosParam as MovimientosFiltro);
+		if (esMovimientosFiltro(movimientosParam)) {
+			setMovimientosFilter(movimientosParam);
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [movimientosParam]);
@@ -2316,6 +2376,8 @@ const FoldersLayout = () => {
 	// Radicación (5/11/2026): juzgado de origen (clave fuero|número) y ubicación actual
 	const [juzgadoFilter, setJuzgadoFilter] = useState<string>("all");
 	const [ubicacionFilter, setUbicacionFilter] = useState<string>("all");
+	// Situación procesal (6/11/2026): "all" | clave normalizada | "__none" (sin dato).
+	const [situacionFilter, setSituacionFilter] = useState<string>("all");
 
 	// Estado para pre-seleccionar paso y valores al abrir AddFolder desde los badges
 	const [addFolderInitialStep, setAddFolderInitialStep] = useState<number | undefined>(undefined);
@@ -2329,7 +2391,7 @@ const FoldersLayout = () => {
 
 	// Selectores
 	const user = useSelector((state) => state.auth.user);
-	const { folders, archivedFolders, archivedPagination, isLoader, isArchivedLoader } = useSelector((state) => state.folder);
+	const { folders, archivedFolders, archivedPagination, archivedFacets, isLoader, isArchivedLoader } = useSelector((state) => state.folder);
 	const subscription = useSelector((state) => state.auth.subscription);
 
 	// Team context - para cargar recursos del equipo si hay uno activo
@@ -2345,23 +2407,25 @@ const FoldersLayout = () => {
 	} = useTeam();
 	const canEditResponsables = userRole === "owner" || userRole === "admin" || userRole === "editor";
 
-	// Equipos: vista por responsable («Mis carpetas / Todas / Sin responsable»). Default «Todas».
-	// El filtro lo resuelve el hub (`?responsable=me|ninguno`); mientras llega la respuesta se
-	// filtra con los `responsables` que ya trae el listado. Solo afecta la tabla principal.
-	const [responsableVista, setResponsableVista] = useState<"todas" | "mias" | "sin">("todas");
+	// Equipos: vista por responsable («Mis carpetas / Todas / Sin responsable», o «De…» con el id
+	// de un integrante, previsto o invitado). Default «Todas». El filtro lo resuelve el hub
+	// (`?responsable=me|ninguno|<id>`); mientras llega la respuesta se filtra con los
+	// `responsables` que ya trae el listado. Solo afecta la tabla principal.
+	const [responsableVista, setResponsableVista] = useState<string>("todas");
 	const [responsableIds, setResponsableIds] = useState<Set<string> | null>(null);
 	const responsablesSignature = useMemo(
 		() => (isTeamMode ? folders.map((f: any) => `${f._id}:${(f.responsables || []).join(",")}`).join("|") : ""),
 		[folders, isTeamMode],
 	);
 	useEffect(() => {
-		if (!isTeamMode || !activeTeam?._id || responsableVista === "todas") {
+		const responsableParam = responsableQueryValue(responsableVista);
+		if (!isTeamMode || !activeTeam?._id || !responsableParam) {
 			setResponsableIds(null);
 			return;
 		}
 		let cancelled = false;
 		setResponsableIds(null);
-		fetchGroupFolderIdsByResponsable(activeTeam._id, responsableVista === "mias" ? "me" : "ninguno").then((ids) => {
+		fetchGroupFolderIdsByResponsable(activeTeam._id, responsableParam).then((ids) => {
 			if (!cancelled) setResponsableIds(ids ? new Set(ids) : null);
 		});
 		return () => {
@@ -2492,25 +2556,11 @@ const FoldersLayout = () => {
 	}, [verifiedFolders]);
 
 	// Juzgados de origen presentes (fuero + número), con conteo; ordenados por fuero y número.
-	const uniqueJuzgados = useMemo(() => {
-		const map = new Map<string, number>();
-		verifiedFolders.forEach((folder: any) => {
-			const k = juzgadoKey(folder);
-			if (k) map.set(k, (map.get(k) || 0) + 1);
-		});
-		const num = (v: string) => (/^\d+$/.test(v) ? parseInt(v, 10) : Number.POSITIVE_INFINITY);
-		return Array.from(map.entries())
-			.map(([value, count]) => {
-				const [fuero, court] = value.split("|");
-				// Número → «7 · Seguridad Social»; texto (MEV, SCBA) → el nombre recortado a una línea
-				const esNumero = /^\d+$/.test(court);
-				const corto = court.length > 44 ? `${court.slice(0, 42)}…` : court;
-				const label = esNumero ? (fuero ? `${court} · ${fuero}` : `Juzgado ${court}`) : corto;
-				return { value, label, count, fuero, court };
-			})
-			.sort((a, b) => a.fuero.localeCompare(b.fuero, "es") || num(a.court) - num(b.court) || a.court.localeCompare(b.court))
-			.map(({ value, label, count }) => ({ value, label, count }));
-	}, [verifiedFolders]);
+	// Número → «7 · Seguridad Social»; texto (MEV, SCBA) → el nombre recortado (util compartido con Archivadas, 6/11/2026).
+	const uniqueJuzgados = useMemo(() => juzgadoOptions(juzgadoCounts(verifiedFolders)), [verifiedFolders]);
+	const uniqueSituaciones = useMemo(() => situacionOptions(verifiedFolders), [verifiedFolders]);
+	// Juzgados de las archivadas: conteo del hub sobre todas, no solo la página visible.
+	const archivedJuzgadoOptions = useMemo(() => juzgadoOptions(archivedFacets?.juzgados || []), [archivedFacets]);
 
 	const uniqueUbicaciones = useMemo(() => {
 		const map = new Map<string, number>();
@@ -2556,6 +2606,10 @@ const FoldersLayout = () => {
 				.join("; "),
 		[teamAssigneesForCsv],
 	);
+	// Opciones «De…» del selector del listado (sin el usuario: ya está en «Mis carpetas») y del
+	// filtro por responsable del modal de archivadas (con todos).
+	const responsableDeOptions = useMemo(() => responsableOptions(teamAssigneesForCsv, user?._id), [teamAssigneesForCsv, user?._id]);
+	const archivedResponsableOptions = useMemo(() => responsableOptions(teamAssigneesForCsv), [teamAssigneesForCsv]);
 
 	// Filtrar carpetas verificadas por todos los filtros
 	const filteredVerifiedFolders = useMemo(() => {
@@ -2639,6 +2693,11 @@ const FoldersLayout = () => {
 			if (ubicacionFilter !== "all" && ubicacionActual(folder) !== ubicacionFilter) {
 				return false;
 			}
+			// Situación procesal (6/11/2026)
+			if (situacionFilter !== "all") {
+				const k = situacionKey(folder.situacion);
+				if (situacionFilter === "__none" ? k !== "" : k !== situacionFilter) return false;
+			}
 
 			// Filtro por movimientos recientes
 			if (movimientosFilter !== "all") {
@@ -2658,6 +2717,10 @@ const FoldersLayout = () => {
 					case "none":
 						if (lastMovement) return false;
 						break;
+					default:
+						// inactive30|90|180|365: último movimiento conocido y anterior a hoy - N días
+						if (isInactividadFiltro(movimientosFilter) && !sinMovimientoHace(folder, INACTIVIDAD_FILTROS[movimientosFilter].days, today))
+							return false;
 				}
 			}
 
@@ -2677,6 +2740,7 @@ const FoldersLayout = () => {
 		fueroFilter,
 		juzgadoFilter,
 		ubicacionFilter,
+		situacionFilter,
 		movimientosFilter,
 	]);
 
@@ -3094,9 +3158,9 @@ const FoldersLayout = () => {
 			loadingRef.current = true;
 			// Usar la función correcta según el modo equipo
 			if (isTeamMode && activeTeam?._id) {
-				await dispatch(getArchivedFoldersByGroupId(activeTeam._id, archivedPage, archivedPageSize));
+				await dispatch(getArchivedFoldersByGroupId(activeTeam._id, archivedPage, archivedPageSize, undefined, archivedExtra));
 			} else {
-				await dispatch(getArchivedFoldersByUserId(user._id, archivedPage, archivedPageSize));
+				await dispatch(getArchivedFoldersByUserId(user._id, archivedPage, archivedPageSize, undefined, archivedExtra));
 			}
 			setArchivedModalOpen(true);
 		} catch (error) {
@@ -3106,12 +3170,14 @@ const FoldersLayout = () => {
 		} finally {
 			loadingRef.current = false;
 		}
-	}, [user?._id, archivedPage, archivedPageSize, isTeamMode, activeTeam?._id]);
+	}, [user?._id, archivedPage, archivedPageSize, isTeamMode, activeTeam?._id, archivedExtra]);
 
 	const handleCloseArchivedModal = useCallback(() => {
 		setArchivedModalOpen(false);
 		setArchivedPage(1); // Resetear a página 1 al cerrar
 		setArchivedSearch(""); // Resetear búsqueda al cerrar
+		setArchivedResponsable("");
+		setArchivedJuzgado("");
 	}, []);
 
 	const handleArchivedPageChange = useCallback(
@@ -3123,9 +3189,9 @@ const FoldersLayout = () => {
 				setArchivedPage(page);
 				// Usar la función correcta según el modo equipo
 				if (isTeamMode && activeTeam?._id) {
-					await dispatch(getArchivedFoldersByGroupId(activeTeam._id, page, archivedPageSize, archivedSearch));
+					await dispatch(getArchivedFoldersByGroupId(activeTeam._id, page, archivedPageSize, archivedSearch, archivedExtra));
 				} else {
-					await dispatch(getArchivedFoldersByUserId(user._id, page, archivedPageSize, archivedSearch));
+					await dispatch(getArchivedFoldersByUserId(user._id, page, archivedPageSize, archivedSearch, archivedExtra));
 				}
 			} catch (error) {
 				setSnackbarMessage("Error al cambiar de página");
@@ -3135,7 +3201,7 @@ const FoldersLayout = () => {
 				loadingRef.current = false;
 			}
 		},
-		[user?._id, archivedPageSize, archivedSearch, isTeamMode, activeTeam?._id],
+		[user?._id, archivedPageSize, archivedSearch, isTeamMode, activeTeam?._id, archivedExtra],
 	);
 
 	const handleArchivedPageSizeChange = useCallback(
@@ -3148,9 +3214,9 @@ const FoldersLayout = () => {
 				setArchivedPage(1); // Resetear a página 1 cuando cambia el tamaño
 				// Usar la función correcta según el modo equipo
 				if (isTeamMode && activeTeam?._id) {
-					await dispatch(getArchivedFoldersByGroupId(activeTeam._id, 1, pageSize, archivedSearch));
+					await dispatch(getArchivedFoldersByGroupId(activeTeam._id, 1, pageSize, archivedSearch, archivedExtra));
 				} else {
-					await dispatch(getArchivedFoldersByUserId(user._id, 1, pageSize, archivedSearch));
+					await dispatch(getArchivedFoldersByUserId(user._id, 1, pageSize, archivedSearch, archivedExtra));
 				}
 			} catch (error) {
 				setSnackbarMessage("Error al cambiar tamaño de página");
@@ -3160,7 +3226,7 @@ const FoldersLayout = () => {
 				loadingRef.current = false;
 			}
 		},
-		[user?._id, archivedSearch, isTeamMode, activeTeam?._id],
+		[user?._id, archivedSearch, isTeamMode, activeTeam?._id, archivedExtra],
 	);
 
 	const handleArchivedSearchChange = useCallback(
@@ -3173,9 +3239,9 @@ const FoldersLayout = () => {
 			setArchivedPage(1);
 			try {
 				if (isTeamMode && activeTeam?._id) {
-					await dispatch(getArchivedFoldersByGroupId(activeTeam._id, 1, archivedPageSize, term));
+					await dispatch(getArchivedFoldersByGroupId(activeTeam._id, 1, archivedPageSize, term, archivedExtra));
 				} else {
-					await dispatch(getArchivedFoldersByUserId(user._id, 1, archivedPageSize, term));
+					await dispatch(getArchivedFoldersByUserId(user._id, 1, archivedPageSize, term, archivedExtra));
 				}
 			} catch (error) {
 				setSnackbarMessage("Error al buscar causas archivadas");
@@ -3183,7 +3249,48 @@ const FoldersLayout = () => {
 				setSnackbarOpen(true);
 			}
 		},
-		[user?._id, archivedPageSize, isTeamMode, activeTeam?._id],
+		[user?._id, archivedPageSize, isTeamMode, activeTeam?._id, archivedExtra],
+	);
+
+	// Filtro por responsable del modal de archivadas (solo en modo equipo): vuelve a página 1.
+	const handleArchivedResponsableChange = useCallback(
+		async (value: string) => {
+			if (!activeTeam?._id) return;
+			setArchivedResponsable(value);
+			setArchivedPage(1);
+			try {
+				await dispatch(
+					getArchivedFoldersByGroupId(activeTeam._id, 1, archivedPageSize, archivedSearch, { ...archivedExtra, responsable: value }),
+				);
+			} catch (error) {
+				setSnackbarMessage("Error al filtrar causas archivadas");
+				setSnackbarSeverity("error");
+				setSnackbarOpen(true);
+			}
+		},
+		[activeTeam?._id, archivedPageSize, archivedSearch, archivedExtra],
+	);
+
+	// Filtro por juzgado del modal de archivadas (también sin equipo): vuelve a página 1.
+	const handleArchivedJuzgadoChange = useCallback(
+		async (value: string) => {
+			if (!user?._id) return;
+			setArchivedJuzgado(value);
+			setArchivedPage(1);
+			const extra = { ...archivedExtra, juzgado: value };
+			try {
+				if (isTeamMode && activeTeam?._id) {
+					await dispatch(getArchivedFoldersByGroupId(activeTeam._id, 1, archivedPageSize, archivedSearch, extra));
+				} else {
+					await dispatch(getArchivedFoldersByUserId(user._id, 1, archivedPageSize, archivedSearch, extra));
+				}
+			} catch (error) {
+				setSnackbarMessage("Error al filtrar causas archivadas");
+				setSnackbarSeverity("error");
+				setSnackbarOpen(true);
+			}
+		},
+		[user?._id, isTeamMode, activeTeam?._id, archivedPageSize, archivedSearch, archivedExtra],
 	);
 
 	const handleOpenGuide = useCallback(() => {
@@ -3229,6 +3336,9 @@ const FoldersLayout = () => {
 	}, []);
 	const handleUbicacionFilterChange = useCallback((event: SelectChangeEvent<string>) => {
 		setUbicacionFilter(event.target.value);
+	}, []);
+	const handleSituacionFilterChange = useCallback((event: SelectChangeEvent<string>) => {
+		setSituacionFilter(event.target.value);
 	}, []);
 
 	const handleUnarchiveSelected = useCallback(
@@ -4190,6 +4300,18 @@ const FoldersLayout = () => {
 				},
 			},
 			{
+				// Situación procesal del expediente PJN (EN LETRA, EN DESPACHO, GIRO…), desde la causa.
+				// Control del estudio (6/11/2026).
+				Header: "Situación",
+				accessor: "situacion" as any,
+				Cell: ({ value }: { value?: string }) =>
+					value ? (
+						<Typography variant="body2" sx={{ whiteSpace: "nowrap" }}>
+							{situacionLabel(value)}
+						</Typography>
+					) : null,
+			},
+			{
 				Header: "Estado",
 				accessor: "status",
 				Cell: ({ value }: { value: string }) => (value ? <StatusPill status={value} /> : null),
@@ -4672,12 +4794,17 @@ const FoldersLayout = () => {
 
 					{/* Equipos: vista por responsable */}
 					{isTeamMode && (
-						<Box sx={{ px: { xs: 0, sm: 3 }, pt: 2, pb: { xs: 1, sm: 0 } }}>
+						<Stack
+							direction={{ xs: "column", sm: "row" }}
+							spacing={1}
+							alignItems={{ xs: "stretch", sm: "center" }}
+							sx={{ px: { xs: 0, sm: 3 }, pt: 2, pb: { xs: 1, sm: 0 } }}
+						>
 							<ToggleButtonGroup
 								exclusive
 								size="small"
-								value={responsableVista}
-								onChange={(_e, next: "todas" | "mias" | "sin" | null) => {
+								value={isResponsableVistaFija(responsableVista) ? responsableVista : null}
+								onChange={(_e, next: string | null) => {
 									if (next) setResponsableVista(next);
 								}}
 								aria-label="Filtrar carpetas por responsable"
@@ -4705,7 +4832,45 @@ const FoldersLayout = () => {
 								<ToggleButton value="todas">Todas</ToggleButton>
 								<ToggleButton value="sin">Sin responsable</ToggleButton>
 							</ToggleButtonGroup>
-						</Box>
+							{/* «De…»: carpetas a cargo de un integrante, previsto o invitado concreto (6/11/2026) */}
+							{responsableDeOptions.length > 0 && (
+								<FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 200 } }}>
+									<Select
+										value={isResponsableVistaFija(responsableVista) ? "" : responsableVista}
+										onChange={(e) => {
+											const next = String(e.target.value);
+											setResponsableVista(next || "todas");
+										}}
+										displayEmpty
+										renderValue={(v) => {
+											const sel = responsableDeOptions.find((o) => o.id === v);
+											return sel ? `De ${sel.name}` : "De…";
+										}}
+										inputProps={{ "aria-label": "Carpetas a cargo de un integrante" }}
+										data-testid="folders-responsable-de"
+										sx={{
+											borderRadius: 1.25,
+											fontSize: "0.78rem",
+											fontWeight: 600,
+											letterSpacing: "-0.005em",
+											color: isResponsableVistaFija(responsableVista) ? "text.secondary" : BRAND_BLUE,
+											bgcolor: isResponsableVistaFija(responsableVista) ? "transparent" : alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+											"& fieldset": { borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14) },
+											"& .MuiSelect-select": { py: 0.75 },
+										}}
+									>
+										<MenuItem value="">
+											<em>Todas (sin filtrar por persona)</em>
+										</MenuItem>
+										{responsableDeOptions.map((o) => (
+											<MenuItem key={o.id} value={o.id}>
+												{o.name}
+											</MenuItem>
+										))}
+									</Select>
+								</FormControl>
+							)}
+						</Stack>
 					)}
 
 					{/* Tabla principal de causas verificadas */}
@@ -4758,6 +4923,9 @@ const FoldersLayout = () => {
 								ubicacionFilter={ubicacionFilter}
 								onUbicacionFilterChange={handleUbicacionFilterChange}
 								uniqueUbicaciones={uniqueUbicaciones}
+								situacionFilter={situacionFilter}
+								onSituacionFilterChange={handleSituacionFilterChange}
+								uniqueSituaciones={uniqueSituaciones}
 								resolveResponsables={isTeamMode ? resolveResponsablesForCsv : undefined}
 								storedHiddenColumns={storedHiddenColumns}
 								onHiddenColumnsChange={handleHiddenColumnsChange}
@@ -4987,6 +5155,12 @@ const FoldersLayout = () => {
 						onPageSizeChange={handleArchivedPageSizeChange}
 						onSearchChange={handleArchivedSearchChange}
 						showResponsables={isTeamMode}
+						responsableFilter={archivedResponsable}
+						responsableOptions={archivedResponsableOptions}
+						onResponsableFilterChange={isTeamMode ? handleArchivedResponsableChange : undefined}
+						juzgadoFilter={archivedJuzgado}
+						juzgadoOptions={archivedJuzgadoOptions}
+						onJuzgadoFilterChange={handleArchivedJuzgadoChange}
 						onAssignResponsables={
 							isTeamMode && canEditResponsables
 								? (ids) =>
@@ -4996,7 +5170,9 @@ const FoldersLayout = () => {
 											// Al terminar, recargar la página actual de archivadas para ver el responsable nuevo
 											clearSelection: () => {
 												if (activeTeam?._id)
-													dispatch(getArchivedFoldersByGroupId(activeTeam._id, archivedPage, archivedPageSize, archivedSearch));
+													dispatch(
+														getArchivedFoldersByGroupId(activeTeam._id, archivedPage, archivedPageSize, archivedSearch, archivedExtra),
+													);
 											},
 										})
 								: undefined
