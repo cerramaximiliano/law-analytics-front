@@ -332,6 +332,10 @@ const ResponsablesContent = () => (
 					En Archivadas: columna «Radicación» y filtros por <strong>juzgado</strong> y por <strong>responsable</strong> junto al buscador
 				</>,
 				<>
+					<strong>Seguimiento</strong>: la estrella de cada carpeta (o «Marcar seguimiento» con varias seleccionadas) marca un expediente
+					importante; después, filtro «Solo en seguimiento». La marca la ve todo el equipo y sirve en cualquier jurisdicción
+				</>,
+				<>
 					<Printer size={14} style={{ marginRight: 4 }} />
 					En Mi equipo, <strong>Distribución de responsables</strong>: carpetas por integrante con su radicación, Imprimir y Descargar CSV
 					(propietario y Administradores)

@@ -302,7 +302,7 @@ export const getFoldersByUserId =
 			dispatch({ type: SET_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación y timestamps
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,causaAccessCutoffAt,source,previousSyncSource,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,createdAt,updatedAt,lastMovementDate";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,causaAccessCutoffAt,source,previousSyncSource,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,createdAt,updatedAt,lastMovementDate,seguimiento";
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/user/${userId}`, {
 				params: { fields },
 			});
@@ -329,7 +329,7 @@ export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatc
 		dispatch({ type: SET_FOLDER_LOADING });
 		// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 		const fields =
-			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,causaAccessCutoffAt,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate,responsables,notificationPolicy,createdBy";
+			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,causaAccessCutoffAt,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate,responsables,notificationPolicy,createdBy,seguimiento";
 		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}`, {
 			params: { fields },
 		});
@@ -442,6 +442,55 @@ export const updateFoldersResponsablesBulk =
 			return { success: true, modified, folders };
 		} catch (error) {
 			return { success: false, message: folderTeamError(error, "No se pudieron asignar los responsables") };
+		}
+	};
+
+/** Seguimiento de expediente importante (6/11/2026). PUT /api/folders/:id/seguimiento (dueño, owner, admin o editor). */
+export const updateFolderSeguimiento =
+	(folderId: string, activo: boolean, nota?: string, headers?: Record<string, string>) =>
+	async (dispatch: Dispatch): Promise<{ success: boolean; message?: string }> => {
+		try {
+			const response = await axios.put(
+				`${import.meta.env.VITE_BASE_URL}/api/folders/${folderId}/seguimiento`,
+				{ activo, ...(nota !== undefined ? { nota } : {}) },
+				{ headers },
+			);
+			if (response.data?.success && response.data.folder) {
+				dispatch({ type: PATCH_FOLDER, payload: response.data.folder });
+				return { success: true };
+			}
+			return { success: false, message: response.data?.message || "No se pudo cambiar el seguimiento" };
+		} catch (error) {
+			return { success: false, message: folderTeamError(error, "No se pudo cambiar el seguimiento") };
+		}
+	};
+
+/** PUT /api/folders/seguimiento/bulk — marcar o quitar en lote (500 por llamada; se trocea). */
+export const updateFoldersSeguimientoBulk =
+	(folderIds: string[], activo: boolean, headers?: Record<string, string>) =>
+	async (dispatch: Dispatch): Promise<{ success: boolean; modified: number; message?: string }> => {
+		try {
+			const ids = [...new Set(folderIds)];
+			let modified = 0;
+			for (let i = 0; i < ids.length; i += BULK_RESPONSABLES_CHUNK) {
+				const chunk = ids.slice(i, i + BULK_RESPONSABLES_CHUNK);
+				const response = await axios.put(
+					`${import.meta.env.VITE_BASE_URL}/api/folders/seguimiento/bulk`,
+					{ folderIds: chunk, activo },
+					{ headers },
+				);
+				if (!response.data?.success) {
+					return { success: false, modified, message: response.data?.message || "No se pudo cambiar el seguimiento" };
+				}
+				const got: { _id: string; seguimiento: FolderData["seguimiento"] }[] = Array.isArray(response.data.folders)
+					? response.data.folders
+					: [];
+				got.forEach((folder) => dispatch({ type: PATCH_FOLDER, payload: folder }));
+				modified += Number(response.data.modified ?? got.length) || 0;
+			}
+			return { success: true, modified };
+		} catch (error) {
+			return { success: false, modified: 0, message: folderTeamError(error, "No se pudo cambiar el seguimiento") };
 		}
 	};
 
@@ -783,7 +832,7 @@ export const getArchivedFoldersByUserId =
 			dispatch({ type: SET_ARCHIVED_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,causaAccessCutoffAt,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate,archivedAt,archivedBy,archivedReason,unarchivedAt,responsables,groupId,createdBy";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,causaAccessCutoffAt,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate,archivedAt,archivedBy,archivedReason,unarchivedAt,responsables,groupId,createdBy,seguimiento";
 
 			const params: Record<string, any> = {
 				archived: true,
@@ -839,7 +888,7 @@ export const getArchivedFoldersByGroupId =
 			dispatch({ type: SET_ARCHIVED_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,causaAccessCutoffAt,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate,archivedAt,archivedBy,archivedReason,unarchivedAt,responsables,groupId,createdBy";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,pjsalta,pjcatamarca,pjmendoza,mevCredentialStatus,causaCredentialCovered,causaAccessCutoffAt,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,causaAssociationError,searchTerm,tooManyResults,searchTotalResults,causaUpdateEnabled,judFolder,lastMovementDate,archivedAt,archivedBy,archivedReason,unarchivedAt,responsables,groupId,createdBy,seguimiento";
 
 			const params: Record<string, any> = {
 				archived: true,

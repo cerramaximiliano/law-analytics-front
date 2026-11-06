@@ -267,6 +267,14 @@ CSV. Las carpetas sin fecha de movimiento conocida no entran en «Sin movimiento
 movimientos». Para un período concreto, elegí **Movimientos → «Período…»** y completá Desde y Hasta: quedan las carpetas cuyo
 último movimiento cae entre esas fechas (los dos extremos incluidos; un extremo vacío no limita).
 
+### Seguimiento de expedientes importantes
+
+Para controlar de cerca algunos expedientes, marcalos con la **estrella** de la fila (o seleccioná varios y usá **Marcar
+seguimiento**). En el detalle hay un botón **Seguimiento** que hace lo mismo. La marca la ve todo el equipo, queda registrado
+quién la puso y cuándo, y sirve para cualquier jurisdicción (PJN, MEV, EJE, Salta, Catamarca, Mendoza, SCBA o carpetas manuales).
+En Filtros, **Seguimiento → «Solo en seguimiento»** deja únicamente esas carpetas y se combina con los demás filtros. La columna
+«Seguimiento» también sale en el CSV. Pueden marcar el propietario, los Administradores y los Editores.
+
 ### Distribución de responsables
 
 En **Configuración → Perfil → Mi equipo**, la tarjeta **Distribución de responsables** muestra las carpetas activas agrupadas

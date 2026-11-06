@@ -118,6 +118,7 @@ import {
 	ArrowDown2,
 	ArrowRight2,
 	UserEdit,
+	Star1,
 	Hierarchy,
 } from "iconsax-react";
 import PjnCredErrorBanner from "sections/apps/folders/PjnCredErrorBanner";
@@ -137,6 +138,8 @@ import {
 	archiveFolders,
 	getArchivedFoldersByUserId,
 	getArchivedFoldersByGroupId,
+	updateFolderSeguimiento,
+	updateFoldersSeguimientoBulk,
 	unarchiveFolders,
 	getFolderById,
 	setFolderSort,
@@ -372,6 +375,9 @@ interface ReactTableProps extends Props {
 	situacionFilter?: string;
 	onSituacionFilterChange?: (event: SelectChangeEvent<string>) => void;
 	uniqueSituaciones?: { value: string; label: string; count: number }[];
+	/** Seguimiento (6/11/2026): all | si | no. */
+	seguimientoFilter?: string;
+	onSeguimientoFilterChange?: (event: SelectChangeEvent<string>) => void;
 	/** Nombres de responsables para el CSV (modo equipo). */
 	resolveResponsables?: (ids: string[] | undefined) => string;
 	/** Columnas ocultas guardadas en el hub para este usuario (manda sobre el navegador) y cómo guardarlas. */
@@ -382,6 +388,8 @@ interface ReactTableProps extends Props {
 	handleAssignSelected?: (selectedRows: any[], clearSelection: () => void) => void;
 	/** Equipos: asistente «Repartir carpetas» (fase 3, 6/11/2026); con selección, se limita a ella. */
 	handleDistribute?: (selectedRows: any[], clearSelection: () => void) => void;
+	/** Seguimiento (6/11/2026): marcar o quitar en lote; `activo` lo decide el botón según la selección. */
+	handleSeguimientoSelected?: (selectedRows: any[], clearSelection: () => void, activo: boolean) => void;
 	onBarWidthMeasured?: (width: number) => void;
 }
 
@@ -394,6 +402,7 @@ function ReactTable({
 	handleDeleteSelected,
 	handleAssignSelected,
 	handleDistribute,
+	handleSeguimientoSelected,
 	isLoading,
 	handleOpenArchivedModal,
 	handleOpenGuide,
@@ -440,6 +449,8 @@ function ReactTable({
 	situacionFilter = "all",
 	onSituacionFilterChange,
 	uniqueSituaciones = [],
+	seguimientoFilter = "all",
+	onSeguimientoFilterChange,
 	resolveResponsables,
 	storedHiddenColumns = null,
 	onHiddenColumnsChange,
@@ -549,6 +560,7 @@ function ReactTable({
 		if (juzgadoFilter !== "all") count++;
 		if (ubicacionFilter !== "all") count++;
 		if (situacionFilter !== "all") count++;
+		if (seguimientoFilter !== "all") count++;
 		return count;
 	}, [
 		folderTypeFilter,
@@ -561,6 +573,7 @@ function ReactTable({
 		juzgadoFilter,
 		ubicacionFilter,
 		situacionFilter,
+		seguimientoFilter,
 	]);
 
 	const filterTypes = useMemo(() => renderFilterTypes, []);
@@ -692,6 +705,7 @@ function ReactTable({
 		{ label: "Juzgado de origen", key: "radicacion" },
 		{ label: "Ubicación actual", key: "ubicacion" },
 		{ label: "Situación", key: "situacion" },
+		{ label: "Seguimiento", key: "seguimiento" },
 		...(resolveResponsables ? [{ label: "Responsable", key: "responsable" }] : []),
 		{ label: "Fecha inicio", key: "initialDateFolder" },
 		{ label: "Fecha cierre", key: "finalDateFolder" },
@@ -719,6 +733,7 @@ function ReactTable({
 			radicacion: radicacionOrigen(folder),
 			ubicacion: ubicacionDetalle(folder) || ubicacionActual(folder),
 			situacion: (folder as any).situacion ? situacionLabel((folder as any).situacion) : "",
+			seguimiento: (folder as any).seguimiento?.activo ? "Sí" : "",
 			responsable: resolveResponsables ? resolveResponsables((folder as any).responsables) : "",
 			initialDateFolder: folder.initialDateFolder || "",
 			finalDateFolder: folder.finalDateFolder || "",
@@ -973,6 +988,32 @@ function ReactTable({
 										</MenuItem>
 									)}
 
+									{/* Seguimiento (6/11/2026): marcar o quitar las seleccionadas */}
+									{handleSeguimientoSelected && (
+										<MenuItem
+											onClick={() => {
+												handleMobileMenuClose();
+												handleSeguimientoSelected(
+													selectedFlatRows,
+													() => toggleAllRowsSelected(false),
+													!selectedFlatRows.every((r: any) => r.original?.seguimiento?.activo),
+												);
+											}}
+											disabled={Object.keys(selectedRowIds).length === 0}
+										>
+											<ListItemIcon>
+												<Star1 size={18} />
+											</ListItemIcon>
+											<ListItemText>
+												{Object.keys(selectedRowIds).length === 0
+													? "Seguimiento"
+													: selectedFlatRows.every((r: any) => r.original?.seguimiento?.activo)
+													? `Quitar seguimiento (${selectedFlatRows.length})`
+													: `Marcar seguimiento (${selectedFlatRows.length})`}
+											</ListItemText>
+										</MenuItem>
+									)}
+
 									{/* Equipos: repartir por criterios (con selección, solo esas) */}
 									{handleDistribute && (
 										<MenuItem
@@ -1142,6 +1183,37 @@ function ReactTable({
 												{Object.keys(selectedRowIds).length > 0
 													? `Asignar responsable (${selectedFlatRows.length})`
 													: "Asignar responsable"}
+											</Button>
+										</span>
+									</Tooltip>
+								)}
+								{handleSeguimientoSelected && (
+									<Tooltip
+										title={Object.keys(selectedRowIds).length === 0 ? "Seleccioná al menos una carpeta para marcar seguimiento" : ""}
+										placement="top"
+									>
+										<span>
+											<Button
+												variant="outlined"
+												color="secondary"
+												size="small"
+												startIcon={<Star1 size={18} />}
+												onClick={() =>
+													handleSeguimientoSelected(
+														selectedFlatRows,
+														() => toggleAllRowsSelected(false),
+														!selectedFlatRows.every((r: any) => r.original?.seguimiento?.activo),
+													)
+												}
+												disabled={Object.keys(selectedRowIds).length === 0}
+												sx={{ textTransform: "none" }}
+												data-testid="folder-seguimiento-btn"
+											>
+												{Object.keys(selectedRowIds).length === 0
+													? "Seguimiento"
+													: selectedFlatRows.every((r: any) => r.original?.seguimiento?.activo)
+													? `Quitar seguimiento (${selectedFlatRows.length})`
+													: `Marcar seguimiento (${selectedFlatRows.length})`}
 											</Button>
 										</span>
 									</Tooltip>
@@ -1584,6 +1656,28 @@ function ReactTable({
 														</Typography>
 													</MenuItem>
 												))}
+											</Select>
+										</FormControl>
+									)}
+									{/* Seguimiento (6/11/2026): solo las marcadas o solo las no marcadas */}
+									{onSeguimientoFilterChange && (
+										<FormControl size="small" sx={{ minWidth: 160 }}>
+											<Select
+												id="seguimiento-filter"
+												displayEmpty
+												value={seguimientoFilter}
+												onChange={onSeguimientoFilterChange}
+												sx={filterSelectSx}
+											>
+												<MenuItem value="all">
+													<Typography variant="body2">Seguimiento: Todas</Typography>
+												</MenuItem>
+												<MenuItem value="si">
+													<Typography variant="body2">Solo en seguimiento</Typography>
+												</MenuItem>
+												<MenuItem value="no">
+													<Typography variant="body2">Sin seguimiento</Typography>
+												</MenuItem>
 											</Select>
 										</FormControl>
 									)}
@@ -2423,6 +2517,8 @@ const FoldersLayout = () => {
 	const [ubicacionFilter, setUbicacionFilter] = useState<string>("all");
 	// Situación procesal (6/11/2026): "all" | clave normalizada | "__none" (sin dato).
 	const [situacionFilter, setSituacionFilter] = useState<string>("all");
+	// Seguimiento (6/11/2026): "all" | "si" | "no".
+	const [seguimientoFilter, setSeguimientoFilter] = useState<string>("all");
 
 	// Estado para pre-seleccionar paso y valores al abrir AddFolder desde los badges
 	const [addFolderInitialStep, setAddFolderInitialStep] = useState<number | undefined>(undefined);
@@ -2743,6 +2839,10 @@ const FoldersLayout = () => {
 				const k = situacionKey(folder.situacion);
 				if (situacionFilter === "__none" ? k !== "" : k !== situacionFilter) return false;
 			}
+			// Seguimiento (6/11/2026)
+			if (seguimientoFilter !== "all" && Boolean(folder.seguimiento?.activo) !== (seguimientoFilter === "si")) {
+				return false;
+			}
 
 			// Filtro por movimientos recientes
 			if (movimientosFilter !== "all") {
@@ -2789,6 +2889,7 @@ const FoldersLayout = () => {
 		juzgadoFilter,
 		ubicacionFilter,
 		situacionFilter,
+		seguimientoFilter,
 		movimientosFilter,
 		periodo,
 	]);
@@ -3136,6 +3237,45 @@ const FoldersLayout = () => {
 		open: false,
 		folderIds: [],
 	});
+	// Seguimiento de expedientes importantes (6/11/2026): estrella por fila y acción masiva.
+	const handleToggleSeguimiento = useCallback(
+		async (folder: any) => {
+			const activo = !folder?.seguimiento?.activo;
+			const r = await dispatch(updateFolderSeguimiento(folder._id, activo, undefined, getRequestHeaders()));
+			setSnackbarMessage(
+				r.success
+					? activo
+						? "Carpeta marcada para seguimiento"
+						: "Carpeta quitada del seguimiento"
+					: r.message || "No se pudo cambiar el seguimiento",
+			);
+			setSnackbarSeverity(r.success ? "success" : "error");
+			setSnackbarOpen(true);
+		},
+		[getRequestHeaders],
+	);
+	const handleSeguimientoSelected = useCallback(
+		async (selectedRows: Row<any>[], clearSelection: () => void, activo: boolean) => {
+			if (selectedRows.length === 0) return;
+			const r = await dispatch(
+				updateFoldersSeguimientoBulk(
+					selectedRows.map((row) => row.original._id),
+					activo,
+					getRequestHeaders(),
+				),
+			);
+			setSnackbarMessage(
+				r.success
+					? `${activo ? "Marcadas para seguimiento" : "Quitadas del seguimiento"}: ${r.modified} carpeta${r.modified === 1 ? "" : "s"}`
+					: r.message || "No se pudo cambiar el seguimiento",
+			);
+			setSnackbarSeverity(r.success ? "success" : "error");
+			setSnackbarOpen(true);
+			if (r.success) clearSelection();
+		},
+		[getRequestHeaders],
+	);
+
 	const handleAssignSelected = useCallback((selectedRows: Row<any>[], clearSelection: () => void) => {
 		if (selectedRows.length === 0) return;
 		setBulkAssign({ open: true, folderIds: selectedRows.map((row) => row.original._id), clearSelection });
@@ -3389,6 +3529,9 @@ const FoldersLayout = () => {
 	}, []);
 	const handleSituacionFilterChange = useCallback((event: SelectChangeEvent<string>) => {
 		setSituacionFilter(event.target.value);
+	}, []);
+	const handleSeguimientoFilterChange = useCallback((event: SelectChangeEvent<string>) => {
+		setSeguimientoFilter(event.target.value);
 	}, []);
 
 	const handleUnarchiveSelected = useCallback(
@@ -4522,6 +4665,21 @@ const FoldersLayout = () => {
 
 					return (
 						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0.25}>
+							{/* Seguimiento (6/11/2026): estrella ámbar cuando está marcada; cualquier jurisdicción */}
+							{canUpdate && (
+								<Tooltip title={folder.seguimiento?.activo ? "Quitar de seguimiento" : "Marcar para seguimiento"}>
+									<span>
+										<IconButton
+											size="small"
+											sx={{ ...actionIconSx, color: folder.seguimiento?.activo ? STALE_AMBER : "text.secondary" }}
+											onClick={(e) => handleRowAction(e, () => handleToggleSeguimiento(folder))}
+											data-testid="folder-seguimiento-star"
+										>
+											<Star1 variant={folder.seguimiento?.activo ? "Bold" : "Linear"} size={18} />
+										</IconButton>
+									</span>
+								</Tooltip>
+							)}
 							{/* "Abrir" estándar para causas verificadas. En la card mobile (compact) no va:
 							    tocar la card ya abre la carpeta y el área táctil de 44 px no deja lugar. */}
 							{!compact && (
@@ -4934,6 +5092,7 @@ const FoldersLayout = () => {
 								handleDeleteSelected={canDelete ? handleDeleteSelected : undefined}
 								handleAssignSelected={isTeamMode && canEditResponsables ? handleAssignSelected : undefined}
 								handleDistribute={isTeamMode && canEditResponsables ? handleDistribute : undefined}
+								handleSeguimientoSelected={canUpdate ? handleSeguimientoSelected : undefined}
 								handleOpenGuide={handleOpenGuide}
 								handleOpenArchivedModal={handleOpenArchivedModal}
 								renderRowSubComponent={renderRowSubComponent}
@@ -4978,6 +5137,8 @@ const FoldersLayout = () => {
 								situacionFilter={situacionFilter}
 								onSituacionFilterChange={handleSituacionFilterChange}
 								uniqueSituaciones={uniqueSituaciones}
+								seguimientoFilter={seguimientoFilter}
+								onSeguimientoFilterChange={handleSeguimientoFilterChange}
 								resolveResponsables={isTeamMode ? resolveResponsablesForCsv : undefined}
 								storedHiddenColumns={storedHiddenColumns}
 								onHiddenColumnsChange={handleHiddenColumnsChange}

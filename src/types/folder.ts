@@ -164,6 +164,8 @@ export type FolderData = {
 	responsables?: string[];
 	/** Equipos: a quién avisa la carpeta. 'equipo' sigue la regla por defecto del equipo. */
 	notificationPolicy?: FolderNotificationPolicy;
+	/** Seguimiento de expediente importante (6/11/2026): marca compartida, con quién y cuándo. */
+	seguimiento?: { activo: boolean; por?: string; desde?: string; nota?: string };
 	/** Equipos: quién creó la carpeta (el userId es siempre el del owner). */
 	createdBy?: string | null;
 };

@@ -31,6 +31,7 @@ import {
 	Link21,
 	MessageText1,
 	DocumentDownload,
+	Star1,
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
@@ -71,7 +72,7 @@ import FolderTeamPanel from "sections/apps/folders/FolderTeamPanel";
 
 // Actions
 import { dispatch } from "store";
-import { getFolderById, unarchiveFolders } from "store/reducers/folder";
+import { getFolderById, unarchiveFolders, updateFolderSeguimiento } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
 import { useTeam } from "contexts/TeamContext";
 import { filterContactsByFolder, getContactsByUserId } from "store/reducers/contacts";
@@ -194,6 +195,26 @@ const Details = () => {
 
 	// Desarchivar desde el banner de carpeta archivada
 	const { getRequestHeaders, isTeamMode } = useTeam();
+
+	// Seguimiento de expediente importante (6/11/2026).
+	const handleToggleSeguimiento = useCallback(async () => {
+		if (!id || !folder) return;
+		const activo = !folder.seguimiento?.activo;
+		const r = await dispatch(updateFolderSeguimiento(id, activo, undefined, getRequestHeaders()));
+		dispatch(
+			openSnackbar({
+				open: true,
+				message: r.success
+					? activo
+						? "Carpeta marcada para seguimiento"
+						: "Carpeta quitada del seguimiento"
+					: r.message || "No se pudo cambiar el seguimiento",
+				variant: "alert",
+				alert: { color: r.success ? "success" : "error" },
+				close: true,
+			}),
+		);
+	}, [id, folder, getRequestHeaders]);
 	const [unarchiving, setUnarchiving] = useState(false);
 	const handleUnarchiveFromBanner = useCallback(async () => {
 		if (!userId || !id || unarchiving) return;
@@ -1161,6 +1182,44 @@ const Details = () => {
 									</ToggleButtonGroup>
 								)}
 								{renderJudicialLink}
+								{/* Seguimiento de expediente importante (6/11/2026): cualquier jurisdicción, con o sin equipo */}
+								{id && folder && (
+									<Tooltip
+										title={folder.seguimiento?.activo ? "Quitar de seguimiento" : "Marcar como expediente importante para seguimiento"}
+									>
+										<Button
+											size="small"
+											variant="outlined"
+											startIcon={<Star1 size={14} variant={folder.seguimiento?.activo ? "Bold" : "Linear"} />}
+											onClick={handleToggleSeguimiento}
+											data-testid="folder-detail-seguimiento"
+											sx={{
+												height: 32,
+												px: 1.25,
+												flexShrink: 0,
+												whiteSpace: "nowrap",
+												textTransform: "none",
+												fontSize: "0.74rem",
+												fontWeight: 600,
+												letterSpacing: "-0.005em",
+												borderRadius: 1,
+												bgcolor: folder.seguimiento?.activo ? alpha(STALE_AMBER, isDark ? 0.16 : 0.1) : theme.palette.background.paper,
+												color: folder.seguimiento?.activo ? STALE_AMBER : theme.palette.text.secondary,
+												border: `1px solid ${
+													folder.seguimiento?.activo ? alpha(STALE_AMBER, 0.4) : alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)
+												}`,
+												transition: "all 180ms ease",
+												"&:hover": {
+													bgcolor: alpha(STALE_AMBER, isDark ? 0.2 : 0.14),
+													borderColor: alpha(STALE_AMBER, 0.5),
+													color: STALE_AMBER,
+												},
+											}}
+										>
+											{folder.seguimiento?.activo ? "En seguimiento" : "Seguimiento"}
+										</Button>
+									</Tooltip>
+								)}
 								{/* Descarga del expediente completo (PJN con causa verificada y válida) */}
 								{folder?.pjn && folder?.causaVerified === true && folder?.causaIsValid !== false && id && (
 									<Tooltip title="Descargar el expediente completo en PDF">
