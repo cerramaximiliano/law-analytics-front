@@ -38,10 +38,6 @@ export interface DefaultRootStateProps {
 	calendar: any;
 	menu: any;
 	snackbar: any;
-	cart: any;
-	product: any;
-	kanban: any;
-	invoice: any;
 	folder: any;
 	notifications: any;
 	calculator: any;

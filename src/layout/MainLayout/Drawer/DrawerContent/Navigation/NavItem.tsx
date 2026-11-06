@@ -45,18 +45,6 @@ const NavItem = ({ item, level }: Props) => {
 
 	// active menu item on page load
 	useEffect(() => {
-		if (pathname && pathname.includes("product-details")) {
-			if (item.url && item.url.includes("product-details")) {
-				dispatch(activeItem({ openItem: [item.id] }));
-			}
-		}
-
-		if (pathname && pathname.includes("kanban")) {
-			if (item.url && item.url.includes("kanban")) {
-				dispatch(activeItem({ openItem: [item.id] }));
-			}
-		}
-
 		if (pathname === item.url) {
 			dispatch(activeItem({ openItem: [item.id] }));
 		}

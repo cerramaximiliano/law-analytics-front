@@ -84,15 +84,6 @@ const Breadcrumbs = ({
 
 	let customLocation = location.pathname;
 
-	// only used for component demo breadcrumbs
-	if (customLocation.includes("/components-overview/breadcrumbs")) {
-		customLocation = "/apps/kanban/board";
-	}
-
-	if (customLocation.includes("/apps/kanban/backlogs")) {
-		customLocation = "/apps/kanban/board";
-	}
-
 	useEffect(() => {
 		// Casos especiales donde necesitamos ajustar manualmente el estado
 		if (customLocation.includes("/apps/profiles/user/payment")) {

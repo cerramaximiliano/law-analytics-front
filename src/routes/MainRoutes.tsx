@@ -27,12 +27,6 @@ const AppReservations = Loadable(lazyRetry(() => import("pages/apps/calendar/res
 
 const AppCustomerList = Loadable(lazyRetry(() => import("pages/apps/customer/list")));
 
-const AppInvoiceCreate = Loadable(lazyRetry(() => import("pages/apps/invoice/create")));
-const AppInvoiceDashboard = Loadable(lazyRetry(() => import("pages/apps/invoice/dashboard")));
-const AppInvoiceList = Loadable(lazyRetry(() => import("pages/apps/invoice/list")));
-const AppInvoiceDetails = Loadable(lazyRetry(() => import("pages/apps/invoice/details")));
-const AppInvoiceEdit = Loadable(lazyRetry(() => import("pages/apps/invoice/edit")));
-
 const UserProfile = Loadable(lazyRetry(() => import("pages/apps/profiles/user")));
 const UserTabPersonal = Loadable(lazyRetry(() => import("sections/apps/profiles/user/TabPersonal")));
 const UserTabPayment = Loadable(lazyRetry(() => import("sections/apps/profiles/user/TabPayment")));
@@ -259,31 +253,6 @@ const MainRoutes = {
 								{
 									path: "customer-list",
 									element: <AppCustomerList />,
-								},
-							],
-						},
-						{
-							path: "invoice",
-							children: [
-								{
-									path: "dashboard",
-									element: <AppInvoiceDashboard />,
-								},
-								{
-									path: "create",
-									element: <AppInvoiceCreate />,
-								},
-								{
-									path: "details/:id",
-									element: <AppInvoiceDetails />,
-								},
-								{
-									path: "edit/:id",
-									element: <AppInvoiceEdit />,
-								},
-								{
-									path: "list",
-									element: <AppInvoiceList />,
 								},
 							],
 						},

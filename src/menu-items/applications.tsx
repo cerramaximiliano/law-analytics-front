@@ -3,20 +3,7 @@ import React from "react";
 // third-party
 import { FormattedMessage } from "react-intl";
 // assets
-import {
-	Calculator,
-	Folder,
-	KyberNetwork,
-	Messages2,
-	Calendar1,
-	Kanban,
-	Profile2User,
-	Bill,
-	ShoppingBag,
-	CalendarTick,
-	Task,
-	DocumentText,
-} from "iconsax-react";
+import { Calculator, Folder, KyberNetwork, Messages2, Calendar1, Profile2User, CalendarTick, Task, DocumentText } from "iconsax-react";
 // type
 import { NavItemType } from "types/menu";
 
@@ -27,10 +14,7 @@ const icons = {
 	folders: Folder,
 	chat: Messages2,
 	calendar: Calendar1,
-	kanban: Kanban,
 	customer: Profile2User,
-	invoice: Bill,
-	ecommerce: ShoppingBag,
 	tasks: Task,
 	booking: CalendarTick,
 	documents: DocumentText,
@@ -144,41 +128,6 @@ const applications: NavItemType = {
 			type: "item",
 			url: "/tareas",
 		},
-		/*
-		{
-			id: "invoice",
-			title: <FormattedMessage id="Facturación" />,
-			url: "/apps/invoice/dashboard",
-			type: "collapse",
-			icon: icons.invoice,
-			breadcrumbs: true,
-			children: [
-				{
-					id: "create",
-					title: <FormattedMessage id="Nueva" />,
-					type: "item",
-					url: "/apps/invoice/create",
-				},
-				{
-					id: "details",
-					title: <FormattedMessage id="Detalles" />,
-					type: "item",
-					url: "/apps/invoice/details/1",
-				},
-				{
-					id: "list",
-					title: <FormattedMessage id="Listados" />,
-					type: "item",
-					url: "/apps/invoice/list",
-				},
-				{
-					id: "edit",
-					title: <FormattedMessage id="Editar" />,
-					type: "item",
-					url: "/apps/invoice/edit/1",
-				},
-			],
-		}, */
 	],
 };
 
