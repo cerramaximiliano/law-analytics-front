@@ -10,7 +10,6 @@ import "./utils/env";
 
 // third-party
 import { Provider as ReduxProvider } from "react-redux";
-import { PersistGate } from "redux-persist/integration/react";
 
 // fonts
 import "assets/fonts/inter/inter.css";
@@ -30,7 +29,7 @@ import "assets/css/custom.css";
 
 // project-imports
 import App from "./App";
-import { store, persister } from "store";
+import { store } from "store";
 import { ConfigProvider } from "contexts/ConfigContext";
 import { TeamProvider } from "contexts/TeamContext";
 import reportWebVitals from "./reportWebVitals";
@@ -70,47 +69,23 @@ if (precarga) precarga[1]().catch(() => {});
 
 // ==============================|| MAIN - REACT DOM RENDER  ||============================== //
 
-// Wrapper component to handle persist errors
-const PersistGateWrapper = ({ children }: { children: React.ReactNode }) => {
-	try {
-		return (
-			<PersistGate
-				loading={null}
-				persistor={persister}
-				onBeforeLift={() => {
-					// Ensure persist is ready before lifting
-					console.log("PersistGate: Before lift");
-				}}
-			>
-				{children}
-			</PersistGate>
-		);
-	} catch (error) {
-		console.error("PersistGate error:", error);
-		// If PersistGate fails, render children directly
-		return <>{children}</>;
-	}
-};
-
 root.render(
 	<ReduxProvider store={store}>
-		<PersistGateWrapper>
-			<ConfigProvider>
-				<BrowserRouter basename={import.meta.env.VITE_BASE_NAME}>
-					<TeamProvider>
-						<ErrorBoundary
-							onError={(error, info) => {
-								// Primer componente de la pila (solo el identificador, sin datos del usuario).
-								const first = /at\s+([A-Za-z0-9_$]+)/.exec(info?.componentStack || "");
-								reportFrontendError(first?.[1] || "react_error_boundary", error?.message || "render_error", error?.name || "Error");
-							}}
-						>
-							<App />
-						</ErrorBoundary>
-					</TeamProvider>
-				</BrowserRouter>
-			</ConfigProvider>
-		</PersistGateWrapper>
+		<ConfigProvider>
+			<BrowserRouter basename={import.meta.env.VITE_BASE_NAME}>
+				<TeamProvider>
+					<ErrorBoundary
+						onError={(error, info) => {
+							// Primer componente de la pila (solo el identificador, sin datos del usuario).
+							const first = /at\s+([A-Za-z0-9_$]+)/.exec(info?.componentStack || "");
+							reportFrontendError(first?.[1] || "react_error_boundary", error?.message || "render_error", error?.name || "Error");
+						}}
+					>
+						<App />
+					</ErrorBoundary>
+				</TeamProvider>
+			</BrowserRouter>
+		</ConfigProvider>
 	</ReduxProvider>,
 );
 
