@@ -15,6 +15,7 @@ import {
 	csvCell,
 	escapeHtml,
 	eventMatchesResponsable,
+	folderExpediente,
 	folderJurisLabel,
 	groupByResponsable,
 	reportFilename,
@@ -100,6 +101,12 @@ describe("CSV", () => {
 		expect(lines[2]).toBe("Beto Miembro,beto@x.com,Gómez c/ Pérez,CABA,Civil,1234/2025,Juz. 7 · Sec. 1");
 		expect(lines[3]).toBe("Sin responsable,,Sin dueño,Salta,,,");
 		expect(lines).toHaveLength(4);
+	});
+
+	it("folderExpediente usa el número y, si no hay, el CUIJ", () => {
+		expect(folderExpediente({ _id: "a", judFolder: { numberJudFolder: " 12/2025 ", cuij: "J-01-1" } })).toBe("12/2025");
+		expect(folderExpediente({ _id: "b", judFolder: { cuij: "J-03-00021075-6/2025-0" } })).toBe("J-03-00021075-6/2025-0");
+		expect(folderExpediente({ _id: "c", judFolder: null })).toBe("");
 	});
 
 	it("folderJurisLabel acepta string u objeto", () => {

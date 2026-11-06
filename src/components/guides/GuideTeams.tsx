@@ -25,6 +25,7 @@ import {
 	FolderOpen,
 	Printer,
 	Lock,
+	Hierarchy,
 } from "iconsax-react";
 import GuideShell from "./GuideShell";
 
@@ -290,16 +291,43 @@ const ResponsablesContent = () => (
 			]}
 		/>
 		<Section
+			title="Repartir carpetas por criterios"
+			color="success"
+			intro={
+				<>
+					Para repartir muchas de una vez: botón <strong>«Repartir carpetas»</strong> en Mi equipo → Distribución, o{" "}
+					<strong>«Repartir»</strong> en el listado (sobre todas las carpetas o solo las marcadas). Elegís el alcance, el criterio, mirás la
+					vista previa y aplicás.
+				</>
+			}
+			items={[
+				<>
+					<Hierarchy size={14} style={{ marginRight: 4 }} />
+					<strong>Por juzgado</strong> o <strong>por fuero</strong>: cada juzgado o fuero a un integrante (o a varios, que se lo dividen)
+				</>,
+				<>
+					<strong>Partes iguales</strong>, <strong>cantidades</strong> (tantas a cada uno, el resto a quien elijas) o{" "}
+					<strong>al azar</strong> (con un número de sorteo para repetirlo igual)
+				</>,
+				<>
+					<strong>Reemplazar</strong> cambia los responsables actuales; <strong>Agregar</strong> los suma. Podés limitar el reparto a las
+					carpetas sin responsable
+				</>,
+				<>También sirve antes de invitar: se reparte entre los integrantes previstos y cada uno recibe lo suyo al aceptar</>,
+			]}
+		/>
+		<Section
 			title="Encontrar y controlar"
 			color="info"
 			items={[
 				<>
-					En Carpetas: selector <strong>Mis carpetas / Todas / Sin responsable</strong>
+					En Carpetas: selector <strong>Mis carpetas / Todas / Sin responsable</strong>, filtros por juzgado y fuero, y la columna
+					«Radicación»
 				</>,
 				<>
 					<Printer size={14} style={{ marginRight: 4 }} />
-					En Mi equipo, <strong>Distribución de responsables</strong>: carpetas por integrante, con Imprimir y Descargar CSV (propietario y
-					Administradores)
+					En Mi equipo, <strong>Distribución de responsables</strong>: carpetas por integrante con su radicación, Imprimir y Descargar CSV
+					(propietario y Administradores)
 				</>,
 			]}
 		/>

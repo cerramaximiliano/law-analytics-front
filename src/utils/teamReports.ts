@@ -106,7 +106,7 @@ export interface DistributionFolder {
 	folderName?: string;
 	folderJuris?: string | { item?: string; label?: string } | null;
 	folderFuero?: string | null;
-	judFolder?: { numberJudFolder?: string; courtNumber?: string; secretaryNumber?: string } | null;
+	judFolder?: { numberJudFolder?: string; cuij?: string; courtNumber?: string; secretaryNumber?: string } | null;
 	responsables?: string[];
 }
 
@@ -124,8 +124,9 @@ export function folderJurisLabel(juris: DistributionFolder["folderJuris"]): stri
 	return juris.label || juris.item || "";
 }
 
+/** Número de expediente; si no hay (EJE, Salta, Mendoza, Catamarca identifican por CUIJ), el CUIJ. */
 export function folderExpediente(folder: DistributionFolder): string {
-	return folder.judFolder?.numberJudFolder?.trim() || "";
+	return folder.judFolder?.numberJudFolder?.trim() || folder.judFolder?.cuij?.trim() || "";
 }
 
 export const DISTRIBUTION_CSV_HEADERS = ["Responsable", "Email", "Carátula", "Jurisdicción", "Fuero", "Expediente", "Radicación"];
