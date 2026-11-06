@@ -240,7 +240,7 @@ pasos:
    | **Por fuero**       | Igual, pero por fuero.                                                                                                |
    | **Partes iguales**  | La misma cantidad para cada uno (a lo sumo una de diferencia). Con el orden **por juzgado**, cada uno recibe juzgados enteros cuando se puede. |
    | **Por cantidades**  | Una cantidad fija para cada uno y, si querés, quién recibe el resto.                                                  |
-   | **Al azar**         | Reparto aleatorio y parejo. La **semilla** permite repetir exactamente el mismo reparto.                              |
+   | **Al azar**         | Reparto aleatorio y parejo. El **número de sorteo** fija el resultado: con el mismo número y las mismas carpetas, sale el mismo reparto (anotalo si querés repetirlo). |
 
 3. **Vista previa**: cuántas carpetas se asignan a cada uno y en qué juzgados, cuántas quedan sin asignar y cuántas archivadas
    entran. Nada se guarda todavía; podés volver atrás y ajustar.

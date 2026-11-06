@@ -589,19 +589,19 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 						<TextField
 							size="small"
 							type="number"
-							label="Semilla"
+							label="Número de sorteo"
 							value={s.seed}
 							onChange={(e) => patch({ seed: Math.max(1, parseInt(e.target.value, 10) || 1) })}
 							inputProps={{ min: 1 }}
 							sx={{ width: 160 }}
 						/>
-						<Tooltip title="Nueva semilla: otro reparto">
+						<Tooltip title="Otro número: otro reparto">
 							<IconButton size="small" onClick={() => patch({ seed: newSeed() })}>
 								<Shuffle size={18} />
 							</IconButton>
 						</Tooltip>
 						<Typography variant="caption" color="text.secondary">
-							Con la misma semilla y el mismo alcance, el reparto se repite igual.
+							Fija el sorteo: con el mismo número y las mismas carpetas, el reparto sale igual. Anotalo si querés repetirlo.
 						</Typography>
 					</Stack>
 				)}
@@ -742,7 +742,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 	if (!activeTeam) return null;
 
 	return (
-		<Dialog open={open} onClose={() => !busy && onClose()} fullWidth maxWidth="md">
+		<Dialog open={open} onClose={() => !busy && onClose()} fullWidth maxWidth="md" disableEscapeKeyDown>
 			<DialogTitle>Repartir carpetas</DialogTitle>
 			<DialogContent>
 				<Stepper activeStep={step} alternativeLabel sx={{ mb: 2.5, mt: 0.5 }}>
@@ -793,7 +793,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 							</span>
 						</Tooltip>
 						<Button variant="contained" onClick={runApply} disabled={busy || !preview || preview.asignadas === 0} sx={primarySx}>
-							{busy ? "Aplicando…" : `Aplicar a ${nf(preview?.asignadas || 0)} carpetas`}
+							{busy ? "Aplicando…" : preview?.asignadas === 1 ? "Aplicar a 1 carpeta" : `Aplicar a ${nf(preview?.asignadas || 0)} carpetas`}
 						</Button>
 					</>
 				)}

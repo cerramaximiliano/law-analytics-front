@@ -210,7 +210,7 @@ export const CRITERIA_OPTIONS: { value: DistributeCriteriaType; label: string; h
 		help: "La misma cantidad para cada uno (±1). Con orden por juzgado, cada uno recibe juzgados enteros cuando se puede.",
 	},
 	{ value: "quantities", label: "Por cantidades", help: "Una cantidad fija para cada uno, en orden; el resto a quien indiques." },
-	{ value: "random", label: "Al azar", help: "Reparto aleatorio y parejo. Con la misma semilla se repite igual." },
+	{ value: "random", label: "Al azar", help: "Reparto aleatorio y parejo. Con el mismo número de sorteo se repite igual." },
 ];
 
 export const ORDER_OPTIONS: { value: DistributeOrder; label: string }[] = [
