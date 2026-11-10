@@ -192,6 +192,7 @@ import { usePjnCredentialError } from "hooks/usePjnCredentialError";
 import { useExpedienteChatAccess } from "hooks/useExpedienteChatAccess";
 import ActividadPropiaStrip from "sections/actividad-propia/ActividadPropiaStrip";
 import DiasActividadChip from "sections/actividad-propia/DiasActividadChip";
+import AyudaActosPjn from "sections/actividad-propia/AyudaActosPjn";
 import { cumpleFiltroActividad, ESTADO_ACTO_LABEL, TIPO_ACTO_LABEL, type FiltroActividadPropia } from "services/actividadPropiaService";
 
 const HIDDEN_COLUMNS_STORAGE_KEY = "la.folders.hiddenColumns.v1";
@@ -1840,22 +1841,25 @@ function ReactTable({
 												sx={filterSelectSx}
 											>
 												<MenuItem value="all">
-													<Typography variant="body2">Actividad propia: Todas</Typography>
+													<Stack direction="row" spacing={0.5} alignItems="center">
+														<Typography variant="body2">Actos del letrado PJN: Todas</Typography>
+														<AyudaActosPjn size={13} />
+													</Stack>
 												</MenuItem>
 												<MenuItem value="mas90">
-													<Typography variant="body2">Sin actividad propia hace más de 90 días</Typography>
+													<Typography variant="body2">PJN: último acto hace más de 90 días</Typography>
 												</MenuItem>
 												<MenuItem value="mas180">
-													<Typography variant="body2">Sin actividad propia hace más de 180 días</Typography>
+													<Typography variant="body2">PJN: último acto hace más de 180 días</Typography>
 												</MenuItem>
 												<MenuItem value="mas365">
-													<Typography variant="body2">Sin actividad propia hace más de 365 días</Typography>
+													<Typography variant="body2">PJN: último acto hace más de 365 días</Typography>
 												</MenuItem>
 												<MenuItem value="pendientes">
-													<Typography variant="body2">Con escritos sin proveer</Typography>
+													<Typography variant="body2">PJN: con escritos sin proveer</Typography>
 												</MenuItem>
 												<MenuItem value="sinActos">
-													<Typography variant="body2">Sin actos propios registrados</Typography>
+													<Typography variant="body2">PJN: sin actos del letrado registrados</Typography>
 												</MenuItem>
 											</Select>
 										</FormControl>
@@ -2961,6 +2965,10 @@ const FoldersLayout = () => {
 		};
 	}, [folders, situacionComoNovedad]);
 
+	// Actos del letrado en PJN (10/11/2026): la columna, el filtro y la franja solo aparecen si alguna carpeta PJN
+	// tiene actos leídos (credencial con bandeja). Sin datos, "Sin actos del letrado" confundiría.
+	const hayActosPjn = useMemo(() => verifiedFolders.some((f: any) => f.pjn && f.ultimaActividadLetrado?.fecha), [verifiedFolders]);
+
 	// Filtrar carpetas verificadas por tipo
 	// Extraer valores únicos para filtros dinámicos
 	const uniquePartes = useMemo(() => {
@@ -3187,6 +3195,7 @@ const FoldersLayout = () => {
 			}
 			// Actividad procesal propia (10/11/2026): solo aplica a carpetas PJN
 			if (
+				hayActosPjn &&
 				actividadPropiaFilter !== "all" &&
 				(!folder.pjn || !cumpleFiltroActividad(actividadPropiaFilter, folder.ultimaActividadLetrado))
 			) {
@@ -3243,6 +3252,7 @@ const FoldersLayout = () => {
 		situacionFilter,
 		seguimientoFilter,
 		actividadPropiaFilter,
+		hayActosPjn,
 		movimientosFilter,
 		periodo,
 	]);
@@ -4889,7 +4899,7 @@ const FoldersLayout = () => {
 			},
 			{
 				// Actividad procesal propia (10/11/2026). Ordena por fecha del último acto: ascendente = más días sin actividad.
-				Header: "Último acto propio",
+				Header: "Último acto PJN",
 				id: "actividadPropia",
 				accessor: (row: any) => row.ultimaActividadLetrado?.fecha || null,
 				Cell: ({ row }: { row: any }) => {
@@ -4898,12 +4908,18 @@ const FoldersLayout = () => {
 					if (!ult?.fecha) {
 						return (
 							<Typography variant="caption" color="text.secondary">
-								Sin actos propios
+								Sin actos del letrado
 							</Typography>
 						);
 					}
 					return (
-						<Tooltip title={ult.titulo || ""} arrow placement="top">
+						<Tooltip
+							title={`Último acto del letrado en PJN${
+								ult.titulo ? `: ${ult.titulo}` : ""
+							}. Días desde que se presentó; sirve para estimar la caducidad de instancia (orientativo).`}
+							arrow
+							placement="top"
+						>
 							<Stack direction="row" alignItems="center" spacing={1}>
 								<DiasActividadChip fecha={ult.fecha} />
 								<Stack spacing={0} sx={{ minWidth: 0 }}>
@@ -5682,7 +5698,7 @@ const FoldersLayout = () => {
 					<Box>
 						<ScrollX>
 							<ReactTable
-								columns={columns as any}
+								columns={(hayActosPjn ? columns : columns.filter((c: any) => c.id !== "actividadPropia")) as any}
 								data={filteredVerifiedFolders}
 								handleAdd={canCreate ? handleAddFolder : undefined}
 								handleArchiveSelected={canUpdate ? handleArchiveSelected : undefined}
@@ -5745,7 +5761,7 @@ const FoldersLayout = () => {
 								seguimientoFilter={seguimientoFilter}
 								onSeguimientoFilterChange={handleSeguimientoFilterChange}
 								actividadPropiaFilter={actividadPropiaFilter}
-								onActividadPropiaFilterChange={handleActividadPropiaFilterChange}
+								onActividadPropiaFilterChange={hayActosPjn ? handleActividadPropiaFilterChange : undefined}
 								resolveResponsables={isTeamMode ? resolveResponsablesForCsv : undefined}
 								storedHiddenColumns={storedHiddenColumns}
 								onHiddenColumnsChange={handleHiddenColumnsChange}

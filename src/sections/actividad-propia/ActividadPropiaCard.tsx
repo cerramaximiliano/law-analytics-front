@@ -1,6 +1,7 @@
 import { Box, Stack, Typography, Skeleton, alpha, useTheme, Link } from "@mui/material";
 import dayjs from "utils/dayjs-config";
 import { BRAND_BLUE } from "themes/dashboardTokens";
+import AyudaActosPjn, { NOMBRE_ACTOS_PJN } from "sections/actividad-propia/AyudaActosPjn";
 import type { UltimaActividadLetrado } from "types/folder";
 import {
 	diasDesde,
@@ -21,7 +22,7 @@ interface Props {
 }
 
 /**
- * Tarjeta «Actividad procesal propia» de la columna lateral de Actividad: días desde el último acto
+ * Tarjeta «Actos del letrado en PJN» de la columna lateral de Actividad: días desde el último acto
  * propio que cuenta, cuál fue y la referencia orientativa del art. 310 CPCCN.
  */
 const ActividadPropiaCard = ({ resumen, habilitado, loading, onVerActos }: Props) => {
@@ -35,8 +36,9 @@ const ActividadPropiaCard = ({ resumen, habilitado, loading, onVerActos }: Props
 			<Typography
 				sx={{ fontSize: "0.58rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}
 			>
-				Actividad procesal propia
+				{NOMBRE_ACTOS_PJN}
 			</Typography>
+			<AyudaActosPjn size={12} />
 		</Stack>
 	);
 
@@ -55,8 +57,8 @@ const ActividadPropiaCard = ({ resumen, habilitado, loading, onVerActos }: Props
 				{titulo}
 				<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", lineHeight: 1.45 }}>
 					{habilitado === false
-						? "Tu credencial PJN no tiene bandeja de escritos: no podemos leer tus actos."
-						: "Sin escritos, cédulas ni DEOX presentados con tu credencial en esta causa."}
+						? "La credencial PJN vinculada no tiene bandeja de escritos: el portal no da los actos del letrado."
+						: "Sin escritos, cédulas ni DEOX presentados con la credencial PJN en esta causa."}
 				</Typography>
 			</Box>
 		);
@@ -83,7 +85,7 @@ const ActividadPropiaCard = ({ resumen, habilitado, loading, onVerActos }: Props
 					{dias}
 				</Typography>
 				<Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }}>
-					{dias === 1 ? "día sin actividad propia" : "días sin actividad propia"}
+					{dias === 1 ? "día desde el último acto" : "días desde el último acto"}
 				</Typography>
 			</Stack>
 
@@ -123,7 +125,7 @@ const ActividadPropiaCard = ({ resumen, habilitado, loading, onVerActos }: Props
 					underline="hover"
 					sx={{ mt: 1, fontSize: "0.7rem", fontWeight: 500, color: BRAND_BLUE }}
 				>
-					Ver actos propios
+					Ver todos los actos
 				</Link>
 			)}
 		</Box>

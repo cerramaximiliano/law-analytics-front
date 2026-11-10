@@ -419,10 +419,10 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 			? [
 					{
 						value: "actos" as TabValue,
-						label: "Actos propios",
+						label: "Actos PJN",
 						icon: <Edit2 size={20} />,
 						color: BRAND_BLUE,
-						description: "Escritos, cédulas y DEOX tuyos",
+						description: "Escritos, cédulas y DEOX del letrado",
 					},
 			  ]
 			: []),

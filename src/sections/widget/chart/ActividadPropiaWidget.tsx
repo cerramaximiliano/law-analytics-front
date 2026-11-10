@@ -6,12 +6,13 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, Edit2 } from "iconsax-react";
 
 import { BRAND_BLUE } from "themes/dashboardTokens";
+import AyudaActosPjn, { NOMBRE_ACTOS_PJN } from "sections/actividad-propia/AyudaActosPjn";
 import { fetchResumenActividadPropia, TRAMOS, type ResumenActividadPropia } from "services/actividadPropiaService";
 
 const LISTADO = "/apps/folders/list";
 
 /**
- * Widget del panel «Actividad procesal propia» (10/11/2026): carpetas PJN activas por días desde el
+ * Widget del panel «Actos del letrado en PJN» (10/11/2026): carpetas PJN activas por días desde el
  * último acto propio y las que están por cumplir los 6 meses de referencia (150 a 180 días).
  * No se muestra si el usuario no tiene credencial PJN con bandeja ni actos registrados.
  */
@@ -55,11 +56,14 @@ const ActividadPropiaWidget = () => {
 						<Edit2 size={20} variant="Bulk" />
 					</Box>
 					<Stack spacing={0.25}>
-						<Typography variant="subtitle1" sx={{ letterSpacing: "-0.005em" }}>
-							Actividad procesal propia
-						</Typography>
+						<Stack direction="row" spacing={0.5} alignItems="center">
+							<Typography variant="subtitle1" sx={{ letterSpacing: "-0.005em" }}>
+								{NOMBRE_ACTOS_PJN}
+							</Typography>
+							<AyudaActosPjn />
+						</Stack>
 						<Typography variant="caption" sx={{ color: "text.secondary" }}>
-							Causas PJN activas por días desde tu último acto
+							Causas PJN activas por días desde el último acto
 						</Typography>
 					</Stack>
 				</Stack>

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Box, ButtonBase, Stack, Typography, alpha, useTheme } from "@mui/material";
 import { BRAND_BLUE } from "themes/dashboardTokens";
+import AyudaActosPjn, { NOMBRE_ACTOS_PJN } from "sections/actividad-propia/AyudaActosPjn";
 import type { FolderData } from "types/folder";
 import { TRAMOS, diasDesde, tramoDe, type FiltroActividadPropia, type TramoActividad } from "services/actividadPropiaService";
 
@@ -51,9 +52,12 @@ const ActividadPropiaStrip = ({ folders, value, onChange }: Props) => {
 			}}
 		>
 			<Stack direction="row" spacing={1} alignItems="baseline" flexWrap="wrap" useFlexGap mb={1}>
-				<Typography sx={{ fontSize: "0.82rem", fontWeight: 600, letterSpacing: "-0.005em" }}>Actividad procesal propia</Typography>
+				<Stack direction="row" spacing={0.5} alignItems="center">
+					<Typography sx={{ fontSize: "0.82rem", fontWeight: 600, letterSpacing: "-0.005em" }}>{NOMBRE_ACTOS_PJN}</Typography>
+					<AyudaActosPjn />
+				</Stack>
 				<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
-					Días desde tu último escrito, cédula o DEOX en cada causa PJN activa. Tocá un tramo para filtrar.
+					Causas PJN activas según los días desde el último escrito, cédula o DEOX presentado con la credencial. Tocá un tramo para filtrar.
 				</Typography>
 			</Stack>
 			<Box

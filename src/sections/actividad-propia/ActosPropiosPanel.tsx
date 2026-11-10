@@ -20,6 +20,7 @@ import {
 import { Menu } from "iconsax-react";
 import dayjs from "utils/dayjs-config";
 import { BRAND_BLUE } from "themes/dashboardTokens";
+import AyudaActosPjn, { NOMBRE_ACTOS_PJN } from "sections/actividad-propia/AyudaActosPjn";
 import { ESTADO_ACTO_LABEL, TIPO_ACTO_LABEL, type ActosPropiosCarpeta } from "services/actividadPropiaService";
 import type { TipoActoPropio } from "types/folder";
 
@@ -41,7 +42,7 @@ const ESTADO_COLOR: Record<string, string> = {
 	no_agregado: "text.disabled",
 };
 
-/** Sub-vista «Actos propios» de Actividad: historial de escritos, cédulas y DEOX presentados con la credencial. */
+/** Sub-vista «Actos PJN» de Actividad: historial de escritos, cédulas y DEOX presentados con la credencial. */
 const ActosPropiosPanel = ({ data, loading, error, onOpenMenu }: Props) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
@@ -80,9 +81,12 @@ const ActosPropiosPanel = ({ data, loading, error, onOpenMenu }: Props) => {
 						</IconButton>
 					)}
 					<Stack spacing={0}>
-						<Typography sx={{ fontSize: "0.9rem", fontWeight: 600, letterSpacing: "-0.005em" }}>Actos propios</Typography>
+						<Stack direction="row" spacing={0.5} alignItems="center">
+							<Typography sx={{ fontSize: "0.9rem", fontWeight: 600, letterSpacing: "-0.005em" }}>{NOMBRE_ACTOS_PJN}</Typography>
+							<AyudaActosPjn />
+						</Stack>
 						<Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }}>
-							Escritos, cédulas y DEOX presentados con tu credencial PJN
+							Escritos, cédulas y DEOX presentados con la credencial PJN vinculada
 						</Typography>
 					</Stack>
 					<Box sx={{ flex: 1 }} />
@@ -126,7 +130,7 @@ const ActosPropiosPanel = ({ data, loading, error, onOpenMenu }: Props) => {
 				) : visibles.length === 0 ? (
 					<Typography sx={{ p: 3, fontSize: "0.8rem", color: "text.secondary" }}>
 						{actos.length === 0
-							? "Sin escritos, cédulas ni DEOX presentados con tu credencial en esta causa."
+							? "Sin escritos, cédulas ni DEOX presentados con la credencial PJN en esta causa."
 							: "No hay actos con este filtro."}
 					</Typography>
 				) : (
