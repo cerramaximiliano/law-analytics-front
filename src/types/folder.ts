@@ -126,6 +126,8 @@ export type FolderData = {
 	listRemovedSource?: "pjn" | "scba" | "mev" | "eje";
 	causaLastSyncDate?: string; // Fecha de última sincronización
 	lastMovementDate?: string; // Fecha del último movimiento
+	/** Último acto procesal propio (escrito, cédula o DEOX del letrado de la credencial PJN). Lo escribe pjn-mis-causas (10/11/2026). */
+	ultimaActividadLetrado?: UltimaActividadLetrado | null;
 	/** Situación procesal del expediente PJN, desde la causa (EN LETRA, EN DESPACHO, GIRO…). La agrega el hub al listar (6/11/2026). */
 	situacion?: string;
 	// Desde cuándo está en esa situación (ISO), la registra pjn-mis-causas al detectar el cambio (13/11/2026).
@@ -223,3 +225,19 @@ export type FolderState = {
 	sortBy?: string;
 	sortDesc?: boolean;
 };
+
+/** Estado visible de un acto propio: presentado (sin proveer), gestionado (proveído), en_expediente, enviado (cédula/DEOX), no_agregado. */
+export type EstadoActoPropio = "presentado" | "gestionado" | "en_expediente" | "enviado" | "no_agregado";
+export type TipoActoPropio = "escrito" | "cedula" | "deox";
+
+export interface UltimaActividadLetrado {
+	fecha: string;
+	tipo: TipoActoPropio;
+	titulo?: string | null;
+	estado: EstadoActoPropio;
+	movimientoFecha?: string | null;
+	porTipo?: Partial<Record<TipoActoPropio, { fecha: string; titulo?: string | null; estado: EstadoActoPropio }>>;
+	/** Escritos presentados que el juzgado todavía no proveyó. */
+	pendientes?: number;
+	recalculadoAt?: string;
+}

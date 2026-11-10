@@ -1,0 +1,133 @@
+import { Box, Stack, Typography, Skeleton, alpha, useTheme, Link } from "@mui/material";
+import dayjs from "utils/dayjs-config";
+import { BRAND_BLUE } from "themes/dashboardTokens";
+import type { UltimaActividadLetrado } from "types/folder";
+import {
+	diasDesde,
+	tramoDe,
+	tramoInfo,
+	fechaReferencia,
+	REFERENCIA_MESES,
+	TIPO_ACTO_LABEL,
+	ESTADO_ACTO_LABEL,
+} from "services/actividadPropiaService";
+
+interface Props {
+	resumen: UltimaActividadLetrado | null | undefined;
+	/** undefined mientras no se sabe (sin respuesta del hub). */
+	habilitado?: boolean;
+	loading?: boolean;
+	onVerActos?: () => void;
+}
+
+/**
+ * Tarjeta «Actividad procesal propia» de la columna lateral de Actividad: días desde el último acto
+ * propio que cuenta, cuál fue y la referencia orientativa del art. 310 CPCCN.
+ */
+const ActividadPropiaCard = ({ resumen, habilitado, loading, onVerActos }: Props) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const borde = alpha(BRAND_BLUE, isDark ? 0.16 : 0.1);
+
+	const titulo = (
+		<Stack direction="row" spacing={0.5} alignItems="center" mb={1}>
+			<Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+			<Typography
+				sx={{ fontSize: "0.58rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}
+			>
+				Actividad procesal propia
+			</Typography>
+		</Stack>
+	);
+
+	if (loading && !resumen) {
+		return (
+			<Box sx={{ p: 1.75, borderTop: `1px solid ${borde}` }}>
+				{titulo}
+				<Skeleton variant="rectangular" height={88} sx={{ borderRadius: 1 }} />
+			</Box>
+		);
+	}
+
+	if (!resumen) {
+		return (
+			<Box sx={{ p: 1.75, borderTop: `1px solid ${borde}` }}>
+				{titulo}
+				<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", lineHeight: 1.45 }}>
+					{habilitado === false
+						? "Tu credencial PJN no tiene bandeja de escritos: no podemos leer tus actos."
+						: "Sin escritos, cédulas ni DEOX presentados con tu credencial en esta causa."}
+				</Typography>
+			</Box>
+		);
+	}
+
+	const dias = diasDesde(resumen.fecha) ?? 0;
+	const t = tramoInfo(tramoDe(dias));
+	const ref = fechaReferencia(resumen.fecha);
+	const refCumplida = ref.getTime() <= Date.now();
+
+	return (
+		<Box sx={{ p: 1.75, borderTop: `1px solid ${borde}` }}>
+			{titulo}
+			<Stack direction="row" spacing={0.75} alignItems="baseline">
+				<Typography
+					sx={{
+						fontSize: "1.6rem",
+						fontWeight: 700,
+						lineHeight: 1,
+						fontVariantNumeric: "tabular-nums",
+						color: t ? (isDark ? t.color : t.fg) : "text.primary",
+					}}
+				>
+					{dias}
+				</Typography>
+				<Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }}>
+					{dias === 1 ? "día sin actividad propia" : "días sin actividad propia"}
+				</Typography>
+			</Stack>
+
+			<Box sx={{ mt: 1, p: 1, borderRadius: 0.75, bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03), border: `1px solid ${borde}` }}>
+				<Typography sx={{ fontSize: "0.64rem", color: "text.secondary" }}>
+					Último acto · {TIPO_ACTO_LABEL[resumen.tipo] ?? resumen.tipo}
+				</Typography>
+				{resumen.titulo && (
+					<Typography sx={{ fontSize: "0.72rem", fontWeight: 600, lineHeight: 1.3, wordBreak: "break-word" }}>{resumen.titulo}</Typography>
+				)}
+				<Typography sx={{ fontSize: "0.68rem", color: "text.secondary" }}>
+					{dayjs(resumen.fecha).format("DD/MM/YYYY HH:mm")} · {ESTADO_ACTO_LABEL[resumen.estado] ?? resumen.estado}
+				</Typography>
+			</Box>
+
+			{(resumen.pendientes || 0) > 0 && (
+				<Typography sx={{ mt: 0.75, fontSize: "0.68rem", color: "warning.main" }}>
+					{resumen.pendientes === 1 ? "1 escrito presentado sin proveer" : `${resumen.pendientes} escritos presentados sin proveer`}
+				</Typography>
+			)}
+
+			<Box sx={{ mt: 1 }}>
+				<Typography sx={{ fontSize: "0.68rem", color: "text.secondary" }}>Referencia art. 310: {REFERENCIA_MESES} meses</Typography>
+				<Typography sx={{ fontSize: "0.68rem", fontWeight: 500, color: refCumplida ? "error.main" : "text.primary" }}>
+					{refCumplida ? "Cumplidos el " : "Se cumplen el "}
+					{dayjs(ref).format("DD/MM/YYYY")}
+				</Typography>
+				<Typography sx={{ fontSize: "0.62rem", color: "text.secondary", lineHeight: 1.4, mt: 0.25 }}>
+					Orientativo: no descuenta ferias ni actos de la otra parte o del juzgado.
+				</Typography>
+			</Box>
+
+			{onVerActos && (
+				<Link
+					component="button"
+					onClick={onVerActos}
+					underline="hover"
+					sx={{ mt: 1, fontSize: "0.7rem", fontWeight: 500, color: BRAND_BLUE }}
+				>
+					Ver actos propios
+				</Link>
+			)}
+		</Box>
+	);
+};
+
+export default ActividadPropiaCard;

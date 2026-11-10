@@ -190,6 +190,9 @@ import { SCBA_BINDING_COPY, SCBA_PROFILE_PATH } from "utils/scbaBindingState";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 import { usePjnCredentialError } from "hooks/usePjnCredentialError";
 import { useExpedienteChatAccess } from "hooks/useExpedienteChatAccess";
+import ActividadPropiaStrip from "sections/actividad-propia/ActividadPropiaStrip";
+import DiasActividadChip from "sections/actividad-propia/DiasActividadChip";
+import { cumpleFiltroActividad, ESTADO_ACTO_LABEL, TIPO_ACTO_LABEL, type FiltroActividadPropia } from "services/actividadPropiaService";
 
 const HIDDEN_COLUMNS_STORAGE_KEY = "la.folders.hiddenColumns.v1";
 const NON_HIDEABLE_COLUMNS = new Set(["selection", "folderName"]);
@@ -398,6 +401,9 @@ interface ReactTableProps extends Props {
 	/** Seguimiento (6/11/2026): all | si | no. */
 	seguimientoFilter?: string;
 	onSeguimientoFilterChange?: (event: SelectChangeEvent<string>) => void;
+	/** Actividad procesal propia (10/11/2026): días desde el último escrito, cédula o DEOX propio. */
+	actividadPropiaFilter?: string;
+	onActividadPropiaFilterChange?: (event: SelectChangeEvent<string>) => void;
 	/** Nombres de responsables para el CSV (modo equipo). */
 	resolveResponsables?: (ids: string[] | undefined) => string;
 	/** Columnas ocultas guardadas en el hub para este usuario (manda sobre el navegador) y cómo guardarlas. */
@@ -481,6 +487,8 @@ function ReactTable({
 	uniqueSituaciones = [],
 	seguimientoFilter = "all",
 	onSeguimientoFilterChange,
+	actividadPropiaFilter = "all",
+	onActividadPropiaFilterChange,
 	resolveResponsables,
 	storedHiddenColumns = null,
 	onHiddenColumnsChange,
@@ -593,8 +601,10 @@ function ReactTable({
 		if (etiquetaFilter !== "all") count++;
 		if (situacionFilter !== "all") count++;
 		if (seguimientoFilter !== "all") count++;
+		if (actividadPropiaFilter !== "all") count++;
 		return count;
 	}, [
+		actividadPropiaFilter,
 		folderTypeFilter,
 		statusFilter,
 		parteFilter,
@@ -1819,6 +1829,37 @@ function ReactTable({
 											</Select>
 										</FormControl>
 									)}
+									{/* Actividad procesal propia (10/11/2026): días desde el último acto propio */}
+									{onActividadPropiaFilterChange && (
+										<FormControl size="small" sx={{ minWidth: 180 }}>
+											<Select
+												id="actividad-propia-filter"
+												displayEmpty
+												value={actividadPropiaFilter}
+												onChange={onActividadPropiaFilterChange}
+												sx={filterSelectSx}
+											>
+												<MenuItem value="all">
+													<Typography variant="body2">Actividad propia: Todas</Typography>
+												</MenuItem>
+												<MenuItem value="mas90">
+													<Typography variant="body2">Sin actividad propia hace más de 90 días</Typography>
+												</MenuItem>
+												<MenuItem value="mas180">
+													<Typography variant="body2">Sin actividad propia hace más de 180 días</Typography>
+												</MenuItem>
+												<MenuItem value="mas365">
+													<Typography variant="body2">Sin actividad propia hace más de 365 días</Typography>
+												</MenuItem>
+												<MenuItem value="pendientes">
+													<Typography variant="body2">Con escritos sin proveer</Typography>
+												</MenuItem>
+												<MenuItem value="sinActos">
+													<Typography variant="body2">Sin actos propios registrados</Typography>
+												</MenuItem>
+											</Select>
+										</FormControl>
+									)}
 									{/* Filtro por Jurisdicción */}
 									{onJurisdiccionFilterChange && uniqueJurisdicciones.length > 0 && (
 										<FormControl size="small" sx={{ minWidth: 150 }}>
@@ -2697,6 +2738,32 @@ const FoldersLayout = () => {
 	const [situacionFilter, setSituacionFilter] = useState<string>(savedFilters.situacionFilter ?? "all");
 	// Seguimiento (6/11/2026): "all" | "si" | "no".
 	const [seguimientoFilter, setSeguimientoFilter] = useState<string>(savedFilters.seguimientoFilter ?? "all");
+	// Actividad procesal propia (10/11/2026). ?actividadPropia= lo usan el widget del panel y la franja de tramos.
+	const ACTIVIDAD_PROPIA_FILTROS: FiltroActividadPropia[] = [
+		"all",
+		"hasta90",
+		"d91a180",
+		"d181a365",
+		"mas365",
+		"sinActos",
+		"mas90",
+		"mas180",
+		"pendientes",
+	];
+	const esFiltroActividad = (v: string | null): v is FiltroActividadPropia =>
+		!!v && ACTIVIDAD_PROPIA_FILTROS.includes(v as FiltroActividadPropia);
+	const actividadPropiaParam = searchParams.get("actividadPropia");
+	const [actividadPropiaFilter, setActividadPropiaFilter] = useState<FiltroActividadPropia>(
+		esFiltroActividad(actividadPropiaParam)
+			? actividadPropiaParam
+			: esFiltroActividad(savedFilters.actividadPropiaFilter ?? null)
+			? savedFilters.actividadPropiaFilter
+			: "all",
+	);
+	useEffect(() => {
+		if (esFiltroActividad(actividadPropiaParam)) setActividadPropiaFilter(actividadPropiaParam);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [actividadPropiaParam]);
 
 	// Estado para pre-seleccionar paso y valores al abrir AddFolder desde los badges
 	const [addFolderInitialStep, setAddFolderInitialStep] = useState<number | undefined>(undefined);
@@ -2758,10 +2825,12 @@ const FoldersLayout = () => {
 				etiquetaFilter,
 				situacionFilter,
 				seguimientoFilter,
+				actividadPropiaFilter,
 				responsableVista,
 			},
 		});
 	}, [
+		actividadPropiaFilter,
 		folderTypeFilter,
 		statusFilter,
 		parteFilter,
@@ -3116,6 +3185,13 @@ const FoldersLayout = () => {
 			if (seguimientoFilter !== "all" && Boolean(folder.seguimiento?.activo) !== (seguimientoFilter === "si")) {
 				return false;
 			}
+			// Actividad procesal propia (10/11/2026): solo aplica a carpetas PJN
+			if (
+				actividadPropiaFilter !== "all" &&
+				(!folder.pjn || !cumpleFiltroActividad(actividadPropiaFilter, folder.ultimaActividadLetrado))
+			) {
+				return false;
+			}
 
 			// Filtro por movimientos recientes
 			if (movimientosFilter !== "all") {
@@ -3166,6 +3242,7 @@ const FoldersLayout = () => {
 		etiquetaIdsVigentes,
 		situacionFilter,
 		seguimientoFilter,
+		actividadPropiaFilter,
 		movimientosFilter,
 		periodo,
 	]);
@@ -3918,6 +3995,9 @@ const FoldersLayout = () => {
 	}, []);
 	const handleSeguimientoFilterChange = useCallback((event: SelectChangeEvent<string>) => {
 		setSeguimientoFilter(event.target.value);
+	}, []);
+	const handleActividadPropiaFilterChange = useCallback((event: SelectChangeEvent<string>) => {
+		setActividadPropiaFilter(event.target.value as FiltroActividadPropia);
 	}, []);
 
 	const handleRefreshFolders = useCallback(() => {
@@ -4808,6 +4888,39 @@ const FoldersLayout = () => {
 				},
 			},
 			{
+				// Actividad procesal propia (10/11/2026). Ordena por fecha del último acto: ascendente = más días sin actividad.
+				Header: "Último acto propio",
+				id: "actividadPropia",
+				accessor: (row: any) => row.ultimaActividadLetrado?.fecha || null,
+				Cell: ({ row }: { row: any }) => {
+					const ult = row.original.ultimaActividadLetrado;
+					if (!row.original.pjn) return <span>-</span>;
+					if (!ult?.fecha) {
+						return (
+							<Typography variant="caption" color="text.secondary">
+								Sin actos propios
+							</Typography>
+						);
+					}
+					return (
+						<Tooltip title={ult.titulo || ""} arrow placement="top">
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<DiasActividadChip fecha={ult.fecha} />
+								<Stack spacing={0} sx={{ minWidth: 0 }}>
+									<Typography variant="body2" sx={{ whiteSpace: "nowrap" }}>
+										{dayjs(ult.fecha).format("DD/MM/YYYY")} · {TIPO_ACTO_LABEL[ult.tipo as keyof typeof TIPO_ACTO_LABEL] ?? ult.tipo}
+									</Typography>
+									<Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+										{ESTADO_ACTO_LABEL[ult.estado as keyof typeof ESTADO_ACTO_LABEL] ?? ult.estado}
+										{ult.pendientes > 0 ? ` · ${ult.pendientes} sin proveer` : ""}
+									</Typography>
+								</Stack>
+							</Stack>
+						</Tooltip>
+					);
+				},
+			},
+			{
 				Header: "Fecha Final",
 				accessor: "finalDateFolder",
 				Cell: ({ value }: { value: any }) => {
@@ -5450,6 +5563,9 @@ const FoldersLayout = () => {
 					</Stack>
 				</Box>
 
+				{/* Actividad procesal propia (10/11/2026): tramos por días desde el último acto propio; cada uno filtra */}
+				<ActividadPropiaStrip folders={verifiedFolders} value={actividadPropiaFilter} onChange={setActividadPropiaFilter} />
+
 				{/* Mobile: sin borde ni fondo propio — las cards ya enmarcan cada carpeta (evita el doble marco). */}
 				<MainCard
 					content={false}
@@ -5628,6 +5744,8 @@ const FoldersLayout = () => {
 								uniqueSituaciones={uniqueSituaciones}
 								seguimientoFilter={seguimientoFilter}
 								onSeguimientoFilterChange={handleSeguimientoFilterChange}
+								actividadPropiaFilter={actividadPropiaFilter}
+								onActividadPropiaFilterChange={handleActividadPropiaFilterChange}
 								resolveResponsables={isTeamMode ? resolveResponsablesForCsv : undefined}
 								storedHiddenColumns={storedHiddenColumns}
 								onHiddenColumnsChange={handleHiddenColumnsChange}

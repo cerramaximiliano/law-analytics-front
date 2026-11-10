@@ -20,6 +20,7 @@ import AssignUsers from "sections/widget/chart/TaskWidget";
 import UpcomingMovementEventsWidget from "sections/widget/chart/UpcomingMovementEventsWidget";
 import StorageWidget from "sections/widget/chart/StorageWidget";
 import ResourceUsageWidget from "sections/widget/chart/ResourceUsageWidget";
+import ActividadPropiaWidget from "sections/widget/chart/ActividadPropiaWidget";
 
 // assets
 import { Calendar, CloudChange } from "iconsax-react";
@@ -657,6 +658,8 @@ const DashboardDefault = () => {
 							</Grid>
 							<Grid item xs={12} md={6} lg={3}>
 								<Stack spacing={3}>
+									{/* Actividad procesal propia (10/11/2026): solo con credencial PJN con bandeja */}
+									<ActividadPropiaWidget />
 									<ResourceUsageWidget />
 									<StorageWidget />
 									<AssignUsers />

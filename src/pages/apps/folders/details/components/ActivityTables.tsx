@@ -39,8 +39,13 @@ import {
 	Gallery,
 	Note1,
 	Refresh2,
+	Edit2,
 } from "iconsax-react";
 import MainCard from "components/MainCard";
+import type { UltimaActividadLetrado } from "types/folder";
+import ActividadPropiaCard from "sections/actividad-propia/ActividadPropiaCard";
+import ActosPropiosPanel from "sections/actividad-propia/ActosPropiosPanel";
+import { useActosPropios } from "sections/actividad-propia/useActosPropios";
 import { useParams } from "react-router";
 import { useSearchParams } from "react-router-dom";
 import { useSelector, dispatch } from "store";
@@ -90,9 +95,13 @@ interface ActivityTablesProps {
 	// aviso "Mostrando movimientos hasta el …" del viewer PJN cuando el listado
 	// del hub no trae accessCutoffAt.
 	accessCutoffAt?: string | null;
+	/** Carpeta PJN: suma la sub-vista «Actos propios» y la tarjeta de actividad procesal propia (10/11/2026). */
+	pjn?: boolean;
+	/** folder.ultimaActividadLetrado del detalle: la tarjeta se muestra sin esperar el historial. */
+	actividadPropia?: UltimaActividadLetrado | null;
 }
 
-type TabValue = "movements" | "notifications" | "calendar" | "notes" | "combined";
+type TabValue = "movements" | "notifications" | "calendar" | "notes" | "combined" | "actos";
 
 interface TabConfig {
 	value: TabValue;
@@ -102,7 +111,7 @@ interface TabConfig {
 	description: string;
 }
 
-const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutoffAt = null }) => {
+const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutoffAt = null, pjn = false, actividadPropia = null }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -148,11 +157,12 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 	useEffect(() => {
 		const sub = searchParams.get("sub");
 		if (!sub) return;
-		if (["movements", "notifications", "calendar", "notes", "combined"].includes(sub)) setActiveTab(sub as TabValue);
+		if (["movements", "notifications", "calendar", "notes", "combined", "actos"].includes(sub)) setActiveTab(sub as TabValue);
 		const next = new URLSearchParams(searchParams);
 		next.delete("sub");
 		setSearchParams(next, { replace: true });
 	}, [searchParams, setSearchParams]);
+	const actosPropios = useActosPropios(id, pjn);
 
 	// Al salir del tab de movimientos el deep-link ya fue atendido — descartarlo
 	// para que volver al tab no re-dispare el visor (las tablas remontan al
@@ -405,6 +415,17 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 			color: BRAND_BLUE,
 			description: "Todas las actividades unificadas",
 		},
+		...(pjn
+			? [
+					{
+						value: "actos" as TabValue,
+						label: "Actos propios",
+						icon: <Edit2 size={20} />,
+						color: BRAND_BLUE,
+						description: "Escritos, cédulas y DEOX tuyos",
+					},
+			  ]
+			: []),
 	];
 
 	const handleTabChange = (_event: React.SyntheticEvent, newValue: TabValue) => {
@@ -1143,6 +1164,22 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 					)}
 				</Stack>
 			</Box>
+
+			{pjn && (
+				<ActividadPropiaCard
+					resumen={actosPropios.data ? actosPropios.data.resumen : actividadPropia}
+					habilitado={actosPropios.data?.habilitado}
+					loading={actosPropios.loading}
+					onVerActos={
+						activeTab === "actos"
+							? undefined
+							: () => {
+									setActiveTab("actos");
+									setMobileOpen(false);
+							  }
+					}
+				/>
+			)}
 		</Box>
 	);
 
@@ -1199,7 +1236,15 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 				{isMobile ? (
 					<>
 						{/* Mobile Layout */}
-						<Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+						{activeTab === "actos" && (
+							<ActosPropiosPanel
+								data={actosPropios.data}
+								loading={actosPropios.loading}
+								error={actosPropios.error}
+								onOpenMenu={() => setMobileOpen(true)}
+							/>
+						)}
+						<Box sx={{ flex: 1, display: activeTab === "actos" ? "none" : "flex", flexDirection: "column", overflow: "hidden" }}>
 							{/* Header Toolbar */}
 							<Box
 								sx={{
@@ -1465,7 +1510,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 													border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 												}}
 											>
-												<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
+												<ActivityFilters
+													activeTab={activeTab === "actos" ? "movements" : activeTab}
+													filters={filters}
+													onFiltersChange={setFilters}
+												/>
 											</Box>
 										</Fade>
 									</Collapse>
@@ -1633,10 +1682,13 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 						{sidebarContent}
 
 						{/* Main Content Area */}
+						{activeTab === "actos" && (
+							<ActosPropiosPanel data={actosPropios.data} loading={actosPropios.loading} error={actosPropios.error} />
+						)}
 						<Box
 							sx={{
 								flex: 1,
-								display: "flex",
+								display: activeTab === "actos" ? "none" : "flex",
 								flexDirection: "column",
 								overflow: "hidden",
 							}}
@@ -2055,7 +2107,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 														border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
 													}}
 												>
-													<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
+													<ActivityFilters
+														activeTab={activeTab === "actos" ? "movements" : activeTab}
+														filters={filters}
+														onFiltersChange={setFilters}
+													/>
 												</Box>
 											</Fade>
 										</Collapse>

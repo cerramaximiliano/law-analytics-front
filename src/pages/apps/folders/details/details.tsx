@@ -1332,7 +1332,12 @@ const Details = () => {
 
 					{/* Tab 2: Actividad */}
 					<TabPanel value={tabValue} index={1}>
-						<ActivityTables folderName={folder?.folderName} accessCutoffAt={folder?.causaAccessCutoffAt ?? null} />
+						<ActivityTables
+							folderName={folder?.folderName}
+							accessCutoffAt={folder?.causaAccessCutoffAt ?? null}
+							pjn={!!folder?.pjn}
+							actividadPropia={folder?.ultimaActividadLetrado ?? null}
+						/>
 					</TabPanel>
 
 					{/* Tab 3: Gestión */}
