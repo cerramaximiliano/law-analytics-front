@@ -95,6 +95,20 @@ describe("totales", () => {
 			}),
 		).toBe("Plan Premium US$ 29,99 + 5 bloques US$ 45 = US$ 74,99/mes · 1.750 causas");
 	});
+	it("total del combo con descuento porcentual", () => {
+		expect(
+			formatPlanBlocksTotal({
+				planPrice: 29.99,
+				planCurrency: "usd",
+				planFolders: 500,
+				blocks: 6,
+				unitPrice: 9,
+				unitCurrency: "usd",
+				foldersPerBlock: 250,
+				discountPercent: 25,
+			}),
+		).toBe("Plan Premium US$ 29,99 + 6 bloques US$ 54 = US$ 83,99/mes · 2.000 causas · con 25 % OFF: US$ 62,99/mes");
+	});
 	it("null con 0 bloques, sin precio o con monedas distintas", () => {
 		const base = { planPrice: 29.99, planCurrency: "usd", planFolders: 500, unitPrice: 9, unitCurrency: "usd", foldersPerBlock: 250 };
 		expect(formatPlanBlocksTotal({ ...base, blocks: 0 })).toBeNull();

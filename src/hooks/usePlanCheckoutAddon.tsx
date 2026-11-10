@@ -60,6 +60,8 @@ export interface BeginCheckoutArgs {
 	planName: string;
 	planPrice: number | null;
 	planCurrency?: string | null;
+	/** Descuento porcentual del plan (activePercentOff) para mostrar el total con el % aplicado. */
+	discountPercent?: number | null;
 	/** Llama al checkout del hub. Sin add-on recibe `undefined`. */
 	proceed: (addon?: PlanCheckoutAddonOptions) => Promise<PlanCheckoutResponse>;
 }
@@ -185,8 +187,15 @@ const usePlanCheckoutAddon = () => {
 		[addon, isSelected],
 	);
 
-	const totalFor = (planName: string, planPrice: number | null, planCurrency?: string | null) =>
-		formatPlanAddonTotal({ planName, planPrice, planCurrency, addonPrice: addonPrice.amount, addonCurrency: addonPrice.currency });
+	const totalFor = (planName: string, planPrice: number | null, planCurrency?: string | null, discountPercent?: number | null) =>
+		formatPlanAddonTotal({
+			planName,
+			planPrice,
+			planCurrency,
+			addonPrice: addonPrice.amount,
+			addonCurrency: addonPrice.currency,
+			discountPercent,
+		});
 
 	const dialogs = dialog ? (
 		<McpAddonLegalDialog
@@ -198,7 +207,7 @@ const usePlanCheckoutAddon = () => {
 			error={dialog.error}
 			planCheckout={{
 				planName: dialog.args.planName,
-				totalLabel: totalFor(dialog.args.planName, dialog.args.planPrice, dialog.args.planCurrency),
+				totalLabel: totalFor(dialog.args.planName, dialog.args.planPrice, dialog.args.planCurrency, dialog.args.discountPercent),
 			}}
 			onCancel={() => setDialog(null)}
 			onConfirm={confirm}

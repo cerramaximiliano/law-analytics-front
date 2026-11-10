@@ -69,6 +69,26 @@ export function formatAmount(amount: number, currency: string): string {
 export const addAmounts = (a: number, b: number): number => Math.round(a * 100 + b * 100) / 100;
 
 /**
+ * Porcentaje del descuento activo del plan (el que el hub manda en `activeDiscounts[0]` y
+ * el checkout aplica a TODOS los ítems: plan, bloques y conector). null si no hay descuento
+ * porcentual vigente; los descuentos de monto fijo no se proyectan sobre el combo.
+ */
+export function activePercentOff(discount?: { discountType?: string; discountValue?: number } | null): number | null {
+	if (!discount || discount.discountType !== "percentage") return null;
+	const v = Number(discount.discountValue);
+	return Number.isFinite(v) && v > 0 && v <= 100 ? v : null;
+}
+
+/** Total con el porcentaje aplicado, redondeado a centavos como lo hace Stripe sobre el subtotal. */
+export const applyPercentOff = (amount: number, percent: number): number => Math.round(amount * (100 - percent)) / 100;
+
+/** " · con 25 % OFF: US$ 65,99/mes" (vacío si no hay porcentaje). */
+export function percentOffSuffix(total: number, currency: string, percent?: number | null): string {
+	if (typeof percent !== "number" || percent <= 0) return "";
+	return ` · con ${percent.toLocaleString("es-AR")} % OFF: ${formatAmount(applyPercentOff(total, percent), currency)}/mes`;
+}
+
+/**
  * "Plan Estándar US$ 7,99 + Conectores de IA US$ 4 = US$ 11,99/mes".
  * null si falta algún precio o las monedas no coinciden (no se suma lo que no se puede sumar).
  */
@@ -78,6 +98,8 @@ export function formatPlanAddonTotal(p: {
 	planCurrency?: string | null;
 	addonPrice: number | null | undefined;
 	addonCurrency?: string | null;
+	/** Descuento porcentual del plan (activePercentOff): se muestra el total con el % aplicado. */
+	discountPercent?: number | null;
 }): string | null {
 	if (typeof p.planPrice !== "number" || typeof p.addonPrice !== "number") return null;
 	const planCurrency = (p.planCurrency || "usd").toLowerCase();
@@ -87,7 +109,7 @@ export function formatPlanAddonTotal(p: {
 	return `Plan ${p.planName} ${formatAmount(p.planPrice, planCurrency)} + ${MCP_ADDON_NAME} ${formatAmount(
 		p.addonPrice,
 		addonCurrency,
-	)} = ${formatAmount(total, planCurrency)}/mes`;
+	)} = ${formatAmount(total, planCurrency)}/mes${percentOffSuffix(total, planCurrency, p.discountPercent)}`;
 }
 
 /** Etiqueta del checkbox: "Agregar Conectores de IA (+US$ 4/mes)". */

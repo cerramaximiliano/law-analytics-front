@@ -25,7 +25,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 import PlanCheckoutAddonOption from "sections/mcp/PlanCheckoutAddonOption";
 import usePlanCheckoutAddon, { type PlanCheckoutAddonOptions } from "hooks/usePlanCheckoutAddon";
 import { getPlanPricing } from "utils/planPricingUtils";
-import { addAmounts, isAddonCompatiblePlan, PLAN_CHECKOUT_ADDON_CODES, planShortName } from "utils/planCheckoutAddon";
+import { activePercentOff, addAmounts, isAddonCompatiblePlan, PLAN_CHECKOUT_ADDON_CODES, planShortName } from "utils/planCheckoutAddon";
 import PlanCheckoutBlocksOption from "sections/addons/PlanCheckoutBlocksOption";
 import usePlanCheckoutBlocks from "hooks/usePlanCheckoutBlocks";
 import {
@@ -272,6 +272,9 @@ const Plans = () => {
 							blocksHere > 0 ? `${addonPlanName} + ${blocksHere} ${blocksHere === 1 ? "bloque" : "bloques"}` : addonPlanName;
 						const comboPlanPrice =
 							blocksHere > 0 && addonPlanPrice !== null && blocksCost !== null ? addAmounts(addonPlanPrice, blocksCost) : addonPlanPrice;
+						// Descuento porcentual vigente para este usuario (dirigido o público): el checkout lo
+						// aplica a todos los ítems, así que los totales del combo lo muestran también.
+						const percentOff = activePercentOff(plan.activeDiscounts?.[0]);
 						if (offerAddonHere) {
 							return (
 								<Grid item xs={12} sm={6} md={4} key={plan.planId}>
@@ -299,6 +302,7 @@ const Plans = () => {
 															unitPrice: planBlocks.unitPrice,
 															unitCurrency: planBlocks.unitCurrency,
 															foldersPerBlock: planBlocks.foldersPerBlock,
+															discountPercent: percentOff,
 														})}
 														disabled={loadingPlanId !== null}
 													/>
@@ -309,7 +313,7 @@ const Plans = () => {
 													onChange={(checked) => addonCheckout.setSelected(plan.planId, checked)}
 													addonPrice={addonCheckout.addonPrice.amount}
 													addonCurrency={addonCheckout.addonPrice.currency}
-													totalLabel={addonCheckout.totalFor(comboPlanName, comboPlanPrice, pricing?.currency)}
+													totalLabel={addonCheckout.totalFor(comboPlanName, comboPlanPrice, pricing?.currency, percentOff)}
 													disabled={loadingPlanId !== null}
 												/>
 											</>
@@ -325,6 +329,7 @@ const Plans = () => {
 													planName: comboPlanName,
 													planPrice: comboPlanPrice,
 													planCurrency: pricing?.currency,
+													discountPercent: percentOff,
 													proceed: async (addonOptions) => {
 														if (blocksHere <= 0) return startPlanCheckout(plan, addonOptions);
 														const res = await startPlanCheckout(plan, {

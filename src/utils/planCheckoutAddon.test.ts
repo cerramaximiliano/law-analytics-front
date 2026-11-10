@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import type { McpAddonStatus } from "types/mcpAddon";
 import {
+	activePercentOff,
 	addAmounts,
 	addonCheckboxLabel,
+	applyPercentOff,
 	formatPlanAddonTotal,
 	isAddonCompatiblePlan,
 	planCheckoutAddonErrorMessage,
@@ -70,6 +72,23 @@ describe("copy y montos", () => {
 		expect(formatPlanAddonTotal({ planName: "Estándar", planPrice: 7.99, addonPrice: 4 })).toBe(
 			"Plan Estándar US$ 7,99 + Conectores de IA US$ 4 = US$ 11,99/mes",
 		);
+	});
+
+	it("con descuento porcentual muestra el total con el % aplicado (como lo cobra Stripe)", () => {
+		expect(formatPlanAddonTotal({ planName: "Premium + 6 bloques", planPrice: 83.99, addonPrice: 4, discountPercent: 25 })).toBe(
+			"Plan Premium + 6 bloques US$ 83,99 + Conectores de IA US$ 4 = US$ 87,99/mes · con 25 % OFF: US$ 65,99/mes",
+		);
+		expect(formatPlanAddonTotal({ planName: "Estándar", planPrice: 7.99, addonPrice: 4, discountPercent: null })).toBe(
+			"Plan Estándar US$ 7,99 + Conectores de IA US$ 4 = US$ 11,99/mes",
+		);
+	});
+
+	it("activePercentOff y applyPercentOff", () => {
+		expect(activePercentOff({ discountType: "percentage", discountValue: 25 })).toBe(25);
+		expect(activePercentOff({ discountType: "fixed", discountValue: 5 })).toBeNull();
+		expect(activePercentOff(undefined)).toBeNull();
+		expect(applyPercentOff(87.99, 25)).toBe(65.99);
+		expect(applyPercentOff(29.99, 25)).toBe(22.49);
 	});
 
 	it("sin precio del plan o con monedas distintas no arma el total", () => {

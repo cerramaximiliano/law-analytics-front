@@ -11,7 +11,7 @@
  */
 
 import type { ExtraFoldersStatus } from "store/reducers/ApiService";
-import { addAmounts, formatAmount } from "utils/planCheckoutAddon";
+import { addAmounts, formatAmount, percentOffSuffix } from "utils/planCheckoutAddon";
 
 export const EXTRA_FOLDERS_KEY = "extra_folders" as const;
 /** Único plan con el que se venden bloques. */
@@ -69,6 +69,8 @@ export function formatPlanBlocksTotal(p: {
 	unitPrice: number | null | undefined;
 	unitCurrency?: string | null;
 	foldersPerBlock: number;
+	/** Descuento porcentual del plan (activePercentOff): se muestra el total con el % aplicado. */
+	discountPercent?: number | null;
 }): string | null {
 	if (p.blocks <= 0 || typeof p.planPrice !== "number") return null;
 	const cost = blocksMonthlyCost(p.blocks, p.unitPrice);
@@ -81,7 +83,7 @@ export function formatPlanBlocksTotal(p: {
 	return `Plan Premium ${formatAmount(p.planPrice, planCurrency)} + ${p.blocks} ${p.blocks === 1 ? "bloque" : "bloques"} ${formatAmount(
 		cost,
 		planCurrency,
-	)} = ${formatAmount(total, planCurrency)}/mes${folders}`;
+	)} = ${formatAmount(total, planCurrency)}/mes${folders}${percentOffSuffix(total, planCurrency, p.discountPercent)}`;
 }
 
 /** Mensaje para el usuario cuando el hub rechaza los bloques en el checkout del alta. */
