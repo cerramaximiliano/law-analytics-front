@@ -58,7 +58,7 @@ const ActividadPropiaCard = ({ resumen, habilitado, loading, onVerActos }: Props
 				<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", lineHeight: 1.45 }}>
 					{habilitado === false
 						? "La credencial PJN vinculada no tiene bandeja de escritos: el portal no da los actos del letrado."
-						: "Sin escritos, cédulas ni DEOX presentados con la credencial PJN en esta causa."}
+						: "Sin actos con esta credencial: ningún escrito, cédula ni DEOX presentado con la credencial PJN vinculada. Puede llevarla otro letrado."}
 				</Typography>
 			</Box>
 		);

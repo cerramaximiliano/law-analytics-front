@@ -97,6 +97,22 @@ const ActividadPropiaStrip = ({ folders, value, onChange }: Props) => {
 					);
 				})}
 			</Box>
+			{conteo.sinActos > 0 && (
+				<ButtonBase
+					onClick={() => onChange(value === "sinActos" ? "all" : "sinActos")}
+					aria-pressed={value === "sinActos"}
+					sx={{ mt: 1, px: 0.5, py: 0.25, borderRadius: 0.75, justifyContent: "flex-start", textAlign: "left" }}
+				>
+					<Typography sx={{ fontSize: "0.72rem", color: value === "sinActos" ? BRAND_BLUE : "text.secondary" }}>
+						{conteo.sinActos === 1
+							? "1 causa sin actos de esta credencial (puede llevarla otro letrado)."
+							: `${conteo.sinActos} causas sin actos de esta credencial (pueden llevarlas otros letrados).`}{" "}
+						<Box component="span" sx={{ color: BRAND_BLUE, fontWeight: 500 }}>
+							{value === "sinActos" ? "Quitar filtro" : "Ver cuáles"}
+						</Box>
+					</Typography>
+				</ButtonBase>
+			)}
 		</Box>
 	);
 };

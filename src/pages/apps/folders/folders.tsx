@@ -1859,7 +1859,7 @@ function ReactTable({
 													<Typography variant="body2">PJN: con escritos sin proveer</Typography>
 												</MenuItem>
 												<MenuItem value="sinActos">
-													<Typography variant="body2">PJN: sin actos del letrado registrados</Typography>
+													<Typography variant="body2">PJN: sin actos con esta credencial</Typography>
 												</MenuItem>
 											</Select>
 										</FormControl>
@@ -4908,7 +4908,7 @@ const FoldersLayout = () => {
 					if (!ult?.fecha) {
 						return (
 							<Typography variant="caption" color="text.secondary">
-								Sin actos del letrado
+								Sin actos con esta credencial
 							</Typography>
 						);
 					}
