@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
@@ -45,7 +45,7 @@ import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import PricingTablesMcpAddon from "sections/mcp/PricingTablesMcpAddon";
 import PlanCheckoutAddonOption from "sections/mcp/PlanCheckoutAddonOption";
 import usePlanCheckoutAddon, { type PlanCheckoutAddonOptions } from "hooks/usePlanCheckoutAddon";
-import { addAmounts, isAddonCompatiblePlan, PLAN_CHECKOUT_ADDON_CODES, planShortName } from "utils/planCheckoutAddon";
+import { activePercentOff, addAmounts, isAddonCompatiblePlan, PLAN_CHECKOUT_ADDON_CODES, planShortName } from "utils/planCheckoutAddon";
 import PlanCheckoutBlocksOption from "sections/addons/PlanCheckoutBlocksOption";
 import usePlanCheckoutBlocks from "hooks/usePlanCheckoutBlocks";
 import {
@@ -56,6 +56,8 @@ import {
 	planCheckoutBlocksErrorMessage,
 	withBlocks,
 } from "utils/planCheckoutBlocks";
+import PackOfferCard from "sections/plans/PackOfferCard";
+import { discountDurationLabel, findPackOffer, packBlocks, packWantsConnector } from "utils/planCheckoutPack";
 
 // id de la grilla de planes: destino del CTA "Mejorar mi plan" del add-on.
 const PLANS_GRID_ID = "planes-grilla";
@@ -150,7 +152,9 @@ const Pricing = () => {
 	// Huella de la suscripción para la tarjeta del add-on: si cambia (cambio de plan, baja o
 	// cambio programado exitoso), la tarjeta vuelve a pedir el estado del add-on.
 	const mcpSubscriptionKey = currentPlanId
-		? [currentPlanId, currentSubscription?.cancelAtPeriodEnd ? "1" : "0", currentSubscription?.scheduledPlanChange?.targetPlan ?? ""].join("|")
+		? [currentPlanId, currentSubscription?.cancelAtPeriodEnd ? "1" : "0", currentSubscription?.scheduledPlanChange?.targetPlan ?? ""].join(
+				"|",
+		  )
 		: null;
 
 	const refreshReduxSubscription = () => {
@@ -239,6 +243,81 @@ const Pricing = () => {
 	 * Rechazo de los bloques que handleSubscribe devuelve sin avisar (códigos propios del
 	 * checkout con add-on). Avisa, vuelve el selector a 0 y relee el estado. true si lo resolvió.
 	 */
+	/**
+	 * Checkout de alta con lo seleccionado (plan + bloques + conector): abre el diálogo del
+	 * conector si corresponde (acepta la política) y llama a handleSubscribe. Lo comparten la
+	 * tarjeta del plan y la tarjeta del pack.
+	 */
+	const launchPlanCheckout = (p: {
+		plan: Plan;
+		offerAddonHere: boolean;
+		blocksHere: number;
+		comboPlanName: string;
+		comboPlanPrice: number | null;
+		planCurrency?: string | null;
+		percentOff: number | null;
+	}) => {
+		const { plan, offerAddonHere, blocksHere, comboPlanName, comboPlanPrice, planCurrency, percentOff } = p;
+		const discountCode = plan.activeDiscounts && plan.activeDiscounts.length > 0 ? plan.activeDiscounts[0].code : undefined;
+		if (offerAddonHere) {
+			addonCheckout.begin({
+				planId: plan.planId,
+				planName: comboPlanName,
+				planPrice: comboPlanPrice,
+				planCurrency,
+				discountPercent: percentOff,
+				proceed: async (addonOptions) => {
+					if (blocksHere <= 0) return handleSubscribe(plan.planId, discountCode, addonOptions);
+					const res = await handleSubscribe(plan.planId, discountCode, {
+						addons: withBlocks(addonOptions?.addons, blocksHere),
+						acceptedPolicyVersion: addonOptions?.acceptedPolicyVersion ?? null,
+					});
+					// Rechazo de los bloques: lo avisamos acá y el diálogo del conector solo se cierra.
+					if (handleBlocksRejection(res, !addonOptions)) return { success: false, code: "BLOCKS_REJECTED" };
+					return res;
+				},
+			});
+		} else if (blocksHere > 0) {
+			handleSubscribe(plan.planId, discountCode, { addons: withBlocks([], blocksHere), acceptedPolicyVersion: null }).then((res) =>
+				handleBlocksRejection(res, true),
+			);
+		} else {
+			handleSubscribe(plan.planId, discountCode);
+		}
+	};
+
+	// Pack (combo) propuesto por un cupón vigente para este usuario (utils/planCheckoutPack):
+	// tarjeta propia arriba de los planes con el plan + bloques + conector ya elegidos, editables.
+	// Comparte la selección con la tarjeta del plan. Solo en la rama de alta: sin plan pago, no
+	// miembro de equipo, plan distinto del actual y checkout directo disponible.
+	const packOffer = useMemo(() => findPackOffer(plans), [plans]);
+	const userHasPaidPlanNow = currentPlanId === "standard" || currentPlanId === "pro" || currentPlanId === "premium";
+	const packOffersAddon =
+		!!packOffer &&
+		addonCheckout.offer &&
+		!isTeamMember &&
+		!userHasPaidPlanNow &&
+		currentPlanId !== packOffer.plan.planId &&
+		packOffer.plan.isActive &&
+		isAddonCompatiblePlan(packOffer.plan.planId);
+	const packOffersBlocks =
+		packOffersAddon &&
+		!!packOffer &&
+		planBlocks.offer &&
+		packOffer.plan.planId === BLOCKS_PLAN_ID &&
+		getPlanPricing(packOffer.plan).billingPeriod === "monthly";
+	const showPack = packOffersAddon;
+	const [packApplied, setPackApplied] = useState<string | null>(null);
+	useEffect(() => {
+		if (!packOffer || !showPack) return;
+		const key = `${packOffer.discount.code}:${packOffersBlocks ? "b" : "-"}`;
+		if (packApplied === key) return;
+		if (packOffersBlocks) planBlocks.setBlocks(packBlocks(packOffer.pack));
+		addonCheckout.setSelected(packOffer.plan.planId, packWantsConnector(packOffer.pack));
+		setPackApplied(key);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [packOffer, showPack, packOffersBlocks, packApplied]);
+
 	const handleBlocksRejection = (res: any, blocksOnly: boolean): boolean => {
 		if (!res || res.success !== false || !res.code || !PLAN_CHECKOUT_ADDON_CODES.has(res.code)) return false;
 		if (!blocksOnly && res.addon !== EXTRA_FOLDERS_KEY) return false;
@@ -794,7 +873,6 @@ const Pricing = () => {
 		);
 	};
 
-
 	const isDark = theme.palette.mode === "dark";
 
 	// Helpers brand reusables
@@ -954,8 +1032,18 @@ const Pricing = () => {
 									<Stack spacing={1.25}>
 										{[0, 1, 2, 3, 4].map((j) => (
 											<Stack key={j} direction="row" alignItems="center" spacing={1}>
-												<Box sx={{ width: 14, height: 14, borderRadius: "50%", bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.12), flexShrink: 0 }} />
-												<Box sx={{ width: `${70 - j * 6}%`, height: 10, borderRadius: 0.5, bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }} />
+												<Box
+													sx={{
+														width: 14,
+														height: 14,
+														borderRadius: "50%",
+														bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.12),
+														flexShrink: 0,
+													}}
+												/>
+												<Box
+													sx={{ width: `${70 - j * 6}%`, height: 10, borderRadius: 0.5, bgcolor: alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) }}
+												/>
 											</Stack>
 										))}
 									</Stack>
@@ -982,9 +1070,7 @@ const Pricing = () => {
 							},
 						}}
 					/>
-					<Typography sx={{ fontSize: "0.72rem", letterSpacing: "0.04em", color: "text.secondary" }}>
-						Cargando planes…
-					</Typography>
+					<Typography sx={{ fontSize: "0.72rem", letterSpacing: "0.04em", color: "text.secondary" }}>Cargando planes…</Typography>
 				</Stack>
 			</Stack>
 		);
@@ -1038,9 +1124,7 @@ const Pricing = () => {
 						<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
 							No pudimos cargar los planes
 						</Typography>
-						<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", maxWidth: 420, textWrap: "pretty" }}>
-							{error}
-						</Typography>
+						<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", maxWidth: 420, textWrap: "pretty" }}>{error}</Typography>
 					</Stack>
 				</Box>
 			</Stack>
@@ -1160,7 +1244,16 @@ const Pricing = () => {
 										}}
 									>
 										<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
-										<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: BRAND_BLUE, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>
+										<Typography
+											sx={{
+												fontSize: "0.68rem",
+												fontWeight: 600,
+												color: BRAND_BLUE,
+												letterSpacing: "0.04em",
+												textTransform: "uppercase",
+												lineHeight: 1,
+											}}
+										>
 											{roleConfig.label}
 										</Typography>
 									</Box>
@@ -1429,45 +1522,108 @@ const Pricing = () => {
 									</TableRow>
 								</TableHead>
 								<TableBody>
-								{(() => {
-									// Recolectar los primeros 5 recursos visibles del plan más completo
-									const currentEnv = import.meta.env.PROD ? "production" : "development";
-									const isVisibleInCurrentEnv = (visibility: string | undefined) => {
-										if (!visibility || visibility === "all") return true;
-										if (visibility === "none") return false;
-										return visibility === currentEnv;
-									};
-									const allResourceNames = Array.from(
-										new Set(
-											plans.flatMap((p) =>
-												p.resourceLimits
-													.filter((r) => isVisibleInCurrentEnv(r.visibility))
-													.sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
-													.slice(0, 5)
-													.map((r) => r.name),
+									{(() => {
+										// Recolectar los primeros 5 recursos visibles del plan más completo
+										const currentEnv = import.meta.env.PROD ? "production" : "development";
+										const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+											if (!visibility || visibility === "all") return true;
+											if (visibility === "none") return false;
+											return visibility === currentEnv;
+										};
+										const allResourceNames = Array.from(
+											new Set(
+												plans.flatMap((p) =>
+													p.resourceLimits
+														.filter((r) => isVisibleInCurrentEnv(r.visibility))
+														.sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
+														.slice(0, 5)
+														.map((r) => r.name),
+												),
 											),
-										),
-									).slice(0, 5);
-									return allResourceNames.map((resourceName) => (
-										<TableRow key={resourceName}>
-											<TableCell>{plans[0]?.resourceLimits.find((r) => r.name === resourceName)?.displayName ?? resourceName}</TableCell>
-											{plans.map((p) => {
-												const resource = p.resourceLimits.find((r) => r.name === resourceName);
-												return (
-													<TableCell key={p.planId} align="center">
-														{resource ? resource.limit : "—"}
-													</TableCell>
-												);
-											})}
-										</TableRow>
-									));
-								})()}
-							</TableBody>
-						</Table>
-					</TableContainer>
+										).slice(0, 5);
+										return allResourceNames.map((resourceName) => (
+											<TableRow key={resourceName}>
+												<TableCell>{plans[0]?.resourceLimits.find((r) => r.name === resourceName)?.displayName ?? resourceName}</TableCell>
+												{plans.map((p) => {
+													const resource = p.resourceLimits.find((r) => r.name === resourceName);
+													return (
+														<TableCell key={p.planId} align="center">
+															{resource ? resource.limit : "—"}
+														</TableCell>
+													);
+												})}
+											</TableRow>
+										));
+									})()}
+								</TableBody>
+							</Table>
+						</TableContainer>
 					</Box>
 				</Box>
 			)}
+
+			{showPack &&
+				packOffer &&
+				(() => {
+					const packPricing = getPlanPricing(packOffer.plan);
+					const packPlanName = planShortName(packOffer.plan.displayName);
+					const packPlanPrice = packPricing.billingPeriod === "monthly" ? packPricing.basePrice : null;
+					const packBlocksHere = packOffersBlocks ? planBlocks.blocks : 0;
+					const packBlocksCost = blocksMonthlyCost(packBlocksHere, planBlocks.unitPrice);
+					const packComboName =
+						packBlocksHere > 0 ? `${packPlanName} + ${packBlocksHere} ${packBlocksHere === 1 ? "bloque" : "bloques"}` : packPlanName;
+					const packComboPrice =
+						packBlocksHere > 0 && packPlanPrice !== null && packBlocksCost !== null
+							? addAmounts(packPlanPrice, packBlocksCost)
+							: packPlanPrice;
+					const packPercentOff = activePercentOff(packOffer.discount);
+					const badge =
+						packOffer.discount.badge ||
+						(packPercentOff !== null ? `${packPercentOff} % OFF ${discountDurationLabel(packOffer.discount)}` : null);
+					return (
+						<PackOfferCard
+							title={packOffer.pack.title || "Pack para tu estudio"}
+							subtitle={packOffer.pack.subtitle || packOffer.discount.promotionalMessage || null}
+							badge={badge}
+							planId={packOffer.plan.planId}
+							planName={packPlanName}
+							planPrice={packPlanPrice}
+							currency={packPricing.currency || "usd"}
+							planFolders={packOffer.plan.resourceLimits?.find((r: ResourceLimit) => r.name === "folders")?.limit ?? null}
+							blocks={{
+								offer: packOffersBlocks,
+								value: planBlocks.blocks,
+								max: planBlocks.maxBlocks,
+								unitPrice: planBlocks.unitPrice,
+								foldersPerBlock: planBlocks.foldersPerBlock,
+								onChange: planBlocks.setBlocks,
+							}}
+							connector={{
+								offer: packOffersAddon,
+								checked: addonCheckout.isSelected(packOffer.plan.planId),
+								price: addonCheckout.addonPrice.amount,
+								onChange: (checked) => addonCheckout.setSelected(packOffer.plan.planId, checked),
+							}}
+							percentOff={packPercentOff}
+							durationLabel={discountDurationLabel(packOffer.discount)}
+							cta={{
+								label: packOffer.pack.ctaLabel || "Contratar el pack",
+								onClick: () =>
+									launchPlanCheckout({
+										plan: packOffer.plan,
+										offerAddonHere: packOffersAddon,
+										blocksHere: packBlocksHere,
+										comboPlanName: packComboName,
+										comboPlanPrice: packComboPrice,
+										planCurrency: packPricing.currency,
+										percentOff: packPercentOff,
+									}),
+								disabled: loadingPlanId !== null || addonCheckout.busy || reactivating || cancelingScheduledChange,
+								loading: loadingPlanId === packOffer.plan.planId,
+							}}
+						/>
+					);
+				})()}
 
 			<Grid container spacing={3} alignItems="stretch" id={PLANS_GRID_ID} sx={{ scrollMarginTop: 96 }}>
 				{plans.map((plan) => {
@@ -1565,6 +1721,9 @@ const Pricing = () => {
 					const blocksHere = offerBlocksHere ? planBlocks.blocks : 0;
 					const blocksCost = blocksMonthlyCost(blocksHere, planBlocks.unitPrice);
 					const planFoldersLimit = plan.resourceLimits?.find((r: ResourceLimit) => r.name === "folders")?.limit ?? null;
+					// Descuento porcentual vigente para este usuario: el checkout lo aplica a todos los
+					// ítems, así que los totales del combo lo muestran también.
+					const percentOff = activePercentOff(plan.activeDiscounts?.[0]);
 					const blocksTotalLabel = formatPlanBlocksTotal({
 						planPrice: addonPlanPrice,
 						planCurrency: pricing.currency,
@@ -1573,6 +1732,7 @@ const Pricing = () => {
 						unitPrice: planBlocks.unitPrice,
 						unitCurrency: planBlocks.unitCurrency,
 						foldersPerBlock: planBlocks.foldersPerBlock,
+						discountPercent: percentOff,
 					});
 					// Con bloques, el diálogo del conector muestra el total del combo completo.
 					const comboPlanName =
@@ -1589,43 +1749,26 @@ const Pricing = () => {
 							} else if (isDowngradeToFree) {
 								setCancelDialogOpen(true);
 							} else if (!isCurrentPlan) {
-								const discountCode =
-									plan.activeDiscounts && plan.activeDiscounts.length > 0 ? plan.activeDiscounts[0].code : undefined;
-								if (offerAddonHere) {
-									addonCheckout.begin({
-										planId: plan.planId,
-										planName: comboPlanName,
-										planPrice: comboPlanPrice,
-										planCurrency: pricing.currency,
-										proceed: async (addonOptions) => {
-											if (blocksHere <= 0) return handleSubscribe(plan.planId, discountCode, addonOptions);
-											const res = await handleSubscribe(plan.planId, discountCode, {
-												addons: withBlocks(addonOptions?.addons, blocksHere),
-												acceptedPolicyVersion: addonOptions?.acceptedPolicyVersion ?? null,
-											});
-											// Rechazo de los bloques: lo avisamos acá y el diálogo del conector solo se cierra.
-											if (handleBlocksRejection(res, !addonOptions)) return { success: false, code: "BLOCKS_REJECTED" };
-											return res;
-										},
-									});
-								} else if (blocksHere > 0) {
-									handleSubscribe(plan.planId, discountCode, { addons: withBlocks([], blocksHere), acceptedPolicyVersion: null }).then(
-										(res) => handleBlocksRejection(res, true),
-									);
-								} else {
-									handleSubscribe(plan.planId, discountCode);
-								}
+								launchPlanCheckout({
+									plan,
+									offerAddonHere,
+									blocksHere,
+									comboPlanName,
+									comboPlanPrice,
+									planCurrency: pricing.currency,
+									percentOff,
+								});
 							}
 						}
 					};
 
 					// Mensaje contextual (cancelación / cambio programado) que va debajo del título.
-					let contextMessage:
-						| { text: string; tone?: "success" | "error" | "warning" | "info" }
-						| undefined;
+					let contextMessage: { text: string; tone?: "success" | "error" | "warning" | "info" } | undefined;
 					if (isScheduledTarget) {
 						contextMessage = {
-							text: scheduledDateLabel ? `Pasarás a este plan el ${scheduledDateLabel}` : "Cambio programado al finalizar tu período actual",
+							text: scheduledDateLabel
+								? `Pasarás a este plan el ${scheduledDateLabel}`
+								: "Cambio programado al finalizar tu período actual",
 							tone: "info",
 						};
 					} else if (isCurrentPlan && scheduledChange && !isAlreadyCanceled) {
@@ -1647,12 +1790,7 @@ const Pricing = () => {
 							text: `Tu plan volverá a Free el ${new Date(currentSubscription.currentPeriodEnd).toLocaleDateString("es-AR")}`,
 							tone: "error",
 						};
-					} else if (
-						isCurrentPlan &&
-						isAlreadyCanceled &&
-						currentPlanId !== "free" &&
-						currentSubscription?.currentPeriodEnd
-					) {
+					} else if (isCurrentPlan && isAlreadyCanceled && currentPlanId !== "free" && currentSubscription?.currentPeriodEnd) {
 						contextMessage = {
 							text: `Cancelado. Activo hasta el ${new Date(currentSubscription.currentPeriodEnd).toLocaleDateString("es-AR")}`,
 							tone: "success",
@@ -1663,7 +1801,9 @@ const Pricing = () => {
 						<Grid item xs={12} sm={6} md={plans.length >= 4 ? 6 : 4} lg={plans.length >= 4 ? 3 : 4} key={plan.planId}>
 							<PlanCard
 								plan={plan}
-								highlighted={(plans.some((pp) => pp.planId === "pro") ? plan.planId === "pro" : plan.planId === "standard") && !isCurrentPlan}
+								highlighted={
+									(plans.some((pp) => pp.planId === "pro") ? plan.planId === "pro" : plan.planId === "standard") && !isCurrentPlan
+								}
 								isCurrent={isCurrentPlan}
 								contextMessage={contextMessage}
 								showInactiveOverlay={isInactive}
@@ -1692,7 +1832,7 @@ const Pricing = () => {
 													onChange={(checked) => addonCheckout.setSelected(plan.planId, checked)}
 													addonPrice={addonCheckout.addonPrice.amount}
 													addonCurrency={addonCheckout.addonPrice.currency}
-													totalLabel={addonCheckout.totalFor(comboPlanName, comboPlanPrice, pricing.currency)}
+													totalLabel={addonCheckout.totalFor(comboPlanName, comboPlanPrice, pricing.currency, percentOff)}
 													disabled={loadingPlanId !== null}
 												/>
 											)}
@@ -1704,7 +1844,11 @@ const Pricing = () => {
 									onClick: handleCtaClick,
 									disabled: ctaDisabled,
 									loading: loadingPlanId === plan.planId || reactivating,
-									variant: isInactive ? "outlined" : isCurrentPlan || plan.planId === "standard" || plan.planId === "pro" || plan.planId === "premium" ? "contained" : "outlined",
+									variant: isInactive
+										? "outlined"
+										: isCurrentPlan || plan.planId === "standard" || plan.planId === "pro" || plan.planId === "premium"
+										? "contained"
+										: "outlined",
 									color: ctaColor,
 									startIcon: isInactive ? <Lock size={16} /> : undefined,
 									dataTestId: `sub-action-btn-${plan.planId}`,
@@ -1811,7 +1955,13 @@ const Pricing = () => {
 			</Dialog>
 
 			{/* Diálogo para mostrar las opciones de downgrade */}
-			<Dialog open={optionsDialogOpen} onClose={() => setOptionsDialogOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: dialogPaperSx }}>
+			<Dialog
+				open={optionsDialogOpen}
+				onClose={() => setOptionsDialogOpen(false)}
+				maxWidth="sm"
+				fullWidth
+				PaperProps={{ sx: dialogPaperSx }}
+			>
 				<Box
 					sx={{
 						position: "relative",
@@ -1852,7 +2002,9 @@ const Pricing = () => {
 						<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
 							<Stack direction="row" spacing={0.75} alignItems="center">
 								<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
-								<Typography sx={{ fontSize: "0.6rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
+								<Typography
+									sx={{ fontSize: "0.6rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}
+								>
 									Cambio de plan
 								</Typography>
 							</Stack>
@@ -2014,11 +2166,16 @@ const Pricing = () => {
 						<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
 							<Stack direction="row" spacing={0.75} alignItems="center">
 								<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: theme.palette.error.main }} />
-								<Typography sx={{ fontSize: "0.6rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}>
+								<Typography
+									sx={{ fontSize: "0.6rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "text.secondary" }}
+								>
 									Cancelar suscripción
 								</Typography>
 							</Stack>
-							<Typography id="cancel-subscription-dialog-title" sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}>
+							<Typography
+								id="cancel-subscription-dialog-title"
+								sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", color: "text.primary" }}
+							>
 								Volver al plan gratuito
 							</Typography>
 						</Stack>
@@ -2097,7 +2254,9 @@ const Pricing = () => {
 										<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>• 5 causas</Typography>
 										<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>• 3 cálculos</Typography>
 										<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>• 10 contactos</Typography>
-										<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>• 50 MB de almacenamiento</Typography>
+										<Typography sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+											• 50 MB de almacenamiento
+										</Typography>
 									</Stack>
 								</Stack>
 							</Stack>
@@ -2105,7 +2264,12 @@ const Pricing = () => {
 					</Stack>
 				</DialogContent>
 				<DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}` }}>
-					<Button onClick={() => setCancelDialogOpen(false)} disabled={cancelLoading} data-testid="sub-cancel-dialog-keep-btn" sx={ghostBtnSx}>
+					<Button
+						onClick={() => setCancelDialogOpen(false)}
+						disabled={cancelLoading}
+						data-testid="sub-cancel-dialog-keep-btn"
+						sx={ghostBtnSx}
+					>
 						Mantener plan
 					</Button>
 					<Button
