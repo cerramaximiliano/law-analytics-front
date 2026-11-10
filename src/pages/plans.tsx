@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 
@@ -28,6 +28,9 @@ import { getPlanPricing } from "utils/planPricingUtils";
 import { activePercentOff, addAmounts, isAddonCompatiblePlan, PLAN_CHECKOUT_ADDON_CODES, planShortName } from "utils/planCheckoutAddon";
 import PlanCheckoutBlocksOption from "sections/addons/PlanCheckoutBlocksOption";
 import usePlanCheckoutBlocks from "hooks/usePlanCheckoutBlocks";
+import useAuth from "hooks/useAuth";
+import PackOfferCard from "sections/plans/PackOfferCard";
+import { discountDurationLabel, findPackOffer, packBlocks, packWantsConnector } from "utils/planCheckoutPack";
 import {
 	BLOCKS_PLAN_ID,
 	blocksMonthlyCost,
@@ -97,6 +100,27 @@ const Plans = () => {
 	const addonCheckout = usePlanCheckoutAddon();
 	// Bloques de «Causas adicionales» en el mismo pago que Premium (utils/planCheckoutBlocks).
 	const planBlocks = usePlanCheckoutBlocks();
+	const { isLoggedIn } = useAuth();
+
+	// Pack (combo) propuesto por un cupón vigente para este usuario (utils/planCheckoutPack):
+	// tarjeta propia arriba de los planes con el plan + bloques + conector ya elegidos. Comparte
+	// la selección con la tarjeta del plan, así que editar en una se ve en la otra. Solo en la
+	// rama de alta (logueado sin plan pago, con el checkout directo disponible).
+	const packOffer = useMemo(() => findPackOffer(plans), [plans]);
+	const packPlanId = packOffer?.plan.planId ?? null;
+	const packOffersAddon = !!packPlanId && addonCheckout.offer && isAddonCompatiblePlan(packPlanId);
+	const packOffersBlocks = packOffersAddon && planBlocks.offer && packPlanId === BLOCKS_PLAN_ID;
+	const showPack = !!packOffer && !!isLoggedIn && packOffersAddon;
+	const [packApplied, setPackApplied] = useState<string | null>(null);
+	useEffect(() => {
+		if (!packOffer || !showPack) return;
+		const key = `${packOffer.discount.code}:${packOffersBlocks ? "b" : "-"}`;
+		if (packApplied === key) return;
+		if (packOffersBlocks) planBlocks.setBlocks(packBlocks(packOffer.pack));
+		addonCheckout.setSelected(packOffer.plan.planId, packWantsConnector(packOffer.pack));
+		setPackApplied(key);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [packOffer, showPack, packOffersBlocks, packApplied]);
 
 	const snackbar = (message: string, color: "success" | "error" | "warning" | "info") =>
 		dispatch(openSnackbar({ open: true, message, variant: "alert", alert: { color }, close: true }));
@@ -131,6 +155,67 @@ const Plans = () => {
 		} finally {
 			setLoadingPlanId(null);
 		}
+	};
+
+	/**
+	 * «Suscribirme» / «Contratar el pack»: abre el diálogo del conector si está marcado (acepta la
+	 * política) y lanza el checkout de alta con el plan, los bloques y el conector elegidos. Lo
+	 * comparten la tarjeta del plan y la tarjeta del pack.
+	 */
+	const launchCheckout = (
+		plan: Plan,
+		blocksHere: number,
+		comboPlanName: string,
+		comboPlanPrice: number | null,
+		planCurrency: string | undefined,
+		percentOff: number | null,
+	) => {
+		trackPlanCTA(plan.planId);
+		addonCheckout.begin({
+			planId: plan.planId,
+			planName: comboPlanName,
+			planPrice: comboPlanPrice,
+			planCurrency,
+			discountPercent: percentOff,
+			proceed: async (addonOptions) => {
+				if (blocksHere <= 0) return startPlanCheckout(plan, addonOptions);
+				const res = await startPlanCheckout(plan, {
+					addons: withBlocks(addonOptions?.addons, blocksHere),
+					acceptedPolicyVersion: addonOptions?.acceptedPolicyVersion ?? null,
+				});
+				// Rechazo de los bloques (devuelto sin aviso): avisar acá y cerrar el diálogo del conector.
+				const blocksOnly = !addonOptions;
+				if (
+					res?.success === false &&
+					res.code &&
+					PLAN_CHECKOUT_ADDON_CODES.has(res.code) &&
+					(blocksOnly || res.addon === EXTRA_FOLDERS_KEY)
+				) {
+					snackbar(planCheckoutBlocksErrorMessage(res.code, res.reason, res.message), "info");
+					planBlocks.reset();
+					planBlocks.refresh();
+					return { success: false, code: "BLOCKS_REJECTED" };
+				}
+				return res;
+			},
+		});
+	};
+
+	/** Precios y combo de un plan para el checkout directo (tarjeta del plan y tarjeta del pack). */
+	const comboFor = (plan: Plan) => {
+		const pricing = getPlanPricing(plan);
+		const addonPlanName = planShortName(plan.displayName);
+		const addonPlanPrice = pricing.billingPeriod === "monthly" ? pricing.basePrice : null;
+		const offerBlocksHere = planBlocks.offer && plan.planId === BLOCKS_PLAN_ID && addonPlanPrice !== null;
+		const blocksHere = offerBlocksHere ? planBlocks.blocks : 0;
+		const blocksCost = blocksMonthlyCost(blocksHere, planBlocks.unitPrice);
+		const comboPlanName = blocksHere > 0 ? `${addonPlanName} + ${blocksHere} ${blocksHere === 1 ? "bloque" : "bloques"}` : addonPlanName;
+		const comboPlanPrice =
+			blocksHere > 0 && addonPlanPrice !== null && blocksCost !== null ? addAmounts(addonPlanPrice, blocksCost) : addonPlanPrice;
+		// Descuento porcentual vigente para este usuario (dirigido o público): el checkout lo
+		// aplica a todos los ítems, así que los totales del combo lo muestran también.
+		const percentOff = activePercentOff(plan.activeDiscounts?.[0]);
+		return { pricing, addonPlanName, addonPlanPrice, offerBlocksHere, blocksHere, blocksCost, comboPlanName, comboPlanPrice, percentOff };
 	};
 
 	// Plan gratuito → subir al grid de planes (sin redirect, ya estás en /plans).
@@ -258,23 +343,55 @@ const Plans = () => {
 					</motion.div>
 				</Box>
 
+				{showPack &&
+					packOffer &&
+					(() => {
+						const { pricing, addonPlanName, addonPlanPrice, blocksHere, comboPlanName, comboPlanPrice, percentOff } = comboFor(
+							packOffer.plan,
+						);
+						const badge =
+							packOffer.discount.badge || (percentOff !== null ? `${percentOff} % OFF ${discountDurationLabel(packOffer.discount)}` : null);
+						return (
+							<PackOfferCard
+								title={packOffer.pack.title || "Pack para tu estudio"}
+								subtitle={packOffer.pack.subtitle || packOffer.discount.promotionalMessage || null}
+								badge={badge}
+								planId={packOffer.plan.planId}
+								planName={addonPlanName}
+								planPrice={addonPlanPrice}
+								currency={pricing.currency || "usd"}
+								planFolders={packOffer.plan.resourceLimits?.find((r) => r.name === "folders")?.limit ?? null}
+								blocks={{
+									offer: packOffersBlocks,
+									value: planBlocks.blocks,
+									max: planBlocks.maxBlocks,
+									unitPrice: planBlocks.unitPrice,
+									foldersPerBlock: planBlocks.foldersPerBlock,
+									onChange: planBlocks.setBlocks,
+								}}
+								connector={{
+									offer: packOffersAddon,
+									checked: addonCheckout.isSelected(packOffer.plan.planId),
+									price: addonCheckout.addonPrice.amount,
+									onChange: (checked) => addonCheckout.setSelected(packOffer.plan.planId, checked),
+								}}
+								percentOff={percentOff}
+								durationLabel={discountDurationLabel(packOffer.discount)}
+								cta={{
+									label: packOffer.pack.ctaLabel || "Contratar el pack",
+									onClick: () => launchCheckout(packOffer.plan, blocksHere, comboPlanName, comboPlanPrice, pricing.currency, percentOff),
+									disabled: loadingPlanId !== null || addonCheckout.busy,
+									loading: loadingPlanId === packOffer.plan.planId,
+								}}
+							/>
+						);
+					})()}
+
 				<Grid container spacing={3} alignItems="stretch" justifyContent="center">
 					{plans.map((plan, idx) => {
 						const highlighted = isHighlightedPlan(plan.planId);
 						const offerAddonHere = addonCheckout.offer && plan.isActive && isAddonCompatiblePlan(plan.planId);
-						const pricing = offerAddonHere ? getPlanPricing(plan) : null;
-						const addonPlanName = planShortName(plan.displayName);
-						const addonPlanPrice = pricing && pricing.billingPeriod === "monthly" ? pricing.basePrice : null;
-						const offerBlocksHere = offerAddonHere && planBlocks.offer && plan.planId === BLOCKS_PLAN_ID && addonPlanPrice !== null;
-						const blocksHere = offerBlocksHere ? planBlocks.blocks : 0;
-						const blocksCost = blocksMonthlyCost(blocksHere, planBlocks.unitPrice);
-						const comboPlanName =
-							blocksHere > 0 ? `${addonPlanName} + ${blocksHere} ${blocksHere === 1 ? "bloque" : "bloques"}` : addonPlanName;
-						const comboPlanPrice =
-							blocksHere > 0 && addonPlanPrice !== null && blocksCost !== null ? addAmounts(addonPlanPrice, blocksCost) : addonPlanPrice;
-						// Descuento porcentual vigente para este usuario (dirigido o público): el checkout lo
-						// aplica a todos los ítems, así que los totales del combo lo muestran también.
-						const percentOff = activePercentOff(plan.activeDiscounts?.[0]);
+						const { pricing, addonPlanPrice, offerBlocksHere, blocksHere, comboPlanName, comboPlanPrice, percentOff } = comboFor(plan);
 						if (offerAddonHere) {
 							return (
 								<Grid item xs={12} sm={6} md={4} key={plan.planId}>
@@ -322,37 +439,7 @@ const Plans = () => {
 											label: loadingPlanId === plan.planId ? "Procesando..." : "Suscribirme",
 											disabled: loadingPlanId !== null || addonCheckout.busy,
 											loading: loadingPlanId === plan.planId,
-											onClick: () => {
-												trackPlanCTA(plan.planId);
-												addonCheckout.begin({
-													planId: plan.planId,
-													planName: comboPlanName,
-													planPrice: comboPlanPrice,
-													planCurrency: pricing?.currency,
-													discountPercent: percentOff,
-													proceed: async (addonOptions) => {
-														if (blocksHere <= 0) return startPlanCheckout(plan, addonOptions);
-														const res = await startPlanCheckout(plan, {
-															addons: withBlocks(addonOptions?.addons, blocksHere),
-															acceptedPolicyVersion: addonOptions?.acceptedPolicyVersion ?? null,
-														});
-														// Rechazo de los bloques (devuelto sin aviso): avisar acá y cerrar el diálogo del conector.
-														const blocksOnly = !addonOptions;
-														if (
-															res?.success === false &&
-															res.code &&
-															PLAN_CHECKOUT_ADDON_CODES.has(res.code) &&
-															(blocksOnly || res.addon === EXTRA_FOLDERS_KEY)
-														) {
-															snackbar(planCheckoutBlocksErrorMessage(res.code, res.reason, res.message), "info");
-															planBlocks.reset();
-															planBlocks.refresh();
-															return { success: false, code: "BLOCKS_REJECTED" };
-														}
-														return res;
-													},
-												});
-											},
+											onClick: () => launchCheckout(plan, blocksHere, comboPlanName, comboPlanPrice, pricing?.currency, percentOff),
 											variant: highlighted ? "contained" : "outlined",
 											color: "primary",
 											dataTestId: `plans-cta-${plan.planId}`,

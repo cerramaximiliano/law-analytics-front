@@ -429,6 +429,24 @@ export interface PlanFeature {
 	order?: number;
 }
 
+/** Add-on incluido en el pack de un cupón (ver ActiveDiscountPack). */
+export interface ActiveDiscountPackAddon {
+	key: string;
+	quantity: number;
+}
+
+/**
+ * Pack (combo) que propone un cupón: plan + add-ons preseleccionados. /plans lo muestra como
+ * tarjeta propia con los ítems editables y un solo botón (sections/plans/PackOfferCard).
+ */
+export interface ActiveDiscountPack {
+	planId: string;
+	addons: ActiveDiscountPackAddon[];
+	title?: string | null;
+	subtitle?: string | null;
+	ctaLabel?: string | null;
+}
+
 export interface ActiveDiscount {
 	code: string;
 	name: string;
@@ -445,6 +463,8 @@ export interface ActiveDiscount {
 	discountAmount: number;
 	finalPrice: number;
 	discountPercentage: number;
+	/** Pack (combo) propuesto por el cupón; null si no propone uno. */
+	pack?: ActiveDiscountPack | null;
 }
 
 export interface Plan {
