@@ -39,6 +39,13 @@ describe("findPackOffer", () => {
 		expect(offer?.plan.planId).toBe("premium");
 		expect(offer?.discount.code).toBe("ESTUDIO-FERNANDEZ-25");
 	});
+	it("publicOnly deja afuera los cupones dirigidos (la vista pública /plans)", () => {
+		const targeted = plan("premium", { activeDiscounts: [discount({ isTargeted: true })] });
+		expect(findPackOffer([targeted], { publicOnly: true })).toBeNull();
+		expect(findPackOffer([targeted])?.discount.code).toBe("ESTUDIO-FERNANDEZ-25");
+		const forAll = plan("premium", { activeDiscounts: [discount({ code: "PACK-TODOS", isTargeted: false })] });
+		expect(findPackOffer([forAll], { publicOnly: true })?.discount.code).toBe("PACK-TODOS");
+	});
 	it("ignora packs de otro plan, cupones sin pack y planes inactivos", () => {
 		expect(findPackOffer([plan("standard", { activeDiscounts: [discount()] })])).toBeNull();
 		expect(findPackOffer([plan("premium", { activeDiscounts: [discount({ pack: null })] })])).toBeNull();

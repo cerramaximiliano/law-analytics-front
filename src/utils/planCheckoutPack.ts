@@ -20,13 +20,20 @@ export interface PackOffer {
 	pack: ActiveDiscountPack;
 }
 
-/** Primer plan activo cuyo cupón vigente propone un pack para ese mismo plan. */
-export function findPackOffer(plans: Plan[]): PackOffer | null {
+/**
+ * Primer plan activo cuyo cupón vigente propone un pack para ese mismo plan.
+ * `publicOnly`: solo cupones para todos (sin usuarios, segmentos ni contactos destinatarios).
+ * Lo usa /plans, que es una vista pública: un pack dirigido a una persona se ofrece en la
+ * vista interna de planes (Cuenta → Suscripción), no ahí.
+ */
+export function findPackOffer(plans: Plan[], opts: { publicOnly?: boolean } = {}): PackOffer | null {
 	for (const plan of plans) {
 		if (!plan.isActive || !plan.activeDiscounts) continue;
 		for (const discount of plan.activeDiscounts) {
 			const pack = discount.pack;
-			if (pack && pack.planId === plan.planId) return { plan, discount, pack };
+			if (!pack || pack.planId !== plan.planId) continue;
+			if (opts.publicOnly && discount.isTargeted) continue;
+			return { plan, discount, pack };
 		}
 	}
 	return null;

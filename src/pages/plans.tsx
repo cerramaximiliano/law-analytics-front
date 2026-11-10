@@ -102,11 +102,12 @@ const Plans = () => {
 	const planBlocks = usePlanCheckoutBlocks();
 	const { isLoggedIn } = useAuth();
 
-	// Pack (combo) propuesto por un cupón vigente para este usuario (utils/planCheckoutPack):
-	// tarjeta propia arriba de los planes con el plan + bloques + conector ya elegidos. Comparte
-	// la selección con la tarjeta del plan, así que editar en una se ve en la otra. Solo en la
-	// rama de alta (logueado sin plan pago, con el checkout directo disponible).
-	const packOffer = useMemo(() => findPackOffer(plans), [plans]);
+	// Pack (combo) propuesto por un cupón vigente (utils/planCheckoutPack): tarjeta propia arriba
+	// de los planes con el plan + bloques + conector ya elegidos. Comparte la selección con la
+	// tarjeta del plan, así que editar en una se ve en la otra. Solo en la rama de alta (logueado
+	// sin plan pago, con el checkout directo disponible). Esta es la vista PÚBLICA: solo packs de
+	// cupones para todos; los dirigidos a una persona se ofrecen en Cuenta → Suscripción.
+	const packOffer = useMemo(() => findPackOffer(plans, { publicOnly: true }), [plans]);
 	const packPlanId = packOffer?.plan.planId ?? null;
 	const packOffersAddon = !!packPlanId && addonCheckout.offer && isAddonCompatiblePlan(packPlanId);
 	const packOffersBlocks = packOffersAddon && planBlocks.offer && packPlanId === BLOCKS_PLAN_ID;

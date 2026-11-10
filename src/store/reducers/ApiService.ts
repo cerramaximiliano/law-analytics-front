@@ -463,6 +463,8 @@ export interface ActiveDiscount {
 	discountAmount: number;
 	finalPrice: number;
 	discountPercentage: number;
+	/** true si el cupón apunta a usuarios, segmentos o contactos concretos (no es para todos). */
+	isTargeted?: boolean;
 	/** Pack (combo) propuesto por el cupón; null si no propone uno. */
 	pack?: ActiveDiscountPack | null;
 }
