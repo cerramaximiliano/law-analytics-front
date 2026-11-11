@@ -97,15 +97,6 @@ export const ESTADO_ACTO_LABEL: Record<EstadoActoPropio, string> = {
 	no_agregado: "No agregado por el juzgado",
 };
 
-/** Referencia del art. 310 CPCCN para primera instancia: 6 meses. Solo orientativa. */
-export const REFERENCIA_MESES = 6;
-
-export const fechaReferencia = (fecha: string): Date => {
-	const d = new Date(fecha);
-	d.setMonth(d.getMonth() + REFERENCIA_MESES);
-	return d;
-};
-
 /** Filtro del listado de carpetas por actividad propia. */
 export type FiltroActividadPropia = "all" | TramoActividad | "mas90" | "mas180" | "pendientes";
 

@@ -3,15 +3,7 @@ import dayjs from "utils/dayjs-config";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import AyudaActosPjn, { NOMBRE_ACTOS_PJN } from "sections/actividad-propia/AyudaActosPjn";
 import type { UltimaActividadLetrado } from "types/folder";
-import {
-	diasDesde,
-	tramoDe,
-	tramoInfo,
-	fechaReferencia,
-	REFERENCIA_MESES,
-	TIPO_ACTO_LABEL,
-	ESTADO_ACTO_LABEL,
-} from "services/actividadPropiaService";
+import { diasDesde, tramoDe, tramoInfo, TIPO_ACTO_LABEL, ESTADO_ACTO_LABEL } from "services/actividadPropiaService";
 
 interface Props {
 	resumen: UltimaActividadLetrado | null | undefined;
@@ -23,7 +15,7 @@ interface Props {
 
 /**
  * Tarjeta «Actos del letrado en PJN» de la columna lateral de Actividad: días desde el último acto
- * propio que cuenta, cuál fue y la referencia orientativa del art. 310 CPCCN.
+ * propio que cuenta, cuál fue.
  */
 const ActividadPropiaCard = ({ resumen, habilitado, loading, onVerActos }: Props) => {
 	const theme = useTheme();
@@ -97,8 +89,6 @@ const ActividadPropiaCard = ({ resumen, habilitado, loading, onVerActos }: Props
 
 	const dias = diasDesde(resumen.fecha) ?? 0;
 	const t = tramoInfo(tramoDe(dias));
-	const ref = fechaReferencia(resumen.fecha);
-	const refCumplida = ref.getTime() <= Date.now();
 
 	return (
 		<Box sx={{ p: 1.75, borderTop: `1px solid ${borde}` }}>
@@ -135,21 +125,10 @@ const ActividadPropiaCard = ({ resumen, habilitado, loading, onVerActos }: Props
 			{lineaSinConfirmar}
 
 			{(resumen.pendientes || 0) > 0 && (
-				<Typography sx={{ mt: 0.75, fontSize: "0.68rem", color: "warning.main" }}>
+				<Typography sx={{ mt: 0.75, fontSize: "0.68rem", color: isDark ? "warning.light" : "warning.dark", fontWeight: 500 }}>
 					{resumen.pendientes === 1 ? "1 escrito presentado sin proveer" : `${resumen.pendientes} escritos presentados sin proveer`}
 				</Typography>
 			)}
-
-			<Box sx={{ mt: 1 }}>
-				<Typography sx={{ fontSize: "0.68rem", color: "text.secondary" }}>Referencia art. 310: {REFERENCIA_MESES} meses</Typography>
-				<Typography sx={{ fontSize: "0.68rem", fontWeight: 500, color: refCumplida ? "error.main" : "text.primary" }}>
-					{refCumplida ? "Cumplidos el " : "Se cumplen el "}
-					{dayjs(ref).format("DD/MM/YYYY")}
-				</Typography>
-				<Typography sx={{ fontSize: "0.62rem", color: "text.secondary", lineHeight: 1.4, mt: 0.25 }}>
-					Orientativo: no descuenta ferias ni actos de la otra parte o del juzgado.
-				</Typography>
-			</Box>
 
 			{onVerActos && (
 				<Link

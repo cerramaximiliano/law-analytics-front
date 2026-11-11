@@ -37,7 +37,7 @@ type FiltroTipo = "todos" | TipoActoPropio;
 const ESTADO_COLOR: Record<string, string> = {
 	en_expediente: "success.main",
 	gestionado: "primary.main",
-	presentado: "warning.main",
+	presentado: "warning.dark",
 	enviado: "text.secondary",
 	no_agregado: "text.disabled",
 };

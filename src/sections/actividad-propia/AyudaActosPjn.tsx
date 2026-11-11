@@ -21,7 +21,7 @@ const AyudaActosPjn = ({ size = 14, texto }: { size?: number; texto?: React.Reac
 			component="span"
 			tabIndex={0}
 			aria-label={`Qué son las ${NOMBRE_ACTOS_PJN.toLowerCase()}`}
-			sx={{ display: "inline-flex", alignItems: "center", color: "text.secondary", cursor: "help", verticalAlign: "middle" }}
+			sx={{ display: "inline-flex", alignItems: "center", color: "text.secondary", verticalAlign: "middle" }}
 			onClick={(e) => e.stopPropagation()}
 		>
 			<InfoCircle size={size} />
