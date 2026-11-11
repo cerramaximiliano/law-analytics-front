@@ -221,6 +221,9 @@ function ReactTable({
 			// El orden elegido (selector o cabecera) no se pierde al cambiar de vista ni al recargar las
 			// tareas (11/11/2026, reporte de Silvia): react-table lo reiniciaba con cada array nuevo de `data`.
 			autoResetSortBy: false,
+			// Ídem con el buscador: tras crear o borrar una tarea el cuadro conservaba el texto pero la
+			// lista volvía a mostrar todo (visto en producción el 11/11/2026).
+			autoResetGlobalFilter: false,
 			initialState: {
 				pageIndex: controlledPageIndex,
 				pageSize: controlledPageSize,
