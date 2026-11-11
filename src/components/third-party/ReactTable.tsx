@@ -483,15 +483,15 @@ export const SortingSelect = ({ sortBy, sortDesc, setSortBy, allColumns }: Sorti
 					value={sort}
 					onChange={handleChange}
 					style={{ maxHeight: "30.75px" }}
-					input={<OutlinedInput id="select-column-hiding" placeholder="Ordernar por" />}
+					input={<OutlinedInput id="select-column-hiding" placeholder="Ordenar por" />}
 					renderValue={(selected) => {
 						const selectedColumn = allColumns.filter((column: ColumnInstance) => column.id === selected)[0];
 						if (!selected) {
-							return <Typography variant="subtitle1">Ordernar por</Typography>;
+							return <Typography variant="subtitle1">Ordenar por</Typography>;
 						}
 						return (
 							<Typography variant="subtitle2">
-								Ordernar por ({typeof selectedColumn.Header === "string" ? selectedColumn.Header : selectedColumn?.title})
+								Ordenar por ({typeof selectedColumn.Header === "string" ? selectedColumn.Header : selectedColumn?.title})
 							</Typography>
 						);
 					}}
