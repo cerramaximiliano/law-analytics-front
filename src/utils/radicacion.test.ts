@@ -8,6 +8,10 @@ describe("radicación", () => {
 	it("juzgado de origen con y sin secretaría", () => {
 		expect(radicacionOrigen(f({ courtNumber: "7", secretaryNumber: "1" }))).toBe("Juz. 7 · Sec. 1");
 		expect(radicacionOrigen(f({ courtNumber: "7" }))).toBe("Juz. 7");
+		// MEV/SCBA: el «número» es el nombre del juzgado → sin prefijo «Juz.»
+		expect(radicacionOrigen(f({ courtNumber: "Juzgado Civil y Comercial N° 5 - Lomas de Zamora" }))).toBe(
+			"Juzgado Civil y Comercial N° 5 - Lomas de Zamora",
+		);
 		expect(radicacionOrigen(f({ courtNumber: "" }))).toBe("");
 		expect(radicacionOrigen({})).toBe("");
 	});

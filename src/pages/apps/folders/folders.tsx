@@ -186,7 +186,7 @@ function ColumnasSelect({
 	setHiddenColumns: (ids: string[]) => void;
 	selectSx?: any;
 }) {
-	// «Acciones» no se puede ocultar: es la columna fija que motivó el selector.
+	// «Acciones» no se puede ocultar: es la columna que motivó el selector.
 	const options = allColumns.filter(
 		(c) => typeof c.Header === "string" && c.Header !== "Acciones" && !NON_HIDEABLE_COLUMNS.has(c.id) && c.id !== "_id" && c.id !== "email",
 	);
@@ -227,29 +227,6 @@ function ColumnasSelect({
 		</FormControl>
 	);
 }
-
-/** Columna «Acciones» fija a la derecha (y «Carátula» no), para no perder de vista la causa al desplazarse. */
-const stickyActionsSx = (column: any) =>
-	column?.Header === "Acciones"
-		? {
-				position: "sticky" as const,
-				right: 0,
-				// «&&» sube la especificidad: el tema pinta las celdas del encabezado con un tinte
-				// semitransparente (rgba 0.035) que ganaba y dejaba ver «JURISDICCIÓN» debajo
-				// de «ACCIONES» (verificado en producción el 5/11).
-				"&&": {
-					backgroundColor: (theme: any) => theme.palette.background.paper,
-					backgroundImage: "none",
-					zIndex: 2,
-					boxShadow: "-6px 0 8px -6px rgba(0,0,0,0.18)",
-				},
-				"&&.MuiTableCell-head": {
-					backgroundColor: (theme: any) => theme.palette.background.paper,
-					backgroundImage: "none",
-					zIndex: 3,
-				},
-		  }
-		: undefined;
 
 /**
  * Segunda línea de la columna Jurisdicción / opción del filtro Departamento:
@@ -2051,7 +2028,7 @@ function ReactTable({
 							{headerGroups.map((headerGroup) => (
 								<TableRow {...headerGroup.getHeaderGroupProps()} sx={{ "& > th:first-of-type": { width: "40px" } }}>
 									{headerGroup.headers.map((column: any) => (
-										<TableCell {...column.getHeaderProps([{ className: column.className }])} sx={stickyActionsSx(column)}>
+										<TableCell {...column.getHeaderProps([{ className: column.className }])}>
 											<HeaderSort column={column} sort />
 										</TableCell>
 									))}
@@ -2112,9 +2089,7 @@ function ReactTable({
 											}}
 										>
 											{row.cells.map((cell) => (
-												<TableCell {...cell.getCellProps([{ className: cell.column.className }])} sx={stickyActionsSx(cell.column)}>
-													{cell.render("Cell")}
-												</TableCell>
+												<TableCell {...cell.getCellProps([{ className: cell.column.className }])}>{cell.render("Cell")}</TableCell>
 											))}
 										</TableRow>
 										<TableRow>
@@ -4563,15 +4538,22 @@ const FoldersLayout = () => {
 					const origen = radicacionOrigen(row.original);
 					const actual = ubicacionDetalle(row.original);
 					if (!origen && !actual) return null;
+					// Una sola línea por dato, con puntos suspensivos y tooltip: en MEV/SCBA el «número» de
+					// juzgado es el nombre completo y, sin recorte, el texto se metía en Situación (10/11/2026).
+					const linea1 = origen || "Sin juzgado";
 					return (
 						<Stack spacing={0} sx={{ maxWidth: 150 }}>
-							<Typography variant="body2" sx={{ whiteSpace: "nowrap" }}>
-								{origen || "Sin juzgado"}
-							</Typography>
-							{actual && (
-								<Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
-									{actual}
+							<Tooltip title={linea1} placement="top-start" enterDelay={400}>
+								<Typography variant="body2" noWrap sx={{ display: "block" }}>
+									{linea1}
 								</Typography>
+							</Tooltip>
+							{actual && (
+								<Tooltip title={actual} placement="top-start" enterDelay={400}>
+									<Typography variant="caption" color="text.secondary" noWrap sx={{ lineHeight: 1.3, display: "block" }}>
+										{actual}
+									</Typography>
+								</Tooltip>
 							)}
 						</Stack>
 					);
@@ -4582,12 +4564,17 @@ const FoldersLayout = () => {
 				// Control del estudio (6/11/2026).
 				Header: "Situación",
 				accessor: "situacion" as any,
-				Cell: ({ value }: { value?: string }) =>
-					value ? (
-						<Typography variant="body2" sx={{ whiteSpace: "nowrap" }}>
-							{situacionLabel(value)}
-						</Typography>
-					) : null,
+				Cell: ({ value }: { value?: string }) => {
+					if (!value) return null;
+					const label = situacionLabel(value);
+					return (
+						<Tooltip title={label} placement="top-start" enterDelay={400}>
+							<Typography variant="body2" noWrap sx={{ display: "block", maxWidth: 140 }}>
+								{label}
+							</Typography>
+						</Tooltip>
+					);
+				},
 			},
 			{
 				Header: "Estado",

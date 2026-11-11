@@ -2,12 +2,17 @@
 // Equipos / reparto por juzgado (5/11/2026): el dato viaja en judFolder y no se mostraba.
 // Funciones puras, sin React, para el listado, el CSV y los filtros.
 
-/** «Juz. 7 · Sec. 1» a partir del juzgado de origen; vacío si no hay número. */
+/**
+ * «Juz. 7 · Sec. 1» a partir del juzgado de origen; vacío si no hay dato. Cuando el «número»
+ * es un nombre (MEV/SCBA: «Juzgado Civil y Comercial N° 5 - Lomas de Zamora») va tal cual,
+ * sin el prefijo «Juz.» redundante (10/11/2026).
+ */
 export const radicacionOrigen = (f: any): string => {
 	const c = String(f?.judFolder?.courtNumber || "").trim();
 	const sec = String(f?.judFolder?.secretaryNumber || "").trim();
 	if (!c) return "";
-	return `Juz. ${c}${sec ? ` · Sec. ${sec}` : ""}`;
+	const juzgado = /^\d+$/.test(c) ? `Juz. ${c}` : c;
+	return `${juzgado}${sec ? ` · Sec. ${sec}` : ""}`;
 };
 
 export type UbicacionKind = "Juzgado" | "Cámara" | "Corte" | "Otro" | "";
