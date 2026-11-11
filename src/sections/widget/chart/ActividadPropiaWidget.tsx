@@ -7,7 +7,7 @@ import { ArrowRight, Edit2 } from "iconsax-react";
 
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import AyudaActosPjn, { NOMBRE_ACTOS_PJN } from "sections/actividad-propia/AyudaActosPjn";
-import { fetchResumenActividadPropia, TRAMOS, type ResumenActividadPropia } from "services/actividadPropiaService";
+import { fetchResumenActividadPropia, TRAMOS, AMBAR_TEXTO, type ResumenActividadPropia } from "services/actividadPropiaService";
 
 const LISTADO = "/apps/folders/list";
 
@@ -30,8 +30,17 @@ const ActividadPropiaWidget = () => {
 		};
 	}, []);
 
-	const conActos = data ? data.total - data.tramos.sinActos : 0;
+	const sinConfirmar = data?.tramos.sinConfirmar ?? 0;
+	const conActos = data ? data.total - data.tramos.sinActos - sinConfirmar : 0;
 	if (!data || !data.habilitado || conActos === 0) return null;
+
+	// Las que no tienen una presentación en el expediente: también cuentan en el total y en la barra.
+	const gris = alpha(theme.palette.text.primary, isDark ? 0.28 : 0.18);
+	const ambar = isDark ? AMBAR_TEXTO.dark : AMBAR_TEXTO.light;
+	const otros = [
+		{ key: "sinConfirmar", label: "Presentadas, todavía sin movimiento", n: sinConfirmar, color: alpha(ambar, 0.55) },
+		{ key: "sinActos", label: "Sin presentaciones propias", n: data.tramos.sinActos, color: gris },
+	].filter((o) => o.n > 0);
 
 	const ir = (filtro: string) => navigate(`${LISTADO}?actividadPropia=${filtro}`);
 
@@ -63,7 +72,7 @@ const ActividadPropiaWidget = () => {
 							<AyudaActosPjn />
 						</Stack>
 						<Typography variant="caption" sx={{ color: "text.secondary" }}>
-							Causas PJN activas por días desde la última presentación en el expediente
+							{data.total} causas PJN activas por días desde la última presentación en el expediente
 						</Typography>
 					</Stack>
 				</Stack>
@@ -72,10 +81,15 @@ const ActividadPropiaWidget = () => {
 					{TRAMOS.map((t) =>
 						data.tramos[t.key] > 0 ? (
 							<Tooltip key={t.key} title={`${t.label}: ${data.tramos[t.key]}`} arrow>
-								<Box sx={{ width: `${(data.tramos[t.key] / conActos) * 100}%`, minWidth: 4, bgcolor: t.color }} />
+								<Box sx={{ width: `${(data.tramos[t.key] / data.total) * 100}%`, minWidth: 4, bgcolor: t.color }} />
 							</Tooltip>
 						) : null,
 					)}
+					{otros.map((o) => (
+						<Tooltip key={o.key} title={`${o.label}: ${o.n}`} arrow>
+							<Box sx={{ width: `${(o.n / data.total) * 100}%`, minWidth: 4, bgcolor: o.color }} />
+						</Tooltip>
+					))}
 				</Box>
 
 				<Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0.5 }}>
@@ -98,6 +112,26 @@ const ActividadPropiaWidget = () => {
 							<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
 								{data.tramos[t.key]}
 							</Typography>
+						</ButtonBase>
+					))}
+					{otros.map((o) => (
+						<ButtonBase
+							key={o.key}
+							onClick={() => ir(o.key)}
+							sx={{
+								gridColumn: "1 / -1",
+								justifyContent: "space-between",
+								px: 0.75,
+								py: 0.5,
+								borderRadius: 0.75,
+								"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.06) },
+							}}
+						>
+							<Stack direction="row" spacing={0.75} alignItems="center">
+								<Box sx={{ width: 8, height: 8, borderRadius: 0.5, bgcolor: o.color }} />
+								<Typography sx={{ fontSize: "0.75rem", color: "text.secondary" }}>{o.label}</Typography>
+							</Stack>
+							<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{o.n}</Typography>
 						</ButtonBase>
 					))}
 				</Box>

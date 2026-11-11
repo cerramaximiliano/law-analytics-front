@@ -18,7 +18,8 @@ export interface ResumenActividadPropia {
 	/** El usuario tiene credencial PJN con bandeja: sin ella no hay actos que leer. */
 	habilitado: boolean;
 	total: number;
-	tramos: Record<TramoActividad, number>;
+	/** `sinActos`: ninguna presentación con la credencial. `sinConfirmar`: hay presentaciones, ninguna figura todavía en el expediente. */
+	tramos: Record<TramoActividad, number> & { sinConfirmar?: number };
 	pendientes: number;
 	proximas: { _id: string; folderName: string; dias: number; fecha: string; tipo: TipoActoPropio }[];
 	proximasTotal: number;
@@ -98,7 +99,7 @@ export const ESTADO_ACTO_LABEL: Record<EstadoActoPropio, string> = {
 };
 
 /** Filtro del listado de carpetas por actividad propia. */
-export type FiltroActividadPropia = "all" | TramoActividad | "mas90" | "mas180" | "pendientes";
+export type FiltroActividadPropia = "all" | TramoActividad | "mas90" | "mas180" | "pendientes" | "sinConfirmar";
 
 export const cumpleFiltroActividad = (filtro: FiltroActividadPropia, ult?: UltimaActividadLetrado | null): boolean => {
 	if (filtro === "all") return true;
@@ -110,6 +111,10 @@ export const cumpleFiltroActividad = (filtro: FiltroActividadPropia, ult?: Ultim
 			return dias !== null && dias > 180;
 		case "pendientes":
 			return (ult?.pendientes || 0) > 0;
+		case "sinConfirmar":
+			return dias === null && !!ult?.ultimoSinConfirmar;
+		case "sinActos":
+			return dias === null && !ult?.ultimoSinConfirmar;
 		default:
 			return tramoDe(dias) === filtro;
 	}

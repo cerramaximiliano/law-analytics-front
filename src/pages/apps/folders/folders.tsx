@@ -1870,6 +1870,9 @@ function ReactTable({
 												<MenuItem value="sinActos">
 													<Typography variant="body2">PJN: sin presentaciones con esta credencial</Typography>
 												</MenuItem>
+												<MenuItem value="sinConfirmar">
+													<Typography variant="body2">PJN: presentaciones todavía sin movimiento en el expediente</Typography>
+												</MenuItem>
 											</Select>
 										</FormControl>
 									)}
@@ -2762,6 +2765,7 @@ const FoldersLayout = () => {
 		"mas90",
 		"mas180",
 		"pendientes",
+		"sinConfirmar",
 	];
 	const esFiltroActividad = (v: string | null): v is FiltroActividadPropia =>
 		!!v && ACTIVIDAD_PROPIA_FILTROS.includes(v as FiltroActividadPropia);
