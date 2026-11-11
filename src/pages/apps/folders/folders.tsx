@@ -625,6 +625,10 @@ function ReactTable({
 			columns: columns as any,
 			data,
 			filterTypes,
+			// El orden elegido no se pierde al filtrar ni al recargar la lista (11/11/2026, reporte de
+			// Silvia): react-table lo reiniciaba al inicial con cada array nuevo de `data`. La página
+			// sí vuelve a la 1 al filtrar (autoResetPage queda por defecto).
+			autoResetSortBy: false,
 			initialState: {
 				pageIndex: 0,
 				pageSize: typeof savedPrefs.pageSize === "number" && savedPrefs.pageSize > 0 ? savedPrefs.pageSize : initialPageSize,
