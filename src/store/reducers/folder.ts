@@ -823,6 +823,10 @@ export const archiveFolders =
 export interface ArchivedListExtra {
 	responsable?: string;
 	juzgado?: string;
+	/** Instancia actual (11/11/2026): juzgado | camara | camara:<sala> | corte | otro. */
+	ubicacion?: string;
+	/** Orden del modal: lastMovement (default) | ubicacion | folderName | updatedAt. */
+	sort?: string;
 }
 
 export const getArchivedFoldersByUserId =
@@ -838,8 +842,9 @@ export const getArchivedFoldersByUserId =
 				archived: true,
 				fields,
 				page,
-				// Archivadas ordenadas por último movimiento (5/11/2026): las que más se mueven, primero.
-				sort: "lastMovement",
+				// Archivadas ordenadas por último movimiento (5/11/2026), salvo que el modal pida otro
+				// orden (instancia / carátula, 11/11/2026).
+				sort: extra.sort || "lastMovement",
 			};
 			if (limit !== undefined) {
 				params.limit = limit;
@@ -851,7 +856,8 @@ export const getArchivedFoldersByUserId =
 			// se piden los conteos por juzgado para armar el selector con todas las opciones.
 			if (extra.responsable) params.responsable = extra.responsable;
 			if (extra.juzgado) params.juzgado = extra.juzgado;
-			params.facets = "juzgados";
+			if (extra.ubicacion) params.ubicacion = extra.ubicacion;
+			params.facets = "juzgados,ubicaciones";
 
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/user/${userId}`, {
 				params,
@@ -894,8 +900,9 @@ export const getArchivedFoldersByGroupId =
 				archived: true,
 				fields,
 				page,
-				// Archivadas ordenadas por último movimiento (5/11/2026): las que más se mueven, primero.
-				sort: "lastMovement",
+				// Archivadas ordenadas por último movimiento (5/11/2026), salvo que el modal pida otro
+				// orden (instancia / carátula, 11/11/2026).
+				sort: extra.sort || "lastMovement",
 			};
 			if (limit !== undefined) {
 				params.limit = limit;
@@ -907,7 +914,8 @@ export const getArchivedFoldersByGroupId =
 			// se piden los conteos por juzgado para armar el selector con todas las opciones.
 			if (extra.responsable) params.responsable = extra.responsable;
 			if (extra.juzgado) params.juzgado = extra.juzgado;
-			params.facets = "juzgados";
+			if (extra.ubicacion) params.ubicacion = extra.ubicacion;
+			params.facets = "juzgados,ubicaciones";
 
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}`, {
 				params,

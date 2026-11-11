@@ -1,8 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { juzgadoKey, radicacionOrigen, ubicacionActual, ubicacionDetalle } from "./radicacion";
+import { juzgadoKey, radicacionOrigen, ubicacionActual, ubicacionDetalle, ubicacionOptions } from "./radicacion";
 
 // Radicación en el listado de carpetas (5/11/2026).
 const f = (judFolder: any, folderFuero = "Seguridad Social") => ({ judFolder, folderFuero });
+
+describe("opciones del filtro por instancia (archivadas, 11/11/2026)", () => {
+	it("ordena Cámara por sala numérica, luego Corte, Juzgado y otra; sin tocar los conteos", () => {
+		const opts = ubicacionOptions([
+			{ kind: "juzgado", sala: "", count: 40 },
+			{ kind: "camara", sala: "10", count: 1 },
+			{ kind: "otro", sala: "", count: 2 },
+			{ kind: "corte", sala: "", count: 3 },
+			{ kind: "camara", sala: "2", count: 8 },
+			{ kind: "camara", sala: "", count: 4 },
+			{ kind: "camara", sala: "1", count: 12 },
+			{ kind: "", sala: "", count: 99 },
+		]);
+		expect(opts).toEqual([
+			{ value: "camara:1", label: "Cámara · Sala 1", count: 12 },
+			{ value: "camara:2", label: "Cámara · Sala 2", count: 8 },
+			{ value: "camara:10", label: "Cámara · Sala 10", count: 1 },
+			{ value: "camara", label: "Cámara", count: 4 },
+			{ value: "corte", label: "Corte Suprema", count: 3 },
+			{ value: "juzgado", label: "Juzgado", count: 40 },
+			{ value: "otro", label: "Otra dependencia", count: 2 },
+		]);
+	});
+});
 
 describe("radicación", () => {
 	it("juzgado de origen con y sin secretaría", () => {

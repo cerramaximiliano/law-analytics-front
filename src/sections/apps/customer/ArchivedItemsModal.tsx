@@ -95,6 +95,13 @@ interface ArchivedItemsModalProps {
 	juzgadoFilter?: string;
 	juzgadoOptions?: { value: string; label: string; count: number }[];
 	onJuzgadoFilterChange?: (value: string) => void;
+	// Instancia actual (11/11/2026, pedido de Silvia): Juzgado / Cámara · Sala / Corte, resuelto por el
+	// hub (`?ubicacion=`) con las opciones de todas las archivadas (facets). Y el orden del listado.
+	ubicacionFilter?: string;
+	ubicacionOptions?: { value: string; label: string; count: number }[];
+	onUbicacionFilterChange?: (value: string) => void;
+	sortValue?: string;
+	onSortChange?: (value: string) => void;
 	// Eliminar archivadas (6/11/2026, pedido de Silvia): el parent abre su diálogo de confirmación.
 	onDeleteSelected?: (selectedIds: string[]) => void;
 }
@@ -122,6 +129,11 @@ const ArchivedItemsModal = ({
 	juzgadoFilter = "",
 	juzgadoOptions = [],
 	onJuzgadoFilterChange,
+	ubicacionFilter = "",
+	ubicacionOptions = [],
+	onUbicacionFilterChange,
+	sortValue = "",
+	onSortChange,
 	onDeleteSelected,
 }: ArchivedItemsModalProps) => {
 	const theme = useTheme();
@@ -160,6 +172,9 @@ const ArchivedItemsModal = ({
 	const showResponsableFilter = showResponsables && itemType === "folders" && Boolean(onResponsableFilterChange);
 	const showJuzgadoFilter =
 		itemType === "folders" && Boolean(onJuzgadoFilterChange) && (juzgadoOptions.length > 0 || Boolean(juzgadoFilter));
+	const showUbicacionFilter =
+		itemType === "folders" && Boolean(onUbicacionFilterChange) && (ubicacionOptions.length > 0 || Boolean(ubicacionFilter));
+	const showSort = itemType === "folders" && Boolean(onSortChange);
 
 	const columns = useMemo(() => {
 		if (itemType === "contacts") {
@@ -456,7 +471,7 @@ const ArchivedItemsModal = ({
 					</Box>
 				)}
 
-				{(onSearchChange || showResponsableFilter || showJuzgadoFilter) && (
+				{(onSearchChange || showResponsableFilter || showJuzgadoFilter || showUbicacionFilter || showSort) && (
 					<Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mb: 2, flexShrink: 0 }}>
 						{onSearchChange && (
 							<OutlinedInput
@@ -489,6 +504,42 @@ const ArchivedItemsModal = ({
 											{o.label} ({o.count})
 										</MenuItem>
 									))}
+								</Select>
+							</FormControl>
+						)}
+						{showUbicacionFilter && (
+							<FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 190 } }}>
+								<Select
+									value={ubicacionFilter}
+									onChange={(e) => onUbicacionFilterChange?.(String(e.target.value))}
+									displayEmpty
+									inputProps={{ "aria-label": "Filtrar archivadas por instancia" }}
+									data-testid="archived-ubicacion-filter"
+									sx={selectSx}
+								>
+									<MenuItem value="">Instancia: todas</MenuItem>
+									{ubicacionOptions.map((o) => (
+										<MenuItem key={o.value} value={o.value}>
+											{o.label} ({o.count})
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+						)}
+						{showSort && (
+							<FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 200 } }}>
+								<Select
+									value={sortValue}
+									onChange={(e) => onSortChange?.(String(e.target.value))}
+									displayEmpty
+									inputProps={{ "aria-label": "Ordenar archivadas" }}
+									data-testid="archived-sort"
+									sx={selectSx}
+								>
+									<MenuItem value="">Orden: último movimiento</MenuItem>
+									<MenuItem value="ubicacion">Orden: instancia (Cámara · Sala, Corte, Juzgado)</MenuItem>
+									<MenuItem value="folderName">Orden: carátula</MenuItem>
+									<MenuItem value="updatedAt">Orden: última actualización</MenuItem>
 								</Select>
 							</FormControl>
 						)}
@@ -543,7 +594,7 @@ const ArchivedItemsModal = ({
 								message={
 									searchText.trim()
 										? `No se encontraron ${itemLabelPlural} para "${searchText.trim()}"`
-										: responsableFilter || juzgadoFilter
+										: responsableFilter || juzgadoFilter || ubicacionFilter
 										? `No hay ${itemLabelPlural} archivad${itemType === "contacts" ? "os" : "as"} con ese filtro`
 										: `No hay ${itemLabelPlural} archivad${itemType === "contacts" ? "os" : "as"}`
 								}

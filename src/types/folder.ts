@@ -204,7 +204,11 @@ export type FolderState = {
 	archivedFolders: FolderData[];
 	archivedPagination: PaginationInfo;
 	/** Conteo por juzgado de las archivadas (hub `facets.juzgados`), para el filtro del modal (6/11/2026). */
-	archivedFacets?: { juzgados?: { fuero: string; court: string; count: number }[] };
+	archivedFacets?: {
+		juzgados?: { fuero: string; court: string; count: number }[];
+		/** Conteo por instancia actual (hub `facets.ubicaciones`, 11/11/2026): Cámara·sala / Corte / Juzgado / otra. */
+		ubicaciones?: { kind: string; sala: string; count: number }[];
+	};
 	selectedFolders: FolderData[];
 	folder: FolderData | null;
 	isLoader: boolean;

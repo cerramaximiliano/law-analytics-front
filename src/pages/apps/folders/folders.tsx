@@ -56,7 +56,15 @@ import { getTeamAssignees, resolveAssignees } from "utils/teamAssignees";
 import { isResponsableVistaFija, responsableOptions, responsableQueryValue } from "utils/responsableVista";
 import { FOLDERS_LIST_PREFS_KEY, readListPrefs, writeListPrefs } from "utils/listPrefs";
 import { updateUser } from "store/reducers/auth";
-import { juzgadoCounts, juzgadoKey, juzgadoOptions, radicacionOrigen, ubicacionActual, ubicacionDetalle } from "utils/radicacion";
+import {
+	juzgadoCounts,
+	juzgadoKey,
+	juzgadoOptions,
+	radicacionOrigen,
+	ubicacionActual,
+	ubicacionDetalle,
+	ubicacionOptions,
+} from "utils/radicacion";
 import {
 	diasDesdeUltimoMovimiento,
 	enPeriodo,
@@ -2416,9 +2424,12 @@ const FoldersLayout = () => {
 	const [archivedResponsable, setArchivedResponsable] = useState("");
 	// Juzgado de origen del modal de archivadas ("" = todos, o «fuero|número»), 6/11/2026.
 	const [archivedJuzgado, setArchivedJuzgado] = useState("");
+	// Instancia actual y orden del modal de archivadas (11/11/2026, pedido de Silvia).
+	const [archivedUbicacion, setArchivedUbicacion] = useState("");
+	const [archivedSort, setArchivedSort] = useState("");
 	const archivedExtra = useMemo(
-		() => ({ responsable: archivedResponsable, juzgado: archivedJuzgado }),
-		[archivedResponsable, archivedJuzgado],
+		() => ({ responsable: archivedResponsable, juzgado: archivedJuzgado, ubicacion: archivedUbicacion, sort: archivedSort }),
+		[archivedResponsable, archivedJuzgado, archivedUbicacion, archivedSort],
 	);
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -2719,6 +2730,7 @@ const FoldersLayout = () => {
 	const uniqueSituaciones = useMemo(() => situacionOptions(verifiedFolders), [verifiedFolders]);
 	// Juzgados de las archivadas: conteo del hub sobre todas, no solo la página visible.
 	const archivedJuzgadoOptions = useMemo(() => juzgadoOptions(archivedFacets?.juzgados || []), [archivedFacets]);
+	const archivedUbicacionOptions = useMemo(() => ubicacionOptions(archivedFacets?.ubicaciones || []), [archivedFacets]);
 
 	const uniqueUbicaciones = useMemo(() => {
 		const map = new Map<string, number>();
@@ -3495,6 +3507,40 @@ const FoldersLayout = () => {
 			}
 		},
 		[activeTeam?._id, archivedPageSize, archivedSearch, archivedExtra],
+	);
+
+	// Instancia actual y orden del modal de archivadas (11/11/2026): vuelven a página 1.
+	const reloadArchivedWith = useCallback(
+		async (extra: typeof archivedExtra) => {
+			if (!user?._id) return;
+			setArchivedPage(1);
+			try {
+				if (isTeamMode && activeTeam?._id) {
+					await dispatch(getArchivedFoldersByGroupId(activeTeam._id, 1, archivedPageSize, archivedSearch, extra));
+				} else {
+					await dispatch(getArchivedFoldersByUserId(user._id, 1, archivedPageSize, archivedSearch, extra));
+				}
+			} catch (error) {
+				setSnackbarMessage("Error al filtrar causas archivadas");
+				setSnackbarSeverity("error");
+				setSnackbarOpen(true);
+			}
+		},
+		[user?._id, isTeamMode, activeTeam?._id, archivedPageSize, archivedSearch],
+	);
+	const handleArchivedUbicacionChange = useCallback(
+		(value: string) => {
+			setArchivedUbicacion(value);
+			void reloadArchivedWith({ ...archivedExtra, ubicacion: value });
+		},
+		[archivedExtra, reloadArchivedWith],
+	);
+	const handleArchivedSortChange = useCallback(
+		(value: string) => {
+			setArchivedSort(value);
+			void reloadArchivedWith({ ...archivedExtra, sort: value });
+		},
+		[archivedExtra, reloadArchivedWith],
 	);
 
 	// Filtro por juzgado del modal de archivadas (también sin equipo): vuelve a página 1.
@@ -5432,6 +5478,11 @@ const FoldersLayout = () => {
 						juzgadoFilter={archivedJuzgado}
 						juzgadoOptions={archivedJuzgadoOptions}
 						onJuzgadoFilterChange={handleArchivedJuzgadoChange}
+						ubicacionFilter={archivedUbicacion}
+						ubicacionOptions={archivedUbicacionOptions}
+						onUbicacionFilterChange={handleArchivedUbicacionChange}
+						sortValue={archivedSort}
+						onSortChange={handleArchivedSortChange}
 						onDeleteSelected={
 							canDelete
 								? (ids) => {

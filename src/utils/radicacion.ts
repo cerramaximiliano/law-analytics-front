@@ -42,6 +42,44 @@ export const ubicacionDetalle = (f: any): string => {
 	return "";
 };
 
+/** Conteo por instancia que devuelve el hub (`facets.ubicaciones`): kind + sala (solo en Cámara). */
+export interface UbicacionFacet {
+	kind: string;
+	sala: string;
+	count: number;
+}
+
+export interface UbicacionOption {
+	value: string;
+	label: string;
+	count: number;
+}
+
+const UBICACION_LABEL: Record<string, string> = { camara: "Cámara", corte: "Corte Suprema", juzgado: "Juzgado", otro: "Otra dependencia" };
+const UBICACION_ORDER: Record<string, number> = { camara: 1, corte: 2, juzgado: 3, otro: 4 };
+
+/**
+ * Opciones del filtro por instancia actual (11/11/2026, pedido de Silvia): Cámara por sala
+ * (numérica), Cámara sin sala, Corte, Juzgado, otra. Valor = lo que entiende el hub en `?ubicacion=`.
+ */
+export const ubicacionOptions = (facets: UbicacionFacet[]): UbicacionOption[] => {
+	const salaNum = (s: string) => (/^\d+$/.test(s) ? Number(s) : Number.MAX_SAFE_INTEGER);
+	return facets
+		.filter((f) => UBICACION_LABEL[f.kind])
+		.map((f) => {
+			const sala = f.kind === "camara" ? String(f.sala || "").trim() : "";
+			return {
+				value: sala ? `camara:${sala}` : f.kind,
+				label: sala ? `Cámara · Sala ${sala}` : UBICACION_LABEL[f.kind],
+				count: f.count,
+				_k: UBICACION_ORDER[f.kind],
+				_s: sala ? salaNum(sala) : Number.MAX_SAFE_INTEGER,
+			};
+		})
+		.sort((a, b) => a._k - b._k || a._s - b._s || a.label.localeCompare(b.label, "es"))
+		.map(({ value, label, count }) => ({ value, label, count }));
+};
+
 /** Clave del filtro por juzgado: fuero + número (el mismo número existe en varios fueros). */
 export const juzgadoKey = (f: any): string => {
 	const c = String(f?.judFolder?.courtNumber || "").trim();
