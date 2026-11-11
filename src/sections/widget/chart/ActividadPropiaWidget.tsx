@@ -63,7 +63,7 @@ const ActividadPropiaWidget = () => {
 							<AyudaActosPjn />
 						</Stack>
 						<Typography variant="caption" sx={{ color: "text.secondary" }}>
-							Causas PJN activas por días desde el último acto
+							Causas PJN activas por días desde la última presentación en el expediente
 						</Typography>
 					</Stack>
 				</Stack>

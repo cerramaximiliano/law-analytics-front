@@ -57,7 +57,8 @@ const ActividadPropiaStrip = ({ folders, value, onChange }: Props) => {
 					<AyudaActosPjn />
 				</Stack>
 				<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
-					Causas PJN activas según los días desde el último escrito, cédula o DEOX presentado con la credencial. Tocá un tramo para filtrar.
+					Causas PJN activas según los días desde la última presentación (escrito, cédula o DEOX) que figura en el expediente. Tocá un tramo
+					para filtrar.
 				</Typography>
 			</Stack>
 			<Box

@@ -203,7 +203,9 @@ const ActosPropiosPanel = ({ data, loading, error, onOpenMenu }: Props) => {
 														<Typography sx={{ fontSize: "0.66rem", color: "text.secondary" }}>A {a.destinatarios.join(", ")}</Typography>
 													)}
 													{esUltimo && (
-														<Typography sx={{ fontSize: "0.66rem", fontWeight: 700, color: BRAND_BLUE }}>Último acto que cuenta</Typography>
+														<Typography sx={{ fontSize: "0.66rem", fontWeight: 700, color: BRAND_BLUE }}>
+															Última presentación que cuenta
+														</Typography>
 													)}
 												</Stack>
 											</TableCell>
@@ -234,8 +236,8 @@ const ActosPropiosPanel = ({ data, loading, error, onOpenMenu }: Props) => {
 			</Box>
 			<Box sx={{ px: 1.5, py: 1, borderTop: `1px solid ${borde}` }}>
 				<Typography sx={{ fontSize: "0.66rem", color: "text.secondary" }}>
-					Fuente: bandeja de escritos, cédulas enviadas y DEOX enviados del portal PJN. Cuenta el último acto que ya figura como movimiento
-					en el expediente; lo presentado y todavía sin movimiento no corre el contador.
+					Fuente: bandeja de escritos, cédulas enviadas y DEOX enviados del portal PJN. Cuenta la última presentación que ya figura como
+					movimiento en el expediente; lo presentado y todavía sin movimiento no corre el contador.
 					{data?.truncado ? " Se muestran los 1.000 más recientes." : ""}
 				</Typography>
 			</Box>

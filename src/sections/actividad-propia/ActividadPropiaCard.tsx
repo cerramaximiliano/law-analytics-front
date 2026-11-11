@@ -78,7 +78,7 @@ const ActividadPropiaCard = ({ resumen, habilitado, loading, onVerActos }: Props
 			<Box sx={{ p: 1.75, borderTop: `1px solid ${borde}` }}>
 				{titulo}
 				<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", lineHeight: 1.45 }}>
-					Ningún acto de esta credencial figura todavía como movimiento en el expediente.
+					Ninguna presentación de esta credencial figura todavía como movimiento en el expediente.
 				</Typography>
 				{lineaSinConfirmar}
 				{onVerActos && (
@@ -116,13 +116,13 @@ const ActividadPropiaCard = ({ resumen, habilitado, loading, onVerActos }: Props
 					{dias}
 				</Typography>
 				<Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }}>
-					{dias === 1 ? "día desde el último acto" : "días desde el último acto"}
+					{dias === 1 ? "día desde la última presentación" : "días desde la última presentación"}
 				</Typography>
 			</Stack>
 
 			<Box sx={{ mt: 1, p: 1, borderRadius: 0.75, bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03), border: `1px solid ${borde}` }}>
 				<Typography sx={{ fontSize: "0.64rem", color: "text.secondary" }}>
-					Último acto en el expediente · {resumen.tipo ? TIPO_ACTO_LABEL[resumen.tipo] ?? resumen.tipo : ""}
+					Última presentación en el expediente · {resumen.tipo ? TIPO_ACTO_LABEL[resumen.tipo] ?? resumen.tipo : ""}
 				</Typography>
 				{resumen.titulo && (
 					<Typography sx={{ fontSize: "0.72rem", fontWeight: 600, lineHeight: 1.3, wordBreak: "break-word" }}>{resumen.titulo}</Typography>

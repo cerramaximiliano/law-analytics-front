@@ -1847,13 +1847,13 @@ function ReactTable({
 													</Stack>
 												</MenuItem>
 												<MenuItem value="mas90">
-													<Typography variant="body2">PJN: último acto hace más de 90 días</Typography>
+													<Typography variant="body2">PJN: última presentación hace más de 90 días</Typography>
 												</MenuItem>
 												<MenuItem value="mas180">
-													<Typography variant="body2">PJN: último acto hace más de 180 días</Typography>
+													<Typography variant="body2">PJN: última presentación hace más de 180 días</Typography>
 												</MenuItem>
 												<MenuItem value="mas365">
-													<Typography variant="body2">PJN: último acto hace más de 365 días</Typography>
+													<Typography variant="body2">PJN: última presentación hace más de 365 días</Typography>
 												</MenuItem>
 												<MenuItem value="pendientes">
 													<Typography variant="body2">PJN: con escritos sin proveer</Typography>
@@ -4899,7 +4899,7 @@ const FoldersLayout = () => {
 			},
 			{
 				// Actividad procesal propia (10/11/2026). Ordena por fecha del último acto: ascendente = más días sin actividad.
-				Header: "Último acto PJN",
+				Header: "Última presentación PJN",
 				id: "actividadPropia",
 				accessor: (row: any) => row.ultimaActividadLetrado?.fecha || null,
 				Cell: ({ row }: { row: any }) => {
@@ -4914,9 +4914,9 @@ const FoldersLayout = () => {
 					}
 					return (
 						<Tooltip
-							title={`Último acto del letrado en PJN${
+							title={`Última presentación del letrado en PJN${
 								ult.titulo ? `: ${ult.titulo}` : ""
-							}. Último acto que figura como movimiento en el expediente; sirve para estimar la caducidad de instancia (orientativo).`}
+							}. Última presentación que figura como movimiento en el expediente; sirve para estimar la caducidad de instancia (orientativo).`}
 							arrow
 							placement="top"
 						>
