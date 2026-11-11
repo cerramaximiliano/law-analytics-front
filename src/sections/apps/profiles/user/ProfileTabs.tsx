@@ -343,7 +343,7 @@ const ProfileTabs = ({ focusInput }: Props) => {
 					</Stack>
 					<LinearProgress
 						variant="determinate"
-						value={storagePercentage}
+						value={Math.min(Math.max(storagePercentage, 0), 100)}
 						sx={{
 							height: 6,
 							borderRadius: 1,

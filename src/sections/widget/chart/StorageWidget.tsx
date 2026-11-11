@@ -97,7 +97,7 @@ const StorageWidget = () => {
 				{/* Barra de progreso */}
 				<LinearProgress
 					variant="determinate"
-					value={storagePercentage}
+					value={Math.min(Math.max(storagePercentage, 0), 100)}
 					sx={{
 						height: 8,
 						borderRadius: 1,
