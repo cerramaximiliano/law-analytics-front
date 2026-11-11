@@ -12,8 +12,8 @@ const AYUDA = (
 			Nación. Solo causas del PJN; las demás jurisdicciones todavía no lo tienen.
 		</Typography>
 		<Typography sx={{ fontSize: "0.72rem", lineHeight: 1.45, mb: 0.5 }}>
-			Sirve para estimar la caducidad de instancia: el art. 310 del CPCCN la fija en 6 meses en primera instancia. Un escrito cuenta desde
-			que se presenta; si el juzgado no lo agrega, deja de contar.
+			Sirve para estimar la caducidad de instancia: el art. 310 del CPCCN la fija en 6 meses en primera instancia. Cuenta el último acto que
+			ya figura como movimiento en el expediente; lo presentado y todavía sin proveer se muestra aparte y no corre el contador.
 		</Typography>
 		<Typography sx={{ fontSize: "0.7rem", lineHeight: 1.45, opacity: 0.8 }}>
 			Es orientativo: no descuenta ferias ni días inhábiles, ni actos de la otra parte o del juzgado.

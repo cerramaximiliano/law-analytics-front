@@ -230,14 +230,24 @@ export type FolderState = {
 export type EstadoActoPropio = "presentado" | "gestionado" | "en_expediente" | "enviado" | "no_agregado";
 export type TipoActoPropio = "escrito" | "cedula" | "deox";
 
-export interface UltimaActividadLetrado {
+export interface ActoSinConfirmar {
 	fecha: string;
 	tipo: TipoActoPropio;
 	titulo?: string | null;
 	estado: EstadoActoPropio;
+}
+
+/** Último acto del letrado que el expediente registra (movimiento confirmado). Sin ninguno confirmado, `fecha` es null. */
+export interface UltimaActividadLetrado {
+	fecha: string | null;
+	tipo: TipoActoPropio | null;
+	titulo?: string | null;
+	estado: EstadoActoPropio | null;
 	movimientoFecha?: string | null;
 	porTipo?: Partial<Record<TipoActoPropio, { fecha: string; titulo?: string | null; estado: EstadoActoPropio }>>;
 	/** Escritos presentados que el juzgado todavía no proveyó. */
 	pendientes?: number;
+	/** Acto más reciente todavía sin movimiento en el expediente: no corre el contador. */
+	ultimoSinConfirmar?: ActoSinConfirmar | null;
 	recalculadoAt?: string;
 }

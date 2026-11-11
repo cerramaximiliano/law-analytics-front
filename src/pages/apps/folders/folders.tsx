@@ -4908,7 +4908,7 @@ const FoldersLayout = () => {
 					if (!ult?.fecha) {
 						return (
 							<Typography variant="caption" color="text.secondary">
-								Sin actos con esta credencial
+								{ult?.ultimoSinConfirmar ? "Sin actos en el expediente todavía" : "Sin actos con esta credencial"}
 							</Typography>
 						);
 					}
@@ -4916,7 +4916,7 @@ const FoldersLayout = () => {
 						<Tooltip
 							title={`Último acto del letrado en PJN${
 								ult.titulo ? `: ${ult.titulo}` : ""
-							}. Días desde que se presentó; sirve para estimar la caducidad de instancia (orientativo).`}
+							}. Último acto que figura como movimiento en el expediente; sirve para estimar la caducidad de instancia (orientativo).`}
 							arrow
 							placement="top"
 						>

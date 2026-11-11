@@ -51,7 +51,7 @@ const ActosPropiosPanel = ({ data, loading, error, onOpenMenu }: Props) => {
 	const [verNoCuentan, setVerNoCuentan] = useState(true);
 
 	const actos = data?.actos ?? [];
-	const ultimoQueCuentaId = useMemo(() => actos.find((a) => a.valido)?._id, [actos]);
+	const ultimoQueCuentaId = useMemo(() => actos.find((a) => a.valido && a.estado === "en_expediente")?._id, [actos]);
 	const visibles = useMemo(
 		() => actos.filter((a) => (tipo === "todos" || a.tipo === tipo) && (verNoCuentan || a.valido)),
 		[actos, tipo, verNoCuentan],
@@ -234,8 +234,8 @@ const ActosPropiosPanel = ({ data, loading, error, onOpenMenu }: Props) => {
 			</Box>
 			<Box sx={{ px: 1.5, py: 1, borderTop: `1px solid ${borde}` }}>
 				<Typography sx={{ fontSize: "0.66rem", color: "text.secondary" }}>
-					Fuente: bandeja de escritos, cédulas enviadas y DEOX enviados del portal PJN. Un escrito cuenta desde que se presenta; si el
-					juzgado no lo agrega, deja de contar.
+					Fuente: bandeja de escritos, cédulas enviadas y DEOX enviados del portal PJN. Cuenta el último acto que ya figura como movimiento
+					en el expediente; lo presentado y todavía sin movimiento no corre el contador.
 					{data?.truncado ? " Se muestran los 1.000 más recientes." : ""}
 				</Typography>
 			</Box>
