@@ -60,7 +60,7 @@ const ActosPropiosPanel = ({ data, loading, error, onOpenMenu }: Props) => {
 	const totalValidos = c ? c.escrito + c.cedula + c.deox : 0;
 
 	const chips: { key: FiltroTipo; label: string }[] = [
-		{ key: "todos", label: `Todos · ${totalValidos}` },
+		{ key: "todos", label: `Todas · ${totalValidos}` },
 		{ key: "escrito", label: `Escritos · ${c?.escrito ?? 0}` },
 		{ key: "cedula", label: `Cédulas · ${c?.cedula ?? 0}` },
 		{ key: "deox", label: `DEOX · ${c?.deox ?? 0}` },
