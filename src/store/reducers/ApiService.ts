@@ -166,7 +166,13 @@ export interface ExtraFoldersStatus {
 	folders: { used: number; plan: number; extra: number; limit: number };
 	storage: { usedMB: number; plan: number; extra: number; limit: number };
 	eligible: boolean;
-	eligibilityReason: "paid_plan_required" | "premium_required" | "subscription_inactive" | "subscription_canceling" | "plan_change_scheduled" | null;
+	eligibilityReason:
+		| "paid_plan_required"
+		| "premium_required"
+		| "subscription_inactive"
+		| "subscription_canceling"
+		| "plan_change_scheduled"
+		| null;
 	publicAvailable: boolean;
 	availabilityReason: string | null;
 	maintenanceMessage: string | null;
@@ -1819,12 +1825,13 @@ class ApiService {
 
 	/**
 	 * Actualiza el estado de onboarding del usuario
-	 * @param data - Datos de actualización (step, featureName, dismissed)
+	 * @param data - Datos de actualización (step, featureName, dismissed, banner)
 	 */
 	static async updateOnboarding(data: {
 		step?: string;
 		featureName?: string;
 		dismissed?: boolean;
+		banner?: DashboardBanner;
 	}): Promise<ApiResponse<{ onboarding: OnboardingStatus }>> {
 		try {
 			const response = await axios.put<ApiResponse<{ onboarding: OnboardingStatus }>>(`${API_BASE_URL}/api/auth/onboarding`, data, {
@@ -1841,6 +1848,14 @@ class ApiService {
 	 */
 	static async dismissOnboarding(): Promise<ApiResponse<{ onboarding: OnboardingStatus }>> {
 		return this.updateOnboarding({ dismissed: true });
+	}
+
+	/**
+	 * Cierra un aviso del dashboard para siempre, en el usuario (2026-11-11). Antes el cierre
+	 * vivía sólo en localStorage y el aviso volvía en cada sesión nueva u otro navegador.
+	 */
+	static async dismissDashboardBanner(banner: DashboardBanner): Promise<ApiResponse<{ onboarding: OnboardingStatus }>> {
+		return this.updateOnboarding({ banner });
 	}
 
 	/**
@@ -1893,6 +1908,9 @@ export interface OnboardingSignals {
 	} | null;
 }
 
+/** Avisos del dashboard cuyo cierre persiste en el usuario (PUT /api/auth/onboarding { banner }). */
+export type DashboardBanner = "first_sync" | "app_card";
+
 // Interfaz para el estado de onboarding
 export interface OnboardingStatus {
 	createdFirstFolder: boolean;
@@ -1907,6 +1925,12 @@ export interface OnboardingStatus {
 	lastOnboardingSessionAt: string | null;
 	dismissed: boolean;
 	dismissedAt: string | null;
+	/** Carpeta fijada para el aviso "Tu primera causa ya tiene N movimientos". */
+	firstSyncedFolderId?: string | null;
+	/** El usuario cerró ese aviso (el backend deja de devolver firstSyncedFolder). */
+	firstSyncSeenAt?: string | null;
+	/** El usuario cerró la tarjeta de descarga de la app del dashboard. */
+	appCardDismissedAt?: string | null;
 }
 
 export default ApiService;

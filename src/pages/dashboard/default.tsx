@@ -577,11 +577,12 @@ const DashboardDefault = () => {
 				)}
 
 				{/* Oferta de la app después del registro (2026-10-22): recién con una carpeta cargada (antes,
-				    lo único es la primera causa). Android y computadora; se cierra para siempre. */}
+				    lo único es la primera causa). Android y computadora; se cierra para siempre (el cierre
+				    se guarda en el usuario, 2026-11-11). */}
 				{!showFirstCausa && !isFullyLoading && !error && !isDismissing && hasFolders && (
 					<Grid item xs={12} sx={{ "&:empty": { display: "none" } }}>
 						<Suspense fallback={null}>
-							<DashboardAppCard />
+							<DashboardAppCard dismissedOnServer={!!onboardingStatus?.appCardDismissedAt} />
 						</Suspense>
 					</Grid>
 				)}

@@ -6,7 +6,7 @@ import { alpha, useTheme } from "@mui/material/styles";
 
 // project-imports
 import { BRAND_BLUE, LIVE_GREEN } from "themes/dashboardTokens";
-import { OnboardingSignals } from "store/reducers/ApiService";
+import ApiService, { OnboardingSignals } from "store/reducers/ApiService";
 
 // icons
 import { ArrowRight, CloseCircle, TickCircle } from "iconsax-react";
@@ -21,7 +21,10 @@ import { ThemeMode } from "types/config";
 // Momento de éxito del onboarding: la primera sincronización de una causa es
 // silenciosa por diseño (no avisamos el histórico), así que el usuario conectaba
 // su cuenta y la carpeta se llenaba sin que nada se lo dijera. Se muestra una
-// sola vez por usuario y carpeta, hasta que el usuario lo cierra.
+// sola vez por usuario, hasta que el usuario lo cierra.
+// 2026-11-11: el cierre se guarda en el usuario (el backend deja de devolver la
+// carpeta). localStorage queda como cache optimista para que no parpadee si el
+// dashboard se vuelve a montar antes de que el servidor responda.
 
 type FirstSynced = NonNullable<OnboardingSignals["firstSyncedFolder"]>;
 
@@ -53,9 +56,12 @@ const FirstSyncBanner = ({ userId, folder }: FirstSyncBannerProps) => {
 		try {
 			localStorage.setItem(key, "1");
 		} catch {
-			// sin storage: se vuelve a mostrar en la próxima visita
+			// sin storage: el cierre igual queda en el servidor
 		}
 		setDismissed(true);
+		ApiService.dismissDashboardBanner("first_sync").catch(() => {
+			// sin red: se reintenta la próxima vez que el usuario lo cierre
+		});
 	};
 
 	const goToActivity = () => {

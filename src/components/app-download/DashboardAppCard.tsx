@@ -8,6 +8,7 @@ import { CloseCircle } from "iconsax-react";
 
 // project-imports
 import MainCard from "components/MainCard";
+import ApiService from "store/reducers/ApiService";
 import {
 	APP_ICON_SRC,
 	GOOGLE_PLAY_BADGE_SRC,
@@ -20,19 +21,28 @@ import {
 	type DevicePlatform,
 } from "utils/appDownload";
 
+interface DashboardAppCardProps {
+	/** El usuario ya la cerró en el servidor (onboarding.appCardDismissedAt): no se muestra en ningún navegador. */
+	dismissedOnServer?: boolean;
+}
+
 /**
  * Oferta de la app en el panel, después del registro (2026-10-22): se registra en la web (la
  * conversión y la atribución de campañas quedan medidas) y después se le ofrece la app. El panel
  * la muestra recién cuando el usuario ya tiene una carpeta: antes, lo único es cargar la primera
  * causa. Android: insignia. Computadora: insignia y QR. iPhone: no se muestra.
+ * 2026-11-11: el cierre se persiste en el usuario; localStorage queda como cache optimista.
  */
-const DashboardAppCard = () => {
+const DashboardAppCard = ({ dismissedOnServer = false }: DashboardAppCardProps) => {
 	const [platform, setPlatform] = useState<DevicePlatform | null>(() => (shouldShowDashboardAppCard() ? devicePlatform() : null));
-	if (!platform) return null;
+	if (!platform || dismissedOnServer) return null;
 
 	const close = () => {
 		dismissDashboardAppCard();
 		setPlatform(null);
+		ApiService.dismissDashboardBanner("app_card").catch(() => {
+			// sin red: queda el cierre local y se reintenta en el próximo cierre
+		});
 	};
 	const placement = "dashboard" as const;
 
