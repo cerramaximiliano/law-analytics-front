@@ -122,6 +122,7 @@ import {
 	UserEdit,
 	Star1,
 	Hierarchy,
+	CloseCircle,
 } from "iconsax-react";
 import PjnCredErrorBanner from "sections/apps/folders/PjnCredErrorBanner";
 import TaskAssignees from "sections/apps/tasks/TaskAssignees";
@@ -862,7 +863,8 @@ function ReactTable({
 			{!hideControls && (
 				<Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
 					{/* ── TOOLBAR ──────────────────────────────────────────────────────────
-					    Desktop (≥ sm): una sola fila —  Agregar | sep | Archivados+Archivar | sep | Filtros+Orden | sep | [Buscador · CSV · Eliminar · Guía]
+					    Desktop (≥ sm): una sola fila —  Agregar | sep | Archivados+Repartir | sep | Filtros+Orden+Columnas | sep | [Buscador · Más opciones]
+					                   + barra de selección (Collapse) debajo con las acciones masivas cuando hay carpetas marcadas
 					    Mobile (< sm):  fila 1 = Buscador full-width
 					                   fila 2 = [Agregar carpeta (contained)] [overflow MoreVert → resto de acciones]
 					─────────────────────────────────────────────────────────────────────── */}
@@ -1130,94 +1132,8 @@ function ReactTable({
 								>
 									Archivados
 								</Button>
-								{handleArchiveSelected && (
-									<Tooltip
-										title={Object.keys(selectedRowIds).length === 0 ? "Seleccioná al menos una carpeta para archivar" : ""}
-										placement="top"
-									>
-										<span>
-											<Button
-												variant="outlined"
-												color="secondary"
-												size="small"
-												startIcon={<Archive size={18} />}
-												onClick={() => handleArchiveSelected(selectedFlatRows)}
-												disabled={Object.keys(selectedRowIds).length === 0}
-												sx={{ textTransform: "none" }}
-												aria-label={
-													Object.keys(selectedRowIds).length === 0
-														? "Archivar carpetas — seleccioná al menos una"
-														: `Archivar ${selectedFlatRows.length} carpeta${selectedFlatRows.length > 1 ? "s" : ""}`
-												}
-											>
-												{Object.keys(selectedRowIds).length > 0 ? `Archivar (${selectedFlatRows.length})` : "Archivar"}
-											</Button>
-										</span>
-									</Tooltip>
-								)}
-								{handleAssignSelected && (
-									<Tooltip
-										title={Object.keys(selectedRowIds).length === 0 ? "Seleccioná al menos una carpeta para asignar responsable" : ""}
-										placement="top"
-									>
-										<span>
-											<Button
-												variant="outlined"
-												color="secondary"
-												size="small"
-												startIcon={<UserEdit size={18} />}
-												onClick={() => handleAssignSelected(selectedFlatRows, () => toggleAllRowsSelected(false))}
-												disabled={Object.keys(selectedRowIds).length === 0}
-												sx={{ textTransform: "none" }}
-												data-testid="folder-assign-responsable-btn"
-											>
-												{Object.keys(selectedRowIds).length > 0
-													? `Asignar responsable (${selectedFlatRows.length})`
-													: "Asignar responsable"}
-											</Button>
-										</span>
-									</Tooltip>
-								)}
-								{handleSeguimientoSelected && (
-									<Tooltip
-										title={Object.keys(selectedRowIds).length === 0 ? "Seleccioná al menos una carpeta para marcar seguimiento" : ""}
-										placement="top"
-									>
-										<span>
-											<Button
-												variant="outlined"
-												color="secondary"
-												size="small"
-												startIcon={<Star1 size={18} />}
-												onClick={() =>
-													handleSeguimientoSelected(
-														selectedFlatRows,
-														() => toggleAllRowsSelected(false),
-														!selectedFlatRows.every((r: any) => r.original?.seguimiento?.activo),
-													)
-												}
-												disabled={Object.keys(selectedRowIds).length === 0}
-												sx={{ textTransform: "none" }}
-												data-testid="folder-seguimiento-btn"
-											>
-												{Object.keys(selectedRowIds).length === 0
-													? "Seguimiento"
-													: selectedFlatRows.every((r: any) => r.original?.seguimiento?.activo)
-													? `Quitar seguimiento (${selectedFlatRows.length})`
-													: `Marcar seguimiento (${selectedFlatRows.length})`}
-											</Button>
-										</span>
-									</Tooltip>
-								)}
 								{handleDistribute && (
-									<Tooltip
-										title={
-											Object.keys(selectedRowIds).length > 0
-												? "Repartir las carpetas seleccionadas por juzgado, fuero, partes iguales, cantidades o al azar"
-												: "Repartir carpetas del equipo por juzgado, fuero, partes iguales, cantidades o al azar"
-										}
-										placement="top"
-									>
+									<Tooltip title="Repartir carpetas del equipo por juzgado, fuero, partes iguales, cantidades o al azar" placement="top">
 										<Button
 											variant="outlined"
 											color="secondary"
@@ -1227,27 +1143,7 @@ function ReactTable({
 											sx={{ textTransform: "none" }}
 											data-testid="folder-distribute-btn"
 										>
-											{Object.keys(selectedRowIds).length > 0 ? `Repartir (${selectedFlatRows.length})` : "Repartir"}
-										</Button>
-									</Tooltip>
-								)}
-								{(handleArchiveSelected || handleAssignSelected) && rows.length > 0 && (
-									<Tooltip
-										title={
-											selectedFlatRows.length < rows.length
-												? "Selecciona todas las carpetas que pasan los filtros actuales, no solo la página visible"
-												: "Quita la selección"
-										}
-										placement="top"
-									>
-										<Button
-											variant="text"
-											size="small"
-											onClick={() => toggleAllRowsSelected(selectedFlatRows.length < rows.length)}
-											sx={{ textTransform: "none", color: "text.secondary" }}
-											data-testid="folder-select-all-filtered-btn"
-										>
-											{selectedFlatRows.length < rows.length ? `Seleccionar todas (${rows.length})` : "Quitar selección"}
+											Repartir
 										</Button>
 									</Tooltip>
 								)}
@@ -1366,53 +1262,6 @@ function ReactTable({
 									/>
 								</Box>
 								<CSVLink ref={csvLinkRef} data={csvData} headers={csvHeaders} filename={"causas.csv"} style={{ display: "none" }} />
-								{handleDeleteSelected && (
-									<Tooltip
-										title={
-											Object.keys(selectedRowIds).length === 0
-												? "Selecciona carpetas para eliminar"
-												: `Eliminar ${selectedFlatRows.length} carpeta${selectedFlatRows.length > 1 ? "s" : ""}`
-										}
-									>
-										<span>
-											<IconButton
-												color="error"
-												size="small"
-												onClick={() => handleDeleteSelected(selectedFlatRows)}
-												disabled={Object.keys(selectedRowIds).length === 0}
-												sx={{ opacity: Object.keys(selectedRowIds).length === 0 ? 0.5 : 1, position: "relative" }}
-												aria-label={
-													Object.keys(selectedRowIds).length === 0
-														? "Eliminar carpetas — seleccioná al menos una"
-														: `Eliminar ${selectedFlatRows.length} carpeta${selectedFlatRows.length > 1 ? "s" : ""}`
-												}
-											>
-												<Trash variant="Bulk" size={20} />
-												{Object.keys(selectedRowIds).length > 0 && (
-													<Box
-														sx={{
-															position: "absolute",
-															top: -4,
-															right: -4,
-															bgcolor: "error.main",
-															color: "white",
-															borderRadius: "50%",
-															width: 16,
-															height: 16,
-															fontSize: "0.65rem",
-															fontWeight: "bold",
-															display: "flex",
-															alignItems: "center",
-															justifyContent: "center",
-														}}
-													>
-														{selectedFlatRows.length}
-													</Box>
-												)}
-											</IconButton>
-										</span>
-									</Tooltip>
-								)}
 								<Tooltip title="Más opciones">
 									<IconButton color="secondary" size="small" onClick={handleDesktopMenuOpen} aria-label="Más opciones">
 										<More variant="Bulk" size={20} />
@@ -1451,6 +1300,130 @@ function ReactTable({
 								</Menu>
 							</Stack>
 						</Stack>
+					)}
+
+					{/* ── BARRA DE SELECCIÓN (escritorio) ──────────────────────────────────
+					    Las acciones que dependen de la selección viven acá y no en la barra principal:
+					    antes los botones se alargaban con el contador («Archivar (3)», «Asignar
+					    responsable (3)»…) y el buscador y «Más opciones» caían a una segunda línea
+					    (11/11/2026). La barra principal no cambia de ancho al seleccionar. */}
+					{!matchDownSM && (
+						<Collapse in={selectedFlatRows.length > 0} unmountOnExit>
+							<Stack
+								direction="row"
+								alignItems="center"
+								spacing={1}
+								flexWrap="wrap"
+								useFlexGap
+								sx={{
+									px: 1.75,
+									py: 1,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.045),
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.26 : 0.16)}`,
+									borderRadius: 1.5,
+								}}
+								data-testid="folder-selection-bar"
+							>
+								<Typography variant="body2" sx={{ fontWeight: 600, whiteSpace: "nowrap", mr: 0.5 }}>
+									{selectedFlatRows.length === 1 ? "1 seleccionada" : `${selectedFlatRows.length} seleccionadas`}
+								</Typography>
+								{handleArchiveSelected && (
+									<Button
+										variant="outlined"
+										color="secondary"
+										size="small"
+										startIcon={<Archive size={18} />}
+										onClick={() => handleArchiveSelected(selectedFlatRows)}
+										sx={{ textTransform: "none" }}
+										data-testid="folder-archive-selected-btn"
+									>
+										Archivar
+									</Button>
+								)}
+								{handleAssignSelected && (
+									<Button
+										variant="outlined"
+										color="secondary"
+										size="small"
+										startIcon={<UserEdit size={18} />}
+										onClick={() => handleAssignSelected(selectedFlatRows, () => toggleAllRowsSelected(false))}
+										sx={{ textTransform: "none" }}
+										data-testid="folder-assign-responsable-btn"
+									>
+										Asignar responsable
+									</Button>
+								)}
+								{handleSeguimientoSelected && (
+									<Button
+										variant="outlined"
+										color="secondary"
+										size="small"
+										startIcon={<Star1 size={18} />}
+										onClick={() =>
+											handleSeguimientoSelected(
+												selectedFlatRows,
+												() => toggleAllRowsSelected(false),
+												!selectedFlatRows.every((r: any) => r.original?.seguimiento?.activo),
+											)
+										}
+										sx={{ textTransform: "none" }}
+										data-testid="folder-seguimiento-btn"
+									>
+										{selectedFlatRows.every((r: any) => r.original?.seguimiento?.activo) ? "Quitar seguimiento" : "Marcar seguimiento"}
+									</Button>
+								)}
+								{handleDistribute && (
+									<Tooltip
+										title="Repartir las carpetas seleccionadas por juzgado, fuero, partes iguales, cantidades o al azar"
+										placement="top"
+									>
+										<Button
+											variant="outlined"
+											color="secondary"
+											size="small"
+											startIcon={<Hierarchy size={18} />}
+											onClick={() => handleDistribute(selectedFlatRows, () => toggleAllRowsSelected(false))}
+											sx={{ textTransform: "none" }}
+											data-testid="folder-distribute-selected-btn"
+										>
+											Repartir
+										</Button>
+									</Tooltip>
+								)}
+								{handleDeleteSelected && (
+									<Button
+										variant="outlined"
+										color="error"
+										size="small"
+										startIcon={<Trash size={18} />}
+										onClick={() => handleDeleteSelected(selectedFlatRows)}
+										sx={{ textTransform: "none" }}
+										data-testid="folder-delete-selected-btn"
+									>
+										Eliminar
+									</Button>
+								)}
+								<Box sx={{ flex: 1 }} />
+								{selectedFlatRows.length < rows.length && (
+									<Tooltip title="Selecciona todas las carpetas que pasan los filtros actuales, no solo la página visible" placement="top">
+										<Button
+											variant="text"
+											size="small"
+											onClick={() => toggleAllRowsSelected(true)}
+											sx={{ textTransform: "none", color: "text.secondary", whiteSpace: "nowrap" }}
+											data-testid="folder-select-all-filtered-btn"
+										>
+											{`Seleccionar todas (${rows.length})`}
+										</Button>
+									</Tooltip>
+								)}
+								<Tooltip title="Quitar selección">
+									<IconButton size="small" color="secondary" onClick={() => toggleAllRowsSelected(false)} aria-label="Quitar selección">
+										<CloseCircle size={18} />
+									</IconButton>
+								</Tooltip>
+							</Stack>
+						</Collapse>
 					)}
 
 					{/* Panel de filtros colapsable (desktop + mobile) — wrapper tintado
