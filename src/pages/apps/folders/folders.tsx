@@ -1871,7 +1871,7 @@ function ReactTable({
 													<Typography variant="body2">PJN: sin presentaciones con esta credencial</Typography>
 												</MenuItem>
 												<MenuItem value="sinConfirmar">
-													<Typography variant="body2">PJN: presentaciones todavía sin movimiento en el expediente</Typography>
+													<Typography variant="body2">PJN: solo presentaciones sin proveer</Typography>
 												</MenuItem>
 											</Select>
 										</FormControl>

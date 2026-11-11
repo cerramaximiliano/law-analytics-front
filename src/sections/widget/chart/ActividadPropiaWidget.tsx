@@ -38,8 +38,20 @@ const ActividadPropiaWidget = () => {
 	const gris = alpha(theme.palette.text.primary, isDark ? 0.28 : 0.18);
 	const ambar = isDark ? AMBAR_TEXTO.dark : AMBAR_TEXTO.light;
 	const otros = [
-		{ key: "sinConfirmar", label: "Presentadas, todavía sin movimiento", n: sinConfirmar, color: alpha(ambar, 0.55) },
-		{ key: "sinActos", label: "Sin presentaciones propias", n: data.tramos.sinActos, color: gris },
+		{
+			key: "sinConfirmar",
+			label: "Solo presentaciones sin proveer",
+			ayuda: "Presentaste en estas causas, pero el juzgado todavía no agregó ninguna al expediente: no hay días que contar.",
+			n: sinConfirmar,
+			color: alpha(ambar, 0.55),
+		},
+		{
+			key: "sinActos",
+			label: "Sin presentaciones propias",
+			ayuda: "Ningún escrito, cédula ni DEOX presentado con tu credencial PJN en estas causas.",
+			n: data.tramos.sinActos,
+			color: gris,
+		},
 	].filter((o) => o.n > 0);
 
 	const ir = (filtro: string) => navigate(`${LISTADO}?actividadPropia=${filtro}`);
@@ -115,24 +127,25 @@ const ActividadPropiaWidget = () => {
 						</ButtonBase>
 					))}
 					{otros.map((o) => (
-						<ButtonBase
-							key={o.key}
-							onClick={() => ir(o.key)}
-							sx={{
-								gridColumn: "1 / -1",
-								justifyContent: "space-between",
-								px: 0.75,
-								py: 0.5,
-								borderRadius: 0.75,
-								"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.06) },
-							}}
-						>
-							<Stack direction="row" spacing={0.75} alignItems="center">
-								<Box sx={{ width: 8, height: 8, borderRadius: 0.5, bgcolor: o.color }} />
-								<Typography sx={{ fontSize: "0.75rem", color: "text.secondary" }}>{o.label}</Typography>
-							</Stack>
-							<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{o.n}</Typography>
-						</ButtonBase>
+						<Tooltip key={o.key} title={o.ayuda} arrow placement="left">
+							<ButtonBase
+								onClick={() => ir(o.key)}
+								sx={{
+									gridColumn: "1 / -1",
+									justifyContent: "space-between",
+									px: 0.75,
+									py: 0.5,
+									borderRadius: 0.75,
+									"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.06) },
+								}}
+							>
+								<Stack direction="row" spacing={0.75} alignItems="center">
+									<Box sx={{ width: 8, height: 8, borderRadius: 0.5, bgcolor: o.color }} />
+									<Typography sx={{ fontSize: "0.75rem", color: "text.secondary" }}>{o.label}</Typography>
+								</Stack>
+								<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{o.n}</Typography>
+							</ButtonBase>
+						</Tooltip>
 					))}
 				</Box>
 
