@@ -105,7 +105,7 @@ const ActosPropiosPanel = ({ data, loading, error, onOpenMenu }: Props) => {
 					{(c?.noCuentan ?? 0) > 0 && (
 						<FormControlLabel
 							control={<Switch size="small" checked={verNoCuentan} onChange={(e) => setVerNoCuentan(e.target.checked)} />}
-							label={<Typography sx={{ fontSize: "0.72rem" }}>Mostrar los que no cuentan ({c?.noCuentan})</Typography>}
+							label={<Typography sx={{ fontSize: "0.72rem" }}>Mostrar las que no cuentan ({c?.noCuentan})</Typography>}
 							sx={{ ml: 0.5 }}
 						/>
 					)}
@@ -121,7 +121,7 @@ const ActosPropiosPanel = ({ data, loading, error, onOpenMenu }: Props) => {
 					</Stack>
 				) : error ? (
 					<Typography sx={{ p: 3, fontSize: "0.8rem", color: "text.secondary" }}>
-						No pudimos cargar los actos. Probá de nuevo en un rato.
+						No pudimos cargar las presentaciones. Probá de nuevo en un rato.
 					</Typography>
 				) : data?.habilitado === false && actos.length === 0 ? (
 					<Typography sx={{ p: 3, fontSize: "0.8rem", color: "text.secondary" }}>
@@ -131,7 +131,7 @@ const ActosPropiosPanel = ({ data, loading, error, onOpenMenu }: Props) => {
 					<Typography sx={{ p: 3, fontSize: "0.8rem", color: "text.secondary" }}>
 						{actos.length === 0
 							? "Sin escritos, cédulas ni DEOX presentados con la credencial PJN en esta causa."
-							: "No hay actos con este filtro."}
+							: "No hay presentaciones con este filtro."}
 					</Typography>
 				) : (
 					<TableContainer>
@@ -139,7 +139,7 @@ const ActosPropiosPanel = ({ data, loading, error, onOpenMenu }: Props) => {
 							<TableHead>
 								<TableRow>
 									<TableCell sx={{ fontSize: "0.72rem", fontWeight: 600, whiteSpace: "nowrap" }}>Fecha</TableCell>
-									<TableCell sx={{ fontSize: "0.72rem", fontWeight: 600 }}>Acto</TableCell>
+									<TableCell sx={{ fontSize: "0.72rem", fontWeight: 600 }}>Presentación</TableCell>
 									<TableCell sx={{ fontSize: "0.72rem", fontWeight: 600 }}>Estado</TableCell>
 									<TableCell sx={{ fontSize: "0.72rem", fontWeight: 600 }}>Movimiento en el expediente</TableCell>
 								</TableRow>

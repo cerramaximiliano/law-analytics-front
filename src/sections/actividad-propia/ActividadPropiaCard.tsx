@@ -57,8 +57,8 @@ const ActividadPropiaCard = ({ resumen, habilitado, loading, onVerActos }: Props
 				{titulo}
 				<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", lineHeight: 1.45 }}>
 					{habilitado === false
-						? "La credencial PJN vinculada no tiene bandeja de escritos: el portal no da los actos del letrado."
-						: "Sin actos con esta credencial: ningún escrito, cédula ni DEOX presentado con la credencial PJN vinculada. Puede llevarla otro letrado."}
+						? "La credencial PJN vinculada no tiene bandeja de escritos: el portal no da las presentaciones del letrado."
+						: "Sin presentaciones con esta credencial: ningún escrito, cédula ni DEOX presentado con la credencial PJN vinculada. Puede llevarla otro letrado."}
 				</Typography>
 			</Box>
 		);
@@ -88,7 +88,7 @@ const ActividadPropiaCard = ({ resumen, habilitado, loading, onVerActos }: Props
 						underline="hover"
 						sx={{ mt: 1, fontSize: "0.7rem", fontWeight: 500, color: BRAND_BLUE }}
 					>
-						Ver todos los actos
+						Ver todas las presentaciones
 					</Link>
 				)}
 			</Box>
@@ -158,7 +158,7 @@ const ActividadPropiaCard = ({ resumen, habilitado, loading, onVerActos }: Props
 					underline="hover"
 					sx={{ mt: 1, fontSize: "0.7rem", fontWeight: 500, color: BRAND_BLUE }}
 				>
-					Ver todos los actos
+					Ver todas las presentaciones
 				</Link>
 			)}
 		</Box>

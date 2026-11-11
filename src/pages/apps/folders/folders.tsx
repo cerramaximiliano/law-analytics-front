@@ -1841,7 +1841,7 @@ function ReactTable({
 											>
 												<MenuItem value="all">
 													<Stack direction="row" spacing={0.5} alignItems="center">
-														<Typography variant="body2">Actos del letrado PJN: Todas</Typography>
+														<Typography variant="body2">Presentaciones del letrado PJN: Todas</Typography>
 														<AyudaActosPjn size={13} />
 													</Stack>
 												</MenuItem>
@@ -1868,7 +1868,7 @@ function ReactTable({
 													<Typography variant="body2">PJN: con escritos sin proveer</Typography>
 												</MenuItem>
 												<MenuItem value="sinActos">
-													<Typography variant="body2">PJN: sin actos con esta credencial</Typography>
+													<Typography variant="body2">PJN: sin presentaciones con esta credencial</Typography>
 												</MenuItem>
 											</Select>
 										</FormControl>
@@ -4917,7 +4917,7 @@ const FoldersLayout = () => {
 					if (!ult?.fecha) {
 						return (
 							<Typography variant="caption" color="text.secondary">
-								{ult?.ultimoSinConfirmar ? "Sin actos en el expediente todavía" : "Sin actos con esta credencial"}
+								{ult?.ultimoSinConfirmar ? "Sin presentaciones en el expediente todavía" : "Sin presentaciones con esta credencial"}
 							</Typography>
 						);
 					}
