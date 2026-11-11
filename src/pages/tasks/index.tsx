@@ -38,6 +38,7 @@ import {
 	useTable,
 	usePagination,
 	Column,
+	SortingRule,
 	HeaderGroup,
 	Row,
 	Cell,
@@ -55,6 +56,7 @@ import GuideTasks from "components/guides/GuideTasks";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
+import { readListPrefs, writeListPrefs } from "utils/listPrefs";
 
 // assets
 import { Add, Task, Eye, Trash, Edit2, DocumentDownload, InfoCircle, More, Printer } from "iconsax-react";
@@ -138,6 +140,8 @@ const TaskStatusPill = ({ value }: { value?: string }) => {
 
 // ==============================|| REACT TABLE ||============================== //
 
+const TASKS_LIST_PREFS_KEY = "la.tasks.list.v1";
+
 interface Props {
 	columns: Column<TaskType>[];
 	data: TaskType[];
@@ -181,7 +185,11 @@ function ReactTable({
 	const [isColumnsReady, setIsColumnsReady] = useState(false);
 
 	const filterTypes = useMemo(() => renderFilterTypes, []);
-	const [sortBy, setSortByState] = useState([{ id: "name", desc: false }]);
+	// Orden inicial: el guardado en esta pestaña (sobrevive a entrar en una tarea y volver), si no, por nombre.
+	const initialSortBy = useMemo(() => {
+		const saved = readListPrefs<{ sortBy?: SortingRule<TaskType>[] }>(TASKS_LIST_PREFS_KEY).sortBy;
+		return Array.isArray(saved) && saved.length > 0 && typeof saved[0]?.id === "string" ? saved : [{ id: "name", desc: false }];
+	}, []);
 
 	const defaultHiddenColumns = useMemo(() => {
 		const hidden = matchDownSM ? ["_id", "description", "groupId", "folderId", "subtasks"] : ["_id", "groupId"];
@@ -201,7 +209,7 @@ function ReactTable({
 		page,
 		gotoPage,
 		setPageSize,
-		state: { globalFilter, selectedRowIds, pageIndex, pageSize },
+		state: { globalFilter, selectedRowIds, pageIndex, pageSize, sortBy: tableSortBy },
 		preGlobalFilteredRows,
 		setGlobalFilter,
 		setSortBy,
@@ -210,10 +218,13 @@ function ReactTable({
 			columns,
 			data,
 			filterTypes,
+			// El orden elegido (selector o cabecera) no se pierde al cambiar de vista ni al recargar las
+			// tareas (11/11/2026, reporte de Silvia): react-table lo reiniciaba con cada array nuevo de `data`.
+			autoResetSortBy: false,
 			initialState: {
 				pageIndex: controlledPageIndex,
 				pageSize: controlledPageSize,
-				sortBy: sortBy,
+				sortBy: initialSortBy,
 				hiddenColumns: defaultHiddenColumns,
 			},
 			pageCount: Math.ceil(data.length / controlledPageSize),
@@ -252,8 +263,8 @@ function ReactTable({
 	}, [defaultHiddenColumns, setHiddenColumns, isColumnsReady]);
 
 	useEffect(() => {
-		setSortBy(sortBy);
-	}, [setSortBy, sortBy]);
+		writeListPrefs(TASKS_LIST_PREFS_KEY, { sortBy: tableSortBy });
+	}, [tableSortBy]);
 
 	useEffect(() => {
 		if (pageIndex !== controlledPageIndex) {
@@ -364,11 +375,9 @@ function ReactTable({
 					{/* Sort */}
 					<Box sx={{ width: { xs: "100%", sm: 220 } }}>
 						<SortingSelect
-							sortBy={sortBy[0]?.id || "name"}
-							setSortBy={(newSortBy: any) => {
-								setSortByState(newSortBy);
-								setSortBy(newSortBy);
-							}}
+							sortBy={tableSortBy?.[0]?.id || "name"}
+							sortDesc={tableSortBy?.[0]?.desc === true}
+							setSortBy={setSortBy}
 							allColumns={allColumns}
 						/>
 					</Box>

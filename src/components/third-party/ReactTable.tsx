@@ -442,8 +442,12 @@ interface SortingSelectProps {
 	allColumns: ColumnInstance<{}>[];
 }
 
-/** Columnas de fecha: al elegirlas se ordena de más reciente a más antigua (pedido de Silvia, 6/11/2026). */
-const esColumnaDeFecha = (id: string) => /date|fecha|movement/i.test(id);
+/**
+ * Dirección inicial al elegir una columna en el selector. Fechas: de más reciente a más antigua
+ * (pedido de Silvia, 6/11/2026). Excepción: los vencimientos (`dueDate`, «vencimiento») van de más
+ * próximo a más lejano, que es lo que se busca al ordenar tareas por vencimiento (Silvia, 11/11/2026).
+ */
+const esColumnaDeFecha = (id: string) => /date|fecha|movement/i.test(id) && !/due|vencimiento/i.test(id);
 
 export const SortingSelect = ({ sortBy, sortDesc, setSortBy, allColumns }: SortingSelectProps) => {
 	const [sort, setSort] = useState<string>(sortBy);

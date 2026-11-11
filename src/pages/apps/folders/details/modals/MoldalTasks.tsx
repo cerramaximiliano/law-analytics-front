@@ -23,6 +23,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 import { addTask, updateTask } from "store/reducers/tasks";
 import { useTeam } from "contexts/TeamContext";
 import dayjs from "utils/dayjs-config";
+import { dueDateToIso } from "utils/taskDueDate";
 
 import { TaskSquare } from "iconsax-react";
 
@@ -114,13 +115,16 @@ const ModalTasks = ({
 	async function _submitForm(values: TaskFormValues, actions: any) {
 		try {
 			let result;
+			// El día tipeado (DD/MM/AAAA) viaja como instante al mediodía local: como texto, el hub
+			// lo tomaba en UTC y el listado mostraba el día anterior (ver utils/taskDueDate).
+			const payload = { ...values, dueDate: dueDateToIso(values.dueDate) ?? values.dueDate };
 
 			if (isEditMode && taskToEdit) {
 				// Update existing task
-				result = await dispatch(updateTask(taskToEdit._id, values));
+				result = await dispatch(updateTask(taskToEdit._id, payload));
 			} else {
 				// Create new task
-				result = await dispatch(addTask(values, { headers: getRequestHeaders() }));
+				result = await dispatch(addTask(payload, { headers: getRequestHeaders() }));
 			}
 
 			if (result.success) {

@@ -26,6 +26,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import * as Yup from "yup";
 import { useFormik, Form, FormikProvider } from "formik";
 import dayjs from "utils/dayjs-config";
+import { dueDateToIso } from "utils/taskDueDate";
 
 // project imports
 import { dispatch, useSelector } from "store";
@@ -132,7 +133,8 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 				const { assignedTo, ...rest } = values;
 				const taskData = {
 					...rest,
-					dueDate: dayjs(values.dueDate).toISOString(),
+					// Mediodía local del día elegido: el hub (UTC) y el listado muestran el mismo día.
+					dueDate: dueDateToIso(values.dueDate) ?? dayjs(values.dueDate).toISOString(),
 					// En modo equipo la tarea es del owner (el hub también lo resuelve por X-Group-Id)
 					userId: (isTeamMode ? getUserIdForResource() : undefined) || user?._id,
 					checked: false,
