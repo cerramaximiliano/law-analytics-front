@@ -21,7 +21,7 @@ import { Menu } from "iconsax-react";
 import dayjs from "utils/dayjs-config";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import AyudaActosPjn, { NOMBRE_ACTOS_PJN } from "sections/actividad-propia/AyudaActosPjn";
-import { ESTADO_ACTO_LABEL, TIPO_ACTO_LABEL, type ActosPropiosCarpeta } from "services/actividadPropiaService";
+import { AMBAR_TEXTO, ESTADO_ACTO_LABEL, TIPO_ACTO_LABEL, type ActosPropiosCarpeta } from "services/actividadPropiaService";
 import type { TipoActoPropio } from "types/folder";
 
 interface Props {
@@ -37,7 +37,7 @@ type FiltroTipo = "todos" | TipoActoPropio;
 const ESTADO_COLOR: Record<string, string> = {
 	en_expediente: "success.main",
 	gestionado: "primary.main",
-	presentado: "warning.dark",
+	presentado: "ambar",
 	enviado: "text.secondary",
 	no_agregado: "text.disabled",
 };
@@ -214,7 +214,10 @@ const ActosPropiosPanel = ({ data, loading, error, onOpenMenu }: Props) => {
 													fontSize: "0.75rem",
 													whiteSpace: "nowrap",
 													fontWeight: 500,
-													color: ESTADO_COLOR[a.estado] ?? "text.secondary",
+													color:
+														ESTADO_COLOR[a.estado] === "ambar"
+															? AMBAR_TEXTO[isDark ? "dark" : "light"]
+															: ESTADO_COLOR[a.estado] ?? "text.secondary",
 												}}
 											>
 												{ESTADO_ACTO_LABEL[a.estado] ?? a.estado}

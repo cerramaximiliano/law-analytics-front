@@ -3,7 +3,7 @@ import dayjs from "utils/dayjs-config";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import AyudaActosPjn, { NOMBRE_ACTOS_PJN } from "sections/actividad-propia/AyudaActosPjn";
 import type { UltimaActividadLetrado } from "types/folder";
-import { diasDesde, tramoDe, tramoInfo, TIPO_ACTO_LABEL, ESTADO_ACTO_LABEL } from "services/actividadPropiaService";
+import { diasDesde, tramoDe, tramoInfo, TIPO_ACTO_LABEL, ESTADO_ACTO_LABEL, AMBAR_TEXTO } from "services/actividadPropiaService";
 
 interface Props {
 	resumen: UltimaActividadLetrado | null | undefined;
@@ -125,7 +125,7 @@ const ActividadPropiaCard = ({ resumen, habilitado, loading, onVerActos }: Props
 			{lineaSinConfirmar}
 
 			{(resumen.pendientes || 0) > 0 && (
-				<Typography sx={{ mt: 0.75, fontSize: "0.68rem", color: isDark ? "warning.light" : "warning.dark", fontWeight: 500 }}>
+				<Typography sx={{ mt: 0.75, fontSize: "0.68rem", color: isDark ? AMBAR_TEXTO.dark : AMBAR_TEXTO.light, fontWeight: 500 }}>
 					{resumen.pendientes === 1 ? "1 escrito presentado sin proveer" : `${resumen.pendientes} escritos presentados sin proveer`}
 				</Typography>
 			)}

@@ -114,3 +114,6 @@ export const cumpleFiltroActividad = (filtro: FiltroActividadPropia, ult?: Ultim
 			return tramoDe(dias) === filtro;
 	}
 };
+
+/** Ámbar legible sobre fondo claro y oscuro: el `warning` del tema es amarillo y no se lee como texto. */
+export const AMBAR_TEXTO = { light: "#B45309", dark: "#FBBF24" };
