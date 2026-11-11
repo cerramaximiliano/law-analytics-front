@@ -67,6 +67,7 @@ import LinkToPJIol, { PortalIol } from "sections/apps/folders/LinkToPJIol";
 import LinkToPJBuenosAires from "sections/apps/folders/LinkToPJBuenosAires";
 import LinkToPJCaba from "sections/apps/folders/LinkToPJCaba";
 import NavigationControls from "./components/NavigationControls";
+import { TAB_PARAM_BY_INDEX, tabIndexFromParam } from "./tabParams";
 import InfoTabsVertical from "./components/InfoTabsVertical";
 import FolderTeamPanel from "sections/apps/folders/FolderTeamPanel";
 
@@ -164,7 +165,7 @@ const Details = () => {
 		if (tabValue === 1 && id) dispatch(marcarFolderVisto(id));
 	}, [tabValue, id]);
 	const [folderNotFound, setFolderNotFound] = useState(false);
-	const [searchParams] = useSearchParams();
+	const [searchParams, setSearchParams] = useSearchParams();
 	// const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false); // Removed: Using icon tabs instead
 	const { setCustomLabel, clearCustomLabel } = useBreadcrumb();
 
@@ -292,18 +293,20 @@ const Details = () => {
 	// Deep-link a un movimiento (?movement=<id>, ej. desde la vista pública /m/:token):
 	// abrir la pestaña Actividad para que ActivityTables monte y resalte el movimiento.
 	// Va después del reset de arriba: en mount el reset pone 0 y esto lo lleva a 1.
-	// ?tab=activity: mismo destino desde el aviso "Tu primera causa ya tiene N
-	// movimientos" del dashboard.
+	// ?tab=<pestaña> (ver tabParams.ts): la pestaña activa vive en la URL, así las
+	// flechas anterior/siguiente la conservan al pasar de causa (pedido de Silvia,
+	// 11/11/2026) y el aviso "Tu primera causa ya tiene N movimientos" abre Actividad.
+	// `id` en las deps: al pasar de causa con el mismo ?tab= el objeto searchParams
+	// no cambia, y sin esto el reset de arriba dejaría Información General.
+	// Chat espera a que el acceso esté resuelto: sin acceso la pestaña no existe.
 	useEffect(() => {
-		if (searchParams.get("movement") || searchParams.get("tab") === "activity") {
+		if (searchParams.get("movement")) {
 			setTabValue(1);
-		} else if (searchParams.get("tab") === "relaciones") {
-			setTabValue(5);
-		} else if (searchParams.get("tab") === "chat" && chatAccess.allowed) {
-			// Espera a que el acceso esté resuelto: sin acceso la pestaña no existe.
-			setTabValue(6);
+			return;
 		}
-	}, [searchParams, chatAccess.allowed]);
+		const index = tabIndexFromParam(searchParams.get("tab"), chatAccess.allowed);
+		if (index !== null) setTabValue(index);
+	}, [id, searchParams, chatAccess.allowed]);
 
 	// Handle folder not found - redirect after showing message
 	useEffect(() => {
@@ -410,10 +413,29 @@ const Details = () => {
 		setLimitErrorOpen(false);
 	}, []);
 
-	const handleTabChange = useCallback((event: SyntheticEvent, newValue: number) => {
-		setTabValue(newValue);
-		// Mobile drawer removed - no longer needed with icon tabs
-	}, []);
+	// Cambiar de pestaña la refleja en ?tab= (replace: no ensucia el historial).
+	// Quita un deep-link de movimiento pendiente, que si no forzaría Actividad.
+	const selectTab = useCallback(
+		(newValue: number) => {
+			setTabValue(newValue);
+			setSearchParams(
+				(prev) => {
+					const next = new URLSearchParams(prev);
+					const param = TAB_PARAM_BY_INDEX[newValue];
+					if (param) next.set("tab", param);
+					else next.delete("tab");
+					next.delete("movement");
+					next.delete("action");
+					next.delete("open");
+					return next;
+				},
+				{ replace: true },
+			);
+		},
+		[setSearchParams],
+	);
+
+	const handleTabChange = useCallback((event: SyntheticEvent, newValue: number) => selectTab(newValue), [selectTab]);
 
 	// Analítica: vista del detalle de carpeta (una vez por carpeta y pestaña; sin ids ni datos).
 	const lastDetailViewKey = useRef<string>("");
@@ -506,6 +528,15 @@ const Details = () => {
 		],
 		[folder?.pjn, relacionesTotal, chatAccess.allowed],
 	);
+
+	// Al pasar con las flechas de una causa PJN en Relaciones/Chat IA a una que no
+	// tiene esa pestaña: mostrar Información General en vez de un panel vacío.
+	// Solo con la carpeta nueva ya cargada; la URL no se toca (si el acceso al chat
+	// se resuelve después, el efecto de ?tab= vuelve a abrirlo).
+	useEffect(() => {
+		if (!folder?._id || folder._id !== id) return;
+		if (!tabItems.some((tab) => tab.value === tabValue)) setTabValue(0);
+	}, [folder?._id, id, tabItems, tabValue]);
 
 	// Flags de causa removida del listado origen (afectan el styling del chip).
 	// Soporta listRemoved + listRemovedSource (nuevo) y pjnNotFound (legacy).
@@ -946,7 +977,7 @@ const Details = () => {
 						paddingLeft: 2,
 					}}
 				>
-					<NavigationControls currentFolderId={id} inline />
+					<NavigationControls currentFolderId={id} tabParam={TAB_PARAM_BY_INDEX[tabValue]} inline />
 				</Box>
 			)}
 
@@ -994,7 +1025,7 @@ const Details = () => {
 											return (
 												<Tooltip key={tab.value} title={tab.label} arrow>
 													<Box
-														onClick={() => setTabValue(tab.value)}
+														onClick={() => selectTab(tab.value)}
 														sx={{
 															display: "flex",
 															alignItems: "center",
@@ -1019,7 +1050,7 @@ const Details = () => {
 														onKeyDown={(e) => {
 															if (e.key === "Enter" || e.key === " ") {
 																e.preventDefault();
-																setTabValue(tab.value);
+																selectTab(tab.value);
 															}
 														}}
 													>

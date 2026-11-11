@@ -4,9 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { Box, Button, Tooltip, Stack, useTheme, useMediaQuery, Chip } from "@mui/material";
 import { ArrowLeft2, ArrowRight2, Grid5 } from "iconsax-react";
 import { useSelector } from "react-redux";
+import { tabQuery } from "../tabParams";
 
 interface NavigationControlsProps {
 	currentFolderId: string;
+	/** ?tab= de la pestaña activa: se conserva al pasar de causa (sin valor = Información General). */
+	tabParam?: string;
 	inline?: boolean;
 }
 
@@ -18,7 +21,7 @@ interface StateType {
 	};
 }
 
-const NavigationControls = ({ currentFolderId, inline = false }: NavigationControlsProps) => {
+const NavigationControls = ({ currentFolderId, tabParam, inline = false }: NavigationControlsProps) => {
 	const navigate = useNavigate();
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -77,15 +80,15 @@ const NavigationControls = ({ currentFolderId, inline = false }: NavigationContr
 
 	const handlePrevFolder = useCallback(() => {
 		if (prevFolder) {
-			navigate(`/apps/folders/details/${prevFolder._id}`);
+			navigate(`/apps/folders/details/${prevFolder._id}${tabQuery(tabParam)}`);
 		}
-	}, [prevFolder, navigate]);
+	}, [prevFolder, tabParam, navigate]);
 
 	const handleNextFolder = useCallback(() => {
 		if (nextFolder) {
-			navigate(`/apps/folders/details/${nextFolder._id}`);
+			navigate(`/apps/folders/details/${nextFolder._id}${tabQuery(tabParam)}`);
 		}
-	}, [nextFolder, navigate]);
+	}, [nextFolder, tabParam, navigate]);
 
 	// Formatear nombre del folder
 	const formatFolderName = (name: string) => {
