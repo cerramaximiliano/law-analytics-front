@@ -43,7 +43,7 @@ import {
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import type { UltimaActividadLetrado } from "types/folder";
-import ActividadPropiaCard from "sections/actividad-propia/ActividadPropiaCard";
+import ActividadPropiaLinea from "sections/actividad-propia/ActividadPropiaLinea";
 import ActosPropiosPanel from "sections/actividad-propia/ActosPropiosPanel";
 import { useActosPropios } from "sections/actividad-propia/useActosPropios";
 import { useParams } from "react-router";
@@ -179,6 +179,19 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 	const [pjnDateTo, setPjnDateTo] = useState("");
 	const [showFilters, setShowFilters] = useState(false);
 	const [mobileOpen, setMobileOpen] = useState(false);
+
+	// Última presentación del letrado: línea bajo la cabecera del expediente PJN.
+	const lineaPresentaciones = pjn ? (
+		<ActividadPropiaLinea
+			resumen={actosPropios.data ? actosPropios.data.resumen : actividadPropia}
+			habilitado={actosPropios.data?.habilitado}
+			loading={actosPropios.loading}
+			onVerTodas={() => {
+				setActiveTab("actos");
+				setMobileOpen(false);
+			}}
+		/>
+	) : null;
 	const [filters, setFilters] = useState<any>({
 		startDate: null,
 		endDate: null,
@@ -1164,22 +1177,6 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 					)}
 				</Stack>
 			</Box>
-
-			{pjn && (
-				<ActividadPropiaCard
-					resumen={actosPropios.data ? actosPropios.data.resumen : actividadPropia}
-					habilitado={actosPropios.data?.habilitado}
-					loading={actosPropios.loading}
-					onVerActos={
-						activeTab === "actos"
-							? undefined
-							: () => {
-									setActiveTab("actos");
-									setMobileOpen(false);
-							  }
-					}
-				/>
-			)}
 		</Box>
 	);
 
@@ -1585,6 +1582,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 														causaLastSyncDate={movementsData.causaLastSyncDate}
 														accessCutoffAt={accessCutoffAt}
 														refreshKey={refreshKey}
+														encabezado={lineaPresentaciones}
 													/>
 												) : (
 													<MovementsTable
@@ -2183,6 +2181,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 														causaLastSyncDate={movementsData.causaLastSyncDate}
 														accessCutoffAt={accessCutoffAt}
 														refreshKey={refreshKey}
+														encabezado={lineaPresentaciones}
 													/>
 												) : (
 													<MovementsTable

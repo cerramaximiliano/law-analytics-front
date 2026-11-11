@@ -86,6 +86,8 @@ interface Props {
 	// alcanzó a traer y manda `accessCutoffAt` en el listado; este prop
 	// (folder.causaAccessCutoffAt) es el fallback si la respuesta no lo trae.
 	accessCutoffAt?: string | null;
+	// Línea extra bajo la cabecera del expediente (última presentación del letrado).
+	encabezado?: React.ReactNode;
 }
 
 const QUICK_ACTION_TO_PANEL_TAB = {
@@ -149,6 +151,7 @@ const PjnMovementsViewerSection = ({
 	linkedOnly = false,
 	causaLastSyncDate = null,
 	accessCutoffAt = null,
+	encabezado = null,
 }: Props) => {
 	const navigate = useNavigate();
 	const [page, setPage] = useState(1);
@@ -550,6 +553,7 @@ const PjnMovementsViewerSection = ({
 					</Tooltip>
 				)}
 			</Stack>
+			{encabezado}
 
 			<Box sx={{ p: 2, pt: 1.5 }}>
 				{/* Banner de upgrade (plan free): componente UNIFICADO — mismo diseño y
