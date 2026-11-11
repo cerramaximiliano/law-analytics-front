@@ -1,4 +1,4 @@
-import { Box, Divider, Link, Stack, Tooltip, Typography, useTheme } from "@mui/material";
+import { Box, Divider, Link, Stack, Tooltip, Typography, alpha, useTheme } from "@mui/material";
 import dayjs from "utils/dayjs-config";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import AyudaActosPjn from "sections/actividad-propia/AyudaActosPjn";
@@ -100,8 +100,12 @@ const ActividadPropiaLinea = ({ resumen, habilitado, loading, onVerTodas }: Prop
 
 			{hayPendiente && (
 				<>
-					<Divider orientation="vertical" flexItem sx={{ display: { xs: "none", sm: "block" } }} />
-					<Divider sx={{ display: { xs: "block", sm: "none" } }} />
+					<Divider
+						orientation="vertical"
+						flexItem
+						sx={{ display: { xs: "none", sm: "block" }, borderColor: (t) => alpha(t.palette.text.primary, 0.25), my: 0.25 }}
+					/>
+					<Divider sx={{ display: { xs: "block", sm: "none" }, borderColor: (t) => alpha(t.palette.text.primary, 0.25) }} />
 					<Tooltip title="No corre el contador hasta que figure como movimiento en el expediente.">
 						<Stack spacing={0.25} sx={{ minWidth: 0 }}>
 							<Stack direction="row" spacing={0.5} alignItems="center">
