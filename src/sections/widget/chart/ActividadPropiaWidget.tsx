@@ -16,7 +16,8 @@ const LISTADO = "/apps/folders/list";
  * último acto propio y las que están por cumplir los 6 meses de referencia (150 a 180 días).
  * No se muestra si el usuario no tiene credencial PJN con bandeja ni actos registrados.
  */
-const ActividadPropiaWidget = () => {
+/** `onVisible`: avisa al panel si el widget se muestra, para acomodar la fila. */
+const ActividadPropiaWidget = ({ onVisible }: { onVisible?: (visible: boolean) => void }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const navigate = useNavigate();
@@ -32,7 +33,11 @@ const ActividadPropiaWidget = () => {
 
 	const sinConfirmar = data?.tramos.sinConfirmar ?? 0;
 	const conActos = data ? data.total - data.tramos.sinActos - sinConfirmar : 0;
-	if (!data || !data.habilitado || conActos === 0) return null;
+	const visible = !!data && data.habilitado && conActos > 0;
+	useEffect(() => {
+		onVisible?.(visible);
+	}, [visible, onVisible]);
+	if (!data || !visible) return null;
 
 	// Las que no tienen una presentación en el expediente: también cuentan en el total y en la barra.
 	const gris = alpha(theme.palette.text.primary, isDark ? 0.28 : 0.18);

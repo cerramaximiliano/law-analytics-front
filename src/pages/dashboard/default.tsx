@@ -52,7 +52,12 @@ const ONBOARDING_OVERRIDE_KEY = "dashboard_onboarding_override";
 
 // ==============================|| DASHBOARD - DEFAULT ||============================== //
 
+/** Grid item que estira su tarjeta al alto de la fila. */
+const igualAltura = { display: "flex", "& > *": { flex: 1, minWidth: 0 } } as const;
+
 const DashboardDefault = () => {
+	// El widget de presentaciones PJN solo se muestra con credencial PJN con bandeja: la fila 2 se acomoda según eso.
+	const [hayPresentacionesPjn, setHayPresentacionesPjn] = useState(false);
 	const navigate = useNavigate();
 
 	// Override de la vista del WelcomeBanner para preview/dev. Solo lo usan
@@ -595,15 +600,15 @@ const DashboardDefault = () => {
 					<Fade in timeout={400}>
 						<Grid container item spacing={2.75}>
 							{/* row 1 - Mostrar estadisticas clave del dashboard */}
-							<Grid item xs={12} sm={6} lg={3}>
+							<Grid item xs={12} sm={6} lg={3} sx={igualAltura}>
 								<FinancialWidget foldersTrend={foldersTrend} />
 							</Grid>
 
-							<Grid item xs={12} sm={6} lg={3}>
+							<Grid item xs={12} sm={6} lg={3} sx={igualAltura}>
 								<ActiveFoldersWidget />
 							</Grid>
 
-							<Grid item xs={12} sm={6} lg={3}>
+							<Grid item xs={12} sm={6} lg={3} sx={igualAltura}>
 								<EcommerceDataCard
 									title="Tareas pendientes"
 									count={(dashboardData?.tasks?.pending || 0).toString()}
@@ -627,7 +632,7 @@ const DashboardDefault = () => {
 								</EcommerceDataCard>
 							</Grid>
 
-							<Grid item xs={12} sm={6} lg={3}>
+							<Grid item xs={12} sm={6} lg={3} sx={igualAltura}>
 								<EcommerceDataCard
 									title="Próximos vencimientos"
 									count={(deadlineCounts.total || 0).toString()}
@@ -644,26 +649,27 @@ const DashboardDefault = () => {
 								</EcommerceDataCard>
 							</Grid>
 
-							{/* row 2 — tres columnas:
-							    · izquierda (lg=5): el chart principal de distribución
-							    · centro (lg=4): "Próximos vencimientos" (la lista) — único
-							      widget de vencimientos del dashboard; su contador vive en la
-							      KPI de la fila 1, que muestra el mismo total
-							    · derecha (lg=3): stack de utilidades (recursos / storage / tareas) */}
-							<Grid item xs={12} md={6} lg={5}>
+							{/* Fila 2: distribución, vencimientos y, con credencial PJN con bandeja, presentaciones del letrado.
+							    Sin ese widget, las dos primeras se reparten el ancho. Mismas alturas en la fila. */}
+							<Grid item xs={12} md={6} lg={hayPresentacionesPjn ? 5 : 7} sx={igualAltura}>
 								<RepeatCustomerRate />
 							</Grid>
-							<Grid item xs={12} md={6} lg={4}>
+							<Grid item xs={12} md={6} lg={hayPresentacionesPjn ? 4 : 5} sx={igualAltura}>
 								<UpcomingMovementEventsWidget />
 							</Grid>
-							<Grid item xs={12} md={6} lg={3}>
-								<Stack spacing={3}>
-									{/* Actividad procesal propia (10/11/2026): solo con credencial PJN con bandeja */}
-									<ActividadPropiaWidget />
-									<ResourceUsageWidget />
-									<StorageWidget />
-									<AssignUsers />
-								</Stack>
+							<Grid item xs={12} md={6} lg={3} sx={{ ...igualAltura, display: hayPresentacionesPjn ? "flex" : "none" }}>
+								<ActividadPropiaWidget onVisible={setHayPresentacionesPjn} />
+							</Grid>
+
+							{/* Fila 3: utilidades en tres columnas iguales */}
+							<Grid item xs={12} md={6} lg={4} sx={igualAltura}>
+								<AssignUsers />
+							</Grid>
+							<Grid item xs={12} md={6} lg={4} sx={igualAltura}>
+								<ResourceUsageWidget />
+							</Grid>
+							<Grid item xs={12} md={6} lg={4} sx={igualAltura}>
+								<StorageWidget />
 							</Grid>
 						</Grid>
 					</Fade>
