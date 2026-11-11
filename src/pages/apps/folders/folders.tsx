@@ -190,7 +190,6 @@ import { SCBA_BINDING_COPY, SCBA_PROFILE_PATH } from "utils/scbaBindingState";
 import { useScbaCredentialError } from "hooks/useScbaCredentialError";
 import { usePjnCredentialError } from "hooks/usePjnCredentialError";
 import { useExpedienteChatAccess } from "hooks/useExpedienteChatAccess";
-import ActividadPropiaStrip from "sections/actividad-propia/ActividadPropiaStrip";
 import DiasActividadChip from "sections/actividad-propia/DiasActividadChip";
 import AyudaActosPjn from "sections/actividad-propia/AyudaActosPjn";
 import { cumpleFiltroActividad, ESTADO_ACTO_LABEL, TIPO_ACTO_LABEL, type FiltroActividadPropia } from "services/actividadPropiaService";
@@ -1845,6 +1844,16 @@ function ReactTable({
 														<Typography variant="body2">Actos del letrado PJN: Todas</Typography>
 														<AyudaActosPjn size={13} />
 													</Stack>
+												</MenuItem>
+												{/* Tramos: llegan desde el widget del panel (?actividadPropia=…) */}
+												<MenuItem value="hasta90">
+													<Typography variant="body2">PJN: última presentación hasta 90 días</Typography>
+												</MenuItem>
+												<MenuItem value="d91a180">
+													<Typography variant="body2">PJN: última presentación entre 91 y 180 días</Typography>
+												</MenuItem>
+												<MenuItem value="d181a365">
+													<Typography variant="body2">PJN: última presentación entre 181 y 365 días</Typography>
 												</MenuItem>
 												<MenuItem value="mas90">
 													<Typography variant="body2">PJN: última presentación hace más de 90 días</Typography>
@@ -5578,9 +5587,6 @@ const FoldersLayout = () => {
 						</Box>
 					</Stack>
 				</Box>
-
-				{/* Actividad procesal propia (10/11/2026): tramos por días desde el último acto propio; cada uno filtra */}
-				<ActividadPropiaStrip folders={verifiedFolders} value={actividadPropiaFilter} onChange={setActividadPropiaFilter} />
 
 				{/* Mobile: sin borde ni fondo propio — las cards ya enmarcan cada carpeta (evita el doble marco). */}
 				<MainCard
