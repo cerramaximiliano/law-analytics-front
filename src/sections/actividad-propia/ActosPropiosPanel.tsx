@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	Box,
 	Stack,
@@ -14,10 +14,14 @@ import {
 	TableContainer,
 	Skeleton,
 	IconButton,
+	Pagination,
 	alpha,
 	useTheme,
 } from "@mui/material";
 import { Menu } from "iconsax-react";
+
+/** Mismo tamaño de página que la tabla de movimientos del expediente. */
+const POR_PAGINA = 20;
 import dayjs from "utils/dayjs-config";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import AyudaActosPjn, { NOMBRE_ACTOS_PJN } from "sections/actividad-propia/AyudaActosPjn";
@@ -56,6 +60,10 @@ const ActosPropiosPanel = ({ data, loading, error, onOpenMenu }: Props) => {
 		() => actos.filter((a) => (tipo === "todos" || a.tipo === tipo) && (verNoCuentan || a.valido)),
 		[actos, tipo, verNoCuentan],
 	);
+	const [page, setPage] = useState(1);
+	useEffect(() => setPage(1), [tipo, verNoCuentan, data]);
+	const totalPages = Math.ceil(visibles.length / POR_PAGINA);
+	const pagina = useMemo(() => visibles.slice((page - 1) * POR_PAGINA, page * POR_PAGINA), [visibles, page]);
 	const c = data?.conteo;
 	const totalValidos = c ? c.escrito + c.cedula + c.deox : 0;
 
@@ -145,7 +153,7 @@ const ActosPropiosPanel = ({ data, loading, error, onOpenMenu }: Props) => {
 								</TableRow>
 							</TableHead>
 							<TableBody>
-								{visibles.map((a) => {
+								{pagina.map((a) => {
 									const esUltimo = a._id === ultimoQueCuentaId;
 									const apagado = !a.valido;
 									return (
@@ -234,6 +242,11 @@ const ActosPropiosPanel = ({ data, loading, error, onOpenMenu }: Props) => {
 								})}
 							</TableBody>
 						</Table>
+						{totalPages > 1 && (
+							<Stack alignItems="center" sx={{ my: 2 }}>
+								<Pagination count={totalPages} page={page} onChange={(_, p) => setPage(p)} color="primary" size="small" />
+							</Stack>
+						)}
 					</TableContainer>
 				)}
 			</Box>
