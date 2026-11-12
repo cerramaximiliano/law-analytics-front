@@ -20,7 +20,7 @@ interface MovementNotesDialogProps {
 
 // Notas de un movimiento (12/11/2026, pedido de Estudio FS Abogados): el ícono con el contador
 // sobre el movimiento solo mostraba un tooltip y no había dónde leer la nota; ahora abre este
-// diálogo. El listado completo de la carpeta sigue en Gestión → Notas y en Actividad → Notas.
+// diálogo. El listado completo de la carpeta está en Actividad → Notas (único lugar desde el 12/11).
 const MovementNotesDialog: React.FC<MovementNotesDialogProps> = ({ open, onClose, notes, movementTitle, onAddNote }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
@@ -142,7 +142,7 @@ const MovementNotesDialog: React.FC<MovementNotesDialogProps> = ({ open, onClose
 					</Stack>
 				)}
 				<Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 2 }}>
-					Todas las notas del expediente están en Actividad → Notas y en Gestión → Notas.
+					Todas las notas del expediente están en Actividad → Notas.
 				</Typography>
 			</DialogContent>
 

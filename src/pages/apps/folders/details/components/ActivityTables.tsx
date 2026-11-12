@@ -138,6 +138,16 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 	const openMovement = deepLink?.open ?? false;
 	const { canCreate } = useTeam();
 	const [activeTab, setActiveTab] = useState<TabValue>("movements");
+	// ?sub=notes|calendar|notifications|combined: abre esa sub-solapa (12/11/2026, desde
+	// Gestión → «N notas»). Se consume como el deep-link de movimiento.
+	useEffect(() => {
+		const sub = searchParams.get("sub");
+		if (!sub) return;
+		if (["movements", "notifications", "calendar", "notes", "combined"].includes(sub)) setActiveTab(sub as TabValue);
+		const next = new URLSearchParams(searchParams);
+		next.delete("sub");
+		setSearchParams(next, { replace: true });
+	}, [searchParams, setSearchParams]);
 
 	// Al salir del tab de movimientos el deep-link ya fue atendido — descartarlo
 	// para que volver al tab no re-dispare el visor (las tablas remontan al
@@ -366,7 +376,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 			description: "Eventos y audiencias",
 		},
 		// Notas del expediente (12/11/2026, pedido de Estudio FS Abogados): el listado ya existía en
-		// Gestión → Notas pero no se encontraba desde la actividad, que es donde se crean.
+		// Gestión → Notas pero no se encontraba desde la actividad, que es donde se crean. Desde el
+		// 12/11 es el único listado (Gestión solo muestra el acceso «N notas»).
 		{
 			value: "notes",
 			label: "Notas",

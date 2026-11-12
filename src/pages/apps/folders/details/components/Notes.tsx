@@ -15,6 +15,8 @@ import {
 	Tooltip,
 	Collapse,
 	CircularProgress,
+	ToggleButton,
+	ToggleButtonGroup,
 } from "@mui/material";
 import MainCard from "components/MainCard";
 import { DocumentText, Add, Trash, Edit2 } from "iconsax-react";
@@ -48,6 +50,14 @@ const Notes: React.FC<NotesProps> = ({ title, folderId, folderName }) => {
 	const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
 	const [isDeleting, setIsDeleting] = useState(false);
 	const { selectedNotes } = useSelector((state: RootState) => state.notesReducer);
+	// Único listado de notas del expediente (12/11/2026): las sueltas y las de movimientos,
+	// con filtro. Antes había dos solapas (Gestión y Actividad) con lo mismo.
+	const [notesFilter, setNotesFilter] = useState<"todas" | "expediente" | "movimientos">("todas");
+	const allNotes: Note[] = selectedNotes || [];
+	const visibleNotes = allNotes.filter((n) =>
+		notesFilter === "todas" ? true : notesFilter === "movimientos" ? Boolean(n.movementRef) : !n.movementRef,
+	);
+	const movementNotesCount = allNotes.filter((n) => Boolean(n.movementRef)).length;
 
 	useEffect(() => {
 		if (folderId) {
@@ -187,10 +197,38 @@ const Notes: React.FC<NotesProps> = ({ title, folderId, folderName }) => {
 			}}
 		>
 			<Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+				{allNotes.length > 0 && (
+					<Box sx={{ px: 2, pt: 1.5 }}>
+						<ToggleButtonGroup
+							exclusive
+							size="small"
+							value={notesFilter}
+							onChange={(_e, next) => next && setNotesFilter(next)}
+							aria-label="Filtrar notas"
+							data-testid="notes-filter"
+							sx={{
+								"& .MuiToggleButton-root": {
+									textTransform: "none",
+									fontSize: "0.76rem",
+									fontWeight: 600,
+									px: 1.25,
+									py: 0.5,
+									color: "text.secondary",
+									borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
+									"&.Mui-selected": { color: BRAND_BLUE, bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08) },
+								},
+							}}
+						>
+							<ToggleButton value="todas">Todas ({allNotes.length})</ToggleButton>
+							<ToggleButton value="expediente">Del expediente ({allNotes.length - movementNotesCount})</ToggleButton>
+							<ToggleButton value="movimientos">De movimientos ({movementNotesCount})</ToggleButton>
+						</ToggleButtonGroup>
+					</Box>
+				)}
 				<Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
-					{selectedNotes && selectedNotes.length > 0 ? (
+					{visibleNotes.length > 0 ? (
 						<Stack spacing={1.25}>
-							{selectedNotes.map((note: Note) => {
+							{visibleNotes.map((note: Note) => {
 								const needsTruncation = shouldTruncate(note.content || "");
 								const isExpanded = expandedNotes.has(note._id);
 								const content = note.content || "";

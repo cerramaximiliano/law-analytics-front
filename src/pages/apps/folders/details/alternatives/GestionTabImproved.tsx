@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Box, Tabs, Tab, Typography, Badge, useTheme, useMediaQuery, Drawer, IconButton, Stack, alpha } from "@mui/material";
+import { Box, Tabs, Tab, Typography, Badge, useTheme, useMediaQuery, Drawer, IconButton, Stack, alpha, Button } from "@mui/material";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Calculator, People, TaskSquare, Menu, DocumentText, Briefcase } from "iconsax-react";
 import MainCard from "components/MainCard";
 import CalcTableResponsive from "../components/CalcTableResponsive";
@@ -7,12 +8,12 @@ import MembersImproved from "../components/MembersImproved";
 import IntervinientesPjnPanel from "../components/IntervinientesPjnPanel";
 import type { IntervinientesPjnVista } from "api/intervinientesPjn";
 import TaskListImproved from "../components/TaskListImproved";
-import Notes from "../components/Notes";
 import { FolderData } from "types/folder";
 import { useSelector, dispatch } from "store";
 import { getCalculatorsByFolderId } from "store/reducers/calculator";
 import { filterContactsByFolder, getContactsByUserId, getContactsByGroupId } from "store/reducers/contacts";
 import { getTasksByFolderId } from "store/reducers/tasks";
+import { getNotesByFolderId } from "store/reducers/notes";
 import { useTeam } from "contexts/TeamContext";
 import type { RootState } from "store";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
@@ -122,6 +123,8 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 			if (tasksFolderId !== folder._id) {
 				dispatch(getTasksByFolderId(folder._id));
 			}
+			// Para el contador «N notas» (el listado vive en Actividad → Notas).
+			dispatch(getNotesByFolderId(folder._id));
 
 			if (groupId) {
 				await dispatch(getContactsByGroupId(groupId));
@@ -168,13 +171,12 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 			description: `${pendingTasks} pendientes de ${totalTasks}`,
 			badge: pendingTasks,
 		},
-		{
-			icon: <DocumentText size={20} />,
-			label: "Notas",
-			shortLabel: "Notas",
-			description: `${selectedNotes?.length || 0} notas`,
-		},
 	];
+	// Las notas viven en un solo lugar, Actividad → Notas (12/11/2026): acá solo el acceso.
+	const navigate = useNavigate();
+	const location = useLocation();
+	const goToNotes = () => navigate(`${location.pathname}?tab=activity&sub=notes`);
+	const notesCount = selectedNotes?.length || 0;
 
 	const StatRow = ({ label, value: rowValue }: { label: string; value: React.ReactNode }) => (
 		<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -419,6 +421,15 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 						</Box>
 					)}
 					<StatRow label="Última actualización" value="Hoy" />
+					<Button
+						size="small"
+						onClick={goToNotes}
+						startIcon={<DocumentText size={14} variant="Bulk" />}
+						data-testid="gestion-go-notes"
+						sx={{ mt: 1, textTransform: "none", fontWeight: 600, fontSize: "0.78rem", justifyContent: "flex-start", px: 0.5 }}
+					>
+						{notesCount === 1 ? "1 nota" : `${notesCount} notas`} · ver en Actividad
+					</Button>
 				</Stack>
 			</Box>
 		</Box>
@@ -510,9 +521,6 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 							<TabPanel value={value} index={2}>
 								<TaskListImproved title="" folderName={folder.folderName} />
 							</TabPanel>
-							<TabPanel value={value} index={3}>
-								<Notes title="" folderId={folder._id} />
-							</TabPanel>
 						</Box>
 					</Box>
 					<Drawer
@@ -552,9 +560,6 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 							</TabPanel>
 							<TabPanel value={value} index={2}>
 								<TaskListImproved title="" folderName={folder.folderName} />
-							</TabPanel>
-							<TabPanel value={value} index={3}>
-								<Notes title="" folderId={folder._id} />
 							</TabPanel>
 						</Box>
 					</Box>
