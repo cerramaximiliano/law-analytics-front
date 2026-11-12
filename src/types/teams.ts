@@ -42,6 +42,8 @@ export interface DraftInvitationRequest {
 export interface TeamSettings {
 	autoShareNewResources: boolean;
 	defaultRole: "editor" | "viewer";
+	/** Qué ve cada integrante (30/10/2026): 'todo' o 'propio' (solo lo suyo), con excepciones por integrante. */
+	visibility?: { defaultMode?: "todo" | "propio"; members?: { userId: string; mode: "todo" | "propio" }[] };
 }
 
 export interface TeamOwnerInfo {

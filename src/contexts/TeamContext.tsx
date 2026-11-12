@@ -34,6 +34,8 @@ interface TeamContextType {
 	canManageMembers: boolean;
 	isOwner: boolean;
 	isAdmin: boolean;
+	/** El integrante ve solo lo suyo (Mi equipo → «Qué ve cada integrante»). Owner y admins: false. */
+	seesOnlyOwn: boolean;
 
 	// Utility
 	getTeamIdForResource: () => string | undefined;
@@ -66,6 +68,7 @@ const initialContextValue: TeamContextType = {
 	canManageMembers: false,
 	isOwner: false,
 	isAdmin: false,
+	seesOnlyOwn: false,
 	getTeamIdForResource: () => undefined,
 	getUserIdForResource: () => "",
 	getRequestHeaders: () => ({}),
@@ -164,6 +167,16 @@ export function TeamProvider({ children }: TeamProviderProps) {
 	const canManageMembers = useMemo(() => hasPermission("manage_members"), [hasPermission]);
 	const isOwner = userRole === "owner";
 	const isAdmin = userRole === "admin" || userRole === "owner";
+	// Visibilidad «solo lo suyo» (12/11/2026): el hub ya filtra los listados; el front usa esto
+	// para no mostrar solapas ni selectores «de otros» que quedarían vacíos.
+	const seesOnlyOwn = useMemo(() => {
+		if (!isTeamMode || !activeTeam || isAdmin) return false;
+		const v = activeTeam.settings?.visibility;
+		if (!v) return false;
+		const override = (v.members || []).find((m) => String(m.userId) === String(currentUserId));
+		if (override) return override.mode === "propio";
+		return v.defaultMode === "propio";
+	}, [isTeamMode, activeTeam, isAdmin, currentUserId]);
 
 	// Check if team owner has a specific feature
 	const hasTeamFeature = useCallback(
@@ -315,6 +328,7 @@ export function TeamProvider({ children }: TeamProviderProps) {
 			canManageMembers,
 			isOwner,
 			isAdmin,
+			seesOnlyOwn,
 			getTeamIdForResource,
 			getUserIdForResource,
 			getRequestHeaders,
@@ -343,6 +357,7 @@ export function TeamProvider({ children }: TeamProviderProps) {
 			canManageMembers,
 			isOwner,
 			isAdmin,
+			seesOnlyOwn,
 			getTeamIdForResource,
 			getUserIdForResource,
 			getRequestHeaders,
@@ -405,7 +420,10 @@ export function useTeamsFeature() {
 	const maxTeamMembers = useMemo(() => {
 		// Con un equipo activo, el cupo es el del plan del OWNER (la API lo calcula en
 		// capacity.maxCount): un administrador Free de un equipo Premium ve 10, no 0.
-		const activeTeam = teamsState.activeTeam as { capacity?: { maxCount?: number }; ownerSubscription?: { resourceLimits?: Array<{ name: string; limit: number }> } } | null;
+		const activeTeam = teamsState.activeTeam as {
+			capacity?: { maxCount?: number };
+			ownerSubscription?: { resourceLimits?: Array<{ name: string; limit: number }> };
+		} | null;
 		if (typeof activeTeam?.capacity?.maxCount === "number") return activeTeam.capacity.maxCount;
 		const ownerLimit = activeTeam?.ownerSubscription?.resourceLimits?.find((l) => l.name === "teamMembers");
 		if (ownerLimit) return ownerLimit.limit;

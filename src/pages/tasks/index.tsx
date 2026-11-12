@@ -637,12 +637,23 @@ const Tasks = () => {
 	const { user } = useSelector((state) => state.auth);
 	const userId = user?._id;
 
-	const { activeTeam, isTeamMode, isOwner, canCreate, canUpdate, canDelete, isInitialized: isTeamInitialized } = useTeam();
+	const {
+		activeTeam,
+		isTeamMode,
+		isOwner,
+		isAdmin,
+		seesOnlyOwn,
+		canCreate,
+		canUpdate,
+		canDelete,
+		isInitialized: isTeamInitialized,
+	} = useTeam();
 
 	// Vista por responsable (modo equipo). Default: "Mis tareas" para miembros,
 	// "Todas" para el owner; el usuario puede cambiarla y se vuelve a pedir el listado.
 	const [vistaElegida, setVistaElegida] = useState<TaskVista | null>(null);
-	const vista: TaskVista = vistaElegida ?? (isOwner ? "todas" : "mias");
+	// Quien ve solo lo suyo no tiene selector (12/11/2026): «Todas» es su lista completa.
+	const vista: TaskVista = seesOnlyOwn ? "todas" : vistaElegida ?? (isOwner ? "todas" : "mias");
 	// Filtro por un integrante (?asignado=). Elegir uno reemplaza a la vista; volver a la
 	// vista (o «Todos») lo limpia.
 	const [responsableId, setResponsableId] = useState<string>("");
@@ -934,83 +945,87 @@ const Tasks = () => {
 		);
 	}, [folders, activeTeam?.name, filteredData, teamAssignees, responsableId]);
 
-	const vistaSelector = isTeamMode ? (
-		<Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ xs: "stretch", sm: "center" }}>
-			<ToggleButtonGroup
-				exclusive
-				size="small"
-				value={responsableId ? null : vista}
-				onChange={(_e, next: TaskVista | null) => {
-					if (next) {
-						setVistaElegida(next);
-						setResponsableId("");
-						setPageIndex(0);
-					}
-				}}
-				aria-label="Filtrar tareas por responsable"
-				sx={{
-					width: { xs: "100%", sm: "auto" },
-					"& .MuiToggleButton-root": {
-						flex: { xs: 1, sm: "initial" },
-						textTransform: "none",
-						fontSize: "0.78rem",
-						fontWeight: 600,
-						letterSpacing: "-0.005em",
-						px: 1.5,
-						py: 0.625,
-						color: "text.secondary",
-						borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
-						"&.Mui-selected": {
-							color: BRAND_BLUE,
-							bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
-							"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.12) },
+	const vistaSelector =
+		isTeamMode && !seesOnlyOwn ? (
+			<Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ xs: "stretch", sm: "center" }}>
+				<ToggleButtonGroup
+					exclusive
+					size="small"
+					value={responsableId ? null : vista}
+					onChange={(_e, next: TaskVista | null) => {
+						if (next) {
+							setVistaElegida(next);
+							setResponsableId("");
+							setPageIndex(0);
+						}
+					}}
+					aria-label="Filtrar tareas por responsable"
+					sx={{
+						width: { xs: "100%", sm: "auto" },
+						"& .MuiToggleButton-root": {
+							flex: { xs: 1, sm: "initial" },
+							textTransform: "none",
+							fontSize: "0.78rem",
+							fontWeight: 600,
+							letterSpacing: "-0.005em",
+							px: 1.5,
+							py: 0.625,
+							color: "text.secondary",
+							borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
+							"&.Mui-selected": {
+								color: BRAND_BLUE,
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+								"&:hover": { bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.12) },
+							},
 						},
-					},
-				}}
-			>
-				<ToggleButton value="mias">Mis tareas</ToggleButton>
-				<ToggleButton value="todas">Todas</ToggleButton>
-				<ToggleButton value="sin_asignar">Sin asignar</ToggleButton>
-			</ToggleButtonGroup>
-			<Select
-				size="small"
-				displayEmpty
-				value={responsableId}
-				onChange={(e) => {
-					setResponsableId(String(e.target.value || ""));
-					setPageIndex(0);
-				}}
-				inputProps={{ "aria-label": "Filtrar tareas por integrante" }}
-				renderValue={(value) =>
-					value ? `Responsable: ${teamAssignees.find((a) => a.id === value)?.name || "Miembro"}` : "Responsable: todos"
-				}
-				sx={{ minWidth: 180, "& .MuiSelect-select": { py: "5px", fontSize: "0.78rem", fontWeight: 500 } }}
-			>
-				<MenuItem value="">Todos</MenuItem>
-				{teamAssignees.map((a) => (
-					<MenuItem key={a.id} value={a.id}>
-						{a.name}
-						{a.isOwner ? " · Propietario" : ""}
-					</MenuItem>
-				))}
-			</Select>
-			<Tooltip title={responsableId ? "Imprimir las tareas de este responsable" : "Imprimir las tareas agrupadas por responsable"}>
-				<span>
-					<Button
+					}}
+				>
+					<ToggleButton value="mias">Mis tareas</ToggleButton>
+					<ToggleButton value="todas">Todas</ToggleButton>
+					<ToggleButton value="sin_asignar">Sin asignar</ToggleButton>
+				</ToggleButtonGroup>
+				{/* Por integrante: solo owner/admin (12/11/2026) */}
+				{isAdmin && (
+					<Select
 						size="small"
-						variant="outlined"
-						color="secondary"
-						startIcon={<Printer size={16} />}
-						onClick={handlePrintTasks}
-						disabled={isLoader}
-						sx={{ textTransform: "none", whiteSpace: "nowrap" }}
+						displayEmpty
+						value={responsableId}
+						onChange={(e) => {
+							setResponsableId(String(e.target.value || ""));
+							setPageIndex(0);
+						}}
+						inputProps={{ "aria-label": "Filtrar tareas por integrante" }}
+						renderValue={(value) =>
+							value ? `Responsable: ${teamAssignees.find((a) => a.id === value)?.name || "Miembro"}` : "Responsable: todos"
+						}
+						sx={{ minWidth: 180, "& .MuiSelect-select": { py: "5px", fontSize: "0.78rem", fontWeight: 500 } }}
 					>
-						Imprimir
-					</Button>
-				</span>
-			</Tooltip>
-		</Stack>
-	) : undefined;
+						<MenuItem value="">Todos</MenuItem>
+						{teamAssignees.map((a) => (
+							<MenuItem key={a.id} value={a.id}>
+								{a.name}
+								{a.isOwner ? " · Propietario" : ""}
+							</MenuItem>
+						))}
+					</Select>
+				)}
+				<Tooltip title={responsableId ? "Imprimir las tareas de este responsable" : "Imprimir las tareas agrupadas por responsable"}>
+					<span>
+						<Button
+							size="small"
+							variant="outlined"
+							color="secondary"
+							startIcon={<Printer size={16} />}
+							onClick={handlePrintTasks}
+							disabled={isLoader}
+							sx={{ textTransform: "none", whiteSpace: "nowrap" }}
+						>
+							Imprimir
+						</Button>
+					</span>
+				</Tooltip>
+			</Stack>
+		) : undefined;
 
 	const totalTasks = filteredData.length;
 	const pendingTasks = useMemo(

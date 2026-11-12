@@ -169,7 +169,9 @@ const ArchivedItemsModal = ({
 		searchDebounceRef.current = setTimeout(() => onSearchChange(value.trim()), 400);
 	};
 
-	const showResponsableFilter = showResponsables && itemType === "folders" && Boolean(onResponsableFilterChange);
+	// Solo owner/admin reciben opciones (12/11/2026): editores y visualizadores no filtran por otros.
+	const showResponsableFilter =
+		showResponsables && itemType === "folders" && Boolean(onResponsableFilterChange) && responsableOptions.length > 0;
 	const showJuzgadoFilter =
 		itemType === "folders" && Boolean(onJuzgadoFilterChange) && (juzgadoOptions.length > 0 || Boolean(juzgadoFilter));
 	const showUbicacionFilter =

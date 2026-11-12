@@ -2539,6 +2539,8 @@ const FoldersLayout = () => {
 		isInitialized: isTeamInitialized,
 		getRequestHeaders,
 		userRole,
+		isAdmin: isTeamAdmin,
+		seesOnlyOwn,
 	} = useTeam();
 	const canEditResponsables = userRole === "owner" || userRole === "admin" || userRole === "editor";
 
@@ -2546,7 +2548,10 @@ const FoldersLayout = () => {
 	// de un integrante, previsto o invitado). Default «Todas». El filtro lo resuelve el hub
 	// (`?responsable=me|ninguno|<id>`); mientras llega la respuesta se filtra con los
 	// `responsables` que ya trae el listado. Solo afecta la tabla principal.
-	const [responsableVista, setResponsableVista] = useState<string>(savedFilters.responsableVista ?? "todas");
+	const [responsableVistaElegida, setResponsableVista] = useState<string>(savedFilters.responsableVista ?? "todas");
+	// Quien ve solo lo suyo no tiene solapas ni «De…» (12/11/2026): el hub ya le devuelve solo sus
+	// carpetas, así que «Todas» es su lista completa y «Sin responsable» / «De…» quedarían vacías.
+	const responsableVista = seesOnlyOwn ? "todas" : responsableVistaElegida;
 	const [responsableIds, setResponsableIds] = useState<Set<string> | null>(null);
 	// Guardar los filtros en esta pestaña cada vez que cambian (ver savedFilters).
 	useEffect(() => {
@@ -5103,8 +5108,8 @@ const FoldersLayout = () => {
 						</Box>
 					)}
 
-					{/* Equipos: vista por responsable */}
-					{isTeamMode && (
+					{/* Equipos: vista por responsable (no para quien ve solo lo suyo) */}
+					{isTeamMode && !seesOnlyOwn && (
 						<Stack
 							direction={{ xs: "column", sm: "row" }}
 							spacing={1}
@@ -5143,8 +5148,8 @@ const FoldersLayout = () => {
 								<ToggleButton value="todas">Todas</ToggleButton>
 								<ToggleButton value="sin">Sin responsable</ToggleButton>
 							</ToggleButtonGroup>
-							{/* «De…»: carpetas a cargo de un integrante, previsto o invitado concreto (6/11/2026) */}
-							{responsableDeOptions.length > 0 && (
+							{/* «De…»: carpetas a cargo de un integrante, previsto o invitado concreto (6/11/2026). Solo owner/admin. */}
+							{isTeamAdmin && responsableDeOptions.length > 0 && (
 								<FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 200 } }}>
 									<Select
 										value={isResponsableVistaFija(responsableVista) ? "" : responsableVista}
@@ -5473,7 +5478,7 @@ const FoldersLayout = () => {
 						onSearchChange={handleArchivedSearchChange}
 						showResponsables={isTeamMode}
 						responsableFilter={archivedResponsable}
-						responsableOptions={archivedResponsableOptions}
+						responsableOptions={isTeamAdmin ? archivedResponsableOptions : []}
 						onResponsableFilterChange={isTeamMode ? handleArchivedResponsableChange : undefined}
 						juzgadoFilter={archivedJuzgado}
 						juzgadoOptions={archivedJuzgadoOptions}

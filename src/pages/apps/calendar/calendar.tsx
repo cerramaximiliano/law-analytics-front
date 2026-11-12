@@ -470,11 +470,12 @@ const Calendar = () => {
 
 	// Team context - para cargar recursos del equipo si hay uno activo
 	// isOwner: true if user is the owner of the active team (can manage Google Calendar sync)
-	const { activeTeam, isTeamMode, canCreate, canUpdate, canDelete, isOwner, isInitialized: isTeamInitialized } = useTeam();
+	const { activeTeam, isTeamMode, canCreate, canUpdate, canDelete, isOwner, isAdmin, isInitialized: isTeamInitialized } = useTeam();
 
 	// Equipos: filtro por responsable («todos», un integrante o SIN_RESPONSABLE). Usa los
 	// `responsables` que el hub agrega a cada evento (los de su carpeta; sin carpeta, quien lo creó).
-	const showResponsableFilter = isTeamMode && !!activeTeam;
+	// Solo owner/admin filtran por otros integrantes (12/11/2026).
+	const showResponsableFilter = isTeamMode && !!activeTeam && isAdmin;
 	const [responsableFilter, setResponsableFilter] = useState<string>("todos");
 	const teamAssignees = useMemo(() => getTeamAssignees(activeTeam), [activeTeam]);
 	useEffect(() => {
