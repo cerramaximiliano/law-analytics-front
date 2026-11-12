@@ -51,6 +51,7 @@ import MovementsTable from "./tables/MovementsTable";
 import PjnMovementsViewerSection from "./PjnMovementsViewerSection";
 
 import NotificationsTable from "./tables/NotificationsTable";
+import PjnCedulasSection from "./PjnCedulasSection";
 import CalendarTable from "./tables/CalendarTable";
 import Notes from "./Notes";
 import CombinedTablePaginated from "./tables/CombinedTablePaginated";
@@ -127,6 +128,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 		// filtro para que el locate no lo descarte (un movimiento sin documento
 		// con "Con documento" activo daba not_found siendo que existe).
 		setFilters((prev: any) => ({ ...prev, onlyWithDocuments: false, onlyWithLinked: false }));
+		// Puede venir de otra sub-solapa (p. ej. Cédulas → «Movimiento», 12/11/2026).
+		setActiveTab("movements");
 		const next = new URLSearchParams(searchParams);
 		next.delete("movement");
 		next.delete("action");
@@ -1507,6 +1510,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 														autoOpenMovement={openMovement}
 													/>
 												))}
+											{activeTab === "notifications" && scrapingSource === "pjn" && isSyncedFolder && id && (
+												<PjnCedulasSection folderId={id} searchQuery={searchQuery} />
+											)}
 											{activeTab === "notifications" && (
 												<NotificationsTable
 													notifications={notificationsData.notifications}
@@ -2077,6 +2083,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 														autoOpenMovement={openMovement}
 													/>
 												))}
+											{activeTab === "notifications" && scrapingSource === "pjn" && isSyncedFolder && id && (
+												<PjnCedulasSection folderId={id} searchQuery={searchQuery} />
+											)}
 											{activeTab === "notifications" && (
 												<NotificationsTable
 													notifications={notificationsData.notifications}

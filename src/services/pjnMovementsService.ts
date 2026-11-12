@@ -9,6 +9,7 @@
 
 import axios from "axios";
 import type { PjnMovementsListParams, PjnMovementsListResponse, PjnMovementPdfUrlResponse } from "types/pjnMovement";
+import type { PjnCedulasResponse } from "types/pjnCedula";
 
 function getBaseUrl(): string {
 	// Mismo patrón que judicialMovementsService.ts
@@ -75,5 +76,12 @@ export async function setPjnMovementReadStatus(
 	const encoded = encodeURIComponent(movementId);
 	const url = `${getBaseUrl()}/api/folders/${folderId}/movimientos/${encoded}/read-status`;
 	const response = await axios.put<{ success: boolean; read: boolean }>(url, { read }, { withCredentials: true });
+	return response.data;
+}
+
+// Cédulas de la carpeta (movimientos CEDULA + bandeja del portal), 12/11/2026.
+export async function getPjnCedulasByFolder(folderId: string): Promise<PjnCedulasResponse> {
+	const url = `${getBaseUrl()}/api/folders/${folderId}/cedulas`;
+	const response = await axios.get<PjnCedulasResponse>(url, { withCredentials: true });
 	return response.data;
 }
