@@ -68,6 +68,12 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 	const assignableMembers = useMemo(() => getTeamAssignees(activeTeam, { includeInvitations: true }), [activeTeam]);
 	const currentIds = useMemo(() => responsables || [], [responsables]);
 	const policy: FolderNotificationPolicy = notificationPolicy || "equipo";
+	// «Según el equipo» muestra qué significa hoy (12/11/2026, pedido de Estudio FS Abogados: la
+	// administradora leía «según el equipo» y no sabía que su equipo ya avisa solo a responsables).
+	const teamDefault = activeTeam?.settings?.notifications?.defaultPolicy === "responsables" ? "responsables" : "todos";
+	const teamDefaultLabel = teamDefault === "responsables" ? "solo responsables" : "todos";
+	const policyLabel = (o: { value: FolderNotificationPolicy; label: string }) =>
+		o.value === "equipo" ? `${o.label} (hoy: ${teamDefaultLabel})` : o.label;
 	const policyOption = FOLDER_POLICY_OPTIONS.find((o) => o.value === policy) || FOLDER_POLICY_OPTIONS[0];
 
 	const [editOpen, setEditOpen] = useState(false);
@@ -152,19 +158,19 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 						>
 							{FOLDER_POLICY_OPTIONS.map((o) => (
 								<MenuItem key={o.value} value={o.value}>
-									{o.label}
+									{policyLabel(o)}
 								</MenuItem>
 							))}
 						</Select>
 					) : (
-						<Typography sx={{ fontSize: "0.82rem", fontWeight: 500 }}>{policyOption.label}</Typography>
+						<Typography sx={{ fontSize: "0.82rem", fontWeight: 500 }}>{policyLabel(policyOption)}</Typography>
 					)}
 					<Tooltip
 						title={
 							<Box>
 								{FOLDER_POLICY_OPTIONS.map((o) => (
 									<Typography key={o.value} variant="caption" component="div" sx={{ mb: 0.5 }}>
-										<b>{o.label}:</b> {o.help}
+										<b>{policyLabel(o)}:</b> {o.help}
 									</Typography>
 								))}
 								<Typography variant="caption" component="div">

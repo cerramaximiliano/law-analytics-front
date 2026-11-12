@@ -46,6 +46,8 @@ export interface TeamSettings {
 	visibility?: { defaultMode?: "todo" | "propio"; members?: { userId: string; mode: "todo" | "propio" }[] };
 	/** Quién puede cambiar responsables de carpetas y tareas (12/11/2026): 'editores' (default) o solo 'admins'. */
 	responsables?: { editableBy?: "editores" | "admins" };
+	/** Avisos del equipo (30/10/2026): regla por defecto de las carpetas con regla «según el equipo». */
+	notifications?: { defaultPolicy?: "todos" | "responsables" };
 }
 
 export interface TeamOwnerInfo {
