@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 // react
 
 // material-ui
@@ -170,6 +170,16 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 	// no están en el equipo se muestran como "Miembro" para que se puedan quitar).
 	const selectedAssignees = useMemo(() => resolveAssignees(values.assignedTo, assignableMembers), [values.assignedTo, assignableMembers]);
 
+	// Al elegir una carpeta en una tarea nueva sin responsables, propone los responsables de la
+	// carpeta (12/11/2026, pedido de Estudio FS Abogados); se pueden cambiar antes de guardar.
+	useEffect(() => {
+		if (!isCreating || !isTeamMode || !values.folderId || (values.assignedTo || []).length > 0) return;
+		const carpeta = folders?.find((f: any) => f._id === values.folderId);
+		const asignables = new Set(assignableMembers.map((a) => a.id));
+		const heredados = ((carpeta?.responsables || []) as string[]).map(String).filter((id) => asignables.has(id));
+		if (heredados.length > 0) setFieldValue("assignedTo", heredados);
+	}, [values.folderId]);
+
 	return (
 		<FormikProvider value={formik}>
 			<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
@@ -177,7 +187,9 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 					<Grid container spacing={3}>
 						<Grid item xs={12}>
 							<Stack spacing={1}>
-								<InputLabel htmlFor="task-name" sx={labelSx}>Nombre de la tarea</InputLabel>
+								<InputLabel htmlFor="task-name" sx={labelSx}>
+									Nombre de la tarea
+								</InputLabel>
 								<TextField
 									fullWidth
 									id="task-name"
@@ -192,7 +204,9 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 
 						<Grid item xs={12}>
 							<Stack spacing={1}>
-								<InputLabel htmlFor="task-description" sx={labelSx}>Descripción</InputLabel>
+								<InputLabel htmlFor="task-description" sx={labelSx}>
+									Descripción
+								</InputLabel>
 								<TextField
 									fullWidth
 									id="task-description"
@@ -208,7 +222,9 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 
 						<Grid item xs={12} sm={6}>
 							<Stack spacing={1}>
-								<InputLabel htmlFor="task-dueDate" sx={labelSx}>Fecha de vencimiento</InputLabel>
+								<InputLabel htmlFor="task-dueDate" sx={labelSx}>
+									Fecha de vencimiento
+								</InputLabel>
 								<DatePicker
 									value={values.dueDate}
 									onChange={(date) => setFieldValue("dueDate", date ? dayjs(date) : dayjs())}
@@ -227,7 +243,9 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 
 						<Grid item xs={12} sm={6}>
 							<Stack spacing={1}>
-								<InputLabel htmlFor="task-priority" sx={labelSx}>Prioridad</InputLabel>
+								<InputLabel htmlFor="task-priority" sx={labelSx}>
+									Prioridad
+								</InputLabel>
 								<FormControl fullWidth>
 									<Select id="task-priority" {...getFieldProps("priority")} error={Boolean(touched.priority && errors.priority)}>
 										<MenuItem value="baja">Baja</MenuItem>
@@ -240,7 +258,9 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 
 						<Grid item xs={12} sm={6}>
 							<Stack spacing={1}>
-								<InputLabel htmlFor="task-status" sx={labelSx}>Estado</InputLabel>
+								<InputLabel htmlFor="task-status" sx={labelSx}>
+									Estado
+								</InputLabel>
 								<FormControl fullWidth>
 									<Select id="task-status" {...getFieldProps("status")} error={Boolean(touched.status && errors.status)}>
 										<MenuItem value="pendiente">Pendiente</MenuItem>
@@ -255,7 +275,9 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 
 						<Grid item xs={12} sm={6}>
 							<Stack spacing={1}>
-								<InputLabel htmlFor="task-folder" sx={labelSx}>Carpeta</InputLabel>
+								<InputLabel htmlFor="task-folder" sx={labelSx}>
+									Carpeta
+								</InputLabel>
 								<FormControl fullWidth>
 									<Select
 										id="task-folder"

@@ -31,6 +31,7 @@ import dayjs from "utils/dayjs-config";
 import PjnPdfViewer from "components/PjnPdfViewer";
 import MovementsUpgradeBanner from "components/shared/MovementsUpgradeBanner";
 import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
+import MovementNotesDialog from "./MovementNotesDialog";
 import ModalTasks from "pages/apps/folders/details/modals/MoldalTasks";
 import AddEventFrom from "sections/apps/calendar/AddEventForm";
 import { dispatch, useSelector } from "store";
@@ -397,6 +398,12 @@ const PjnMovementsViewerSection = ({
 		setActionMovId(movId);
 		setNoteModalOpen(true);
 	};
+	// Notas de un movimiento: el ícono con el contador abre el listado (12/11/2026).
+	const [notesDialogMov, setNotesDialogMov] = useState<{ id: string; title: string } | null>(null);
+	const notesOfMovement = useMemo(
+		() => (notesDialogMov ? (folderNotes as Note[]).filter((n) => n.movementRef === notesDialogMov.id) : []),
+		[folderNotes, notesDialogMov],
+	);
 	const openTaskModal = (movId: string) => {
 		setActionMovId(movId);
 		setTaskModalOpen(true);
@@ -679,8 +686,27 @@ const PjnMovementsViewerSection = ({
 														{(notesCountByMov[m._id] || tasksCountByMov[m._id] || eventsCountByMov[m._id]) && (
 															<Stack direction="row" alignItems="center" spacing={1}>
 																{notesCountByMov[m._id] ? (
-																	<Tooltip title={`${notesCountByMov[m._id]} nota${notesCountByMov[m._id] > 1 ? "s" : ""}`}>
-																		<Stack direction="row" alignItems="center" spacing={0.25} sx={{ color: "primary.main" }}>
+																	<Tooltip title={`Ver ${notesCountByMov[m._id]} nota${notesCountByMov[m._id] > 1 ? "s" : ""}`}>
+																		<Stack
+																			direction="row"
+																			alignItems="center"
+																			spacing={0.25}
+																			component="button"
+																			type="button"
+																			data-testid="movement-notes-indicator"
+																			onClick={(e: React.MouseEvent) => {
+																				e.stopPropagation();
+																				setNotesDialogMov({ id: m._id, title: `${m.fecha || ""} ${m.tipo || ""}`.trim() });
+																			}}
+																			sx={{
+																				color: "primary.main",
+																				cursor: "pointer",
+																				background: "none",
+																				border: 0,
+																				p: 0,
+																				"&:hover": { textDecoration: "underline" },
+																			}}
+																		>
 																			<Note1 size="13" variant="Bulk" />
 																			<Typography variant="caption" sx={{ fontWeight: 600 }}>
 																				{notesCountByMov[m._id]}
@@ -904,6 +930,14 @@ const PjnMovementsViewerSection = ({
 				hasPrev={hasPrev}
 				hasNext={hasNext}
 				onReadStatusChange={handleReadStatusChange}
+			/>
+
+			<MovementNotesDialog
+				open={Boolean(notesDialogMov)}
+				onClose={() => setNotesDialogMov(null)}
+				notes={notesOfMovement}
+				movementTitle={notesDialogMov?.title}
+				onAddNote={notesDialogMov ? () => openNoteModal(notesDialogMov.id) : undefined}
 			/>
 
 			{/* Modales de acción rápida desde la tabla (nota / tarea vinculada al movimiento) */}

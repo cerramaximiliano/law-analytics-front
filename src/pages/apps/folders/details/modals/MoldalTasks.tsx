@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
+	Autocomplete,
 	Box,
+	Chip,
 	DialogTitle,
 	Button,
 	Stack,
 	DialogContent,
 	DialogActions,
+	TextField,
 	useTheme,
 	Typography,
 	InputLabel,
@@ -24,6 +27,7 @@ import { addTask, updateTask } from "store/reducers/tasks";
 import { useTeam } from "contexts/TeamContext";
 import dayjs from "utils/dayjs-config";
 import { dueDateToIso } from "utils/taskDueDate";
+import { getTeamAssignees, resolveAssignees, TeamAssignee } from "utils/teamAssignees";
 
 import { TaskSquare } from "iconsax-react";
 
@@ -47,7 +51,17 @@ const ModalTasks = ({
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const userId = useSelector((state: any) => state.auth?.user?._id);
-	const { getRequestHeaders } = useTeam();
+	const { getRequestHeaders, isTeamMode, activeTeam } = useTeam();
+	// Responsables (equipos, 12/11/2026, pedido de Estudio FS Abogados): la tarea nace asignada a
+	// los responsables de la carpeta (el hub también lo resuelve si el campo no viene) y se puede
+	// cambiar acá, sin tener que ir a editarla después en Tareas.
+	const currentFolder = useSelector((state: any) => state.folder?.folder);
+	const assignableMembers = useMemo(() => getTeamAssignees(activeTeam), [activeTeam]);
+	const folderResponsables = useMemo<string[]>(() => {
+		if (!isTeamMode || !currentFolder || String(currentFolder._id) !== String(folderId)) return [];
+		const asignables = new Set(assignableMembers.map((a) => a.id));
+		return ((currentFolder.responsables || []) as string[]).map(String).filter((id) => asignables.has(id));
+	}, [isTeamMode, currentFolder, folderId, assignableMembers]);
 
 	const isEditMode = editMode && taskToEdit;
 
@@ -92,6 +106,7 @@ const ModalTasks = ({
 				checked: taskToEdit.checked || false,
 				folderId: taskToEdit.folderId || folderId,
 				userId: taskToEdit.userId || userId,
+				...(isTeamMode ? { assignedTo: (taskToEdit.assignedTo || []).map(String) } : {}),
 			};
 		}
 
@@ -102,6 +117,7 @@ const ModalTasks = ({
 			checked: false,
 			folderId,
 			userId,
+			...(isTeamMode ? { assignedTo: folderResponsables } : {}),
 		};
 
 		if (externalInitialValues) {
@@ -194,7 +210,8 @@ const ModalTasks = ({
 			onSubmit={_handleSubmit}
 			enableReinitialize
 		>
-			{({ isSubmitting, resetForm, handleSubmit }) => {
+			{({ isSubmitting, resetForm, values, setFieldValue }) => {
+				const selectedAssignees = resolveAssignees(values.assignedTo, assignableMembers);
 				const handleClose = () => {
 					if (!isSubmitting) {
 						closeTaskModal();
@@ -319,6 +336,49 @@ const ModalTasks = ({
 											/>
 										</Stack>
 									</Grid>
+
+									{isTeamMode && (
+										<Grid item xs={12}>
+											<Stack spacing={0.75}>
+												<InputLabel htmlFor="task-assignedTo" sx={{ fontSize: "0.78rem", fontWeight: 500, color: "text.primary" }}>
+													Responsables
+												</InputLabel>
+												<Autocomplete<TeamAssignee, true>
+													id="task-assignedTo"
+													multiple
+													fullWidth
+													size="small"
+													disabled={isSubmitting}
+													options={assignableMembers}
+													value={selectedAssignees}
+													onChange={(_event, newValue) =>
+														setFieldValue(
+															"assignedTo",
+															newValue.map((a) => a.id),
+														)
+													}
+													isOptionEqualToValue={(option, value) => option.id === value.id}
+													getOptionLabel={(option) => option.name}
+													renderTags={(value, getTagProps) =>
+														value.map((option, index) => (
+															<Chip {...getTagProps({ index })} key={option.id} label={option.name} size="small" />
+														))
+													}
+													renderInput={(params) => (
+														<TextField
+															{...params}
+															placeholder={selectedAssignees.length === 0 ? "Sin responsable (elegí uno o más integrantes)" : ""}
+														/>
+													)}
+												/>
+												<Typography variant="caption" color="text.secondary">
+													{folderResponsables.length > 0
+														? "Por defecto, los responsables de la carpeta."
+														: "La carpeta no tiene responsables: asignalos acá o en «Responsables de la carpeta»."}
+												</Typography>
+											</Stack>
+										</Grid>
+									)}
 								</Grid>
 							</DialogContent>
 

@@ -52,6 +52,7 @@ import PjnMovementsViewerSection from "./PjnMovementsViewerSection";
 
 import NotificationsTable from "./tables/NotificationsTable";
 import CalendarTable from "./tables/CalendarTable";
+import Notes from "./Notes";
 import CombinedTablePaginated from "./tables/CombinedTablePaginated";
 import ModalMovements from "../modals/ModalMovements";
 import ModalNotifications from "../modals/ModalNotifications";
@@ -88,7 +89,7 @@ interface ActivityTablesProps {
 	accessCutoffAt?: string | null;
 }
 
-type TabValue = "movements" | "notifications" | "calendar" | "combined";
+type TabValue = "movements" | "notifications" | "calendar" | "notes" | "combined";
 
 interface TabConfig {
 	value: TabValue;
@@ -363,6 +364,15 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 			icon: <Calendar size={20} />,
 			color: BRAND_BLUE,
 			description: "Eventos y audiencias",
+		},
+		// Notas del expediente (12/11/2026, pedido de Estudio FS Abogados): el listado ya existía en
+		// Gestión → Notas pero no se encontraba desde la actividad, que es donde se crean.
+		{
+			value: "notes",
+			label: "Notas",
+			icon: <DocumentText size={20} />,
+			color: BRAND_BLUE,
+			description: "Notas sobre el expediente y sus movimientos",
 		},
 		{
 			value: "combined",
@@ -1162,7 +1172,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 
 									{/* Action buttons */}
 									<Stack direction="row" spacing={0.75}>
-										{activeTab !== "combined" && canCreate && (
+										{activeTab !== "combined" && activeTab !== "notes" && canCreate && (
 											<Tooltip title={`Agregar ${currentTab?.label.toLowerCase().slice(0, -1)}`}>
 												<IconButton
 													size="small"
@@ -1376,7 +1386,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 								)}
 
 								{/* Filtros — brand */}
-								{!(activeTab === "movements" && isSyncedFolder) && (
+								{!(activeTab === "movements" && isSyncedFolder) && activeTab !== "notes" && (
 									<Collapse in={showFilters} timeout="auto" unmountOnExit>
 										<Fade in={showFilters} timeout={350}>
 											<Box
@@ -1504,6 +1514,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 													onView={handleViewEvent}
 												/>
 											)}
+											{activeTab === "notes" && id && <Notes title="" folderId={id} folderName={folderName} />}
 											{activeTab === "combined" && (
 												<CombinedTablePaginated
 													activities={activitiesData.activities || []}
@@ -1582,34 +1593,36 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 											</Typography>
 										</Box>
 
-										{/* Search */}
-										<TextField
-											size="small"
-											placeholder={`Buscar en ${currentTab?.label.toLowerCase()}…`}
-											value={searchQuery}
-											onChange={(e) => setSearchQuery(e.target.value)}
-											sx={{ minWidth: 300 }}
-											InputProps={{
-												startAdornment: (
-													<InputAdornment position="start">
-														<SearchNormal1 size={16} variant="Bulk" color={BRAND_BLUE} />
-													</InputAdornment>
-												),
-												sx: {
-													bgcolor: theme.palette.background.paper,
-													borderRadius: 1,
-													"& .MuiOutlinedInput-notchedOutline": {
-														borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
+										{/* Search (Notas tiene su propio listado) */}
+										{activeTab !== "notes" && (
+											<TextField
+												size="small"
+												placeholder={`Buscar en ${currentTab?.label.toLowerCase()}…`}
+												value={searchQuery}
+												onChange={(e) => setSearchQuery(e.target.value)}
+												sx={{ minWidth: 300 }}
+												InputProps={{
+													startAdornment: (
+														<InputAdornment position="start">
+															<SearchNormal1 size={16} variant="Bulk" color={BRAND_BLUE} />
+														</InputAdornment>
+													),
+													sx: {
+														bgcolor: theme.palette.background.paper,
+														borderRadius: 1,
+														"& .MuiOutlinedInput-notchedOutline": {
+															borderColor: alpha(BRAND_BLUE, isDark ? 0.22 : 0.14),
+														},
+														"&:hover .MuiOutlinedInput-notchedOutline": {
+															borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
+														},
+														"&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+															borderColor: BRAND_BLUE,
+														},
 													},
-													"&:hover .MuiOutlinedInput-notchedOutline": {
-														borderColor: alpha(BRAND_BLUE, isDark ? 0.36 : 0.26),
-													},
-													"&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-														borderColor: BRAND_BLUE,
-													},
-												},
-											}}
-										/>
+												}}
+											/>
+										)}
 
 										{/* PJN: filtros nativos del expediente en el toolbar (estado de PDF +
 										    rango de fechas — el endpoint pjn-movements los soporta) */}
@@ -1739,7 +1752,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 												<ExportSquare size={16} variant="Bulk" />
 											</IconButton>
 										</Tooltip>
-										{activeTab !== "combined" && canCreate && (
+										{activeTab !== "combined" && activeTab !== "notes" && canCreate && (
 											<Tooltip title={`Agregar ${currentTab?.label.toLowerCase().slice(0, -1)}`}>
 												<IconButton
 													size="small"
@@ -1908,8 +1921,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 											)}
 										</Stack>
 									</Box>
-								) : activeTab !== "movements" ? (
-									/* Filtros para otras pestañas (PJN en movimientos no muestra nada acá) */
+								) : activeTab !== "movements" && activeTab !== "notes" ? (
+									/* Filtros para otras pestañas (PJN en movimientos no muestra nada acá; Notas tiene su propio listado) */
 									<>
 										<Box sx={{ mt: 1.5, display: "flex", justifyContent: "flex-end" }}>
 											<Tooltip title={showFilters ? "Ocultar filtros" : "Mostrar filtros"}>
@@ -2071,6 +2084,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 													onView={handleViewEvent}
 												/>
 											)}
+											{activeTab === "notes" && id && <Notes title="" folderId={id} folderName={folderName} />}
 											{activeTab === "combined" && (
 												<CombinedTablePaginated
 													activities={activitiesData.activities || []}

@@ -51,6 +51,7 @@ import { useParams } from "react-router";
 import PDFViewer from "components/shared/PDFViewer";
 import MovementTextViewer from "components/shared/MovementTextViewer";
 import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
+import MovementNotesDialog from "../MovementNotesDialog";
 import ModalTasks from "pages/apps/folders/details/modals/MoldalTasks";
 import AddEventFrom from "sections/apps/calendar/AddEventForm";
 import { Dialog } from "@mui/material";
@@ -298,6 +299,12 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	// Modals de acciones rápidas (nota / tarea / vencimiento) prefijados con movementRef.
 	const [actionMovement, setActionMovement] = useState<Movement | null>(null);
 	const [quickNoteOpen, setQuickNoteOpen] = useState(false);
+	// Notas de un movimiento: el ícono con el contador abre el listado (12/11/2026).
+	const [notesDialogMovement, setNotesDialogMovement] = useState<Movement | null>(null);
+	const notesOfMovement = useMemo(
+		() => (notesDialogMovement?._id ? (folderNotes as Note[]).filter((n) => n.movementRef === notesDialogMovement._id) : []),
+		[folderNotes, notesDialogMovement],
+	);
 	const [quickTaskOpen, setQuickTaskOpen] = useState(false);
 	const [quickEventOpen, setQuickEventOpen] = useState(false);
 
@@ -793,8 +800,27 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 														</Stack>
 														<Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
 															{movement._id && notesCountByMov[movement._id] ? (
-																<Tooltip title={`${notesCountByMov[movement._id]} nota${notesCountByMov[movement._id] > 1 ? "s" : ""}`}>
-																	<Stack direction="row" alignItems="center" spacing={0.25} sx={{ color: "primary.main" }}>
+																<Tooltip title={`Ver ${notesCountByMov[movement._id]} nota${notesCountByMov[movement._id] > 1 ? "s" : ""}`}>
+																	<Stack
+																		direction="row"
+																		alignItems="center"
+																		spacing={0.25}
+																		component="button"
+																		type="button"
+																		data-testid="movement-notes-indicator"
+																		onClick={(e: React.MouseEvent) => {
+																			e.stopPropagation();
+																			setNotesDialogMovement(movement);
+																		}}
+																		sx={{
+																			color: "primary.main",
+																			cursor: "pointer",
+																			background: "none",
+																			border: 0,
+																			p: 0,
+																			"&:hover": { textDecoration: "underline" },
+																		}}
+																	>
 																		<Note1 size="13" variant="Bulk" />
 																		<Typography variant="caption" sx={{ fontWeight: 600 }}>
 																			{notesCountByMov[movement._id]}
@@ -1266,6 +1292,21 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 				isLoadingMore={isLoadingMoreForPdf}
 				totalWithLinks={totalWithLinks}
 				documentsBeforeThisPage={documentsBeforeThisPage}
+			/>
+
+			<MovementNotesDialog
+				open={Boolean(notesDialogMovement)}
+				onClose={() => setNotesDialogMovement(null)}
+				notes={notesOfMovement}
+				movementTitle={notesDialogMovement ? `${notesDialogMovement.time || ""} ${notesDialogMovement.title || ""}`.trim() : undefined}
+				onAddNote={
+					notesDialogMovement && isSyncedRow(notesDialogMovement) && hasRealRef(notesDialogMovement)
+						? () => {
+								setActionMovement(notesDialogMovement);
+								setQuickNoteOpen(true);
+						  }
+						: undefined
+				}
 			/>
 
 			{/* Acciones rápidas por fila (nota / tarea / vencimiento) con movementRef prefijado */}
