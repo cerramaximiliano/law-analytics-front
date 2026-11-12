@@ -59,9 +59,9 @@ const notify = (message: string, color: "success" | "error") =>
 const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
-	const { activeTeam, userRole, isAdmin, getRequestHeaders } = useTeam();
+	const { activeTeam, isAdmin, getRequestHeaders, canEditResponsables } = useTeam();
 
-	const canEditResponsables = userRole === "owner" || userRole === "admin" || userRole === "editor";
+	// canEditResponsables: owner/admin siempre; editor según la regla del equipo (12/11/2026).
 	const canEditPolicy = isAdmin;
 
 	// Incluye previstos e invitados (responsables de carpetas antes de aceptar, 5/11/2026).

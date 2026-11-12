@@ -63,7 +63,7 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 	const isDark = theme.palette.mode === "dark";
 	const { folders } = useSelector((state) => state.folder);
 	const { user } = useSelector((state) => state.auth);
-	const { getRequestHeaders, isTeamMode, activeTeam, getUserIdForResource } = useTeam();
+	const { getRequestHeaders, isTeamMode, activeTeam, getUserIdForResource, canEditResponsables } = useTeam();
 
 	const isCreating = !task;
 
@@ -317,6 +317,7 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 										fullWidth
 										options={assignableMembers}
 										value={selectedAssignees}
+										disabled={!canEditResponsables}
 										onChange={(_event, newValue) =>
 											setFieldValue(
 												"assignedTo",
@@ -369,6 +370,11 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 											/>
 										)}
 									/>
+									{!canEditResponsables && (
+										<Typography variant="caption" color="text.secondary">
+											Los responsables son los de la carpeta; en este equipo solo el propietario o un administrador los cambian.
+										</Typography>
+									)}
 								</Stack>
 							</Grid>
 						)}

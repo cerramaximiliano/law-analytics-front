@@ -2538,11 +2538,10 @@ const FoldersLayout = () => {
 		canDelete,
 		isInitialized: isTeamInitialized,
 		getRequestHeaders,
-		userRole,
 		isAdmin: isTeamAdmin,
 		seesOnlyOwn,
+		canEditResponsables,
 	} = useTeam();
-	const canEditResponsables = userRole === "owner" || userRole === "admin" || userRole === "editor";
 
 	// Equipos: vista por responsable («Mis carpetas / Todas / Sin responsable», o «De…» con el id
 	// de un integrante, previsto o invitado). Default «Todas». El filtro lo resuelve el hub

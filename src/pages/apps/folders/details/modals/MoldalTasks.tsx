@@ -51,7 +51,7 @@ const ModalTasks = ({
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const userId = useSelector((state: any) => state.auth?.user?._id);
-	const { getRequestHeaders, isTeamMode, activeTeam } = useTeam();
+	const { getRequestHeaders, isTeamMode, activeTeam, canEditResponsables } = useTeam();
 	// Responsables (equipos, 12/11/2026, pedido de Estudio FS Abogados): la tarea nace asignada a
 	// los responsables de la carpeta (el hub también lo resuelve si el campo no viene) y se puede
 	// cambiar acá, sin tener que ir a editarla después en Tareas.
@@ -348,7 +348,7 @@ const ModalTasks = ({
 													multiple
 													fullWidth
 													size="small"
-													disabled={isSubmitting}
+													disabled={isSubmitting || !canEditResponsables}
 													options={assignableMembers}
 													value={selectedAssignees}
 													onChange={(_event, newValue) =>
@@ -372,7 +372,9 @@ const ModalTasks = ({
 													)}
 												/>
 												<Typography variant="caption" color="text.secondary">
-													{folderResponsables.length > 0
+													{!canEditResponsables
+														? "Los responsables son los de la carpeta; en este equipo solo el propietario o un administrador los cambian."
+														: folderResponsables.length > 0
 														? "Por defecto, los responsables de la carpeta."
 														: "La carpeta no tiene responsables: asignalos acá o en «Responsables de la carpeta»."}
 												</Typography>

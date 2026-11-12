@@ -36,6 +36,8 @@ interface TeamContextType {
 	isAdmin: boolean;
 	/** El integrante ve solo lo suyo (Mi equipo → «Qué ve cada integrante»). Owner y admins: false. */
 	seesOnlyOwn: boolean;
+	/** Puede cambiar responsables de carpetas y tareas (owner/admin siempre; editor según la regla del equipo; viewer nunca). */
+	canEditResponsables: boolean;
 
 	// Utility
 	getTeamIdForResource: () => string | undefined;
@@ -69,6 +71,7 @@ const initialContextValue: TeamContextType = {
 	isOwner: false,
 	isAdmin: false,
 	seesOnlyOwn: false,
+	canEditResponsables: false,
 	getTeamIdForResource: () => undefined,
 	getUserIdForResource: () => "",
 	getRequestHeaders: () => ({}),
@@ -169,6 +172,14 @@ export function TeamProvider({ children }: TeamProviderProps) {
 	const isAdmin = userRole === "admin" || userRole === "owner";
 	// Visibilidad «solo lo suyo» (12/11/2026): el hub ya filtra los listados; el front usa esto
 	// para no mostrar solapas ni selectores «de otros» que quedarían vacíos.
+	// Regla del equipo «quién puede cambiar responsables» (12/11/2026). Espejo de
+	// services/responsablesPolicy.js del hub, que es quien la aplica de verdad.
+	const canEditResponsables = useMemo(() => {
+		if (!isTeamMode) return false;
+		if (isAdmin) return true;
+		if (userRole !== "editor") return false;
+		return activeTeam?.settings?.responsables?.editableBy !== "admins";
+	}, [isTeamMode, isAdmin, userRole, activeTeam]);
 	const seesOnlyOwn = useMemo(() => {
 		if (!isTeamMode || !activeTeam || isAdmin) return false;
 		const v = activeTeam.settings?.visibility;
@@ -329,6 +340,7 @@ export function TeamProvider({ children }: TeamProviderProps) {
 			isOwner,
 			isAdmin,
 			seesOnlyOwn,
+			canEditResponsables,
 			getTeamIdForResource,
 			getUserIdForResource,
 			getRequestHeaders,
@@ -358,6 +370,7 @@ export function TeamProvider({ children }: TeamProviderProps) {
 			isOwner,
 			isAdmin,
 			seesOnlyOwn,
+			canEditResponsables,
 			getTeamIdForResource,
 			getUserIdForResource,
 			getRequestHeaders,

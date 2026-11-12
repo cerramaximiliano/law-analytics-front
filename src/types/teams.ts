@@ -44,6 +44,8 @@ export interface TeamSettings {
 	defaultRole: "editor" | "viewer";
 	/** Qué ve cada integrante (30/10/2026): 'todo' o 'propio' (solo lo suyo), con excepciones por integrante. */
 	visibility?: { defaultMode?: "todo" | "propio"; members?: { userId: string; mode: "todo" | "propio" }[] };
+	/** Quién puede cambiar responsables de carpetas y tareas (12/11/2026): 'editores' (default) o solo 'admins'. */
+	responsables?: { editableBy?: "editores" | "admins" };
 }
 
 export interface TeamOwnerInfo {

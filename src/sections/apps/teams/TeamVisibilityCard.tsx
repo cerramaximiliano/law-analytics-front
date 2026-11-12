@@ -34,10 +34,19 @@ import { stackedTableSx, wrapOnMobileSx } from "./stackedTableSx";
 
 export type TeamVisibilityMode = "todo" | "propio";
 
+export type ResponsablesEditableBy = "editores" | "admins";
+
 interface VisibilitySettings {
 	defaultMode: TeamVisibilityMode;
 	members: { userId: string; mode: TeamVisibilityMode }[];
+	responsablesEditableBy?: ResponsablesEditableBy;
 }
+
+// Quién puede cambiar responsables de carpetas y tareas (12/11/2026, pedido de Estudio FS Abogados).
+const RESPONSABLES_OPTIONS: { value: ResponsablesEditableBy; label: string }[] = [
+	{ value: "editores", label: "Propietario, administradores y editores" },
+	{ value: "admins", label: "Solo el propietario y los administradores" },
+];
 
 const MODE_OPTIONS: { value: TeamVisibilityMode; label: string }[] = [
 	{ value: "todo", label: "Todo el equipo" },
@@ -57,7 +66,7 @@ const apiError = (error: unknown, fallback: string) =>
 // esas carpetas. El propietario y los administradores siempre ven todo. Owner/admin editan.
 export default function TeamVisibilityCard() {
 	const dispatch = useDispatch();
-	const { activeTeam, isAdmin } = useTeam();
+	const { activeTeam, isAdmin, refreshActiveTeam } = useTeam();
 	const groupId = activeTeam?._id;
 
 	const assignees = useMemo(() => getTeamAssignees(activeTeam), [activeTeam]);
@@ -78,10 +87,12 @@ export default function TeamVisibilityCard() {
 	const [saved, setSaved] = useState<VisibilitySettings | null>(null);
 	const [defaultMode, setDefaultMode] = useState<TeamVisibilityMode>("todo");
 	const [modes, setModes] = useState<Record<string, TeamVisibilityMode>>({});
+	const [responsablesEditableBy, setResponsablesEditableBy] = useState<ResponsablesEditableBy>("editores");
 
 	const applySettings = useCallback((settings: VisibilitySettings) => {
 		setSaved(settings);
 		setDefaultMode(settings.defaultMode || "todo");
+		setResponsablesEditableBy(settings.responsablesEditableBy === "admins" ? "admins" : "editores");
 		const next: Record<string, TeamVisibilityMode> = {};
 		for (const m of settings.members || []) next[String(m.userId)] = m.mode;
 		setModes(next);
@@ -125,9 +136,10 @@ export default function TeamVisibilityCard() {
 	const hasChanges = useMemo(() => {
 		if (!saved) return false;
 		if ((saved.defaultMode || "todo") !== defaultMode) return true;
+		if ((saved.responsablesEditableBy === "admins" ? "admins" : "editores") !== responsablesEditableBy) return true;
 		const savedMap = new Map((saved.members || []).map((m) => [String(m.userId), m.mode]));
 		return assignees.some((a) => !alwaysAll(a) && (savedMap.get(a.id) || saved.defaultMode || "todo") !== (modes[a.id] || defaultMode));
-	}, [saved, defaultMode, modes, assignees, alwaysAll]);
+	}, [saved, defaultMode, modes, assignees, alwaysAll, responsablesEditableBy]);
 
 	const handleSave = async () => {
 		if (!groupId) return;
@@ -135,11 +147,13 @@ export default function TeamVisibilityCard() {
 		try {
 			const response = await axios.put(
 				`${import.meta.env.VITE_BASE_URL}/api/groups/${groupId}/visibility-settings`,
-				{ defaultMode, members: membersPayload },
+				{ defaultMode, members: membersPayload, responsablesEditableBy },
 				{ headers: { "X-Group-Id": groupId } },
 			);
 			if (response.data?.success && response.data.settings) {
 				applySettings(response.data.settings);
+				// El contexto lee settings.responsables del equipo activo (selectores de responsables).
+				refreshActiveTeam().catch(() => undefined);
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -213,6 +227,35 @@ export default function TeamVisibilityCard() {
 						) : (
 							<Typography variant="body2" fontWeight={500}>
 								{DEFAULT_OPTIONS.find((o) => o.value === defaultMode)?.label}
+							</Typography>
+						)}
+					</Box>
+
+					<Box>
+						<Typography sx={{ ...headCellSx, mb: 0.5 }}>Quién puede cambiar responsables</Typography>
+						<Typography variant="caption" color="text.secondary" component="div" sx={{ mb: 0.5 }}>
+							Responsables de carpetas y de tareas. Con «solo el propietario y los administradores», los editores crean tareas que nacen con
+							los responsables de la carpeta, sin poder cambiarlos.
+						</Typography>
+						{isAdmin ? (
+							<RadioGroup
+								row
+								value={responsablesEditableBy}
+								onChange={(e) => setResponsablesEditableBy(e.target.value as ResponsablesEditableBy)}
+							>
+								{RESPONSABLES_OPTIONS.map((o) => (
+									<FormControlLabel
+										key={o.value}
+										value={o.value}
+										control={<Radio size="small" />}
+										label={<Typography variant="body2">{o.label}</Typography>}
+										disabled={saving}
+									/>
+								))}
+							</RadioGroup>
+						) : (
+							<Typography variant="body2" fontWeight={500}>
+								{RESPONSABLES_OPTIONS.find((o) => o.value === responsablesEditableBy)?.label}
 							</Typography>
 						)}
 					</Box>
