@@ -1,28 +1,26 @@
-// Cédulas de una carpeta PJN (12/11/2026): GET /api/folders/:folderId/cedulas.
-// Une los movimientos CEDULA del espejo con la bandeja de notificaciones del portal.
-
-export type PjnCedulaClase = "cedula" | "parte" | "tribunal" | "incorporada" | "retorno";
+// Notificaciones de la bandeja del PJN de una carpeta (12/11/2026): GET /api/folders/:folderId/cedulas.
+// Fuente única: pjn-notifications (bandeja RECIBIDAS de notif.pjn.gov.ar, sincronizada por credencial).
 
 export interface PjnCedula {
-	/** Movimiento: "{causaId}:{sourceId}". Bandeja sin movimiento: "bandeja:{sourceId}". */
+	/** "bandeja:{sourceId}" */
 	id: string;
-	fuente: "movimiento" | "bandeja";
-	clase: PjnCedulaClase;
+	sourceId: number;
+	/** ISO exacto: fecha y hora de la notificación en el portal. */
 	fecha: string | null;
-	tipo: string | null;
-	detalle: string | null;
 	numeroCedula: string | null;
-	/** ISO exacto si viene de la bandeja; YYYY-MM-DD si se leyó del PDF. */
-	notificadaEl: string | null;
-	notificadaFuente: "bandeja" | "documento" | null;
+	oficina: string | null;
+	autor: string | null;
 	destinatarios: string[];
+	expediente: { numero: number | null; anio: number | null; numeracion: string | null; caratula: string | null };
+	/** vinculada | sin_movimiento | sin_causa | fuero_desconocido | datos_incompletos */
+	vinculo: string | null;
+	/** Movimiento CEDULA del espejo ya vinculado ("{causaId}:{sourceId}"), si lo hay. */
+	movementId: string | null;
+	movimientoTipo: string | null;
+	hasPdf: boolean;
 	/** YYYY-MM-DD calculado por plazos automáticos, si existe. */
 	vencimiento: string | null;
 	plazoEstado: string | null;
-	hasPdf: boolean;
-	url: string | null;
-	respaldo?: boolean;
-	vinculo?: string | null;
 }
 
 export interface PjnCedulasResponse {
@@ -30,7 +28,4 @@ export interface PjnCedulasResponse {
 	count: number;
 	data: PjnCedula[];
 	message?: string;
-	requiresUpgrade?: boolean;
-	ocultas?: number;
-	accessCutoffAt?: string;
 }

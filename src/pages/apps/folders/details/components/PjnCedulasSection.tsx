@@ -29,25 +29,9 @@ interface Props {
 	searchQuery?: string;
 }
 
-const CLASE_LABEL: Record<PjnCedula["clase"], string> = {
-	cedula: "Cédula",
-	parte: "Cédula a la parte",
-	tribunal: "Cédula del tribunal",
-	incorporada: "Cédula incorporada",
-	retorno: "Retorno de cédula",
-};
-
-const fmtFecha = (v: string | null) => {
-	if (!v) return "—";
-	// YYYY-MM-DD (leído del PDF) o ISO exacto (bandeja).
-	if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return dayjs(v).format("DD/MM/YYYY");
-	const p = dayjs(v);
-	return p.isValid() ? p.format("DD/MM/YYYY HH:mm") : "—";
-};
-
-// Cédulas del PJN de la carpeta (12/11/2026, pedido de Estudio FS Abogados): las notificaciones
-// del juzgado al domicilio electrónico, juntas, arriba de las notificaciones manuales. Lee
-// GET /api/folders/:id/cedulas (movimientos CEDULA + bandeja del portal).
+// Notificaciones de la bandeja del PJN de la carpeta (12/11/2026, pedido de Estudio FS Abogados):
+// las cédulas que el juzgado notificó al domicilio electrónico, juntas, arriba de las
+// notificaciones manuales. Lee GET /api/folders/:id/cedulas (solo pjn-notifications).
 const PjnCedulasSection: React.FC<Props> = ({ folderId, searchQuery = "" }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
@@ -65,7 +49,7 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, searchQuery = "" }) => {
 				if (!cancelled) setData(r);
 			})
 			.catch((e) => {
-				if (!cancelled) setError(e?.response?.data?.message || "No se pudieron cargar las cédulas");
+				if (!cancelled) setError(e?.response?.data?.message || "No se pudieron cargar las notificaciones de la bandeja");
 			})
 			.finally(() => {
 				if (!cancelled) setLoading(false);
@@ -78,7 +62,7 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, searchQuery = "" }) => {
 	const q = searchQuery.trim().toLowerCase();
 	const filas = (data?.data || []).filter((c) =>
 		q
-			? [c.tipo, c.detalle, c.numeroCedula, ...(c.destinatarios || [])].some((v) =>
+			? [c.numeroCedula, c.oficina, c.autor, ...(c.destinatarios || [])].some((v) =>
 					String(v || "")
 						.toLowerCase()
 						.includes(q),
@@ -86,22 +70,25 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, searchQuery = "" }) => {
 			: true,
 	);
 
-	// Abre el movimiento en Actividad → Movimientos (deep-link ?movement=&open=1).
+	// Abre el movimiento vinculado en Actividad → Movimientos (deep-link ?movement=&open=1).
 	const verMovimiento = (c: PjnCedula) => {
+		if (!c.movementId) return;
+		const movementId = c.movementId;
 		setSearchParams((prev) => {
 			const next = new URLSearchParams(prev);
-			next.set("movement", c.id);
+			next.set("movement", movementId);
 			next.set("open", "1");
 			return next;
 		});
 	};
 	const verPdf = async (c: PjnCedula) => {
+		if (!c.movementId) return;
 		try {
-			const r = await getPjnMovementPdfUrl(folderId, c.id);
-			const url = r?.pdfUrl || (r as any)?.fallbackUrl || c.url;
+			const r = await getPjnMovementPdfUrl(folderId, c.movementId);
+			const url = r?.pdfUrl || (r as any)?.fallbackUrl;
 			if (url) window.open(url, "_blank", "noopener");
 		} catch {
-			if (c.url) window.open(c.url, "_blank", "noopener");
+			/* sin PDF disponible */
 		}
 	};
 
@@ -127,11 +114,10 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, searchQuery = "" }) => {
 		>
 			<Stack direction="row" alignItems="center" spacing={1} sx={{ px: 2, py: 1.25, bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03) }}>
 				<NotificationStatus size={16} variant="Bulk" color={BRAND_BLUE} />
-				<Typography sx={{ fontSize: "0.82rem", fontWeight: 600 }}>Cédulas del expediente</Typography>
+				<Typography sx={{ fontSize: "0.82rem", fontWeight: 600 }}>Notificaciones del juzgado (bandeja del PJN)</Typography>
 				{data && (
 					<Typography variant="caption" color="text.secondary">
 						{data.count === 1 ? "1 cédula" : `${data.count} cédulas`}
-						{data.requiresUpgrade && data.ocultas ? ` · ${data.ocultas} más en el historial` : ""}
 					</Typography>
 				)}
 			</Stack>
@@ -148,19 +134,17 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, searchQuery = "" }) => {
 					{data?.message ||
 						(q
 							? "Ninguna cédula coincide con la búsqueda."
-							: data?.requiresUpgrade && data.ocultas
-							? "Las cédulas de este expediente están en el historial completo, que muestran los planes pagos."
-							: "El juzgado todavía no notificó cédulas en este expediente.")}
+							: "No hay cédulas de este expediente en la bandeja de notificaciones del PJN de la cuenta vinculada.")}
 				</Typography>
 			) : (
 				<TableContainer>
 					<Table size="small" sx={{ "& td, & th": { fontSize: "0.8rem", verticalAlign: "top" } }}>
 						<TableHead>
 							<TableRow>
-								<TableCell sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>Fecha</TableCell>
-								<TableCell sx={{ fontWeight: 700 }}>Tipo</TableCell>
-								<TableCell sx={{ fontWeight: 700 }}>Detalle</TableCell>
 								<TableCell sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>Notificada</TableCell>
+								<TableCell sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>N° cédula</TableCell>
+								<TableCell sx={{ fontWeight: 700 }}>Oficina / autor</TableCell>
+								<TableCell sx={{ fontWeight: 700 }}>Destinatario</TableCell>
 								<TableCell sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>Vencimiento</TableCell>
 								<TableCell sx={{ fontWeight: 700, whiteSpace: "nowrap" }} align="right">
 									Acciones
@@ -170,64 +154,46 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, searchQuery = "" }) => {
 						<TableBody>
 							{filas.map((c) => (
 								<TableRow key={c.id} hover data-testid="pjn-cedula-row">
-									<TableCell sx={{ whiteSpace: "nowrap" }}>{c.fecha ? dayjs(c.fecha).format("DD/MM/YYYY") : "—"}</TableCell>
+									<TableCell sx={{ whiteSpace: "nowrap" }}>{c.fecha ? dayjs(c.fecha).format("DD/MM/YYYY HH:mm") : "—"}</TableCell>
+									<TableCell sx={{ whiteSpace: "nowrap" }}>{c.numeroCedula || "—"}</TableCell>
 									<TableCell>
-										<Stack spacing={0.25}>
-											<Typography sx={{ fontSize: "0.8rem", fontWeight: 600 }}>{CLASE_LABEL[c.clase]}</Typography>
-											{c.numeroCedula && (
-												<Typography variant="caption" color="text.secondary">
-													N° {c.numeroCedula}
-												</Typography>
-											)}
-											{c.fuente === "bandeja" && (
-												<Typography variant="caption" color="text.secondary">
-													Bandeja del portal
-												</Typography>
-											)}
-										</Stack>
-									</TableCell>
-									<TableCell>
-										<Typography sx={{ fontSize: "0.8rem" }}>{c.detalle || "—"}</Typography>
-										{c.destinatarios.length > 0 && (
+										<Typography sx={{ fontSize: "0.8rem" }}>{c.oficina || "—"}</Typography>
+										{c.autor && (
 											<Typography variant="caption" color="text.secondary">
-												A: {c.destinatarios.join(", ")}
+												{c.autor}
 											</Typography>
 										)}
 									</TableCell>
-									<TableCell sx={{ whiteSpace: "nowrap" }}>
-										<Tooltip
-											title={
-												c.notificadaFuente === "bandeja"
-													? "Fecha exacta de la bandeja de notificaciones"
-													: c.notificadaFuente === "documento"
-													? "Leída del PDF de la cédula"
-													: ""
-											}
-										>
-											<span>{fmtFecha(c.notificadaEl)}</span>
-										</Tooltip>
-									</TableCell>
+									<TableCell>{c.destinatarios.length ? c.destinatarios.join(", ") : "—"}</TableCell>
 									<TableCell sx={{ whiteSpace: "nowrap" }}>{vencChip(c)}</TableCell>
 									<TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-										{c.fuente === "movimiento" && (
-											<Button
-												size="small"
-												startIcon={<Eye size={14} />}
-												onClick={() => verMovimiento(c)}
-												sx={{ textTransform: "none", fontSize: "0.75rem" }}
-											>
-												Movimiento
-											</Button>
-										)}
-										{(c.hasPdf || c.url) && (
-											<Button
-												size="small"
-												startIcon={<DocumentText size={14} />}
-												onClick={() => verPdf(c)}
-												sx={{ textTransform: "none", fontSize: "0.75rem" }}
-											>
-												PDF
-											</Button>
+										{c.movementId ? (
+											<>
+												<Button
+													size="small"
+													startIcon={<Eye size={14} />}
+													onClick={() => verMovimiento(c)}
+													sx={{ textTransform: "none", fontSize: "0.75rem" }}
+												>
+													Movimiento
+												</Button>
+												{c.hasPdf && (
+													<Button
+														size="small"
+														startIcon={<DocumentText size={14} />}
+														onClick={() => verPdf(c)}
+														sx={{ textTransform: "none", fontSize: "0.75rem" }}
+													>
+														PDF
+													</Button>
+												)}
+											</>
+										) : (
+											<Tooltip title="La cédula todavía no aparece entre los movimientos del expediente; se vincula sola cuando el juzgado la carga.">
+												<Typography variant="caption" color="text.secondary">
+													Sin movimiento aún
+												</Typography>
+											</Tooltip>
 										)}
 									</TableCell>
 								</TableRow>
@@ -235,12 +201,6 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, searchQuery = "" }) => {
 						</TableBody>
 					</Table>
 				</TableContainer>
-			)}
-			{data?.requiresUpgrade && (
-				<Alert severity="info" sx={{ m: 2, mt: 0 }}>
-					Tu plan muestra solo las cédulas de los últimos movimientos
-					{data.ocultas ? ` (${data.ocultas} más en el historial)` : ""}. Los planes pagos muestran todas.
-				</Alert>
 			)}
 		</Box>
 	);
