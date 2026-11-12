@@ -1,6 +1,8 @@
 // Notificaciones de la bandeja del PJN de una carpeta (12/11/2026): GET /api/folders/:folderId/cedulas.
 // Fuente única: pjn-notifications (bandeja RECIBIDAS de notif.pjn.gov.ar, sincronizada por credencial).
 
+import type { PjnMovement } from "types/pjnMovement";
+
 export interface PjnCedula {
 	/** "bandeja:{sourceId}" */
 	id: string;
@@ -17,6 +19,8 @@ export interface PjnCedula {
 	/** Movimiento CEDULA del espejo ya vinculado ("{causaId}:{sourceId}"), si lo hay. */
 	movementId: string | null;
 	movimientoTipo: string | null;
+	/** El movimiento vinculado con el shape del viewer, para abrir la cédula en PjnPdfViewer. */
+	movimiento: PjnMovement | null;
 	hasPdf: boolean;
 	/** YYYY-MM-DD calculado por plazos automáticos, si existe. */
 	vencimiento: string | null;

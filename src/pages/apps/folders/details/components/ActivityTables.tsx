@@ -1511,7 +1511,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 													/>
 												))}
 											{activeTab === "notifications" && scrapingSource === "pjn" && isSyncedFolder && id && (
-												<PjnCedulasSection folderId={id} searchQuery={searchQuery} />
+												<PjnCedulasSection folderId={id} folderName={folderName} searchQuery={searchQuery} />
 											)}
 											{activeTab === "notifications" && (
 												<NotificationsTable
@@ -2084,7 +2084,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 													/>
 												))}
 											{activeTab === "notifications" && scrapingSource === "pjn" && isSyncedFolder && id && (
-												<PjnCedulasSection folderId={id} searchQuery={searchQuery} />
+												<PjnCedulasSection folderId={id} folderName={folderName} searchQuery={searchQuery} />
 											)}
 											{activeTab === "notifications" && (
 												<NotificationsTable

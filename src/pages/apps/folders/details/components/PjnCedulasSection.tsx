@@ -17,25 +17,25 @@ import {
 	useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { DocumentText, Eye, NotificationStatus } from "iconsax-react";
-import { useSearchParams } from "react-router-dom";
+import { DocumentText, NotificationStatus } from "iconsax-react";
 import dayjs from "utils/dayjs-config";
-import { getPjnCedulasByFolder, getPjnMovementPdfUrl } from "services/pjnMovementsService";
+import { getPjnCedulasByFolder } from "services/pjnMovementsService";
 import type { PjnCedula, PjnCedulasResponse } from "types/pjnCedula";
+import PjnPdfViewer from "components/PjnPdfViewer";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 
 interface Props {
 	folderId: string;
+	folderName?: string;
 	searchQuery?: string;
 }
 
 // Notificaciones de la bandeja del PJN de la carpeta (12/11/2026, pedido de Estudio FS Abogados):
 // las cédulas que el juzgado notificó al domicilio electrónico, juntas, arriba de las
 // notificaciones manuales. Lee GET /api/folders/:id/cedulas (solo pjn-notifications).
-const PjnCedulasSection: React.FC<Props> = ({ folderId, searchQuery = "" }) => {
+const PjnCedulasSection: React.FC<Props> = ({ folderId, folderName, searchQuery = "" }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
-	const [, setSearchParams] = useSearchParams();
 	const [data, setData] = useState<PjnCedulasResponse | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -70,27 +70,15 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, searchQuery = "" }) => {
 			: true,
 	);
 
-	// Abre el movimiento vinculado en Actividad → Movimientos (deep-link ?movement=&open=1).
-	const verMovimiento = (c: PjnCedula) => {
-		if (!c.movementId) return;
-		const movementId = c.movementId;
-		setSearchParams((prev) => {
-			const next = new URLSearchParams(prev);
-			next.set("movement", movementId);
-			next.set("open", "1");
-			return next;
-		});
+	// La cédula se abre con el mismo visor de PDF que Actividad → Movimientos, sobre su
+	// movimiento vinculado; anterior/siguiente recorren solo las cédulas con movimiento.
+	const conMovimiento = filas.filter((c) => c.movimiento);
+	const [viewerIdx, setViewerIdx] = useState<number | null>(null);
+	const abrirCedula = (c: PjnCedula) => {
+		const idx = conMovimiento.findIndex((x) => x.id === c.id);
+		if (idx >= 0) setViewerIdx(idx);
 	};
-	const verPdf = async (c: PjnCedula) => {
-		if (!c.movementId) return;
-		try {
-			const r = await getPjnMovementPdfUrl(folderId, c.movementId);
-			const url = r?.pdfUrl || (r as any)?.fallbackUrl;
-			if (url) window.open(url, "_blank", "noopener");
-		} catch {
-			/* sin PDF disponible */
-		}
-	};
+	const viewerMovement = viewerIdx !== null ? conMovimiento[viewerIdx]?.movimiento || null : null;
 
 	const hoy = dayjs().startOf("day");
 	const vencChip = (c: PjnCedula) => {
@@ -167,31 +155,21 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, searchQuery = "" }) => {
 									<TableCell>{c.destinatarios.length ? c.destinatarios.join(", ") : "—"}</TableCell>
 									<TableCell sx={{ whiteSpace: "nowrap" }}>{vencChip(c)}</TableCell>
 									<TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-										{c.movementId ? (
-											<>
-												<Button
-													size="small"
-													startIcon={<Eye size={14} />}
-													onClick={() => verMovimiento(c)}
-													sx={{ textTransform: "none", fontSize: "0.75rem" }}
-												>
-													Movimiento
-												</Button>
-												{c.hasPdf && (
-													<Button
-														size="small"
-														startIcon={<DocumentText size={14} />}
-														onClick={() => verPdf(c)}
-														sx={{ textTransform: "none", fontSize: "0.75rem" }}
-													>
-														PDF
-													</Button>
-												)}
-											</>
+										{c.movimiento ? (
+											<Button
+												size="small"
+												variant="outlined"
+												startIcon={<DocumentText size={14} />}
+												onClick={() => abrirCedula(c)}
+												data-testid="pjn-cedula-ver"
+												sx={{ textTransform: "none", fontSize: "0.75rem" }}
+											>
+												Ver cédula
+											</Button>
 										) : (
-											<Tooltip title="La cédula todavía no aparece entre los movimientos del expediente; se vincula sola cuando el juzgado la carga.">
+											<Tooltip title="La cédula todavía no aparece entre los movimientos del expediente; el PDF se incorpora cuando el juzgado la carga.">
 												<Typography variant="caption" color="text.secondary">
-													Sin movimiento aún
+													PDF no disponible aún
 												</Typography>
 											</Tooltip>
 										)}
@@ -202,6 +180,17 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, searchQuery = "" }) => {
 					</Table>
 				</TableContainer>
 			)}
+			<PjnPdfViewer
+				open={viewerIdx !== null && Boolean(viewerMovement)}
+				onClose={() => setViewerIdx(null)}
+				folderId={folderId}
+				folderName={folderName}
+				movement={viewerMovement}
+				onPrev={() => setViewerIdx((i) => (i !== null && i > 0 ? i - 1 : i))}
+				onNext={() => setViewerIdx((i) => (i !== null && i < conMovimiento.length - 1 ? i + 1 : i))}
+				hasPrev={viewerIdx !== null && viewerIdx > 0}
+				hasNext={viewerIdx !== null && viewerIdx < conMovimiento.length - 1}
+			/>
 		</Box>
 	);
 };
