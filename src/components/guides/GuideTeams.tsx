@@ -1,7 +1,23 @@
 import React from "react";
 
 // material-ui
-import { Typography, Box, Alert, AlertTitle, Stack, Paper, Grid, styled, alpha } from "@mui/material";
+import {
+	Typography,
+	Box,
+	Alert,
+	AlertTitle,
+	Stack,
+	Paper,
+	Grid,
+	styled,
+	alpha,
+	Table,
+	TableBody,
+	TableCell,
+	TableContainer,
+	TableHead,
+	TableRow,
+} from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
 // project imports
@@ -84,6 +100,63 @@ const Card = ({ icon, title, color, children }: { icon: React.ReactNode; title: 
 				{children}
 			</Typography>
 		</Paper>
+	);
+};
+
+// Tabla comparativa (12/11/2026): qué ve, qué puede hacer y qué avisos recibe cada rol según la
+// opción que elige el propietario. La primera columna es la fila (rol o modo); las demás, opciones.
+const GuideTable = ({
+	title,
+	color,
+	columns,
+	rows,
+	note,
+}: {
+	title: string;
+	color: Palette;
+	columns: string[];
+	rows: { label: React.ReactNode; cells: React.ReactNode[] }[];
+	note?: React.ReactNode;
+}) => {
+	const theme = useTheme();
+	return (
+		<StyledPaper>
+			<Box sx={{ p: 2, bgcolor: alpha(theme.palette[color].lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
+				<Typography variant="subtitle1" fontWeight="bold">
+					{title}
+				</Typography>
+			</Box>
+			<TableContainer>
+				<Table size="small" sx={{ minWidth: 480, "& td, & th": { verticalAlign: "top", fontSize: "0.82rem" } }}>
+					<TableHead>
+						<TableRow>
+							{columns.map((c, i) => (
+								<TableCell key={i} sx={{ fontWeight: 700, lineHeight: 1.3 }}>
+									{c}
+								</TableCell>
+							))}
+						</TableRow>
+					</TableHead>
+					<TableBody>
+						{rows.map((r, i) => (
+							<TableRow key={i}>
+								<TableCell sx={{ fontWeight: 600, minWidth: 120 }}>{r.label}</TableCell>
+								{r.cells.map((c, j) => (
+									<TableCell key={j}>{c}</TableCell>
+								))}
+							</TableRow>
+						))}
+					</TableBody>
+				</Table>
+			</TableContainer>
+			{note && (
+				<Box sx={{ p: 2, pt: 1.5 }}>
+					<Typography variant="body2" color="text.secondary">
+						{note}
+					</Typography>
+				</Box>
+			)}
+		</StyledPaper>
 	);
 };
 
@@ -247,8 +320,8 @@ const RolesContent = () => (
 			</Grid>
 			<Grid item xs={12} md={6}>
 				<Card icon={<Edit size={24} />} title="Editor" color="success">
-					Para los abogados. Crea y edita causas, tareas, eventos, contactos y escritos, y asigna responsables. No borra ni gestiona
-					integrantes.
+					Para los abogados. Crea y edita causas, tareas, eventos, contactos y escritos. Asigna responsables solo si la regla del equipo lo
+					permite. No borra ni gestiona integrantes.
 				</Card>
 			</Grid>
 			<Grid item xs={12} md={6}>
@@ -287,8 +360,32 @@ const ResponsablesContent = () => (
 				<>
 					<strong>De a muchas:</strong> marcá carpetas y usá «Asignar responsable (N)» con Reemplazar, Agregar o Quitar
 				</>,
-				<>Pueden hacerlo el propietario, los Administradores y los Editores</>,
+				<>
+					Pueden hacerlo el propietario y los Administradores; los Editores, solo si la regla{" "}
+					<strong>«Quién puede cambiar responsables»</strong> (Mi equipo → Qué ve cada integrante) está en «propietario, administradores y
+					editores»
+				</>,
 			]}
+		/>
+		<GuideTable
+			title="Quién puede cambiar responsables, según la regla del equipo"
+			color="warning"
+			columns={["Rol", "Propietario, administradores y editores (predeterminada)", "Solo el propietario y los administradores"]}
+			rows={[
+				{
+					label: "Propietario y Administrador",
+					cells: ["Cambian responsables de carpetas y tareas", "Cambian responsables de carpetas y tareas"],
+				},
+				{
+					label: "Editor",
+					cells: [
+						"Cambia responsables de carpetas y tareas; elige los responsables al crear una tarea",
+						"No cambia responsables. Crea tareas, que nacen con los responsables de la carpeta; el selector aparece bloqueado",
+					],
+				},
+				{ label: "Visualizador", cells: ["Solo consulta", "Solo consulta"] },
+			]}
+			note="Pensada para estudios donde una sola persona reparte el trabajo: nadie se reasigna causas ni tareas por su cuenta."
 		/>
 		<Section
 			title="Repartir carpetas por criterios"
@@ -321,8 +418,9 @@ const ResponsablesContent = () => (
 			color="info"
 			items={[
 				<>
-					En Carpetas: selector <strong>Mis carpetas / Todas / Sin responsable</strong> y <strong>De…</strong> (un integrante, previsto o
-					invitado), filtros por juzgado y fuero, y la columna «Radicación»
+					En Carpetas: selector <strong>Mis carpetas / Todas / Sin responsable</strong>, filtros por juzgado y fuero, y la columna
+					«Radicación». <strong>De…</strong> (un integrante, previsto o invitado) lo ven el propietario y los Administradores; quien ve solo
+					lo suyo no tiene estas solapas: su lista ya es solo lo suyo
 				</>,
 				<>
 					Para controlar un juzgado: filtro <strong>Juzgado</strong> + «Sin movimiento hace más de 1, 3, 6 meses o 1 año» +{" "}
@@ -358,7 +456,12 @@ const TasksEventsContent = () => (
 			}
 			items={[
 				<>
-					Vistas <strong>Mis tareas / Todas / Sin asignar</strong> y filtro <strong>Responsable</strong>; Imprimir agrupa por responsable
+					<strong>Una tarea nueva con carpeta nace con los responsables de la carpeta</strong>, se cree desde el expediente o desde Tareas.
+					Se pueden cambiar antes de guardar si la regla del equipo lo permite
+				</>,
+				<>
+					Vistas <strong>Mis tareas / Todas / Sin asignar</strong> y filtro <strong>Responsable</strong> (el filtro, propietario y
+					Administradores); Imprimir agrupa por responsable. Quien ve solo lo suyo no tiene las vistas: su lista ya es solo lo suyo
 				</>,
 				<>Los recordatorios le llegan a cada responsable; sin responsables, a quien la creó</>,
 			]}
@@ -376,7 +479,8 @@ const TasksEventsContent = () => (
 					<strong>Con carpeta:</strong> a los responsables de esa carpeta (si no tiene, a todo el equipo)
 				</>,
 				<>
-					<strong>Sin carpeta:</strong> a todo el equipo
+					<strong>Sin carpeta:</strong> a todo el equipo. Quien ve solo lo suyo lo crea «Solo para mí» por defecto, y al elegirle carpeta
+					pasa a avisar a sus responsables
 				</>,
 				<>
 					<Lock size={14} style={{ marginRight: 4 }} />
@@ -405,12 +509,42 @@ const NotificationsContent = () => (
 					todos)
 				</>,
 				<>
-					<strong>De una carpeta:</strong> «Según el equipo», «Solo responsables» o «Todos»
+					<strong>De una carpeta:</strong> «Regla del equipo: …» (muestra cuál aplica hoy), «Solo responsables» o «Todos»
 				</>,
 				<>
 					<strong>Por integrante:</strong> «Según cada carpeta», «Todo» o «Solo lo mío»
 				</>,
 			]}
+		/>
+		<GuideTable
+			title="Qué avisos recibe cada integrante, según la regla del equipo"
+			color="primary"
+			columns={["Modo del integrante", "Regla «Todos los integrantes» (predeterminada)", "Regla «Solo los responsables de cada carpeta»"]}
+			rows={[
+				{
+					label: "Según cada carpeta (predeterminado)",
+					cells: [
+						"Movimientos, cédulas y eventos de todas las carpetas (salvo las que tengan regla propia «Solo responsables»)",
+						"Solo los de las carpetas donde es responsable (y los de carpetas sin responsable, o con regla propia «Todos»)",
+					],
+				},
+				{
+					label: "Todo",
+					cells: [
+						"Todo el equipo, siempre",
+						"Todo el equipo, siempre. Es el modo para el propietario o el administrador que quiere ver todo",
+					],
+				},
+				{ label: "Solo lo mío", cells: ["Solo sus carpetas", "Solo sus carpetas"] },
+			]}
+			note={
+				<>
+					Las tareas avisan a sus responsables (sin responsables, a quien las creó) con cualquier regla. Los eventos siguen a los
+					responsables de su carpeta; sin carpeta, a todo el equipo; «Solo para mí», solo a quien lo creó. El propietario y los
+					Administradores no reciben más avisos por su rol: para recibir todo, su modo tiene que ser «Todo». Quien ve solo lo suyo nunca
+					recibe avisos de carpetas que no ve.
+				</>
+			}
 		/>
 		<Alert severity="info">
 			<Typography>
@@ -437,6 +571,37 @@ const VisibilityContent = () => (
 				<>Tareas asignadas a él, creadas por él o de sus carpetas</>,
 				<>Eventos que creó, los de sus carpetas y los del equipo sin carpeta</>,
 			]}
+		/>
+		<GuideTable
+			title="Qué ve y qué puede hacer cada rol, según la opción elegida"
+			color="success"
+			columns={["Rol", "«Todos ven todo» (predeterminada)", "«Cada integrante ve solo lo suyo»"]}
+			rows={[
+				{
+					label: "Propietario y Administrador",
+					cells: [
+						"Ven todo. Crean, editan, borran, asignan responsables, configuran avisos y visibilidad",
+						"Ven todo, igual. Son quienes reparten las carpetas y deciden las excepciones",
+					],
+				},
+				{
+					label: "Editor",
+					cells: [
+						"Ve todas las carpetas, tareas y eventos del equipo. Crea y edita; cambia responsables si la regla lo permite",
+						"Ve solo sus carpetas, sus tareas y sus eventos. Crea y edita dentro de eso; una carpeta ajena abierta por enlace le dice «no está asignada a vos»",
+					],
+				},
+				{
+					label: "Visualizador",
+					cells: ["Ve todo el equipo, sin editar", "Ve solo sus carpetas, tareas y eventos, sin editar"],
+				},
+			]}
+			note={
+				<>
+					Para que una persona vea una carpeta puntual que no es suya, agregala como responsable de esa carpeta: la visibilidad sigue a los
+					responsables. Las excepciones por persona («Todo el equipo» / «Solo lo suyo») se configuran en la misma pantalla.
+				</>
+			}
 		/>
 		<Alert severity="warning">
 			<Typography>

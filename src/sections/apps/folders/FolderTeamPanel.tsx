@@ -73,7 +73,7 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 	const teamDefault = activeTeam?.settings?.notifications?.defaultPolicy === "responsables" ? "responsables" : "todos";
 	const teamDefaultLabel = teamDefault === "responsables" ? "solo responsables" : "todos";
 	const policyLabel = (o: { value: FolderNotificationPolicy; label: string }) =>
-		o.value === "equipo" ? `${o.label} (hoy: ${teamDefaultLabel})` : o.label;
+		o.value === "equipo" ? `Regla del equipo: ${teamDefaultLabel}` : o.label;
 	const policyOption = FOLDER_POLICY_OPTIONS.find((o) => o.value === policy) || FOLDER_POLICY_OPTIONS[0];
 
 	const [editOpen, setEditOpen] = useState(false);
