@@ -19,8 +19,9 @@ import {
 import { alpha } from "@mui/material/styles";
 import { DocumentText, NotificationStatus } from "iconsax-react";
 import dayjs from "utils/dayjs-config";
-import { getPjnCedulasByFolder } from "services/pjnMovementsService";
+import { getPjnCedulasByFolder, getPjnCedulaPdfUrl } from "services/pjnMovementsService";
 import type { PjnCedula, PjnCedulasResponse } from "types/pjnCedula";
+import type { PjnMovement } from "types/pjnMovement";
 import PjnPdfViewer from "components/PjnPdfViewer";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 
@@ -70,15 +71,31 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, folderName, searchQuery 
 			: true,
 	);
 
-	// La cédula se abre con el mismo visor de PDF que Actividad → Movimientos, sobre su
-	// movimiento vinculado; anterior/siguiente recorren solo las cédulas con movimiento.
-	const conMovimiento = filas.filter((c) => c.movimiento);
+	// La cédula se abre con el mismo visor de PDF que Actividad → Movimientos: sobre su
+	// movimiento vinculado o, si no lo tiene, sobre el PDF bajado de la bandeja (pseudo
+	// movimiento + resolver de URL). Anterior/siguiente recorren las que se pueden abrir.
+	const tienePdf = (c: PjnCedula) => Boolean(c.movimiento || c.pdf?.status === "downloaded");
+	const abribles = filas.filter(tienePdf);
 	const [viewerIdx, setViewerIdx] = useState<number | null>(null);
 	const abrirCedula = (c: PjnCedula) => {
-		const idx = conMovimiento.findIndex((x) => x.id === c.id);
+		const idx = abribles.findIndex((x) => x.id === c.id);
 		if (idx >= 0) setViewerIdx(idx);
 	};
-	const viewerMovement = viewerIdx !== null ? conMovimiento[viewerIdx]?.movimiento || null : null;
+	const actual = viewerIdx !== null ? abribles[viewerIdx] || null : null;
+	const viewerMovement: PjnMovement | null = actual
+		? actual.movimiento || {
+				_id: actual.id,
+				fecha: actual.fecha,
+				tipo: "CEDULA ELECTRONICA (bandeja del PJN)",
+				detalle: [actual.numeroCedula ? `Cédula N° ${actual.numeroCedula}` : null, actual.oficina].filter(Boolean).join(" · ") || null,
+				url: null,
+				pdfStatus: "downloaded",
+				pdfBytes: actual.pdf?.bytes || undefined,
+				hasPdf: true,
+				read: true,
+		  }
+		: null;
+	const pdfUrlResolver = actual && !actual.movimiento ? () => getPjnCedulaPdfUrl(folderId, actual.sourceId) : undefined;
 
 	const hoy = dayjs().startOf("day");
 	const vencChip = (c: PjnCedula) => {
@@ -155,7 +172,7 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, folderName, searchQuery 
 									<TableCell>{c.destinatarios.length ? c.destinatarios.join(", ") : "—"}</TableCell>
 									<TableCell sx={{ whiteSpace: "nowrap" }}>{vencChip(c)}</TableCell>
 									<TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-										{c.movimiento ? (
+										{tienePdf(c) ? (
 											<Button
 												size="small"
 												variant="outlined"
@@ -187,9 +204,10 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, folderName, searchQuery 
 				folderName={folderName}
 				movement={viewerMovement}
 				onPrev={() => setViewerIdx((i) => (i !== null && i > 0 ? i - 1 : i))}
-				onNext={() => setViewerIdx((i) => (i !== null && i < conMovimiento.length - 1 ? i + 1 : i))}
+				onNext={() => setViewerIdx((i) => (i !== null && i < abribles.length - 1 ? i + 1 : i))}
 				hasPrev={viewerIdx !== null && viewerIdx > 0}
-				hasNext={viewerIdx !== null && viewerIdx < conMovimiento.length - 1}
+				hasNext={viewerIdx !== null && viewerIdx < abribles.length - 1}
+				pdfUrlResolver={pdfUrlResolver}
 			/>
 		</Box>
 	);

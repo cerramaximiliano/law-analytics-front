@@ -85,3 +85,15 @@ export async function getPjnCedulasByFolder(folderId: string): Promise<PjnCedula
 	const response = await axios.get<PjnCedulasResponse>(url, { withCredentials: true });
 	return response.data;
 }
+
+// URL firmada del PDF bajado de la bandeja (cédulas sin movimiento), 12/11/2026.
+export async function getPjnCedulaPdfUrl(folderId: string, sourceId: number): Promise<PjnMovementPdfUrlResponse> {
+	const url = `${getBaseUrl()}/api/folders/${folderId}/cedulas/${sourceId}/pdf-url`;
+	try {
+		const response = await axios.get<PjnMovementPdfUrlResponse>(url, { withCredentials: true });
+		return response.data;
+	} catch (err: any) {
+		if (err?.response?.data) return err.response.data as PjnMovementPdfUrlResponse;
+		throw err;
+	}
+}

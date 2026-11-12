@@ -22,6 +22,8 @@ export interface PjnCedula {
 	/** El movimiento vinculado con el shape del viewer, para abrir la cédula en PjnPdfViewer. */
 	movimiento: PjnMovement | null;
 	hasPdf: boolean;
+	/** PDF bajado de la bandeja por pjn-mis-causas (para las cédulas sin movimiento). */
+	pdf: { status: "downloaded" | "pending" | "failed" | "not_available"; bytes: number | null };
 	/** YYYY-MM-DD calculado por plazos automáticos, si existe. */
 	vencimiento: string | null;
 	plazoEstado: string | null;

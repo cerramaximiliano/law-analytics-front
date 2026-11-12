@@ -56,7 +56,7 @@ import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
 import ModalTasks from "pages/apps/folders/details/modals/MoldalTasks";
 import AddEventFrom from "sections/apps/calendar/AddEventForm";
 import { getPjnMovementPdfUrl, setPjnMovementReadStatus } from "services/pjnMovementsService";
-import type { PjnMovement, PjnMovementPdfStatus } from "types/pjnMovement";
+import type { PjnMovement, PjnMovementPdfStatus, PjnMovementPdfUrlResponse } from "types/pjnMovement";
 import type { Note } from "types/note";
 import type { TaskType } from "types/task";
 import type { Event as CalendarEvent } from "types/events";
@@ -77,6 +77,9 @@ interface PjnPdfViewerProps {
 	// Abre el visor con el panel lateral desplegado en esta sub-pestaña (deep-link
 	// ?action= de la vista pública). null/undefined = comportamiento normal.
 	initialPanelTab?: "notas" | "tareas" | "vencimientos" | null;
+	// Cédulas de la bandeja sin movimiento (12/11/2026): el PDF no sale de /movimientos/:id/pdf-url
+	// sino de este resolver, y no hay estado leído que marcar.
+	pdfUrlResolver?: () => Promise<PjnMovementPdfUrlResponse>;
 }
 
 interface State {
@@ -156,6 +159,7 @@ const PjnPdfViewer = ({
 	hasNext,
 	onReadStatusChange,
 	initialPanelTab,
+	pdfUrlResolver,
 }: PjnPdfViewerProps) => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -233,7 +237,7 @@ const PjnPdfViewer = ({
 		// muestra loading spinner para evitar parpadeo).
 		const fetchPdf = (onRefresh = false) => {
 			if (!onRefresh) setState({ ...initialState, loading: true });
-			getPjnMovementPdfUrl(folderId, movement._id)
+			(pdfUrlResolver ? pdfUrlResolver() : getPjnMovementPdfUrl(folderId, movement._id))
 				.then((res) => {
 					if (cancelled) return;
 					if (res.success && res.pdfUrl) {
@@ -279,7 +283,7 @@ const PjnPdfViewer = ({
 			cancelled = true;
 			if (refreshTimer) clearTimeout(refreshTimer);
 		};
-	}, [open, movement, folderId]);
+	}, [open, movement, folderId, pdfUrlResolver]);
 
 	// Cargar notas, tareas y eventos (vencimientos) del folder al abrir.
 	useEffect(() => {
@@ -293,7 +297,7 @@ const PjnPdfViewer = ({
 	// Auto-marcar leído al abrir un movimiento no leído (abrir el doc = leerlo).
 	// El toggle manual permite volver a marcarlo no leído.
 	useEffect(() => {
-		if (!open || !movement || movement.read) return;
+		if (!open || !movement || movement.read || pdfUrlResolver) return;
 		let cancelled = false;
 		const id = movement._id;
 		setPjnMovementReadStatus(folderId, id, true)
@@ -544,60 +548,60 @@ const PjnPdfViewer = ({
 			    dos apretados en la misma fila; el toggle del panel vuelve al documento. */}
 				<Stack direction="row" sx={{ flex: 1, minHeight: 0 }}>
 					{(!isMobile || !panelOpen) && (
-					<Box sx={{ flex: 1, position: "relative", bgcolor: theme.palette.grey[100], minWidth: 0 }}>
-						{state.loading && (
-							<Stack alignItems="center" justifyContent="center" sx={{ height: "100%" }}>
-								<CircularProgress />
-								<Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-									Cargando PDF...
-								</Typography>
-							</Stack>
-						)}
+						<Box sx={{ flex: 1, position: "relative", bgcolor: theme.palette.grey[100], minWidth: 0 }}>
+							{state.loading && (
+								<Stack alignItems="center" justifyContent="center" sx={{ height: "100%" }}>
+									<CircularProgress />
+									<Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+										Cargando PDF...
+									</Typography>
+								</Stack>
+							)}
 
-						{/* Mobile: iframe con PDF no renderiza (placeholder "archivo.pdf" +
+							{/* Mobile: iframe con PDF no renderiza (placeholder "archivo.pdf" +
 						    Abrir) — render por canvas con pdfjs. Desktop: iframe nativo. */}
-						{!state.loading && state.pdfUrl && isMobile && !canvasFailed && (
-							<PdfCanvasViewer url={state.pdfUrl} docKey={movement?._id || "doc"} onError={() => setCanvasFailed(true)} />
-						)}
-						{!state.loading && state.pdfUrl && (!isMobile || canvasFailed) && (
-							<iframe
-								src={state.pdfUrl}
-								title="PDF del movimiento"
-								style={{ width: "100%", height: "100%", border: 0 }}
-								onError={handleIframeError}
-							/>
-						)}
+							{!state.loading && state.pdfUrl && isMobile && !canvasFailed && (
+								<PdfCanvasViewer url={state.pdfUrl} docKey={movement?._id || "doc"} onError={() => setCanvasFailed(true)} />
+							)}
+							{!state.loading && state.pdfUrl && (!isMobile || canvasFailed) && (
+								<iframe
+									src={state.pdfUrl}
+									title="PDF del movimiento"
+									style={{ width: "100%", height: "100%", border: 0 }}
+									onError={handleIframeError}
+								/>
+							)}
 
-						{!state.loading && !state.pdfUrl && (
-							<Stack alignItems="center" justifyContent="center" spacing={2} sx={{ p: 4, height: "100%" }}>
-								<Alert severity={status.color === "error" ? "error" : "info"} sx={{ width: "100%", maxWidth: 480 }}>
-									<Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-										{state.errorMsg ?? "PDF no disponible en nuestra plataforma"}
-									</Typography>
-									<Typography variant="body2">
-										Estado: <strong>{status.label}</strong>
-									</Typography>
-									{state.fallbackUrl && (
-										<Typography variant="body2" sx={{ mt: 1 }}>
-											Podés ver el documento original en el portal del PJN.
+							{!state.loading && !state.pdfUrl && (
+								<Stack alignItems="center" justifyContent="center" spacing={2} sx={{ p: 4, height: "100%" }}>
+									<Alert severity={status.color === "error" ? "error" : "info"} sx={{ width: "100%", maxWidth: 480 }}>
+										<Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+											{state.errorMsg ?? "PDF no disponible en nuestra plataforma"}
 										</Typography>
+										<Typography variant="body2">
+											Estado: <strong>{status.label}</strong>
+										</Typography>
+										{state.fallbackUrl && (
+											<Typography variant="body2" sx={{ mt: 1 }}>
+												Podés ver el documento original en el portal del PJN.
+											</Typography>
+										)}
+									</Alert>
+									{state.fallbackUrl && (
+										<Button
+											variant="contained"
+											color="primary"
+											startIcon={<ExportSquare size="18" />}
+											href={state.fallbackUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+											Abrir en PJN
+										</Button>
 									)}
-								</Alert>
-								{state.fallbackUrl && (
-									<Button
-										variant="contained"
-										color="primary"
-										startIcon={<ExportSquare size="18" />}
-										href={state.fallbackUrl}
-										target="_blank"
-										rel="noopener noreferrer"
-									>
-										Abrir en PJN
-									</Button>
-								)}
-							</Stack>
-						)}
-					</Box>
+								</Stack>
+							)}
+						</Box>
 					)}
 
 					{/* Panel lateral de notas y tareas */}
