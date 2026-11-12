@@ -17,11 +17,16 @@ export const radicacionOrigen = (f: any): string => {
 
 export type UbicacionKind = "Juzgado" | "Cámara" | "Corte" | "Otro" | "";
 
+// Empiezan con el nombre de la cámara y son de primera instancia: sus mesas de entradas de primera instancia y el
+// archivo de un juzgado listado bajo la cámara. Misma excepción que el hub (`services/folderUbicacion.js`).
+const PRIMERA_INSTANCIA_EN_CAMARA = /^C[AÁ]MARA\b.*(\b(1RA|1ERA|PRIMERA)\.?\s+INSTANCIA\b|\s-\s+JUZGADO\b)/;
+
 /** Dónde está hoy el expediente, según el texto de la dependencia. */
 export const ubicacionActual = (f: any): UbicacionKind => {
 	const t = String(f?.judFolder?.currentLocation?.text || f?.judFolder?.descriptionJudFolder || "").toUpperCase();
 	if (!t) return "";
 	if (t.includes("CORTE SUPREMA")) return "Corte";
+	if (PRIMERA_INSTANCIA_EN_CAMARA.test(t)) return "Juzgado";
 	if (t.startsWith("CAMARA") || t.startsWith("CÁMARA")) return "Cámara";
 	if (t.startsWith("JUZGADO")) return "Juzgado";
 	return "Otro";

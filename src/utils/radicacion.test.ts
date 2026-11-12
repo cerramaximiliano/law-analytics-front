@@ -46,6 +46,19 @@ describe("radicación", () => {
 			"Cámara",
 		);
 		expect(ubicacionActual(f({ descriptionJudFolder: "CORTE SUPREMA DE JUSTICIA DE LA NACIÓN - MESA DE ENTRADAS" }))).toBe("Corte");
+		// Empieza con el nombre de la cámara y es de primera instancia
+		expect(ubicacionActual(f({ currentLocation: { text: "CAMARA CIVIL - MESA DE ENTRADAS DE 1RA. INSTANCIA" } }))).toBe("Juzgado");
+		expect(ubicacionActual(f({ currentLocation: { text: "Cámara Federal de Córdoba - Mesa única de entradas primera instancia" } }))).toBe(
+			"Juzgado",
+		);
+		expect(
+			ubicacionActual(
+				f({
+					currentLocation: { text: "CAMARA FEDERAL DE SAN MARTIN - JUZGADO FEDERAL EN LO CRIM. Y CORR. DE SAN ISIDRO 1 - SECTOR ARCHIVO" },
+				}),
+			),
+		).toBe("Juzgado");
+		expect(ubicacionActual(f({ currentLocation: { text: "CAMARA CIVIL - MESA DE ENTRADAS DE 2DA. INSTANCIA" } }))).toBe("Cámara");
 		expect(ubicacionActual(f({ descriptionJudFolder: "OFICINA DE PERITOS DE LA CÁMARA" }))).toBe("Otro");
 		expect(ubicacionActual(f({}))).toBe("");
 	});
