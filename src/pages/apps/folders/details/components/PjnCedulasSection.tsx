@@ -29,12 +29,14 @@ interface Props {
 	folderId: string;
 	folderName?: string;
 	searchQuery?: string;
+	/** Columna «Vencimiento» (plazos automáticos). Oculta mientras el cómputo no esté terminado. */
+	showVencimiento?: boolean;
 }
 
 // Notificaciones de la bandeja del PJN de la carpeta (12/11/2026, pedido de Estudio FS Abogados):
 // las cédulas que el juzgado notificó al domicilio electrónico, juntas, arriba de las
 // notificaciones manuales. Lee GET /api/folders/:id/cedulas (solo pjn-notifications).
-const PjnCedulasSection: React.FC<Props> = ({ folderId, folderName, searchQuery = "" }) => {
+const PjnCedulasSection: React.FC<Props> = ({ folderId, folderName, searchQuery = "", showVencimiento = false }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const [data, setData] = useState<PjnCedulasResponse | null>(null);
@@ -108,7 +110,8 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, folderName, searchQuery 
 		const v = dayjs(c.vencimiento);
 		const dias = v.diff(hoy, "day");
 		const color = dias < 0 ? "default" : dias <= 2 ? "error" : dias <= 5 ? "warning" : "success";
-		const label = dias < 0 ? `Venció ${v.format("DD/MM")}` : dias === 0 ? "Vence hoy" : `Vence ${v.format("DD/MM")} (${dias} d)`;
+		// Solo la fecha: los «N días» en corridos confundían frente al plazo en días hábiles.
+		const label = dias < 0 ? `Venció ${v.format("DD/MM")}` : dias === 0 ? "Vence hoy" : `Vence ${v.format("DD/MM")}`;
 		return <Chip size="small" color={color} variant={dias < 0 ? "outlined" : "filled"} label={label} sx={{ fontWeight: 600 }} />;
 	};
 
@@ -150,7 +153,7 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, folderName, searchQuery 
 								<TableCell sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>N° cédula</TableCell>
 								<TableCell sx={{ fontWeight: 700 }}>Oficina / autor</TableCell>
 								<TableCell sx={{ fontWeight: 700 }}>Destinatario</TableCell>
-								<TableCell sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>Vencimiento</TableCell>
+								{showVencimiento && <TableCell sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>Vencimiento</TableCell>}
 								<TableCell sx={{ fontWeight: 700, whiteSpace: "nowrap" }} align="right">
 									Acciones
 								</TableCell>
@@ -170,7 +173,7 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, folderName, searchQuery 
 										)}
 									</TableCell>
 									<TableCell>{c.destinatarios.length ? c.destinatarios.join(", ") : "—"}</TableCell>
-									<TableCell sx={{ whiteSpace: "nowrap" }}>{vencChip(c)}</TableCell>
+									{showVencimiento && <TableCell sx={{ whiteSpace: "nowrap" }}>{vencChip(c)}</TableCell>}
 									<TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
 										{tienePdf(c) ? (
 											<Button

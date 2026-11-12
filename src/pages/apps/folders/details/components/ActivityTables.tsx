@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import SugerenciaPlazoFeedback from "sections/apps/calendar/SugerenciaPlazoFeedback";
 import {
 	Box,
@@ -232,6 +232,14 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 	const activitiesData = useSelector((state: any) => state.activities);
 	const calendarState = useSelector((state: any) => state.calendar);
 	const auth = useSelector((state: any) => state.auth);
+	// Plazos automáticos (12/11/2026): mientras el cómputo no esté terminado, las sugerencias que
+	// escribe el hub en la solapa Notificaciones (user 'plazos-automaticos') y el vencimiento de
+	// las cédulas de bandeja solo los ve el administrador de la plataforma.
+	const isPlatformAdmin = auth?.user?.role === "ADMIN_ROLE";
+	const visibleNotifications = useMemo(() => {
+		const list = (notificationsData?.notifications || []) as any[];
+		return isPlatformAdmin ? list : list.filter((n) => n?.user !== "plazos-automaticos");
+	}, [notificationsData?.notifications, isPlatformAdmin]);
 	const userId = auth.user?._id;
 
 	// Hook personalizado para gestionar scrapingProgress con transición suave (MEV)
@@ -439,7 +447,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 		if (activeTab === "movements") {
 			dataToExport.movements = movementsData.movements;
 		} else if (activeTab === "notifications") {
-			dataToExport.notifications = notificationsData.notifications;
+			dataToExport.notifications = visibleNotifications;
 		} else if (activeTab === "calendar") {
 			dataToExport.events = eventsData.events;
 		} else if (activeTab === "combined") {
@@ -1085,7 +1093,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 							</Tooltip>
 							<Tooltip
 								title={
-									notificationsData.pagination
+									notificationsData.pagination && isPlatformAdmin
 										? `Mostrando ${notificationsData.notifications?.length} de ${notificationsData.pagination.total}`
 										: ""
 								}
@@ -1095,7 +1103,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 								<Box>
 									<StatRow
 										label="Notificaciones"
-										count={notificationsData.pagination?.total || notificationsData.notifications?.length || 0}
+										count={
+											isPlatformAdmin ? notificationsData.pagination?.total || visibleNotifications.length : visibleNotifications.length
+										}
 									/>
 								</Box>
 							</Tooltip>
@@ -1511,11 +1521,16 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 													/>
 												))}
 											{activeTab === "notifications" && scrapingSource === "pjn" && isSyncedFolder && id && (
-												<PjnCedulasSection folderId={id} folderName={folderName} searchQuery={searchQuery} />
+												<PjnCedulasSection
+													folderId={id}
+													folderName={folderName}
+													searchQuery={searchQuery}
+													showVencimiento={isPlatformAdmin}
+												/>
 											)}
 											{activeTab === "notifications" && (
 												<NotificationsTable
-													notifications={notificationsData.notifications}
+													notifications={visibleNotifications}
 													searchQuery={searchQuery}
 													onEdit={handleEditNotification}
 													onDelete={handleDeleteNotification}
@@ -2084,11 +2099,16 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 													/>
 												))}
 											{activeTab === "notifications" && scrapingSource === "pjn" && isSyncedFolder && id && (
-												<PjnCedulasSection folderId={id} folderName={folderName} searchQuery={searchQuery} />
+												<PjnCedulasSection
+													folderId={id}
+													folderName={folderName}
+													searchQuery={searchQuery}
+													showVencimiento={isPlatformAdmin}
+												/>
 											)}
 											{activeTab === "notifications" && (
 												<NotificationsTable
-													notifications={notificationsData.notifications}
+													notifications={visibleNotifications}
 													searchQuery={searchQuery}
 													onEdit={handleEditNotification}
 													onDelete={handleDeleteNotification}
