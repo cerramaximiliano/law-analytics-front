@@ -158,7 +158,7 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, searchQuery = "" }) => {
 									<TableCell sx={{ whiteSpace: "nowrap" }}>{c.numeroCedula || "—"}</TableCell>
 									<TableCell>
 										<Typography sx={{ fontSize: "0.8rem" }}>{c.oficina || "—"}</Typography>
-										{c.autor && (
+										{c.autor && c.autor.trim().toUpperCase() !== (c.oficina || "").trim().toUpperCase() && (
 											<Typography variant="caption" color="text.secondary">
 												{c.autor}
 											</Typography>
