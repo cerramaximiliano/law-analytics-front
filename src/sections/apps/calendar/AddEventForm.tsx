@@ -122,7 +122,7 @@ const AddEventFrom = ({
 	const { isConnected: isGoogleConnected } = useSelector((state: any) => state.googleCalendar);
 	const authUserId = useSelector((state: any) => state.auth?.user?._id);
 	const [syncWithGoogle, setSyncWithGoogle] = useState(isGoogleConnected);
-	const { getTeamIdForResource, getRequestHeaders, isTeamMode, activeTeam } = useTeam();
+	const { getTeamIdForResource, getRequestHeaders, isTeamMode, activeTeam, seesOnlyOwn } = useTeam();
 
 	// Selector de carpeta: solo cuando el formulario no viene ya ligado a una carpeta
 	// (calendario general). En modo equipo las carpetas del store son las del equipo.
@@ -333,6 +333,15 @@ const AddEventFrom = ({
 	});
 
 	const { values, errors, touched, handleSubmit, isSubmitting, getFieldProps, setFieldValue } = formik;
+
+	// Quien ve solo lo suyo (12/11/2026, pedido de Estudio FS Abogados): un evento nuevo sin
+	// carpeta nace «Solo para mí» (si no, avisaría a todo el equipo); al elegir carpeta se
+	// destilda y avisa a los responsables de la carpeta. Se puede cambiar a mano antes de guardar.
+	useEffect(() => {
+		if (event || !isTeamMode || !seesOnlyOwn) return;
+		setFieldValue("personal", !values.folderId);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [event, isTeamMode, seesOnlyOwn, values.folderId]);
 
 	// Opciones del select de Tipo. Solo cuando el evento está vinculado a un
 	// movimiento (movementRef presente, ej. el sub-tab "Vencim." del viewer PJN)
