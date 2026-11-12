@@ -178,7 +178,18 @@ const GuideShell: React.FC<GuideShellProps> = ({ open, onClose, icon, eyebrow = 
 			</DialogTitle>
 
 			{/* ─── Stepper + Content ─── */}
-			<DialogContent sx={{ p: 0, overflowX: "hidden" }}>
+			{/* Un solo scroll (12/11/2026): en escritorio el DialogContent no desplaza; lo hace solo el
+			    cuerpo del paso, que se achica con la ventana (flex + minHeight 0). En móvil, fullScreen,
+			    desplaza el DialogContent entero. Antes había doble barra cuando el paso superaba la altura. */}
+			<DialogContent
+				sx={{
+					p: 0,
+					overflowX: "hidden",
+					overflowY: { xs: "auto", md: "hidden" },
+					display: "flex",
+					flexDirection: "column",
+				}}
+			>
 				{/* En pantalla chica los pasos no entran: una barra de progreso y el «Paso n de N» del contenido */}
 				{fullScreen ? (
 					<LinearProgress
@@ -197,6 +208,7 @@ const GuideShell: React.FC<GuideShellProps> = ({ open, onClose, icon, eyebrow = 
 							px: 3,
 							pt: 2.5,
 							pb: 1.5,
+							flexShrink: 0,
 							overflowX: "auto",
 							bgcolor: alpha(BRAND_BLUE, isDark ? 0.025 : 0.015),
 							borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.12 : 0.07)}`,
@@ -235,7 +247,8 @@ const GuideShell: React.FC<GuideShellProps> = ({ open, onClose, icon, eyebrow = 
 				<Box
 					sx={{
 						p: { xs: 2, sm: 3 },
-						minHeight: { xs: 0, md: 400 },
+						flex: { xs: "none", md: "1 1 auto" },
+						minHeight: 0,
 						maxHeight: { xs: "none", md: 500 },
 						overflowY: { xs: "visible", md: "auto" },
 						overflowWrap: "break-word",
@@ -280,12 +293,7 @@ const GuideShell: React.FC<GuideShellProps> = ({ open, onClose, icon, eyebrow = 
 					bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 				}}
 			>
-				<Button
-					onClick={handleBack}
-					disabled={activeStep === 0}
-					startIcon={<ArrowLeft2 size={14} variant="Bulk" />}
-					sx={ghostBtnSx}
-				>
+				<Button onClick={handleBack} disabled={activeStep === 0} startIcon={<ArrowLeft2 size={14} variant="Bulk" />} sx={ghostBtnSx}>
 					Anterior
 				</Button>
 				<Box sx={{ flex: "1 1 auto" }} />
@@ -293,11 +301,7 @@ const GuideShell: React.FC<GuideShellProps> = ({ open, onClose, icon, eyebrow = 
 					Cerrar
 				</Button>
 				{isLast ? (
-					<Button
-						onClick={onClose}
-						startIcon={<TickCircle size={14} variant="Bulk" />}
-						sx={soberBrandBtnSx}
-					>
+					<Button onClick={onClose} startIcon={<TickCircle size={14} variant="Bulk" />} sx={soberBrandBtnSx}>
 						Finalizar
 					</Button>
 				) : (
