@@ -34,6 +34,7 @@ import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
 import { getJuzgadosByJurisdiction, Juzgado } from "api/juzgados";
 import { useTeam } from "contexts/TeamContext";
+import { ubicacionInstancia } from "utils/radicacion";
 
 // ===========================|| DATA WIDGET - USER PERSONAL DATA ||=========================== //
 
@@ -431,6 +432,11 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 										) : (
 											<>
 												<Typography variant="subtitle1">Ubicación actual</Typography>
+												{ubicacionInstancia(folder) && (
+													<Typography variant="body2" fontWeight={600}>
+														{ubicacionInstancia(folder)}
+													</Typography>
+												)}
 												<Typography variant="body2">{folder?.judFolder?.currentLocation?.text}</Typography>
 											</>
 										)}

@@ -13,6 +13,7 @@ import {
 	FormControl,
 	IconButton,
 	InputAdornment,
+	ListSubheader,
 	MenuItem,
 	OutlinedInput,
 	Pagination,
@@ -24,6 +25,7 @@ import {
 	TableContainer,
 	TableHead,
 	TableRow,
+	Tooltip,
 	Typography,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
@@ -32,9 +34,9 @@ import { alpha, useTheme } from "@mui/material/styles";
 import TaskAssignees from "sections/apps/tasks/TaskAssignees";
 import { PopupTransition } from "components/@extended/Transitions";
 import EmptyResults from "./EmptyResults";
-import { Archive, CloseSquare, InfoCircle, SearchNormal1, Warning2, UserEdit } from "iconsax-react";
+import { Archive, CloseCircle, CloseSquare, InfoCircle, SearchNormal1, Warning2, UserEdit } from "iconsax-react";
 import { BRAND_BLUE, LIVE_GREEN } from "themes/dashboardTokens";
-import { radicacionOrigen, ubicacionDetalle } from "utils/radicacion";
+import { radicacionOrigen, radicacionSegunda, ubicacionInstancia, ubicacionTexto } from "utils/radicacion";
 
 /**
  * Contexto del último archivado (hub models/Folder.js archivedReason):
@@ -93,7 +95,8 @@ interface ArchivedItemsModalProps {
 	// Juzgado de origen (6/11/2026, pedido de Estudio FS Abogados): columna Radicación y filtro
 	// «fuero|número» resuelto por el hub, con las opciones de todas las archivadas (facets).
 	juzgadoFilter?: string;
-	juzgadoOptions?: { value: string; label: string; count: number }[];
+	// Desde el 13/11/2026 es el filtro «Radicación»: juzgados y salas de Cámara por las que pasó la causa (`grupo`).
+	juzgadoOptions?: { value: string; label: string; count: number; grupo?: "juzgado" | "sala" }[];
 	onJuzgadoFilterChange?: (value: string) => void;
 	// Instancia actual (11/11/2026, pedido de Silvia): Juzgado / Cámara · Sala / Corte, resuelto por el
 	// hub (`?ubicacion=`) con las opciones de todas las archivadas (facets). Y el orden del listado.
@@ -189,8 +192,10 @@ const ArchivedItemsModal = ({
 		return [
 			{ id: "folderName", label: "Carátula", minWidth: 170 },
 			{ id: "materia", label: "Materia", minWidth: 100 },
-			// Radicación (6/11/2026): juzgado de origen y, debajo, Cámara / Corte si ya no está en el juzgado.
+			// Radicación (6/11/2026): juzgado de origen y, debajo, la Sala de la Cámara que intervino. Dónde está hoy,
+			// en «Ubicación actual» (13/11/2026): instancia y dependencia.
 			{ id: "radicacion", label: "Radicación", minWidth: 110 },
+			{ id: "ubicacionActual", label: "Ubicación actual", minWidth: 140 },
 			{ id: "status", label: "Estado", minWidth: 100 },
 			{ id: "archivedContext", label: "Archivada", minWidth: 150 },
 			// Último movimiento (5/11/2026): para decidir cuál reactivar sin abrirla.
@@ -473,8 +478,10 @@ const ArchivedItemsModal = ({
 					</Box>
 				)}
 
+				{/* Buscador en su propia fila (13/11/2026): con Radicación, Ubicación actual, Orden y Responsable en la misma
+				    fila quedaba de pocos caracteres. */}
 				{(onSearchChange || showResponsableFilter || showJuzgadoFilter || showUbicacionFilter || showSort) && (
-					<Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mb: 2, flexShrink: 0 }}>
+					<Stack spacing={1} sx={{ mb: 2, flexShrink: 0 }}>
 						{onSearchChange && (
 							<OutlinedInput
 								size="small"
@@ -487,84 +494,111 @@ const ArchivedItemsModal = ({
 										<SearchNormal1 size={16} color={theme.palette.text.secondary} />
 									</InputAdornment>
 								}
+								endAdornment={
+									searchText ? (
+										<InputAdornment position="end">
+											<IconButton
+												size="small"
+												aria-label="Limpiar búsqueda"
+												onClick={() => {
+													// Limpia sin esperar el debounce (13/11/2026).
+													clearTimeout(searchDebounceRef.current);
+													setSearchText("");
+													onSearchChange?.("");
+												}}
+												edge="end"
+											>
+												<CloseCircle size={16} />
+											</IconButton>
+										</InputAdornment>
+									) : null
+								}
 								sx={selectSx}
 							/>
 						)}
-						{showJuzgadoFilter && (
-							<FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 190 } }}>
-								<Select
-									value={juzgadoFilter}
-									onChange={(e) => onJuzgadoFilterChange?.(String(e.target.value))}
-									displayEmpty
-									inputProps={{ "aria-label": "Filtrar archivadas por juzgado" }}
-									data-testid="archived-juzgado-filter"
-									sx={selectSx}
-								>
-									<MenuItem value="">Todos los juzgados</MenuItem>
-									{juzgadoOptions.map((o) => (
-										<MenuItem key={o.value} value={o.value}>
-											{o.label} ({o.count})
-										</MenuItem>
-									))}
-								</Select>
-							</FormControl>
-						)}
-						{showUbicacionFilter && (
-							<FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 190 } }}>
-								<Select
-									value={ubicacionFilter}
-									onChange={(e) => onUbicacionFilterChange?.(String(e.target.value))}
-									displayEmpty
-									inputProps={{ "aria-label": "Filtrar archivadas por instancia" }}
-									data-testid="archived-ubicacion-filter"
-									sx={selectSx}
-								>
-									<MenuItem value="">Instancia: todas</MenuItem>
-									{ubicacionOptions.map((o) => (
-										<MenuItem key={o.value} value={o.value}>
-											{o.label} ({o.count})
-										</MenuItem>
-									))}
-								</Select>
-							</FormControl>
-						)}
-						{showSort && (
-							<FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 200 } }}>
-								<Select
-									value={sortValue}
-									onChange={(e) => onSortChange?.(String(e.target.value))}
-									displayEmpty
-									inputProps={{ "aria-label": "Ordenar archivadas" }}
-									data-testid="archived-sort"
-									sx={selectSx}
-								>
-									<MenuItem value="">Orden: último movimiento</MenuItem>
-									<MenuItem value="ubicacion">Orden: instancia (Cámara · Sala, Corte, Juzgado)</MenuItem>
-									<MenuItem value="folderName">Orden: carátula</MenuItem>
-									<MenuItem value="updatedAt">Orden: última actualización</MenuItem>
-								</Select>
-							</FormControl>
-						)}
-						{showResponsableFilter && (
-							<FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 220 } }}>
-								<Select
-									value={responsableFilter}
-									onChange={(e) => onResponsableFilterChange?.(String(e.target.value))}
-									displayEmpty
-									inputProps={{ "aria-label": "Filtrar archivadas por responsable" }}
-									data-testid="archived-responsable-filter"
-									sx={selectSx}
-								>
-									<MenuItem value="">Todos los responsables</MenuItem>
-									<MenuItem value="ninguno">Sin responsable</MenuItem>
-									{responsableOptions.map((o) => (
-										<MenuItem key={o.id} value={o.id}>
-											{o.name}
-										</MenuItem>
-									))}
-								</Select>
-							</FormControl>
-						)}
+						<Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+							{showJuzgadoFilter && (
+								<FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 190 } }}>
+									<Select
+										value={juzgadoFilter}
+										onChange={(e) => onJuzgadoFilterChange?.(String(e.target.value))}
+										displayEmpty
+										inputProps={{ "aria-label": "Filtrar archivadas por radicación" }}
+										data-testid="archived-juzgado-filter"
+										sx={selectSx}
+									>
+										<MenuItem value="">Radicación: todas</MenuItem>
+										{/* Juzgados y salas por las que pasó la causa (13/11/2026): una causa puede estar en las dos. */}
+										{juzgadoOptions.flatMap((o, i) => {
+											const titulo =
+												o.grupo && o.grupo !== juzgadoOptions[i - 1]?.grupo ? (o.grupo === "sala" ? "Salas de Cámara" : "Juzgados") : null;
+											const item = (
+												<MenuItem key={o.value} value={o.value}>
+													{o.label} ({o.count})
+												</MenuItem>
+											);
+											return titulo ? [<ListSubheader key={`h-${o.grupo}`}>{titulo}</ListSubheader>, item] : [item];
+										})}
+									</Select>
+								</FormControl>
+							)}
+							{showUbicacionFilter && (
+								<FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 190 } }}>
+									<Select
+										value={ubicacionFilter}
+										onChange={(e) => onUbicacionFilterChange?.(String(e.target.value))}
+										displayEmpty
+										inputProps={{ "aria-label": "Filtrar archivadas por ubicación actual" }}
+										data-testid="archived-ubicacion-filter"
+										sx={selectSx}
+									>
+										<MenuItem value="">Ubicación actual: todas</MenuItem>
+										{ubicacionOptions.map((o) => (
+											<MenuItem key={o.value} value={o.value}>
+												{o.label} ({o.count})
+											</MenuItem>
+										))}
+									</Select>
+								</FormControl>
+							)}
+							{showSort && (
+								<FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 200 } }}>
+									<Select
+										value={sortValue}
+										onChange={(e) => onSortChange?.(String(e.target.value))}
+										displayEmpty
+										inputProps={{ "aria-label": "Ordenar archivadas" }}
+										data-testid="archived-sort"
+										sx={selectSx}
+									>
+										<MenuItem value="">Orden: último movimiento</MenuItem>
+										<MenuItem value="ubicacion">Orden: ubicación actual (Cámara, Corte, Juzgado)</MenuItem>
+										<MenuItem value="folderName">Orden: carátula</MenuItem>
+										<MenuItem value="updatedAt">Orden: última actualización</MenuItem>
+									</Select>
+								</FormControl>
+							)}
+							{showResponsableFilter && (
+								<FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 220 } }}>
+									<Select
+										value={responsableFilter}
+										onChange={(e) => onResponsableFilterChange?.(String(e.target.value))}
+										displayEmpty
+										inputProps={{ "aria-label": "Filtrar archivadas por responsable" }}
+										data-testid="archived-responsable-filter"
+										sx={selectSx}
+									>
+										<MenuItem value="">Todos los responsables</MenuItem>
+										<MenuItem value="ninguno">Sin responsable</MenuItem>
+										{responsableOptions.map((o) => (
+											<MenuItem key={o.id} value={o.id}>
+												{o.name}
+											</MenuItem>
+										))}
+									</Select>
+								</FormControl>
+							)}
+						</Stack>
 					</Stack>
 				)}
 
@@ -679,6 +713,19 @@ const ArchivedItemsModal = ({
 																<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
 																	{item.folderName}
 																</Typography>
+																{/* Número de expediente debajo de la carátula (13/11/2026): CUIJ en IOL/EJE, número en el resto. */}
+																{(item.judFolder?.cuij || item.judFolder?.numberJudFolder) && (
+																	<Typography
+																		sx={{
+																			fontSize: "0.72rem",
+																			color: "text.secondary",
+																			fontVariantNumeric: "tabular-nums",
+																			letterSpacing: "-0.005em",
+																		}}
+																	>
+																		{item.judFolder?.cuij || item.judFolder?.numberJudFolder}
+																	</Typography>
+																)}
 															</TableCell>
 															<TableCell>
 																<Typography sx={{ fontSize: "0.8rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
@@ -691,10 +738,33 @@ const ArchivedItemsModal = ({
 																>
 																	{radicacionOrigen(item) || "—"}
 																</Typography>
-																{ubicacionDetalle(item) && (
+																{radicacionSegunda(item) && (
 																	<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
-																		{ubicacionDetalle(item)}
+																		{radicacionSegunda(item)}
 																	</Typography>
+																)}
+															</TableCell>
+															<TableCell>
+																<Typography
+																	sx={{ fontSize: "0.78rem", color: "text.primary", letterSpacing: "-0.005em", whiteSpace: "nowrap" }}
+																>
+																	{ubicacionInstancia(item) || "—"}
+																</Typography>
+																{ubicacionTexto(item) && (
+																	<Tooltip title={ubicacionTexto(item)} placement="top-start" enterDelay={400}>
+																		<Typography
+																			noWrap
+																			sx={{
+																				display: "block",
+																				maxWidth: 200,
+																				fontSize: "0.7rem",
+																				color: "text.secondary",
+																				letterSpacing: "-0.005em",
+																			}}
+																		>
+																			{ubicacionTexto(item)}
+																		</Typography>
+																	</Tooltip>
 																)}
 															</TableCell>
 															<TableCell>

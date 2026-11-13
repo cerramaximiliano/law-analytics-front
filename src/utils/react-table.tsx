@@ -15,7 +15,7 @@ import dayjs from "./dayjs-config";
 import IconButton from "components/@extended/IconButton";
 
 // assets
-import { Add, Minus, SearchNormal1 } from "iconsax-react";
+import { Add, CloseCircle, Minus, SearchNormal1 } from "iconsax-react";
 
 // ==============================|| CUSTOM FUNCTION - REACT TABLE ||============================== //
 
@@ -42,6 +42,22 @@ export function GlobalFilter({ preGlobalFilteredRows, globalFilter, setGlobalFil
 			placeholder={`Buscar en ${count} registros...`}
 			id="start-adornment-email"
 			startAdornment={<SearchNormal1 size={18} />}
+			// «X» para limpiar la búsqueda de una vez (13/11/2026), en todas las tablas que usan este buscador.
+			endAdornment={
+				value ? (
+					<IconButton
+						size="small"
+						aria-label="Limpiar búsqueda"
+						onClick={() => {
+							setValue("");
+							setGlobalFilter(undefined as unknown as string);
+						}}
+						sx={{ mr: -0.5 }}
+					>
+						<CloseCircle size={16} />
+					</IconButton>
+				) : null
+			}
 			style={{ maxHeight: "30.75px", width: "100%" }}
 			{...other}
 		/>

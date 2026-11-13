@@ -54,6 +54,8 @@ export interface UserOnboarding {
 export type UiPreferences = {
 	/** Ids de columnas ocultas en el listado de carpetas («Columnas», 5/11/2026). */
 	foldersHiddenColumns?: string[];
+	/** Contar el cambio de situación del expediente como novedad en el listado, como el «Últ. Act.» del PJN (13/11/2026). */
+	situacionComoNovedad?: boolean;
 	updatedAt?: string | null;
 };
 

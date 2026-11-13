@@ -760,7 +760,7 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 									<Grid item xs={12} md={4}>
 										<JudicialInfoCard
 											icon={<Building />}
-											label="SALA / CÁMARA"
+											label="SALA DE CÁMARA (RADICACIÓN)"
 											value={folder.judFolder.salaNumber}
 											isLoading={isLoader}
 											isEditing={false}

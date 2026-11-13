@@ -128,6 +128,8 @@ export type FolderData = {
 	lastMovementDate?: string; // Fecha del último movimiento
 	/** Situación procesal del expediente PJN, desde la causa (EN LETRA, EN DESPACHO, GIRO…). La agrega el hub al listar (6/11/2026). */
 	situacion?: string;
+	// Desde cuándo está en esa situación (ISO), la registra pjn-mis-causas al detectar el cambio (13/11/2026).
+	situacionDesde?: string | null;
 	// Campos para selección múltiple de causas (EJE/MEV)
 	pendingCausaIds?: string[]; // IDs de causas pendientes de selección
 	/** IOL-1: la búsqueda superó el tope de resultados; pendingCausaIds es un sample de searchTotalResults. */
@@ -206,6 +208,8 @@ export type FolderState = {
 	/** Conteo por juzgado de las archivadas (hub `facets.juzgados`), para el filtro del modal (6/11/2026). */
 	archivedFacets?: {
 		juzgados?: { fuero: string; court: string; count: number }[];
+		/** Conteo por sala de Cámara de la radicación (hub `facets.salas`, 13/11/2026). */
+		salas?: { fuero: string; sala: string; count: number }[];
 		/** Conteo por instancia actual (hub `facets.ubicaciones`, 11/11/2026): Cámara·sala / Corte / Juzgado / otra. */
 		ubicaciones?: { kind: string; sala: string; count: number }[];
 	};

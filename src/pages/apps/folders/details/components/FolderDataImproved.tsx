@@ -21,6 +21,7 @@ import { useParams } from "react-router";
 import { updateFolderById, getFolderById } from "store/reducers/folder";
 import { useTeam } from "contexts/TeamContext";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
+import { ubicacionInstancia } from "utils/radicacion";
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -735,13 +736,7 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 													value={folder?.judFolder?.currentLocation?.text}
 													isLoading={isLoader}
 													icon={<Location size={16} />}
-													helper={
-														folder?.judFolder?.currentLocation?.tipo === "sala-vocalia"
-															? "Cámara"
-															: folder?.judFolder?.currentLocation?.tipo === "juzgado-secretaria"
-															? "Primera instancia"
-															: undefined
-													}
+													helper={ubicacionInstancia(folder) || undefined}
 												/>
 											</Grid>
 										)}

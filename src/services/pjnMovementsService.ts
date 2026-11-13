@@ -97,3 +97,17 @@ export async function getPjnCedulaPdfUrl(folderId: string, sourceId: number): Pr
 		throw err;
 	}
 }
+
+// Historial de la situación del expediente (EN LETRA → EN DESPACHO…), 13/11/2026. El portal cambia la situación sin
+// publicar una actuación; pjn-mis-causas registra cada cambio.
+export interface SituacionCambio {
+	situacion: string;
+	anterior: string | null;
+	desde: string | null;
+	fuente: string | null;
+}
+export async function getSituacionesByFolder(folderId: string): Promise<{ success: boolean; count: number; data: SituacionCambio[] }> {
+	const url = `${getBaseUrl()}/api/folders/${folderId}/situaciones`;
+	const response = await axios.get<{ success: boolean; count: number; data: SituacionCambio[] }>(url, { withCredentials: true });
+	return response.data;
+}

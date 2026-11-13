@@ -823,6 +823,8 @@ export const archiveFolders =
 export interface ArchivedListExtra {
 	responsable?: string;
 	juzgado?: string;
+	/** Sala de Cámara de la radicación (13/11/2026): «fuero|sala». Con `juzgado` forma el filtro «Radicación». */
+	sala?: string;
 	/** Instancia actual (11/11/2026): juzgado | camara | camara:<sala> | corte | otro. */
 	ubicacion?: string;
 	/** Orden del modal: lastMovement (default) | ubicacion | folderName | updatedAt. */
@@ -856,8 +858,9 @@ export const getArchivedFoldersByUserId =
 			// se piden los conteos por juzgado para armar el selector con todas las opciones.
 			if (extra.responsable) params.responsable = extra.responsable;
 			if (extra.juzgado) params.juzgado = extra.juzgado;
+			if (extra.sala) params.sala = extra.sala;
 			if (extra.ubicacion) params.ubicacion = extra.ubicacion;
-			params.facets = "juzgados,ubicaciones";
+			params.facets = "juzgados,salas,ubicaciones";
 
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/user/${userId}`, {
 				params,
@@ -914,8 +917,9 @@ export const getArchivedFoldersByGroupId =
 			// se piden los conteos por juzgado para armar el selector con todas las opciones.
 			if (extra.responsable) params.responsable = extra.responsable;
 			if (extra.juzgado) params.juzgado = extra.juzgado;
+			if (extra.sala) params.sala = extra.sala;
 			if (extra.ubicacion) params.ubicacion = extra.ubicacion;
-			params.facets = "juzgados,ubicaciones";
+			params.facets = "juzgados,salas,ubicaciones";
 
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}`, {
 				params,

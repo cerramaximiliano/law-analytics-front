@@ -440,7 +440,17 @@ interface SortingSelectProps {
 	sortDesc?: boolean;
 	setSortBy: (sortBy: SortingRule<{}>[]) => void;
 	allColumns: ColumnInstance<{}>[];
+	/** Ajuste al pie del menú, separado de las opciones (13/11/2026): p. ej. la casilla de cambios de situación del listado. */
+	menuFooter?: ReactNode;
 }
+
+/**
+ * Pie del menú del Select. El Select clona a cada hijo como opción (onClick, selected, role…); este envoltorio descarta
+ * esas props, así un clic en el pie no cambia el orden ni cierra el menú (el Select ignora clics en nodos sin tabindex).
+ */
+const PieDeMenu = ({ children }: { children?: ReactNode }) => (
+	<Box sx={{ borderTop: 1, borderColor: "divider", mt: 0.5, pt: 0.5, px: 1.5, pb: 0.5 }}>{children}</Box>
+);
 
 /**
  * Dirección inicial al elegir una columna en el selector. Fechas: de más reciente a más antigua
@@ -449,7 +459,7 @@ interface SortingSelectProps {
  */
 const esColumnaDeFecha = (id: string) => /date|fecha|movement/i.test(id) && !/due|vencimiento/i.test(id);
 
-export const SortingSelect = ({ sortBy, sortDesc, setSortBy, allColumns }: SortingSelectProps) => {
+export const SortingSelect = ({ sortBy, sortDesc, setSortBy, allColumns, menuFooter }: SortingSelectProps) => {
 	const [sort, setSort] = useState<string>(sortBy);
 	const [isDescending, setIsDescending] = useState<boolean>(sortDesc === true);
 
@@ -507,6 +517,7 @@ export const SortingSelect = ({ sortBy, sortDesc, setSortBy, allColumns }: Sorti
 								<ListItemText primary={typeof column.Header === "string" ? column.Header : column?.title} />
 							</MenuItem>
 						))}
+					{menuFooter && <PieDeMenu>{menuFooter}</PieDeMenu>}
 				</Select>
 			</FormControl>
 			<Tooltip title={isDescending ? "Orden descendente (Z-A, más reciente primero)" : "Orden ascendente (A-Z, más antiguo primero)"}>

@@ -31,9 +31,11 @@ import ApiService, { NotificationPreferences, NotificationSettings, InactivitySe
 import WhatsAppChannelPanel from "./WhatsAppChannelPanel";
 
 // assets
-import { ArrowDown2, Calendar1, Notification, Sms, Warning2, MessageNotif } from "iconsax-react";
+import { ArrowDown2, Calendar1, DirectInbox, Folder2, Notification, Sms, Warning2, MessageNotif } from "iconsax-react";
 import { openSnackbar } from "store/reducers/snackbar";
-import { dispatch } from "store";
+import axios from "axios";
+import { dispatch, useSelector } from "store";
+import { updateUser } from "store/reducers/auth";
 
 // team context
 import { useTeam } from "contexts/TeamContext";
@@ -92,6 +94,17 @@ const TabSettings = () => {
 	});
 
 	const [expanded, setExpanded] = useState<string | null>(null);
+
+	// Preferencias del listado de carpetas (13/11/2026). Viven en el usuario (`uiPreferences`), no en las de notificación,
+	// pero se guardan y se descartan con los mismos Cancelar/Guardar. «Incluir cambios de situación en los movimientos»:
+	// como el «Últ. Act.» del PJN, un pase a despacho sin actuación cuenta como novedad en el orden, el filtro «Hoy» y la
+	// columna Último movimiento. Es la misma preferencia que la casilla del menú «Ordenar por» del listado.
+	const authUser = useSelector((state: any) => state.auth.user);
+	const situacionGuardada = authUser?.uiPreferences?.situacionComoNovedad === true;
+	const [situacionComoNovedad, setSituacionComoNovedad] = useState<boolean>(situacionGuardada);
+	useEffect(() => {
+		setSituacionComoNovedad(situacionGuardada);
+	}, [situacionGuardada]);
 
 	// Estado del teléfono/consentimiento de WhatsApp (lo mantiene WhatsAppChannelPanel).
 	// El switch del canal solo se puede prender con número verificado + opt-in vigente;
@@ -260,6 +273,10 @@ const TabSettings = () => {
 	const savePreferences = async () => {
 		try {
 			setSaving(true);
+			if (situacionComoNovedad !== situacionGuardada) {
+				await axios.put(`${import.meta.env.VITE_BASE_URL}/api/auth/update`, { uiPreferences: { situacionComoNovedad } });
+				dispatch(updateUser({ uiPreferences: { ...(authUser?.uiPreferences || {}), situacionComoNovedad } }));
+			}
 			const updatedPreferences: NotificationPreferences = {
 				enabled: checked.includes("oc"),
 				channels: {
@@ -678,8 +695,8 @@ const TabSettings = () => {
 		title: string;
 		description: string;
 		icon: React.ReactNode;
-		switchChecked: boolean;
-		onSwitchChange: () => void;
+		switchChecked?: boolean;
+		onSwitchChange?: () => void;
 	}) => (
 		<Stack direction="row" alignItems="center" spacing={1.5} sx={{ width: "100%" }}>
 			<Box
@@ -716,13 +733,15 @@ const TabSettings = () => {
 				<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>{title}</Typography>
 				<Typography sx={{ fontSize: "0.74rem", color: "text.secondary", letterSpacing: "-0.005em" }}>{description}</Typography>
 			</Stack>
-			<Switch
-				checked={switchChecked}
-				onChange={onSwitchChange}
-				disabled={!canEditSettings}
-				onClick={(e) => e.stopPropagation()}
-				sx={switchSx}
-			/>
+			{onSwitchChange && (
+				<Switch
+					checked={!!switchChecked}
+					onChange={onSwitchChange}
+					disabled={!canEditSettings}
+					onClick={(e) => e.stopPropagation()}
+					sx={switchSx}
+				/>
+			)}
 		</Stack>
 	);
 
@@ -1301,14 +1320,14 @@ const TabSettings = () => {
 				</Accordion>
 
 				{/* ── Comunicaciones por email ────────────────────────────────── */}
-				<Accordion disableGutters elevation={0} square sx={accordionSx}>
-					<AccordionSummary expandIcon={<ArrowDown2 size={16} />} sx={accordionSummarySx}>
-						<Stack sx={{ flex: 1 }}>
-							<Typography sx={{ fontSize: "0.9rem", fontWeight: 600, letterSpacing: "-0.01em" }}>Correos que recibo</Typography>
-							<Typography sx={{ fontSize: "0.75rem", color: "text.secondary" }}>
-								Elegí qué comunicaciones querés recibir por email. Podés desactivar las que no te interesen sin darte de baja de todo.
-							</Typography>
-						</Stack>
+				<Accordion expanded={expanded === "panel4"} onChange={handleAccordionChange("panel4")} sx={accordionSx}>
+					<AccordionSummary expandIcon={<ArrowDown2 size={16} variant="Linear" />} sx={accordionSummarySx}>
+						<SectionHeader
+							eyebrow="Comunicaciones por email"
+							title="Correos que recibo"
+							description="Elegí qué correos recibir sin darte de baja de todo"
+							icon={<DirectInbox size={18} variant="Bulk" />}
+						/>
 					</AccordionSummary>
 					<AccordionDetails sx={{ p: 0 }}>
 						<List component="div" disablePadding>
@@ -1342,6 +1361,39 @@ const TabSettings = () => {
 						</List>
 					</AccordionDetails>
 				</Accordion>
+
+				{/* ── Carpetas: preferencias del listado ─────────────────────── */}
+				<Accordion expanded={expanded === "panel5"} onChange={handleAccordionChange("panel5")} sx={accordionSx}>
+					<AccordionSummary expandIcon={<ArrowDown2 size={16} variant="Linear" />} sx={accordionSummarySx}>
+						<SectionHeader
+							eyebrow="Carpetas"
+							title="Listado de carpetas"
+							description="Cómo se ordenan las carpetas y qué cuenta como novedad"
+							icon={<Folder2 size={18} variant="Bulk" />}
+						/>
+					</AccordionSummary>
+					<AccordionDetails sx={{ p: 0 }}>
+						<List component="div" disablePadding>
+							<ListItem sx={subRowSx}>
+								<Stack sx={{ flex: 1 }}>
+									<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>
+										Incluir cambios de situación en los movimientos
+									</Typography>
+									<Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }}>
+										Un pase a despacho sin actuación ordena la carpeta y la muestra en «Hoy»
+									</Typography>
+								</Stack>
+								<Switch
+									size="small"
+									onChange={(e) => setSituacionComoNovedad(e.target.checked)}
+									checked={situacionComoNovedad}
+									disabled={!canEditSettings}
+									sx={switchSx}
+								/>
+							</ListItem>
+						</List>
+					</AccordionDetails>
+				</Accordion>
 			</Stack>
 
 			{canEditSettings && (
@@ -1352,6 +1404,7 @@ const TabSettings = () => {
 								setPreferences(savedPreferencesRef.current);
 								setChecked(savedCheckedRef.current);
 							}
+							setSituacionComoNovedad(situacionGuardada);
 						}}
 						sx={ghostBtnSx}
 					>

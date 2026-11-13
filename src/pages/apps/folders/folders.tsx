@@ -41,6 +41,7 @@ import {
 	ToggleButtonGroup,
 	Checkbox,
 	OutlinedInput,
+	FormControlLabel,
 } from "@mui/material";
 
 import { useFilters, useExpanded, useGlobalFilter, useRowSelect, useSortBy, useTable, usePagination, Row, HeaderProps } from "react-table";
@@ -61,11 +62,17 @@ import {
 	juzgadoKey,
 	juzgadoOptions,
 	radicacionOrigen,
+	radicacionSegunda,
 	ubicacionActual,
-	ubicacionDetalle,
+	ubicacionInstancia,
+	ubicacionResumen,
+	ubicacionTexto,
 	ubicacionOptions,
+	radicacionOptions,
+	radicacionParams,
 } from "utils/radicacion";
 import {
+	conSituacionComoNovedad,
 	diasDesdeUltimoMovimiento,
 	enPeriodo,
 	INACTIVIDAD_FILTROS,
@@ -360,6 +367,9 @@ interface ReactTableProps extends Props {
 	uniqueJuzgados?: { value: string; label: string; count: number }[];
 	ubicacionFilter?: string;
 	onUbicacionFilterChange?: (event: SelectChangeEvent<string>) => void;
+	// Cambios de situación como novedad (como el PJN), preferencia del usuario (13/11/2026)
+	situacionComoNovedad?: boolean;
+	onSituacionComoNovedadChange?: (value: boolean) => void;
 	uniqueUbicaciones?: { value: string; count: number }[];
 	/** Situación procesal del expediente (6/11/2026): EN LETRA, EN DESPACHO… desde la causa. */
 	situacionFilter?: string;
@@ -436,6 +446,8 @@ function ReactTable({
 	uniqueJuzgados = [],
 	ubicacionFilter = "all",
 	onUbicacionFilterChange,
+	situacionComoNovedad,
+	onSituacionComoNovedadChange,
 	uniqueUbicaciones = [],
 	situacionFilter = "all",
 	onSituacionFilterChange,
@@ -706,7 +718,7 @@ function ReactTable({
 		{ label: "Jurisdicción", key: "jurisdiccion" },
 		{ label: "Departamento / Circunscripción", key: "departamento" },
 		{ label: "Fuero", key: "folderFuero" },
-		{ label: "Juzgado de origen", key: "radicacion" },
+		{ label: "Radicación", key: "radicacion" },
 		{ label: "Ubicación actual", key: "ubicacion" },
 		{ label: "Situación", key: "situacion" },
 		{ label: "Seguimiento", key: "seguimiento" },
@@ -734,8 +746,8 @@ function ReactTable({
 			jurisdiccion: folder.folderJuris?.label || "",
 			departamento: departamentoDe(folder.folderJuris?.item, folder.folderJuris?.label),
 			folderFuero: folder.folderFuero || "",
-			radicacion: radicacionOrigen(folder),
-			ubicacion: ubicacionDetalle(folder) || ubicacionActual(folder),
+			radicacion: [radicacionOrigen(folder), radicacionSegunda(folder)].filter(Boolean).join(" / "),
+			ubicacion: ubicacionResumen(folder),
 			situacion: (folder as any).situacion ? situacionLabel((folder as any).situacion) : "",
 			seguimiento: (folder as any).seguimiento?.activo ? "Sí" : "",
 			responsable: resolveResponsables ? resolveResponsables((folder as any).responsables) : "",
@@ -1223,6 +1235,25 @@ function ReactTable({
 										sortDesc={tableSortBy[0]?.desc === true}
 										setSortBy={setSortBy}
 										allColumns={allColumns as any}
+										// Como el PJN (13/11/2026): el cambio de situación (pase a despacho) cuenta como novedad en el orden, el
+										// filtro «Hoy» y la columna Último movimiento. Solo carpetas PJN con Mis Causas tienen esa fecha; el resto
+										// no cambia. Se guarda en la preferencia del usuario (también en Perfil → Configuración → Carpetas).
+										menuFooter={
+											onSituacionComoNovedadChange ? (
+												<FormControlLabel
+													sx={{ m: 0 }}
+													control={
+														<Checkbox
+															size="small"
+															sx={{ p: 0.5, mr: 0.5 }}
+															checked={!!situacionComoNovedad}
+															onChange={(e) => onSituacionComoNovedadChange(e.target.checked)}
+														/>
+													}
+													label={<Typography variant="body2">Incluir cambios de situación en los movimientos</Typography>}
+												/>
+											) : undefined
+										}
 									/>
 								</Box>
 								{!matchDownSM && (
@@ -2422,13 +2453,14 @@ const FoldersLayout = () => {
 	const [archivedSearch, setArchivedSearch] = useState("");
 	// Equipos: filtro por responsable del modal de archivadas ("" = todos, "ninguno", o un id).
 	const [archivedResponsable, setArchivedResponsable] = useState("");
-	// Juzgado de origen del modal de archivadas ("" = todos, o «fuero|número»), 6/11/2026.
+	// Radicación del modal de archivadas (13/11/2026): "" = todas, `j:fuero|número` (juzgado) o `s:fuero|sala` (sala de
+	// Cámara). Antes solo juzgado (6/11/2026). El hub recibe `juzgado` o `sala` (radicacionParams).
 	const [archivedJuzgado, setArchivedJuzgado] = useState("");
 	// Instancia actual y orden del modal de archivadas (11/11/2026, pedido de Silvia).
 	const [archivedUbicacion, setArchivedUbicacion] = useState("");
 	const [archivedSort, setArchivedSort] = useState("");
 	const archivedExtra = useMemo(
-		() => ({ responsable: archivedResponsable, juzgado: archivedJuzgado, ubicacion: archivedUbicacion, sort: archivedSort }),
+		() => ({ responsable: archivedResponsable, ...radicacionParams(archivedJuzgado), ubicacion: archivedUbicacion, sort: archivedSort }),
 		[archivedResponsable, archivedJuzgado, archivedUbicacion, archivedSort],
 	);
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
@@ -2526,6 +2558,7 @@ const FoldersLayout = () => {
 
 	// Selectores
 	const user = useSelector((state) => state.auth.user);
+	const situacionComoNovedad = (user as any)?.uiPreferences?.situacionComoNovedad === true;
 	const { folders, archivedFolders, archivedPagination, archivedFacets, isLoader, isArchivedLoader } = useSelector((state) => state.folder);
 	const subscription = useSelector((state) => state.auth.subscription);
 
@@ -2683,11 +2716,13 @@ const FoldersLayout = () => {
 
 		return {
 			pendingOrInvalidFolders: pending,
-			verifiedFolders: verified,
+			// Con la preferencia «cambios de situación como novedad», el último movimiento de la lista es lo más nuevo entre
+			// el movimiento y el cambio de situación (como el PJN): orden, filtro «Hoy» y columna lo toman solos.
+			verifiedFolders: situacionComoNovedad ? verified.map((f: any) => conSituacionComoNovedad(f)) : verified,
 			pendingCount: pendingVerification + pendingSelection,
 			invalidCount: invalid,
 		};
-	}, [folders]);
+	}, [folders, situacionComoNovedad]);
 
 	// Filtrar carpetas verificadas por tipo
 	// Extraer valores únicos para filtros dinámicos
@@ -2733,7 +2768,10 @@ const FoldersLayout = () => {
 	const uniqueJuzgados = useMemo(() => juzgadoOptions(juzgadoCounts(verifiedFolders)), [verifiedFolders]);
 	const uniqueSituaciones = useMemo(() => situacionOptions(verifiedFolders), [verifiedFolders]);
 	// Juzgados de las archivadas: conteo del hub sobre todas, no solo la página visible.
-	const archivedJuzgadoOptions = useMemo(() => juzgadoOptions(archivedFacets?.juzgados || []), [archivedFacets]);
+	const archivedJuzgadoOptions = useMemo(
+		() => radicacionOptions(archivedFacets?.juzgados || [], archivedFacets?.salas || []),
+		[archivedFacets],
+	);
 	const archivedUbicacionOptions = useMemo(() => ubicacionOptions(archivedFacets?.ubicaciones || []), [archivedFacets]);
 
 	const uniqueUbicaciones = useMemo(() => {
@@ -2742,7 +2780,7 @@ const FoldersLayout = () => {
 			const u = ubicacionActual(folder);
 			map.set(u, (map.get(u) || 0) + 1);
 		});
-		const order = ["Juzgado", "Cámara", "Corte", "Otro", ""];
+		const order = ["Juzgado", "Cámara", "Corte", "Tribunal oral", "Archivo", "Otro", ""];
 		return Array.from(map.entries())
 			.map(([value, count]) => ({ value, count }))
 			.sort((a, b) => order.indexOf(a.value) - order.indexOf(b.value));
@@ -2764,6 +2802,18 @@ const FoldersLayout = () => {
 					/* queda guardado en el navegador igual */
 				}
 			}, 800);
+		},
+		[dispatch, user],
+	);
+
+	const handleSituacionComoNovedadChange = useCallback(
+		async (value: boolean) => {
+			dispatch(updateUser({ uiPreferences: { ...((user as any)?.uiPreferences || {}), situacionComoNovedad: value } }));
+			try {
+				await axios.put(`${import.meta.env.VITE_BASE_URL}/api/auth/update`, { uiPreferences: { situacionComoNovedad: value } });
+			} catch {
+				/* queda aplicada en esta sesión */
+			}
 		},
 		[dispatch, user],
 	);
@@ -3553,7 +3603,7 @@ const FoldersLayout = () => {
 			if (!user?._id) return;
 			setArchivedJuzgado(value);
 			setArchivedPage(1);
-			const extra = { ...archivedExtra, juzgado: value };
+			const extra = { ...archivedExtra, ...radicacionParams(value) };
 			try {
 				if (isTeamMode && activeTeam?._id) {
 					await dispatch(getArchivedFoldersByGroupId(activeTeam._id, 1, archivedPageSize, archivedSearch, extra));
@@ -4424,7 +4474,19 @@ const FoldersLayout = () => {
 				accessor: "lastMovementDate",
 				Cell: ({ value, row }: { value: any; row: any }) => {
 					if (!value) return <span>-</span>;
+					// Novedad por cambio de situación (preferencia del usuario): la situación debajo, como la muestra el PJN
 					const sinVer = <SinVerCount count={row.original.unseenCount} ocultos={row.original.unseenOcultos} />;
+					const conSituacion = (fila: JSX.Element) =>
+						row.original.novedadSituacion && row.original.situacion ? (
+							<Stack spacing={0}>
+								{fila}
+								<Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", lineHeight: 1.3 }}>
+									{situacionLabel(row.original.situacion)}
+								</Typography>
+							</Stack>
+						) : (
+							fila
+						);
 
 					// Formatear la fecha de formato ISO a DD/MM/YYYY (conservar UTC)
 					try {
@@ -4434,7 +4496,7 @@ const FoldersLayout = () => {
 							const isToday = parsedDate.format("YYYY-MM-DD") === dayjs().format("YYYY-MM-DD");
 
 							if (isToday) {
-								return (
+								return conSituacion(
 									<Stack direction="row" alignItems="center" spacing={0.5}>
 										<Box
 											sx={{
@@ -4468,15 +4530,15 @@ const FoldersLayout = () => {
 											</Typography>
 										</Tooltip>
 										{sinVer}
-									</Stack>
+									</Stack>,
 								);
 							}
 
-							return (
+							return conSituacion(
 								<Stack direction="row" alignItems="center" flexWrap="wrap">
 									<span style={row.original.unseenCount > 0 ? { fontWeight: 600 } : undefined}>{formattedDate}</span>
 									{sinVer}
-								</Stack>
+								</Stack>,
 							);
 						} else {
 							return <span>-</span>;
@@ -4549,7 +4611,8 @@ const FoldersLayout = () => {
 				accessor: "folderFuero",
 			},
 			{
-				// Juzgado de origen (y, debajo, la ubicación actual si está en Cámara o Corte).
+				// Dónde se radicó: juzgado de primera instancia y, debajo, la Sala de la Cámara que intervino (aunque la
+				// causa haya vuelto al juzgado). Nunca la Corte: dónde está hoy va en «Ubicación actual» (13/11/2026).
 				// Reparto por juzgado en equipos (5/11/2026).
 				Header: "Radicación",
 				accessor: "judFolder.courtNumber" as any,
@@ -4563,7 +4626,7 @@ const FoldersLayout = () => {
 				},
 				Cell: ({ row }: { row: any }) => {
 					const origen = radicacionOrigen(row.original);
-					const actual = ubicacionDetalle(row.original);
+					const actual = radicacionSegunda(row.original);
 					if (!origen && !actual) return null;
 					// Una sola línea por dato, con puntos suspensivos y tooltip: en MEV/SCBA el «número» de
 					// juzgado es el nombre completo y, sin recorte, el texto se metía en Situación (10/11/2026).
@@ -4587,19 +4650,64 @@ const FoldersLayout = () => {
 				},
 			},
 			{
+				// Dónde está hoy el expediente (13/11/2026): arriba la instancia (1ª, 2ª, recurso directo, Corte,
+				// Archivo General…), abajo la dependencia. La instancia la calcula el worker de Mis Causas.
+				id: "ubicacionActual",
+				Header: "Ubicación actual",
+				accessor: (f: any) => ubicacionActual(f),
+				sortType: (a: any, b: any) => {
+					const orden = ["Cámara", "Corte", "Tribunal oral", "Juzgado", "Archivo", "Otro", ""];
+					return orden.indexOf(ubicacionActual(a.original)) - orden.indexOf(ubicacionActual(b.original));
+				},
+				Cell: ({ row }: { row: any }) => {
+					const instancia = ubicacionInstancia(row.original);
+					const texto = ubicacionTexto(row.original);
+					if (!instancia && !texto) return null;
+					return (
+						<Stack spacing={0} sx={{ maxWidth: 170 }}>
+							{instancia && (
+								<Typography variant="body2" noWrap sx={{ display: "block" }}>
+									{instancia}
+								</Typography>
+							)}
+							{texto && (
+								<Tooltip title={texto} placement="top-start" enterDelay={400}>
+									<Typography variant="caption" color="text.secondary" noWrap sx={{ lineHeight: 1.3, display: "block" }}>
+										{texto}
+									</Typography>
+								</Tooltip>
+							)}
+						</Stack>
+					);
+				},
+			},
+			{
 				// Situación procesal del expediente PJN (EN LETRA, EN DESPACHO, GIRO…), desde la causa.
 				// Control del estudio (6/11/2026).
 				Header: "Situación",
 				accessor: "situacion" as any,
-				Cell: ({ value }: { value?: string }) => {
+				Cell: ({ value, row }: { value?: string; row: any }) => {
 					if (!value) return null;
 					const label = situacionLabel(value);
+					// Desde cuándo (13/11/2026): el portal cambia la situación sin publicar una actuación (un pase a despacho
+					// no es un movimiento); sin la fecha, el usuario lo lee como un movimiento que falta.
+					const desde = row?.original?.situacionDesde ? new Date(row.original.situacionDesde) : null;
+					const desdeTxt = desde
+						? desde.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", timeZone: "America/Argentina/Buenos_Aires" })
+						: "";
 					return (
-						<Tooltip title={label} placement="top-start" enterDelay={400}>
-							<Typography variant="body2" noWrap sx={{ display: "block", maxWidth: 140 }}>
-								{label}
-							</Typography>
-						</Tooltip>
+						<Stack spacing={0} sx={{ maxWidth: 140 }}>
+							<Tooltip title={label} placement="top-start" enterDelay={400}>
+								<Typography variant="body2" noWrap sx={{ display: "block" }}>
+									{label}
+								</Typography>
+							</Tooltip>
+							{desdeTxt && (
+								<Typography variant="caption" color="text.secondary" noWrap sx={{ lineHeight: 1.3, display: "block" }}>
+									desde {desdeTxt}
+								</Typography>
+							)}
+						</Stack>
 					);
 				},
 			},
@@ -5241,6 +5349,8 @@ const FoldersLayout = () => {
 								uniqueJuzgados={uniqueJuzgados}
 								ubicacionFilter={ubicacionFilter}
 								onUbicacionFilterChange={handleUbicacionFilterChange}
+								situacionComoNovedad={situacionComoNovedad}
+								onSituacionComoNovedadChange={handleSituacionComoNovedadChange}
 								uniqueUbicaciones={uniqueUbicaciones}
 								situacionFilter={situacionFilter}
 								onSituacionFilterChange={handleSituacionFilterChange}

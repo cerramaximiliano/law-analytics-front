@@ -99,3 +99,25 @@ export const enPeriodo = (folder: any, periodo: PeriodoMovimientos | null | unde
 	if (hasta && dia > hasta) return false;
 	return true;
 };
+
+/**
+ * Vista de la carpeta con el cambio de situación contado como novedad (13/11/2026, preferencia
+ * `uiPreferences.situacionComoNovedad`): como el «Últ. Act.» del PJN, que se mueve cuando el expediente pasa a despacho
+ * aunque no haya una actuación. Si `situacionDesde` es posterior al último movimiento, `lastMovementDate` pasa a ser el
+ * día del cambio (medianoche UTC del día en Argentina, igual que guarda el hub las fechas de movimiento) y la carpeta
+ * queda marcada con `novedadSituacion`; el último movimiento real queda en `lastMovementDateReal`.
+ */
+export const conSituacionComoNovedad = <T extends Record<string, any>>(folder: T): T => {
+	const sit = folder?.situacionDesde ? new Date(folder.situacionDesde) : null;
+	if (!sit || Number.isNaN(sit.getTime())) return folder;
+	const diaSit = sit.toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
+	const mov = folder.lastMovementDate ? new Date(folder.lastMovementDate) : null;
+	const diaMov = mov && !Number.isNaN(mov.getTime()) ? mov.toISOString().slice(0, 10) : "";
+	if (diaSit <= diaMov) return folder;
+	return {
+		...folder,
+		lastMovementDate: `${diaSit}T00:00:00.000Z`,
+		lastMovementDateReal: folder.lastMovementDate ?? null,
+		novedadSituacion: true,
+	};
+};

@@ -19,6 +19,8 @@ import { updateFolderById } from "store/reducers/folder";
 import { getJuzgadosByJurisdiction, Juzgado } from "api/juzgados";
 import { useTeam } from "contexts/TeamContext";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
+import { ubicacionInstancia } from "utils/radicacion";
+import SituacionHistorial from "./SituacionHistorial";
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -381,6 +383,13 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 															Ubicación actual
 														</Typography>
 													</Stack>
+													{ubicacionInstancia(folder) && (
+														<Typography
+															sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em", mt: 0.25 }}
+														>
+															{ubicacionInstancia(folder)}
+														</Typography>
+													)}
 													<Typography
 														sx={{ fontSize: "0.85rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em", mt: 0.25 }}
 													>
@@ -388,6 +397,13 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 													</Typography>
 												</Grid>
 											)}
+										{/* Situación con su fecha y los cambios anteriores (13/11/2026): el portal la cambia sin publicar
+										    una actuación. Solo lectura. */}
+										{!isEditing && folder?._id && folder?.pjn && (
+											<Grid item xs={12}>
+												<SituacionHistorial folderId={String(folder._id)} />
+											</Grid>
+										)}
 									</Grid>
 								</Box>
 							)}
@@ -572,7 +588,7 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 										)}
 										{folder?.judFolder?.salaNumber && (
 											<Grid item xs={6} md={3}>
-												<CompactField label="SALA / CÁMARA" value={folder.judFolder.salaNumber} isLoading={isLoader} />
+												<CompactField label="SALA DE CÁMARA (RADICACIÓN)" value={folder.judFolder.salaNumber} isLoading={isLoader} />
 											</Grid>
 										)}
 										<Grid item xs={6} md={3}>
@@ -606,9 +622,7 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 											<CompactField
 												label="MONTO"
 												value={
-													values.judFolder.amountJudFolder
-														? `$ ${Number(values.judFolder.amountJudFolder).toLocaleString("es-AR")}`
-														: null
+													values.judFolder.amountJudFolder ? `$ ${Number(values.judFolder.amountJudFolder).toLocaleString("es-AR")}` : null
 												}
 												isLoading={isLoader}
 												icon={<DollarCircle size={12} />}
