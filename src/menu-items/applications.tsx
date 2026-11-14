@@ -3,7 +3,18 @@ import React from "react";
 // third-party
 import { FormattedMessage } from "react-intl";
 // assets
-import { Calculator, Folder, KyberNetwork, Messages2, Calendar1, Profile2User, CalendarTick, Task, DocumentText } from "iconsax-react";
+import {
+	Calculator,
+	Folder,
+	KyberNetwork,
+	Messages2,
+	Calendar1,
+	Profile2User,
+	CalendarTick,
+	Task,
+	DocumentText,
+	NotificationStatus,
+} from "iconsax-react";
 // type
 import { NavItemType } from "types/menu";
 
@@ -18,6 +29,7 @@ const icons = {
 	tasks: Task,
 	booking: CalendarTick,
 	documents: DocumentText,
+	notificaciones: NotificationStatus,
 };
 
 // ==============================|| MENU ITEMS - APPLICATIONS ||============================== //
@@ -41,6 +53,14 @@ const applications: NavItemType = {
 					url: "/apps/folders/list",
 				},
 			],
+		},
+		{
+			// Cédulas de la bandeja del PJN de todos los expedientes, juntas (14/11/2026, pedido de Estudio FS Abogados)
+			id: "notificaciones",
+			title: <FormattedMessage id="Notificaciones" />,
+			type: "item",
+			icon: icons.notificaciones,
+			url: "/apps/notificaciones",
 		},
 		{
 			id: "calculator",

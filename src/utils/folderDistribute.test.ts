@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { buildDistributeRequest, fueroRows, initialWizardState, juzgadoRows, previewRows, splitKeysEqually } from "./folderDistribute";
+import {
+	buildDistributeRequest,
+	fueroRows,
+	initialWizardState,
+	juzgadoRows,
+	previewRows,
+	radicacionFilterOptions,
+	salaRows,
+	splitKeysEqually,
+	splitRadicacion,
+	ubicacionRows,
+} from "./folderDistribute";
 import { RadicacionSummary } from "types/folderDistribute";
 
 // Asistente «Repartir carpetas» (Equipos, fase 3, 6/11/2026).
@@ -18,7 +29,16 @@ const summary: RadicacionSummary = {
 		{ fuero: "Trabajo", activas: 2, archivadas: 0, sinResponsable: 2 },
 	],
 	jurisdicciones: [],
-	ubicaciones: [],
+	salas: [
+		{ fuero: "Civil", sala: "D", activas: 4, archivadas: 1, sinResponsable: 3 },
+		{ fuero: "Seguridad Social", sala: "2", activas: 10, archivadas: 0, sinResponsable: 10 },
+		{ fuero: "Seguridad Social", sala: "1", activas: 0, archivadas: 2, sinResponsable: 2 },
+	],
+	ubicaciones: [
+		{ key: "corte", ubicacion: "Corte Suprema", activas: 3, archivadas: 0, sinResponsable: 3 },
+		{ key: "juzgado", ubicacion: "1ª instancia (Juzgado)", activas: 50, archivadas: 10, sinResponsable: 40 },
+		{ key: "camara", ubicacion: "2ª instancia (Cámara)", activas: 14, archivadas: 3, sinResponsable: 12 },
+	],
 };
 
 describe("juzgadoRows / fueroRows", () => {
@@ -39,6 +59,29 @@ describe("juzgadoRows / fueroRows", () => {
 			["7", 5],
 			["10", 3],
 		]);
+	});
+
+	it("salas de Cámara (radicación) y ubicación actual, como en Archivadas (14/11/2026)", () => {
+		expect(salaRows(summary, "active").map((r) => [r.key, r.label, r.count, r.fueros])).toEqual([
+			["2", "Sala 2", 10, ["Seguridad Social"]],
+			["D", "Sala D", 4, ["Civil"]],
+		]);
+		expect(salaRows(summary, "archived", ["Seguridad Social"]).map((r) => r.key)).toEqual(["1"]);
+		expect(ubicacionRows(summary, "active").map((r) => [r.key, r.label, r.count])).toEqual([
+			["juzgado", "1ª instancia (Juzgado)", 50],
+			["camara", "2ª instancia (Cámara)", 14],
+			["corte", "Corte Suprema", 3],
+		]);
+		const opts = radicacionFilterOptions(summary, "active");
+		expect(opts.map((o) => [o.value, o.group])).toEqual([
+			["j:2", "Juzgado de origen"],
+			["j:7", "Juzgado de origen"],
+			["j:", "Juzgado de origen"],
+			["s:2", "Sala de Cámara"],
+			["s:D", "Sala de Cámara"],
+		]);
+		expect(opts[4].label).toBe("Sala D · Civil");
+		expect(splitRadicacion(["j:7", "s:D", "j:"])).toEqual({ juzgados: ["7", ""], salas: ["D"] });
 	});
 
 	it("fueros de mayor a menor con el alcance", () => {
@@ -83,6 +126,23 @@ describe("buildDistributeRequest", () => {
 		expect(buildDistributeRequest({ ...initialWizardState(), map: {} }, true)).toMatchObject({ ok: false });
 	});
 
+	it("por ubicación actual y por sala: filtros y tabla", () => {
+		const s = {
+			...initialWizardState(),
+			type: "ubicacion" as const,
+			salas: ["D"],
+			ubicaciones: ["camara", "corte"],
+			map: { camara: ["a"], corte: ["b"] },
+		};
+		const r = buildDistributeRequest(s, true);
+		expect(r.ok && r.request.scope.filters).toEqual({ sala: ["D"], ubicacion: ["camara", "corte"] });
+		expect(r.ok && r.request.criteria).toEqual({ type: "ubicacion", map: { camara: ["a"], corte: ["b"] } });
+		expect(buildDistributeRequest({ ...initialWizardState(), type: "sala", map: {} }, true)).toMatchObject({
+			ok: false,
+			error: "Elegí un responsable para al menos una sala",
+		});
+	});
+
 	it("selección del listado: alcance todas y folderIds", () => {
 		const s = { ...initialWizardState(["x", "y"]), type: "equal" as const, assignees: ["a"] };
 		const r = buildDistributeRequest(s, false);
@@ -113,7 +173,14 @@ describe("previewRows", () => {
 				sinAsignar: 1,
 				archivadasIncluidas: 0,
 				restrictedByVisibility: false,
-				porResponsable: [{ id: "a", cantidad: 9, porJuzgado: { 2: 3, 7: 5, "Sin juzgado": 1 } }],
+				porResponsable: [
+					{
+						id: "a",
+						cantidad: 9,
+						porJuzgado: { 2: 3, 7: 5, "Sin juzgado": 1 },
+						porUbicacion: { "2ª instancia (Cámara)": 6, "Corte Suprema": 3 },
+					},
+				],
 			},
 			[{ id: "a", name: "Ana", initials: "AN", isOwner: false, kind: "invitation", invitationStatus: "draft" }],
 			() => "previsto",
@@ -125,6 +192,7 @@ describe("previewRows", () => {
 			cantidad: 9,
 			juzgados: "Juz. 7 (5) · Juz. 2 (3) · y 1 más",
 			juzgadosTotal: 3,
+			ubicaciones: "2ª instancia (Cámara) (6) · Corte Suprema (3)",
 		});
 		expect(previewRows(null, [], () => "")).toEqual([]);
 	});

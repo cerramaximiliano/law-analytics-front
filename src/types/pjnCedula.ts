@@ -35,3 +35,29 @@ export interface PjnCedulasResponse {
 	data: PjnCedula[];
 	message?: string;
 }
+
+// Vista global «Notificaciones» (14/11/2026): GET /api/folders/cedulas/bandeja. Cada fila trae su carpeta.
+export interface PjnCedulaGlobal extends PjnCedula {
+	folder: { _id: string; folderName: string; numero: string | null };
+}
+
+export interface PjnCedulasBandejaParams {
+	q?: string;
+	/** YYYY-MM-DD (hora argentina). */
+	from?: string;
+	to?: string;
+	page?: number;
+	limit?: number;
+}
+
+export interface PjnCedulasBandejaResponse {
+	success: boolean;
+	total: number;
+	page: number;
+	limit: number;
+	/** Carpetas PJN activas en el alcance (equipo + visibilidad, o propias). */
+	carpetas: number;
+	enEquipo: boolean;
+	data: PjnCedulaGlobal[];
+	message?: string;
+}

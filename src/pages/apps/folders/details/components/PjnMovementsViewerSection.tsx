@@ -32,6 +32,7 @@ import PjnPdfViewer from "components/PjnPdfViewer";
 import MovementsUpgradeBanner from "components/shared/MovementsUpgradeBanner";
 import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
 import MovementNotesDialog from "./MovementNotesDialog";
+import MovementTasksDialog from "./MovementTasksDialog";
 import ModalTasks from "pages/apps/folders/details/modals/MoldalTasks";
 import AddEventFrom from "sections/apps/calendar/AddEventForm";
 import { dispatch, useSelector } from "store";
@@ -398,11 +399,20 @@ const PjnMovementsViewerSection = ({
 		setActionMovId(movId);
 		setNoteModalOpen(true);
 	};
+	// Encabezado de los diálogos de notas/tareas: fecha legible (antes salía el ISO crudo) y tipo.
+	const tituloMovimiento = (m: { fecha?: string | null; tipo?: string | null }) =>
+		`${m.fecha && dayjs(m.fecha).isValid() ? dayjs(m.fecha).format("DD/MM/YYYY") : ""} ${m.tipo || ""}`.trim();
 	// Notas de un movimiento: el ícono con el contador abre el listado (12/11/2026).
 	const [notesDialogMov, setNotesDialogMov] = useState<{ id: string; title: string } | null>(null);
 	const notesOfMovement = useMemo(
 		() => (notesDialogMov ? (folderNotes as Note[]).filter((n) => n.movementRef === notesDialogMov.id) : []),
 		[folderNotes, notesDialogMov],
+	);
+	// Tareas de un movimiento: el ícono con el contador abre el listado, igual que las notas (14/11/2026).
+	const [tasksDialogMov, setTasksDialogMov] = useState<{ id: string; title: string } | null>(null);
+	const tasksOfMovement = useMemo(
+		() => (tasksDialogMov ? (folderTasks as TaskType[]).filter((t) => t.movementRef === tasksDialogMov.id) : []),
+		[folderTasks, tasksDialogMov],
 	);
 	const openTaskModal = (movId: string) => {
 		setActionMovId(movId);
@@ -696,7 +706,7 @@ const PjnMovementsViewerSection = ({
 																			data-testid="movement-notes-indicator"
 																			onClick={(e: React.MouseEvent) => {
 																				e.stopPropagation();
-																				setNotesDialogMov({ id: m._id, title: `${m.fecha || ""} ${m.tipo || ""}`.trim() });
+																				setNotesDialogMov({ id: m._id, title: tituloMovimiento(m) });
 																			}}
 																			sx={{
 																				color: "primary.main",
@@ -715,8 +725,27 @@ const PjnMovementsViewerSection = ({
 																	</Tooltip>
 																) : null}
 																{tasksCountByMov[m._id] ? (
-																	<Tooltip title={`${tasksCountByMov[m._id]} tarea${tasksCountByMov[m._id] > 1 ? "s" : ""}`}>
-																		<Stack direction="row" alignItems="center" spacing={0.25} sx={{ color: "success.main" }}>
+																	<Tooltip title={`Ver ${tasksCountByMov[m._id]} tarea${tasksCountByMov[m._id] > 1 ? "s" : ""}`}>
+																		<Stack
+																			direction="row"
+																			alignItems="center"
+																			spacing={0.25}
+																			component="button"
+																			type="button"
+																			data-testid="movement-tasks-indicator"
+																			onClick={(e: React.MouseEvent) => {
+																				e.stopPropagation();
+																				setTasksDialogMov({ id: m._id, title: tituloMovimiento(m) });
+																			}}
+																			sx={{
+																				color: "success.main",
+																				cursor: "pointer",
+																				background: "none",
+																				border: 0,
+																				p: 0,
+																				"&:hover": { textDecoration: "underline" },
+																			}}
+																		>
 																			<TaskSquare size="13" variant="Bulk" />
 																			<Typography variant="caption" sx={{ fontWeight: 600 }}>
 																				{tasksCountByMov[m._id]}
@@ -938,6 +967,13 @@ const PjnMovementsViewerSection = ({
 				notes={notesOfMovement}
 				movementTitle={notesDialogMov?.title}
 				onAddNote={notesDialogMov ? () => openNoteModal(notesDialogMov.id) : undefined}
+			/>
+			<MovementTasksDialog
+				open={Boolean(tasksDialogMov)}
+				onClose={() => setTasksDialogMov(null)}
+				tasks={tasksOfMovement}
+				movementTitle={tasksDialogMov?.title}
+				onAddTask={tasksDialogMov ? () => openTaskModal(tasksDialogMov.id) : undefined}
 			/>
 
 			{/* Modales de acción rápida desde la tabla (nota / tarea vinculada al movimiento) */}

@@ -45,6 +45,7 @@ const ConnectedAppsPage = Loadable(lazyRetry(() => import("pages/oauth/connected
 
 // render - folders
 const FoldersLayout = Loadable(lazyRetry(() => import("pages/apps/folders/folders")));
+const AppNotificaciones = Loadable(lazyRetry(() => import("pages/apps/notificaciones")));
 
 // render - calculator
 const LaborLayout = Loadable(lazyRetry(() => import("pages/calculator/labor/index")));
@@ -180,6 +181,11 @@ const MainRoutes = {
 									element: <FoldersLayout />,
 								},
 							],
+						},
+						{
+							// Vista global de las cédulas de la bandeja del PJN (14/11/2026)
+							path: "notificaciones",
+							element: <AppNotificaciones />,
 						},
 						{
 							path: "chat",

@@ -52,6 +52,7 @@ import PDFViewer from "components/shared/PDFViewer";
 import MovementTextViewer from "components/shared/MovementTextViewer";
 import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
 import MovementNotesDialog from "../MovementNotesDialog";
+import MovementTasksDialog from "../MovementTasksDialog";
 import ModalTasks from "pages/apps/folders/details/modals/MoldalTasks";
 import AddEventFrom from "sections/apps/calendar/AddEventForm";
 import { Dialog } from "@mui/material";
@@ -306,6 +307,12 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 		[folderNotes, notesDialogMovement],
 	);
 	const [quickTaskOpen, setQuickTaskOpen] = useState(false);
+	// Tareas de un movimiento: el contador abre el listado, igual que las notas (14/11/2026).
+	const [tasksDialogMovement, setTasksDialogMovement] = useState<Movement | null>(null);
+	const tasksOfMovement = useMemo(
+		() => (tasksDialogMovement?._id ? (folderTasks as TaskType[]).filter((t) => t.movementRef === tasksDialogMovement._id) : []),
+		[folderTasks, tasksDialogMovement],
+	);
 	const [quickEventOpen, setQuickEventOpen] = useState(false);
 
 	// Deep-link ?movement=: scroll one-shot a la fila resaltada y (con ?open=1)
@@ -829,8 +836,29 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																</Tooltip>
 															) : null}
 															{movement._id && tasksCountByMov[movement._id] ? (
-																<Tooltip title={`${tasksCountByMov[movement._id]} tarea${tasksCountByMov[movement._id] > 1 ? "s" : ""}`}>
-																	<Stack direction="row" alignItems="center" spacing={0.25} sx={{ color: "success.main" }}>
+																<Tooltip
+																	title={`Ver ${tasksCountByMov[movement._id]} tarea${tasksCountByMov[movement._id] > 1 ? "s" : ""}`}
+																>
+																	<Stack
+																		direction="row"
+																		alignItems="center"
+																		spacing={0.25}
+																		component="button"
+																		type="button"
+																		data-testid="movement-tasks-indicator"
+																		onClick={(e: React.MouseEvent) => {
+																			e.stopPropagation();
+																			setTasksDialogMovement(movement);
+																		}}
+																		sx={{
+																			color: "success.main",
+																			cursor: "pointer",
+																			background: "none",
+																			border: 0,
+																			p: 0,
+																			"&:hover": { textDecoration: "underline" },
+																		}}
+																	>
 																		<TaskSquare size="13" variant="Bulk" />
 																		<Typography variant="caption" sx={{ fontWeight: 600 }}>
 																			{tasksCountByMov[movement._id]}
@@ -1304,6 +1332,21 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 						? () => {
 								setActionMovement(notesDialogMovement);
 								setQuickNoteOpen(true);
+						  }
+						: undefined
+				}
+			/>
+
+			<MovementTasksDialog
+				open={Boolean(tasksDialogMovement)}
+				onClose={() => setTasksDialogMovement(null)}
+				tasks={tasksOfMovement}
+				movementTitle={tasksDialogMovement ? `${tasksDialogMovement.time || ""} ${tasksDialogMovement.title || ""}`.trim() : undefined}
+				onAddTask={
+					tasksDialogMovement && isSyncedRow(tasksDialogMovement) && hasRealRef(tasksDialogMovement)
+						? () => {
+								setActionMovement(tasksDialogMovement);
+								setQuickTaskOpen(true);
 						  }
 						: undefined
 				}

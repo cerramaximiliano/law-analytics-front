@@ -57,12 +57,19 @@ import {
 	DistributeWizardState,
 	fueroRows,
 	initialWizardState,
+	isMapCriteria,
+	joinRadicacion,
 	juzgadoRows,
+	MAP_LABELS,
 	MAX_DISTRIBUTE_FOLDERS,
 	newSeed,
 	ORDER_OPTIONS,
 	previewRows,
+	radicacionFilterOptions,
+	salaRows,
 	splitKeysEqually,
+	splitRadicacion,
+	ubicacionRows,
 } from "utils/folderDistribute";
 import { trackActivity } from "utils/productAnalytics";
 import { assigneeTag, getTeamAssignees, TeamAssignee } from "utils/teamAssignees";
@@ -209,12 +216,26 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 		const rows = fueroRows(summary, s.archived);
 		return s.fueros.length ? rows.filter((r) => s.fueros.includes(r.key)) : rows;
 	}, [summary, s.archived, s.fueros]);
-	const allJuzgados = useMemo(() => juzgadoRows(summary, s.archived, s.fueros), [summary, s.archived, s.fueros]);
+	// Sala de Cámara (radicación) y ubicación actual (14/11/2026, pedido de Silvia): como en Archivadas.
+	const rowsSala = useMemo(() => {
+		const rows = salaRows(summary, s.archived, s.fueros);
+		return s.salas.length ? rows.filter((r) => s.salas.includes(r.key)) : rows;
+	}, [summary, s.archived, s.fueros, s.salas]);
+	const rowsUbicacion = useMemo(() => {
+		const rows = ubicacionRows(summary, s.archived);
+		return s.ubicaciones.length ? rows.filter((r) => s.ubicaciones.includes(r.key)) : rows;
+	}, [summary, s.archived, s.ubicaciones]);
 	const allFueros = useMemo(() => fueroRows(summary, s.archived), [summary, s.archived]);
-	const estimate = useMemo(() => rowsJuzgado.reduce((n, r) => n + r.count, 0), [rowsJuzgado]);
-	const estimateUnassigned = useMemo(() => rowsJuzgado.reduce((n, r) => n + r.sinResponsable, 0), [rowsJuzgado]);
+	const radicacionOpts = useMemo(() => radicacionFilterOptions(summary, s.archived, s.fueros), [summary, s.archived, s.fueros]);
+	const allUbicaciones = useMemo(() => ubicacionRows(summary, s.archived), [summary, s.archived]);
+	// Estimación del alcance: la tabla del filtro más restrictivo (la cuenta exacta la da la vista previa).
+	const estimateRows = s.ubicaciones.length ? rowsUbicacion : s.salas.length && !s.juzgados.length ? rowsSala : rowsJuzgado;
+	const estimate = useMemo(() => estimateRows.reduce((n, r) => n + r.count, 0), [estimateRows]);
+	const estimateUnassigned = useMemo(() => estimateRows.reduce((n, r) => n + r.sinResponsable, 0), [estimateRows]);
 
-	const criteriaRows: CriteriaRow[] = s.type === "juzgado" ? rowsJuzgado : rowsFuero;
+	const criteriaRows: CriteriaRow[] =
+		s.type === "juzgado" ? rowsJuzgado : s.type === "sala" ? rowsSala : s.type === "ubicacion" ? rowsUbicacion : rowsFuero;
+	const mapLabels = MAP_LABELS[s.type] || MAP_LABELS.fuero;
 
 	const setRowAssignees = (key: string, next: TeamAssignee[]) =>
 		setS((prev) => ({ ...prev, map: { ...prev.map, [key]: next.map((a) => a.id) } }));
@@ -329,25 +350,46 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 						fullWidth
 						options={allFueros.map((r) => r.key)}
 						value={s.fueros}
-						onChange={(_e, v) => patch({ fueros: v, juzgados: [], map: {} })}
+						onChange={(_e, v) => patch({ fueros: v, juzgados: [], salas: [], map: {} })}
 						getOptionLabel={(k) => {
 							const r = allFueros.find((x) => x.key === k);
 							return r ? `${r.label} (${nf(r.count)})` : k;
 						}}
 						renderInput={(params) => <TextField {...params} label="Fuero" placeholder={s.fueros.length ? "" : "Todos"} />}
 					/>
+					{/* Radicación (14/11/2026, como en Archivadas): juzgados de origen y salas de Cámara por las que pasó la causa */}
 					<Autocomplete
 						multiple
 						size="small"
 						fullWidth
-						options={allJuzgados.map((r) => r.key)}
-						value={s.juzgados}
-						onChange={(_e, v) => patch({ juzgados: v, map: {} })}
-						getOptionLabel={(k) => {
-							const r = allJuzgados.find((x) => x.key === k);
-							return r ? `${r.label}${r.fueros.length === 1 ? ` · ${r.fueros[0]}` : ""} (${nf(r.count)})` : k;
+						options={radicacionOpts.map((o) => o.value)}
+						groupBy={(v) => radicacionOpts.find((o) => o.value === v)?.group || ""}
+						value={joinRadicacion(s.juzgados, s.salas)}
+						onChange={(_e, v) => patch({ ...splitRadicacion(v), map: {} })}
+						getOptionLabel={(v) => {
+							const o = radicacionOpts.find((x) => x.value === v);
+							return o ? `${o.label} (${nf(o.count)})` : v;
 						}}
-						renderInput={(params) => <TextField {...params} label="Juzgado de origen" placeholder={s.juzgados.length ? "" : "Todos"} />}
+						renderInput={(params) => (
+							<TextField
+								{...params}
+								label="Radicación"
+								placeholder={s.juzgados.length || s.salas.length ? "" : "Juzgados y salas de Cámara"}
+							/>
+						)}
+					/>
+					<Autocomplete
+						multiple
+						size="small"
+						fullWidth
+						options={allUbicaciones.map((r) => r.key)}
+						value={s.ubicaciones}
+						onChange={(_e, v) => patch({ ubicaciones: v, map: {} })}
+						getOptionLabel={(k) => {
+							const r = allUbicaciones.find((x) => x.key === k);
+							return r ? `${r.label} (${nf(r.count)})` : k;
+						}}
+						renderInput={(params) => <TextField {...params} label="Ubicación actual" placeholder={s.ubicaciones.length ? "" : "Todas"} />}
 					/>
 				</Stack>
 			)}
@@ -405,7 +447,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 					)}
 				</Box>
 
-				{(s.type === "juzgado" || s.type === "fuero") && (
+				{isMapCriteria(s.type) && (
 					<>
 						<Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
 							<Box sx={{ flex: 1 }}>
@@ -442,13 +484,13 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 						{loadingSummary ? (
 							<Skeleton variant="rounded" height={120} />
 						) : criteriaRows.length === 0 ? (
-							<Alert severity="warning">No hay {s.type === "juzgado" ? "juzgados" : "fueros"} en el alcance elegido.</Alert>
+							<Alert severity="warning">No hay {mapLabels.plural} en el alcance elegido.</Alert>
 						) : (
 							<Box sx={{ maxHeight: 360, overflow: "auto", border: `1px solid ${alpha(BRAND_BLUE, 0.12)}`, borderRadius: 1.5 }}>
 								<Table size="small" stickyHeader>
 									<TableHead>
 										<TableRow>
-											<TableCell sx={{ width: "32%" }}>{s.type === "juzgado" ? "Juzgado" : "Fuero"}</TableCell>
+											<TableCell sx={{ width: "32%" }}>{mapLabels.column}</TableCell>
 											<TableCell align="right" sx={{ width: 90 }}>
 												Carpetas
 											</TableCell>
@@ -657,10 +699,9 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 							Con «cada uno ve lo suyo», el reparto alcanza solo las carpetas que ves.
 						</Alert>
 					)}
-					{preview.sinAsignar > 0 && (s.type === "juzgado" || s.type === "fuero") && (
+					{preview.sinAsignar > 0 && isMapCriteria(s.type) && (
 						<Typography variant="caption" color="text.secondary">
-							Quedan sin asignar las carpetas de {s.type === "juzgado" ? "juzgados" : "fueros"} sin responsable elegido; podés volver y
-							completarlos.
+							Quedan sin asignar las carpetas de {mapLabels.plural} sin responsable elegido; podés volver y completarlos.
 						</Typography>
 					)}
 					{rows.length === 0 ? (
@@ -674,7 +715,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 										<TableCell align="right" sx={{ width: 90 }}>
 											Carpetas
 										</TableCell>
-										<TableCell>Por juzgado</TableCell>
+										<TableCell>{s.type === "ubicacion" ? "Por ubicación actual" : "Por juzgado"}</TableCell>
 									</TableRow>
 								</TableHead>
 								<TableBody>
@@ -698,7 +739,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 											</TableCell>
 											<TableCell>
 												<Typography variant="caption" color="text.secondary">
-													{r.juzgados}
+													{s.type === "ubicacion" && r.ubicaciones ? r.ubicaciones : r.juzgados}
 												</Typography>
 											</TableCell>
 										</TableRow>

@@ -9,7 +9,7 @@
 
 import axios from "axios";
 import type { PjnMovementsListParams, PjnMovementsListResponse, PjnMovementPdfUrlResponse } from "types/pjnMovement";
-import type { PjnCedulasResponse } from "types/pjnCedula";
+import type { PjnCedulasBandejaParams, PjnCedulasBandejaResponse, PjnCedulasResponse } from "types/pjnCedula";
 
 function getBaseUrl(): string {
 	// Mismo patrón que judicialMovementsService.ts
@@ -83,6 +83,17 @@ export async function setPjnMovementReadStatus(
 export async function getPjnCedulasByFolder(folderId: string): Promise<PjnCedulasResponse> {
 	const url = `${getBaseUrl()}/api/folders/${folderId}/cedulas`;
 	const response = await axios.get<PjnCedulasResponse>(url, { withCredentials: true });
+	return response.data;
+}
+
+// Vista global «Notificaciones» (14/11/2026): cédulas de la bandeja de todas las carpetas que ve el usuario.
+// En equipo va el header X-Group-Id (TeamContext.getRequestHeaders); el hub aplica la visibilidad.
+export async function getPjnCedulasBandeja(
+	params: PjnCedulasBandejaParams,
+	headers: Record<string, string> = {},
+): Promise<PjnCedulasBandejaResponse> {
+	const url = `${getBaseUrl()}/api/folders/cedulas/bandeja`;
+	const response = await axios.get<PjnCedulasBandejaResponse>(url, { params, headers, withCredentials: true });
 	return response.data;
 }
 
