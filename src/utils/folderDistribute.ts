@@ -30,8 +30,12 @@ export interface CriteriaRow {
 	sinResponsable: number;
 }
 
-// «Juz. 7»; cuando el «número» es un nombre (MEV/SCBA, Corte) va tal cual, como en la columna Radicación (14/11/2026).
-export const juzgadoLabel = (key: string): string => (!key ? "Sin juzgado" : /^\d+$/.test(key) ? `Juz. ${key}` : key);
+// «Juz. 7»; «Sala D · instancia originaria» para las causas que empiezan en la Cámara (clave «sala:D» del hub, 14/11/2026);
+// cuando el «número» es un nombre (MEV/SCBA, Corte) va tal cual, como en la columna Radicación.
+export const juzgadoLabel = (key: string): string =>
+	!key ? "Sin juzgado" : key.startsWith("sala:") ? `Sala ${key.slice(5)} · instancia originaria` : /^\d+$/.test(key) ? `Juz. ${key}` : key;
+// Orden de las filas de juzgado: números, después salas de instancia originaria, después nombres, «Sin juzgado» al final.
+const juzgadoRank = (key: string): number => (!key ? 3 : /^\d+$/.test(key) ? 0 : key.startsWith("sala:") ? 1 : 2);
 
 export const countForScope = (c: RadicacionCounts, archived: DistributeArchivedScope): number =>
 	archived === "active" ? c.activas : archived === "archived" ? c.archivadas : c.activas + c.archivadas;
@@ -51,7 +55,9 @@ export function juzgadoRows(summary: RadicacionSummary | null, archived: Distrib
 		row.sinResponsable += r.sinResponsable;
 		byKey.set(key, row);
 	}
-	return [...byKey.values()].filter((r) => r.count > 0).sort((a, b) => numOrInf(a.key) - numOrInf(b.key) || a.key.localeCompare(b.key));
+	return [...byKey.values()]
+		.filter((r) => r.count > 0)
+		.sort((a, b) => juzgadoRank(a.key) - juzgadoRank(b.key) || numOrInf(a.key) - numOrInf(b.key) || a.key.localeCompare(b.key, "es"));
 }
 
 /** Filas de Sala de Cámara (radicación): una por sala, con los fueros donde aparece. Numéricas primero, después las de letra. */
@@ -114,7 +120,13 @@ export const isMapCriteria = (t: DistributeCriteriaType): boolean => MAP_CRITERI
 
 /** Palabras de cada criterio por tabla, para encabezados, avisos y errores. */
 export const MAP_LABELS: Record<string, { column: string; singular: string; plural: string; error: string }> = {
-	juzgado: { column: "Juzgado", singular: "juzgado", plural: "juzgados", error: "Elegí un responsable para al menos un juzgado" },
+	// El criterio se llama «Por radicación» (14/11/2026): juzgado de origen o, en instancia originaria, la Sala. El valor «juzgado» es el contrato con el hub.
+	juzgado: {
+		column: "Radicación",
+		singular: "radicación",
+		plural: "radicaciones",
+		error: "Elegí un responsable para al menos una radicación",
+	},
 	fuero: { column: "Fuero", singular: "fuero", plural: "fueros", error: "Elegí un responsable para al menos un fuero" },
 	ubicacion: {
 		column: "Ubicación actual",
@@ -304,7 +316,7 @@ export function previewRows(
 	return preview.porResponsable.map((r) => {
 		const a = byId.get(r.id);
 		const entries = Object.entries(r.porJuzgado || {}).sort((x, y) => y[1] - x[1] || numOrInf(x[0]) - numOrInf(y[0]));
-		const shown = entries.slice(0, max).map(([k, n]) => `${k === "Sin juzgado" ? k : `Juz. ${k}`} (${n})`);
+		const shown = entries.slice(0, max).map(([k, n]) => `${k === "Sin juzgado" ? k : juzgadoLabel(k)} (${n})`);
 		const ubic = Object.entries(r.porUbicacion || {}).sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0], "es"));
 		return {
 			id: r.id,
@@ -327,8 +339,8 @@ export function previewRows(
 export const CRITERIA_OPTIONS: { value: DistributeCriteriaType; label: string; help: string }[] = [
 	{
 		value: "juzgado",
-		label: "Por juzgado",
-		help: "Cada juzgado de origen va a los responsables que elijas. Podés pre-llenar en partes iguales.",
+		label: "Por radicación",
+		help: "Cada radicación va a los responsables que elijas: el juzgado de origen o, en las causas que empiezan en la Cámara (instancia originaria), su Sala.",
 	},
 	{ value: "fuero", label: "Por fuero", help: "Cada fuero va a los responsables que elijas." },
 	{

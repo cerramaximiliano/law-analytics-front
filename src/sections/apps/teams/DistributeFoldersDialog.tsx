@@ -632,6 +632,12 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 													{sinClave > 0 ? `Sin ${mapLabels.singular} (${nf(sinClave)}) y ` : ""}
 													{mapLabels.plural} sin responsable elegido
 												</Typography>
+												{s.type === "ubicacion" && (
+													<Typography variant="caption" color="text.secondary" component="div">
+														La ubicación actual solo se sigue en las causas vinculadas por credencial del PJN; las demás no tienen
+														ubicación.
+													</Typography>
+												)}
 											</TableCell>
 											<TableCell align="right">
 												<Typography variant="body2">

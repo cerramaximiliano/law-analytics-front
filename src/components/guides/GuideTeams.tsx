@@ -400,9 +400,9 @@ const ResponsablesContent = () => (
 			items={[
 				<>
 					<Hierarchy size={14} style={{ marginRight: 4 }} />
-					<strong>Por juzgado</strong>, <strong>por fuero</strong> o <strong>por ubicación actual</strong> (1ª instancia, Cámara, Corte…,
-					dato del PJN): cada uno a un integrante (o a varios, que lo comparten), y «las demás» a quien indiques. El alcance se acota por
-					radicación (juzgado o sala de Cámara) y por ubicación actual, como en Archivadas
+					<strong>Por radicación</strong> (el juzgado de origen o, en instancia originaria, la Sala), <strong>por fuero</strong> o{" "}
+					<strong>por ubicación actual</strong> (1ª instancia, Cámara, Corte…, dato del PJN): cada uno a un integrante (o a varios, que lo
+					comparten), y «las demás» a quien indiques. El alcance se acota por radicación y por ubicación actual, como en Archivadas
 				</>,
 				<>
 					<strong>Partes iguales</strong>, <strong>cantidades</strong> (tantas a cada uno, el resto a quien elijas) o{" "}

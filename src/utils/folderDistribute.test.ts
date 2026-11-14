@@ -23,6 +23,8 @@ const summary: RadicacionSummary = {
 		{ fuero: "Civil", juzgado: "7", activas: 5, archivadas: 0, sinResponsable: 5 },
 		{ fuero: "Civil", juzgado: "10", activas: 0, archivadas: 3, sinResponsable: 3 },
 		{ fuero: "Trabajo", juzgado: "", activas: 2, archivadas: 0, sinResponsable: 2 },
+		// Instancia originaria: sin juzgado, con Sala (14/11/2026)
+		{ fuero: "Civil", juzgado: "sala:D", activas: 3, archivadas: 0, sinResponsable: 3 },
 	],
 	fueros: [
 		{ fuero: "Seguridad Social", activas: 60, archivadas: 10, sinResponsable: 50 },
@@ -49,10 +51,12 @@ describe("juzgadoRows / fueroRows", () => {
 		expect(rows.map((r) => [r.key, r.count])).toEqual([
 			["2", 20],
 			["7", 45],
+			["sala:D", 3],
 			["", 2],
 		]);
 		expect(rows[1].fueros).toEqual(["Seguridad Social", "Civil"]);
-		expect(rows[2].label).toBe("Sin juzgado");
+		expect(rows[2].label).toBe("Sala D · instancia originaria");
+		expect(rows[3].label).toBe("Sin juzgado");
 		expect(juzgadoRows(summary, "archived").map((r) => [r.key, r.count])).toEqual([
 			["7", 10],
 			["10", 3],
@@ -60,6 +64,7 @@ describe("juzgadoRows / fueroRows", () => {
 		expect(juzgadoRows(summary, "all", ["Civil"]).map((r) => [r.key, r.count])).toEqual([
 			["7", 5],
 			["10", 3],
+			["sala:D", 3],
 		]);
 	});
 
@@ -79,11 +84,13 @@ describe("juzgadoRows / fueroRows", () => {
 		expect(opts.map((o) => [o.value, o.group])).toEqual([
 			["j:2", "Juzgado de origen"],
 			["j:7", "Juzgado de origen"],
+			["j:sala:D", "Juzgado de origen"],
 			["j:", "Juzgado de origen"],
 			["s:2", "Sala de Cámara"],
 			["s:D", "Sala de Cámara"],
 		]);
-		expect(opts[4].label).toBe("Sala D · Civil");
+		expect(opts[5].label).toBe("Sala D · Civil");
+		expect(opts[2].label).toBe("Sala D · instancia originaria · Civil");
 		expect(splitRadicacion(["j:7", "s:D", "j:"])).toEqual({ juzgados: ["7", ""], salas: ["D"] });
 	});
 
@@ -197,7 +204,7 @@ describe("previewRows", () => {
 					{
 						id: "a",
 						cantidad: 9,
-						porJuzgado: { 2: 3, 7: 5, "Sin juzgado": 1 },
+						porJuzgado: { 2: 3, 7: 5, "Sin juzgado": 1, "sala:D": 1 },
 						porUbicacion: { "2ª instancia (Cámara)": 6, "Corte Suprema": 3 },
 					},
 				],
@@ -210,8 +217,8 @@ describe("previewRows", () => {
 			name: "Ana",
 			tag: "previsto",
 			cantidad: 9,
-			juzgados: "Juz. 7 (5) · Juz. 2 (3) · y 1 más",
-			juzgadosTotal: 3,
+			juzgados: "Juz. 7 (5) · Juz. 2 (3) · y 2 más",
+			juzgadosTotal: 4,
 			ubicaciones: "2ª instancia (Cámara) (6) · Corte Suprema (3)",
 		});
 		expect(previewRows(null, [], () => "")).toEqual([]);
