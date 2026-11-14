@@ -429,7 +429,7 @@ export const updateFoldersResponsablesBulk =
 		try {
 			const ids = [...new Set(folderIds)];
 			let modified = 0;
-			const migracion: ResponsablesMigracion = { carpetas: 0, tareas: 0, alertas: 0 };
+			const migracion: ResponsablesMigracion = { carpetas: 0, tareas: 0, alertas: 0, movimientos: 0 };
 			const folders: { _id: string; responsables: string[]; notificationPolicy?: FolderNotificationPolicy }[] = [];
 			for (let i = 0; i < ids.length; i += BULK_RESPONSABLES_CHUNK) {
 				const chunk = ids.slice(i, i + BULK_RESPONSABLES_CHUNK);
@@ -453,6 +453,7 @@ export const updateFoldersResponsablesBulk =
 					migracion.carpetas += m.carpetas || 0;
 					migracion.tareas += m.tareas || 0;
 					migracion.alertas += m.alertas || 0;
+					migracion.movimientos = (migracion.movimientos || 0) + (m.movimientos || 0);
 				}
 			}
 			return { success: true, modified, folders, migracion };

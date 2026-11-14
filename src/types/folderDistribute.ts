@@ -70,17 +70,22 @@ export interface ResponsablesMigracion {
 	carpetas: number;
 	tareas: number;
 	alertas: number;
+	/** Movimientos y cédulas judiciales pendientes de envío (todas las jurisdicciones). */
+	movimientos?: number;
 }
 
-/** «Además, 3 tareas pendientes y 2 alertas sin leer pasaron a los nuevos responsables.» ("" si no hubo nada). */
+/** «3 tareas pendientes, 2 alertas sin leer y 1 aviso judicial pendiente pasaron a los nuevos responsables.» ("" si no hubo nada). */
 export const migracionTexto = (m?: ResponsablesMigracion | null): string => {
-	if (!m || (!m.tareas && !m.alertas)) return "";
+	if (!m) return "";
+	const mov = m.movimientos || 0;
 	const partes = [
 		m.tareas ? `${m.tareas} ${m.tareas === 1 ? "tarea pendiente" : "tareas pendientes"}` : "",
 		m.alertas ? `${m.alertas} ${m.alertas === 1 ? "alerta sin leer" : "alertas sin leer"}` : "",
+		mov ? `${mov} ${mov === 1 ? "aviso judicial pendiente" : "avisos judiciales pendientes"}` : "",
 	].filter(Boolean);
-	const n = m.tareas + m.alertas;
-	return `${partes.join(" y ")} ${n === 1 ? "pasó" : "pasaron"} a los nuevos responsables.`;
+	if (!partes.length) return "";
+	const lista = partes.length > 1 ? `${partes.slice(0, -1).join(", ")} y ${partes[partes.length - 1]}` : partes[0];
+	return `${lista} ${m.tareas + m.alertas + mov === 1 ? "pasó" : "pasaron"} a los nuevos responsables.`;
 };
 
 export interface DistributeResult {
