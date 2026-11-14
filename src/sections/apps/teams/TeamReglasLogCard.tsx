@@ -53,7 +53,15 @@ const TIPO_LABEL: Record<string, string> = {
 	cambio: "Cambio de instancia",
 	restauracion: "Restauración",
 	omitida: "Sin cambios",
+	reasignacion: "Reasignación manual",
 };
+const REGLA_LABEL: Record<string, string> = { alta: "Causas nuevas", ubicacion: "Ubicación actual", manual: "Reasignación manual" };
+const REGLA_DETALLE: Record<string, string> = {
+	alta: "Regla para las causas nuevas",
+	ubicacion: "Regla por ubicación actual",
+	manual: "Reasignación manual",
+};
+const ORIGEN_MANUAL: Record<string, string> = { asistente: "desde el asistente de reparto", manual: "desde la carpeta o la selección" };
 const MOTIVO_LABEL: Record<string, string> = {
 	nueva: "causa nueva sin tildar «asignar también las causas nuevas»",
 	con_responsable: "ya tenía responsable propio",
@@ -62,6 +70,7 @@ const MOTIVO_LABEL: Record<string, string> = {
 /** Qué pasó, en una línea. */
 function queFue(it: ReglaLogItem): string {
 	if (it.regla === "alta") return `Causa nueva · ${it.clave ? juzgadoLabel(it.clave) : "Las demás"}`;
+	if (it.regla === "manual") return `Reasignada ${ORIGEN_MANUAL[it.origen] || ""}`.trim();
 	const paso = it.de ? `${kindLabel(it.de)} → ${kindLabel(it.a)}` : `En ${kindLabel(it.a)}`;
 	if (it.tipo === "omitida") return `${paso} · sin cambios (${MOTIVO_LABEL[it.motivo || ""] || it.motivo})`;
 	if (it.tipo === "restauracion") return `${paso} · vuelve a quien la tenía`;
@@ -142,7 +151,7 @@ export default function TeamReglasLogCard() {
 				all.map((it) => [
 					fmt(it.at),
 					it.folderName,
-					it.regla === "alta" ? "Causas nuevas" : "Ubicación actual",
+					REGLA_LABEL[it.regla] || it.regla,
 					queFue(it),
 					names(it.antes),
 					names(it.despues),
@@ -174,6 +183,7 @@ export default function TeamReglasLogCard() {
 				{ label: "Cambios de instancia", n: sum.ubicacion.cambio || 0 },
 				{ label: "Restauraciones", n: sum.ubicacion.restauracion || 0 },
 				{ label: "Sin cambios", n: sum.ubicacion.omitida || 0 },
+				{ label: "Reasignaciones manuales", n: sum.manual?.reasignacion || 0 },
 		  ]
 		: [];
 
@@ -216,9 +226,10 @@ export default function TeamReglasLogCard() {
 					onChange={(e) => setFilter({ regla: e.target.value as ReglaLogQuery["regla"] })}
 					sx={{ minWidth: 160 }}
 				>
-					<MenuItem value="">Las dos</MenuItem>
+					<MenuItem value="">Todas</MenuItem>
 					<MenuItem value="alta">Causas nuevas</MenuItem>
 					<MenuItem value="ubicacion">Ubicación actual</MenuItem>
+					<MenuItem value="manual">Reasignación manual</MenuItem>
 				</TextField>
 				<TextField
 					select
@@ -319,7 +330,7 @@ export default function TeamReglasLogCard() {
 											{it.folderName || "Sin carátula"}
 										</Link>
 										<Typography variant="caption" color="text.secondary" component="div">
-											{it.regla === "alta" ? "Regla para las causas nuevas" : "Regla por ubicación actual"}
+											{REGLA_DETALLE[it.regla] || it.regla}
 										</Typography>
 									</TableCell>
 									<TableCell data-label="Qué pasó">

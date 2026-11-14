@@ -18,6 +18,7 @@ import {
 import { alpha } from "@mui/material/styles";
 
 import { dispatch } from "store";
+import { migracionTexto } from "types/folderDistribute";
 import { BulkResponsablesMode, updateFoldersResponsablesBulk } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
 import { useTeam } from "contexts/TeamContext";
@@ -87,7 +88,15 @@ const BulkResponsablesDialog = ({ open, folderIds, onClose, onDone, single }: Pr
 		);
 		setSaving(false);
 		if (result.success) {
-			notify(result.modified === 1 ? "Se actualizó 1 carpeta" : `Se actualizaron ${result.modified} carpetas`, "success");
+			notify(
+				[
+					result.modified === 1 ? "Se actualizó 1 carpeta." : `Se actualizaron ${result.modified} carpetas.`,
+					migracionTexto(result.migracion),
+				]
+					.filter(Boolean)
+					.join(" "),
+				"success",
+			);
 			onDone?.();
 			onClose();
 		} else {

@@ -27,6 +27,7 @@ import { BRAND_BLUE } from "themes/dashboardTokens";
 import { getTeamAssignees, resolveAssignees, TeamAssignee } from "utils/teamAssignees";
 import TaskAssignees from "sections/apps/tasks/TaskAssignees";
 import { FolderNotificationPolicy } from "types/folder";
+import { migracionTexto } from "types/folderDistribute";
 
 export const FOLDER_POLICY_OPTIONS: { value: FolderNotificationPolicy; label: string; help: string }[] = [
 	{ value: "equipo", label: "Según el equipo", help: "Sigue la regla por defecto del equipo (Mi equipo → Avisos del equipo)." },
@@ -93,7 +94,8 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 		setSavingResponsables(false);
 		if (result.success) {
 			setEditOpen(false);
-			notify("Responsables actualizados", "success");
+			// Tareas heredadas y alertas sin leer siguen al nuevo responsable (hub, 14/11/2026).
+			notify(["Responsables actualizados.", migracionTexto(result.migracion)].filter(Boolean).join(" "), "success");
 		} else {
 			notify(result.message, "error");
 		}

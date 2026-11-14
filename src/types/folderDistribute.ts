@@ -65,10 +65,29 @@ export interface DistributePreview {
 	porResponsable: DistributePreviewRow[];
 }
 
+/** Lo que siguió al nuevo responsable al reasignar (hub services/responsablesMigracion.js, 14/11/2026). */
+export interface ResponsablesMigracion {
+	carpetas: number;
+	tareas: number;
+	alertas: number;
+}
+
+/** «Además, 3 tareas pendientes y 2 alertas sin leer pasaron a los nuevos responsables.» ("" si no hubo nada). */
+export const migracionTexto = (m?: ResponsablesMigracion | null): string => {
+	if (!m || (!m.tareas && !m.alertas)) return "";
+	const partes = [
+		m.tareas ? `${m.tareas} ${m.tareas === 1 ? "tarea pendiente" : "tareas pendientes"}` : "",
+		m.alertas ? `${m.alertas} ${m.alertas === 1 ? "alerta sin leer" : "alertas sin leer"}` : "",
+	].filter(Boolean);
+	const n = m.tareas + m.alertas;
+	return `${partes.join(" y ")} ${n === 1 ? "pasó" : "pasaron"} a los nuevos responsables.`;
+};
+
 export interface DistributeResult {
 	success: true;
 	dryRun: boolean;
 	modified?: number;
+	migracion?: ResponsablesMigracion;
 	preview: DistributePreview;
 }
 

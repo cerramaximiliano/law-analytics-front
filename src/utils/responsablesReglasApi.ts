@@ -109,13 +109,15 @@ export async function applyReglaDeAlta(groupId: string, dryRun: boolean, draft?:
 }
 
 // Registro por carpeta de las dos reglas (hub §8.4, colección responsablesreglaslogs).
-export type ReglaLogTipo = "alta" | "cambio" | "restauracion" | "omitida";
+export type ReglaLogTipo = "alta" | "cambio" | "restauracion" | "omitida" | "reasignacion";
+/** «manual»: reasignación hecha por una persona (carpeta, selección o asistente), 14/11/2026. */
+export type ReglaLogRegla = "alta" | "ubicacion" | "manual";
 
 export interface ReglaLogItem {
 	_id: string;
 	folderId: string;
 	folderName: string;
-	regla: "alta" | "ubicacion";
+	regla: ReglaLogRegla;
 	tipo: ReglaLogTipo;
 	motivo: "con_responsable" | "nueva" | null;
 	clave: string | null;
@@ -131,7 +133,7 @@ export interface ReglaLogItem {
 }
 
 export interface ReglaLogQuery {
-	regla?: "alta" | "ubicacion" | "";
+	regla?: ReglaLogRegla | "";
 	tipo?: ReglaLogTipo | "";
 	responsable?: string;
 	desde?: string;
@@ -146,7 +148,7 @@ export interface ReglaLogResponse {
 	total: number;
 	page: number;
 	limit: number;
-	summary: { alta: Partial<Record<ReglaLogTipo, number>>; ubicacion: Partial<Record<ReglaLogTipo, number>> };
+	summary: Record<"alta" | "ubicacion", Partial<Record<ReglaLogTipo, number>>> & { manual?: Partial<Record<ReglaLogTipo, number>> };
 }
 
 export async function getReglasLog(groupId: string, query: ReglaLogQuery): Promise<ReglaLogResponse> {

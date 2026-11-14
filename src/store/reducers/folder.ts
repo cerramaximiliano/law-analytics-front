@@ -3,7 +3,7 @@
 import axios from "axios";
 import { Dispatch } from "redux";
 import { FolderData, FolderNotificationPolicy, FolderState, PendingCausa } from "types/folder";
-import { DistributeRequest, DistributeResult, DistributeScope, RadicacionSummary } from "types/folderDistribute";
+import { DistributeRequest, DistributeResult, DistributeScope, RadicacionSummary, ResponsablesMigracion } from "types/folderDistribute";
 import { incrementUserStat, updateUserStorage, isFolderLinkedToCausa } from "./userStats";
 
 // Action types
@@ -353,7 +353,11 @@ export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatc
 // ==============================|| EQUIPOS: RESPONSABLES Y AVISOS ||============================== //
 
 type FolderTeamResult =
-	| { success: true; folder: { _id: string; responsables: string[]; notificationPolicy: FolderNotificationPolicy } }
+	| {
+			success: true;
+			folder: { _id: string; responsables: string[]; notificationPolicy: FolderNotificationPolicy };
+			migracion?: ResponsablesMigracion;
+	  }
 	| { success: false; message: string };
 
 const folderTeamError = (error: unknown, fallback: string) =>
@@ -371,7 +375,7 @@ export const updateFolderResponsables =
 			);
 			if (response.data?.success && response.data.folder) {
 				dispatch({ type: PATCH_FOLDER, payload: response.data.folder });
-				return { success: true, folder: response.data.folder };
+				return { success: true, folder: response.data.folder, migracion: response.data.migracion };
 			}
 			return { success: false, message: response.data?.message || "No se pudieron guardar los responsables" };
 		} catch (error) {
@@ -402,7 +406,12 @@ export const updateFolderNotificationPolicy =
 export type BulkResponsablesMode = "replace" | "add" | "remove";
 
 type BulkResponsablesResult =
-	| { success: true; modified: number; folders: { _id: string; responsables: string[]; notificationPolicy?: FolderNotificationPolicy }[] }
+	| {
+			success: true;
+			modified: number;
+			folders: { _id: string; responsables: string[]; notificationPolicy?: FolderNotificationPolicy }[];
+			migracion: ResponsablesMigracion;
+	  }
 	| { success: false; message: string };
 
 /** El hub acepta hasta 500 carpetas por llamada; de a lotes se llega a cualquier selección. */
@@ -420,6 +429,7 @@ export const updateFoldersResponsablesBulk =
 		try {
 			const ids = [...new Set(folderIds)];
 			let modified = 0;
+			const migracion: ResponsablesMigracion = { carpetas: 0, tareas: 0, alertas: 0 };
 			const folders: { _id: string; responsables: string[]; notificationPolicy?: FolderNotificationPolicy }[] = [];
 			for (let i = 0; i < ids.length; i += BULK_RESPONSABLES_CHUNK) {
 				const chunk = ids.slice(i, i + BULK_RESPONSABLES_CHUNK);
@@ -438,8 +448,14 @@ export const updateFoldersResponsablesBulk =
 				got.forEach((folder) => dispatch({ type: PATCH_FOLDER, payload: folder }));
 				folders.push(...got);
 				modified += Number(response.data.modified ?? got.length) || 0;
+				const m = response.data.migracion;
+				if (m) {
+					migracion.carpetas += m.carpetas || 0;
+					migracion.tareas += m.tareas || 0;
+					migracion.alertas += m.alertas || 0;
+				}
 			}
-			return { success: true, modified, folders };
+			return { success: true, modified, folders, migracion };
 		} catch (error) {
 			return { success: false, message: folderTeamError(error, "No se pudieron asignar los responsables") };
 		}

@@ -47,7 +47,9 @@ import {
 	DistributeMode,
 	DistributeOrder,
 	DistributePreview,
+	migracionTexto,
 	RadicacionSummary,
+	ResponsablesMigracion,
 } from "types/folderDistribute";
 import {
 	ARCHIVED_OPTIONS,
@@ -129,6 +131,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [modified, setModified] = useState<number | null>(null);
+	const [migracion, setMigracion] = useState<ResponsablesMigracion | null>(null);
 	const [prefill, setPrefill] = useState<TeamAssignee[]>([]);
 	// «Guardar como regla para las causas nuevas» (14/11/2026): solo criterios por tabla estáticos (radicación / fuero).
 	const [saveAsRule, setSaveAsRule] = useState(false);
@@ -273,6 +276,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 		}
 		const n = r.data.modified ?? 0;
 		setModified(n);
+		setMigracion(r.data.migracion || null);
 		setPreview(r.data.preview);
 		trackActivity("team_distribute_apply", { type: s.type, mode: s.mode, count: n });
 		if (ruleEligible && saveAsRule && groupId) {
@@ -860,6 +864,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 						</Box>
 					)}
 					<Typography variant="body2" color="text.secondary">
+						{!s.onlyUnassigned && "Las tareas pendientes heredadas y las alertas sin leer de cada carpeta pasan a su nuevo responsable. "}
 						{s.onlyUnassigned
 							? "Solo se tocan carpetas sin responsable."
 							: s.mode === "replace"
@@ -891,6 +896,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 			<Alert severity="success" sx={{ width: "100%" }}>
 				{modified === 1 ? "Se asignó 1 carpeta." : `Se asignaron ${nf(modified || 0)} carpetas.`}
 				{preview && preview.sinAsignar > 0 ? ` Quedaron ${nf(preview.sinAsignar)} sin asignar.` : ""}
+				{migracionTexto(migracion) ? ` Además, ${migracionTexto(migracion)}` : ""}
 			</Alert>
 			{ruleResult && (
 				<Alert severity={ruleResult.ok ? "info" : "warning"} sx={{ width: "100%" }}>
