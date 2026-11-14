@@ -176,7 +176,7 @@ const NotificacionesPage = () => {
 						<Stack spacing={0.125} sx={{ minWidth: 0 }}>
 							<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em" }}>Notificaciones</Typography>
 							<Typography variant="caption" color="text.secondary">
-								Bandeja de notificaciones del PJN · {alcance}
+								Bandeja de notificaciones del PJN (solo expedientes con cuenta de Mis Causas vinculada) · {alcance}
 							</Typography>
 						</Stack>
 					</Stack>
@@ -248,6 +248,28 @@ const NotificacionesPage = () => {
 					)}
 				</Stack>
 
+				{/* Solo PJN con cuenta de Mis Causas: sin ninguna credencial activa en el alcance, la bandeja no se sincroniza. */}
+				{!loading && data && data.credencialesActivas === 0 && (
+					<Alert
+						severity="warning"
+						sx={{ m: 2.5, mb: 0 }}
+						action={
+							<Button
+								size="small"
+								color="inherit"
+								onClick={() => navigate(PJN_PROFILE_PATH)}
+								sx={{ textTransform: "none", whiteSpace: "nowrap" }}
+							>
+								Vincular Mis Causas
+							</Button>
+						}
+					>
+						{activeTeam
+							? "Nadie en el equipo tiene una cuenta de Mis Causas del PJN vinculada, así que la bandeja de notificaciones no se sincroniza. "
+							: "No tenés una cuenta de Mis Causas del PJN vinculada, así que la bandeja de notificaciones no se sincroniza. "}
+						Las cédulas aparecen acá cuando se autentican las credenciales en Integraciones.
+					</Alert>
+				)}
 				{loading ? (
 					<Box sx={{ p: 2.5 }}>
 						<Skeleton variant="rounded" height={48} sx={{ mb: 1 }} />

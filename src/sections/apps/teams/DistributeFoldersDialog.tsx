@@ -180,6 +180,9 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 	const [step, setStep] = useState(0);
 	const [s, setS] = useState<DistributeWizardState>(() => initialWizardState(folderIds));
 	const patch = useCallback((p: Partial<DistributeWizardState>) => setS((prev) => ({ ...prev, ...p })), []);
+	// `baseSummary`: todas las carpetas que ve quien reparte (para las opciones de los filtros). `summary`: las del
+	// alcance elegido (archivadas, sin responsable, filtros), que es lo que cuentan las tablas del criterio (14/11/2026).
+	const [baseSummary, setBaseSummary] = useState<RadicacionSummary | null>(null);
 	const [summary, setSummary] = useState<RadicacionSummary | null>(null);
 	const [loadingSummary, setLoadingSummary] = useState(false);
 	const [preview, setPreview] = useState<DistributePreview | null>(null);
@@ -199,11 +202,31 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 		if (!groupId) return;
 		setLoadingSummary(true);
 		fetchRadicacionSummary(groupId).then((r) => {
-			setSummary(r);
-			setLoadingSummary(false);
+			setBaseSummary(r);
 		});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [open, groupId]);
+
+	// Cada cambio del alcance vuelve a contar en el hub (con una pausa corta para no pedir en cada tecla).
+	useEffect(() => {
+		if (!open || !groupId) return;
+		const built = buildDistributeRequest({ ...s, type: "equal", assignees: ["x"] }, true);
+		const scope = built.ok ? built.request.scope : { archived: s.archived, onlyUnassigned: s.onlyUnassigned, filters: {} };
+		let cancelled = false;
+		setLoadingSummary(true);
+		const t = setTimeout(() => {
+			fetchRadicacionSummary(groupId, scope).then((r) => {
+				if (cancelled) return;
+				setSummary(r);
+				setLoadingSummary(false);
+			});
+		}, 250);
+		return () => {
+			cancelled = true;
+			clearTimeout(t);
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [open, groupId, s.archived, s.onlyUnassigned, s.fueros, s.juzgados, s.salas, s.ubicaciones, s.folderIds]);
 
 	const selectionMode = s.folderIds.length > 0;
 
@@ -225,13 +248,34 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 		const rows = ubicacionRows(summary, s.archived);
 		return s.ubicaciones.length ? rows.filter((r) => s.ubicaciones.includes(r.key)) : rows;
 	}, [summary, s.archived, s.ubicaciones]);
-	const allFueros = useMemo(() => fueroRows(summary, s.archived), [summary, s.archived]);
-	const radicacionOpts = useMemo(() => radicacionFilterOptions(summary, s.archived, s.fueros), [summary, s.archived, s.fueros]);
-	const allUbicaciones = useMemo(() => ubicacionRows(summary, s.archived), [summary, s.archived]);
-	// Estimación del alcance: la tabla del filtro más restrictivo (la cuenta exacta la da la vista previa).
-	const estimateRows = s.ubicaciones.length ? rowsUbicacion : s.salas.length && !s.juzgados.length ? rowsSala : rowsJuzgado;
-	const estimate = useMemo(() => estimateRows.reduce((n, r) => n + r.count, 0), [estimateRows]);
-	const estimateUnassigned = useMemo(() => estimateRows.reduce((n, r) => n + r.sinResponsable, 0), [estimateRows]);
+	const allFueros = useMemo(() => fueroRows(baseSummary, s.archived), [baseSummary, s.archived]);
+	const radicacionOpts = useMemo(() => radicacionFilterOptions(baseSummary, s.archived, s.fueros), [baseSummary, s.archived, s.fueros]);
+	const allUbicaciones = useMemo(() => ubicacionRows(baseSummary, s.archived), [baseSummary, s.archived]);
+	// Carpetas del alcance (cuenta exacta del hub) y cuántas quedan afuera por «solo sin responsable».
+	const estimate = summary?.total ?? 0;
+	const conResponsable = summary?.conResponsable ?? 0;
+	// Resumen del alcance para el paso Criterio: qué universo se reparte.
+	const scopeChips = useMemo(() => {
+		const chips: string[] = [];
+		if (selectionMode) chips.push(`${nf(s.folderIds.length)} seleccionadas`);
+		else chips.push(ARCHIVED_OPTIONS.find((o) => o.value === s.archived)?.label || "");
+		chips.push(...s.fueros);
+		chips.push(...joinRadicacion(s.juzgados, s.salas).map((v) => radicacionOpts.find((o) => o.value === v)?.label || v));
+		chips.push(...s.ubicaciones.map((k) => allUbicaciones.find((r) => r.key === k)?.label || k));
+		if (s.onlyUnassigned) chips.push("Solo sin responsable");
+		return chips.filter(Boolean);
+	}, [
+		selectionMode,
+		s.folderIds.length,
+		s.archived,
+		s.fueros,
+		s.juzgados,
+		s.salas,
+		s.ubicaciones,
+		s.onlyUnassigned,
+		radicacionOpts,
+		allUbicaciones,
+	]);
 
 	const criteriaRows: CriteriaRow[] =
 		s.type === "juzgado" ? rowsJuzgado : s.type === "sala" ? rowsSala : s.type === "ubicacion" ? rowsUbicacion : rowsFuero;
@@ -399,16 +443,18 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 			) : selectionMode ? null : (
 				<Typography variant="body2" color="text.secondary">
 					{estimate === 0 ? (
-						"No hay carpetas en este alcance."
+						s.onlyUnassigned && conResponsable > 0 ? (
+							<>
+								Las <strong>{nf(conResponsable)}</strong> carpetas de este alcance ya tienen responsable. Para reasignarlas, desactivá{" "}
+								<strong>«Solo las carpetas sin responsable»</strong>.
+							</>
+						) : (
+							"No hay carpetas en este alcance."
+						)
 					) : (
 						<>
-							<strong>{nf(estimate)}</strong> {estimate === 1 ? "carpeta" : "carpetas"} en el alcance
-							{s.onlyUnassigned && (
-								<>
-									, <strong>{nf(estimateUnassigned)}</strong> sin responsable
-								</>
-							)}
-							. La cuenta exacta la da la vista previa.
+							Se reparten <strong>{nf(estimate)}</strong> {estimate === 1 ? "carpeta" : "carpetas"}
+							{s.onlyUnassigned && conResponsable > 0 && <> (otras {nf(conResponsable)} ya tienen responsable y quedan afuera)</>}.
 							{estimate > MAX_DISTRIBUTE_FOLDERS && (
 								<Typography component="span" color="error">
 									{" "}
@@ -426,6 +472,15 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 		const opt = CRITERIA_OPTIONS.find((o) => o.value === s.type);
 		return (
 			<Stack spacing={2}>
+				{/* El alcance ya está elegido: acá solo se decide CÓMO se reparte ese universo (14/11/2026). */}
+				<Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
+					<Typography variant="body2">
+						Cómo se reparten las <strong>{nf(estimate)}</strong> carpetas del alcance:
+					</Typography>
+					{scopeChips.map((c) => (
+						<Chip key={c} size="small" variant="outlined" label={c} />
+					))}
+				</Stack>
 				<Box>
 					<ToggleButtonGroup
 						exclusive
@@ -456,7 +511,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 									value={prefill}
 									onChange={setPrefill}
 									size="small"
-									placeholder="Pre-llenar en partes iguales entre…"
+									placeholder="Pre-llenar la tabla entre…"
 								/>
 							</Box>
 							<Stack direction="row" spacing={1}>
@@ -468,7 +523,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 									disabled={!prefill.length || !criteriaRows.length}
 									sx={{ textTransform: "none" }}
 								>
-									Repartir
+									Pre-llenar
 								</Button>
 								<Button
 									size="small"
@@ -481,6 +536,11 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 								</Button>
 							</Stack>
 						</Stack>
+						<Typography variant="caption" color="text.secondary" component="div" sx={{ mt: -1 }}>
+							<strong>Pre-llenar</strong> asigna cada fila a una sola persona y reparte las filas entre las elegidas para equilibrar la
+							cantidad; después podés ajustar fila por fila. Si en una fila elegís a varios, todos quedan como responsables de esas
+							carpetas. Para dividir las carpetas de una misma fila entre varios, usá <strong>Partes iguales</strong> con ese alcance.
+						</Typography>
 						{loadingSummary ? (
 							<Skeleton variant="rounded" height={120} />
 						) : criteriaRows.length === 0 ? (
@@ -494,7 +554,11 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 											<TableCell align="right" sx={{ width: 90 }}>
 												Carpetas
 											</TableCell>
-											<TableCell>Responsables</TableCell>
+											<TableCell>
+												<Tooltip title="Varios en una misma fila = todos responsables de esas carpetas">
+													<span>Responsables</span>
+												</Tooltip>
+											</TableCell>
 										</TableRow>
 									</TableHead>
 									<TableBody>
@@ -512,7 +576,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 												</TableCell>
 												<TableCell align="right">
 													<Typography variant="body2">{nf(r.count)}</Typography>
-													{s.onlyUnassigned && r.sinResponsable !== r.count && (
+													{!s.onlyUnassigned && r.sinResponsable > 0 && r.sinResponsable !== r.count && (
 														<Typography variant="caption" color="text.secondary" component="div">
 															{nf(r.sinResponsable)} sin resp.
 														</Typography>
@@ -597,10 +661,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 								))}
 								<Typography variant="caption" color="text.secondary">
 									Suman {nf(quantitiesSum)}
-									{!selectionMode && estimate > 0
-										? ` de ${nf(s.onlyUnassigned ? estimateUnassigned : estimate)} aproximadas en el alcance`
-										: ""}
-									.
+									{!selectionMode && estimate > 0 ? ` de ${nf(estimate)} en el alcance` : ""}.
 								</Typography>
 							</Stack>
 						)}
@@ -693,6 +754,11 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 						{preview.archivadasIncluidas > 0 && (
 							<Chip size="small" variant="outlined" label={`${nf(preview.archivadasIncluidas)} archivadas incluidas`} />
 						)}
+						{(preview.excluidasConResponsable ?? 0) > 0 && (
+							<Tooltip title="Quedan afuera por «Solo las carpetas sin responsable»">
+								<Chip size="small" variant="outlined" label={`${nf(preview.excluidasConResponsable as number)} con responsable, afuera`} />
+							</Tooltip>
+						)}
 					</Stack>
 					{preview.restrictedByVisibility && (
 						<Alert severity="info" sx={{ py: 0.5 }}>
@@ -705,7 +771,23 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 						</Typography>
 					)}
 					{rows.length === 0 ? (
-						<Alert severity="warning">Con este criterio no se asigna ninguna carpeta.</Alert>
+						<Alert severity="warning">
+							{preview.total === 0 ? (
+								(preview.excluidasConResponsable ?? 0) > 0 ? (
+									<>
+										Las {nf(preview.excluidasConResponsable as number)} carpetas que cumplen los filtros ya tienen responsable, así que el
+										alcance quedó vacío. En <strong>Alcance</strong>, desactivá «Solo las carpetas sin responsable» para reasignarlas.
+									</>
+								) : (
+									"El alcance no tiene carpetas para repartir: revisá los filtros."
+								)
+							) : (
+								<>
+									Ninguna de las {nf(preview.total)} carpetas del alcance tiene responsable elegido en el criterio. Volvé a{" "}
+									<strong>Criterio</strong> y completá las filas.
+								</>
+							)}
+						</Alert>
 					) : (
 						<Box sx={{ maxHeight: 360, overflow: "auto", border: `1px solid ${alpha(BRAND_BLUE, 0.12)}`, borderRadius: 1.5 }}>
 							<Table size="small" stickyHeader>

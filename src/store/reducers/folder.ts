@@ -3,7 +3,7 @@
 import axios from "axios";
 import { Dispatch } from "redux";
 import { FolderData, FolderNotificationPolicy, FolderState, PendingCausa } from "types/folder";
-import { DistributeRequest, DistributeResult, RadicacionSummary } from "types/folderDistribute";
+import { DistributeRequest, DistributeResult, DistributeScope, RadicacionSummary } from "types/folderDistribute";
 import { incrementUserStat, updateUserStorage, isFolderLinkedToCausa } from "./userStats";
 
 // Action types
@@ -515,10 +515,18 @@ export const distributeFolderResponsables = async (
 };
 
 /** Conteos por juzgado, fuero, jurisdicción y ubicación del equipo, con el alcance visible de quien pide. */
-export const fetchRadicacionSummary = async (groupId: string): Promise<RadicacionSummary | null> => {
+export const fetchRadicacionSummary = async (groupId: string, scope?: DistributeScope): Promise<RadicacionSummary | null> => {
 	try {
+		// Con `scope` (14/11/2026) el hub cuenta solo las carpetas del alcance elegido (archivadas, sin responsable, filtros).
+		const params: Record<string, string | boolean> = {};
+		if (scope) {
+			params.archived = scope.archived;
+			params.onlyUnassigned = scope.onlyUnassigned;
+			for (const [k, v] of Object.entries(scope.filters || {})) if (Array.isArray(v) && v.length) params[k] = v.join(",");
+		}
 		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}/radicacion-summary`, {
 			headers: { "X-Group-Id": groupId },
+			params,
 		});
 		if (response.data?.success && Array.isArray(response.data.juzgados)) return response.data as RadicacionSummary;
 		return null;

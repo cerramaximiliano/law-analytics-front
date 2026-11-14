@@ -58,6 +58,8 @@ export interface PjnCedulasBandejaResponse {
 	/** Carpetas PJN activas en el alcance (equipo + visibilidad, o propias). */
 	carpetas: number;
 	enEquipo: boolean;
+	/** Cuentas de Mis Causas activas entre los usuarios del alcance; 0 = nada se sincroniza, hay que vincular. */
+	credencialesActivas: number;
 	data: PjnCedulaGlobal[];
 	message?: string;
 }

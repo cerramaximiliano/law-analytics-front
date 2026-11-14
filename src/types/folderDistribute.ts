@@ -57,6 +57,8 @@ export interface DistributePreview {
 	asignadas: number;
 	sinAsignar: number;
 	archivadasIncluidas: number;
+	/** Carpetas del alcance que quedaron afuera solo por «solo sin responsable» (para explicar una vista previa vacía). */
+	excluidasConResponsable?: number;
 	restrictedByVisibility: boolean;
 	porResponsable: DistributePreviewRow[];
 }
@@ -76,6 +78,8 @@ export interface RadicacionCounts {
 
 export interface RadicacionSummary {
 	total: number;
+	/** Con alcance «solo sin responsable»: cuántas carpetas del alcance ya tienen responsable y quedan afuera. */
+	conResponsable?: number;
 	juzgados: ({ fuero: string; juzgado: string } & RadicacionCounts)[];
 	fueros: ({ fuero: string } & RadicacionCounts)[];
 	jurisdicciones: ({ jurisdiccion: string } & RadicacionCounts)[];
