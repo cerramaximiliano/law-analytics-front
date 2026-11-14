@@ -156,3 +156,37 @@ export async function getReglasLog(groupId: string, query: ReglaLogQuery): Promi
 	const { data } = await axios.get(`${base(groupId)}/responsables-reglas/log`, { ...headers(groupId), params });
 	return data;
 }
+
+// Último cambio de responsables de una carpeta (panel de equipo del detalle, 14/11/2026).
+export type UltimoCambioResponsables = Pick<
+	ReglaLogItem,
+	"regla" | "tipo" | "origen" | "clave" | "de" | "a" | "antes" | "despues" | "entran" | "salen" | "at"
+>;
+
+export async function getUltimoCambioResponsables(
+	folderId: string,
+	requestHeaders: Record<string, string>,
+): Promise<UltimoCambioResponsables | null> {
+	const { data } = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/${folderId}/responsables/ultimo-cambio`, {
+		headers: requestHeaders,
+	});
+	return data?.cambio || null;
+}
+
+const UBICACION_CORTA: Record<string, string> = {
+	juzgado: "1ª instancia",
+	camara: "Cámara",
+	corte: "Corte Suprema",
+	"tribunal-oral": "Tribunal Oral",
+	archivo: "Archivo General",
+	otro: "otra dependencia",
+};
+const ubic = (k: string | null) => (k ? UBICACION_CORTA[k] || k : "");
+
+/** Por qué cambiaron los responsables, en pocas palabras: «por la regla de ubicación actual (1ª instancia → Cámara)». */
+export function ultimoCambioMotivo(c: UltimoCambioResponsables): string {
+	if (c.regla === "alta") return "por la regla para las causas nuevas";
+	if (c.regla === "manual") return c.origen === "asistente" ? "a mano, desde el asistente de reparto" : "a mano";
+	if (c.tipo === "restauracion") return `por la regla de ubicación actual (volvió a ${ubic(c.a)})`;
+	return `por la regla de ubicación actual (${c.de ? `${ubic(c.de)} → ${ubic(c.a)}` : `en ${ubic(c.a)}`})`;
+}

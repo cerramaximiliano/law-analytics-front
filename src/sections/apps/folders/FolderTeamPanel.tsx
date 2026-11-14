@@ -17,7 +17,7 @@ import {
 	Typography,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { Edit2, InfoCircle } from "iconsax-react";
+import { Clock, Edit2, InfoCircle } from "iconsax-react";
 
 import { dispatch } from "store";
 import { updateFolderNotificationPolicy, updateFolderResponsables } from "store/reducers/folder";
@@ -28,6 +28,7 @@ import { getTeamAssignees, resolveAssignees, TeamAssignee } from "utils/teamAssi
 import TaskAssignees from "sections/apps/tasks/TaskAssignees";
 import { FolderNotificationPolicy } from "types/folder";
 import { migracionTexto } from "types/folderDistribute";
+import { getUltimoCambioResponsables, UltimoCambioResponsables, ultimoCambioMotivo } from "utils/responsablesReglasApi";
 
 export const FOLDER_POLICY_OPTIONS: { value: FolderNotificationPolicy; label: string; help: string }[] = [
 	{ value: "equipo", label: "Según el equipo", help: "Sigue la regla por defecto del equipo (Mi equipo → Avisos del equipo)." },
@@ -85,6 +86,27 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 	useEffect(() => {
 		if (editOpen) setDraft(currentIds);
 	}, [editOpen, currentIds]);
+
+	// Último cambio de responsables (regla automática o a mano). Se vuelve a pedir cuando cambian los responsables.
+	// Si falla o no hay registro, la línea no se muestra: es un dato de contexto, no bloquea nada.
+	const [ultimoCambio, setUltimoCambio] = useState<UltimoCambioResponsables | null>(null);
+	const responsablesKey = currentIds.join(",");
+	useEffect(() => {
+		let vigente = true;
+		getUltimoCambioResponsables(folderId, getRequestHeaders())
+			.then((c) => vigente && setUltimoCambio(c))
+			.catch(() => vigente && setUltimoCambio(null));
+		return () => {
+			vigente = false;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [folderId, responsablesKey, activeTeam?._id]);
+	const nombres = (ids: string[]) =>
+		ids.length
+			? resolveAssignees(ids, assignableMembers)
+					.map((a) => a.name)
+					.join(", ")
+			: "nadie";
 
 	const selectedAssignees = useMemo(() => resolveAssignees(draft, assignableMembers), [draft, assignableMembers]);
 
@@ -187,6 +209,32 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 					</Tooltip>
 				</Stack>
 			</Stack>
+
+			{ultimoCambio && (
+				<Stack
+					direction="row"
+					spacing={0.75}
+					alignItems="flex-start"
+					sx={{ mt: 0.75, color: "text.secondary" }}
+					data-testid="folder-ultimo-cambio"
+				>
+					<Box component="span" sx={{ display: "inline-flex", mt: "2px", flexShrink: 0 }}>
+						<Clock size={14} />
+					</Box>
+					<Typography variant="caption" sx={{ minWidth: 0 }}>
+						Último cambio de responsables:{" "}
+						{new Date(ultimoCambio.at).toLocaleString("es-AR", {
+							day: "2-digit",
+							month: "2-digit",
+							year: "numeric",
+							hour: "2-digit",
+							minute: "2-digit",
+							hour12: false,
+						})}
+						, {ultimoCambioMotivo(ultimoCambio)}. Antes: {nombres(ultimoCambio.antes)}. Ahora: {nombres(ultimoCambio.despues)}.
+					</Typography>
+				</Stack>
+			)}
 
 			<Dialog open={editOpen} onClose={() => !savingResponsables && setEditOpen(false)} fullWidth maxWidth="sm">
 				<DialogTitle>Responsables de la carpeta</DialogTitle>
