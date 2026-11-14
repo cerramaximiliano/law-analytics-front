@@ -72,6 +72,8 @@ import {
 } from "utils/folderDistribute";
 import { trackActivity } from "utils/productAnalytics";
 import { assigneeTag, getTeamAssignees, TeamAssignee } from "utils/teamAssignees";
+import { apiError, saveReglaDeAlta } from "utils/responsablesReglasApi";
+import AssigneePicker from "./AssigneePicker";
 
 interface Props {
 	open: boolean;
@@ -103,74 +105,13 @@ const primarySx = {
 	"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88) },
 } as const;
 
-/** Selector de responsables (integrantes, previstos e invitados) con chips. */
-function AssigneePicker({
-	options,
-	value,
-	onChange,
-	placeholder,
-	size = "medium",
-	multiple = true,
-}: {
-	options: TeamAssignee[];
-	value: TeamAssignee[];
-	onChange: (next: TeamAssignee[]) => void;
-	placeholder?: string;
-	size?: "small" | "medium";
-	multiple?: boolean;
-}) {
-	return (
-		<Autocomplete<TeamAssignee, true>
-			multiple
-			fullWidth
-			size={size}
-			options={options}
-			value={value}
-			onChange={(_e, next) => onChange(multiple ? next : next.slice(-1))}
-			isOptionEqualToValue={(o, v) => o.id === v.id}
-			getOptionLabel={(o) => o.name}
-			filterSelectedOptions
-			noOptionsText="No hay integrantes para asignar"
-			renderOption={(props, option) => (
-				<Box component="li" {...props} key={option.id}>
-					<Stack direction="row" spacing={1} alignItems="center">
-						<Avatar src={option.avatar} sx={{ width: 24, height: 24, fontSize: "0.62rem", fontWeight: 700 }}>
-							{option.initials}
-						</Avatar>
-						<Typography variant="body2">
-							{option.name}
-							{option.isOwner ? " · Propietario" : ""}
-							{assigneeTag(option) ? ` · ${assigneeTag(option)}` : ""}
-						</Typography>
-					</Stack>
-				</Box>
-			)}
-			renderTags={(tagValue, getTagProps) =>
-				tagValue.map((option, index) => (
-					<Chip
-						{...getTagProps({ index })}
-						key={option.id}
-						size="small"
-						label={assigneeTag(option) ? `${option.name} (${assigneeTag(option)})` : option.name}
-						variant={assigneeTag(option) ? "outlined" : "filled"}
-						avatar={
-							<Avatar src={option.avatar} sx={{ fontSize: "0.6rem", fontWeight: 700 }}>
-								{option.initials}
-							</Avatar>
-						}
-					/>
-				))
-			}
-			renderInput={(params) => <TextField {...params} placeholder={value.length ? "" : placeholder} />}
-		/>
-	);
-}
-
 // Asistente «Repartir carpetas» (Equipos, fase 3, 6/11/2026): alcance → criterio → vista previa
 // (dryRun en el hub) → aplicar. El hub calcula y escribe; acá solo se arma el pedido.
 export default function DistributeFoldersDialog({ open, onClose, folderIds = [], onApplied }: Props) {
 	const navigate = useNavigate();
-	const { activeTeam, getRequestHeaders } = useTeam();
+	const { activeTeam, getRequestHeaders, userRole } = useTeam();
+	// Regla de alta (14/11/2026): la regla es configuración del equipo, la guardan owner o admin.
+	const canSaveRule = userRole === "owner" || userRole === "admin";
 	const groupId = activeTeam?._id;
 	const assignees = useMemo(() => getTeamAssignees(activeTeam, { includeInvitations: true }), [activeTeam]);
 	const byId = useMemo(() => new Map(assignees.map((a) => [a.id, a])), [assignees]);
@@ -189,6 +130,9 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 	const [error, setError] = useState<string | null>(null);
 	const [modified, setModified] = useState<number | null>(null);
 	const [prefill, setPrefill] = useState<TeamAssignee[]>([]);
+	// «Guardar como regla para las causas nuevas» (14/11/2026): solo criterios por tabla estáticos (radicación / fuero).
+	const [saveAsRule, setSaveAsRule] = useState(false);
+	const [ruleResult, setRuleResult] = useState<{ ok: boolean; message: string } | null>(null);
 
 	useEffect(() => {
 		if (!open) return;
@@ -198,6 +142,8 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 		setError(null);
 		setModified(null);
 		setPrefill([]);
+		setSaveAsRule(false);
+		setRuleResult(null);
 		if (!groupId) return;
 		setLoadingSummary(true);
 		fetchRadicacionSummary(groupId).then((r) => {
@@ -309,6 +255,8 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 		setStep(2);
 	};
 
+	const ruleEligible = canSaveRule && (s.type === "juzgado" || s.type === "fuero");
+
 	const runApply = async () => {
 		const built = buildDistributeRequest(s, false);
 		if (!built.ok) {
@@ -327,6 +275,20 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 		setModified(n);
 		setPreview(r.data.preview);
 		trackActivity("team_distribute_apply", { type: s.type, mode: s.mode, count: n });
+		if (ruleEligible && saveAsRule && groupId) {
+			// El mismo criterio, tabla y «Las demás» del reparto, como regla para las carpetas que entren después.
+			const c = built.request.criteria as { type: "juzgado" | "fuero"; map?: Record<string, string[]>; rest?: string[] };
+			try {
+				await saveReglaDeAlta(groupId, { enabled: true, criterio: c.type, map: c.map || {}, rest: c.rest || [] });
+				setRuleResult({
+					ok: true,
+					message: "Quedó guardada como regla: las causas nuevas sin responsable se asignan con esta misma tabla.",
+				});
+				window.dispatchEvent(new Event("regla-de-alta-updated"));
+			} catch (e) {
+				setRuleResult({ ok: false, message: apiError(e, "El reparto se aplicó, pero no se pudo guardar la regla para las causas nuevas") });
+			}
+		}
 		onApplied?.(n);
 		setStep(3);
 	};
@@ -526,6 +488,12 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 							{opt.help}
 						</Typography>
 					)}
+					{s.type === "ubicacion" && (
+						<Alert severity="info" variant="outlined" sx={{ mt: 1, py: 0.25 }}>
+							Esto reparte lo que está hoy en cada instancia. Para que se mantenga solo cuando los expedientes cambien de ubicación, activá
+							la regla en Mi equipo → Responsables por ubicación actual.
+						</Alert>
+					)}
 				</Box>
 
 				{isMapCriteria(s.type) && (
@@ -634,8 +602,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 												</Typography>
 												{s.type === "ubicacion" && (
 													<Typography variant="caption" color="text.secondary" component="div">
-														La ubicación actual solo se sigue en las causas vinculadas por credencial del PJN; las demás no tienen
-														ubicación.
+														La ubicación actual solo se sigue en las causas del PJN; las de otras jurisdicciones no tienen ubicación.
 													</Typography>
 												)}
 											</TableCell>
@@ -900,6 +867,20 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 							: "A las carpetas que ya tenían responsable se les suma el que les toque."}{" "}
 						Los previstos e invitados reciben las carpetas a su nombre cuando aceptan.
 					</Typography>
+					{ruleEligible && (
+						<Box sx={{ p: 1.25, borderRadius: 1.5, border: `1px solid ${alpha(BRAND_BLUE, 0.14)}`, bgcolor: alpha(BRAND_BLUE, 0.02) }}>
+							<FormControlLabel
+								control={
+									<Switch checked={saveAsRule} onChange={(e) => setSaveAsRule(e.target.checked)} data-testid="distribute-save-rule" />
+								}
+								label="Guardar como regla para las causas nuevas"
+							/>
+							<Typography variant="caption" color="text.secondary" component="div">
+								Las carpetas que entren después sin responsable (sincronización de Mis Causas o altas a mano) se asignan solas con esta
+								misma tabla y «Las demás». Reemplaza la regla anterior, si había. Se ve y se edita en Mi equipo.
+							</Typography>
+						</Box>
+					)}
 				</>
 			)}
 		</Stack>
@@ -911,6 +892,11 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 				{modified === 1 ? "Se asignó 1 carpeta." : `Se asignaron ${nf(modified || 0)} carpetas.`}
 				{preview && preview.sinAsignar > 0 ? ` Quedaron ${nf(preview.sinAsignar)} sin asignar.` : ""}
 			</Alert>
+			{ruleResult && (
+				<Alert severity={ruleResult.ok ? "info" : "warning"} sx={{ width: "100%" }}>
+					{ruleResult.message}
+				</Alert>
+			)}
 			<Typography variant="body2" color="text.secondary">
 				En «Mi equipo», la tarjeta Distribución de responsables muestra cómo quedó el reparto. En el listado de carpetas podés filtrar por
 				«Sin responsable» para ver lo que falta.

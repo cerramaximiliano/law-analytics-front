@@ -416,6 +416,33 @@ const ResponsablesContent = () => (
 			]}
 		/>
 		<Section
+			title="Reparto estático y reglas automáticas"
+			color="primary"
+			intro={
+				<>
+					El reparto se hace una vez sobre lo que hay. Dos reglas, en Mi equipo → Distribución, lo mantienen solo (se revisan cada hora;
+					«Aplicar ahora» no espera). Las configuran el propietario y los Administradores.
+				</>
+			}
+			items={[
+				<>
+					<strong>Regla para las causas nuevas</strong>: al repartir <strong>por radicación</strong> o <strong>por fuero</strong>, marcá
+					«Guardar como regla para las causas nuevas». Cada carpeta que entra después sin responsable (sincronización de Mis Causas o alta a
+					mano) recibe el suyo con esa tabla, o «las demás». Nunca cambia una carpeta que ya tiene responsable
+				</>,
+				<>
+					<strong>Responsables por ubicación actual</strong>: «lo que está en Cámara lo sigue X, lo que está en la Corte lo sigue Y». Cuando
+					un expediente cambia de instancia, sus responsables se actualizan. Se puede <strong>sumar</strong> al responsable que tenía o{" "}
+					<strong>reemplazarlo</strong>, y al volver al juzgado vuelve a quien la tenía antes de subir
+				</>,
+				<>
+					La ubicación actual existe solo en los expedientes del <strong>PJN</strong>: la regla no toca los de otras jurisdicciones ni las
+					carpetas archivadas. El reparto «por ubicación actual» del asistente es una foto de hoy; la regla es la que se mantiene
+				</>,
+				<>Quien entra como responsable por una regla recibe un aviso en la campana</>,
+			]}
+		/>
+		<Section
 			title="Encontrar y controlar"
 			color="info"
 			items={[

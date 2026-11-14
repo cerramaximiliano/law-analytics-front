@@ -22,6 +22,8 @@ import {
 	TeamVisibilityCard,
 	MemberTeamScope,
 	TeamResponsablesDistributionCard,
+	TeamReglaDeAltaCard,
+	TeamUbicacionRuleCard,
 	RoleBadge,
 } from "sections/apps/teams";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
@@ -893,6 +895,14 @@ const TabRole = () => {
 			{/* Distribución de carpetas por responsable (impresión y CSV) */}
 			<Grid item xs={12}>
 				<TeamResponsablesDistributionCard />
+			</Grid>
+
+			{/* Reglas automáticas de responsables (14/11/2026): carpetas nuevas y ubicación actual */}
+			<Grid item xs={12}>
+				<TeamReglaDeAltaCard />
+			</Grid>
+			<Grid item xs={12}>
+				<TeamUbicacionRuleCard />
 			</Grid>
 
 			{/* Zona de peligro */}

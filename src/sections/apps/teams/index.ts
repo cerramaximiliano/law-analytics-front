@@ -13,3 +13,6 @@ export { default as TeamVisibilityCard } from "./TeamVisibilityCard";
 export { default as MemberTeamScope } from "./MemberTeamScope";
 export { default as TeamResponsablesDistributionCard } from "./TeamResponsablesDistributionCard";
 export { default as DistributeFoldersDialog } from "./DistributeFoldersDialog";
+export { default as AssigneePicker } from "./AssigneePicker";
+export { default as TeamUbicacionRuleCard } from "./TeamUbicacionRuleCard";
+export { default as TeamReglaDeAltaCard } from "./TeamReglaDeAltaCard";
