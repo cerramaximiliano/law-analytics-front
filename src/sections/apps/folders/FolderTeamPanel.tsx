@@ -92,6 +92,11 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 	const [ultimoCambio, setUltimoCambio] = useState<UltimoCambioResponsables | null>(null);
 	const responsablesKey = currentIds.join(",");
 	useEffect(() => {
+		// Solo owner y administradores: el hub responde 403 al resto, así que ni se pide.
+		if (!isAdmin) {
+			setUltimoCambio(null);
+			return;
+		}
 		let vigente = true;
 		getUltimoCambioResponsables(folderId, getRequestHeaders())
 			.then((c) => vigente && setUltimoCambio(c))
@@ -100,7 +105,7 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 			vigente = false;
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [folderId, responsablesKey, activeTeam?._id]);
+	}, [folderId, responsablesKey, activeTeam?._id, isAdmin]);
 	const nombres = (ids: string[]) =>
 		ids.length
 			? resolveAssignees(ids, assignableMembers)
@@ -210,7 +215,7 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 				</Stack>
 			</Stack>
 
-			{ultimoCambio && (
+			{isAdmin && ultimoCambio && (
 				<Stack
 					direction="row"
 					spacing={0.75}
