@@ -66,9 +66,12 @@ const TaskAssignees = ({ ids, variant = "avatars", max = 4, emptyLabel = "Sin as
 					height: 28,
 					fontSize: "0.68rem",
 					fontWeight: 700,
-					bgcolor: alpha(BRAND_BLUE, 0.16),
+					// Fondo opaco (el color del papel con el tinte encima): al superponerse no se trasluce el de abajo.
+					bgcolor: "background.paper",
+					backgroundImage: `linear-gradient(${alpha(BRAND_BLUE, 0.16)}, ${alpha(BRAND_BLUE, 0.16)})`,
 					color: BRAND_BLUE,
-					border: `2px solid ${alpha(BRAND_BLUE, 0.12)}`,
+					border: "2px solid",
+					borderColor: "background.paper",
 				},
 			}}
 		>
