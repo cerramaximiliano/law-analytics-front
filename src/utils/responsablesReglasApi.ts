@@ -22,7 +22,7 @@ export interface UbicacionRule {
 
 export interface UbicacionRuleResponse {
 	rule: UbicacionRule;
-	coverage: { activas: number; pjn: number; asignadasPorRegla: number };
+	coverage: { activas: number; pjn: number; asignadasPorRegla: number; nuevasSinAsignar?: Partial<Record<UbicacionKind, number>> };
 	kinds: { key: UbicacionKind; label: string }[];
 	canEdit: boolean;
 }

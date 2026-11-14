@@ -183,6 +183,13 @@ export default function TeamUbicacionRuleCard() {
 
 	const cov = data?.coverage;
 	const lastRun = data?.rule.lastRun;
+	// Causas nuevas que la regla dejó sin responsable y que se asignarían con la casilla tildada: solo las que están
+	// en una ubicación con responsables en la tabla (según lo que se ve en pantalla, guardado o no).
+	const nuevasPend = kinds
+		.filter((k) => draft?.map[k.key]?.length && cov?.nuevasSinAsignar?.[k.key])
+		.map((k) => ({ label: k.label, n: cov?.nuevasSinAsignar?.[k.key] || 0 }));
+	const nuevasPendTotal = nuevasPend.reduce((acc, x) => acc + x.n, 0);
+	const nuevasPendDetalle = nuevasPend.map((x) => `${x.label}: ${x.n}`).join(", ");
 
 	return (
 		<Paper
@@ -327,6 +334,21 @@ export default function TeamUbicacionRuleCard() {
 						}
 						sx={{ alignItems: "flex-start", "& .MuiSwitch-root": { mt: -0.5 } }}
 					/>
+					{nuevasPendTotal > 0 && (
+						<Alert severity={draft.incluirNuevas ? "info" : "warning"} variant="outlined" data-testid="ubicacion-nuevas-pendientes">
+							{nuevasPendTotal === 1
+								? "Hay 1 causa nueva sin responsable en una ubicación con regla"
+								: `Hay ${nuevasPendTotal} causas nuevas sin responsable en ubicaciones con regla`}{" "}
+							({nuevasPendDetalle}).{" "}
+							{draft.incluirNuevas
+								? `Con esta opción tildada, ${
+										nuevasPendTotal === 1 ? "se asigna" : "se asignan"
+								  } en la próxima aplicación de la regla (cada hora, o con «Aplicar ahora»).`
+								: `Si tildás esta opción, ${
+										nuevasPendTotal === 1 ? "se asigna" : "se asignan"
+								  } en la próxima aplicación de la regla. Las que alguien asigne a mano antes no se tocan.`}
+						</Alert>
+					)}
 					<FormControlLabel
 						control={
 							<Switch
