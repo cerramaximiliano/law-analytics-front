@@ -156,7 +156,7 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 			<Stack direction={{ xs: "column", md: "row" }} spacing={{ xs: 1.25, md: 3 }} alignItems={{ xs: "flex-start", md: "center" }}>
 				<Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0, flexWrap: "wrap" }} useFlexGap>
 					<Typography sx={labelSx}>Responsables</Typography>
-					<TaskAssignees ids={currentIds} variant="chips" emptyLabel="Sin responsable" />
+					<TaskAssignees ids={currentIds} max={6} emptyLabel="Sin responsable" />
 					{canEditResponsables && (
 						<Button
 							size="small"
