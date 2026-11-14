@@ -13,6 +13,8 @@ export interface UbicacionRule {
 	mode: "replace" | "add";
 	alVolver: "restaurar" | "regla";
 	soloSinResponsable: boolean;
+	/** Causas nuevas (nunca tuvieron responsable): apagado = quedan sin responsable; prendido = se asignan según `map`. */
+	incluirNuevas: boolean;
 	updatedAt?: string | null;
 	updatedBy?: string | null;
 	lastRun?: { at: string; source: "cron" | "manual"; candidatas: number; modified: number } | null;
@@ -103,5 +105,52 @@ export async function saveReglaDeAlta(groupId: string, rule: Partial<ReglaDeAlta
 
 export async function applyReglaDeAlta(groupId: string, dryRun: boolean, draft?: Partial<ReglaDeAlta>): Promise<ReglaDeAltaApplyResult> {
 	const { data } = await axios.post(`${base(groupId)}/regla-de-alta/apply?dryRun=${dryRun}`, dryRun ? draft || {} : {}, headers(groupId));
+	return data;
+}
+
+// Registro por carpeta de las dos reglas (hub §8.4, colección responsablesreglaslogs).
+export type ReglaLogTipo = "alta" | "cambio" | "restauracion" | "omitida";
+
+export interface ReglaLogItem {
+	_id: string;
+	folderId: string;
+	folderName: string;
+	regla: "alta" | "ubicacion";
+	tipo: ReglaLogTipo;
+	motivo: "con_responsable" | "nueva" | null;
+	clave: string | null;
+	de: UbicacionKind | null;
+	a: UbicacionKind | null;
+	antes: string[];
+	despues: string[];
+	entran: string[];
+	salen: string[];
+	corridaId: string | null;
+	origen: "cron" | "manual" | "asistente";
+	at: string;
+}
+
+export interface ReglaLogQuery {
+	regla?: "alta" | "ubicacion" | "";
+	tipo?: ReglaLogTipo | "";
+	responsable?: string;
+	desde?: string;
+	hasta?: string;
+	q?: string;
+	page?: number;
+	limit?: number;
+}
+
+export interface ReglaLogResponse {
+	items: ReglaLogItem[];
+	total: number;
+	page: number;
+	limit: number;
+	summary: { alta: Partial<Record<ReglaLogTipo, number>>; ubicacion: Partial<Record<ReglaLogTipo, number>> };
+}
+
+export async function getReglasLog(groupId: string, query: ReglaLogQuery): Promise<ReglaLogResponse> {
+	const params = Object.fromEntries(Object.entries(query).filter(([, v]) => v !== undefined && v !== ""));
+	const { data } = await axios.get(`${base(groupId)}/responsables-reglas/log`, { ...headers(groupId), params });
 	return data;
 }

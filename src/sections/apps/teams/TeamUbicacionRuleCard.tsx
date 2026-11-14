@@ -57,13 +57,16 @@ const fmtDate = (iso?: string | null) =>
 		? new Date(iso).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
 		: "";
 
-type Draft = Pick<UbicacionRule, "enabled" | "mode" | "alVolver" | "soloSinResponsable"> & { map: Record<string, string[]> };
+type Draft = Pick<UbicacionRule, "enabled" | "mode" | "alVolver" | "soloSinResponsable" | "incluirNuevas"> & {
+	map: Record<string, string[]>;
+};
 
 const toDraft = (r: UbicacionRule): Draft => ({
 	enabled: r.enabled,
 	mode: r.mode,
 	alVolver: r.alVolver,
 	soloSinResponsable: r.soloSinResponsable,
+	incluirNuevas: !!r.incluirNuevas,
 	map: Object.fromEntries(Object.entries(r.map || {}).map(([k, v]) => [k, [...(v || [])]])),
 });
 const cleanMap = (m: Record<string, string[]>) => Object.fromEntries(Object.entries(m).filter(([, v]) => v && v.length));
@@ -148,6 +151,7 @@ export default function TeamUbicacionRuleCard() {
 					mode: draft.mode,
 					alVolver: draft.alVolver,
 					soloSinResponsable: draft.soloSinResponsable,
+					incluirNuevas: draft.incluirNuevas,
 					map: cleanMap(draft.map),
 				}),
 			);
@@ -306,6 +310,26 @@ export default function TeamUbicacionRuleCard() {
 					<FormControlLabel
 						control={
 							<Switch
+								checked={draft.incluirNuevas}
+								onChange={(e) => patch({ incluirNuevas: e.target.checked })}
+								disabled={!canEdit}
+								data-testid="ubicacion-incluir-nuevas"
+							/>
+						}
+						label={
+							<span>
+								Asignar también las causas nuevas que lleguen a cada ubicación
+								<Typography variant="caption" color="text.secondary" component="span" sx={{ display: "block" }}>
+									Sin tildar, las carpetas que nunca tuvieron responsable quedan sin responsable, como en un equipo sin reglas. Las que ya
+									tienen responsable cambian igual al cambiar de instancia.
+								</Typography>
+							</span>
+						}
+						sx={{ alignItems: "flex-start", "& .MuiSwitch-root": { mt: -0.5 } }}
+					/>
+					<FormControlLabel
+						control={
+							<Switch
 								checked={draft.soloSinResponsable}
 								onChange={(e) => patch({ soloSinResponsable: e.target.checked })}
 								disabled={!canEdit}
@@ -330,7 +354,7 @@ export default function TeamUbicacionRuleCard() {
 								<Stack spacing={0.5}>
 									<Typography variant="body2" fontWeight={600}>
 										Cambiarían {preview.cambios} {preview.cambios === 1 ? "carpeta" : "carpetas"}
-										{preview.omitidas ? ` · ${preview.omitidas} quedan igual porque ya tienen responsable` : ""}
+										{preview.omitidas ? ` · ${preview.omitidas} quedan igual (causas nuevas sin tildar o con responsable propio)` : ""}
 									</Typography>
 									<Typography variant="body2">
 										{Object.entries(preview.porUbicacion)

@@ -176,7 +176,7 @@ export default function TeamReglaDeAltaCard() {
 				{draft && criterio && (
 					<FormControlLabel
 						control={<Switch checked={draft.enabled} onChange={(e) => patch({ enabled: e.target.checked })} disabled={!canEdit} />}
-						label={draft.enabled ? "Activa" : "Inactiva"}
+						label="Asignar las causas nuevas según esta tabla"
 						labelPlacement="start"
 						sx={{ mr: 0 }}
 					/>
@@ -184,7 +184,9 @@ export default function TeamReglaDeAltaCard() {
 			</Stack>
 			<Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
 				Las carpetas que entran sin responsable (las que trae la sincronización de Mis Causas o las que se cargan a mano) reciben el suyo
-				según el reparto guardado. Nunca cambia una carpeta que ya tiene responsable. Se revisa cada hora.
+				según el reparto guardado. Aplica a todas las jurisdicciones, también a las carpetas manuales con juzgado o fuero cargados («Solo
+				expedientes del PJN» la restringe). Nunca cambia una carpeta que ya tiene responsable. Si está apagada, las causas nuevas quedan sin
+				responsable. Se revisa cada hora.
 			</Typography>
 
 			{loading ? (

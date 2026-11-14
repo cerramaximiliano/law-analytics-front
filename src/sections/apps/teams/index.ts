@@ -16,3 +16,4 @@ export { default as DistributeFoldersDialog } from "./DistributeFoldersDialog";
 export { default as AssigneePicker } from "./AssigneePicker";
 export { default as TeamUbicacionRuleCard } from "./TeamUbicacionRuleCard";
 export { default as TeamReglaDeAltaCard } from "./TeamReglaDeAltaCard";
+export { default as TeamReglasLogCard } from "./TeamReglasLogCard";

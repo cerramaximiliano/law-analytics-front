@@ -23,6 +23,7 @@ import {
 	MemberTeamScope,
 	TeamResponsablesDistributionCard,
 	TeamReglaDeAltaCard,
+	TeamReglasLogCard,
 	TeamUbicacionRuleCard,
 	RoleBadge,
 } from "sections/apps/teams";
@@ -903,6 +904,9 @@ const TabRole = () => {
 			</Grid>
 			<Grid item xs={12}>
 				<TeamUbicacionRuleCard />
+			</Grid>
+			<Grid item xs={12}>
+				<TeamReglasLogCard />
 			</Grid>
 
 			{/* Zona de peligro */}
