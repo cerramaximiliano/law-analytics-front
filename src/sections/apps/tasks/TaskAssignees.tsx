@@ -70,7 +70,8 @@ const TaskAssignees = ({ ids, variant = "avatars", max = 4, emptyLabel = "Sin as
 					bgcolor: "background.paper",
 					backgroundImage: `linear-gradient(${alpha(BRAND_BLUE, 0.16)}, ${alpha(BRAND_BLUE, 0.16)})`,
 					color: BRAND_BLUE,
-					border: "none",
+					// Borde fino del mismo azul, más intenso que el fondo: marca dónde termina cada ícono al superponerse.
+					border: `1px solid ${alpha(BRAND_BLUE, 0.55)}`,
 				},
 				// El «+N» va a la derecha de todos: queda arriba.
 				"& .MuiAvatar-root:first-of-type": { zIndex: 99 },
