@@ -28,6 +28,8 @@ export interface DistributeCriteria {
 	type: DistributeCriteriaType;
 	/** juzgado, fuero, sala y ubicacion: clave → responsables. */
 	map?: Record<string, string[]>;
+	/** Ídem: «las demás» (sin clave en `map`: sin sala, sin dato, clave no elegida) van a estos responsables. */
+	rest?: string[];
 	/** equal y random. */
 	assignees?: string[];
 	/** quantities: id → cantidad; `rest` → id que recibe el resto. */

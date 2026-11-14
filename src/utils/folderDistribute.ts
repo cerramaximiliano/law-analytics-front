@@ -90,6 +90,24 @@ export function ubicacionRows(summary: RadicacionSummary | null, archived: Distr
 		.sort((a, b) => UBICACION_ORDER.indexOf(a.key) - UBICACION_ORDER.indexOf(b.key));
 }
 
+/** Clave de «las demás» en el pre-llenado automático (no es una clave del hub: se traduce a `rest`). */
+export const REST_KEY = "__rest__";
+
+/**
+ * Reparto automático de una tabla entre personas (14/11/2026): cada clave a una, equilibrando carpetas; «las demás»
+ * (`restCount` carpetas sin clave) también entran y van a quien menos acumula. Devuelve `map` y `restMap`.
+ */
+export function autoSplit(
+	rows: { key: string; count: number }[],
+	restCount: number,
+	assigneeIds: string[],
+): { map: Record<string, string[]>; restMap: string[] } {
+	const all = restCount > 0 ? [...rows, { key: REST_KEY, count: restCount }] : rows;
+	const split = splitKeysEqually(all, assigneeIds);
+	const { [REST_KEY]: restMap = [], ...map } = split;
+	return { map, restMap };
+}
+
 /** Criterios que asignan por tabla «clave → responsables». */
 export const MAP_CRITERIA: DistributeCriteriaType[] = ["juzgado", "fuero", "sala", "ubicacion"];
 export const isMapCriteria = (t: DistributeCriteriaType): boolean => MAP_CRITERIA.includes(t);
@@ -195,6 +213,8 @@ export interface DistributeWizardState {
 	folderIds: string[];
 	type: DistributeCriteriaType;
 	map: Record<string, string[]>;
+	/** Criterios por tabla: responsables de «las demás» carpetas del alcance (sin clave o sin responsable elegido). */
+	restMap: string[];
 	assignees: string[];
 	quantities: Record<string, number>;
 	rest: string | null;
@@ -216,6 +236,7 @@ export function initialWizardState(folderIds: string[] = []): DistributeWizardSt
 		folderIds,
 		type: "juzgado",
 		map: {},
+		restMap: [],
 		assignees: [],
 		quantities: {},
 		rest: null,
@@ -241,8 +262,9 @@ export function buildDistributeRequest(s: DistributeWizardState, dryRun: boolean
 	if (isMapCriteria(s.type)) {
 		const map: Record<string, string[]> = {};
 		for (const [k, ids] of Object.entries(s.map)) if (Array.isArray(ids) && ids.length) map[k] = [...new Set(ids)];
-		if (!Object.keys(map).length) return { ok: false, error: MAP_LABELS[s.type].error };
-		criteria = { type: s.type, map };
+		const rest = [...new Set(s.restMap.filter(Boolean))];
+		if (!Object.keys(map).length && !rest.length) return { ok: false, error: MAP_LABELS[s.type].error };
+		criteria = { type: s.type, map, ...(rest.length ? { rest } : {}) };
 	} else if (s.type === "quantities") {
 		const quantities: Record<string, number | string> = {};
 		for (const [id, n] of Object.entries(s.quantities)) if (Number.isFinite(n) && n > 0) quantities[id] = Math.floor(n);

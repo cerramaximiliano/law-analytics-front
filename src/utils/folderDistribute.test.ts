@@ -5,6 +5,7 @@ import {
 	initialWizardState,
 	juzgadoRows,
 	previewRows,
+	autoSplit,
 	radicacionFilterOptions,
 	salaRows,
 	splitKeysEqually,
@@ -141,6 +142,23 @@ describe("buildDistributeRequest", () => {
 			ok: false,
 			error: "Elegí un responsable para al menos una sala",
 		});
+		// «Las demás» alcanza para armar el pedido, y viaja como `rest`
+		const soloResto = buildDistributeRequest({ ...initialWizardState(), type: "sala", map: {}, restMap: ["b", "b"] }, true);
+		expect(soloResto.ok && soloResto.request.criteria).toEqual({ type: "sala", map: {}, rest: ["b"] });
+	});
+
+	it("autoSplit: cada clave a una persona y «las demás» a quien menos acumula", () => {
+		const r = autoSplit(
+			[
+				{ key: "7", count: 40 },
+				{ key: "2", count: 10 },
+			],
+			25,
+			["a", "b"],
+		);
+		expect(r.map).toEqual({ 7: ["a"], 2: ["b"] });
+		expect(r.restMap).toEqual(["b"]);
+		expect(autoSplit([{ key: "7", count: 40 }], 0, ["a"])).toEqual({ map: { 7: ["a"] }, restMap: [] });
 	});
 
 	it("selección del listado: alcance todas y folderIds", () => {

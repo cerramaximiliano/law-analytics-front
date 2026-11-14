@@ -51,6 +51,7 @@ import {
 } from "types/folderDistribute";
 import {
 	ARCHIVED_OPTIONS,
+	autoSplit,
 	buildDistributeRequest,
 	CRITERIA_OPTIONS,
 	CriteriaRow,
@@ -67,7 +68,6 @@ import {
 	previewRows,
 	radicacionFilterOptions,
 	salaRows,
-	splitKeysEqually,
 	splitRadicacion,
 	ubicacionRows,
 } from "utils/folderDistribute";
@@ -280,6 +280,8 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 	const rowsByType: Record<string, CriteriaRow[]> = { juzgado: rowsJuzgado, fuero: rowsFuero, sala: rowsSala, ubicacion: rowsUbicacion };
 	const criteriaRows: CriteriaRow[] = rowsByType[s.type] || rowsFuero;
 	const mapLabels = MAP_LABELS[s.type] || MAP_LABELS.fuero;
+	// «Las demás»: carpetas del alcance que no caen en ninguna clave de la tabla (sin sala, sin dato) → las cubre `restMap`.
+	const sinClave = Math.max(0, estimate - criteriaRows.reduce((n, r) => n + r.count, 0));
 	// Un criterio «por X» solo tiene sentido si el alcance tiene dos o más X: con el alcance ya acotado a un juzgado (o
 	// una sala, un fuero…) lo que queda es decidir cómo dividirlo (partes iguales, cantidades, azar), 14/11/2026.
 	const criterioSinSentido = (type: DistributeCriteriaType) =>
@@ -480,6 +482,12 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 					{scopeChips.map((c) => (
 						<Chip key={c} size="small" variant="outlined" label={c} />
 					))}
+					{s.onlyUnassigned && conResponsable > 0 && (
+						<Typography variant="caption" color="text.secondary">
+							(otras {nf(conResponsable)} ya tienen responsable y quedan afuera; se incluyen desactivando «Solo las carpetas sin
+							responsable» en Alcance)
+						</Typography>
+					)}
 				</Stack>
 				<Box>
 					<ToggleButtonGroup
@@ -493,11 +501,17 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 							criterioSinSentido(o.value) ? (
 								<Tooltip
 									key={o.value}
-									title={`El alcance tiene ${(rowsByType[o.value] || []).length === 1 ? "un solo" : "ningún"} ${
-										MAP_LABELS[o.value].singular
-									}: no hay nada que repartir por ${
-										MAP_LABELS[o.value].singular
-									}. Elegí cómo dividirlo: partes iguales, cantidades o al azar.`}
+									title={
+										estimate <= 1
+											? `El alcance tiene ${estimate === 1 ? "una sola carpeta" : "ninguna carpeta"}: no hay nada que repartir por ${
+													MAP_LABELS[o.value].singular
+											  }. Ampliá el alcance o desactivá «Solo las carpetas sin responsable».`
+											: `El alcance tiene ${(rowsByType[o.value] || []).length === 1 ? "un solo" : "ningún"} ${
+													MAP_LABELS[o.value].singular
+											  }: no hay nada que repartir por ${
+													MAP_LABELS[o.value].singular
+											  }. Elegí cómo dividirlo: partes iguales, cantidades o al azar.`
+									}
 								>
 									<span>
 										<ToggleButton value={o.value} disabled>
@@ -532,14 +546,15 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 										value={prefill}
 										onChange={(next) => {
 											setPrefill(next);
-											patch({
-												map: next.length
-													? splitKeysEqually(
+											patch(
+												next.length
+													? autoSplit(
 															criteriaRows,
+															sinClave,
 															next.map((a) => a.id),
 													  )
-													: {},
-											});
+													: { map: {}, restMap: [] },
+											);
 										}}
 										size="small"
 										placeholder="Elegí a las personas y la tabla se completa sola"
@@ -550,9 +565,9 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 									color="secondary"
 									onClick={() => {
 										setPrefill([]);
-										patch({ map: {} });
+										patch({ map: {}, restMap: [] });
 									}}
-									disabled={!Object.keys(s.map).length && !prefill.length}
+									disabled={!Object.keys(s.map).length && !prefill.length && !s.restMap.length}
 									sx={{ textTransform: "none" }}
 								>
 									Limpiar
@@ -560,8 +575,8 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 							</Stack>
 							<Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.75 }}>
 								Cada {mapLabels.singular} queda a cargo de una sola persona y los {mapLabels.plural} se distribuyen entre las elegidas
-								equilibrando la cantidad de carpetas. Abajo podés cambiar el responsable de cualquier {mapLabels.singular}; si ponés a
-								varios en el mismo, todos quedan como responsables de esas carpetas.
+								equilibrando la cantidad de carpetas; «las demás» también se asignan. Abajo podés cambiar el responsable de cualquier{" "}
+								{mapLabels.singular}; si ponés a varios en el mismo, todos quedan como responsables de esas carpetas.
 							</Typography>
 						</Box>
 						{loadingSummary ? (
@@ -612,6 +627,32 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 												</TableCell>
 											</TableRow>
 										))}
+										{/* El criterio tiene que repartir todo (14/11/2026): lo que no cae en ninguna clave, o cuya clave quedó sin responsable, va acá. */}
+										<TableRow sx={{ bgcolor: alpha(BRAND_BLUE, 0.03) }}>
+											<TableCell>
+												<Typography variant="body2" fontWeight={600}>
+													Las demás
+												</Typography>
+												<Typography variant="caption" color="text.secondary" component="div">
+													{sinClave > 0 ? `Sin ${mapLabels.singular} (${nf(sinClave)}) y ` : ""}
+													{mapLabels.plural} sin responsable elegido
+												</Typography>
+											</TableCell>
+											<TableCell align="right">
+												<Typography variant="body2">
+													{nf(sinClave + criteriaRows.filter((r) => !(s.map[r.key] || []).length).reduce((n, r) => n + r.count, 0))}
+												</Typography>
+											</TableCell>
+											<TableCell sx={{ py: 0.5 }}>
+												<AssigneePicker
+													options={assignees}
+													value={pick(s.restMap)}
+													onChange={(next) => patch({ restMap: next.map((a) => a.id) })}
+													size="small"
+													placeholder="Quedan sin asignar"
+												/>
+											</TableCell>
+										</TableRow>
 									</TableBody>
 								</Table>
 							</Box>
@@ -786,7 +827,8 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 					)}
 					{preview.sinAsignar > 0 && isMapCriteria(s.type) && (
 						<Typography variant="caption" color="text.secondary">
-							Quedan sin asignar las carpetas de {mapLabels.plural} sin responsable elegido; podés volver y completarlos.
+							Quedan sin asignar las carpetas de {mapLabels.plural} sin responsable elegido; volvé a Criterio y completá «Las demás» para
+							que se reparta todo.
 						</Typography>
 					)}
 					{rows.length === 0 ? (
