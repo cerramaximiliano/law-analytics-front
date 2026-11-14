@@ -70,14 +70,16 @@ const TaskAssignees = ({ ids, variant = "avatars", max = 4, emptyLabel = "Sin as
 					bgcolor: "background.paper",
 					backgroundImage: `linear-gradient(${alpha(BRAND_BLUE, 0.16)}, ${alpha(BRAND_BLUE, 0.16)})`,
 					color: BRAND_BLUE,
-					border: "2px solid",
-					borderColor: "background.paper",
+					border: "none",
 				},
+				// El «+N» va a la derecha de todos: queda arriba.
+				"& .MuiAvatar-root:first-of-type": { zIndex: 99 },
 			}}
 		>
-			{assignees.map((a) => (
+			{/* zIndex creciente: cada ícono queda debajo del que tiene a la derecha. Previstos e invitados, en gris. */}
+			{assignees.map((a, i) => (
 				<Tooltip key={a.id} title={tooltipOf(a)}>
-					<Avatar src={a.avatar} alt={a.name} sx={assigneeTag(a) ? { opacity: 0.75, borderStyle: "dashed !important" } : undefined}>
+					<Avatar src={a.avatar} alt={a.name} sx={{ zIndex: i + 1, ...(assigneeTag(a) ? { color: "text.disabled" } : {}) }}>
 						{a.initials}
 					</Avatar>
 				</Tooltip>
