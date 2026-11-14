@@ -67,7 +67,6 @@ import {
 	ORDER_OPTIONS,
 	previewRows,
 	radicacionFilterOptions,
-	salaRows,
 	splitRadicacion,
 	ubicacionRows,
 } from "utils/folderDistribute";
@@ -239,11 +238,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 		const rows = fueroRows(summary, s.archived);
 		return s.fueros.length ? rows.filter((r) => s.fueros.includes(r.key)) : rows;
 	}, [summary, s.archived, s.fueros]);
-	// Sala de Cámara (radicación) y ubicación actual (14/11/2026, pedido de Silvia): como en Archivadas.
-	const rowsSala = useMemo(() => {
-		const rows = salaRows(summary, s.archived, s.fueros);
-		return s.salas.length ? rows.filter((r) => s.salas.includes(r.key)) : rows;
-	}, [summary, s.archived, s.fueros, s.salas]);
+	// Ubicación actual (14/11/2026, pedido de Silvia): como en Archivadas. La sala es solo filtro del alcance.
 	const rowsUbicacion = useMemo(() => {
 		const rows = ubicacionRows(summary, s.archived);
 		return s.ubicaciones.length ? rows.filter((r) => s.ubicaciones.includes(r.key)) : rows;
@@ -277,7 +272,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 		allUbicaciones,
 	]);
 
-	const rowsByType: Record<string, CriteriaRow[]> = { juzgado: rowsJuzgado, fuero: rowsFuero, sala: rowsSala, ubicacion: rowsUbicacion };
+	const rowsByType: Record<string, CriteriaRow[]> = { juzgado: rowsJuzgado, fuero: rowsFuero, ubicacion: rowsUbicacion };
 	const criteriaRows: CriteriaRow[] = rowsByType[s.type] || rowsFuero;
 	const mapLabels = MAP_LABELS[s.type] || MAP_LABELS.fuero;
 	// «Las demás»: carpetas del alcance que no caen en ninguna clave de la tabla (sin sala, sin dato) → las cubre `restMap`.

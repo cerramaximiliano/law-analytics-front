@@ -39,6 +39,7 @@ const summary: RadicacionSummary = {
 		{ key: "corte", ubicacion: "Corte Suprema", activas: 3, archivadas: 0, sinResponsable: 3 },
 		{ key: "juzgado", ubicacion: "1ª instancia (Juzgado)", activas: 50, archivadas: 10, sinResponsable: 40 },
 		{ key: "camara", ubicacion: "2ª instancia (Cámara)", activas: 14, archivadas: 3, sinResponsable: 12 },
+		{ key: "no-pjn", ubicacion: "Otras jurisdicciones (sin ubicación del PJN)", activas: 2, archivadas: 0, sinResponsable: 2 },
 	],
 };
 
@@ -72,6 +73,7 @@ describe("juzgadoRows / fueroRows", () => {
 			["juzgado", "1ª instancia (Juzgado)", 50],
 			["camara", "2ª instancia (Cámara)", 14],
 			["corte", "Corte Suprema", 3],
+			["no-pjn", "Otras jurisdicciones (sin ubicación del PJN)", 2],
 		]);
 		const opts = radicacionFilterOptions(summary, "active");
 		expect(opts.map((o) => [o.value, o.group])).toEqual([
@@ -127,7 +129,7 @@ describe("buildDistributeRequest", () => {
 		expect(buildDistributeRequest({ ...initialWizardState(), map: {} }, true)).toMatchObject({ ok: false });
 	});
 
-	it("por ubicación actual y por sala: filtros y tabla", () => {
+	it("por ubicación actual (con filtro de sala en el alcance): filtros y tabla", () => {
 		const s = {
 			...initialWizardState(),
 			type: "ubicacion" as const,
@@ -138,13 +140,13 @@ describe("buildDistributeRequest", () => {
 		const r = buildDistributeRequest(s, true);
 		expect(r.ok && r.request.scope.filters).toEqual({ sala: ["D"], ubicacion: ["camara", "corte"] });
 		expect(r.ok && r.request.criteria).toEqual({ type: "ubicacion", map: { camara: ["a"], corte: ["b"] } });
-		expect(buildDistributeRequest({ ...initialWizardState(), type: "sala", map: {} }, true)).toMatchObject({
+		expect(buildDistributeRequest({ ...initialWizardState(), type: "ubicacion", map: {} }, true)).toMatchObject({
 			ok: false,
-			error: "Elegí un responsable para al menos una sala",
+			error: "Elegí un responsable para al menos una ubicación",
 		});
 		// «Las demás» alcanza para armar el pedido, y viaja como `rest`
-		const soloResto = buildDistributeRequest({ ...initialWizardState(), type: "sala", map: {}, restMap: ["b", "b"] }, true);
-		expect(soloResto.ok && soloResto.request.criteria).toEqual({ type: "sala", map: {}, rest: ["b"] });
+		const soloResto = buildDistributeRequest({ ...initialWizardState(), type: "ubicacion", map: {}, restMap: ["b", "b"] }, true);
+		expect(soloResto.ok && soloResto.request.criteria).toEqual({ type: "ubicacion", map: {}, rest: ["b"] });
 	});
 
 	it("autoSplit: cada clave a una persona y «las demás» a quien menos acumula", () => {

@@ -2,9 +2,9 @@
 // Contrato de POST /api/folders/responsables/distribute y GET /api/folders/group/:id/radicacion-summary.
 
 export type DistributeArchivedScope = "active" | "archived" | "all";
-// 14/11/2026 (pedido de Silvia): «sala» (Sala de Cámara de la radicación) y «ubicacion» (dónde está hoy: Juzgado,
-// Cámara, Corte…), como los filtros «Radicación» y «Ubicación actual» del modal de archivadas.
-export type DistributeCriteriaType = "juzgado" | "fuero" | "sala" | "ubicacion" | "equal" | "quantities" | "random";
+// 14/11/2026 (pedido de Silvia): «ubicacion» (dónde está hoy: Juzgado, Cámara, Corte…; dato del PJN, el resto cae en
+// «no-pjn»). La sala de Cámara quedó solo como filtro del alcance: repartir por ella no tiene sentido salvo en instancia originaria.
+export type DistributeCriteriaType = "juzgado" | "fuero" | "ubicacion" | "equal" | "quantities" | "random";
 export type DistributeOrder = "juzgado" | "ultimoMovimiento" | "caratula";
 export type DistributeMode = "replace" | "add";
 
@@ -18,7 +18,7 @@ export interface DistributeScope {
 		juzgado?: string[];
 		/** Salas de Cámara de la radicación: «<fuero>|<sala>» o la sala sola; "" = sin sala. */
 		sala?: string[];
-		/** Ubicación actual: juzgado | camara | corte | tribunal-oral | archivo | otro. */
+		/** Ubicación actual: juzgado | camara | corte | tribunal-oral | archivo | otro | no-pjn (otras jurisdicciones). */
 		ubicacion?: string[];
 		folderIds?: string[];
 	};
@@ -26,7 +26,7 @@ export interface DistributeScope {
 
 export interface DistributeCriteria {
 	type: DistributeCriteriaType;
-	/** juzgado, fuero, sala y ubicacion: clave → responsables. */
+	/** juzgado, fuero y ubicacion: clave → responsables. */
 	map?: Record<string, string[]>;
 	/** Ídem: «las demás» (sin clave en `map`: sin sala, sin dato, clave no elegida) van a estos responsables. */
 	rest?: string[];

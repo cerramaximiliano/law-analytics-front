@@ -73,7 +73,7 @@ export function salaRows(summary: RadicacionSummary | null, archived: Distribute
 		.sort((a, b) => numOrInf(a.key) - numOrInf(b.key) || a.key.localeCompare(b.key, "es"));
 }
 
-const UBICACION_ORDER = ["juzgado", "camara", "corte", "tribunal-oral", "archivo", "otro", ""];
+const UBICACION_ORDER = ["juzgado", "camara", "corte", "tribunal-oral", "archivo", "otro", "", "no-pjn"];
 
 /** Filas de ubicación actual (dónde está hoy el expediente): 1ª instancia, Cámara, Corte, Tribunal oral, Archivo, otra. */
 export function ubicacionRows(summary: RadicacionSummary | null, archived: DistributeArchivedScope): CriteriaRow[] {
@@ -109,14 +109,13 @@ export function autoSplit(
 }
 
 /** Criterios que asignan por tabla «clave → responsables». */
-export const MAP_CRITERIA: DistributeCriteriaType[] = ["juzgado", "fuero", "sala", "ubicacion"];
+export const MAP_CRITERIA: DistributeCriteriaType[] = ["juzgado", "fuero", "ubicacion"];
 export const isMapCriteria = (t: DistributeCriteriaType): boolean => MAP_CRITERIA.includes(t);
 
 /** Palabras de cada criterio por tabla, para encabezados, avisos y errores. */
 export const MAP_LABELS: Record<string, { column: string; singular: string; plural: string; error: string }> = {
 	juzgado: { column: "Juzgado", singular: "juzgado", plural: "juzgados", error: "Elegí un responsable para al menos un juzgado" },
 	fuero: { column: "Fuero", singular: "fuero", plural: "fueros", error: "Elegí un responsable para al menos un fuero" },
-	sala: { column: "Sala de Cámara", singular: "sala", plural: "salas de Cámara", error: "Elegí un responsable para al menos una sala" },
 	ubicacion: {
 		column: "Ubicación actual",
 		singular: "ubicación",
@@ -333,14 +332,9 @@ export const CRITERIA_OPTIONS: { value: DistributeCriteriaType; label: string; h
 	},
 	{ value: "fuero", label: "Por fuero", help: "Cada fuero va a los responsables que elijas." },
 	{
-		value: "sala",
-		label: "Por sala de Cámara",
-		help: "Cada Sala de la Cámara por la que pasó la causa va a los responsables que elijas (es la radicación: se conserva aunque la causa haya vuelto al juzgado).",
-	},
-	{
 		value: "ubicacion",
 		label: "Por ubicación actual",
-		help: "Según dónde está hoy el expediente: 1ª instancia, Cámara, Corte Suprema, Tribunal oral o Archivo. Las que están en Cámara o en la Corte pueden ir a quien las siga.",
+		help: "Según dónde está hoy el expediente (dato del PJN): 1ª instancia, Cámara, Corte Suprema, Tribunal oral o Archivo. Las de otras jurisdicciones van juntas en «Otras jurisdicciones». Es una foto de hoy: no se reasigna cuando el expediente cambia de instancia.",
 	},
 	{
 		value: "equal",
