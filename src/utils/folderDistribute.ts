@@ -95,11 +95,16 @@ export const MAP_CRITERIA: DistributeCriteriaType[] = ["juzgado", "fuero", "sala
 export const isMapCriteria = (t: DistributeCriteriaType): boolean => MAP_CRITERIA.includes(t);
 
 /** Palabras de cada criterio por tabla, para encabezados, avisos y errores. */
-export const MAP_LABELS: Record<string, { column: string; plural: string; error: string }> = {
-	juzgado: { column: "Juzgado", plural: "juzgados", error: "Elegí un responsable para al menos un juzgado" },
-	fuero: { column: "Fuero", plural: "fueros", error: "Elegí un responsable para al menos un fuero" },
-	sala: { column: "Sala de Cámara", plural: "salas de Cámara", error: "Elegí un responsable para al menos una sala" },
-	ubicacion: { column: "Ubicación actual", plural: "ubicaciones", error: "Elegí un responsable para al menos una ubicación" },
+export const MAP_LABELS: Record<string, { column: string; singular: string; plural: string; error: string }> = {
+	juzgado: { column: "Juzgado", singular: "juzgado", plural: "juzgados", error: "Elegí un responsable para al menos un juzgado" },
+	fuero: { column: "Fuero", singular: "fuero", plural: "fueros", error: "Elegí un responsable para al menos un fuero" },
+	sala: { column: "Sala de Cámara", singular: "sala", plural: "salas de Cámara", error: "Elegí un responsable para al menos una sala" },
+	ubicacion: {
+		column: "Ubicación actual",
+		singular: "ubicación",
+		plural: "ubicaciones",
+		error: "Elegí un responsable para al menos una ubicación",
+	},
 };
 
 export interface RadicacionFilterOption {

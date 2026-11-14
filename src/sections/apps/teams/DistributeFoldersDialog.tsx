@@ -277,22 +277,22 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 		allUbicaciones,
 	]);
 
-	const criteriaRows: CriteriaRow[] =
-		s.type === "juzgado" ? rowsJuzgado : s.type === "sala" ? rowsSala : s.type === "ubicacion" ? rowsUbicacion : rowsFuero;
+	const rowsByType: Record<string, CriteriaRow[]> = { juzgado: rowsJuzgado, fuero: rowsFuero, sala: rowsSala, ubicacion: rowsUbicacion };
+	const criteriaRows: CriteriaRow[] = rowsByType[s.type] || rowsFuero;
 	const mapLabels = MAP_LABELS[s.type] || MAP_LABELS.fuero;
+	// Un criterio «por X» solo tiene sentido si el alcance tiene dos o más X: con el alcance ya acotado a un juzgado (o
+	// una sala, un fuero…) lo que queda es decidir cómo dividirlo (partes iguales, cantidades, azar), 14/11/2026.
+	const criterioSinSentido = (type: DistributeCriteriaType) =>
+		isMapCriteria(type) && !loadingSummary && (rowsByType[type] || []).length < 2;
+	useEffect(() => {
+		if (step !== 1 || loadingSummary || !criterioSinSentido(s.type)) return;
+		// Con el alcance ya acotado, lo natural es dividirlo: «Partes iguales» (las otras tablas quedan disponibles si tienen sentido).
+		patch({ type: "equal", map: {} });
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [step, loadingSummary, summary, s.type]);
 
 	const setRowAssignees = (key: string, next: TeamAssignee[]) =>
 		setS((prev) => ({ ...prev, map: { ...prev.map, [key]: next.map((a) => a.id) } }));
-
-	const handlePrefill = () => {
-		if (!prefill.length) return;
-		patch({
-			map: splitKeysEqually(
-				criteriaRows,
-				prefill.map((a) => a.id),
-			),
-		});
-	};
 
 	const runPreview = async () => {
 		const built = buildDistributeRequest(s, true);
@@ -489,11 +489,28 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 						onChange={(_e, v: DistributeCriteriaType | null) => v && patch({ type: v, map: {} })}
 						sx={{ ...toggleSx, flexWrap: "wrap" }}
 					>
-						{CRITERIA_OPTIONS.map((o) => (
-							<ToggleButton key={o.value} value={o.value}>
-								{o.label}
-							</ToggleButton>
-						))}
+						{CRITERIA_OPTIONS.map((o) =>
+							criterioSinSentido(o.value) ? (
+								<Tooltip
+									key={o.value}
+									title={`El alcance tiene ${(rowsByType[o.value] || []).length === 1 ? "un solo" : "ningún"} ${
+										MAP_LABELS[o.value].singular
+									}: no hay nada que repartir por ${
+										MAP_LABELS[o.value].singular
+									}. Elegí cómo dividirlo: partes iguales, cantidades o al azar.`}
+								>
+									<span>
+										<ToggleButton value={o.value} disabled>
+											{o.label}
+										</ToggleButton>
+									</span>
+								</Tooltip>
+							) : (
+								<ToggleButton key={o.value} value={o.value}>
+									{o.label}
+								</ToggleButton>
+							),
+						)}
 					</ToggleButtonGroup>
 					{opt && (
 						<Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.75 }}>
@@ -504,43 +521,49 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 
 				{isMapCriteria(s.type) && (
 					<>
-						<Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
-							<Box sx={{ flex: 1 }}>
-								<AssigneePicker
-									options={assignees}
-									value={prefill}
-									onChange={setPrefill}
-									size="small"
-									placeholder="Pre-llenar la tabla entre…"
-								/>
-							</Box>
-							<Stack direction="row" spacing={1}>
+						<Box>
+							<Typography variant="caption" color="text.secondary" component="div" sx={{ mb: 0.5 }}>
+								Repartir los {mapLabels.plural} automáticamente entre
+							</Typography>
+							<Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+								<Box sx={{ flex: 1 }}>
+									<AssigneePicker
+										options={assignees}
+										value={prefill}
+										onChange={(next) => {
+											setPrefill(next);
+											patch({
+												map: next.length
+													? splitKeysEqually(
+															criteriaRows,
+															next.map((a) => a.id),
+													  )
+													: {},
+											});
+										}}
+										size="small"
+										placeholder="Elegí a las personas y la tabla se completa sola"
+									/>
+								</Box>
 								<Button
 									size="small"
-									variant="outlined"
 									color="secondary"
-									onClick={handlePrefill}
-									disabled={!prefill.length || !criteriaRows.length}
-									sx={{ textTransform: "none" }}
-								>
-									Pre-llenar
-								</Button>
-								<Button
-									size="small"
-									color="secondary"
-									onClick={() => patch({ map: {} })}
-									disabled={!Object.keys(s.map).length}
+									onClick={() => {
+										setPrefill([]);
+										patch({ map: {} });
+									}}
+									disabled={!Object.keys(s.map).length && !prefill.length}
 									sx={{ textTransform: "none" }}
 								>
 									Limpiar
 								</Button>
 							</Stack>
-						</Stack>
-						<Typography variant="caption" color="text.secondary" component="div" sx={{ mt: -1 }}>
-							<strong>Pre-llenar</strong> asigna cada fila a una sola persona y reparte las filas entre las elegidas para equilibrar la
-							cantidad; después podés ajustar fila por fila. Si en una fila elegís a varios, todos quedan como responsables de esas
-							carpetas. Para dividir las carpetas de una misma fila entre varios, usá <strong>Partes iguales</strong> con ese alcance.
-						</Typography>
+							<Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.75 }}>
+								Cada {mapLabels.singular} queda a cargo de una sola persona y los {mapLabels.plural} se distribuyen entre las elegidas
+								equilibrando la cantidad de carpetas. Abajo podés cambiar el responsable de cualquier {mapLabels.singular}; si ponés a
+								varios en el mismo, todos quedan como responsables de esas carpetas.
+							</Typography>
+						</Box>
 						{loadingSummary ? (
 							<Skeleton variant="rounded" height={120} />
 						) : criteriaRows.length === 0 ? (
@@ -554,11 +577,7 @@ export default function DistributeFoldersDialog({ open, onClose, folderIds = [],
 											<TableCell align="right" sx={{ width: 90 }}>
 												Carpetas
 											</TableCell>
-											<TableCell>
-												<Tooltip title="Varios en una misma fila = todos responsables de esas carpetas">
-													<span>Responsables</span>
-												</Tooltip>
-											</TableCell>
+											<TableCell>Responsables de cada {mapLabels.singular}</TableCell>
 										</TableRow>
 									</TableHead>
 									<TableBody>

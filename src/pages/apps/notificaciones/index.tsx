@@ -149,14 +149,8 @@ const NotificacionesPage = () => {
 	return (
 		<>
 			<MainCard content={false} sx={{ borderRadius: 2, border: `1px solid ${borderColor}` }}>
-				<Stack
-					direction={{ xs: "column", md: "row" }}
-					alignItems={{ md: "center" }}
-					justifyContent="space-between"
-					spacing={1.5}
-					sx={{ px: 2.5, py: 2, borderBottom: `1px solid ${borderColor}`, bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03) }}
-				>
-					<Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
+				<Box sx={{ px: 2.5, py: 2, borderBottom: `1px solid ${borderColor}`, bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.03) }}>
+					<Stack direction="row" spacing={1.25} alignItems="center">
 						<Box
 							sx={{
 								width: 36,
@@ -173,14 +167,21 @@ const NotificacionesPage = () => {
 						>
 							<NotificationStatus size={20} variant="Bulk" />
 						</Box>
-						<Stack spacing={0.125} sx={{ minWidth: 0 }}>
-							<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em" }}>Notificaciones</Typography>
-							<Typography variant="caption" color="text.secondary">
-								Bandeja de notificaciones del PJN (solo expedientes con cuenta de Mis Causas vinculada) · {alcance}
-							</Typography>
-						</Stack>
+						<Typography sx={{ fontSize: "1.05rem", fontWeight: 600, letterSpacing: "-0.015em", flex: 1, minWidth: 0 }}>
+							Notificaciones
+						</Typography>
+						<Tooltip title="Actualizar">
+							<IconButton size="small" onClick={() => setReloadKey((k) => k + 1)} aria-label="Actualizar">
+								<Refresh size={18} />
+							</IconButton>
+						</Tooltip>
 					</Stack>
-					<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+					{/* Segunda línea: qué se muestra y cuánto hay; en pantallas chicas el chip baja debajo del texto. */}
+					<Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }} sx={{ mt: 0.75 }}>
+						<Typography variant="caption" color="text.secondary" sx={{ flex: 1, minWidth: 0 }}>
+							Cédulas de la bandeja de notificaciones del portal del PJN, de las causas relacionadas a las credenciales autenticadas ·{" "}
+							{alcance}
+						</Typography>
 						{data && !loading && (
 							<Chip
 								size="small"
@@ -188,16 +189,11 @@ const NotificacionesPage = () => {
 								label={`${data.total.toLocaleString("es-AR")} ${data.total === 1 ? "cédula" : "cédulas"} · ${data.carpetas.toLocaleString(
 									"es-AR",
 								)} ${data.carpetas === 1 ? "expediente" : "expedientes"}`}
-								sx={{ fontWeight: 600 }}
+								sx={{ fontWeight: 600, flexShrink: 0, alignSelf: { xs: "flex-start", sm: "center" } }}
 							/>
 						)}
-						<Tooltip title="Actualizar">
-							<IconButton size="small" onClick={() => setReloadKey((k) => k + 1)} aria-label="Actualizar">
-								<Refresh size={18} />
-							</IconButton>
-						</Tooltip>
 					</Stack>
-				</Stack>
+				</Box>
 
 				<Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${borderColor}` }}>
 					<TextField
@@ -248,7 +244,7 @@ const NotificacionesPage = () => {
 					)}
 				</Stack>
 
-				{/* Solo PJN con cuenta de Mis Causas: sin ninguna credencial activa en el alcance, la bandeja no se sincroniza. */}
+				{/* Solo PJN con credenciales autenticadas: sin ninguna activa en el alcance, la bandeja no se sincroniza. */}
 				{!loading && data && data.credencialesActivas === 0 && (
 					<Alert
 						severity="warning"
@@ -260,14 +256,14 @@ const NotificacionesPage = () => {
 								onClick={() => navigate(PJN_PROFILE_PATH)}
 								sx={{ textTransform: "none", whiteSpace: "nowrap" }}
 							>
-								Vincular Mis Causas
+								Autenticar credenciales
 							</Button>
 						}
 					>
 						{activeTeam
-							? "Nadie en el equipo tiene una cuenta de Mis Causas del PJN vinculada, así que la bandeja de notificaciones no se sincroniza. "
-							: "No tenés una cuenta de Mis Causas del PJN vinculada, así que la bandeja de notificaciones no se sincroniza. "}
-						Las cédulas aparecen acá cuando se autentican las credenciales en Integraciones.
+							? "Nadie en el equipo tiene credenciales del PJN autenticadas, así que la bandeja de notificaciones no se sincroniza. "
+							: "No tenés credenciales del PJN autenticadas, así que la bandeja de notificaciones no se sincroniza. "}
+						Las cédulas aparecen acá cuando autenticás tus credenciales en Integraciones → PJN.
 					</Alert>
 				)}
 				{loading ? (
@@ -286,12 +282,12 @@ const NotificacionesPage = () => {
 							{hayFiltros
 								? "Ninguna cédula coincide con la búsqueda."
 								: data && data.carpetas === 0
-								? "No tenés expedientes del PJN activos. Las cédulas aparecen acá cuando vinculás tu cuenta de Mis Causas y tus expedientes."
-								: "Todavía no hay cédulas en la bandeja de notificaciones del PJN de la cuenta vinculada."}
+								? "No tenés expedientes del PJN activos. Las cédulas aparecen acá cuando autenticás tus credenciales del PJN y se relacionan tus causas."
+								: "Todavía no hay cédulas en la bandeja de notificaciones del portal del PJN para estas causas."}
 						</Typography>
 						{!hayFiltros && data && data.carpetas === 0 && (
 							<Button size="small" sx={{ mt: 1.5, textTransform: "none" }} onClick={() => navigate(PJN_PROFILE_PATH)}>
-								Vincular Mis Causas
+								Autenticar credenciales del PJN
 							</Button>
 						)}
 					</Box>
