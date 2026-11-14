@@ -56,9 +56,14 @@ const TaskAssignees = ({ ids, variant = "avatars", max = 4, emptyLabel = "Sin as
 		);
 	}
 
+	// Íconos sólidos (opción C, 14/11/2026): azul pleno con iniciales claras y una separación fina del color del fondo.
+	// Cada ícono queda debajo del que tiene a la derecha (zIndex creciente). Previstos e invitados, en gris; «+N», en celeste.
+	// El «+N» se arma acá (no con `max` de AvatarGroup) para poder darle su propio estilo y orden.
+	const visibles = assignees.length > max ? assignees.slice(0, max - 1) : assignees;
+	const resto = assignees.slice(visibles.length);
 	return (
 		<AvatarGroup
-			max={max}
+			max={visibles.length + 2}
 			sx={{
 				justifyContent: "flex-end",
 				"& .MuiAvatar-root": {
@@ -66,25 +71,34 @@ const TaskAssignees = ({ ids, variant = "avatars", max = 4, emptyLabel = "Sin as
 					height: 28,
 					fontSize: "0.68rem",
 					fontWeight: 700,
-					// Fondo opaco (el color del papel con el tinte encima): al superponerse no se trasluce el de abajo.
-					bgcolor: "background.paper",
-					backgroundImage: `linear-gradient(${alpha(BRAND_BLUE, 0.16)}, ${alpha(BRAND_BLUE, 0.16)})`,
-					color: BRAND_BLUE,
-					// Borde fino del mismo azul, más intenso que el fondo: marca dónde termina cada ícono al superponerse.
-					border: `1px solid ${alpha(BRAND_BLUE, 0.55)}`,
+					bgcolor: BRAND_BLUE,
+					color: "common.white",
+					border: "none",
+					boxShadow: (theme) => `0 0 0 1.5px ${theme.palette.background.paper}`,
 				},
-				// El «+N» va a la derecha de todos: queda arriba.
-				"& .MuiAvatar-root:first-of-type": { zIndex: 99 },
 			}}
 		>
-			{/* zIndex creciente: cada ícono queda debajo del que tiene a la derecha. Previstos e invitados, en gris. */}
-			{assignees.map((a, i) => (
+			{visibles.map((a, i) => (
 				<Tooltip key={a.id} title={tooltipOf(a)}>
-					<Avatar src={a.avatar} alt={a.name} sx={{ zIndex: i + 1, ...(assigneeTag(a) ? { color: "text.disabled" } : {}) }}>
+					<Avatar src={a.avatar} alt={a.name} sx={{ zIndex: i + 1, ...(assigneeTag(a) ? { bgcolor: "grey.500" } : {}) }}>
 						{a.initials}
 					</Avatar>
 				</Tooltip>
 			))}
+			{resto.length > 0 && (
+				<Tooltip title={resto.map((a) => a.name).join(", ")}>
+					<Avatar
+						sx={{
+							zIndex: visibles.length + 1,
+							bgcolor: "background.paper",
+							backgroundImage: `linear-gradient(${alpha(BRAND_BLUE, 0.16)}, ${alpha(BRAND_BLUE, 0.16)})`,
+							color: BRAND_BLUE,
+						}}
+					>
+						+{resto.length}
+					</Avatar>
+				</Tooltip>
+			)}
 		</AvatarGroup>
 	);
 };
