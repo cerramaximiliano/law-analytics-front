@@ -444,7 +444,7 @@ const Details = () => {
 		const key = `${folder._id}:${tabValue}`;
 		if (lastDetailViewKey.current === key) return;
 		lastDetailViewKey.current = key;
-		const tabNames = ["general", "actividad", "gestion", "recursos", "historial"];
+		const tabNames = ["general", "actividad", "gestion", "recursos", "historial", "relaciones", "chat"];
 		trackActivity("folder_detail_view", { tab: tabNames[tabValue] ?? String(tabValue) });
 	}, [folder?._id, id, tabValue]);
 
@@ -494,14 +494,7 @@ const Details = () => {
 				shortLabel: "Recursos",
 				ariaLabel: "Recursos",
 			},
-			{
-				value: 4,
-				label: "Historial",
-				icon: <Clock size="20" />,
-				shortLabel: "Historial",
-				ariaLabel: "Historial de Cambios",
-			},
-			// Al final para no correr los índices (hay deep-links que fuerzan setTabValue(1)).
+			// Con value fijo 5 y 6 para no correr los índices (hay deep-links que fuerzan setTabValue(1)).
 			...(folder?.pjn
 				? [
 						{
@@ -525,6 +518,14 @@ const Details = () => {
 						},
 				  ]
 				: []),
+			// Historial siempre es la última pestaña a la derecha (15/11/2026); conserva su value 4.
+			{
+				value: 4,
+				label: "Historial",
+				icon: <Clock size="20" />,
+				shortLabel: "Historial",
+				ariaLabel: "Historial de Cambios",
+			},
 		],
 		[folder?.pjn, relacionesTotal, chatAccess.allowed],
 	);
@@ -1104,6 +1105,7 @@ const Details = () => {
 										return (
 											<Tab
 												key={tab.value}
+												value={tab.value}
 												label={
 													tab.badge ? (
 														<Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.75 }}>

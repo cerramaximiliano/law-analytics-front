@@ -87,7 +87,7 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 		if (editOpen) setDraft(currentIds);
 	}, [editOpen, currentIds]);
 
-	// Último cambio de responsables (regla automática o a mano). Se vuelve a pedir cuando cambian los responsables.
+	// Último cambio de responsables hecho por una regla (los manuales van al Historial). Se vuelve a pedir cuando cambian los responsables.
 	// Si falla o no hay registro, la línea no se muestra: es un dato de contexto, no bloquea nada.
 	const [ultimoCambio, setUltimoCambio] = useState<UltimoCambioResponsables | null>(null);
 	const responsablesKey = currentIds.join(",");
@@ -227,7 +227,7 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 						<Clock size={14} />
 					</Box>
 					<Typography variant="caption" sx={{ minWidth: 0 }}>
-						Último cambio de responsables:{" "}
+						Último cambio hecho por una regla:{" "}
 						{new Date(ultimoCambio.at).toLocaleString("es-AR", {
 							day: "2-digit",
 							month: "2-digit",
@@ -236,7 +236,8 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 							minute: "2-digit",
 							hour12: false,
 						})}
-						, {ultimoCambioMotivo(ultimoCambio)}. Antes: {nombres(ultimoCambio.antes)}. Ahora: {nombres(ultimoCambio.despues)}.
+						, {ultimoCambioMotivo(ultimoCambio)}. Antes: {nombres(ultimoCambio.antes)}. Después: {nombres(ultimoCambio.despues)}.
+						{ultimoCambio.modificadoDespues ? " Más tarde se modificaron a mano: el detalle está en la pestaña Historial." : ""}
 					</Typography>
 				</Stack>
 			)}

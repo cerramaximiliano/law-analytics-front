@@ -69,6 +69,19 @@ import {
 	ActivityLogQueryParams,
 } from "types/activityLog";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
+import { ultimoCambioMotivo } from "utils/responsablesReglasApi";
+
+// Cambios de responsables (a mano o por una regla): el hub los copia al historial con metadata.responsables.
+const responsablesAutor = (entry: ActivityLogEntry): string | null => {
+	const r = entry.metadata?.responsables;
+	if (!r || r.regla === "manual") return null;
+	const regla = r.regla === "alta" ? "Regla para las causas nuevas" : "Regla de ubicación actual";
+	return r.origen === "cron" ? `${regla} (automática)` : `${regla}, aplicada por ${formatPerformedBy(entry.performedByInfo)}`;
+};
+const responsablesMotivo = (entry: ActivityLogEntry): string | null => {
+	const r = entry.metadata?.responsables;
+	return r ? `Cambio de responsables ${ultimoCambioMotivo(r)}` : null;
+};
 
 // State interface
 interface ActivityLogState {
@@ -124,6 +137,7 @@ const ACTION_ICONS: Record<ActivityAction, React.ElementType> = {
 // Field names to human-readable labels mapping
 const FIELD_LABELS: Record<string, string> = {
 	// Campos comunes
+	responsables: "Responsables",
 	title: "Título",
 	name: "Nombre",
 	description: "Descripción",
@@ -560,7 +574,7 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 						<Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1 }}>
 							<Box sx={{ flex: 1, minWidth: 0 }}>
 								<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary", mb: 0.5 }}>
-									{formatPerformedBy(entry.performedByInfo)}
+									{responsablesAutor(entry) || formatPerformedBy(entry.performedByInfo)}
 								</Typography>
 
 								<Box sx={{ display: "flex", alignItems: "center", gap: 0.625, flexWrap: "wrap" }}>
@@ -612,6 +626,14 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 										</Typography>
 									)}
 								</Box>
+								{responsablesMotivo(entry) && (
+									<Typography
+										data-testid="historial-responsables"
+										sx={{ fontSize: "0.75rem", color: "text.secondary", mt: 0.5, letterSpacing: "-0.005em" }}
+									>
+										{responsablesMotivo(entry)}: {String(entry.changes?.[0]?.oldValue ?? "")} → {String(entry.changes?.[0]?.newValue ?? "")}
+									</Typography>
+								)}
 							</Box>
 
 							{/* Expand button */}

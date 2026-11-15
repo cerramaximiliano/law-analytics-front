@@ -161,7 +161,10 @@ export async function getReglasLog(groupId: string, query: ReglaLogQuery): Promi
 export type UltimoCambioResponsables = Pick<
 	ReglaLogItem,
 	"regla" | "tipo" | "origen" | "clave" | "de" | "a" | "antes" | "despues" | "entran" | "salen" | "at"
->;
+> & {
+	/** Después de este cambio de la regla, alguien modificó los responsables a mano. */
+	modificadoDespues?: boolean;
+};
 
 export async function getUltimoCambioResponsables(
 	folderId: string,
@@ -184,7 +187,7 @@ const UBICACION_CORTA: Record<string, string> = {
 const ubic = (k: string | null) => (k ? UBICACION_CORTA[k] || k : "");
 
 /** Por qué cambiaron los responsables, en pocas palabras: «por la regla de ubicación actual (1ª instancia → Cámara)». */
-export function ultimoCambioMotivo(c: UltimoCambioResponsables): string {
+export function ultimoCambioMotivo(c: Pick<UltimoCambioResponsables, "regla" | "tipo" | "origen" | "de" | "a">): string {
 	if (c.regla === "alta") return "por la regla para las causas nuevas";
 	if (c.regla === "manual") return c.origen === "asistente" ? "a mano, desde el asistente de reparto" : "a mano";
 	if (c.tipo === "restauracion") return `por la regla de ubicación actual (volvió a ${ubic(c.a)})`;
