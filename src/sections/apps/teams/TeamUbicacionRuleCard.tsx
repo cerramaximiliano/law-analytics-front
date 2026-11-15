@@ -346,7 +346,7 @@ export default function TeamUbicacionRuleCard() {
 								  } en la próxima aplicación de la regla (cada hora, o con «Aplicar ahora»).`
 								: `Si tildás esta opción, ${
 										nuevasPendTotal === 1 ? "se asigna" : "se asignan"
-								  } en la próxima aplicación de la regla. Las que alguien asigne a mano antes no se tocan.`}
+								  } en la próxima aplicación de la regla. Las que tengan una asignación manual antes no se tocan.`}
 						</Alert>
 					)}
 					<FormControlLabel
