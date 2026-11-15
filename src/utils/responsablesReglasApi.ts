@@ -189,7 +189,7 @@ const ubic = (k: string | null) => (k ? UBICACION_CORTA[k] || k : "");
 /** Por qué cambiaron los responsables, en pocas palabras: «por la regla de ubicación actual (1ª instancia → Cámara)». */
 export function ultimoCambioMotivo(c: Pick<UltimoCambioResponsables, "regla" | "tipo" | "origen" | "de" | "a">): string {
 	if (c.regla === "alta") return "por la regla para las causas nuevas";
-	if (c.regla === "manual") return c.origen === "asistente" ? "a mano, desde el asistente de reparto" : "a mano";
+	if (c.regla === "manual") return c.origen === "asistente" ? "cambio manual, desde el asistente de reparto" : "cambio manual";
 	if (c.tipo === "restauracion") return `por la regla de ubicación actual (volvió a ${ubic(c.a)})`;
 	return `por la regla de ubicación actual (${c.de ? `${ubic(c.de)} → ${ubic(c.a)}` : `en ${ubic(c.a)}`})`;
 }

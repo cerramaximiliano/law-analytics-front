@@ -80,7 +80,9 @@ const responsablesAutor = (entry: ActivityLogEntry): string | null => {
 };
 const responsablesMotivo = (entry: ActivityLogEntry): string | null => {
 	const r = entry.metadata?.responsables;
-	return r ? `Cambio de responsables ${ultimoCambioMotivo(r)}` : null;
+	if (!r) return null;
+	if (r.regla === "manual") return `Cambio manual de responsables${r.origen === "asistente" ? ", desde el asistente de reparto" : ""}`;
+	return `Cambio de responsables ${ultimoCambioMotivo(r)}`;
 };
 
 // State interface

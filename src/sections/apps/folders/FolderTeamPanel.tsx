@@ -237,7 +237,7 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 							hour12: false,
 						})}
 						, {ultimoCambioMotivo(ultimoCambio)}. Antes: {nombres(ultimoCambio.antes)}. Después: {nombres(ultimoCambio.despues)}.
-						{ultimoCambio.modificadoDespues ? " Más tarde se modificaron a mano: el detalle está en la pestaña Historial." : ""}
+						{ultimoCambio.modificadoDespues ? " Más tarde hubo un cambio manual: el detalle está en la pestaña Historial." : ""}
 					</Typography>
 				</Stack>
 			)}
