@@ -46,6 +46,7 @@ import { dispatch, useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { useTeam } from "contexts/TeamContext";
 import { BRAND_BLUE, STALE_AMBER } from "themes/dashboardTokens";
+import { colorGrupo, domicilioElectronico, grupoInterviniente, iconoGrupo } from "utils/intervinienteRoles";
 
 interface MembersProps {
 	title: string;
@@ -101,7 +102,7 @@ const getColorByRole = (role: string | string[]) => {
 		case "TERCERO":
 			return "warning";
 		default:
-			return "default";
+			return colorGrupo[grupoInterviniente(firstRole)];
 	}
 };
 
@@ -134,7 +135,7 @@ const getRoleIcon = (role: string | string[]) => {
 		case "TERCERO":
 			return "🔷";
 		default:
-			return "👥";
+			return iconoGrupo[grupoInterviniente(firstRole)];
 	}
 };
 
@@ -257,23 +258,21 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 	}, [letrados, partes]);
 
 	// Color del chip según tipo de parte
-	const getParteChipColor = (tipo: string): "primary" | "error" | "warning" | "info" => {
-		switch (tipo?.toUpperCase()) {
-			case "ACTOR":
-				return "primary";
-			case "DEMANDADO":
-				return "error";
-			case "TERCERO":
-				return "warning";
-			default:
-				return "info";
-		}
+	const getParteChipColor = (tipo: string): "primary" | "error" | "warning" | "info" | "default" | "secondary" => {
+		const g = grupoInterviniente(tipo);
+		if (g === "actora") return "primary";
+		if (g === "demandada") return "error";
+		if (g === "tercero") return "warning";
+		if (g === "testigo") return "default";
+		if (g === "funcionario") return "secondary";
+		return "info";
 	};
 
 	// Color del chip según tipo de letrado
-	const getLetradoChipColor = (tipo: string): "primary" | "secondary" | "success" => {
+	const getLetradoChipColor = (tipo: string): "primary" | "secondary" | "success" | "info" => {
 		if (tipo?.includes("APODERADO")) return "primary";
 		if (tipo?.includes("PATROCINANTE")) return "secondary";
+		if (grupoInterviniente(tipo) === "funcionario") return "info";
 		return "success";
 	};
 
@@ -621,7 +620,9 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 					<ListItemIcon>
 						<Profile size={16} variant="Bulk" color={BRAND_BLUE} />
 					</ListItemIcon>
-					<Typography sx={{ fontSize: "0.82rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em" }}>Ver perfil</Typography>
+					<Typography sx={{ fontSize: "0.82rem", fontWeight: 500, color: "text.primary", letterSpacing: "-0.005em" }}>
+						Ver perfil
+					</Typography>
 				</MenuItem>
 				{canUpdate && selectedMember?.importSource !== "interviniente" && (
 					<MenuItem onClick={() => selectedMember && handleUnlink(selectedMember._id)} sx={{ py: 1, px: 1.5 }}>
@@ -638,9 +639,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 						<ListItemIcon>
 							<Archive size={16} variant="Bulk" color={STALE_AMBER} />
 						</ListItemIcon>
-						<Typography sx={{ fontSize: "0.82rem", fontWeight: 500, color: STALE_AMBER, letterSpacing: "-0.005em" }}>
-							Archivar
-						</Typography>
+						<Typography sx={{ fontSize: "0.82rem", fontWeight: 500, color: STALE_AMBER, letterSpacing: "-0.005em" }}>Archivar</Typography>
 					</MenuItem>
 				)}
 				{canDelete && (
@@ -648,9 +647,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 						<ListItemIcon>
 							<Trash size={16} variant="Bulk" color={errorColor} />
 						</ListItemIcon>
-						<Typography sx={{ fontSize: "0.82rem", fontWeight: 500, color: errorColor, letterSpacing: "-0.005em" }}>
-							Eliminar
-						</Typography>
+						<Typography sx={{ fontSize: "0.82rem", fontWeight: 500, color: errorColor, letterSpacing: "-0.005em" }}>Eliminar</Typography>
 					</MenuItem>
 				)}
 			</Menu>
@@ -686,13 +683,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 								>
 									Nuevo interviniente
 								</Button>
-								<Button
-									fullWidth
-									startIcon={<Link1 size={16} variant="Bulk" />}
-									onClick={handleOpen}
-									disabled={isLoader}
-									sx={ghostCtaSx}
-								>
+								<Button fullWidth startIcon={<Link1 size={16} variant="Bulk" />} onClick={handleOpen} disabled={isLoader} sx={ghostCtaSx}>
 									Vincular existente
 								</Button>
 							</Stack>
@@ -879,11 +870,15 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 																								</Typography>
 																							</TableCell>
 																							<TableCell>
-																								{contact.intervinienteRef?.estadoIej ? (
+																								{domicilioElectronico(contact.intervinienteRef?.estadoIej) ? (
 																									<Chip
-																										label={contact.intervinienteRef.estadoIej}
+																										label={domicilioElectronico(contact.intervinienteRef?.estadoIej)!.label}
 																										size="small"
-																										color={contact.intervinienteRef.estadoIej === "CONSTITUIDO" ? "success" : "default"}
+																										color={
+																											domicilioElectronico(contact.intervinienteRef?.estadoIej)!.constituido
+																												? "success"
+																												: "default"
+																										}
 																									/>
 																								) : (
 																									"-"
@@ -959,11 +954,13 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 																			</Typography>
 																		</TableCell>
 																		<TableCell>
-																			{letrado.intervinienteRef?.estadoIej ? (
+																			{domicilioElectronico(letrado.intervinienteRef?.estadoIej) ? (
 																				<Chip
-																					label={letrado.intervinienteRef.estadoIej}
+																					label={domicilioElectronico(letrado.intervinienteRef?.estadoIej)!.label}
 																					size="small"
-																					color={letrado.intervinienteRef.estadoIej === "CONSTITUIDO" ? "success" : "default"}
+																					color={
+																						domicilioElectronico(letrado.intervinienteRef?.estadoIej)!.constituido ? "success" : "default"
+																					}
 																				/>
 																			) : (
 																				"-"
@@ -1173,13 +1170,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 									>
 										Nuevo interviniente
 									</Button>
-									<Button
-										fullWidth
-										startIcon={<Link1 size={16} variant="Bulk" />}
-										onClick={handleOpen}
-										disabled={isLoader}
-										sx={ghostCtaSx}
-									>
+									<Button fullWidth startIcon={<Link1 size={16} variant="Bulk" />} onClick={handleOpen} disabled={isLoader} sx={ghostCtaSx}>
 										Vincular existente
 									</Button>
 								</Stack>
