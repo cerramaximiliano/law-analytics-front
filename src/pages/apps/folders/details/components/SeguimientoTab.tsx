@@ -24,6 +24,7 @@ import { alpha } from "@mui/material/styles";
 import {
 	Add,
 	ArrowDown,
+	Calendar1,
 	ArrowUp,
 	CloseCircle,
 	DocumentDownload,
@@ -43,6 +44,7 @@ import { useSelector } from "react-redux";
 import { useTeam } from "contexts/TeamContext";
 import PaginationWithJump from "components/shared/PaginationWithJump";
 import { buildCsv, buildPdf } from "sections/apps/folders/ExportFoldersDialog";
+import { FolderEtiquetas } from "sections/apps/folders/EtiquetasExpediente";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 
 // ==============================|| SEGUIMIENTO DE LA CARPETA ||============================== //
@@ -50,7 +52,7 @@ import { BRAND_BLUE } from "themes/dashboardTokens";
 // y las cédulas. Los tipos de anotación (nombre, letra y color) los define cada estudio: acá no
 // hay ninguno fijo.
 
-type Fuente = "anotacion" | "movimiento" | "cedula";
+type Fuente = "anotacion" | "movimiento" | "cedula" | "evento";
 
 interface Tipo {
 	_id?: string;
@@ -78,6 +80,8 @@ interface Respuesta {
 	conteo: Record<Fuente, number>;
 	avisos: string[];
 	tipos: Tipo[];
+	/** Etiquetas que tiene puestas la carpeta (ids del catálogo del estudio). */
+	folderEstados?: string[];
 	canConfig: boolean;
 	canAnotar: boolean;
 	canEditar: boolean;
@@ -94,8 +98,8 @@ const TEXTO_MAX = 2000;
 const LOADER_MIN_MS = 300;
 const API = import.meta.env.VITE_BASE_URL;
 
-const FUENTE_LABEL: Record<Fuente, string> = { anotacion: "Anotaciones", movimiento: "Movimientos", cedula: "Cédulas" };
-const FUENTE_SINGULAR: Record<Fuente, string> = { anotacion: "Anotación", movimiento: "Movimiento", cedula: "Cédula" };
+const FUENTE_LABEL: Record<Fuente, string> = { anotacion: "Anotaciones", movimiento: "Movimientos", cedula: "Cédulas", evento: "Eventos" };
+const FUENTE_SINGULAR: Record<Fuente, string> = { anotacion: "Anotación", movimiento: "Movimiento", cedula: "Cédula", evento: "Evento" };
 const ORIGEN_LABEL: Record<string, string> = {
 	pjn: "PJN",
 	mev: "MEV",
@@ -558,7 +562,8 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 		const esAnotacion = item.fuente === "anotacion";
 		const color = tipo ? colorDeTexto(tipo.color, isDark, theme.palette.text.primary) : theme.palette.text.primary;
 		const enEdicion = editId === item.id;
-		const Icono = item.fuente === "movimiento" ? Judge : item.fuente === "cedula" ? Notification : NoteText;
+		const Icono =
+			item.fuente === "movimiento" ? Judge : item.fuente === "cedula" ? Notification : item.fuente === "evento" ? Calendar1 : NoteText;
 		return (
 			<Box
 				key={item.id}
@@ -764,6 +769,18 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 					<MenuItem onClick={() => exportar("csv")}>Planilla (CSV)</MenuItem>
 				</Menu>
 			</Box>
+
+			{/* Etiquetas del expediente (los «estados» del estudio) */}
+			{data && (
+				<Box sx={{ mb: 1.5 }}>
+					<FolderEtiquetas
+						folderId={folderId}
+						value={data.folderEstados || []}
+						canEdit={data.canEditar}
+						onChange={(ids) => setData((d) => (d ? { ...d, folderEstados: ids } : d))}
+					/>
+				</Box>
+			)}
 
 			{/* Alta de anotación */}
 			{data?.canAnotar && (

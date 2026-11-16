@@ -85,6 +85,8 @@ import {
 	sinMovimientoHace,
 } from "utils/controlCarpetas";
 import ExportFoldersDialog from "sections/apps/folders/ExportFoldersDialog";
+import { EtiquetasCell } from "sections/apps/folders/EtiquetasExpediente";
+import useEtiquetasExpediente, { nombresDeEtiquetas } from "hooks/useEtiquetasExpediente";
 import { formatFolderName } from "utils/formatFolderName";
 import {
 	INVALID_FOLDER_NAME,
@@ -379,6 +381,10 @@ interface ReactTableProps extends Props {
 	uniqueJuzgados?: { value: string; label: string; count: number }[];
 	ubicacionFilter?: string;
 	onUbicacionFilterChange?: (event: SelectChangeEvent<string>) => void;
+	/** Etiquetas del expediente (16/11/2026): las crea cada estudio; "all" | id | "__none". */
+	etiquetaFilter?: string;
+	onEtiquetaFilterChange?: (event: SelectChangeEvent<string>) => void;
+	etiquetaOptions?: { value: string; label: string; count: number }[];
 	// Cambios de situación como novedad (como el PJN), preferencia del usuario (13/11/2026)
 	situacionComoNovedad?: boolean;
 	onSituacionComoNovedadChange?: (value: boolean) => void;
@@ -459,6 +465,9 @@ function ReactTable({
 	uniqueJuzgados = [],
 	ubicacionFilter = "all",
 	onUbicacionFilterChange,
+	etiquetaFilter = "all",
+	onEtiquetaFilterChange,
+	etiquetaOptions = [],
 	situacionComoNovedad,
 	onSituacionComoNovedadChange,
 	uniqueUbicaciones = [],
@@ -575,6 +584,7 @@ function ReactTable({
 		if (departamentoFilter !== "all") count++;
 		if (juzgadoFilter !== "all") count++;
 		if (ubicacionFilter !== "all") count++;
+		if (etiquetaFilter !== "all") count++;
 		if (situacionFilter !== "all") count++;
 		if (seguimientoFilter !== "all") count++;
 		return count;
@@ -588,6 +598,7 @@ function ReactTable({
 		departamentoFilter,
 		juzgadoFilter,
 		ubicacionFilter,
+		etiquetaFilter,
 		situacionFilter,
 		seguimientoFilter,
 	]);
@@ -612,6 +623,8 @@ function ReactTable({
 			out.push("initialDateFolder");
 		// Situación (6/11/2026): solo la informan PJN y los portales con situación; sin dato, oculta.
 		if (rows.every((f) => !f?.situacion)) out.push("situacion");
+		// Etiquetas (16/11/2026): solo si alguna carpeta tiene.
+		if (rows.every((f) => !f?.estados?.length)) out.push("estados");
 		return out;
 	}, [data]);
 
@@ -734,6 +747,7 @@ function ReactTable({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[exportOpen, visibleColumns.map((c: any) => c.id).join("|")],
 	);
+	const { etiquetas: etiquetasParaExportar } = useEtiquetasExpediente();
 	const exportSourceRows: any[] =
 		selectedFlatRows.length > 0 ? selectedFlatRows.map((d: any) => d.original) : rows.map((r: any) => r.original);
 	const exportRows = useMemo(() => {
@@ -761,6 +775,7 @@ function ReactTable({
 			ubicacionActual: (f) => ubicacionResumen(f),
 			situacion: (f) => (f.situacion ? situacionLabel(f.situacion) : ""),
 			status: (f) => f.status || "",
+			estados: (f) => nombresDeEtiquetas(f.estados, etiquetasParaExportar).join(", "),
 			responsables: (f) => (resolveResponsables ? resolveResponsables(f.responsables) : ""),
 			createdAt: (f) => fecha(f.createdAt),
 			updatedAt: (f) => fecha(f.updatedAt),
@@ -1816,6 +1831,23 @@ function ReactTable({
 											</Select>
 										</FormControl>
 									)}
+									{/* Filtro por etiqueta del expediente (las define cada estudio) */}
+									{onEtiquetaFilterChange && etiquetaOptions.length > 0 && (
+										<FormControl size="small" sx={{ minWidth: 170 }}>
+											<Select id="etiqueta-filter" displayEmpty value={etiquetaFilter} onChange={onEtiquetaFilterChange} sx={filterSelectSx}>
+												<MenuItem value="all">
+													<Typography variant="body2">Etiqueta: Todas</Typography>
+												</MenuItem>
+												{etiquetaOptions.map((e) => (
+													<MenuItem key={e.value} value={e.value}>
+														<Typography variant="body2">
+															{e.label} ({e.count})
+														</Typography>
+													</MenuItem>
+												))}
+											</Select>
+										</FormControl>
+									)}
 								</Stack>
 							</Box>
 						</Collapse>
@@ -2566,6 +2598,9 @@ const FoldersLayout = () => {
 	// Radicación (5/11/2026): juzgado de origen (clave fuero|número) y ubicación actual
 	const [juzgadoFilter, setJuzgadoFilter] = useState<string>(savedFilters.juzgadoFilter ?? "all");
 	const [ubicacionFilter, setUbicacionFilter] = useState<string>(savedFilters.ubicacionFilter ?? "all");
+	// Etiquetas del expediente (16/11/2026): "all" | id de etiqueta | "__none" (sin etiquetas).
+	const [etiquetaFilter, setEtiquetaFilter] = useState<string>(savedFilters.etiquetaFilter ?? "all");
+	const { etiquetas: etiquetasDelEstudio } = useEtiquetasExpediente();
 	// Situación procesal (6/11/2026): "all" | clave normalizada | "__none" (sin dato).
 	const [situacionFilter, setSituacionFilter] = useState<string>(savedFilters.situacionFilter ?? "all");
 	// Seguimiento (6/11/2026): "all" | "si" | "no".
@@ -2628,6 +2663,7 @@ const FoldersLayout = () => {
 				departamentoFilter,
 				juzgadoFilter,
 				ubicacionFilter,
+				etiquetaFilter,
 				situacionFilter,
 				seguimientoFilter,
 				responsableVista,
@@ -2644,6 +2680,7 @@ const FoldersLayout = () => {
 		departamentoFilter,
 		juzgadoFilter,
 		ubicacionFilter,
+		etiquetaFilter,
 		situacionFilter,
 		seguimientoFilter,
 		responsableVista,
@@ -2813,6 +2850,23 @@ const FoldersLayout = () => {
 	);
 	const archivedUbicacionOptions = useMemo(() => ubicacionOptions(archivedFacets?.ubicaciones || []), [archivedFacets]);
 
+	// Etiquetas: solo cuentan las vigentes del catálogo del estudio.
+	const etiquetaIdsVigentes = useMemo(() => new Set(etiquetasDelEstudio.map((e) => String(e._id))), [etiquetasDelEstudio]);
+	const etiquetaOptions = useMemo(() => {
+		if (!etiquetasDelEstudio.length) return [];
+		const conteo = new Map<string, number>();
+		let sin = 0;
+		verifiedFolders.forEach((folder: any) => {
+			const propias = (folder.estados || []).map(String).filter((id: string) => etiquetaIdsVigentes.has(id));
+			if (!propias.length) sin += 1;
+			propias.forEach((id: string) => conteo.set(id, (conteo.get(id) || 0) + 1));
+		});
+		return [
+			...etiquetasDelEstudio.map((e) => ({ value: String(e._id), label: e.nombre, count: conteo.get(String(e._id)) || 0 })),
+			{ value: "__none", label: "Sin etiquetas", count: sin },
+		];
+	}, [verifiedFolders, etiquetasDelEstudio, etiquetaIdsVigentes]);
+
 	const uniqueUbicaciones = useMemo(() => {
 		const map = new Map<string, number>();
 		verifiedFolders.forEach((folder: any) => {
@@ -2956,6 +3010,11 @@ const FoldersLayout = () => {
 			if (ubicacionFilter !== "all" && ubicacionActual(folder) !== ubicacionFilter) {
 				return false;
 			}
+			// Etiquetas del expediente (16/11/2026)
+			if (etiquetaFilter !== "all") {
+				const propias = (folder.estados || []).map(String).filter((id: string) => etiquetaIdsVigentes.has(id));
+				if (etiquetaFilter === "__none" ? propias.length > 0 : !propias.includes(etiquetaFilter)) return false;
+			}
 			// Situación procesal (6/11/2026)
 			if (situacionFilter !== "all") {
 				const k = situacionKey(folder.situacion);
@@ -3011,6 +3070,8 @@ const FoldersLayout = () => {
 		fueroFilter,
 		juzgadoFilter,
 		ubicacionFilter,
+		etiquetaFilter,
+		etiquetaIdsVigentes,
 		situacionFilter,
 		seguimientoFilter,
 		movimientosFilter,
@@ -3030,6 +3091,7 @@ const FoldersLayout = () => {
 			departamentoFilter,
 			juzgadoFilter,
 			ubicacionFilter,
+			etiquetaFilter,
 			situacionFilter,
 			seguimientoFilter,
 		].some((v) => v !== "all");
@@ -3062,6 +3124,7 @@ const FoldersLayout = () => {
 		departamentoFilter,
 		juzgadoFilter,
 		ubicacionFilter,
+		etiquetaFilter,
 		situacionFilter,
 		seguimientoFilter,
 		isTeamMode,
@@ -3754,6 +3817,9 @@ const FoldersLayout = () => {
 	}, []);
 	const handleUbicacionFilterChange = useCallback((event: SelectChangeEvent<string>) => {
 		setUbicacionFilter(event.target.value);
+	}, []);
+	const handleEtiquetaFilterChange = useCallback((event: SelectChangeEvent<string>) => {
+		setEtiquetaFilter(event.target.value);
 	}, []);
 	const handleSituacionFilterChange = useCallback((event: SelectChangeEvent<string>) => {
 		setSituacionFilter(event.target.value);
@@ -4807,6 +4873,13 @@ const FoldersLayout = () => {
 				accessor: "status",
 				Cell: ({ value }: { value: string }) => (value ? <StatusPill status={value} /> : null),
 			},
+			// Etiquetas del expediente (16/11/2026): las crea cada estudio. Oculta si ninguna carpeta tiene.
+			{
+				Header: "Etiquetas",
+				accessor: "estados",
+				disableSortBy: true,
+				Cell: ({ value }: { value?: string[] }) => <EtiquetasCell ids={value} />,
+			},
 			...(isTeamMode
 				? [
 						{
@@ -5441,6 +5514,9 @@ const FoldersLayout = () => {
 								uniqueJuzgados={uniqueJuzgados}
 								ubicacionFilter={ubicacionFilter}
 								onUbicacionFilterChange={handleUbicacionFilterChange}
+								etiquetaFilter={etiquetaFilter}
+								onEtiquetaFilterChange={handleEtiquetaFilterChange}
+								etiquetaOptions={etiquetaOptions}
 								situacionComoNovedad={situacionComoNovedad}
 								onSituacionComoNovedadChange={handleSituacionComoNovedadChange}
 								uniqueUbicaciones={uniqueUbicaciones}
