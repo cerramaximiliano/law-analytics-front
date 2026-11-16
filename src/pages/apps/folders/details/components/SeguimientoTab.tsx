@@ -32,7 +32,7 @@ import {
 	Edit2,
 	Judge,
 	DocumentText,
-	Eye,
+	More,
 	NoteText,
 	Notification,
 	SearchNormal1,
@@ -116,8 +116,7 @@ const pageSizeInicial = () => {
 		return 10;
 	}
 };
-// Con más tipos que estos, la fila muestra un solo botón que abre la lista.
-const TIPOS_EN_FILA_MAX = 4;
+
 const TEXTO_MAX = 2000;
 const LOADER_MIN_MS = 300;
 const API = import.meta.env.VITE_BASE_URL;
@@ -378,8 +377,8 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 	const [ocupado, setOcupado] = useState<string | null>(null);
 	const [borrar, setBorrar] = useState<Item | null>(null);
 	const [pageSize, setPageSize] = useState<number>(pageSizeInicial);
-	// Detalle de un registro, documento abierto y menú de tipos (cuando no entran en la fila).
-	const [detalle, setDetalle] = useState<Item | null>(null);
+	// Documento abierto y menús de la fila (acciones de la anotación y tipos).
+	const [accionesMenu, setAccionesMenu] = useState<{ anchor: HTMLElement; item: Item } | null>(null);
 	const [pdf, setPdf] = useState<{ url: string; title: string } | null>(null);
 	const [abriendoPdf, setAbriendoPdf] = useState<string | null>(null);
 	const [tipoMenu, setTipoMenu] = useState<{ anchor: HTMLElement; item: Item } | null>(null);
@@ -612,6 +611,7 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 		const esAnotacion = item.fuente === "anotacion";
 		const color = tipo ? colorDeTexto(tipo.color, isDark, theme.palette.text.primary) : theme.palette.text.primary;
 		const enEdicion = editId === item.id;
+		const puedeTipar = Boolean(data?.canEditar) && tipos.length > 0;
 		const Icono =
 			item.fuente === "movimiento" ? Judge : item.fuente === "cedula" ? Notification : item.fuente === "evento" ? Calendar1 : NoteText;
 		return (
@@ -636,7 +636,39 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 					<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", lineHeight: 1.3 }}>{fh.hora}</Typography>
 				</Box>
 				<Box sx={{ width: 24, flexShrink: 0, display: "flex", justifyContent: "center", pt: 0.1 }}>
-					{tipo ? (
+					{esAnotacion && puedeTipar ? (
+						// El tipo se cambia desde la misma letra: un clic abre los tipos del estudio.
+						<Tooltip title={tipo ? `${tipo.nombre}. Clic para cambiar el tipo.` : "Sin tipo. Clic para elegir uno."}>
+							<Box
+								component="button"
+								type="button"
+								onClick={(e: React.MouseEvent<HTMLElement>) => setTipoMenu({ anchor: e.currentTarget, item })}
+								disabled={ocupado === item.id}
+								aria-label="Cambiar el tipo"
+								data-testid="seguimiento-tipo-fila"
+								sx={{
+									width: 22,
+									height: 22,
+									p: 0,
+									display: "inline-flex",
+									alignItems: "center",
+									justifyContent: "center",
+									borderRadius: 0.75,
+									fontSize: "0.7rem",
+									fontWeight: 700,
+									fontFamily: "inherit",
+									lineHeight: 1,
+									cursor: "pointer",
+									border: tipo ? `1.5px solid ${tipo.color}` : `1.5px dashed ${alpha(theme.palette.text.secondary, 0.55)}`,
+									bgcolor: tipo ? tipo.color : "transparent",
+									color: tipo ? textoSobre(tipo.color) : theme.palette.text.secondary,
+									"&:hover": { boxShadow: `0 0 0 2px ${alpha(tipo ? tipo.color : BRAND_BLUE, 0.25)}` },
+								}}
+							>
+								{tipo ? tipo.letra : "+"}
+							</Box>
+						</Tooltip>
+					) : tipo ? (
 						<TipoBoton tipo={tipo} activo size={22} />
 					) : (
 						<Tooltip title={FUENTE_SINGULAR[item.fuente]}>
@@ -700,64 +732,31 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 						</>
 					)}
 				</Box>
-				{!enEdicion && (
-					<Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
-						{esAnotacion &&
-							data?.canEditar &&
-							(tipos.length <= TIPOS_EN_FILA_MAX ? (
-								tipos.map((t) => (
-									<TipoBoton
-										key={t._id}
-										tipo={t}
-										activo={item.tipoId === t._id}
-										size={20}
-										disabled={ocupado === item.id}
-										onClick={() => cambiarTipo(item, t._id as string)}
-									/>
-								))
-							) : (
-								<Tooltip title="Cambiar el tipo">
-									<Button
-										size="small"
-										onClick={(e) => setTipoMenu({ anchor: e.currentTarget, item })}
-										disabled={ocupado === item.id}
-										data-testid="seguimiento-tipo-menu"
-										sx={{ minWidth: 0, height: 22, px: 0.75, fontSize: "0.7rem", textTransform: "none" }}
-									>
-										Tipo
-									</Button>
-								</Tooltip>
-							))}
-						{tieneDocumento(item) && (
-							<Tooltip title="Ver documento">
-								<span>
-									<IconButton size="small" onClick={() => verDocumento(item)} disabled={abriendoPdf === item.id} aria-label="Ver documento">
-										<DocumentText size={15} />
-									</IconButton>
-								</span>
-							</Tooltip>
-						)}
-						<Tooltip title="Ver detalle">
-							<IconButton size="small" onClick={() => setDetalle(item)} aria-label="Ver detalle" data-testid="seguimiento-ver">
-								<Eye size={15} />
+				{/* Una sola acción por fila, siempre en el mismo lugar: documento (movimientos y cédulas) o menú (anotaciones). */}
+				<Box sx={{ width: 30, flexShrink: 0, display: "flex", justifyContent: "center" }}>
+					{!enEdicion && esAnotacion && (data?.canEditar || data?.canEliminar) && (
+						<Tooltip title="Modificar o eliminar">
+							<IconButton
+								size="small"
+								onClick={(e) => setAccionesMenu({ anchor: e.currentTarget, item })}
+								disabled={ocupado === item.id}
+								aria-label="Acciones de la anotación"
+								data-testid="seguimiento-acciones"
+							>
+								<More size={16} />
 							</IconButton>
 						</Tooltip>
-						{esAnotacion && data?.canEditar && (
-							<Tooltip title="Modificar">
-								<IconButton size="small" onClick={() => empezarEdicion(item)} aria-label="Modificar anotación">
-									<Edit2 size={15} />
+					)}
+					{!esAnotacion && tieneDocumento(item) && (
+						<Tooltip title="Ver documento">
+							<span>
+								<IconButton size="small" onClick={() => verDocumento(item)} disabled={abriendoPdf === item.id} aria-label="Ver documento">
+									<DocumentText size={16} />
 								</IconButton>
-							</Tooltip>
-						)}
-						{esAnotacion && data?.canEliminar && (
-							<Tooltip title="Eliminar">
-								<IconButton size="small" onClick={() => setBorrar(item)} aria-label="Eliminar anotación" color="error">
-									<Trash size={15} />
-								</IconButton>
-							</Tooltip>
-						)}
-					</Stack>
-				)}
+							</span>
+						</Tooltip>
+					)}
+				</Box>
 			</Box>
 		);
 	};
@@ -1048,7 +1047,7 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 				</Box>
 			)}
 
-			{/* Menú de tipos (cuando el estudio definió más de los que entran en la fila) */}
+			{/* Menú de tipos: se abre desde la letra de la fila */}
 			<Menu anchorEl={tipoMenu?.anchor} open={!!tipoMenu} onClose={() => setTipoMenu(null)}>
 				{tipos.map((t) => (
 					<MenuItem
@@ -1066,62 +1065,48 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 						{t.nombre}
 					</MenuItem>
 				))}
+				{tipoMenu?.item.tipoId && (
+					<MenuItem
+						dense
+						onClick={() => {
+							if (tipoMenu) modificar(tipoMenu.item, { tipoId: null });
+							setTipoMenu(null);
+						}}
+						sx={{ borderTop: `1px solid ${theme.palette.divider}`, mt: 0.5, color: "text.secondary" }}
+					>
+						Sin tipo
+					</MenuItem>
+				)}
 			</Menu>
 
-			{/* Detalle de un registro */}
-			<Dialog open={!!detalle} onClose={() => setDetalle(null)} maxWidth="sm" fullWidth>
-				{detalle &&
-					(() => {
-						const fh = fechaHora(detalle.fecha);
-						const tipo = detalle.fuente === "anotacion" ? tipoPorId.get(detalle.tipoId || "") : undefined;
-						const fila = (label: string, valor?: React.ReactNode) =>
-							valor ? (
-								<Box sx={{ display: "flex", gap: 1.5, py: 0.6 }}>
-									<Typography sx={{ width: 110, flexShrink: 0, fontSize: "0.76rem", color: "text.secondary" }}>{label}</Typography>
-									<Typography component="div" sx={{ fontSize: "0.84rem", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-										{valor}
-									</Typography>
-								</Box>
-							) : null;
-						return (
-							<>
-								<DialogTitle sx={{ pb: 0.5 }}>{FUENTE_SINGULAR[detalle.fuente]}</DialogTitle>
-								<DialogContent data-testid="seguimiento-detalle">
-									{fila("Fecha", `${fh.fecha}${fh.hora ? ` · ${fh.hora}` : ""}`)}
-									{detalle.fin &&
-										fila(
-											"Hasta",
-											`${fechaHora(detalle.fin).fecha}${fechaHora(detalle.fin).hora ? ` · ${fechaHora(detalle.fin).hora}` : ""}`,
-										)}
-									{tipo && fila("Tipo", tipo.nombre)}
-									{fila(detalle.fuente === "anotacion" ? "Anotación" : "Descripción", detalle.texto)}
-									{fila("Detalle", detalle.detalle)}
-									{detalle.descripcion && detalle.descripcion !== detalle.detalle && fila("Observaciones", detalle.descripcion)}
-									{detalle.vencimiento && fila("Vence", fechaHora(detalle.vencimiento).fecha)}
-									{fila("Origen", detalle.origen ? ORIGEN_LABEL[detalle.origen] || detalle.origen : undefined)}
-									{fila("Anotó", detalle.autor)}
-								</DialogContent>
-								<DialogActions sx={{ px: 3, pb: 2 }}>
-									{tieneDocumento(detalle) && (
-										<Button
-											startIcon={<DocumentText size={16} />}
-											onClick={() => {
-												const item = detalle;
-												setDetalle(null);
-												verDocumento(item);
-											}}
-										>
-											Ver documento
-										</Button>
-									)}
-									<Button onClick={() => setDetalle(null)} variant="contained">
-										Cerrar
-									</Button>
-								</DialogActions>
-							</>
-						);
-					})()}
-			</Dialog>
+			{/* Menú de la anotación */}
+			<Menu anchorEl={accionesMenu?.anchor} open={!!accionesMenu} onClose={() => setAccionesMenu(null)}>
+				{data?.canEditar && (
+					<MenuItem
+						dense
+						onClick={() => {
+							if (accionesMenu) empezarEdicion(accionesMenu.item);
+							setAccionesMenu(null);
+						}}
+					>
+						<Edit2 size={15} style={{ marginRight: 8 }} />
+						Modificar
+					</MenuItem>
+				)}
+				{data?.canEliminar && (
+					<MenuItem
+						dense
+						onClick={() => {
+							if (accionesMenu) setBorrar(accionesMenu.item);
+							setAccionesMenu(null);
+						}}
+						sx={{ color: "error.main" }}
+					>
+						<Trash size={15} style={{ marginRight: 8 }} />
+						Eliminar
+					</MenuItem>
+				)}
+			</Menu>
 
 			<PDFViewer open={!!pdf} onClose={() => setPdf(null)} url={pdf?.url || ""} title={pdf?.title || "Documento"} />
 
