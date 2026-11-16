@@ -155,8 +155,8 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({ open, onClose,
 	const getRecommendedPlans = (): Plan[] => {
 		if (plans.length === 0) return [];
 		let currentUserPlan = "free";
-		if (isLimitError && limitInfo) currentUserPlan = limitInfo.plan.toLowerCase();
-		else if (isFeatureError && featureInfo) currentUserPlan = featureInfo.plan.toLowerCase();
+		if (isLimitError && limitInfo) currentUserPlan = String(limitInfo.plan || "free").toLowerCase();
+		else if (isFeatureError && featureInfo) currentUserPlan = String(featureInfo.plan || "free").toLowerCase();
 		return plans.filter((plan) => plan.planId.toLowerCase() !== currentUserPlan && plan.isActive);
 	};
 
@@ -219,13 +219,13 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({ open, onClose,
 								</Typography>
 							</Stack>
 						</Stack>
-						{featureInfo.availableIn.length > 0 && (
+						{(featureInfo.availableIn || []).length > 0 && (
 							<Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
 								<Typography variant="body2" sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}>
 									Disponible en:
 								</Typography>
 								<Stack direction="row" spacing={0.5} flexWrap="wrap" sx={{ gap: 0.5 }}>
-									{featureInfo.availableIn.map((plan, index) => (
+									{(featureInfo.availableIn || []).map((plan, index) => (
 										<Chip
 											key={index}
 											size="small"
