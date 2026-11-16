@@ -23,6 +23,9 @@ export type IntervinienteRef = {
 	iej?: string;
 	tomoFolio?: string;
 	nombreNormalizado?: string;
+	otrosNombres?: string[]; // otras formas del nombre en las causas (mismo CUIT/DNI)
+	causas?: { causaId: string; causaType?: string; tipoInterviniente?: string; rol?: string }[]; // rol por causa
+	revisar?: string; // motivo para revisar el contacto
 	partesRepresentadas?: ParteRepresentada[];
 	importedAt?: string;
 	lastUpdatedAt?: string;
