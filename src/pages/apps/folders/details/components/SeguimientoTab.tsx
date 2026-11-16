@@ -15,6 +15,7 @@ import {
 	MenuItem,
 	Skeleton,
 	Stack,
+	TablePagination,
 	TextField,
 	Tooltip,
 	Typography,
@@ -30,6 +31,8 @@ import {
 	DocumentDownload,
 	Edit2,
 	Judge,
+	DocumentText,
+	Eye,
 	NoteText,
 	Notification,
 	SearchNormal1,
@@ -43,6 +46,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 import { useSelector } from "react-redux";
 import { useTeam } from "contexts/TeamContext";
 import PaginationWithJump from "components/shared/PaginationWithJump";
+import PDFViewer from "components/shared/PDFViewer";
 import { buildCsv, buildPdf } from "sections/apps/folders/ExportFoldersDialog";
 import { FolderEtiquetas } from "sections/apps/folders/EtiquetasExpediente";
 import { BRAND_BLUE } from "themes/dashboardTokens";
@@ -72,6 +76,14 @@ interface Item {
 	noteId?: string;
 	origen?: string;
 	vencimiento?: string | null;
+	/** Documento del movimiento o de la cédula, si lo hay. */
+	link?: string;
+	hasPdf?: boolean;
+	sourceId?: string;
+	descripcion?: string;
+	/** Eventos: fin y si es de todo el día. */
+	fin?: string | null;
+	todoElDia?: boolean;
 }
 
 interface Respuesta {
@@ -93,7 +105,19 @@ interface SeguimientoTabProps {
 	folderName?: string;
 }
 
-const PAGE_SIZE = 25;
+// Mismo paginado que Actividad → Movimientos: filas por página a elección, 10 por defecto.
+const PAGE_SIZES = [5, 10, 25, 50];
+const PAGE_SIZE_KEY = "la.seguimiento.pageSize.v1";
+const pageSizeInicial = () => {
+	try {
+		const n = Number(localStorage.getItem(PAGE_SIZE_KEY));
+		return PAGE_SIZES.includes(n) ? n : 10;
+	} catch {
+		return 10;
+	}
+};
+// Con más tipos que estos, la fila muestra un solo botón que abre la lista.
+const TIPOS_EN_FILA_MAX = 4;
 const TEXTO_MAX = 2000;
 const LOADER_MIN_MS = 300;
 const API = import.meta.env.VITE_BASE_URL;
@@ -353,6 +377,12 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 	const [editFecha, setEditFecha] = useState("");
 	const [ocupado, setOcupado] = useState<string | null>(null);
 	const [borrar, setBorrar] = useState<Item | null>(null);
+	const [pageSize, setPageSize] = useState<number>(pageSizeInicial);
+	// Detalle de un registro, documento abierto y menú de tipos (cuando no entran en la fila).
+	const [detalle, setDetalle] = useState<Item | null>(null);
+	const [pdf, setPdf] = useState<{ url: string; title: string } | null>(null);
+	const [abriendoPdf, setAbriendoPdf] = useState<string | null>(null);
+	const [tipoMenu, setTipoMenu] = useState<{ anchor: HTMLElement; item: Item } | null>(null);
 
 	const [configOpen, setConfigOpen] = useState(false);
 	const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null);
@@ -365,7 +395,7 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 
 	useEffect(() => {
 		setPage(1);
-	}, [order, fuentes, tipoFiltro, searchDebounced, folderId]);
+	}, [order, fuentes, tipoFiltro, searchDebounced, folderId, pageSize]);
 
 	const params = useMemo(
 		() => ({
@@ -383,7 +413,7 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 		setLoading(true);
 		setShowLoader(true);
 		axios
-			.get(`${API}/api/folders/${folderId}/seguimiento`, { params: { ...params, page, limit: PAGE_SIZE } })
+			.get(`${API}/api/folders/${folderId}/seguimiento`, { params: { ...params, page, limit: pageSize } })
 			.then((res) => {
 				if (cancelled) return;
 				setData(res.data);
@@ -402,7 +432,7 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 		return () => {
 			cancelled = true;
 		};
-	}, [folderId, page, params, reload]);
+	}, [folderId, page, pageSize, params, reload]);
 
 	const tipos = useMemo(() => data?.tipos || [], [data?.tipos]);
 	const tipoPorId = useMemo(() => new Map(tipos.map((t) => [t._id as string, t])), [tipos]);
@@ -525,6 +555,26 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 		}
 	};
 
+	const tieneDocumento = (item: Item) => Boolean(item.link || item.hasPdf);
+	// Abre el PDF del movimiento o de la cédula en el mismo visor que Actividad.
+	const verDocumento = async (item: Item) => {
+		if (item.fuente === "cedula" && item.hasPdf && item.sourceId && !item.link) {
+			setAbriendoPdf(item.id);
+			try {
+				const res = await axios.get(`${API}/api/folders/${folderId}/cedulas/${encodeURIComponent(item.sourceId)}/pdf-url`);
+				const url = res.data?.pdfUrl || res.data?.url;
+				if (!url) throw new Error("sin url");
+				setPdf({ url, title: item.texto });
+			} catch {
+				aviso("No se pudo abrir el documento de la cédula.");
+			} finally {
+				setAbriendoPdf(null);
+			}
+			return;
+		}
+		if (item.link) setPdf({ url: item.link, title: item.texto });
+	};
+
 	const toggleFuente = (f: Fuente) => setFuentes((cur) => (cur.includes(f) ? cur.filter((x) => x !== f) : [...cur, f]));
 
 	const panelSx = {
@@ -579,7 +629,6 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 					borderLeft: `3px solid ${tipo ? tipo.color : esAnotacion ? alpha(BRAND_BLUE, 0.5) : "transparent"}`,
 					bgcolor: esAnotacion ? "transparent" : alpha(theme.palette.text.primary, isDark ? 0.04 : 0.025),
 					opacity: ocupado === item.id ? 0.55 : 1,
-					"&:hover .seguimiento-acciones": { opacity: 1 },
 				}}
 			>
 				<Box sx={{ width: 86, flexShrink: 0, pt: 0.1 }}>
@@ -651,33 +700,56 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 						</>
 					)}
 				</Box>
-				{esAnotacion && !enEdicion && (data?.canEditar || data?.canEliminar) && (
-					<Stack
-						direction="row"
-						spacing={0.5}
-						alignItems="center"
-						className="seguimiento-acciones"
-						sx={{ flexShrink: 0, opacity: { xs: 1, md: 0.35 }, transition: "opacity .12s" }}
-					>
-						{data?.canEditar &&
-							tipos.map((t) => (
-								<TipoBoton
-									key={t._id}
-									tipo={t}
-									activo={item.tipoId === t._id}
-									size={20}
-									disabled={ocupado === item.id}
-									onClick={() => cambiarTipo(item, t._id as string)}
-								/>
+				{!enEdicion && (
+					<Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
+						{esAnotacion &&
+							data?.canEditar &&
+							(tipos.length <= TIPOS_EN_FILA_MAX ? (
+								tipos.map((t) => (
+									<TipoBoton
+										key={t._id}
+										tipo={t}
+										activo={item.tipoId === t._id}
+										size={20}
+										disabled={ocupado === item.id}
+										onClick={() => cambiarTipo(item, t._id as string)}
+									/>
+								))
+							) : (
+								<Tooltip title="Cambiar el tipo">
+									<Button
+										size="small"
+										onClick={(e) => setTipoMenu({ anchor: e.currentTarget, item })}
+										disabled={ocupado === item.id}
+										data-testid="seguimiento-tipo-menu"
+										sx={{ minWidth: 0, height: 22, px: 0.75, fontSize: "0.7rem", textTransform: "none" }}
+									>
+										Tipo
+									</Button>
+								</Tooltip>
 							))}
-						{data?.canEditar && (
+						{tieneDocumento(item) && (
+							<Tooltip title="Ver documento">
+								<span>
+									<IconButton size="small" onClick={() => verDocumento(item)} disabled={abriendoPdf === item.id} aria-label="Ver documento">
+										<DocumentText size={15} />
+									</IconButton>
+								</span>
+							</Tooltip>
+						)}
+						<Tooltip title="Ver detalle">
+							<IconButton size="small" onClick={() => setDetalle(item)} aria-label="Ver detalle" data-testid="seguimiento-ver">
+								<Eye size={15} />
+							</IconButton>
+						</Tooltip>
+						{esAnotacion && data?.canEditar && (
 							<Tooltip title="Modificar">
 								<IconButton size="small" onClick={() => empezarEdicion(item)} aria-label="Modificar anotación">
 									<Edit2 size={15} />
 								</IconButton>
 							</Tooltip>
 						)}
-						{data?.canEliminar && (
+						{esAnotacion && data?.canEliminar && (
 							<Tooltip title="Eliminar">
 								<IconButton size="small" onClick={() => setBorrar(item)} aria-label="Eliminar anotación" color="error">
 									<Trash size={15} />
@@ -913,11 +985,145 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 				</Box>
 			)}
 
-			{data && data.pagination.pages > 1 && (
-				<Box sx={{ display: "flex", justifyContent: "center", mt: 2.5 }}>
-					<PaginationWithJump page={page - 1} totalPages={data.pagination.pages} onPageChange={(p) => setPage(p + 1)} disabled={loading} />
+			{/* Paginación: la misma que Actividad → Movimientos */}
+			{data && total > 0 && (
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+						flexWrap: "wrap",
+						gap: 1,
+						mt: 1.5,
+						pt: 1,
+						borderTop: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+					}}
+					data-testid="seguimiento-paginacion"
+				>
+					<TablePagination
+						rowsPerPageOptions={PAGE_SIZES}
+						component="div"
+						count={total}
+						rowsPerPage={pageSize}
+						page={Math.min(page - 1, Math.max(0, data.pagination.pages - 1))}
+						onPageChange={(_e, p) => setPage(p + 1)}
+						onRowsPerPageChange={(e) => {
+							const n = parseInt(e.target.value, 10);
+							setPageSize(n);
+							try {
+								localStorage.setItem(PAGE_SIZE_KEY, String(n));
+							} catch {
+								/* sin almacenamiento local: no se recuerda */
+							}
+						}}
+						labelRowsPerPage="Filas por página"
+						labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
+						sx={{
+							"& .MuiTablePagination-toolbar": { paddingLeft: 0, minHeight: 44 },
+							"& .MuiTablePagination-actions": { display: "none" },
+							"& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
+								fontSize: "0.74rem",
+								fontWeight: 500,
+								letterSpacing: "-0.005em",
+								color: "text.secondary",
+								fontVariantNumeric: "tabular-nums",
+							},
+							"& .MuiTablePagination-select": {
+								fontSize: "0.78rem",
+								fontWeight: 600,
+								color: BRAND_BLUE,
+								fontVariantNumeric: "tabular-nums",
+								borderRadius: 0.875,
+							},
+						}}
+					/>
+					{data.pagination.pages > 1 && (
+						<PaginationWithJump
+							page={page - 1}
+							totalPages={data.pagination.pages}
+							onPageChange={(p) => setPage(p + 1)}
+							disabled={loading}
+						/>
+					)}
 				</Box>
 			)}
+
+			{/* Menú de tipos (cuando el estudio definió más de los que entran en la fila) */}
+			<Menu anchorEl={tipoMenu?.anchor} open={!!tipoMenu} onClose={() => setTipoMenu(null)}>
+				{tipos.map((t) => (
+					<MenuItem
+						key={t._id}
+						dense
+						selected={tipoMenu?.item.tipoId === t._id}
+						onClick={() => {
+							if (tipoMenu) cambiarTipo(tipoMenu.item, t._id as string);
+							setTipoMenu(null);
+						}}
+					>
+						<Box sx={{ mr: 1, display: "inline-flex" }}>
+							<TipoBoton tipo={t} activo size={20} />
+						</Box>
+						{t.nombre}
+					</MenuItem>
+				))}
+			</Menu>
+
+			{/* Detalle de un registro */}
+			<Dialog open={!!detalle} onClose={() => setDetalle(null)} maxWidth="sm" fullWidth>
+				{detalle &&
+					(() => {
+						const fh = fechaHora(detalle.fecha);
+						const tipo = detalle.fuente === "anotacion" ? tipoPorId.get(detalle.tipoId || "") : undefined;
+						const fila = (label: string, valor?: React.ReactNode) =>
+							valor ? (
+								<Box sx={{ display: "flex", gap: 1.5, py: 0.6 }}>
+									<Typography sx={{ width: 110, flexShrink: 0, fontSize: "0.76rem", color: "text.secondary" }}>{label}</Typography>
+									<Typography component="div" sx={{ fontSize: "0.84rem", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+										{valor}
+									</Typography>
+								</Box>
+							) : null;
+						return (
+							<>
+								<DialogTitle sx={{ pb: 0.5 }}>{FUENTE_SINGULAR[detalle.fuente]}</DialogTitle>
+								<DialogContent data-testid="seguimiento-detalle">
+									{fila("Fecha", `${fh.fecha}${fh.hora ? ` · ${fh.hora}` : ""}`)}
+									{detalle.fin &&
+										fila(
+											"Hasta",
+											`${fechaHora(detalle.fin).fecha}${fechaHora(detalle.fin).hora ? ` · ${fechaHora(detalle.fin).hora}` : ""}`,
+										)}
+									{tipo && fila("Tipo", tipo.nombre)}
+									{fila(detalle.fuente === "anotacion" ? "Anotación" : "Descripción", detalle.texto)}
+									{fila("Detalle", detalle.detalle)}
+									{detalle.descripcion && detalle.descripcion !== detalle.detalle && fila("Observaciones", detalle.descripcion)}
+									{detalle.vencimiento && fila("Vence", fechaHora(detalle.vencimiento).fecha)}
+									{fila("Origen", detalle.origen ? ORIGEN_LABEL[detalle.origen] || detalle.origen : undefined)}
+									{fila("Anotó", detalle.autor)}
+								</DialogContent>
+								<DialogActions sx={{ px: 3, pb: 2 }}>
+									{tieneDocumento(detalle) && (
+										<Button
+											startIcon={<DocumentText size={16} />}
+											onClick={() => {
+												const item = detalle;
+												setDetalle(null);
+												verDocumento(item);
+											}}
+										>
+											Ver documento
+										</Button>
+									)}
+									<Button onClick={() => setDetalle(null)} variant="contained">
+										Cerrar
+									</Button>
+								</DialogActions>
+							</>
+						);
+					})()}
+			</Dialog>
+
+			<PDFViewer open={!!pdf} onClose={() => setPdf(null)} url={pdf?.url || ""} title={pdf?.title || "Documento"} />
 
 			<ConfigTiposDialog
 				open={configOpen}
