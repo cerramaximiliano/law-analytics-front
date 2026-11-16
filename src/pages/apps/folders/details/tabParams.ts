@@ -7,6 +7,7 @@ export const TAB_PARAM_BY_INDEX: Record<number, string> = {
 	4: "historial",
 	5: "relaciones",
 	6: "chat",
+	7: "seguimiento",
 };
 
 const INDEX_BY_TAB_PARAM: Record<string, number> = Object.fromEntries(

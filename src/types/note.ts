@@ -24,7 +24,9 @@ export interface NoteFormValues {
 	movementRef?: string;
 	movementSource?: "pjn" | "mev" | "scba" | "eje" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "manual" | null;
 	kind?: "nota" | "anotacion";
-	occurredAt?: string;
+	occurredAt?: string | null;
+	/** Tipo de la anotación (uno de los que define el estudio en Seguimiento). */
+	tipoId?: string | null;
 }
 
 export interface NoteModalType {

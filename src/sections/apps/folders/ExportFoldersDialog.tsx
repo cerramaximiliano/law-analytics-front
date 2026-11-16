@@ -64,11 +64,19 @@ const PDF_WEIGHT: Record<string, number> = {
 	responsables: 1.8,
 };
 
-export async function buildPdf(columns: ExportColumn[], rows: Record<string, string>[], subtitle: string): Promise<Blob> {
+export async function buildPdf(
+	columns: ExportColumn[],
+	rows: Record<string, string>[],
+	subtitle: string,
+	/** Título del listado y anchos relativos por columna; por defecto, los de Mis Carpetas. */
+	opts: { title?: string; weights?: Record<string, number> } = {},
+): Promise<Blob> {
+	const title = opts.title || "Carpetas";
+	const weights = opts.weights || PDF_WEIGHT;
 	// Carga diferida: la librería de PDF pesa y solo hace falta al exportar.
 	const { Document, Page, StyleSheet, Text, View, pdf } = await import("@react-pdf/renderer");
-	const total = columns.reduce((acc, c) => acc + (PDF_WEIGHT[c.id] || 1.3), 0);
-	const width = (c: ExportColumn) => `${((PDF_WEIGHT[c.id] || 1.3) / total) * 100}%`;
+	const total = columns.reduce((acc, c) => acc + (weights[c.id] || 1.3), 0);
+	const width = (c: ExportColumn) => `${((weights[c.id] || 1.3) / total) * 100}%`;
 	const fontSize = columns.length > 10 ? 6.5 : columns.length > 7 ? 7.5 : 8.5;
 	const st = StyleSheet.create({
 		page: { paddingTop: 28, paddingBottom: 36, paddingHorizontal: 28, fontSize, color: "#1b2533" },
@@ -90,9 +98,9 @@ export async function buildPdf(columns: ExportColumn[], rows: Record<string, str
 		},
 	});
 	const doc = (
-		<Document title="Carpetas">
+		<Document title={title}>
 			<Page size="A4" orientation="landscape" style={st.page}>
-				<Text style={st.title}>Carpetas</Text>
+				<Text style={st.title}>{title}</Text>
 				<Text style={st.subtitle}>{subtitle}</Text>
 				<View style={st.head} fixed>
 					{columns.map((c) => (

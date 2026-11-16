@@ -18,7 +18,6 @@ import {
 	SelectChangeEvent,
 	Skeleton,
 	TextField,
-	Button,
 	InputAdornment,
 } from "@mui/material";
 import {
@@ -62,9 +61,6 @@ import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { dispatch } from "store";
 import { getFolderActivityLog } from "store/reducers/activityLog";
-import { addNote } from "store/reducers/notes";
-import { openSnackbar } from "store/reducers/snackbar";
-import { useTeam } from "contexts/TeamContext";
 import PaginationWithJump from "components/shared/PaginationWithJump";
 import {
 	ActivityLogEntry,
@@ -133,12 +129,6 @@ const RESOURCE_ICONS: Record<ActivityResourceType, React.ElementType> = {
 // Escritos y formularios comparten el tipo «document»; el servidor los distingue en metadata.kind.
 const KIND_LABELS: Record<string, string> = { escrito: "Escrito", formulario: "Formulario o carta", anotacion: "Anotación" };
 
-const ANOTACION_MAX = 2000;
-// Fecha local de hoy en formato de <input type="date">.
-const hoyISO = () => {
-	const d = new Date();
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
 // La fecha del hecho viaja como día (sin hora): se muestra tal cual, sin pasar por la zona horaria.
 const fechaDelHecho = (value: unknown): string | null => {
 	const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ""));
@@ -369,12 +359,6 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 		return () => clearTimeout(t);
 	}, [search]);
 
-	// Anotación rápida: se guarda como nota de la carpeta y aparece arriba del historial.
-	const { canCreate, getRequestHeaders } = useTeam();
-	const userId = useSelector((state: any) => state.auth?.user?._id);
-	const [anotacion, setAnotacion] = useState("");
-	const [anotacionFecha, setAnotacionFecha] = useState(hoyISO());
-	const [anotando, setAnotando] = useState(false);
 
 	const ITEMS_PER_PAGE = 10;
 
@@ -436,48 +420,6 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 		// Note: We don't clear activity log on unmount to preserve the cache
 		// The cache will be invalidated when fetching a different folder or with different params
 	}, [fetchActivityLog]);
-
-	const handleAnotar = async () => {
-		const texto = anotacion.trim();
-		if (!texto || anotando) return;
-		setAnotando(true);
-		const hoy = hoyISO();
-		const result = await dispatch(
-			addNote(
-				{
-					title: texto,
-					content: texto,
-					userId,
-					folderId,
-					kind: "anotacion",
-					...(anotacionFecha && anotacionFecha !== hoy ? { occurredAt: anotacionFecha } : {}),
-				},
-				{ headers: getRequestHeaders() },
-			),
-		);
-		setAnotando(false);
-		if (result.success) {
-			setAnotacion("");
-			setAnotacionFecha(hoy);
-			if (page === 1 && !resourceTypeFilter && !actionFilter && !searchDebounced) fetchActivityLog(true);
-			else {
-				setResourceTypeFilter("");
-				setActionFilter("");
-				setSearch("");
-				setPage(1);
-			}
-		} else {
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: result.error || "No se pudo guardar la anotación.",
-					variant: "alert",
-					alert: { color: "error" },
-					close: true,
-				}),
-			);
-		}
-	};
 
 	// Reset page when filters change
 	useEffect(() => {
@@ -993,64 +935,6 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 					</Tooltip>
 				</Stack>
 			</Box>
-
-			{/* Anotación rápida */}
-			{canCreate && (
-				<Box
-					data-testid="historial-anotar"
-					sx={{
-						p: 1.5,
-						mb: 2,
-						bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
-						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
-						borderRadius: 1.5,
-					}}
-				>
-					<Stack direction={{ xs: "column", md: "row" }} spacing={1.25} alignItems={{ xs: "stretch", md: "flex-start" }}>
-						<TextField
-							value={anotacion}
-							onChange={(e) => setAnotacion(e.target.value.slice(0, ANOTACION_MAX))}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" && !e.shiftKey) {
-									e.preventDefault();
-									handleAnotar();
-								}
-							}}
-							placeholder="Anotá lo que hiciste: llamé al cliente, pedí la documentación, presenté el escrito…"
-							size="small"
-							fullWidth
-							multiline
-							maxRows={5}
-							disabled={anotando}
-							inputProps={{ "aria-label": "Anotación" }}
-							helperText="Enter guarda la anotación; Shift + Enter agrega un renglón. Queda también en Notas."
-							sx={{ "& .MuiInputBase-root": { bgcolor: "background.paper", fontSize: "0.875rem" } }}
-						/>
-						<Stack direction="row" spacing={1.25} sx={{ flexShrink: 0 }}>
-							<Tooltip title="Fecha del hecho. Cambiala si estás anotando algo de otro día.">
-								<TextField
-									type="date"
-									size="small"
-									value={anotacionFecha}
-									onChange={(e) => setAnotacionFecha(e.target.value)}
-									disabled={anotando}
-									inputProps={{ max: hoyISO(), "aria-label": "Fecha del hecho" }}
-									sx={{ width: 150, "& .MuiInputBase-root": { bgcolor: "background.paper", fontSize: "0.85rem" } }}
-								/>
-							</Tooltip>
-							<Button
-								variant="contained"
-								size="small"
-								onClick={handleAnotar}
-								disabled={!anotacion.trim() || anotando}
-								sx={{ height: 37, px: 2.25, whiteSpace: "nowrap" }}
-							>
-								{anotando ? "Guardando…" : "Anotar"}
-							</Button>
-						</Stack>
-					</Stack>
-				</Box>
-			)}
 
 			{/* Filters — brand */}
 			<Collapse in={showFilters}>

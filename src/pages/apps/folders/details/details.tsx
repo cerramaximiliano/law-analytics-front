@@ -27,6 +27,7 @@ import {
 	FolderCross,
 	ArrowLeft,
 	Clock,
+	TaskSquare,
 	Warning2,
 	Link21,
 	MessageText1,
@@ -61,6 +62,7 @@ import { openExpedienteExport } from "utils/expedienteExportTracker";
 import { useExpedienteChatAccess } from "hooks/useExpedienteChatAccess";
 import { marcarFolderVisto } from "store/reducers/folder";
 import HistorialTab from "./components/HistorialTab";
+import SeguimientoTab from "./components/SeguimientoTab";
 import LinkToJudicialPower from "sections/apps/folders/LinkToJudicialPower";
 import UnlinkFolderDialog from "sections/apps/folders/UnlinkFolderDialog";
 import LinkToPJIol, { PortalIol } from "sections/apps/folders/LinkToPJIol";
@@ -447,7 +449,7 @@ const Details = () => {
 		const key = `${folder._id}:${tabValue}`;
 		if (lastDetailViewKey.current === key) return;
 		lastDetailViewKey.current = key;
-		const tabNames = ["general", "actividad", "gestion", "recursos", "historial", "relaciones", "chat"];
+		const tabNames = ["general", "actividad", "gestion", "recursos", "historial", "relaciones", "chat", "seguimiento"];
 		trackActivity("folder_detail_view", { tab: tabNames[tabValue] ?? String(tabValue) });
 	}, [folder?._id, id, tabValue]);
 
@@ -521,6 +523,14 @@ const Details = () => {
 						},
 				  ]
 				: []),
+			// Seguimiento es la anteúltima (16/11/2026): anotaciones del estudio + movimientos + cédulas.
+			{
+				value: 7,
+				label: "Seguimiento",
+				icon: <TaskSquare size="20" />,
+				shortLabel: "Seguim.",
+				ariaLabel: "Seguimiento del expediente",
+			},
 			// Historial siempre es la última pestaña a la derecha (15/11/2026); conserva su value 4.
 			{
 				value: 4,
@@ -1336,6 +1346,11 @@ const Details = () => {
 					{/* Tab 5: Historial */}
 					<TabPanel value={tabValue} index={4}>
 						{id && <HistorialTab folderId={id} />}
+					</TabPanel>
+
+					{/* Seguimiento (value 7): se monta al abrirla, trae movimientos y cédulas */}
+					<TabPanel value={tabValue} index={7}>
+						{id && tabValue === 7 && <SeguimientoTab folderId={id} folderName={folder?.folderName} />}
 					</TabPanel>
 
 					{/* Tab 6: Expedientes relacionados (PJN) */}
