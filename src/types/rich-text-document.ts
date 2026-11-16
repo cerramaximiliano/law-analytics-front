@@ -24,6 +24,8 @@ export interface RichTextTemplate {
 	// faltan y el modelo es propio (se puede editar y borrar).
 	createdBy?: string | null;
 	createdByName?: string;
+	/** «Solo para mí»: no lo ve nadie más, aunque quien lo creó esté en un equipo. */
+	personal?: boolean;
 	scope?: "team" | "personal" | "system";
 	canEdit?: boolean;
 	canDelete?: boolean;
@@ -36,6 +38,8 @@ export interface CreateRichTextTemplatePayload {
 	content?: Record<string, unknown>;
 	mergeFields?: string[];
 	isPublic?: boolean;
+	/** «Solo para mí» (en equipo): el modelo no se comparte. */
+	personal?: boolean;
 }
 
 export interface UpdateRichTextTemplatePayload extends Partial<CreateRichTextTemplatePayload> {}

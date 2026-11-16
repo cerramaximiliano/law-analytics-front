@@ -176,15 +176,17 @@ export const createRichTextTemplate = (data: CreateRichTextTemplatePayload) => a
 	}
 };
 
-export const updateRichTextTemplate = (id: string, data: UpdateRichTextTemplatePayload) => async (dispatch: Dispatch) => {
-	try {
-		const res = await axios.patch(`${TEMPLATES_URL}/${id}`, data);
-		dispatch({ type: UPDATE_TEMPLATE, payload: res.data.template });
-		return { success: true, template: res.data.template as RichTextTemplate };
-	} catch (error) {
-		return { success: false, error: getErrorMsg(error, "Error al actualizar plantilla") };
-	}
-};
+export const updateRichTextTemplate =
+	(id: string, data: UpdateRichTextTemplatePayload) => async (dispatch: Dispatch, getState?: () => any) => {
+		try {
+			// La cabecera del equipo hace falta para pasar un modelo personal a compartido.
+			const res = await axios.patch(`${TEMPLATES_URL}/${id}`, data, { headers: teamHeadersOf(activeTeamIdOf(getState)) });
+			dispatch({ type: UPDATE_TEMPLATE, payload: res.data.template });
+			return { success: true, template: res.data.template as RichTextTemplate };
+		} catch (error) {
+			return { success: false, error: getErrorMsg(error, "Error al actualizar plantilla") };
+		}
+	};
 
 export const deleteRichTextTemplate = (id: string) => async (dispatch: Dispatch) => {
 	try {

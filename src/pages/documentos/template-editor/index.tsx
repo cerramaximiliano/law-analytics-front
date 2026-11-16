@@ -29,6 +29,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { PaginationPlus } from "tiptap-pagination-plus";
 import { useDispatch, useSelector } from "store";
 import { getRichTextTemplate, createRichTextTemplate, updateRichTextTemplate } from "store/reducers/richTextDocuments";
+import { useTeam } from "contexts/TeamContext";
 import { openSnackbar } from "store/reducers/snackbar";
 import MainCard from "components/MainCard";
 import EditorToolbar from "pages/herramientas/editor-poc/EditorToolbar";
@@ -44,6 +45,8 @@ import Highlight from "@tiptap/extension-highlight";
 import { type RichTextTemplateCategory } from "types/rich-text-document";
 
 // ==============================|| TEMPLATE EDITOR ||============================== //
+
+const MODELO_PERSONAL_KEY = "la.modelos.personal.v1";
 
 const A4_CONFIG = {
 	pageHeight: 1123,
@@ -115,6 +118,16 @@ const TemplateEditorPage = () => {
 	const [category, setCategory] = useState<RichTextTemplateCategory>("otro");
 	const [saving, setSaving] = useState(false);
 	const [readOnly, setReadOnly] = useState(false);
+	// En equipo, cada modelo puede ser compartido o solo de quien lo crea. Se recuerda la última
+	// elección de esta persona para los modelos nuevos.
+	const { activeTeam } = useTeam();
+	const [personal, setPersonal] = useState<boolean>(() => {
+		try {
+			return localStorage.getItem(MODELO_PERSONAL_KEY) === "1";
+		} catch {
+			return false;
+		}
+	});
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [contentLoaded, setContentLoaded] = useState(false);
 	const printIframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -158,6 +171,7 @@ const TemplateEditorPage = () => {
 			setName(tpl.name ?? "");
 			setDescription(tpl.description ?? "");
 			setCategory((tpl.category as RichTextTemplateCategory) ?? "otro");
+			setPersonal(tpl.scope ? tpl.scope === "personal" : Boolean(tpl.personal));
 			if (tpl.content && Object.keys(tpl.content).length > 0) {
 				const parsedTpl = editor.schema.nodeFromJSON(tpl.content as Parameters<typeof editor.commands.setContent>[0]);
 				editor.view.dispatch(
@@ -209,7 +223,21 @@ const TemplateEditorPage = () => {
 		setSaving(true);
 		const content = editor.getJSON() as Record<string, unknown>;
 		const mergeFields = extractMergeFields(content);
-		const payload = { name: name.trim(), description: description.trim(), category, content, mergeFields };
+		const payload = {
+			name: name.trim(),
+			description: description.trim(),
+			category,
+			content,
+			mergeFields,
+			...(activeTeam ? { personal } : {}),
+		};
+		if (activeTeam && !isEdit) {
+			try {
+				localStorage.setItem(MODELO_PERSONAL_KEY, personal ? "1" : "0");
+			} catch {
+				/* sin almacenamiento local: no se recuerda la elección */
+			}
+		}
 
 		let result;
 		if (isEdit && id) {
@@ -284,6 +312,22 @@ const TemplateEditorPage = () => {
 								))}
 							</Select>
 						</FormControl>
+
+						{activeTeam && (
+							<FormControl size="small" sx={{ minWidth: 170, "& .MuiInputBase-root": { height: 36 } }}>
+								<InputLabel>Quién lo ve</InputLabel>
+								<Select
+									label="Quién lo ve"
+									value={personal ? "personal" : "equipo"}
+									onChange={(e) => setPersonal(e.target.value === "personal")}
+									disabled={readOnly}
+									inputProps={{ "data-testid": "modelo-visibilidad" }}
+								>
+									<MenuItem value="equipo">Todo el equipo</MenuItem>
+									<MenuItem value="personal">Solo yo</MenuItem>
+								</Select>
+							</FormControl>
+						)}
 
 						<TextField
 							size="small"
