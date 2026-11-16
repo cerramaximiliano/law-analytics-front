@@ -23,7 +23,6 @@ import {
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import {
-	Add,
 	ArrowDown,
 	Calendar1,
 	ArrowUp,
@@ -49,6 +48,7 @@ import PaginationWithJump from "components/shared/PaginationWithJump";
 import PDFViewer from "components/shared/PDFViewer";
 import { buildCsv, buildPdf } from "sections/apps/folders/ExportFoldersDialog";
 import { FolderEtiquetas } from "sections/apps/folders/EtiquetasExpediente";
+import EtiquetasYTiposDialog from "sections/apps/folders/EtiquetasYTiposDialog";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 
 // ==============================|| SEGUIMIENTO DE LA CARPETA ||============================== //
@@ -133,11 +133,6 @@ const ORIGEN_LABEL: Record<string, string> = {
 	pjmendoza: "PJ Mendoza",
 	manual: "Cargado a mano",
 };
-const TIPOS_SUGERIDOS: Tipo[] = [
-	{ nombre: "Procesal", letra: "P", color: "#1b2533" },
-	{ nombre: "Extraprocesal", letra: "E", color: "#8a94a6" },
-	{ nombre: "Pendiente", letra: "N", color: "#d32f2f" },
-];
 
 const pad = (n: number) => String(n).padStart(2, "0");
 /** Date → valor de <input type="datetime-local"> en hora local. */
@@ -220,128 +215,6 @@ const TipoBoton = ({
 		</Box>
 	</Tooltip>
 );
-
-// ── Configuración de tipos ─────────────────────────────────────────────────────
-
-const ConfigTiposDialog = ({
-	open,
-	onClose,
-	folderId,
-	tipos,
-	onSaved,
-}: {
-	open: boolean;
-	onClose: () => void;
-	folderId: string;
-	tipos: Tipo[];
-	onSaved: (tipos: Tipo[]) => void;
-}) => {
-	const [draft, setDraft] = useState<Tipo[]>([]);
-	const [saving, setSaving] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-
-	useEffect(() => {
-		if (open) {
-			setDraft(tipos.map((t) => ({ ...t })));
-			setError(null);
-		}
-	}, [open, tipos]);
-
-	const cambiar = (i: number, patch: Partial<Tipo>) => setDraft((d) => d.map((t, j) => (j === i ? { ...t, ...patch } : t)));
-
-	const guardar = async () => {
-		setSaving(true);
-		setError(null);
-		try {
-			const res = await axios.put(`${API}/api/folders/${folderId}/seguimiento/tipos`, { tipos: draft });
-			onSaved(res.data.tipos || []);
-			onClose();
-		} catch (e: any) {
-			setError(e?.response?.data?.message || "No se pudieron guardar los tipos.");
-		} finally {
-			setSaving(false);
-		}
-	};
-
-	return (
-		<Dialog open={open} onClose={saving ? undefined : onClose} maxWidth="sm" fullWidth>
-			<DialogTitle sx={{ pb: 0.5 }}>Tipos de anotación</DialogTitle>
-			<DialogContent>
-				<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", mb: 2 }}>
-					Definí los tipos que usa tu estudio: el nombre, la letra del botón y el color con que se ve la anotación. Valen para todas las
-					carpetas y todo el equipo.
-				</Typography>
-				{error && (
-					<Alert severity="error" sx={{ mb: 1.5 }}>
-						{error}
-					</Alert>
-				)}
-				<Stack spacing={1}>
-					{draft.map((t, i) => (
-						<Stack key={t._id || `nuevo-${i}`} direction="row" spacing={1} alignItems="center" data-testid="seguimiento-config-fila">
-							<Tooltip title="Color">
-								<Box
-									component="input"
-									type="color"
-									value={t.color}
-									onChange={(e: React.ChangeEvent<HTMLInputElement>) => cambiar(i, { color: e.target.value })}
-									aria-label={`Color de ${t.nombre || "tipo"}`}
-									sx={{ width: 36, height: 36, p: 0, border: "none", bgcolor: "transparent", cursor: "pointer", flexShrink: 0 }}
-								/>
-							</Tooltip>
-							<TextField
-								size="small"
-								label="Letra"
-								value={t.letra}
-								onChange={(e) => cambiar(i, { letra: e.target.value.slice(0, 2).toUpperCase() })}
-								sx={{ width: 76 }}
-							/>
-							<TextField
-								size="small"
-								label="Nombre"
-								value={t.nombre}
-								onChange={(e) => cambiar(i, { nombre: e.target.value.slice(0, 30) })}
-								fullWidth
-							/>
-							<Tooltip title="Quitar tipo. Las anotaciones que lo tenían quedan sin tipo.">
-								<IconButton size="small" onClick={() => setDraft((d) => d.filter((_, j) => j !== i))} aria-label="Quitar tipo">
-									<Trash size={16} />
-								</IconButton>
-							</Tooltip>
-						</Stack>
-					))}
-				</Stack>
-				{draft.length === 0 && (
-					<Box sx={{ py: 2, textAlign: "center" }}>
-						<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", mb: 1 }}>
-							Todavía no hay tipos. Podés crear los tuyos o empezar con una sugerencia.
-						</Typography>
-						<Button size="small" variant="outlined" onClick={() => setDraft(TIPOS_SUGERIDOS.map((t) => ({ ...t })))}>
-							Usar Procesal, Extraprocesal y Pendiente
-						</Button>
-					</Box>
-				)}
-				<Button
-					size="small"
-					startIcon={<Add size={16} />}
-					onClick={() => setDraft((d) => [...d, { nombre: "", letra: "", color: "#3a7bff" }])}
-					disabled={draft.length >= 12}
-					sx={{ mt: 1.5 }}
-				>
-					Agregar tipo
-				</Button>
-			</DialogContent>
-			<DialogActions sx={{ px: 3, pb: 2 }}>
-				<Button onClick={onClose} disabled={saving} color="secondary">
-					Cancelar
-				</Button>
-				<Button onClick={guardar} disabled={saving || draft.some((t) => !t.nombre.trim())} variant="contained">
-					{saving ? "Guardando…" : "Guardar"}
-				</Button>
-			</DialogActions>
-		</Dialog>
-	);
-};
 
 // ── Solapa ─────────────────────────────────────────────────────────────────────
 
@@ -828,8 +701,8 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 						</span>
 					</Tooltip>
 					{data?.canConfig && (
-						<Tooltip title="Configurar tipos de anotación">
-							<IconButton size="small" onClick={() => setConfigOpen(true)} aria-label="Configurar tipos de anotación" sx={iconBtnSx}>
+						<Tooltip title="Etiquetas y tipos">
+							<IconButton size="small" onClick={() => setConfigOpen(true)} aria-label="Etiquetas y tipos" sx={iconBtnSx}>
 								<Setting2 size={16} />
 							</IconButton>
 						</Tooltip>
@@ -849,6 +722,10 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 						value={data.folderEstados || []}
 						canEdit={data.canEditar}
 						onChange={(ids) => setData((d) => (d ? { ...d, folderEstados: ids } : d))}
+						onConfigSaved={({ tipos: nuevos }) => {
+							setData((d) => (d ? { ...d, tipos: nuevos as Tipo[] } : d));
+							refrescar();
+						}}
 					/>
 				</Box>
 			)}
@@ -1110,16 +987,14 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 
 			<PDFViewer open={!!pdf} onClose={() => setPdf(null)} url={pdf?.url || ""} title={pdf?.title || "Documento"} />
 
-			<ConfigTiposDialog
+			<EtiquetasYTiposDialog
 				open={configOpen}
 				onClose={() => setConfigOpen(false)}
-				folderId={folderId}
-				tipos={tipos}
-				onSaved={(nuevos) => {
-					setData((d) => (d ? { ...d, tipos: nuevos } : d));
+				onSaved={({ tipos: nuevos }) => {
+					setData((d) => (d ? { ...d, tipos: nuevos as Tipo[] } : d));
 					if (tipoNuevo && !nuevos.some((t) => t._id === tipoNuevo)) setTipoNuevo(null);
 					if (tipoFiltro && tipoFiltro !== "sin" && !nuevos.some((t) => t._id === tipoFiltro)) setTipoFiltro("");
-					aviso("Tipos de anotación guardados.", "success");
+					refrescar();
 				}}
 			/>
 

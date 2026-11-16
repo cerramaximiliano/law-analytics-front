@@ -39,6 +39,7 @@ import NotificationStatus from "sections/widget/analytics/NotificationStatus";
 import DeadlineProjections from "sections/widget/analytics/DeadlineProjections";
 import FolderClosingTrends from "sections/widget/analytics/FolderClosingTrends";
 import HistoricalTrends from "sections/widget/analytics/HistoricalTrends";
+import ListadosCarpetas from "sections/widget/analytics/ListadosCarpetas";
 
 // ==============================|| DASHBOARD - ANALYTICS ||============================== //
 
@@ -596,6 +597,11 @@ const DashboardAnalytics = () => {
 					{/* Grid de widgets — opacity reducida + sin interacción en plan free */}
 					<Box sx={!hasAdvancedAnalytics ? { opacity: 0.4, pointerEvents: "none", userSelect: "none" } : undefined}>
 						<Grid container spacing={3}>
+							{/* Listados de carpetas por alcance (etiquetas, responsables, fuero…): planes pagos */}
+							<Grid item xs={12}>
+								<ListadosCarpetas enabled={hasAdvancedAnalytics} />
+							</Grid>
+
 							{/* Row 1 - Key Metrics */}
 							<Grid item xs={12} md={6} lg={3}>
 								<AverageResolutionTime />

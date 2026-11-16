@@ -1,36 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
-import {
-	Alert,
-	Box,
-	Button,
-	Checkbox,
-	Chip,
-	Dialog,
-	DialogActions,
-	DialogContent,
-	DialogTitle,
-	IconButton,
-	ListItemText,
-	Menu,
-	MenuItem,
-	Stack,
-	TextField,
-	Tooltip,
-	Typography,
-} from "@mui/material";
+import { Box, Button, Checkbox, Chip, ListItemText, Menu, MenuItem, Stack, Typography } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { Add, Setting2, Tag, Trash } from "iconsax-react";
+import { Setting2, Tag } from "iconsax-react";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import useEtiquetasExpediente, { Etiqueta } from "hooks/useEtiquetasExpediente";
+import EtiquetasYTiposDialog, { TipoAnotacion } from "sections/apps/folders/EtiquetasYTiposDialog";
 
 // ==============================|| ETIQUETAS DEL EXPEDIENTE ||============================== //
 // Etiquetas que crea cada estudio («Haber reajustado», «Embargo»…) y pone en sus carpetas
 // para después filtrar el listado. Nombre y color los elige el estudio.
 
 const API = import.meta.env.VITE_BASE_URL;
-const COLORES = ["#2e7d32", "#d32f2f", "#1565c0", "#ef6c00", "#6a1b9a", "#00838f", "#5d4037", "#455a64"];
 
 const luminancia = (hex: string) => {
 	const n = parseInt(hex.slice(1), 16);
@@ -71,107 +53,6 @@ export const EtiquetasCell = ({ ids }: { ids?: string[] }) => {
 	);
 };
 
-// ── Administrar el catálogo ────────────────────────────────────────────────────
-
-export const EtiquetasConfigDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-	const { etiquetas, guardar } = useEtiquetasExpediente();
-	const [draft, setDraft] = useState<Etiqueta[]>([]);
-	const [saving, setSaving] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-
-	useEffect(() => {
-		if (open) {
-			setDraft(etiquetas.map((e) => ({ ...e })));
-			setError(null);
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [open]);
-
-	const cambiar = (i: number, patch: Partial<Etiqueta>) => setDraft((d) => d.map((e, j) => (j === i ? { ...e, ...patch } : e)));
-
-	const onGuardar = async () => {
-		setSaving(true);
-		setError(null);
-		try {
-			await guardar(draft);
-			dispatch(openSnackbar({ open: true, message: "Etiquetas guardadas.", variant: "alert", alert: { color: "success" }, close: true }));
-			onClose();
-		} catch (e: any) {
-			setError(e?.response?.data?.message || "No se pudieron guardar las etiquetas.");
-		} finally {
-			setSaving(false);
-		}
-	};
-
-	return (
-		<Dialog open={open} onClose={saving ? undefined : onClose} maxWidth="sm" fullWidth>
-			<DialogTitle sx={{ pb: 0.5 }}>Etiquetas del expediente</DialogTitle>
-			<DialogContent>
-				<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", mb: 2 }}>
-					Creá las etiquetas que usa tu estudio (por ejemplo «Haber reajustado» o «Embargo»). Después las ponés en cada carpeta y filtrás el
-					listado por ellas. Valen para todo el equipo.
-				</Typography>
-				{error && (
-					<Alert severity="error" sx={{ mb: 1.5 }}>
-						{error}
-					</Alert>
-				)}
-				<Stack spacing={1}>
-					{draft.map((e, i) => (
-						<Stack key={e._id || `nueva-${i}`} direction="row" spacing={1} alignItems="center" data-testid="etiqueta-config-fila">
-							<Tooltip title="Color">
-								<Box
-									component="input"
-									type="color"
-									value={e.color}
-									onChange={(ev: React.ChangeEvent<HTMLInputElement>) => cambiar(i, { color: ev.target.value })}
-									aria-label={`Color de ${e.nombre || "etiqueta"}`}
-									sx={{ width: 36, height: 36, p: 0, border: "none", bgcolor: "transparent", cursor: "pointer", flexShrink: 0 }}
-								/>
-							</Tooltip>
-							<TextField
-								size="small"
-								label="Nombre"
-								value={e.nombre}
-								onChange={(ev) => cambiar(i, { nombre: ev.target.value.slice(0, 40) })}
-								fullWidth
-								autoFocus={!e._id && i === draft.length - 1}
-							/>
-							<Tooltip title="Quitar etiqueta. Se saca también de las carpetas que la tenían.">
-								<IconButton size="small" onClick={() => setDraft((d) => d.filter((_, j) => j !== i))} aria-label="Quitar etiqueta">
-									<Trash size={16} />
-								</IconButton>
-							</Tooltip>
-						</Stack>
-					))}
-				</Stack>
-				{draft.length === 0 && (
-					<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", py: 1.5, textAlign: "center" }}>
-						Todavía no hay etiquetas.
-					</Typography>
-				)}
-				<Button
-					size="small"
-					startIcon={<Add size={16} />}
-					onClick={() => setDraft((d) => [...d, { nombre: "", color: COLORES[d.length % COLORES.length] }])}
-					disabled={draft.length >= 60}
-					sx={{ mt: 1.5 }}
-				>
-					Agregar etiqueta
-				</Button>
-			</DialogContent>
-			<DialogActions sx={{ px: 3, pb: 2 }}>
-				<Button onClick={onClose} disabled={saving} color="secondary">
-					Cancelar
-				</Button>
-				<Button onClick={onGuardar} disabled={saving || draft.some((e) => !e.nombre.trim())} variant="contained">
-					{saving ? "Guardando…" : "Guardar"}
-				</Button>
-			</DialogActions>
-		</Dialog>
-	);
-};
-
 // ── Etiquetas de una carpeta (detalle) ─────────────────────────────────────────
 
 interface FolderEtiquetasProps {
@@ -181,9 +62,11 @@ interface FolderEtiquetasProps {
 	onChange: (ids: string[]) => void;
 	/** Puede poner y quitar etiquetas (titular, administrador o editor). */
 	canEdit: boolean;
+	/** Se guardó la configuración central (etiquetas y tipos). */
+	onConfigSaved?: (cfg: { tipos: TipoAnotacion[]; etiquetas: Etiqueta[] }) => void;
 }
 
-export const FolderEtiquetas = ({ folderId, value, onChange, canEdit }: FolderEtiquetasProps) => {
+export const FolderEtiquetas = ({ folderId, value, onChange, canEdit, onConfigSaved }: FolderEtiquetasProps) => {
 	const { etiquetas, canConfig, loaded } = useEtiquetasExpediente();
 	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 	const [configOpen, setConfigOpen] = useState(false);
@@ -275,11 +158,11 @@ export const FolderEtiquetas = ({ folderId, value, onChange, canEdit }: FolderEt
 						sx={{ borderTop: (t) => `1px solid ${t.palette.divider}`, mt: 0.5 }}
 					>
 						<Setting2 size={15} style={{ marginRight: 8 }} />
-						<ListItemText primary="Administrar etiquetas" primaryTypographyProps={{ fontSize: "0.82rem", fontWeight: 600 }} />
+						<ListItemText primary="Etiquetas y tipos" primaryTypographyProps={{ fontSize: "0.82rem", fontWeight: 600 }} />
 					</MenuItem>
 				)}
 			</Menu>
-			<EtiquetasConfigDialog open={configOpen} onClose={() => setConfigOpen(false)} />
+			<EtiquetasYTiposDialog open={configOpen} onClose={() => setConfigOpen(false)} onSaved={onConfigSaved} />
 		</Stack>
 	);
 };

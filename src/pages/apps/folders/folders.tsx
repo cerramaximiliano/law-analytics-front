@@ -86,6 +86,7 @@ import {
 } from "utils/controlCarpetas";
 import ExportFoldersDialog from "sections/apps/folders/ExportFoldersDialog";
 import { EtiquetasCell } from "sections/apps/folders/EtiquetasExpediente";
+import EtiquetasYTiposDialog from "sections/apps/folders/EtiquetasYTiposDialog";
 import useEtiquetasExpediente, { nombresDeEtiquetas } from "hooks/useEtiquetasExpediente";
 import { formatFolderName } from "utils/formatFolderName";
 import {
@@ -126,6 +127,7 @@ import {
 	Box1,
 	InfoCircle,
 	DocumentDownload,
+	Tag,
 	Refresh,
 	More,
 	SearchStatus1,
@@ -536,6 +538,7 @@ function ReactTable({
 		},
 	} as const;
 	const [exportOpen, setExportOpen] = useState(false);
+	const [etiquetasOpen, setEtiquetasOpen] = useState(false);
 	const g1ButtonRef = useRef<HTMLButtonElement>(null);
 	const g2StackRef = useRef<HTMLDivElement>(null);
 	// Estado de credencial SCBA/PJN del usuario (cache singleton con TTL, ver
@@ -1137,6 +1140,19 @@ function ReactTable({
 										<ListItemText>Exportar</ListItemText>
 									</MenuItem>
 
+									{/* Etiquetas del expediente y tipos de anotación */}
+									<MenuItem
+										onClick={() => {
+											handleMobileMenuClose();
+											setEtiquetasOpen(true);
+										}}
+									>
+										<ListItemIcon>
+											<Tag variant="Bulk" size={18} />
+										</ListItemIcon>
+										<ListItemText>Etiquetas y tipos</ListItemText>
+									</MenuItem>
+
 									{/* Guía */}
 									<MenuItem
 										onClick={() => {
@@ -1151,6 +1167,7 @@ function ReactTable({
 									</MenuItem>
 								</Menu>
 								{exportDialog}
+								<EtiquetasYTiposDialog open={etiquetasOpen} onClose={() => setEtiquetasOpen(false)} />
 							</Stack>
 						</Stack>
 					) : (
@@ -1345,6 +1362,7 @@ function ReactTable({
 									/>
 								</Box>
 								{exportDialog}
+								<EtiquetasYTiposDialog open={etiquetasOpen} onClose={() => setEtiquetasOpen(false)} />
 								<Tooltip title="Más opciones">
 									<IconButton color="secondary" size="small" onClick={handleDesktopMenuOpen} aria-label="Más opciones">
 										<More variant="Bulk" size={20} />
@@ -1368,6 +1386,18 @@ function ReactTable({
 											<DocumentDownload variant="Bulk" size={18} />
 										</ListItemIcon>
 										<ListItemText>Exportar</ListItemText>
+									</MenuItem>
+									<MenuItem
+										onClick={() => {
+											handleDesktopMenuClose();
+											setEtiquetasOpen(true);
+										}}
+										data-testid="menu-etiquetas-tipos"
+									>
+										<ListItemIcon>
+											<Tag variant="Bulk" size={18} />
+										</ListItemIcon>
+										<ListItemText>Etiquetas y tipos</ListItemText>
 									</MenuItem>
 									<MenuItem
 										onClick={() => {
