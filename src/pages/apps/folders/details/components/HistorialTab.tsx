@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 import {
 	Box,
@@ -380,6 +380,32 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 
 	// Selectors
 	const { logs, pagination, isLoading, error } = useSelector((state: RootState) => state.activityLog);
+
+	// Al actualizar, buscar, filtrar o cambiar de página la lista se reemplaza por el esqueleto
+	// completo y se mantiene un mínimo, para que la recarga se note y no sea un parpadeo.
+	const LOADER_MIN_MS = 400;
+	const [showLoader, setShowLoader] = useState(false);
+	const loaderSince = useRef(0);
+	// Después de la primera carga no se vuelve a reemplazar toda la solapa por el esqueleto
+	// inicial: desmontaría el buscador y el campo de anotación mientras se escribe.
+	const [loadedOnce, setLoadedOnce] = useState(false);
+	useEffect(() => {
+		if (!isLoading && loaderSince.current) setLoadedOnce(true);
+	}, [isLoading]);
+	useEffect(() => {
+		if (isLoading) {
+			loaderSince.current = Date.now();
+			setShowLoader(true);
+			return;
+		}
+		const restante = LOADER_MIN_MS - (Date.now() - loaderSince.current);
+		if (restante <= 0) {
+			setShowLoader(false);
+			return;
+		}
+		const t = setTimeout(() => setShowLoader(false), restante);
+		return () => clearTimeout(t);
+	}, [isLoading]);
 
 	// Fetch activity log
 	const fetchActivityLog = useCallback(
@@ -795,7 +821,7 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 	);
 
 	// Loading state
-	if (isLoading && logs.length === 0) {
+	if (isLoading && logs.length === 0 && !loadedOnce) {
 		return (
 			<Box sx={{ p: { xs: 1, sm: 2 } }}>
 				{/* Header skeleton */}
@@ -1081,18 +1107,15 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 				</Box>
 			</Collapse>
 
-			{/* Loading overlay */}
-			{isLoading && logs.length > 0 && (
-				<Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-					<Stack direction="row" spacing={1} alignItems="center">
-						<Skeleton variant="circular" width={20} height={20} animation="wave" />
-						<Skeleton variant="text" width={100} height={20} animation="wave" />
-					</Stack>
+			{/* Recarga: esqueleto completo en lugar de la lista */}
+			{showLoader && (
+				<Box data-testid="historial-cargando">
+					<HistorialLoader />
 				</Box>
 			)}
 
 			{/* Empty state — brand */}
-			{!isLoading && logs.length === 0 && (
+			{!showLoader && !isLoading && logs.length === 0 && (
 				<Box
 					sx={{
 						p: 3.5,
@@ -1132,7 +1155,7 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 			)}
 
 			{/* Timeline */}
-			{logs.length > 0 && (
+			{!showLoader && logs.length > 0 && (
 				<Timeline
 					sx={{
 						p: 0,
