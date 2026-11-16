@@ -600,6 +600,150 @@ const DetailedViewContent = () => {
 	);
 };
 
+// Lista de puntos con título y explicación, como el resto de la guía.
+const Punto = ({ titulo, children }: { titulo: string; children: React.ReactNode }) => {
+	const theme = useTheme();
+	return (
+		<Box display="flex" alignItems="flex-start">
+			<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main, marginTop: "3px" }} />
+			<Box>
+				<Typography fontWeight="bold">{titulo}</Typography>
+				<Typography variant="body2">{children}</Typography>
+			</Box>
+		</Box>
+	);
+};
+
+const Bloque = ({ titulo, children }: { titulo: string; children: React.ReactNode }) => {
+	const theme = useTheme();
+	return (
+		<StyledPaper>
+			<Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
+				<Typography variant="subtitle1" fontWeight="bold">
+					{titulo}
+				</Typography>
+			</Box>
+			<Box sx={{ p: 2 }}>
+				<Stack spacing={2}>{children}</Stack>
+			</Box>
+		</StyledPaper>
+	);
+};
+
+const SeguimientoContent = () => (
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
+		<Typography paragraph>
+			La solapa <strong>Seguimiento</strong> de cada carpeta reúne en una sola lista, ordenada por fecha y hora, todo lo que pasa con el
+			expediente: lo que anota tu estudio y lo que llega del juzgado. Es el lugar para llevar el día a día de la causa.
+		</Typography>
+
+		<Bloque titulo="Qué muestra">
+			<Punto titulo="Anotaciones del estudio">
+				Lo que cargás vos o tu equipo: «llamé al cliente», «subí el escrito», «a despacho». Quedan con el nombre de quien anotó.
+			</Punto>
+			<Punto titulo="Movimientos del expediente">
+				Entran solos desde el portal judicial, sin cargarlos a mano. Si el movimiento tiene documento, se abre desde la misma fila.
+			</Punto>
+			<Punto titulo="Cédulas y notificaciones">También entran solas, con su vencimiento cuando lo tienen.</Punto>
+			<Punto titulo="Eventos y vencimientos">Los que cargaste en el calendario de la carpeta.</Punto>
+		</Bloque>
+
+		<Bloque titulo="Cómo anotar">
+			<Punto titulo="Escribí y apretá Enter">
+				El campo está arriba de la lista. Enter guarda la anotación; Shift + Enter agrega un renglón.
+			</Punto>
+			<Punto titulo="Elegí el tipo">
+				Si tu estudio definió tipos de anotación, aparecen como botones con una letra al lado del campo. La anotación toma el color de su
+				tipo.
+			</Punto>
+			<Punto titulo="Cambiá la fecha si hace falta">
+				Viene con la fecha y hora del momento. Podés cambiarla para anotar algo de otro día o dejar un pendiente a futuro.
+			</Punto>
+			<Punto titulo="Corregí después">
+				Con un clic en la letra de la anotación le cambiás el tipo (por ejemplo, un pendiente que ya se cumplió). Desde el menú de la fila
+				la modificás o la eliminás.
+			</Punto>
+		</Bloque>
+
+		<Bloque titulo="Cómo encontrar y sacar la información">
+			<Punto titulo="Filtros">Mostrá solo anotaciones, movimientos, cédulas o eventos, o solo las anotaciones de un tipo.</Punto>
+			<Punto titulo="Buscador y orden">
+				Buscá por cualquier palabra. Con la flecha elegís si querés lo más nuevo arriba o lo más viejo arriba.
+			</Punto>
+			<Punto titulo="Imprimir y exportar">Genera un PDF o una planilla con lo que estés viendo, respetando los filtros.</Punto>
+		</Bloque>
+
+		<Alert severity="info">
+			<AlertTitle>Seguimiento e Historial no son lo mismo</AlertTitle>
+			<Typography>
+				Seguimiento es el día a día del expediente. El <strong>Historial</strong>, la última solapa, es el registro de lo que se hizo dentro
+				del sistema: quién creó, modificó o eliminó cada cosa.
+			</Typography>
+		</Alert>
+
+		<Alert severity="warning">
+			<AlertTitle>Movimientos según tu plan</AlertTitle>
+			<Typography>
+				En el plan gratuito se muestran los últimos 5 movimientos del portal judicial, igual que en Actividad. Las anotaciones del estudio
+				no tienen límite.
+			</Typography>
+		</Alert>
+	</Stack>
+);
+
+const EtiquetasTiposContent = () => (
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
+		<Typography paragraph>
+			Las <strong>etiquetas</strong> y los <strong>tipos de anotación</strong> los define cada estudio, con el nombre y el color que quiera.
+			No vienen precargados: los creás según cómo trabajás.
+		</Typography>
+
+		<Bloque titulo="Etiquetas del expediente">
+			<Punto titulo="Para qué sirven">
+				Marcan la carpeta con un estado propio de tu estudio, como «Haber reajustado» o «Embargo», para encontrar después todas las que lo
+				tienen.
+			</Punto>
+			<Punto titulo="Cómo se ponen">
+				En la solapa Seguimiento de la carpeta, con el botón «Cambiar» al lado de Etiquetas. Una carpeta puede tener varias.
+			</Punto>
+			<Punto titulo="Cómo se usan">
+				En Mis Carpetas, el filtro «Etiqueta» deja solo las carpetas que la tienen, y la columna «Etiquetas» las muestra. Ese listado se
+				puede exportar.
+			</Punto>
+		</Bloque>
+
+		<Bloque titulo="Tipos de anotación">
+			<Punto titulo="Para qué sirven">
+				Clasifican lo que anotás en Seguimiento, por ejemplo Procesal, Extraprocesal y Pendiente. Cada tipo tiene la letra de su botón y el
+				color con que se ve la anotación.
+			</Punto>
+			<Punto titulo="Cómo se usan">Elegís el tipo al anotar y podés cambiarlo después con un clic en la letra de la anotación.</Punto>
+		</Bloque>
+
+		<Bloque titulo="Dónde se configuran y quién puede">
+			<Punto titulo="Etiquetas y tipos">
+				En Mis Carpetas, en el menú de más opciones, o con el engranaje de la solapa Seguimiento. Ahí ves las dos listas y cuánto se usa
+				cada una. Lo que definas vale para todas las carpetas.
+			</Punto>
+			<Punto titulo="Permisos en un equipo">
+				Por defecto las crean y modifican el titular y los administradores. Ellos pueden habilitar también a los editores. Un lector nunca
+				puede. Poner y quitar etiquetas en una carpeta lo hace cualquiera que pueda editarla.
+			</Punto>
+			<Punto titulo="Si borrás una">
+				Una etiqueta borrada se quita de las carpetas que la tenían. Las anotaciones de un tipo borrado quedan sin tipo; no se pierden.
+			</Punto>
+		</Bloque>
+
+		<Alert severity="info">
+			<AlertTitle>Listados por etiqueta, responsable o fuero</AlertTitle>
+			<Typography>
+				En Análisis, la sección «Listados de carpetas» arma un listado eligiendo una o más opciones (etiquetas, responsables, fuero, juzgado
+				y otras), para verlo en pantalla, PDF o planilla. Está disponible en los planes pagos.
+			</Typography>
+		</Alert>
+	</Stack>
+);
+
 const ArchivingContent = () => {
 	const theme = useTheme();
 	return (
@@ -781,6 +925,8 @@ const GuideFolders: React.FC<GuideFoldersProps> = ({ open, onClose }) => {
 		{ title: "Campos del Formulario de Carpeta", content: <FormFieldsContent /> },
 		{ title: "Gestión de Carpetas", content: <ManagementContent /> },
 		{ title: "Vista Detallada de Carpeta", content: <DetailedViewContent /> },
+		{ title: "Seguimiento del Expediente", content: <SeguimientoContent /> },
+		{ title: "Etiquetas y Tipos de Anotación", content: <EtiquetasTiposContent /> },
 		{ title: "Archivado y Organización", content: <ArchivingContent /> },
 		{ title: "Consejos Prácticos", content: <PracticalTipsContent /> },
 	];

@@ -46,6 +46,8 @@ import { useSelector } from "react-redux";
 import { useTeam } from "contexts/TeamContext";
 import PaginationWithJump from "components/shared/PaginationWithJump";
 import PDFViewer from "components/shared/PDFViewer";
+import PjnAccessAlert from "components/shared/PjnAccessAlert";
+import { PjnAccess } from "types/movements";
 import { buildCsv, buildPdf } from "sections/apps/folders/ExportFoldersDialog";
 import { FolderEtiquetas } from "sections/apps/folders/EtiquetasExpediente";
 import EtiquetasYTiposDialog from "sections/apps/folders/EtiquetasYTiposDialog";
@@ -91,6 +93,8 @@ interface Respuesta {
 	pagination: { total: number; page: number; limit: number; pages: number };
 	conteo: Record<Fuente, number>;
 	avisos: string[];
+	/** Plan sin movimientos judiciales: el mismo dato de acceso que usa Actividad. */
+	accesos?: PjnAccess[];
 	tipos: Tipo[];
 	/** Etiquetas que tiene puestas la carpeta (ids del catálogo del estudio). */
 	folderEstados?: string[];
@@ -476,6 +480,8 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 	};
 
 	const hayFiltros = fuentes.length > 0 || !!tipoFiltro || !!searchDebounced;
+	// Movimientos del portal que el plan no muestra (solo sin búsqueda ni filtro de tipo, que no los alcanzan).
+	const bloqueados = !tipoFiltro && !searchDebounced ? data?.accesos?.[0]?.availableMovements || 0 : 0;
 	const total = data?.pagination.total ?? 0;
 
 	const renderItem = (item: Item) => {
@@ -824,6 +830,12 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 				)}
 			</Stack>
 
+			{/* Plan sin movimientos judiciales: el mismo aviso que Actividad (se ven solo los últimos). */}
+			{data?.accesos?.[0] && (
+				<Box sx={{ mb: 1.5 }} data-testid="seguimiento-plan">
+					<PjnAccessAlert pjnAccess={data.accesos[0]} />
+				</Box>
+			)}
 			{data?.avisos?.map((a) => (
 				<Alert key={a} severity="info" sx={{ mb: 1.5, py: 0.25 }}>
 					{a}
@@ -858,6 +870,37 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 			) : (
 				<Box sx={{ border: `1px solid ${theme.palette.divider}`, borderBottom: "none", borderRadius: 1, overflow: "hidden" }}>
 					{(data?.items || []).map(renderItem)}
+					{/* Al final de la lista, filas borrosas por los movimientos que el plan no muestra (como en Actividad). */}
+					{bloqueados > 0 &&
+						page >= (data?.pagination.pages || 1) &&
+						Array.from({ length: Math.min(3, bloqueados) }).map((_, i) => (
+							<Box
+								key={`bloqueado-${i}`}
+								data-testid="seguimiento-bloqueado"
+								aria-hidden
+								sx={{
+									display: "flex",
+									gap: 1.25,
+									px: 1.25,
+									py: 0.9,
+									borderBottom: `1px solid ${theme.palette.divider}`,
+									borderLeft: "3px solid transparent",
+									filter: "blur(3px)",
+									userSelect: "none",
+									pointerEvents: "none",
+									color: "text.disabled",
+								}}
+							>
+								<Typography sx={{ width: 86, flexShrink: 0, fontSize: "0.78rem", fontWeight: 600 }}>00/00/0000</Typography>
+								<Box sx={{ width: 24, flexShrink: 0 }} />
+								<Box sx={{ flex: 1 }}>
+									<Typography sx={{ fontSize: "0.86rem" }}>
+										{["Providencia simple - Téngase presente", "Notificación electrónica", "Pase a despacho"][i]}
+									</Typography>
+									<Typography sx={{ fontSize: "0.72rem" }}>Movimiento · PJN</Typography>
+								</Box>
+							</Box>
+						))}
 				</Box>
 			)}
 
