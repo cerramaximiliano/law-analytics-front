@@ -7,6 +7,10 @@ export interface Note {
 	folderId?: string;
 	movementRef?: string;
 	movementSource?: "pjn" | "mev" | "scba" | "eje" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "manual" | null;
+	/** "anotacion" = registro rápido cargado desde el Historial de la carpeta. */
+	kind?: "nota" | "anotacion";
+	/** Fecha del hecho anotado, si no es la del día en que se cargó. */
+	occurredAt?: string;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -19,6 +23,8 @@ export interface NoteFormValues {
 	groupId?: string;
 	movementRef?: string;
 	movementSource?: "pjn" | "mev" | "scba" | "eje" | "pjsalta" | "pjcatamarca" | "pjmendoza" | "manual" | null;
+	kind?: "nota" | "anotacion";
+	occurredAt?: string;
 }
 
 export interface NoteModalType {
