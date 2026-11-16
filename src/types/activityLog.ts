@@ -102,6 +102,7 @@ export interface ActivityLogQueryParams {
 	limit?: number;
 	resourceType?: ActivityResourceType;
 	action?: ActivityAction;
+	search?: string;
 	startDate?: string;
 	endDate?: string;
 }

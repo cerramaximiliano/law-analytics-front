@@ -86,6 +86,7 @@ const buildQueryParams = (params?: ActivityLogQueryParams): Record<string, any> 
 		if (params.limit !== undefined) queryParams.limit = params.limit;
 		if (params.resourceType) queryParams.resourceType = params.resourceType;
 		if (params.action) queryParams.action = params.action;
+		if (params.search) queryParams.search = params.search;
 		if (params.startDate) queryParams.startDate = params.startDate;
 		if (params.endDate) queryParams.endDate = params.endDate;
 	}

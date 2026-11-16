@@ -19,6 +19,7 @@ import {
 	Skeleton,
 	TextField,
 	Button,
+	InputAdornment,
 } from "@mui/material";
 import {
 	Timeline,
@@ -54,6 +55,8 @@ import {
 	ArrowUp2,
 	Filter,
 	Refresh2,
+	SearchNormal1,
+	CloseCircle,
 } from "iconsax-react";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -358,6 +361,13 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 	const [page, setPage] = useState(1);
 	const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 	const [showFilters, setShowFilters] = useState(false);
+	// Búsqueda en el servidor, con una espera corta mientras se escribe.
+	const [search, setSearch] = useState("");
+	const [searchDebounced, setSearchDebounced] = useState("");
+	useEffect(() => {
+		const t = setTimeout(() => setSearchDebounced(search.trim()), 300);
+		return () => clearTimeout(t);
+	}, [search]);
 
 	// Anotación rápida: se guarda como nota de la carpeta y aparece arriba del historial.
 	const { canCreate, getRequestHeaders } = useTeam();
@@ -385,10 +395,13 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 			if (actionFilter) {
 				params.action = actionFilter;
 			}
+			if (searchDebounced) {
+				params.search = searchDebounced;
+			}
 
 			dispatch(getFolderActivityLog(folderId, params, forceRefresh));
 		},
-		[folderId, page, resourceTypeFilter, actionFilter],
+		[folderId, page, resourceTypeFilter, actionFilter, searchDebounced],
 	);
 
 	// Initial fetch (cache-aware, no cleanup needed to preserve cache)
@@ -420,10 +433,11 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 		if (result.success) {
 			setAnotacion("");
 			setAnotacionFecha(hoy);
-			if (page === 1 && !resourceTypeFilter && !actionFilter) fetchActivityLog(true);
+			if (page === 1 && !resourceTypeFilter && !actionFilter && !searchDebounced) fetchActivityLog(true);
 			else {
 				setResourceTypeFilter("");
 				setActionFilter("");
+				setSearch("");
 				setPage(1);
 			}
 		} else {
@@ -442,7 +456,7 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 	// Reset page when filters change
 	useEffect(() => {
 		setPage(1);
-	}, [resourceTypeFilter, actionFilter]);
+	}, [resourceTypeFilter, actionFilter, searchDebounced]);
 
 	// Handle filter changes
 	const handleResourceTypeChange = (event: SelectChangeEvent<ActivityResourceType | "">) => {
@@ -884,7 +898,29 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 					</Stack>
 				</Stack>
 
-				<Stack direction="row" spacing={0.75}>
+				<Stack direction="row" spacing={0.75} alignItems="center" sx={{ flex: "1 1 220px", justifyContent: "flex-end", minWidth: 0 }}>
+					<TextField
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						placeholder="Buscar en el historial…"
+						size="small"
+						inputProps={{ "aria-label": "Buscar en el historial" }}
+						InputProps={{
+							startAdornment: (
+								<InputAdornment position="start">
+									<SearchNormal1 size={16} />
+								</InputAdornment>
+							),
+							endAdornment: search ? (
+								<InputAdornment position="end">
+									<IconButton size="small" aria-label="Borrar búsqueda" onClick={() => setSearch("")} edge="end">
+										<CloseCircle size={16} />
+									</IconButton>
+								</InputAdornment>
+							) : null,
+						}}
+						sx={{ flex: "1 1 180px", maxWidth: 320, minWidth: 0, "& .MuiInputBase-root": { height: 32, fontSize: "0.82rem" } }}
+					/>
 					<Tooltip title="Actualizar">
 						<IconButton
 							onClick={() => fetchActivityLog(true)}
@@ -1083,10 +1119,12 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 						<Clock size={28} variant="Bulk" />
 					</Box>
 					<Typography sx={{ fontSize: "1rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.015em" }}>
-						Sin actividad registrada
+						{searchDebounced || resourceTypeFilter || actionFilter ? "Sin resultados" : "Sin actividad registrada"}
 					</Typography>
 					<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", letterSpacing: "-0.005em", mt: 0.5 }}>
-						{resourceTypeFilter || actionFilter
+						{searchDebounced
+							? `No hay registros que coincidan con «${searchDebounced}».`
+							: resourceTypeFilter || actionFilter
 							? "No se encontraron registros con los filtros seleccionados."
 							: "Las acciones realizadas en esta causa aparecerán acá."}
 					</Typography>
