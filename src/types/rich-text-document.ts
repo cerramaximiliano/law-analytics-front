@@ -20,6 +20,13 @@ export interface RichTextTemplate {
 	source: RichTextTemplateSource;
 	createdAt?: string;
 	updatedAt?: string;
+	// Equipos (16/11/2026). `scope` y los permisos solo vienen en el listado del equipo; en la cuenta individual
+	// faltan y el modelo es propio (se puede editar y borrar).
+	createdBy?: string | null;
+	createdByName?: string;
+	scope?: "team" | "personal" | "system";
+	canEdit?: boolean;
+	canDelete?: boolean;
 }
 
 export interface CreateRichTextTemplatePayload {

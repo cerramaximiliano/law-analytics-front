@@ -231,6 +231,14 @@ const PickModelDialog = ({ open, onClose, folderId }: Props) => {
 													variant="outlined"
 													sx={{ height: 18, fontSize: "0.65rem" }}
 												/>
+												{tpl.scope && tpl.scope !== "system" && (
+													<Chip
+														label={tpl.scope === "team" ? "Equipo" : "Personal"}
+														size="small"
+														variant="outlined"
+														sx={{ height: 18, fontSize: "0.65rem" }}
+													/>
+												)}
 											</Stack>
 											{tpl.description && (
 												<Typography variant="caption" color="text.secondary" noWrap>

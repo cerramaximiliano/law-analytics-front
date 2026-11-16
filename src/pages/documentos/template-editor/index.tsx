@@ -37,6 +37,8 @@ import MergeFieldExtension from "pages/herramientas/editor-poc/extensions/MergeF
 import TabIndentExtension from "pages/herramientas/editor-poc/extensions/TabIndentExtension";
 import FontSizeExtension from "pages/herramientas/editor-poc/extensions/FontSizeExtension";
 import LineHeightExtension from "pages/herramientas/editor-poc/extensions/LineHeightExtension";
+import IndentExtension from "pages/herramientas/editor-poc/extensions/IndentExtension";
+import { FontFamily } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import { type RichTextTemplateCategory } from "types/rich-text-document";
@@ -112,6 +114,7 @@ const TemplateEditorPage = () => {
 	const [description, setDescription] = useState("");
 	const [category, setCategory] = useState<RichTextTemplateCategory>("otro");
 	const [saving, setSaving] = useState(false);
+	const [readOnly, setReadOnly] = useState(false);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [contentLoaded, setContentLoaded] = useState(false);
 	const printIframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -127,6 +130,8 @@ const TemplateEditorPage = () => {
 			TabIndentExtension,
 			FontSizeExtension,
 			LineHeightExtension,
+			IndentExtension,
+			FontFamily,
 			Color,
 			Highlight.configure({ multicolor: true }),
 			PaginationPlus.configure(A4_CONFIG),
@@ -145,6 +150,11 @@ const TemplateEditorPage = () => {
 				return;
 			}
 			const tpl = result.template;
+			// Equipos: un lector abre el modelo del equipo solo para verlo.
+			if (tpl.canEdit === false) {
+				setReadOnly(true);
+				editor.setEditable(false);
+			}
 			setName(tpl.name ?? "");
 			setDescription(tpl.description ?? "");
 			setCategory((tpl.category as RichTextTemplateCategory) ?? "otro");
@@ -298,10 +308,10 @@ const TemplateEditorPage = () => {
 							size="small"
 							sx={{ height: 36 }}
 							onClick={handleSave}
-							disabled={saving}
+							disabled={saving || readOnly}
 							startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
 						>
-							{saving ? "Guardando..." : isEdit ? "Actualizar modelo" : "Guardar modelo"}
+							{readOnly ? "Solo lectura" : saving ? "Guardando..." : isEdit ? "Actualizar modelo" : "Guardar modelo"}
 						</Button>
 					</Stack>
 				</Stack>

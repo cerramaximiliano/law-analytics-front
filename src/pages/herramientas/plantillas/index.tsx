@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTeam } from "contexts/TeamContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
 	Box,
@@ -345,7 +346,7 @@ const CardTypeHeader = ({
 	statusTooltip,
 }: {
 	kind: "formulario" | "texto";
-	origin: "system" | "user";
+	origin: "system" | "user" | "team" | "personal";
 	status?: "ok" | "warn" | "missing";
 	statusTooltip?: string;
 }) => {
@@ -417,7 +418,7 @@ const CardTypeHeader = ({
 					flexShrink: 0,
 				}}
 			>
-				{origin === "system" ? "Sistema" : "Propio"}
+				{origin === "system" ? "Sistema" : origin === "team" ? "Equipo" : origin === "personal" ? "Personal" : "Propio"}
 			</Typography>
 		</Stack>
 	);
@@ -656,10 +657,12 @@ interface RichTextModelCardProps {
 	template: RichTextTemplate;
 	onEdit: (t: RichTextTemplate) => void;
 	onDelete: (t: RichTextTemplate) => void;
+	/** Un lector del equipo no puede generar escritos: la tarjeta no ofrece «Crear documento». */
+	canUse?: boolean;
 	onUse: (t: RichTextTemplate) => void;
 }
 
-const RichTextModelCard = ({ template, onEdit, onDelete, onUse }: RichTextModelCardProps) => {
+const RichTextModelCard = ({ template, onEdit, onDelete, onUse, canUse = true }: RichTextModelCardProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const { brandPrimarySx, ghostBtnSx, iconBtnDestructiveSx } = useBrandStyles();
@@ -678,13 +681,20 @@ const RichTextModelCard = ({ template, onEdit, onDelete, onUse }: RichTextModelC
 			}}
 		>
 			<Stack spacing={1.25} sx={{ flex: 1 }}>
-				<CardTypeHeader kind="texto" origin="user" />
+				<CardTypeHeader kind="texto" origin={template.scope === "team" ? "team" : template.scope === "personal" ? "personal" : "user"} />
 				<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary", lineHeight: 1.3 }}>
 					{template.name}
 				</Typography>
 				{template.description && (
 					<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
 						{template.description}
+					</Typography>
+				)}
+				{template.scope && (
+					<Typography sx={{ fontSize: "0.7rem", color: "text.secondary", letterSpacing: "-0.005em" }} data-testid="modelo-alcance">
+						{template.scope === "team"
+							? `Compartido con el equipo${template.createdByName ? ` · creado por ${template.createdByName}` : ""}`
+							: "Solo lo ves vos"}
 					</Typography>
 				)}
 				<Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap" useFlexGap>
@@ -717,22 +727,29 @@ const RichTextModelCard = ({ template, onEdit, onDelete, onUse }: RichTextModelC
 				</Box>
 			</Stack>
 			<Stack direction="row" spacing={1} sx={{ pt: 1.5 }}>
-				<Button size="small" startIcon={<Edit2 size={14} variant="Linear" />} onClick={() => onEdit(template)} sx={{ ...ghostBtnSx, flex: 1 }}>
-					Editar
-				</Button>
-				<Button
-					size="small"
-					startIcon={<DocumentUpload size={14} variant="Linear" />}
-					onClick={() => onUse(template)}
-					sx={{ ...brandPrimarySx, flex: 1, minWidth: 0 }}
-				>
-					Crear documento
-				</Button>
-				<Tooltip title="Eliminar modelo">
-					<IconButton onClick={() => onDelete(template)} sx={iconBtnDestructiveSx} aria-label="eliminar">
-						<Trash size={15} variant="Linear" />
-					</IconButton>
-				</Tooltip>
+				{/* Equipos: el servidor dice qué puede hacer cada integrante; sin esos datos (cuenta individual) el modelo es propio. */}
+				{template.canEdit !== false && (
+					<Button size="small" startIcon={<Edit2 size={14} variant="Linear" />} onClick={() => onEdit(template)} sx={{ ...ghostBtnSx, flex: 1 }}>
+						Editar
+					</Button>
+				)}
+				{canUse && (
+					<Button
+						size="small"
+						startIcon={<DocumentUpload size={14} variant="Linear" />}
+						onClick={() => onUse(template)}
+						sx={{ ...brandPrimarySx, flex: 1, minWidth: 0 }}
+					>
+						Crear documento
+					</Button>
+				)}
+				{template.canDelete !== false && (
+					<Tooltip title="Eliminar modelo">
+						<IconButton onClick={() => onDelete(template)} sx={iconBtnDestructiveSx} aria-label="eliminar">
+							<Trash size={15} variant="Linear" />
+						</IconButton>
+					</Tooltip>
+				)}
 			</Stack>
 		</Box>
 	);
@@ -1034,28 +1051,39 @@ const ModelosPage = () => {
 		});
 	}, []);
 
+	// Modelos de texto: la búsqueda y el paginado los resuelve el servidor (16/11/2026); la pantalla pide solo la
+	// página que muestra, sin el texto de cada modelo. La primera página deja un lugar para la tarjeta «Nuevo modelo».
+	// Equipos: al resolverse (o cambiar) el equipo activo se vuelve a pedir, ahora con los modelos compartidos.
+	const { activeTeam, canCreate: canCreateInTeam } = useTeam();
+	const teamId = activeTeam?._id;
+	const rtPageSize = Math.max(1, cardsPerPage - 1);
+	const [rtTotal, setRtTotal] = useState(0);
+	const [rtSearchDebounced, setRtSearchDebounced] = useState("");
+	const [rtReload, setRtReload] = useState(0);
 	useEffect(() => {
-		dispatch(fetchRichTextTemplates({ source: "user" })).then((res: any) => {
-			if (res.success) {
-				const list = res.templates || [];
-				setMyModelsCount(list.length);
-				if (activeTab === 1) setRtTemplates(list);
-			}
-		});
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
-
+		const t = setTimeout(() => setRtSearchDebounced(rtSearch.trim()), 300);
+		return () => clearTimeout(t);
+	}, [rtSearch]);
 	useEffect(() => {
-		if (activeTab !== 1) return;
+		let cancelled = false;
 		setRtLoading(true);
-		dispatch(fetchRichTextTemplates({ source: "user" })).then((res: any) => {
-			if (res.success) {
-				setRtTemplates(res.templates || []);
-				setMyModelsCount((res.templates || []).length);
-			}
-			setRtLoading(false);
-		});
-	}, [activeTab]);
+		dispatch(fetchRichTextTemplates({ source: "user", page: rtPage, limit: rtPageSize, search: rtSearchDebounced || undefined })).then(
+			(res: any) => {
+				if (cancelled) return;
+				if (res.success) {
+					setRtTemplates(res.templates || []);
+					setRtTotal(res.total || 0);
+					// El contador del encabezado es el total sin buscar.
+					if (!rtSearchDebounced) setMyModelsCount(res.total || 0);
+				}
+				setRtLoading(false);
+			},
+		);
+		return () => {
+			cancelled = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [teamId, rtPage, rtPageSize, rtSearchDebounced, rtReload]);
 
 	// Reset paginación al cambiar búsqueda o breakpoint
 	useEffect(() => {
@@ -1064,7 +1092,7 @@ const ModelosPage = () => {
 
 	useEffect(() => {
 		setRtPage(1);
-	}, [rtSearch, cardsPerPage]);
+	}, [rtSearchDebounced, cardsPerPage]);
 
 	const handlePreview = async (tpl: PdfTemplate) => {
 		setPreviewGenTitle(null);
@@ -1106,8 +1134,9 @@ const ModelosPage = () => {
 		if (deleteTarget.kind === "rt") {
 			const res = await dispatch(deleteRichTextTemplate(deleteTarget.id));
 			if (res.success) {
-				setRtTemplates((prev) => prev.filter((t) => t._id !== deleteTarget.id));
-				setMyModelsCount((c) => Math.max(0, c - 1));
+				// Se vuelve a pedir la página (si era el último de la página, retrocede una).
+				if (rtTemplates.length === 1 && rtPage > 1) setRtPage(rtPage - 1);
+				else setRtReload((n) => n + 1);
 				showSnackbar("Modelo eliminado", "success");
 			} else {
 				showSnackbar(res.error || "Error al eliminar", "error");
@@ -1138,11 +1167,8 @@ const ModelosPage = () => {
 			);
 		});
 
-	const filteredRtTemplates = rtTemplates.filter((t) => {
-		if (!rtSearch.trim()) return true;
-		const q = rtSearch.toLowerCase();
-		return t.name.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q);
-	});
+	// Ya vienen filtrados y paginados por el servidor.
+	const filteredRtTemplates = rtTemplates;
 
 	// Modelos de tipo formulario (PdfTemplate) propios del usuario — se muestran en "Mis modelos".
 	// La API solo devuelve al dueño sus propios PdfTemplate (source=user + userId), así que quedan aislados.
@@ -1169,7 +1195,7 @@ const ModelosPage = () => {
 	}
 
 	const pdfPagination = paginateWithDashed(systemTemplates, pdfPage);
-	const rtPagination = paginateWithDashed(filteredRtTemplates, rtPage);
+	const rtPagination = { slice: filteredRtTemplates, totalPages: Math.max(1, Math.ceil(rtTotal / rtPageSize)), isFirstPage: rtPage === 1 };
 
 	const paginationSx = {
 		"& .MuiPaginationItem-root": {
@@ -1543,7 +1569,7 @@ const ModelosPage = () => {
 										sx={{ mb: 2, minHeight: 0, borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.08)}`, "& .MuiTab-root": { minHeight: 0, py: 1.25, textTransform: "none", fontSize: "0.82rem", fontWeight: 600, letterSpacing: "-0.005em" }, "& .Mui-selected": { color: BRAND_BLUE }, "& .MuiTabs-indicator": { bgcolor: BRAND_BLUE } }}
 									>
 										<Tab label={`Formularios (${myPdfTemplates.length})`} />
-										<Tab label={`Modelos de texto (${filteredRtTemplates.length})`} />
+										<Tab label={`Modelos de texto (${rtTotal})`} />
 									</Tabs>
 									{myTab === 0 ? (
 										myPdfTemplates.length > 0 ? (
@@ -1574,10 +1600,10 @@ const ModelosPage = () => {
 											<Grid container spacing={2}>
 												{rtPagination.slice.map((tpl) => (
 													<Grid item xs={12} sm={6} md={4} lg={3} key={tpl._id}>
-														<RichTextModelCard template={tpl} onEdit={(t) => navigate(`/documentos/modelos/${t._id}/editar`)} onDelete={(t) => setDeleteTarget({ kind: "rt", id: t._id, name: t.name })} onUse={(t) => navigate(`/documentos/escritos/nuevo?templateId=${t._id}`)} />
+														<RichTextModelCard template={tpl} canUse={canCreateInTeam} onEdit={(t) => navigate(`/documentos/modelos/${t._id}/editar`)} onDelete={(t) => setDeleteTarget({ kind: "rt", id: t._id, name: t.name })} onUse={(t) => navigate(`/documentos/escritos/nuevo?templateId=${t._id}`)} />
 													</Grid>
 												))}
-												{rtPagination.isFirstPage && (
+												{rtPagination.isFirstPage && canCreateInTeam && (
 													<Grid item xs={12} sm={6} md={4} lg={3}>
 														<DashedCard icon={<Add size={22} variant="Linear" />} title="Nuevo modelo" subtitle="Creá uno desde cero con campos dinámicos." onClick={() => navigate("/documentos/modelos/nuevo")} />
 													</Grid>

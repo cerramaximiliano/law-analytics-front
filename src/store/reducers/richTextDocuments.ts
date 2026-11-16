@@ -134,14 +134,21 @@ const getErrorMsg = (error: unknown, fallback: string): string =>
 
 // ── Template thunks ─────────────────────────────────────────────────────────────
 
+// En modo equipo los modelos se listan por grupo: los del titular, los del equipo y los personales de quien pide
+// (16/11/2026). Sin equipo, los propios.
+const templatesListUrl = (getState?: () => any) => {
+	const teamId = activeTeamIdOf(getState);
+	return teamId ? `${TEMPLATES_URL}/group/${teamId}` : TEMPLATES_URL;
+};
+
 export const fetchRichTextTemplates =
 	(params: RichTextTemplatesQueryParams = {}) =>
-	async (dispatch: Dispatch) => {
+	async (dispatch: Dispatch, getState?: () => any) => {
 		dispatch({ type: SET_LOADING });
 		try {
-			const res = await axios.get(TEMPLATES_URL, { params });
+			const res = await axios.get(templatesListUrl(getState), { params });
 			dispatch({ type: SET_TEMPLATES, payload: { templates: res.data.templates, total: res.data.total } });
-			return { success: true, templates: res.data.templates as RichTextTemplate[] };
+			return { success: true, templates: res.data.templates as RichTextTemplate[], total: (res.data.total ?? 0) as number };
 		} catch (error) {
 			dispatch({ type: SET_TEMPLATES, payload: { templates: [], total: 0 } });
 			return { success: false, error: getErrorMsg(error, "Error al obtener plantillas") };
@@ -158,9 +165,10 @@ export const getRichTextTemplate = (id: string) => async (dispatch: Dispatch) =>
 	}
 };
 
-export const createRichTextTemplate = (data: CreateRichTextTemplatePayload) => async (dispatch: Dispatch) => {
+export const createRichTextTemplate = (data: CreateRichTextTemplatePayload) => async (dispatch: Dispatch, getState?: () => any) => {
 	try {
-		const res = await axios.post(TEMPLATES_URL, data);
+		// Con equipo activo va la cabecera X-Group-Id: el modelo queda compartido con el equipo, a nombre del titular.
+		const res = await axios.post(TEMPLATES_URL, data, { headers: teamHeadersOf(activeTeamIdOf(getState)) });
 		dispatch({ type: ADD_TEMPLATE, payload: res.data.template });
 		return { success: true, template: res.data.template as RichTextTemplate };
 	} catch (error) {
