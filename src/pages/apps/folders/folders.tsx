@@ -1140,7 +1140,7 @@ function ReactTable({
 										<ListItemText>Exportar</ListItemText>
 									</MenuItem>
 
-									{/* Etiquetas del expediente y tipos de anotación */}
+									{/* Etiquetas del expediente y categorías de las anotaciones */}
 									<MenuItem
 										onClick={() => {
 											handleMobileMenuClose();
@@ -1150,7 +1150,7 @@ function ReactTable({
 										<ListItemIcon>
 											<Tag variant="Bulk" size={18} />
 										</ListItemIcon>
-										<ListItemText>Etiquetas y tipos</ListItemText>
+										<ListItemText>Etiquetas y categorías</ListItemText>
 									</MenuItem>
 
 									{/* Guía */}
@@ -1397,7 +1397,7 @@ function ReactTable({
 										<ListItemIcon>
 											<Tag variant="Bulk" size={18} />
 										</ListItemIcon>
-										<ListItemText>Etiquetas y tipos</ListItemText>
+										<ListItemText>Etiquetas y categorías</ListItemText>
 									</MenuItem>
 									<MenuItem
 										onClick={() => {

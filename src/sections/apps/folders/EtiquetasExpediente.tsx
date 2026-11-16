@@ -158,7 +158,7 @@ export const FolderEtiquetas = ({ folderId, value, onChange, canEdit, onConfigSa
 						sx={{ borderTop: (t) => `1px solid ${t.palette.divider}`, mt: 0.5 }}
 					>
 						<Setting2 size={15} style={{ marginRight: 8 }} />
-						<ListItemText primary="Etiquetas y tipos" primaryTypographyProps={{ fontSize: "0.82rem", fontWeight: 600 }} />
+						<ListItemText primary="Etiquetas y categorías" primaryTypographyProps={{ fontSize: "0.82rem", fontWeight: 600 }} />
 					</MenuItem>
 				)}
 			</Menu>

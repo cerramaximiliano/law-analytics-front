@@ -24,7 +24,7 @@ import useEtiquetasExpediente, { Etiqueta } from "hooks/useEtiquetasExpediente";
 
 // ==============================|| ETIQUETAS Y TIPOS: CONFIGURACIÓN CENTRAL ||============================== //
 // Un solo lugar para lo que cada estudio define para sus carpetas: las etiquetas del expediente
-// y los tipos de anotación del Seguimiento, con cuánto se usa cada uno, y quién puede
+// y las categorías de las anotaciones del Seguimiento (en el código, «tipos»), con cuánto se usa cada uno, y quién puede
 // administrarlos. Se abre desde Mis Carpetas y desde la solapa Seguimiento.
 
 export interface TipoAnotacion {
@@ -160,7 +160,7 @@ const EtiquetasYTiposDialog = ({ open, onClose, onSaved }: Props) => {
 
 	return (
 		<Dialog open={open} onClose={saving ? undefined : onClose} maxWidth="sm" fullWidth data-testid="etiquetas-tipos-dialog">
-			<DialogTitle sx={{ pb: 0.5 }}>Etiquetas y tipos</DialogTitle>
+			<DialogTitle sx={{ pb: 0.5 }}>Etiquetas y categorías</DialogTitle>
 			<DialogContent>
 				<Typography sx={{ fontSize: "0.8rem", color: "text.secondary", mb: 2 }}>
 					Lo que definas acá vale para todas las carpetas{cfg?.canPermisos ? " y todo el equipo" : ""}.
@@ -233,8 +233,8 @@ const EtiquetasYTiposDialog = ({ open, onClose, onSaved }: Props) => {
 						</Seccion>
 
 						<Seccion
-							titulo="Tipos de anotación"
-							ayuda="Se eligen al anotar en la solapa Seguimiento. Cada tipo tiene la letra de su botón y el color con que se ve la anotación."
+							titulo="Categorías de las anotaciones"
+							ayuda="Se eligen al anotar en la solapa Seguimiento. Cada categoría tiene la letra de su botón y el color con que se ve la anotación."
 						>
 							<Stack spacing={1}>
 								{tipos.map((t, i) => (
@@ -242,7 +242,7 @@ const EtiquetasYTiposDialog = ({ open, onClose, onSaved }: Props) => {
 										<ColorInput
 											value={t.color}
 											disabled={soloLectura}
-											label={`Color de ${t.nombre || "tipo"}`}
+											label={`Color de ${t.nombre || "categoría"}`}
 											onChange={(color) => setTipos((d) => d.map((x, j) => (j === i ? { ...x, color } : x)))}
 										/>
 										<TextField
@@ -265,8 +265,8 @@ const EtiquetasYTiposDialog = ({ open, onClose, onSaved }: Props) => {
 										/>
 										{uso(t._id ? cfg.uso.tipos[t._id] : 0, "anotación", "anotaciones")}
 										{!soloLectura && (
-											<Tooltip title="Quitar. Las anotaciones que lo tenían quedan sin tipo.">
-												<IconButton size="small" onClick={() => setTipos((d) => d.filter((_, j) => j !== i))} aria-label="Quitar tipo">
+											<Tooltip title="Quitar. Las anotaciones que la tenían quedan sin categoría.">
+												<IconButton size="small" onClick={() => setTipos((d) => d.filter((_, j) => j !== i))} aria-label="Quitar categoría">
 													<Trash size={16} />
 												</IconButton>
 											</Tooltip>
@@ -274,7 +274,9 @@ const EtiquetasYTiposDialog = ({ open, onClose, onSaved }: Props) => {
 									</Stack>
 								))}
 							</Stack>
-							{tipos.length === 0 && <Typography sx={{ fontSize: "0.8rem", color: "text.secondary" }}>Todavía no hay tipos.</Typography>}
+							{tipos.length === 0 && (
+								<Typography sx={{ fontSize: "0.8rem", color: "text.secondary" }}>Todavía no hay categorías.</Typography>
+							)}
 							{!soloLectura && (
 								<Stack direction="row" spacing={1} sx={{ mt: 1 }} flexWrap="wrap" useFlexGap>
 									<Button
@@ -283,7 +285,7 @@ const EtiquetasYTiposDialog = ({ open, onClose, onSaved }: Props) => {
 										onClick={() => setTipos((d) => [...d, { nombre: "", letra: "", color: "#3a7bff" }])}
 										disabled={tipos.length >= 12}
 									>
-										Agregar tipo
+										Agregar categoría
 									</Button>
 									{tipos.length === 0 && (
 										<Button size="small" variant="outlined" onClick={() => setTipos(TIPOS_SUGERIDOS.map((t) => ({ ...t })))}>
@@ -296,7 +298,7 @@ const EtiquetasYTiposDialog = ({ open, onClose, onSaved }: Props) => {
 
 						{cfg.canPermisos && (
 							<Seccion
-								titulo="Quién puede crearlos y modificarlos"
+								titulo="Quién puede crearlas y modificarlas"
 								ayuda="Un lector nunca puede. Poner y quitar etiquetas en una carpeta lo hace cualquiera que pueda editarla."
 							>
 								<TextField

@@ -652,21 +652,21 @@ const SeguimientoContent = () => (
 			<Punto titulo="Escribí y apretá Enter">
 				El campo está arriba de la lista. Enter guarda la anotación; Shift + Enter agrega un renglón.
 			</Punto>
-			<Punto titulo="Elegí el tipo">
-				Si tu estudio definió tipos de anotación, aparecen como botones con una letra al lado del campo. La anotación toma el color de su
-				tipo.
+			<Punto titulo="Elegí la categoría">
+				Si tu estudio definió categorías para las anotaciones, aparecen como botones con una letra al lado del campo. La anotación toma el
+				color de su categoría.
 			</Punto>
 			<Punto titulo="Cambiá la fecha si hace falta">
 				Viene con la fecha y hora del momento. Podés cambiarla para anotar algo de otro día o dejar un pendiente a futuro.
 			</Punto>
 			<Punto titulo="Corregí después">
-				Con un clic en la letra de la anotación le cambiás el tipo (por ejemplo, un pendiente que ya se cumplió). Desde el menú de la fila
-				la modificás o la eliminás.
+				Con un clic en la letra de la anotación le cambiás la categoría (por ejemplo, un pendiente que ya se cumplió). Desde el menú de la
+				fila la modificás o la eliminás.
 			</Punto>
 		</Bloque>
 
 		<Bloque titulo="Cómo encontrar y sacar la información">
-			<Punto titulo="Filtros">Mostrá solo anotaciones, movimientos, cédulas o eventos, o solo las anotaciones de un tipo.</Punto>
+			<Punto titulo="Filtros">Mostrá solo anotaciones, movimientos, cédulas o eventos, o solo las anotaciones de una categoría.</Punto>
 			<Punto titulo="Buscador y orden">
 				Buscá por cualquier palabra. Con la flecha elegís si querés lo más nuevo arriba o lo más viejo arriba.
 			</Punto>
@@ -694,8 +694,8 @@ const SeguimientoContent = () => (
 const EtiquetasTiposContent = () => (
 	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 		<Typography paragraph>
-			Las <strong>etiquetas</strong> y los <strong>tipos de anotación</strong> los define cada estudio, con el nombre y el color que quiera.
-			No vienen precargados: los creás según cómo trabajás.
+			Las <strong>etiquetas</strong> y las <strong>categorías de las anotaciones</strong> las define cada estudio, con el nombre y el color
+			que quiera. No vienen precargadas: las creás según cómo trabajás.
 		</Typography>
 
 		<Bloque titulo="Etiquetas del expediente">
@@ -712,16 +712,16 @@ const EtiquetasTiposContent = () => (
 			</Punto>
 		</Bloque>
 
-		<Bloque titulo="Tipos de anotación">
+		<Bloque titulo="Categorías de las anotaciones">
 			<Punto titulo="Para qué sirven">
-				Clasifican lo que anotás en Seguimiento, por ejemplo Procesal, Extraprocesal y Pendiente. Cada tipo tiene la letra de su botón y el
-				color con que se ve la anotación.
+				Clasifican lo que anotás en Seguimiento, por ejemplo Procesal, Extraprocesal y Pendiente. Cada categoría tiene la letra de su botón
+				y el color con que se ve la anotación.
 			</Punto>
-			<Punto titulo="Cómo se usan">Elegís el tipo al anotar y podés cambiarlo después con un clic en la letra de la anotación.</Punto>
+			<Punto titulo="Cómo se usan">Elegís la categoría al anotar y podés cambiarla después con un clic en la letra de la anotación.</Punto>
 		</Bloque>
 
 		<Bloque titulo="Dónde se configuran y quién puede">
-			<Punto titulo="Etiquetas y tipos">
+			<Punto titulo="Etiquetas y categorías">
 				En Mis Carpetas, en el menú de más opciones, o con el engranaje de la solapa Seguimiento. Ahí ves las dos listas y cuánto se usa
 				cada una. Lo que definas vale para todas las carpetas.
 			</Punto>
@@ -730,7 +730,8 @@ const EtiquetasTiposContent = () => (
 				puede. Poner y quitar etiquetas en una carpeta lo hace cualquiera que pueda editarla.
 			</Punto>
 			<Punto titulo="Si borrás una">
-				Una etiqueta borrada se quita de las carpetas que la tenían. Las anotaciones de un tipo borrado quedan sin tipo; no se pierden.
+				Una etiqueta borrada se quita de las carpetas que la tenían. Las anotaciones de una categoría borrada quedan sin categoría; no se
+				pierden.
 			</Punto>
 		</Bloque>
 
@@ -926,7 +927,7 @@ const GuideFolders: React.FC<GuideFoldersProps> = ({ open, onClose }) => {
 		{ title: "Gestión de Carpetas", content: <ManagementContent /> },
 		{ title: "Vista Detallada de Carpeta", content: <DetailedViewContent /> },
 		{ title: "Seguimiento del Expediente", content: <SeguimientoContent /> },
-		{ title: "Etiquetas y Tipos de Anotación", content: <EtiquetasTiposContent /> },
+		{ title: "Etiquetas y Categorías de Anotaciones", content: <EtiquetasTiposContent /> },
 		{ title: "Archivado y Organización", content: <ArchivingContent /> },
 		{ title: "Consejos Prácticos", content: <PracticalTipsContent /> },
 	];

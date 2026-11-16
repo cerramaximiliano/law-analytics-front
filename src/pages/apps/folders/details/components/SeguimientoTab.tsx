@@ -517,13 +517,13 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 				<Box sx={{ width: 24, flexShrink: 0, display: "flex", justifyContent: "center", pt: 0.1 }}>
 					{esAnotacion && puedeTipar ? (
 						// El tipo se cambia desde la misma letra: un clic abre los tipos del estudio.
-						<Tooltip title={tipo ? `${tipo.nombre}. Clic para cambiar el tipo.` : "Sin tipo. Clic para elegir uno."}>
+						<Tooltip title={tipo ? `${tipo.nombre}. Clic para cambiar la categoría.` : "Sin categoría. Clic para elegir una."}>
 							<Box
 								component="button"
 								type="button"
 								onClick={(e: React.MouseEvent<HTMLElement>) => setTipoMenu({ anchor: e.currentTarget, item })}
 								disabled={ocupado === item.id}
-								aria-label="Cambiar el tipo"
+								aria-label="Cambiar la categoría"
 								data-testid="seguimiento-tipo-fila"
 								sx={{
 									width: 22,
@@ -707,8 +707,8 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 						</span>
 					</Tooltip>
 					{data?.canConfig && (
-						<Tooltip title="Etiquetas y tipos">
-							<IconButton size="small" onClick={() => setConfigOpen(true)} aria-label="Etiquetas y tipos" sx={iconBtnSx}>
+						<Tooltip title="Etiquetas y categorías">
+							<IconButton size="small" onClick={() => setConfigOpen(true)} aria-label="Etiquetas y categorías" sx={iconBtnSx}>
 								<Setting2 size={16} />
 							</IconButton>
 						</Tooltip>
@@ -809,7 +809,7 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 				{tipos.length > 0 && (
 					<>
 						<Box sx={{ width: "1px", height: 18, bgcolor: "divider", mx: 0.5 }} />
-						<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>Tipo:</Typography>
+						<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>Categoría:</Typography>
 						{tipos.map((t) => (
 							<TipoBoton
 								key={t._id}
@@ -820,7 +820,7 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 							/>
 						))}
 						<Chip
-							label="Sin tipo"
+							label="Sin categoría"
 							size="small"
 							clickable
 							onClick={() => setTipoFiltro((cur) => (cur === "sin" ? "" : "sin"))}
@@ -994,7 +994,7 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 						}}
 						sx={{ borderTop: `1px solid ${theme.palette.divider}`, mt: 0.5, color: "text.secondary" }}
 					>
-						Sin tipo
+						Sin categoría
 					</MenuItem>
 				)}
 			</Menu>
