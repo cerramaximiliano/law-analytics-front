@@ -2,7 +2,10 @@ import { generateHTML } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
-import { TextStyle } from "@tiptap/extension-text-style";
+import { TextStyle, FontFamily } from "@tiptap/extension-text-style";
+import FontSizeExtension from "pages/herramientas/editor-poc/extensions/FontSizeExtension";
+import LineHeightExtension from "pages/herramientas/editor-poc/extensions/LineHeightExtension";
+import IndentExtension from "pages/herramientas/editor-poc/extensions/IndentExtension";
 import { Color } from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import axios from "axios";
@@ -25,6 +28,10 @@ const EXTENSIONS = [
 	Underline,
 	TextAlign.configure({ types: ["heading", "paragraph"] }),
 	TextStyle,
+	FontSizeExtension,
+	LineHeightExtension,
+	IndentExtension,
+	FontFamily,
 	Color,
 	Highlight.configure({ multicolor: true }),
 ];

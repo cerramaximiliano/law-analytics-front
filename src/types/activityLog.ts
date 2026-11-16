@@ -10,7 +10,9 @@ export type ActivityResourceType =
 	| "document"
 	| "movement"
 	| "expense"
-	| "availability";
+	| "availability"
+	| "postal_tracking"
+	| "seclo";
 
 export type ActivityAction =
 	| "created"
@@ -116,6 +118,8 @@ export const RESOURCE_TYPE_LABELS: Record<ActivityResourceType, string> = {
 	movement: "Movimiento",
 	expense: "Gasto",
 	availability: "Disponibilidad",
+	postal_tracking: "Seguimiento de envío",
+	seclo: "Solicitud SECLO",
 };
 
 export const ACTION_LABELS: Record<ActivityAction, string> = {

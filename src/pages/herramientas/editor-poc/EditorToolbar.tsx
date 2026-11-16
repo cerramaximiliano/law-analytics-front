@@ -24,6 +24,9 @@ import {
 	TextalignCenter,
 	TextalignRight,
 	TextalignJustifycenter,
+	TextalignJustifyleft,
+	TextalignJustifyright,
+	Firstline,
 	HambergerMenu,
 	ArrowRotateLeft,
 	ArrowRotateRight,
@@ -48,6 +51,19 @@ const HEADINGS = [
 ];
 
 const FONT_SIZES = ["10", "11", "12", "14", "16", "18", "20", "24", "28", "32"];
+
+// Tipos de letra que existen en cualquier equipo y en el servidor que arma el PDF.
+// El valor vacío es el de siempre (Times New Roman).
+export const FONT_FAMILIES = [
+	{ value: "", label: "Times New Roman" },
+	{ value: "Arial, Helvetica, sans-serif", label: "Arial" },
+	{ value: '"Courier New", Courier, monospace', label: "Courier New" },
+	{ value: "Georgia, serif", label: "Georgia" },
+	{ value: "Verdana, Geneva, sans-serif", label: "Verdana" },
+];
+
+// Un texto pegado puede traer otra fuente (Calibri, Cambria…): se muestra por su primer nombre.
+const fontLabel = (value: string) => FONT_FAMILIES.find((f) => f.value === value)?.label || value.split(",")[0].replace(/["']/g, "").trim();
 
 const LINE_HEIGHTS = [
 	{ value: "1", label: "Simple" },
@@ -115,6 +131,13 @@ const EditorToolbar = ({ editor, onExportPdf }: EditorToolbarProps) => {
 		return attrs?.fontSize ?? "12";
 	};
 
+	const getCurrentFontFamily = (): string => editor.getAttributes("textStyle")?.fontFamily ?? "";
+
+	const getParagraphAttrs = () => {
+		const p = editor.getAttributes("paragraph");
+		return Object.keys(p).length ? p : editor.getAttributes("heading");
+	};
+
 	const getCurrentLineHeight = () => {
 		const pAttrs = editor.getAttributes("paragraph");
 		return pAttrs?.lineHeight ?? "";
@@ -170,6 +193,32 @@ const EditorToolbar = ({ editor, onExportPdf }: EditorToolbarProps) => {
 					</MenuItem>
 				))}
 			</Select>
+
+			{/* Tipo de letra */}
+			<Tooltip title="Tipo de letra" placement="top">
+				<Select
+					size="small"
+					value={getCurrentFontFamily()}
+					displayEmpty
+					onChange={(e) => {
+						const val = e.target.value as string;
+						if (val) {
+							editor.chain().focus().setFontFamily(val).run();
+						} else {
+							editor.chain().focus().unsetFontFamily().run();
+						}
+					}}
+					renderValue={(val) => <span style={{ fontSize: "0.75rem" }}>{fontLabel(val as string)}</span>}
+					inputProps={{ "aria-label": "Tipo de letra" }}
+					sx={{ fontSize: "0.75rem", height: 28, minWidth: 128 }}
+				>
+					{FONT_FAMILIES.map((f) => (
+						<MenuItem key={f.label} value={f.value} sx={{ fontSize: "0.8rem", fontFamily: f.value || '"Times New Roman", Times, serif' }}>
+							{f.label}
+						</MenuItem>
+					))}
+				</Select>
+			</Tooltip>
 
 			{/* Tamaño de fuente */}
 			<Select
@@ -333,6 +382,39 @@ const EditorToolbar = ({ editor, onExportPdf }: EditorToolbarProps) => {
 					</ToggleButton>
 				</Tooltip>
 			</ToggleButtonGroup>
+
+			<Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+
+			{/* Sangría */}
+			<Tooltip title="Disminuir sangría">
+				<span>
+					<IconButton
+						size="small"
+						aria-label="Disminuir sangría"
+						disabled={!getParagraphAttrs()?.indent}
+						onClick={() => editor.chain().focus().decreaseIndent().run()}
+					>
+						<TextalignJustifyleft size={16} />
+					</IconButton>
+				</span>
+			</Tooltip>
+			<Tooltip title="Aumentar sangría">
+				<IconButton size="small" aria-label="Aumentar sangría" onClick={() => editor.chain().focus().increaseIndent().run()}>
+					<TextalignJustifyright size={16} />
+				</IconButton>
+			</Tooltip>
+			<Tooltip title="Sangría de primera línea">
+				<ToggleButton
+					value="firstLineIndent"
+					size="small"
+					aria-label="Sangría de primera línea"
+					selected={!!getParagraphAttrs()?.firstLineIndent}
+					onClick={() => editor.chain().focus().toggleFirstLineIndent().run()}
+					sx={{ border: "none", borderRadius: 1, p: 0.5 }}
+				>
+					<Firstline size={16} />
+				</ToggleButton>
+			</Tooltip>
 
 			<Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
 

@@ -59,6 +59,8 @@ import { Fragment } from "prosemirror-model";
 import { wordDiff, insertDiffWithoutHistory } from "pages/herramientas/editor-poc/diffUtils";
 import FontSizeExtension from "pages/herramientas/editor-poc/extensions/FontSizeExtension";
 import LineHeightExtension from "pages/herramientas/editor-poc/extensions/LineHeightExtension";
+import IndentExtension from "pages/herramientas/editor-poc/extensions/IndentExtension";
+import { FontFamily } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import axios from "axios";
@@ -303,6 +305,8 @@ const DocumentEditorPage = () => {
 			TabIndentExtension,
 			FontSizeExtension,
 			LineHeightExtension,
+			IndentExtension,
+			FontFamily,
 			Color,
 			Highlight.configure({ multicolor: true }),
 			PaginationPlus.configure(A4_CONFIG),

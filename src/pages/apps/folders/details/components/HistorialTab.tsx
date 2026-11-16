@@ -118,7 +118,12 @@ const RESOURCE_ICONS: Record<ActivityResourceType, React.ElementType> = {
 	movement: ArrowSwapVertical,
 	expense: Moneys,
 	availability: Clock,
+	postal_tracking: ArrowSwapVertical,
+	seclo: Calendar,
 };
+
+// Escritos y formularios comparten el tipo «document»; el servidor los distingue en metadata.kind.
+const KIND_LABELS: Record<string, string> = { escrito: "Escrito", formulario: "Formulario o carta" };
 
 // Icon mapping for actions
 const ACTION_ICONS: Record<ActivityAction, React.ElementType> = {
@@ -141,6 +146,7 @@ const FIELD_LABELS: Record<string, string> = {
 	// Campos comunes
 	responsables: "Responsables",
 	title: "Título",
+	label: "Etiqueta",
 	name: "Nombre",
 	description: "Descripción",
 	status: "Estado",
@@ -610,7 +616,7 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 									<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
 										<ResourceIcon size={12} variant="Bulk" color={theme.palette.text.secondary} />
 										<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
-											{RESOURCE_TYPE_LABELS[entry.resourceType] || entry.resourceType}
+											{KIND_LABELS[entry.metadata?.kind] || RESOURCE_TYPE_LABELS[entry.resourceType] || entry.resourceType}
 										</Typography>
 									</Box>
 									{entry.resourceName && (
