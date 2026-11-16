@@ -665,7 +665,7 @@ interface RichTextModelCardProps {
 const RichTextModelCard = ({ template, onEdit, onDelete, onUse, canUse = true }: RichTextModelCardProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
-	const { brandPrimarySx, ghostBtnSx, iconBtnDestructiveSx } = useBrandStyles();
+	const { brandPrimarySx, ghostBtnSx, iconBtnSx, iconBtnDestructiveSx } = useBrandStyles();
 	return (
 		<Box
 			sx={{
@@ -728,21 +728,29 @@ const RichTextModelCard = ({ template, onEdit, onDelete, onUse, canUse = true }:
 			</Stack>
 			<Stack direction="row" spacing={1} sx={{ pt: 1.5 }}>
 				{/* Equipos: el servidor dice qué puede hacer cada integrante; sin esos datos (cuenta individual) el modelo es propio. */}
-				{template.canEdit !== false && (
-					<Button size="small" startIcon={<Edit2 size={14} variant="Linear" />} onClick={() => onEdit(template)} sx={{ ...ghostBtnSx, flex: 1 }}>
-						Editar
-					</Button>
-				)}
+				{/* La acción principal ocupa el ancho y Editar pasa a ícono: con los tres controles de texto no entraban en la tarjeta. */}
 				{canUse && (
 					<Button
 						size="small"
 						startIcon={<DocumentUpload size={14} variant="Linear" />}
 						onClick={() => onUse(template)}
-						sx={{ ...brandPrimarySx, flex: 1, minWidth: 0 }}
+						sx={{ ...brandPrimarySx, flex: 1, minWidth: 0, whiteSpace: "nowrap" }}
 					>
 						Crear documento
 					</Button>
 				)}
+				{template.canEdit !== false &&
+					(canUse ? (
+						<Tooltip title="Editar modelo">
+							<IconButton onClick={() => onEdit(template)} sx={iconBtnSx} aria-label="editar">
+								<Edit2 size={15} variant="Linear" />
+							</IconButton>
+						</Tooltip>
+					) : (
+						<Button size="small" startIcon={<Edit2 size={14} variant="Linear" />} onClick={() => onEdit(template)} sx={{ ...ghostBtnSx, flex: 1 }}>
+							Editar
+						</Button>
+					))}
 				{template.canDelete !== false && (
 					<Tooltip title="Eliminar modelo">
 						<IconButton onClick={() => onDelete(template)} sx={iconBtnDestructiveSx} aria-label="eliminar">
@@ -1516,25 +1524,30 @@ const ModelosPage = () => {
 									>
 										¿Cómo funciona?
 									</Button>
-									<Button
-										size="small"
-										startIcon={<DocumentUpload size={15} variant="Linear" />}
-										onClick={() => navigate("/documentos/modelos/nuevo")}
-										sx={ghostBtnSx}
-									>
-										Modelo de texto
-									</Button>
-									<Button
-										size="small"
-										startIcon={<Add size={15} variant="Linear" />}
-										onClick={() => {
-							setEditTemplate(null);
-							setWizardOpen(true);
-						}}
-										sx={brandPrimarySx}
-									>
-										Crear formulario
-									</Button>
+									{/* Un lector del equipo no crea modelos ni formularios: el servidor lo rechaza. */}
+									{canCreateInTeam && (
+										<Button
+											size="small"
+											startIcon={<DocumentUpload size={15} variant="Linear" />}
+											onClick={() => navigate("/documentos/modelos/nuevo")}
+											sx={ghostBtnSx}
+										>
+											Modelo de texto
+										</Button>
+									)}
+									{canCreateInTeam && (
+										<Button
+											size="small"
+											startIcon={<Add size={15} variant="Linear" />}
+											onClick={() => {
+												setEditTemplate(null);
+												setWizardOpen(true);
+											}}
+											sx={brandPrimarySx}
+										>
+											Crear formulario
+										</Button>
+									)}
 								</Stack>
 							</Stack>
 
@@ -1590,9 +1603,11 @@ const ModelosPage = () => {
 										) : (
 											<Box sx={{ py: 5, textAlign: "center" }}>
 												<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", mb: 1.5 }}>Todavía no tenés formularios.</Typography>
-												<Button size="small" startIcon={<Add size={15} variant="Linear" />} onClick={() => { setEditTemplate(null); setWizardOpen(true); }} sx={brandPrimarySx}>
-													Crear formulario
-												</Button>
+												{canCreateInTeam && (
+													<Button size="small" startIcon={<Add size={15} variant="Linear" />} onClick={() => { setEditTemplate(null); setWizardOpen(true); }} sx={brandPrimarySx}>
+														Crear formulario
+													</Button>
+												)}
 											</Box>
 										)
 									) : filteredRtTemplates.length > 0 ? (
@@ -1618,9 +1633,11 @@ const ModelosPage = () => {
 									) : (
 										<Box sx={{ py: 5, textAlign: "center" }}>
 											<Typography sx={{ fontSize: "0.85rem", color: "text.secondary", mb: 1.5 }}>Todavía no tenés modelos de texto.</Typography>
-											<Button size="small" startIcon={<Add size={15} variant="Linear" />} onClick={() => navigate("/documentos/modelos/nuevo")} sx={brandPrimarySx}>
-												Crear modelo de texto
-											</Button>
+											{canCreateInTeam && (
+												<Button size="small" startIcon={<Add size={15} variant="Linear" />} onClick={() => navigate("/documentos/modelos/nuevo")} sx={brandPrimarySx}>
+													Crear modelo de texto
+												</Button>
+											)}
 										</Box>
 									)}
 								</>

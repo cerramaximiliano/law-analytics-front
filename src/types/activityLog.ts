@@ -134,8 +134,8 @@ export const ACTION_LABELS: Record<ActivityAction, string> = {
 	shared: "compartió",
 	unshared: "dejó de compartir",
 	commented: "comentó en",
-	attached: "adjuntó a",
-	detached: "desadjuntó de",
+	attached: "vinculó",
+	detached: "desvinculó",
 };
 
 export const ACTION_COLORS: Record<ActivityAction, "success" | "info" | "warning" | "error" | "default"> = {
