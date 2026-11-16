@@ -174,7 +174,7 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 					)}
 				</Stack>
 
-				<Stack direction="row" spacing={1.25} alignItems="center">
+				<Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0, maxWidth: "100%", flexWrap: "wrap" }} useFlexGap>
 					<Typography sx={labelSx}>Avisos de esta carpeta</Typography>
 					{canEditPolicy ? (
 						<Select
@@ -182,7 +182,7 @@ const FolderTeamPanel = ({ folderId, responsables, notificationPolicy }: Props) 
 							value={policy}
 							disabled={savingPolicy}
 							onChange={(e) => handlePolicyChange(e.target.value as FolderNotificationPolicy)}
-							sx={{ minWidth: 180, "& .MuiSelect-select": { py: "5px", fontSize: "0.8rem", fontWeight: 500 } }}
+							sx={{ minWidth: 180, maxWidth: "100%", "& .MuiSelect-select": { py: "5px", fontSize: "0.8rem", fontWeight: 500 } }}
 							inputProps={{ "aria-label": "Avisos de esta carpeta" }}
 						>
 							{FOLDER_POLICY_OPTIONS.map((o) => (

@@ -1603,8 +1603,10 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 									bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02),
 								}}
 							>
-								<Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
-									<Stack direction="row" spacing={1.25} alignItems="center" flex={1}>
+								{/* 16/11/2026: los filtros bajan de fila cuando no entran y las acciones quedan siempre a la vista
+								    (antes la fila no se partía y Exportar / Agregar quedaban cortados por la derecha). */}
+								<Stack direction="row" spacing={1.5} alignItems="flex-start" justifyContent="space-between">
+									<Stack direction="row" alignItems="center" sx={{ flex: 1, minWidth: 0, flexWrap: "wrap", gap: 1.25 }}>
 										{/* Current tab pill */}
 										<Box
 											sx={{
@@ -1632,7 +1634,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 												placeholder={`Buscar en ${currentTab?.label.toLowerCase()}…`}
 												value={searchQuery}
 												onChange={(e) => setSearchQuery(e.target.value)}
-												sx={{ minWidth: 300 }}
+												sx={{ flex: "1 1 200px", minWidth: 200, maxWidth: 360 }}
 												InputProps={{
 													startAdornment: (
 														<InputAdornment position="start">
@@ -1660,125 +1662,133 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 										    rango de fechas — el endpoint pjn-movements los soporta) */}
 										{activeTab === "movements" && scrapingSource === "pjn" && (
 											<>
-												<Tooltip title="Mostrar solo los movimientos que tienen documento">
-													<Chip
+												<Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flex: "none" }}>
+													<Tooltip title="Mostrar solo los movimientos que tienen documento">
+														<Chip
+															size="small"
+															clickable
+															icon={<DocumentText size={14} variant="Bulk" />}
+															label="Con documento"
+															onClick={() => setFilters({ ...filters, onlyWithDocuments: !filters.onlyWithDocuments })}
+															sx={{
+																fontWeight: 600,
+																letterSpacing: "-0.005em",
+																border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithDocuments ? 0.5 : isDark ? 0.22 : 0.14)}`,
+																bgcolor: filters.onlyWithDocuments ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+																color: filters.onlyWithDocuments ? BRAND_BLUE : "text.secondary",
+																"& .MuiChip-icon": { color: BRAND_BLUE },
+															}}
+														/>
+													</Tooltip>
+													<Tooltip title="Mostrar solo los movimientos que tienen notas, tareas o vencimientos vinculados">
+														<Chip
+															size="small"
+															clickable
+															icon={<Note1 size={14} variant="Bulk" />}
+															label="Con vinculados"
+															onClick={() => setFilters({ ...filters, onlyWithLinked: !filters.onlyWithLinked })}
+															sx={{
+																fontWeight: 600,
+																letterSpacing: "-0.005em",
+																border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithLinked ? 0.5 : isDark ? 0.22 : 0.14)}`,
+																bgcolor: filters.onlyWithLinked ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+																color: filters.onlyWithLinked ? BRAND_BLUE : "text.secondary",
+																"& .MuiChip-icon": { color: BRAND_BLUE },
+															}}
+														/>
+													</Tooltip>
+												</Box>
+												<Box sx={{ display: "flex", gap: 1.25, flex: "none" }}>
+													<TextField
 														size="small"
-														clickable
-														icon={<DocumentText size={14} variant="Bulk" />}
-														label="Con documento"
-														onClick={() => setFilters({ ...filters, onlyWithDocuments: !filters.onlyWithDocuments })}
-														sx={{
-															fontWeight: 600,
-															letterSpacing: "-0.005em",
-															border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithDocuments ? 0.5 : isDark ? 0.22 : 0.14)}`,
-															bgcolor: filters.onlyWithDocuments ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
-															color: filters.onlyWithDocuments ? BRAND_BLUE : "text.secondary",
-															"& .MuiChip-icon": { color: BRAND_BLUE },
-														}}
+														type="date"
+														label="Desde"
+														value={pjnDateFrom}
+														onChange={(e) => setPjnDateFrom(e.target.value)}
+														InputLabelProps={{ shrink: true }}
+														sx={{ width: 138 }}
 													/>
-												</Tooltip>
-												<Tooltip title="Mostrar solo los movimientos que tienen notas, tareas o vencimientos vinculados">
-													<Chip
+													<TextField
 														size="small"
-														clickable
-														icon={<Note1 size={14} variant="Bulk" />}
-														label="Con vinculados"
-														onClick={() => setFilters({ ...filters, onlyWithLinked: !filters.onlyWithLinked })}
-														sx={{
-															fontWeight: 600,
-															letterSpacing: "-0.005em",
-															border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithLinked ? 0.5 : isDark ? 0.22 : 0.14)}`,
-															bgcolor: filters.onlyWithLinked ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
-															color: filters.onlyWithLinked ? BRAND_BLUE : "text.secondary",
-															"& .MuiChip-icon": { color: BRAND_BLUE },
-														}}
+														type="date"
+														label="Hasta"
+														value={pjnDateTo}
+														onChange={(e) => setPjnDateTo(e.target.value)}
+														InputLabelProps={{ shrink: true }}
+														sx={{ width: 138 }}
 													/>
-												</Tooltip>
-												<TextField
-													size="small"
-													type="date"
-													label="Desde"
-													value={pjnDateFrom}
-													onChange={(e) => setPjnDateFrom(e.target.value)}
-													InputLabelProps={{ shrink: true }}
-													sx={{ width: 150 }}
-												/>
-												<TextField
-													size="small"
-													type="date"
-													label="Hasta"
-													value={pjnDateTo}
-													onChange={(e) => setPjnDateTo(e.target.value)}
-													InputLabelProps={{ shrink: true }}
-													sx={{ width: 150 }}
-												/>
+												</Box>
 											</>
 										)}
 										{/* Sincronizadas no-PJN: mismos filtros inline en la fila del buscador */}
 										{activeTab === "movements" && scrapingSource !== "pjn" && isSyncedFolder && (
 											<>
-												<Tooltip title="Mostrar solo los movimientos que tienen documento">
-													<Chip
+												<Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flex: "none" }}>
+													<Tooltip title="Mostrar solo los movimientos que tienen documento">
+														<Chip
+															size="small"
+															clickable
+															icon={<DocumentText size={14} variant="Bulk" />}
+															label={`Con documento${movementsData.totalWithLinks > 0 ? ` (${movementsData.totalWithLinks})` : ""}`}
+															onClick={() => setFilters({ ...filters, onlyWithDocuments: !filters.onlyWithDocuments })}
+															sx={{
+																fontWeight: 600,
+																letterSpacing: "-0.005em",
+																border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithDocuments ? 0.5 : isDark ? 0.22 : 0.14)}`,
+																bgcolor: filters.onlyWithDocuments ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+																color: filters.onlyWithDocuments ? BRAND_BLUE : "text.secondary",
+																"& .MuiChip-icon": { color: BRAND_BLUE },
+															}}
+														/>
+													</Tooltip>
+													<Tooltip title="Mostrar solo los movimientos que tienen notas, tareas o vencimientos vinculados">
+														<Chip
+															size="small"
+															clickable
+															icon={<Note1 size={14} variant="Bulk" />}
+															label="Con vinculados"
+															onClick={() => setFilters({ ...filters, onlyWithLinked: !filters.onlyWithLinked })}
+															sx={{
+																fontWeight: 600,
+																letterSpacing: "-0.005em",
+																border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithLinked ? 0.5 : isDark ? 0.22 : 0.14)}`,
+																bgcolor: filters.onlyWithLinked ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
+																color: filters.onlyWithLinked ? BRAND_BLUE : "text.secondary",
+																"& .MuiChip-icon": { color: BRAND_BLUE },
+															}}
+														/>
+													</Tooltip>
+												</Box>
+												<Box sx={{ display: "flex", gap: 1.25, flex: "none" }}>
+													<TextField
 														size="small"
-														clickable
-														icon={<DocumentText size={14} variant="Bulk" />}
-														label={`Con documento${movementsData.totalWithLinks > 0 ? ` (${movementsData.totalWithLinks})` : ""}`}
-														onClick={() => setFilters({ ...filters, onlyWithDocuments: !filters.onlyWithDocuments })}
-														sx={{
-															fontWeight: 600,
-															letterSpacing: "-0.005em",
-															border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithDocuments ? 0.5 : isDark ? 0.22 : 0.14)}`,
-															bgcolor: filters.onlyWithDocuments ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
-															color: filters.onlyWithDocuments ? BRAND_BLUE : "text.secondary",
-															"& .MuiChip-icon": { color: BRAND_BLUE },
-														}}
+														type="date"
+														label="Desde"
+														value={filters.startDate ? dayjs(filters.startDate).format("YYYY-MM-DD") : ""}
+														onChange={(e) =>
+															setFilters({ ...filters, startDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
+														}
+														InputLabelProps={{ shrink: true }}
+														sx={{ width: 138 }}
 													/>
-												</Tooltip>
-												<Tooltip title="Mostrar solo los movimientos que tienen notas, tareas o vencimientos vinculados">
-													<Chip
+													<TextField
 														size="small"
-														clickable
-														icon={<Note1 size={14} variant="Bulk" />}
-														label="Con vinculados"
-														onClick={() => setFilters({ ...filters, onlyWithLinked: !filters.onlyWithLinked })}
-														sx={{
-															fontWeight: 600,
-															letterSpacing: "-0.005em",
-															border: `1px solid ${alpha(BRAND_BLUE, filters.onlyWithLinked ? 0.5 : isDark ? 0.22 : 0.14)}`,
-															bgcolor: filters.onlyWithLinked ? alpha(BRAND_BLUE, isDark ? 0.22 : 0.12) : "transparent",
-															color: filters.onlyWithLinked ? BRAND_BLUE : "text.secondary",
-															"& .MuiChip-icon": { color: BRAND_BLUE },
-														}}
+														type="date"
+														label="Hasta"
+														value={filters.endDate ? dayjs(filters.endDate).format("YYYY-MM-DD") : ""}
+														onChange={(e) =>
+															setFilters({ ...filters, endDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
+														}
+														InputLabelProps={{ shrink: true }}
+														sx={{ width: 138 }}
 													/>
-												</Tooltip>
-												<TextField
-													size="small"
-													type="date"
-													label="Desde"
-													value={filters.startDate ? dayjs(filters.startDate).format("YYYY-MM-DD") : ""}
-													onChange={(e) =>
-														setFilters({ ...filters, startDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
-													}
-													InputLabelProps={{ shrink: true }}
-													sx={{ width: 150 }}
-												/>
-												<TextField
-													size="small"
-													type="date"
-													label="Hasta"
-													value={filters.endDate ? dayjs(filters.endDate).format("YYYY-MM-DD") : ""}
-													onChange={(e) =>
-														setFilters({ ...filters, endDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
-													}
-													InputLabelProps={{ shrink: true }}
-													sx={{ width: 150 }}
-												/>
+												</Box>
 											</>
 										)}
 									</Stack>
 
-									{/* Action buttons — brand */}
-									<Stack direction="row" spacing={0.75}>
+									{/* Action buttons — brand. No se achican y quedan a la altura del buscador. */}
+									<Stack direction="row" spacing={0.75} alignItems="center" sx={{ flexShrink: 0, minHeight: 37 }}>
 										<Tooltip title="Exportar">
 											<IconButton size="small" onClick={handleExport} sx={brandIconButtonSx}>
 												<ExportSquare size={16} variant="Bulk" />

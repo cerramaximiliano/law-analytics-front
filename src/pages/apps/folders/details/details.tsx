@@ -84,6 +84,9 @@ import ArchivedFolderView from "sections/apps/folders/ArchivedFolderView";
 import { trackActivity } from "utils/productAnalytics";
 import { showUnarchiveLimitSnackbar } from "utils/unarchiveLimitSnackbar";
 
+// Botón del encabezado sin texto (celular): cuadrado de 32 px con el ícono centrado.
+const MOBILE_ICON_ONLY_SX = { minWidth: 32, width: 32, px: 0, "& .MuiButton-startIcon": { m: 0 } } as const;
+
 interface StateType {
 	folder: {
 		folder: any;
@@ -1149,7 +1152,8 @@ const Details = () => {
 									gap: 1.25,
 									alignItems: "center",
 									justifyContent: { xs: "center", sm: "flex-start", md: "flex-end" },
-									flexWrap: { xs: "wrap", sm: "nowrap" },
+									// Celular (16/11/2026): una sola fila de íconos; los textos ocupaban tres renglones arriba del contenido.
+									flexWrap: "nowrap",
 									pb: { xs: 1, md: 0.75 },
 								}}
 							>
@@ -1200,7 +1204,9 @@ const Details = () => {
 											<Tooltip title="Vista compacta">
 												<Box sx={{ display: "flex", alignItems: "center", gap: 0.625 }}>
 													<TableDocument size={14} variant="Bulk" />
-													<Typography sx={{ fontSize: "0.74rem", fontWeight: 600, letterSpacing: "-0.005em" }}>Compacta</Typography>
+													{!isMobile && (
+														<Typography sx={{ fontSize: "0.74rem", fontWeight: 600, letterSpacing: "-0.005em" }}>Compacta</Typography>
+													)}
 												</Box>
 											</Tooltip>
 										</ToggleButton>
@@ -1208,7 +1214,9 @@ const Details = () => {
 											<Tooltip title="Vista detallada con mejor aprovechamiento del espacio">
 												<Box sx={{ display: "flex", alignItems: "center", gap: 0.625 }}>
 													<Category size={14} variant="Bulk" />
-													<Typography sx={{ fontSize: "0.74rem", fontWeight: 600, letterSpacing: "-0.005em" }}>Detallada</Typography>
+													{!isMobile && (
+														<Typography sx={{ fontSize: "0.74rem", fontWeight: 600, letterSpacing: "-0.005em" }}>Detallada</Typography>
+													)}
 												</Box>
 											</Tooltip>
 										</ToggleButton>
@@ -1226,9 +1234,10 @@ const Details = () => {
 											startIcon={<Star1 size={14} variant={folder.seguimiento?.activo ? "Bold" : "Linear"} />}
 											onClick={handleToggleSeguimiento}
 											data-testid="folder-detail-seguimiento"
+											aria-label={folder.seguimiento?.activo ? "Quitar de seguimiento" : "Marcar para seguimiento"}
 											sx={{
 												height: 32,
-												px: 1.25,
+												...(isMobile ? MOBILE_ICON_ONLY_SX : { px: 1.25 }),
 												flexShrink: 0,
 												whiteSpace: "nowrap",
 												textTransform: "none",
@@ -1249,7 +1258,7 @@ const Details = () => {
 												},
 											}}
 										>
-											{folder.seguimiento?.activo ? "En seguimiento" : "Seguimiento"}
+											{!isMobile && (folder.seguimiento?.activo ? "En seguimiento" : "Seguimiento")}
 										</Button>
 									</Tooltip>
 								)}
@@ -1262,10 +1271,11 @@ const Details = () => {
 											startIcon={<DocumentDownload size={14} variant="Bulk" />}
 											onClick={() => openExpedienteExport(id, folder.folderName)}
 											data-testid="folder-detail-download-expediente"
+											aria-label="Descargar el expediente completo en PDF"
 											sx={{
 												// Mismo lenguaje que el toggle Compacta/Detallada: 32 px, borde BRAND_BLUE tenue, texto 0.74rem.
 												height: 32,
-												px: 1.25,
+												...(isMobile ? MOBILE_ICON_ONLY_SX : { px: 1.25 }),
 												flexShrink: 0,
 												whiteSpace: "nowrap",
 												textTransform: "none",
@@ -1284,7 +1294,7 @@ const Details = () => {
 												},
 											}}
 										>
-											Descargar expediente
+											{!isMobile && "Descargar expediente"}
 										</Button>
 									</Tooltip>
 								)}

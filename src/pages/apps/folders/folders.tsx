@@ -84,7 +84,7 @@ import {
 	situacionOptions,
 	sinMovimientoHace,
 } from "utils/controlCarpetas";
-import { CSVLink } from "react-csv";
+import ExportFoldersDialog from "sections/apps/folders/ExportFoldersDialog";
 import { formatFolderName } from "utils/formatFolderName";
 import {
 	INVALID_FOLDER_NAME,
@@ -208,9 +208,19 @@ function ColumnasSelect({
 	);
 	const visibles = options.filter((c) => !hiddenColumns.includes(c.id)).length;
 	return (
-		<FormControl size="small" sx={{ minWidth: 150 }}>
+		<FormControl
+			size="small"
+			sx={{
+				minWidth: 150,
+				// Mismo alto, tipografía y borde que «Ordenar por» (16/11/2026): antes quedaba más alto que su vecino.
+				"& .MuiOutlinedInput-notchedOutline": { borderColor: alpha(BRAND_BLUE, 0.16), transition: "border-color 0.15s ease" },
+				"& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": { borderColor: alpha(BRAND_BLUE, 0.32) },
+				"& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: alpha(BRAND_BLUE, 0.55), borderWidth: 1 },
+			}}
+		>
 			<Select
 				id="folders-columnas"
+				style={{ maxHeight: "30.75px" }}
 				multiple
 				displayEmpty
 				value={hiddenColumns}
@@ -226,7 +236,7 @@ function ColumnasSelect({
 				}}
 				input={<OutlinedInput />}
 				renderValue={() => (
-					<Typography variant="body2">
+					<Typography variant="subtitle2">
 						Columnas: {visibles} de {options.length}
 					</Typography>
 				)}
@@ -333,6 +343,8 @@ interface ReactTableProps extends Props {
 	handleMenuClose: () => void;
 	/** If true, shows onboarding-specific UI (special empty state, muted controls) */
 	isOnboarding?: boolean;
+	/** La lista tiene carpetas pero los filtros (o la vista por responsable) no dejan ninguna: texto del estado vacío. */
+	emptyByFilters?: { title: string; description: string } | null;
 	/** If true, disables row-level navigation to folder details (desktop double-click + mobile card title click). */
 	disableRowNavigation?: boolean;
 	/** If true, disables row selection: hides the checkbox column and removes the click-to-toggle on rows/cards. */
@@ -421,6 +433,7 @@ function ReactTable({
 	handleMenuOpen,
 	handleMenuClose,
 	isOnboarding = false,
+	emptyByFilters = null,
 	folderTypeFilter = "all",
 	onFolderTypeFilterChange,
 	statusFilter = "all",
@@ -513,7 +526,7 @@ function ReactTable({
 			borderWidth: 1,
 		},
 	} as const;
-	const csvLinkRef = useRef<any>(null);
+	const [exportOpen, setExportOpen] = useState(false);
 	const g1ButtonRef = useRef<HTMLButtonElement>(null);
 	const g2StackRef = useRef<HTMLDivElement>(null);
 	// Estado de credencial SCBA/PJN del usuario (cache singleton con TTL, ver
@@ -709,55 +722,67 @@ function ReactTable({
 		}
 	}, [tableSortBy]);
 
-	const csvHeaders = [
-		{ label: "Nombre", key: "folderName" },
-		{ label: "CUIJ", key: "cuij" },
-		{ label: "Nº expediente", key: "numberJudFolder" },
-		{ label: "Materia", key: "materia" },
-		{ label: "Estado", key: "status" },
-		{ label: "Jurisdicción", key: "jurisdiccion" },
-		{ label: "Departamento / Circunscripción", key: "departamento" },
-		{ label: "Fuero", key: "folderFuero" },
-		{ label: "Radicación", key: "radicacion" },
-		{ label: "Ubicación actual", key: "ubicacion" },
-		{ label: "Situación", key: "situacion" },
-		{ label: "Seguimiento", key: "seguimiento" },
-		...(resolveResponsables ? [{ label: "Responsable", key: "responsable" }] : []),
-		{ label: "Fecha inicio", key: "initialDateFolder" },
-		{ label: "Fecha cierre", key: "finalDateFolder" },
-		{ label: "Monto", key: "amount" },
-		{ label: "Descripción", key: "description" },
-		// "Nro. Expediente"/"Año Expediente" salían de folder.expedientNumber y
-		// folder.expedientYear, que NO existen en el modelo: eran dos columnas
-		// siempre vacías, y además duplicaban a "Nº expediente" (numberJudFolder),
-		// que sí tiene dato. Mismo campo fantasma que había en la vista de
-		// verificación pendiente — 2026-08-26.
-		{ label: "Origen", key: "source" },
-	];
-
-	const csvData = useMemo(() => {
-		const sourceRows = selectedFlatRows.length > 0 ? selectedFlatRows.map((d: any) => d.original) : data;
-		return sourceRows.map((folder: Folder) => ({
-			folderName: folder.folderName || "",
-			cuij: folder.judFolder?.cuij || "",
-			numberJudFolder: folder.judFolder?.numberJudFolder || "",
-			materia: folder.materia || "",
-			status: folder.status || "",
-			jurisdiccion: folder.folderJuris?.label || "",
-			departamento: departamentoDe(folder.folderJuris?.item, folder.folderJuris?.label),
-			folderFuero: folder.folderFuero || "",
-			radicacion: [radicacionOrigen(folder), radicacionSegunda(folder)].filter(Boolean).join(" / "),
-			ubicacion: ubicacionResumen(folder),
-			situacion: (folder as any).situacion ? situacionLabel((folder as any).situacion) : "",
-			seguimiento: (folder as any).seguimiento?.activo ? "Sí" : "",
-			responsable: resolveResponsables ? resolveResponsables((folder as any).responsables) : "",
-			initialDateFolder: folder.initialDateFolder || "",
-			finalDateFolder: folder.finalDateFolder || "",
-			amount: folder.amount ?? "",
-			description: folder.description || "",
-			source: folder.source || (folder.pjn ? "PJN" : "manual"),
-		}));
-	}, [selectedFlatRows, data]);
+	// Exportar (16/11/2026): todas las filas de la lista —o las seleccionadas, si hay— con las columnas visibles. El
+	// texto de cada celda sale de acá, por id de columna; se arma recién al abrir el diálogo.
+	const exportColumns = useMemo(
+		() =>
+			exportOpen
+				? (visibleColumns as any[])
+						.filter((c) => typeof c.Header === "string" && c.Header !== "Acciones" && !["selection", "_id", "email"].includes(c.id))
+						.map((c) => ({ id: c.id as string, label: c.Header as string }))
+				: [],
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[exportOpen, visibleColumns.map((c: any) => c.id).join("|")],
+	);
+	const exportSourceRows: any[] =
+		selectedFlatRows.length > 0 ? selectedFlatRows.map((d: any) => d.original) : rows.map((r: any) => r.original);
+	const exportRows = useMemo(() => {
+		if (!exportOpen) return [];
+		const fecha = (v: any) => {
+			if (!v) return "";
+			const texto = String(v);
+			if (/^\d{2}\/\d{2}\/\d{4}/.test(texto)) return texto.slice(0, 10);
+			const d = dayjs(v);
+			return d.isValid() ? d.format("DD/MM/YYYY") : texto;
+		};
+		const valor: Record<string, (f: any) => string> = {
+			folderName: (f) => f.folderName || "",
+			"judFolder.numberJudFolder": (f) => f.judFolder?.numberJudFolder || f.judFolder?.cuij || "",
+			materia: (f) => f.materia || "",
+			orderStatus: (f) => f.orderStatus || "",
+			description: (f) => f.description || "",
+			initialDateFolder: (f) => fecha(f.initialDateFolder),
+			lastMovementDate: (f) => fecha(f.lastMovementDate),
+			finalDateFolder: (f) => fecha(f.finalDateFolder),
+			"folderJuris.label": (f) =>
+				[f.folderJuris?.label, departamentoDe(f.folderJuris?.item, f.folderJuris?.label)].filter(Boolean).join(" · "),
+			folderFuero: (f) => f.folderFuero || "",
+			"judFolder.courtNumber": (f) => [radicacionOrigen(f), radicacionSegunda(f)].filter(Boolean).join(" / "),
+			ubicacionActual: (f) => ubicacionResumen(f),
+			situacion: (f) => (f.situacion ? situacionLabel(f.situacion) : ""),
+			status: (f) => f.status || "",
+			responsables: (f) => (resolveResponsables ? resolveResponsables(f.responsables) : ""),
+			createdAt: (f) => fecha(f.createdAt),
+			updatedAt: (f) => fecha(f.updatedAt),
+		};
+		return exportSourceRows.map((f) => Object.fromEntries(exportColumns.map((c) => [c.id, String(valor[c.id]?.(f) ?? "")])));
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [exportOpen, exportColumns, exportSourceRows.length]);
+	const exportScopeLabel =
+		selectedFlatRows.length > 0
+			? `${selectedFlatRows.length === 1 ? "la carpeta seleccionada" : `las ${selectedFlatRows.length} carpetas seleccionadas`}`
+			: `${
+					rows.length === 1 ? "la carpeta de la lista" : `las ${rows.length} carpetas de la lista`
+			  } (todas las páginas, con los filtros y el orden actuales)`;
+	const exportDialog = (
+		<ExportFoldersDialog
+			open={exportOpen}
+			onClose={() => setExportOpen(false)}
+			columns={exportColumns}
+			rows={exportRows}
+			scopeLabel={exportScopeLabel}
+		/>
+	);
 
 	if (!isColumnsReady || isLoading) {
 		// Skeleton simplificado para tabla secundaria
@@ -1084,17 +1109,17 @@ function ReactTable({
 										</MenuItem>
 									)}
 
-									{/* Exportar CSV */}
+									{/* Exportar (CSV o PDF) */}
 									<MenuItem
 										onClick={() => {
 											handleMobileMenuClose();
-											csvLinkRef.current?.link?.click();
+											setExportOpen(true);
 										}}
 									>
 										<ListItemIcon>
 											<DocumentDownload variant="Bulk" size={18} />
 										</ListItemIcon>
-										<ListItemText>Exportar CSV</ListItemText>
+										<ListItemText>Exportar</ListItemText>
 									</MenuItem>
 
 									{/* Guía */}
@@ -1110,7 +1135,7 @@ function ReactTable({
 										<ListItemText>Ver Guía</ListItemText>
 									</MenuItem>
 								</Menu>
-								<CSVLink ref={csvLinkRef} data={csvData} headers={csvHeaders} filename={"causas.csv"} style={{ display: "none" }} />
+								{exportDialog}
 							</Stack>
 						</Stack>
 					) : (
@@ -1304,7 +1329,7 @@ function ReactTable({
 										disabled={data.length === 0}
 									/>
 								</Box>
-								<CSVLink ref={csvLinkRef} data={csvData} headers={csvHeaders} filename={"causas.csv"} style={{ display: "none" }} />
+								{exportDialog}
 								<Tooltip title="Más opciones">
 									<IconButton color="secondary" size="small" onClick={handleDesktopMenuOpen} aria-label="Más opciones">
 										<More variant="Bulk" size={20} />
@@ -1321,13 +1346,13 @@ function ReactTable({
 									<MenuItem
 										onClick={() => {
 											handleDesktopMenuClose();
-											csvLinkRef.current?.link?.click();
+											setExportOpen(true);
 										}}
 									>
 										<ListItemIcon>
 											<DocumentDownload variant="Bulk" size={18} />
 										</ListItemIcon>
-										<ListItemText>Exportar CSV</ListItemText>
+										<ListItemText>Exportar</ListItemText>
 									</MenuItem>
 									<MenuItem
 										onClick={() => {
@@ -2169,7 +2194,7 @@ function ReactTable({
 						}}
 					/>
 
-					{data.length === 0 ? (
+					{data.length === 0 && !emptyByFilters ? (
 						isOnboarding && handleAdd ? (
 							// Empty state especial para onboarding (solo si puede crear)
 							<Stack
@@ -2395,7 +2420,7 @@ function ReactTable({
 										textWrap: "balance",
 									}}
 								>
-									No encontramos carpetas
+									{emptyByFilters?.title ?? "No encontramos carpetas"}
 								</Typography>
 								<Typography
 									sx={{
@@ -2406,7 +2431,7 @@ function ReactTable({
 										textWrap: "pretty",
 									}}
 								>
-									Probá con otros términos de búsqueda o ajustá los filtros.
+									{emptyByFilters?.description ?? "Probá con otros términos de búsqueda o ajustá los filtros."}
 								</Typography>
 							</Stack>
 						</Stack>
@@ -2585,6 +2610,10 @@ const FoldersLayout = () => {
 	// carpetas, así que «Todas» es su lista completa y «Sin responsable» / «De…» quedarían vacías.
 	const responsableVista = seesOnlyOwn ? "todas" : responsableVistaElegida;
 	const [responsableIds, setResponsableIds] = useState<Set<string> | null>(null);
+	// Transición al cambiar de vista por responsable (16/11/2026): esqueleto hasta que el hub confirma la lista, con un
+	// mínimo breve para que el cambio se note aunque la respuesta sea inmediata. No se muestra al reasignar carpetas.
+	const [responsableLoading, setResponsableLoading] = useState(false);
+	const responsableVistaPrevia = useRef(responsableVista);
 	// Guardar los filtros en esta pestaña cada vez que cambian (ver savedFilters).
 	useEffect(() => {
 		writeListPrefs(FOLDERS_LIST_PREFS_KEY, {
@@ -2625,15 +2654,25 @@ const FoldersLayout = () => {
 	);
 	useEffect(() => {
 		const responsableParam = responsableQueryValue(responsableVista);
+		const cambioDeVista = responsableVistaPrevia.current !== responsableVista;
+		responsableVistaPrevia.current = responsableVista;
+		let cancelled = false;
+		const minimo = new Promise<void>((resolve) => setTimeout(resolve, cambioDeVista ? 300 : 0));
+		const terminar = () => minimo.then(() => !cancelled && setResponsableLoading(false));
+		if (cambioDeVista && isTeamMode) setResponsableLoading(true);
 		if (!isTeamMode || !activeTeam?._id || !responsableParam) {
 			setResponsableIds(null);
-			return;
+			terminar();
+			return () => {
+				cancelled = true;
+			};
 		}
-		let cancelled = false;
 		setResponsableIds(null);
-		fetchGroupFolderIdsByResponsable(activeTeam._id, responsableParam).then((ids) => {
-			if (!cancelled) setResponsableIds(ids ? new Set(ids) : null);
-		});
+		fetchGroupFolderIdsByResponsable(activeTeam._id, responsableParam)
+			.then((ids) => {
+				if (!cancelled) setResponsableIds(ids ? new Set(ids) : null);
+			})
+			.finally(terminar);
 		return () => {
 			cancelled = true;
 		};
@@ -2976,6 +3015,58 @@ const FoldersLayout = () => {
 		seguimientoFilter,
 		movimientosFilter,
 		periodo,
+	]);
+
+	// Hay carpetas pero los filtros no dejan ninguna: el estado vacío lo dice, en vez de «Todavía no hay carpetas creadas».
+	const emptyByFilters = useMemo(() => {
+		if (verifiedFolders.length === 0 || filteredVerifiedFolders.length > 0) return null;
+		const otrosFiltros = [
+			folderTypeFilter,
+			statusFilter,
+			parteFilter,
+			movimientosFilter,
+			jurisdiccionFilter,
+			fueroFilter,
+			departamentoFilter,
+			juzgadoFilter,
+			ubicacionFilter,
+			situacionFilter,
+			seguimientoFilter,
+		].some((v) => v !== "all");
+		if (!isTeamMode || responsableVista === "todas" || otrosFiltros) {
+			return {
+				title: "No encontramos carpetas",
+				description: "Ninguna carpeta coincide con los filtros aplicados. Ajustalos o quitalos para ver más.",
+			};
+		}
+		if (responsableVista === "mias") {
+			return { title: "No tenés carpetas a tu cargo", description: "Elegí «Todas» para ver las carpetas del equipo." };
+		}
+		if (responsableVista === "sin") {
+			return { title: "No hay carpetas sin responsable", description: "Todas las carpetas del equipo tienen a alguien a cargo." };
+		}
+		const persona = responsableDeOptions.find((o) => o.id === responsableVista)?.name;
+		return {
+			title: persona ? `${persona} no tiene carpetas a cargo` : "Esa persona no tiene carpetas a cargo",
+			description: "Elegí «Todas» para ver las carpetas del equipo.",
+		};
+	}, [
+		verifiedFolders.length,
+		filteredVerifiedFolders.length,
+		folderTypeFilter,
+		statusFilter,
+		parteFilter,
+		movimientosFilter,
+		jurisdiccionFilter,
+		fueroFilter,
+		departamentoFilter,
+		juzgadoFilter,
+		ubicacionFilter,
+		situacionFilter,
+		seguimientoFilter,
+		isTeamMode,
+		responsableVista,
+		responsableDeOptions,
 	]);
 
 	// Efecto para la carga inicial y cuando cambia el equipo activo
@@ -5312,7 +5403,8 @@ const FoldersLayout = () => {
 								handleOpenArchivedModal={handleOpenArchivedModal}
 								renderRowSubComponent={renderRowSubComponent}
 								prefsKey={FOLDERS_LIST_PREFS_KEY}
-								isLoading={isLoader}
+								isLoading={isLoader || responsableLoading}
+								emptyByFilters={emptyByFilters}
 								expandedRowId={expandedRowId}
 								navigate={navigate}
 								skeletonRowCount={filteredVerifiedFolders.length}
