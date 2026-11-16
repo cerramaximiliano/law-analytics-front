@@ -1236,7 +1236,11 @@ const Details = () => {
 								{/* Seguimiento de expediente importante (6/11/2026): cualquier jurisdicción, con o sin equipo */}
 								{id && folder && (
 									<Tooltip
-										title={folder.seguimiento?.activo ? "Quitar de seguimiento" : "Marcar como expediente importante para seguimiento"}
+										title={
+											folder.seguimiento?.activo
+												? "Expediente destacado. Clic para quitar la marca."
+												: "Destacar como expediente importante"
+										}
 									>
 										<Button
 											size="small"
@@ -1247,7 +1251,8 @@ const Details = () => {
 											aria-label={folder.seguimiento?.activo ? "Quitar de seguimiento" : "Marcar para seguimiento"}
 											sx={{
 												height: 32,
-												...(isMobile ? MOBILE_ICON_ONLY_SX : { px: 1.25 }),
+												// Solo ícono en cualquier ancho (16/11/2026): con la solapa Seguimiento ya no entran los rótulos.
+												...MOBILE_ICON_ONLY_SX,
 												flexShrink: 0,
 												whiteSpace: "nowrap",
 												textTransform: "none",
@@ -1267,9 +1272,7 @@ const Details = () => {
 													color: STALE_AMBER,
 												},
 											}}
-										>
-											{!isMobile && (folder.seguimiento?.activo ? "En seguimiento" : "Seguimiento")}
-										</Button>
+										></Button>
 									</Tooltip>
 								)}
 								{/* Descarga del expediente completo (PJN con causa verificada y válida) */}
@@ -1285,7 +1288,8 @@ const Details = () => {
 											sx={{
 												// Mismo lenguaje que el toggle Compacta/Detallada: 32 px, borde BRAND_BLUE tenue, texto 0.74rem.
 												height: 32,
-												...(isMobile ? MOBILE_ICON_ONLY_SX : { px: 1.25 }),
+												// Solo ícono en cualquier ancho (16/11/2026): con la solapa Seguimiento ya no entran los rótulos.
+												...MOBILE_ICON_ONLY_SX,
 												flexShrink: 0,
 												whiteSpace: "nowrap",
 												textTransform: "none",
@@ -1303,9 +1307,7 @@ const Details = () => {
 													color: BRAND_BLUE,
 												},
 											}}
-										>
-											{!isMobile && "Descargar expediente"}
-										</Button>
+										></Button>
 									</Tooltip>
 								)}
 							</Box>
