@@ -8,13 +8,14 @@
 
 import { useState } from "react";
 
-import { Alert, Box, Button, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { Alert, Box, Button, IconButton, Link, Stack, Tooltip, Typography } from "@mui/material";
 import { Copy, TickCircle } from "iconsax-react";
 
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
 import ChatGptLogo from "components/icons/ChatGptLogo";
 import type { McpAccess } from "hooks/useMcpAccess";
 import { MCP_ADDON_PLANS_URL } from "utils/mcpAddonState";
+import { CLAUDE_DIRECTORY_URL } from "sections/mcp/McpPublicDocs";
 
 interface Props {
 	access: McpAccess | null;
@@ -58,7 +59,8 @@ const McpConnectGuide = ({ access, loading, hidePlanNotice = false }: Props) => 
 	const anyAvailable = claude.available || chatgpt.available;
 
 	if (!anyAvailable) {
-		const message = claude.message || chatgpt.message || "La conexión con asistentes de IA no está disponible para tu cuenta por el momento.";
+		const message =
+			claude.message || chatgpt.message || "La conexión con asistentes de IA no está disponible para tu cuenta por el momento.";
 		return <Alert severity="info">{message}</Alert>;
 	}
 
@@ -88,15 +90,22 @@ const McpConnectGuide = ({ access, loading, hidePlanNotice = false }: Props) => 
 						Cómo conectar {claude.available && chatgpt.available ? "Claude.ai o ChatGPT" : claude.available ? "Claude.ai" : "ChatGPT"}
 					</Typography>
 					{!(claude.publicEnabled || chatgpt.publicEnabled) && (
-						<Typography variant="caption" sx={{ px: 0.75, py: 0.125, borderRadius: 0.75, bgcolor: "warning.lighter", color: "warning.darker" }}>
+						<Typography
+							variant="caption"
+							sx={{ px: 0.75, py: 0.125, borderRadius: 0.75, bgcolor: "warning.lighter", color: "warning.darker" }}
+						>
 							Acceso beta
 						</Typography>
 					)}
 				</Stack>
 				{claude.available && (
 					<Typography variant="body2" color="text.secondary">
-						En Claude.ai: Configuración → Conectores → <b>Agregar conector personalizado</b>, pegá esta URL y autorizá el acceso con tu
-						cuenta de Law||Analytics.
+						En Claude.ai: Law||Analytics está en el directorio de conectores. Abrí{" "}
+						<Link href={CLAUDE_DIRECTORY_URL} target="_blank" rel="noopener noreferrer">
+							la ficha de Law Analytics
+						</Link>{" "}
+						y tocá <b>Conectar</b>, o andá a Personalizar → Conectores → Descubrir y buscá «Law Analytics». Después autorizá el acceso con
+						tu cuenta de Law||Analytics. Alternativa: Agregar → conector personalizado, con la URL de abajo.
 					</Typography>
 				)}
 				{chatgpt.available && (
