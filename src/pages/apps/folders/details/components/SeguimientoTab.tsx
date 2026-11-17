@@ -415,10 +415,15 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 			const blob =
 				formato === "csv"
 					? new Blob([buildCsv(columns, rows)], { type: "text/csv;charset=utf-8" })
-					: await buildPdf(columns, rows, `${folderName || "Carpeta"} · ${rows.length} registros · ${fechaHora(hoy.toISOString(), true).fecha}`, {
-							title: "Seguimiento",
-							weights: { fecha: 1, hora: 0.6, tipo: 1.2, descripcion: 6, autor: 1.6 },
-					  });
+					: await buildPdf(
+							columns,
+							rows,
+							`${folderName || "Carpeta"} · ${rows.length} registros · ${fechaHora(hoy.toISOString(), true).fecha}`,
+							{
+								title: "Seguimiento",
+								weights: { fecha: 1, hora: 0.6, tipo: 1.2, descripcion: 6, autor: 1.6 },
+							},
+					  );
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement("a");
 			a.href = url;
