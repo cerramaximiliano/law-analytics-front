@@ -165,6 +165,11 @@ const colorDeTexto = (hex: string, isDark: boolean, fallback: string) => {
 	return (isDark && l < 0.3) || (!isDark && l > 0.75) ? fallback : hex;
 };
 const textoSobre = (hex: string) => (luminancia(hex) > 0.6 ? "#1b2533" : "#ffffff");
+// Con qué color se dibuja la categoría. Un color oscuro (el negro de «Procesal») se confunde con
+// el fondo del modo oscuro: ahí se muestra en un gris claro, así se ve el botón y se nota cuándo
+// está elegido. En modo claro, un color casi blanco conserva su relleno y solo cambia el borde.
+const colorVisible = (hex: string, isDark: boolean) => (isDark && luminancia(hex) < 0.3 ? "#dfe4ec" : hex);
+const bordeDe = (hex: string, isDark: boolean) => (!isDark && luminancia(hex) > 0.85 ? "rgba(27,37,51,0.45)" : colorVisible(hex, isDark));
 
 const aviso = (message: string, color: "success" | "error" = "error") =>
 	dispatch(openSnackbar({ open: true, message, variant: "alert", alert: { color }, close: true }));
@@ -193,7 +198,7 @@ const TipoBoton = ({
 			aria-label={tipo.nombre}
 			aria-pressed={onClick ? activo : undefined}
 			data-testid="seguimiento-tipo"
-			sx={{
+			sx={(theme) => ({
 				width: size,
 				height: size,
 				minWidth: size,
@@ -207,13 +212,19 @@ const TipoBoton = ({
 				fontFamily: "inherit",
 				p: 0,
 				cursor: onClick ? "pointer" : "default",
-				border: `1.5px solid ${tipo.color}`,
-				bgcolor: activo ? tipo.color : "transparent",
-				color: activo ? textoSobre(tipo.color) : "text.secondary",
+				border: `1.5px solid ${bordeDe(tipo.color, theme.palette.mode === "dark")}`,
+				bgcolor: activo ? colorVisible(tipo.color, theme.palette.mode === "dark") : "transparent",
+				color: activo ? textoSobre(colorVisible(tipo.color, theme.palette.mode === "dark")) : "text.primary",
 				opacity: disabled ? 0.5 : 1,
 				transition: "background-color .12s",
-				"&:hover": onClick ? { bgcolor: activo ? tipo.color : alpha(tipo.color, 0.18) } : undefined,
-			}}
+				"&:hover": onClick
+					? {
+							bgcolor: activo
+								? colorVisible(tipo.color, theme.palette.mode === "dark")
+								: alpha(bordeDe(tipo.color, theme.palette.mode === "dark"), 0.18),
+					  }
+					: undefined,
+			})}
 		>
 			{tipo.letra}
 		</Box>
@@ -505,7 +516,7 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 					px: 1.25,
 					py: 0.9,
 					borderBottom: `1px solid ${theme.palette.divider}`,
-					borderLeft: `3px solid ${tipo ? tipo.color : esAnotacion ? alpha(BRAND_BLUE, 0.5) : "transparent"}`,
+					borderLeft: `3px solid ${tipo ? colorVisible(tipo.color, isDark) : esAnotacion ? alpha(BRAND_BLUE, 0.5) : "transparent"}`,
 					bgcolor: esAnotacion ? "transparent" : alpha(theme.palette.text.primary, isDark ? 0.04 : 0.025),
 					opacity: ocupado === item.id ? 0.55 : 1,
 				}}
@@ -538,10 +549,10 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 									fontFamily: "inherit",
 									lineHeight: 1,
 									cursor: "pointer",
-									border: tipo ? `1.5px solid ${tipo.color}` : `1.5px dashed ${alpha(theme.palette.text.secondary, 0.55)}`,
-									bgcolor: tipo ? tipo.color : "transparent",
-									color: tipo ? textoSobre(tipo.color) : theme.palette.text.secondary,
-									"&:hover": { boxShadow: `0 0 0 2px ${alpha(tipo ? tipo.color : BRAND_BLUE, 0.25)}` },
+									border: tipo ? `1.5px solid ${bordeDe(tipo.color, isDark)}` : `1.5px dashed ${alpha(theme.palette.text.secondary, 0.55)}`,
+									bgcolor: tipo ? colorVisible(tipo.color, isDark) : "transparent",
+									color: tipo ? textoSobre(colorVisible(tipo.color, isDark)) : theme.palette.text.secondary,
+									"&:hover": { boxShadow: `0 0 0 2px ${alpha(tipo ? colorVisible(tipo.color, isDark) : BRAND_BLUE, 0.25)}` },
 								}}
 							>
 								{tipo ? tipo.letra : "+"}

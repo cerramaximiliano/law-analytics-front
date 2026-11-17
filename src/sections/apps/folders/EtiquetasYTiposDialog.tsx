@@ -195,7 +195,7 @@ const EtiquetasYTiposDialog = ({ open, onClose, onSaved }: Props) => {
 											size="small"
 											label="Nombre"
 											value={e.nombre}
-											disabled={soloLectura}
+											InputProps={{ readOnly: soloLectura }}
 											onChange={(ev) =>
 												setEtiquetas((d) => d.map((x, j) => (j === i ? { ...x, nombre: ev.target.value.slice(0, 40) } : x)))
 											}
@@ -249,7 +249,7 @@ const EtiquetasYTiposDialog = ({ open, onClose, onSaved }: Props) => {
 											size="small"
 											label="Letra"
 											value={t.letra}
-											disabled={soloLectura}
+											InputProps={{ readOnly: soloLectura }}
 											onChange={(ev) =>
 												setTipos((d) => d.map((x, j) => (j === i ? { ...x, letra: ev.target.value.slice(0, 2).toUpperCase() } : x)))
 											}
@@ -259,7 +259,7 @@ const EtiquetasYTiposDialog = ({ open, onClose, onSaved }: Props) => {
 											size="small"
 											label="Nombre"
 											value={t.nombre}
-											disabled={soloLectura}
+											InputProps={{ readOnly: soloLectura }}
 											onChange={(ev) => setTipos((d) => d.map((x, j) => (j === i ? { ...x, nombre: ev.target.value.slice(0, 30) } : x)))}
 											fullWidth
 										/>
