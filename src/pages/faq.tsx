@@ -230,7 +230,7 @@ const FAQS: Faq[] = [
 		category: "integraciones",
 		question: "¿Puedo conectar Law||Analytics a Claude.ai o ChatGPT?",
 		answer:
-			"Sí. Tenemos un conector MCP (Model Context Protocol) que te permite pedirle a Claude.ai o ChatGPT que busquen tus expedientes, resuman movimientos, consulten jurisprudencia y más, directamente desde cualquier chat con tu cuenta. Pedí acceso en /integraciones/conectores-ai.",
+			"Sí. Tenemos un conector MCP (Model Context Protocol) que te permite pedirle a Claude.ai o ChatGPT que busquen tus expedientes, resuman movimientos, consulten jurisprudencia y más, directamente desde cualquier chat con tu cuenta. Se activa con el add-on Conectores de IA; los pasos están en /integraciones/conectores-ai.",
 	},
 	{
 		id: "int2",
@@ -243,7 +243,7 @@ const FAQS: Faq[] = [
 		id: "int3",
 		category: "integraciones",
 		question: "¿Qué necesito para conectarlo?",
-		answer: `(1) Una cuenta activa en Law||Analytics con plan Estándar, Pro o Premium + el add-on Conectores de IA (durante la beta cerrada el acceso se habilita a mano, sin add-on). (2) Una cuenta de Claude: la disponibilidad de los conectores depende de tu plan de Claude. Después en Claude: Law||Analytics está en el directorio de conectores (Plugins → Conectores → buscá «Law Analytics» en el listado y tocá Conectar) y autorizás con tu cuenta. Alternativa: Agregar → conector personalizado con ${DEFAULT_MCP_URL}.`,
+		answer: `(1) Una cuenta activa en Law||Analytics con plan Estándar, Pro o Premium + el add-on Conectores de IA. (2) Una cuenta de Claude: la disponibilidad de los conectores depende de tu plan de Claude. Después en Claude: Law||Analytics está en el directorio de conectores (Plugins → Conectores → buscá «Law Analytics» en el listado y tocá Conectar) y autorizás con tu cuenta. Alternativa: Agregar → conector personalizado con ${DEFAULT_MCP_URL}.`,
 	},
 	{
 		id: "int4",
