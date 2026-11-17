@@ -143,12 +143,13 @@ const pad = (n: number) => String(n).padStart(2, "0");
 /** Date → valor de <input type="datetime-local"> en hora local. */
 const toLocalInput = (d: Date) =>
 	`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-// Los movimientos de los portales (y las anotaciones viejas) traen solo el día, guardado como
-// medianoche UTC: se muestra ese día, sin hora, en vez de correrlo a la tarde anterior.
-const fechaHora = (iso: string) => {
+// Los movimientos de los portales traen solo el día, guardado como medianoche UTC: se muestra
+// ese día, sin hora, en vez de correrlo a la tarde anterior. Una anotación siempre tiene hora
+// (`conHora`): la de las 21:00 cae justo en medianoche UTC y no es «solo el día».
+const fechaHora = (iso: string, conHora = false) => {
 	const d = new Date(iso);
 	if (Number.isNaN(d.getTime())) return { fecha: "—", hora: "" };
-	if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0) {
+	if (!conHora && d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0) {
 		return { fecha: `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`, hora: "" };
 	}
 	return { fecha: `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`, hora: `${pad(d.getHours())}:${pad(d.getMinutes())}` };
@@ -400,7 +401,7 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 				{ id: "autor", label: "Anotó" },
 			];
 			const rows = filas.map((i) => {
-				const fh = fechaHora(i.fecha);
+				const fh = fechaHora(i.fecha, i.fuente === "anotacion");
 				return {
 					fecha: fh.fecha,
 					hora: fh.hora,
@@ -414,7 +415,7 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 			const blob =
 				formato === "csv"
 					? new Blob([buildCsv(columns, rows)], { type: "text/csv;charset=utf-8" })
-					: await buildPdf(columns, rows, `${folderName || "Carpeta"} · ${rows.length} registros · ${fechaHora(hoy.toISOString()).fecha}`, {
+					: await buildPdf(columns, rows, `${folderName || "Carpeta"} · ${rows.length} registros · ${fechaHora(hoy.toISOString(), true).fecha}`, {
 							title: "Seguimiento",
 							weights: { fecha: 1, hora: 0.6, tipo: 1.2, descripcion: 6, autor: 1.6 },
 					  });
@@ -487,7 +488,7 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 	const total = data?.pagination.total ?? 0;
 
 	const renderItem = (item: Item) => {
-		const fh = fechaHora(item.fecha);
+		const fh = fechaHora(item.fecha, item.fuente === "anotacion");
 		const tipo = item.fuente === "anotacion" ? tipoPorId.get(item.tipoId || "") : undefined;
 		const esAnotacion = item.fuente === "anotacion";
 		const color = tipo ? colorDeTexto(tipo.color, isDark, theme.palette.text.primary) : theme.palette.text.primary;
