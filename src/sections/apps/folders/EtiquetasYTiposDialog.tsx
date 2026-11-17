@@ -10,12 +10,15 @@ import {
 	DialogTitle,
 	IconButton,
 	MenuItem,
+	Popover,
 	Skeleton,
 	Stack,
 	TextField,
 	Tooltip,
 	Typography,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { PALETA, colorVisible } from "utils/coloresSeguimiento";
 import { Add, Trash } from "iconsax-react";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
@@ -44,13 +47,16 @@ interface Config {
 }
 
 const API = import.meta.env.VITE_BASE_URL;
-const COLORES = ["#2e7d32", "#d32f2f", "#1565c0", "#ef6c00", "#6a1b9a", "#00838f", "#5d4037", "#455a64"];
+// Orden en que se sugieren los colores al agregar una etiqueta (todos de la paleta).
+const COLORES = ["#2e7d32", "#d32f2f", "#1565c0", "#ef6c00", "#6a1b9a", "#00838f", "#c2185b", "#8a94a6"];
 const TIPOS_SUGERIDOS: TipoAnotacion[] = [
 	{ nombre: "Procesal", letra: "P", color: "#1b2533" },
 	{ nombre: "Extraprocesal", letra: "E", color: "#8a94a6" },
 	{ nombre: "Pendiente", letra: "N", color: "#d32f2f" },
 ];
 
+// Selector de color: una lista cerrada de muestras en lugar de la paleta entera del navegador.
+// Un color guardado antes que no esté en la lista se sigue viendo en el botón.
 const ColorInput = ({
 	value,
 	onChange,
@@ -61,19 +67,68 @@ const ColorInput = ({
 	onChange: (v: string) => void;
 	label: string;
 	disabled?: boolean;
-}) => (
-	<Tooltip title="Color">
-		<Box
-			component="input"
-			type="color"
-			value={value}
-			disabled={disabled}
-			onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
-			aria-label={label}
-			sx={{ width: 36, height: 36, p: 0, border: "none", bgcolor: "transparent", cursor: disabled ? "default" : "pointer", flexShrink: 0 }}
-		/>
-	</Tooltip>
-);
+}) => {
+	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+	const actual = PALETA.find((c) => c.hex === String(value).toLowerCase());
+	return (
+		<>
+			<Tooltip title={disabled ? actual?.nombre || "Color" : `Color${actual ? `: ${actual.nombre}` : ""}`}>
+				<Box
+					component="button"
+					type="button"
+					disabled={disabled}
+					onClick={(e: React.MouseEvent<HTMLElement>) => setAnchor(e.currentTarget)}
+					aria-label={label}
+					data-testid="color-boton"
+					sx={(theme) => ({
+						width: 32,
+						height: 32,
+						p: 0,
+						flexShrink: 0,
+						borderRadius: 1,
+						cursor: disabled ? "default" : "pointer",
+						bgcolor: colorVisible(value, theme.palette.mode === "dark"),
+						border: `1px solid ${alpha(theme.palette.text.primary, 0.3)}`,
+					})}
+				/>
+			</Tooltip>
+			<Popover
+				open={Boolean(anchor)}
+				anchorEl={anchor}
+				onClose={() => setAnchor(null)}
+				anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+			>
+				<Box sx={{ p: 1.25, display: "grid", gridTemplateColumns: "repeat(5, 28px)", gap: 1 }}>
+					{PALETA.map((c) => (
+						<Tooltip key={c.hex} title={c.nombre}>
+							<Box
+								component="button"
+								type="button"
+								aria-label={c.nombre}
+								data-testid="color-opcion"
+								onClick={() => {
+									onChange(c.hex);
+									setAnchor(null);
+								}}
+								sx={(theme) => ({
+									width: 28,
+									height: 28,
+									p: 0,
+									borderRadius: 0.75,
+									cursor: "pointer",
+									bgcolor: colorVisible(c.hex, theme.palette.mode === "dark"),
+									border: `1px solid ${alpha(theme.palette.text.primary, 0.25)}`,
+									outline: actual?.hex === c.hex ? `2px solid ${theme.palette.primary.main}` : "none",
+									outlineOffset: 2,
+								})}
+							/>
+						</Tooltip>
+					))}
+				</Box>
+			</Popover>
+		</>
+	);
+};
 
 const Seccion = ({ titulo, ayuda, children }: { titulo: string; ayuda: string; children: React.ReactNode }) => (
 	<Box sx={{ mb: 3 }}>
@@ -282,7 +337,7 @@ const EtiquetasYTiposDialog = ({ open, onClose, onSaved }: Props) => {
 									<Button
 										size="small"
 										startIcon={<Add size={16} />}
-										onClick={() => setTipos((d) => [...d, { nombre: "", letra: "", color: "#3a7bff" }])}
+										onClick={() => setTipos((d) => [...d, { nombre: "", letra: "", color: "#1565c0" }])}
 										disabled={tipos.length >= 12}
 									>
 										Agregar categoría

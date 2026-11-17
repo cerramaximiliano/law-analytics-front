@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
+import { colorVisible, luminancia, textoSobre } from "utils/coloresSeguimiento";
 import {
 	Alert,
 	Box,
@@ -153,22 +154,12 @@ const fechaHora = (iso: string) => {
 	return { fecha: `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`, hora: `${pad(d.getHours())}:${pad(d.getMinutes())}` };
 };
 
-// Un color elegido por el estudio puede no leerse sobre el fondo del tema (negro en modo
-// oscuro, un amarillo claro en modo claro). El texto usa el color solo si contrasta.
-const luminancia = (hex: string) => {
-	const n = parseInt(hex.slice(1), 16);
-	const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => v / 255);
-	return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-};
+// Un color fuera de la paleta puede no leerse como texto sobre el fondo del tema: ahí va el color normal.
 const colorDeTexto = (hex: string, isDark: boolean, fallback: string) => {
-	const l = luminancia(hex);
-	return (isDark && l < 0.3) || (!isDark && l > 0.75) ? fallback : hex;
+	const visible = colorVisible(hex, isDark);
+	const l = luminancia(visible);
+	return (isDark && l < 0.3) || (!isDark && l > 0.75) ? fallback : visible;
 };
-const textoSobre = (hex: string) => (luminancia(hex) > 0.6 ? "#1b2533" : "#ffffff");
-// Con qué color se dibuja la categoría. Un color oscuro (el negro de «Procesal») se confunde con
-// el fondo del modo oscuro: ahí se muestra en un gris claro, así se ve el botón y se nota cuándo
-// está elegido. En modo claro, un color casi blanco conserva su relleno y solo cambia el borde.
-const colorVisible = (hex: string, isDark: boolean) => (isDark && luminancia(hex) < 0.3 ? "#dfe4ec" : hex);
 const bordeDe = (hex: string, isDark: boolean) => (!isDark && luminancia(hex) > 0.85 ? "rgba(27,37,51,0.45)" : colorVisible(hex, isDark));
 
 const aviso = (message: string, color: "success" | "error" = "error") =>

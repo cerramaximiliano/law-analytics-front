@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { colorVisible, textoSobre } from "utils/coloresSeguimiento";
 import { Box, Button, Checkbox, Chip, ListItemText, Menu, MenuItem, Stack, Typography } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { Setting2, Tag } from "iconsax-react";
@@ -14,26 +15,23 @@ import EtiquetasYTiposDialog, { TipoAnotacion } from "sections/apps/folders/Etiq
 
 const API = import.meta.env.VITE_BASE_URL;
 
-const luminancia = (hex: string) => {
-	const n = parseInt(hex.slice(1), 16);
-	const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => v / 255);
-	return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-};
-
 export const EtiquetaChip = ({ etiqueta, onDelete }: { etiqueta: Etiqueta; onDelete?: () => void }) => (
 	<Chip
 		size="small"
 		label={etiqueta.nombre}
 		onDelete={onDelete}
 		data-testid="etiqueta-chip"
-		sx={{
-			height: 22,
-			maxWidth: 220,
-			fontSize: "0.72rem",
-			fontWeight: 600,
-			bgcolor: etiqueta.color,
-			color: luminancia(etiqueta.color) > 0.6 ? "#1b2533" : "#fff",
-			"& .MuiChip-deleteIcon": { color: "inherit", opacity: 0.7, "&:hover": { color: "inherit", opacity: 1 } },
+		sx={(theme) => {
+			const fondo = colorVisible(etiqueta.color, theme.palette.mode === "dark");
+			return {
+				height: 22,
+				maxWidth: 220,
+				fontSize: "0.72rem",
+				fontWeight: 600,
+				bgcolor: fondo,
+				color: textoSobre(fondo),
+				"& .MuiChip-deleteIcon": { color: "inherit", opacity: 0.7, "&:hover": { color: "inherit", opacity: 1 } },
+			};
 		}}
 	/>
 );
@@ -135,7 +133,7 @@ export const FolderEtiquetas = ({ folderId, value, onChange, canEdit, onConfigSa
 								width: 10,
 								height: 10,
 								borderRadius: "50%",
-								bgcolor: e.color,
+								bgcolor: (t) => colorVisible(e.color, t.palette.mode === "dark"),
 								mr: 1,
 								border: (t) => `1px solid ${alpha(t.palette.text.primary, 0.2)}`,
 							}}
