@@ -34,15 +34,7 @@ import {
 import { alpha } from "@mui/material/styles";
 
 // icons
-import {
-	ArrowDown2,
-	ArrowRight2,
-	Lock1,
-	Message,
-	MessageQuestion,
-	ShieldTick,
-	TickCircle,
-} from "iconsax-react";
+import { ArrowDown2, ArrowRight2, Lock1, Message, MessageQuestion, ShieldTick, TickCircle } from "iconsax-react";
 
 // project-imports
 import ClaudeAiLogo from "components/icons/ClaudeAiLogo";
@@ -96,13 +88,15 @@ const buildSteps = (priceLabel: string | null): Step[] => [
 	{
 		num: 1,
 		title: "Activá el add-on Conectores de IA",
-		body: `Se suma a tu plan Estándar, Pro o Premium${priceLabel ? ` por ${priceLabel}` : ""}. Lo activás desde esta página, desde Planes o desde tu cuenta (Perfil → Suscripción), y lo podés quitar cuando quieras.`,
+		body: `Se suma a tu plan Estándar, Pro o Premium${
+			priceLabel ? ` por ${priceLabel}` : ""
+		}. Lo activás desde esta página, desde Planes o desde tu cuenta (Perfil → Suscripción), y lo podés quitar cuando quieras.`,
 	},
 	{
 		num: 2,
 		title: "Agregá Law Analytics en Claude",
-		body: `Law Analytics está en el directorio de conectores de Claude: abrí ${CLAUDE_DIRECTORY_URL} y tocá Conectar, o en Claude andá a Personalizar → Conectores → Descubrir → buscá "Law Analytics". Los conectores están disponibles según tu plan de Claude.`,
-		alt: `Alternativa: Personalizar → Conectores → Agregar → conector personalizado. Nombre: "Law Analytics". URL: ${MCP_CONNECTOR_URL}.`,
+		body: `Law Analytics está en el directorio de conectores de Claude: abrí ${CLAUDE_DIRECTORY_URL} y tocá Conectar, o en Claude andá a Plugins → Conectores, buscá "Law Analytics" en el listado y tocá Conectar. Los conectores están disponibles según tu plan de Claude.`,
+		alt: `Alternativa: agregalo como conector personalizado. Nombre: "Law Analytics". URL: ${MCP_CONNECTOR_URL}.`,
 	},
 	{
 		num: 3,
@@ -180,8 +174,8 @@ const ClaudeAiLandingPage = () => {
 	const heroTitle = bothAiEnabled
 		? "Conectá Claude.ai y ChatGPT a tu cuenta de Law||Analytics"
 		: claudeAiEnabled
-			? "Conectá Claude.ai a tu cuenta de Law||Analytics"
-			: "Conectá ChatGPT a tu cuenta de Law||Analytics";
+		? "Conectá Claude.ai a tu cuenta de Law||Analytics"
+		: "Conectá ChatGPT a tu cuenta de Law||Analytics";
 
 	const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -269,8 +263,7 @@ const ClaudeAiLandingPage = () => {
 							Integración no disponible
 						</Typography>
 						<Typography color="text.secondary">
-							{maintenanceMessage ||
-								"La integración con Claude.ai no está disponible en este momento. Volvé a intentar más tarde."}
+							{maintenanceMessage || "La integración con Claude.ai no está disponible en este momento. Volvé a intentar más tarde."}
 						</Typography>
 						<Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 2, width: { xs: "100%", sm: "auto" } }}>
 							{!maintenanceMessage && (
@@ -348,13 +341,7 @@ const ClaudeAiLandingPage = () => {
 						>
 							{cta.label}
 						</Button>
-						<Button
-							variant="outlined"
-							size="large"
-							component="a"
-							href="#como-funciona"
-							sx={{ minWidth: 180 }}
-						>
+						<Button variant="outlined" size="large" component="a" href="#como-funciona" sx={{ minWidth: 180 }}>
 							Cómo funciona
 						</Button>
 					</Stack>
@@ -378,53 +365,53 @@ const ClaudeAiLandingPage = () => {
 
 				{/* Steps */}
 				<FadeInWhenVisible>
-				<Box sx={{ mb: 8 }} id="como-funciona">
-					<Typography variant="h4" sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}>
-						Cómo conectarlo
-					</Typography>
-					<Typography variant="body1" color="text.secondary" sx={{ textAlign: "center", mb: 4 }}>
-						{steps.length} pasos. Demora menos de 2 minutos.
-					</Typography>
-					<Stack spacing={2}>
-						{steps.map((s) => (
-							<Card key={s.num} variant="outlined">
-								<CardContent>
-									<Stack direction="row" spacing={3} alignItems="flex-start">
-										<Box
-											sx={{
-												minWidth: 40,
-												height: 40,
-												borderRadius: "50%",
-												bgcolor: BRAND_BLUE,
-												color: "white",
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												fontWeight: 700,
-												fontSize: 18,
-											}}
-										>
-											{s.num}
-										</Box>
-										<Box sx={{ flex: 1 }}>
-											<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-												{s.title}
-											</Typography>
-											<Typography variant="body2" color="text.secondary">
-												{s.body}
-											</Typography>
-											{s.alt && (
-												<Typography variant="body2" color="text.secondary" sx={{ mt: 1, wordBreak: "break-word" }}>
-													{s.alt}
+					<Box sx={{ mb: 8 }} id="como-funciona">
+						<Typography variant="h4" sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}>
+							Cómo conectarlo
+						</Typography>
+						<Typography variant="body1" color="text.secondary" sx={{ textAlign: "center", mb: 4 }}>
+							{steps.length} pasos. Demora menos de 2 minutos.
+						</Typography>
+						<Stack spacing={2}>
+							{steps.map((s) => (
+								<Card key={s.num} variant="outlined">
+									<CardContent>
+										<Stack direction="row" spacing={3} alignItems="flex-start">
+											<Box
+												sx={{
+													minWidth: 40,
+													height: 40,
+													borderRadius: "50%",
+													bgcolor: BRAND_BLUE,
+													color: "white",
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													fontWeight: 700,
+													fontSize: 18,
+												}}
+											>
+												{s.num}
+											</Box>
+											<Box sx={{ flex: 1 }}>
+												<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
+													{s.title}
 												</Typography>
-											)}
-										</Box>
-									</Stack>
-								</CardContent>
-							</Card>
-						))}
-					</Stack>
-				</Box>
+												<Typography variant="body2" color="text.secondary">
+													{s.body}
+												</Typography>
+												{s.alt && (
+													<Typography variant="body2" color="text.secondary" sx={{ mt: 1, wordBreak: "break-word" }}>
+														{s.alt}
+													</Typography>
+												)}
+											</Box>
+										</Stack>
+									</CardContent>
+								</Card>
+							))}
+						</Stack>
+					</Box>
 				</FadeInWhenVisible>
 
 				<Divider sx={{ my: 6 }} />
@@ -438,103 +425,103 @@ const ClaudeAiLandingPage = () => {
 
 				{/* Trust / Security */}
 				<FadeInWhenVisible>
-				<Box sx={{ mb: 8 }} id="seguridad">
-					<Typography variant="h4" sx={{ fontWeight: 700, mb: 4, textAlign: "center" }}>
-						Seguridad y privacidad
-					</Typography>
-					<Grid container spacing={2}>
-						<Grid item xs={12} sm={4}>
-							<Stack spacing={1} alignItems="center" sx={{ textAlign: "center" }}>
-								<Lock1 size={32} color={BRAND_BLUE} />
-								<Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-									OAuth 2.1 estándar
-								</Typography>
-								<Typography variant="body2" color="text.secondary">
-									Mismo protocolo que usás para login con Google o GitHub.
-								</Typography>
-							</Stack>
+					<Box sx={{ mb: 8 }} id="seguridad">
+						<Typography variant="h4" sx={{ fontWeight: 700, mb: 4, textAlign: "center" }}>
+							Seguridad y privacidad
+						</Typography>
+						<Grid container spacing={2}>
+							<Grid item xs={12} sm={4}>
+								<Stack spacing={1} alignItems="center" sx={{ textAlign: "center" }}>
+									<Lock1 size={32} color={BRAND_BLUE} />
+									<Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+										OAuth 2.1 estándar
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										Mismo protocolo que usás para login con Google o GitHub.
+									</Typography>
+								</Stack>
+							</Grid>
+							<Grid item xs={12} sm={4}>
+								<Stack spacing={1} alignItems="center" sx={{ textAlign: "center" }}>
+									<ShieldTick size={32} color={BRAND_BLUE} />
+									<Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+										Sólo lectura
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										El conector no puede crear, modificar ni eliminar nada en tu cuenta.
+									</Typography>
+								</Stack>
+							</Grid>
+							<Grid item xs={12} sm={4}>
+								<Stack spacing={1} alignItems="center" sx={{ textAlign: "center" }}>
+									<TickCircle size={32} color={BRAND_BLUE} />
+									<Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+										Revocable al instante
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										Cancelás desde Claude.ai o desde tu cuenta de Law||Analytics.
+									</Typography>
+								</Stack>
+							</Grid>
 						</Grid>
-						<Grid item xs={12} sm={4}>
-							<Stack spacing={1} alignItems="center" sx={{ textAlign: "center" }}>
-								<ShieldTick size={32} color={BRAND_BLUE} />
-								<Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-									Sólo lectura
-								</Typography>
-								<Typography variant="body2" color="text.secondary">
-									El conector no puede crear, modificar ni eliminar nada en tu cuenta.
-								</Typography>
-							</Stack>
-						</Grid>
-						<Grid item xs={12} sm={4}>
-							<Stack spacing={1} alignItems="center" sx={{ textAlign: "center" }}>
-								<TickCircle size={32} color={BRAND_BLUE} />
-								<Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-									Revocable al instante
-								</Typography>
-								<Typography variant="body2" color="text.secondary">
-									Cancelás desde Claude.ai o desde tu cuenta de Law||Analytics.
-								</Typography>
-							</Stack>
-						</Grid>
-					</Grid>
-					<Typography variant="body2" color="text.secondary" sx={{ mt: 4, textAlign: "center" }}>
-						Cómo tratamos la información que consultan los asistentes de IA:{" "}
-						<Link href={PRIVACY_CONNECTORS_URL} underline="hover" sx={{ fontWeight: 500 }}>
-							Política de Privacidad — Conectores de IA
-						</Link>
-						.
-					</Typography>
-				</Box>
+						<Typography variant="body2" color="text.secondary" sx={{ mt: 4, textAlign: "center" }}>
+							Cómo tratamos la información que consultan los asistentes de IA:{" "}
+							<Link href={PRIVACY_CONNECTORS_URL} underline="hover" sx={{ fontWeight: 500 }}>
+								Política de Privacidad — Conectores de IA
+							</Link>
+							.
+						</Typography>
+					</Box>
 				</FadeInWhenVisible>
 
 				<Divider sx={{ my: 6 }} />
 
 				{/* FAQ */}
 				<FadeInWhenVisible>
-				<Box sx={{ mb: 8 }} id="faq">
-					<Typography variant="h4" sx={{ fontWeight: 700, mb: 4, textAlign: "center" }}>
-						Preguntas frecuentes
-					</Typography>
-					<Stack spacing={1}>
-						{FAQ.map((item, i) => (
-							<Accordion
-								key={i}
-								expanded={openFaq === i}
-								onChange={() => handleFaqToggle(i)}
-								disableGutters
-								elevation={0}
-								sx={{
-									border: `1px solid ${theme.palette.divider}`,
-									borderRadius: "8px !important",
-									"&:before": { display: "none" },
-									"&.Mui-expanded": { margin: 0, borderColor: BRAND_BLUE },
-								}}
-							>
-								<AccordionSummary expandIcon={<ArrowDown2 size={18} />}>
-									<Stack direction="row" spacing={1.5} alignItems="center">
-										<MessageQuestion size={20} color={BRAND_BLUE} />
-										<Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-											{item.q}
+					<Box sx={{ mb: 8 }} id="faq">
+						<Typography variant="h4" sx={{ fontWeight: 700, mb: 4, textAlign: "center" }}>
+							Preguntas frecuentes
+						</Typography>
+						<Stack spacing={1}>
+							{FAQ.map((item, i) => (
+								<Accordion
+									key={i}
+									expanded={openFaq === i}
+									onChange={() => handleFaqToggle(i)}
+									disableGutters
+									elevation={0}
+									sx={{
+										border: `1px solid ${theme.palette.divider}`,
+										borderRadius: "8px !important",
+										"&:before": { display: "none" },
+										"&.Mui-expanded": { margin: 0, borderColor: BRAND_BLUE },
+									}}
+								>
+									<AccordionSummary expandIcon={<ArrowDown2 size={18} />}>
+										<Stack direction="row" spacing={1.5} alignItems="center">
+											<MessageQuestion size={20} color={BRAND_BLUE} />
+											<Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+												{item.q}
+											</Typography>
+										</Stack>
+									</AccordionSummary>
+									<AccordionDetails>
+										<Typography variant="body2" color="text.secondary" sx={{ pl: 4.5 }}>
+											{item.a}
+											{item.link && (
+												<>
+													{" "}
+													<Link href={item.link.href} underline="hover" sx={{ fontWeight: 500 }}>
+														{item.link.label}
+													</Link>
+												</>
+											)}
 										</Typography>
-									</Stack>
-								</AccordionSummary>
-								<AccordionDetails>
-									<Typography variant="body2" color="text.secondary" sx={{ pl: 4.5 }}>
-										{item.a}
-										{item.link && (
-											<>
-												{" "}
-												<Link href={item.link.href} underline="hover" sx={{ fontWeight: 500 }}>
-													{item.link.label}
-												</Link>
-											</>
-										)}
-									</Typography>
-								</AccordionDetails>
-							</Accordion>
-						))}
-					</Stack>
-				</Box>
+									</AccordionDetails>
+								</Accordion>
+							))}
+						</Stack>
+					</Box>
 				</FadeInWhenVisible>
 
 				<Divider sx={{ my: 6 }} />
@@ -548,33 +535,33 @@ const ClaudeAiLandingPage = () => {
 
 				{/* CTA final */}
 				<FadeInWhenVisible>
-				<Box sx={{ textAlign: "center", py: 6 }}>
-					<Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>
-						{cta.kind === "connect" ? "Ya podés conectarlo" : "Listo para probarlo"}
-					</Typography>
-					<Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 540, mx: "auto" }}>
-						{cta.kind === "beta_request"
-							? "Estamos sumando de a poco a un grupo chico de estudios jurídicos. Escribinos y te activamos el acceso."
-							: "Activá el add-on y conectá tu asistente en menos de dos minutos. Podés quitarlo cuando quieras."}
-					</Typography>
-					<Stack direction={{ xs: "column", sm: "row" }} spacing={2} justifyContent="center">
-						<Button
-							variant="contained"
-							size="large"
-							onClick={() => handleCtaClick("footer")}
-							disabled={cta.disabled}
-							startIcon={cta.kind === "beta_request" ? <Message size={20} /> : undefined}
-							endIcon={cta.kind === "beta_request" ? undefined : <ArrowRight2 size={20} />}
-							sx={{ minWidth: 240 }}
-						>
-							{cta.label}
-						</Button>
-					</Stack>
-					<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 3, maxWidth: 560, mx: "auto" }}>
-						{cta.footnote} Además necesitás una cuenta de {bothAiEnabled ? "Claude o ChatGPT" : claudeAiEnabled ? "Claude" : "ChatGPT"}; la
-						disponibilidad de los conectores depende de tu plan.
-					</Typography>
-				</Box>
+					<Box sx={{ textAlign: "center", py: 6 }}>
+						<Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>
+							{cta.kind === "connect" ? "Ya podés conectarlo" : "Listo para probarlo"}
+						</Typography>
+						<Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 540, mx: "auto" }}>
+							{cta.kind === "beta_request"
+								? "Estamos sumando de a poco a un grupo chico de estudios jurídicos. Escribinos y te activamos el acceso."
+								: "Activá el add-on y conectá tu asistente en menos de dos minutos. Podés quitarlo cuando quieras."}
+						</Typography>
+						<Stack direction={{ xs: "column", sm: "row" }} spacing={2} justifyContent="center">
+							<Button
+								variant="contained"
+								size="large"
+								onClick={() => handleCtaClick("footer")}
+								disabled={cta.disabled}
+								startIcon={cta.kind === "beta_request" ? <Message size={20} /> : undefined}
+								endIcon={cta.kind === "beta_request" ? undefined : <ArrowRight2 size={20} />}
+								sx={{ minWidth: 240 }}
+							>
+								{cta.label}
+							</Button>
+						</Stack>
+						<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 3, maxWidth: 560, mx: "auto" }}>
+							{cta.footnote} Además necesitás una cuenta de {bothAiEnabled ? "Claude o ChatGPT" : claudeAiEnabled ? "Claude" : "ChatGPT"};
+							la disponibilidad de los conectores depende de tu plan.
+						</Typography>
+					</Box>
 				</FadeInWhenVisible>
 
 				<Divider sx={{ my: 6 }} />

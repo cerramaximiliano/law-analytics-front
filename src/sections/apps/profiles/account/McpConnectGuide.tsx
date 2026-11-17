@@ -104,8 +104,8 @@ const McpConnectGuide = ({ access, loading, hidePlanNotice = false }: Props) => 
 						<Link href={CLAUDE_DIRECTORY_URL} target="_blank" rel="noopener noreferrer">
 							la ficha de Law Analytics
 						</Link>{" "}
-						y tocá <b>Conectar</b>, o andá a Personalizar → Conectores → Descubrir y buscá «Law Analytics». Después autorizá el acceso con
-						tu cuenta de Law||Analytics. Alternativa: Agregar → conector personalizado, con la URL de abajo.
+						y tocá <b>Conectar</b>, o en Claude andá a Plugins → Conectores, buscá «Law Analytics» en el listado y tocá Conectar. Después
+						autorizá el acceso con tu cuenta de Law||Analytics. Alternativa: Agregar → conector personalizado, con la URL de abajo.
 					</Typography>
 				)}
 				{chatgpt.available && (
