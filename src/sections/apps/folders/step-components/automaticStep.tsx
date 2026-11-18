@@ -64,6 +64,7 @@ import pjmendozaWorkersService from "api/workersPjMendoza";
 import PjnAccountConnect, { PjnAccountConnectRef } from "./PjnAccountConnect";
 import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import { usePjnSiteStatus } from "hooks/usePjnSiteStatus";
+import { PJN_FUERO_OPCIONES, pjnFueroPorCodigo } from "utils/pjnFueros";
 import ScbaAccountConnect, { ScbaAccountConnectRef } from "./ScbaAccountConnect";
 
 const customInputStyles = {
@@ -79,126 +80,8 @@ const customInputStyles = {
 	},
 };
 
-// Lista de jurisdicciones del Poder Judicial de la Nación
-const jurisdicciones = [
-	{
-		value: "",
-		nombre: "Seleccione una jurisdicción",
-	},
-	/* {
-    value: "0",
-    nombre: "CSJ - Corte Suprema de Justicia de la Nación",
-  }, */
-	{
-		value: "1",
-		nombre: "CIV - Cámara Nacional de Apelaciones en lo Civil",
-	},
-	/*{ 
-    value: "2",
-    nombre: "CAF - Cámara Nacional de Apelaciones en lo Contencioso Administrativo Federal",
-  },
-  {
-    value: "3",
-    nombre: "CCF - Cámara Nacional de Apelaciones en lo Civil y Comercial Federal",
-  },
-  {
-    value: "4",
-    nombre: "CNE - Cámara Nacional Electoral",
-  }, */
-	{
-		value: "5",
-		nombre: "CSS - Camara Federal de la Seguridad Social",
-	},
-	/*   {
-      value: "6",
-      nombre: "CPE - Cámara Nacional de Apelaciones en lo Penal Económico",
-    }, */
-	{
-		value: "7",
-		nombre: "CNT - Cámara Nacional de Apelaciones del Trabajo",
-	},
-	/*   {
-      value: "8",
-      nombre: "CFP - Camara Criminal y Correccional Federal",
-    },
-    {
-      value: "9",
-      nombre: "CCC - Camara Nacional de Apelaciones en lo Criminal y Correccional",
-    }, */
-	{
-		value: "10",
-		nombre: "COM - Cámara Nacional de Apelaciones en lo Comercial",
-	},
-	/*
-    {
-      value: "11",
-      nombre: "CPF - Camara Federal de Casación Penal",
-    },
-    {
-      value: "12",
-      nombre: "CPN - Camara Nacional Casacion Penal",
-    },
-    {
-      value: "13",
-      nombre: "FBB - Justicia Federal de Bahia Blanca",
-    },
-    {
-      value: "14",
-      nombre: "FCR - Justicia Federal de Comodoro Rivadavia",
-    },
-    {
-      value: "15",
-      nombre: "FCB - Justicia Federal de Córdoba",
-    },
-    {
-      value: "16",
-      nombre: "FCT - Justicia Federal de Corrientes",
-    },
-    {
-      value: "17",
-      nombre: "FGR - Justicia Federal de General Roca",
-    },
-    {
-      value: "18",
-      nombre: "FLP - Justicia Federal de La Plata",
-    },
-    {
-      value: "19",
-      nombre: "FMP - Justicia Federal de Mar del Plata",
-    },
-    {
-      value: "20",
-      nombre: "FMZ - Justicia Federal de Mendoza",
-    },
-    {
-      value: "21",
-      nombre: "FPO - Justicia Federal de Posadas",
-    },
-    {
-      value: "22",
-      nombre: "FPA - Justicia Federal de Paraná",
-    },
-    {
-      value: "23",
-      nombre: "FRE - Justicia Federal de Resistencia",
-    },
-    {
-      value: "24",
-      nombre: "FSA - Justicia Federal de Salta",
-    },
-    {
-      value: "25",
-      nombre: "FRO - Justicia Federal de Rosario",
-    },
-    {
-      value: "26",
-      nombre: "FSM - Justicia Federal de San Martin",
-    },
-    {
-      value: "27",
-      nombre: "FTU - Justicia Federal de Tucuman",
-    }, */
-];
+// Lista de jurisdicciones del Poder Judicial de la Nación: los 28 fueros del portal (utils/pjnFueros).
+const jurisdicciones = [{ value: "", nombre: "Seleccione una jurisdicción" }, ...PJN_FUERO_OPCIONES];
 
 interface FormValues {
 	folderJuris?: string;
@@ -526,22 +409,12 @@ const AutomaticStep = () => {
 		return true;
 	};
 
-	// Función para determinar el fuero basado en la jurisdicción
-	const getFueroFromJurisdiction = (jurisdiccion: string | undefined): string => {
+	// Fuero de la carpeta según la jurisdicción elegida. Null cuando el código no identifica una
+	// materia (Corte Suprema y sedes federales del interior): el usuario lo completa después.
+	const getFueroFromJurisdiction = (jurisdiccion: string | undefined): string | null => {
 		if (!jurisdiccion) return "Civil"; // Valor por defecto
-
-		switch (jurisdiccion) {
-			case "1":
-				return "Civil";
-			case "5":
-				return "Seguridad Social";
-			case "7":
-				return "Laboral";
-			case "10":
-				return "Comercial";
-			default:
-				return "Civil"; // Valor por defecto para otras jurisdicciones
-		}
+		const fuero = pjnFueroPorCodigo(jurisdiccion);
+		return fuero ? fuero.folderFuero : "Civil";
 	};
 
 	// Función para establecer los valores automáticamente

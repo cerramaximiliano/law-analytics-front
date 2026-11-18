@@ -135,7 +135,7 @@ export type FolderData = {
 	/** IOL-1: la búsqueda superó el tope de resultados; pendingCausaIds es un sample de searchTotalResults. */
 	tooManyResults?: boolean;
 	searchTotalResults?: number | null;
-	pendingCausaType?: string; // Tipo de causas pendientes ('CausasEje' | 'MEV' | 'CausasPjSalta' | 'CausasPjCatamarca' | 'CausasPjMendoza')
+	pendingCausaType?: string; // Tipo de causas pendientes ('CausasEje' | 'MEV' | 'CausasPjSalta' | 'CausasPjCatamarca' | 'CausasPjMendoza' | un causaType PJN: ahí las candidatas son filas de la causa pivote y pendingCausaIds queda vacío)
 	searchTerm?: string; // Término de búsqueda original
 	eje?: boolean; // Indica si es una causa EJE (CABA)
 	scba?: boolean; // Indica si es una causa SCBA (Provincia de Buenos Aires)

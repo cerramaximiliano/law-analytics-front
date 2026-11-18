@@ -1864,7 +1864,13 @@ function ReactTable({
 									{/* Filtro por etiqueta del expediente (las define cada estudio) */}
 									{onEtiquetaFilterChange && etiquetaOptions.length > 0 && (
 										<FormControl size="small" sx={{ minWidth: 170 }}>
-											<Select id="etiqueta-filter" displayEmpty value={etiquetaFilter} onChange={onEtiquetaFilterChange} sx={filterSelectSx}>
+											<Select
+												id="etiqueta-filter"
+												displayEmpty
+												value={etiquetaFilter}
+												onChange={onEtiquetaFilterChange}
+												sx={filterSelectSx}
+											>
 												<MenuItem value="all">
 													<Typography variant="body2">Etiqueta: Todas</Typography>
 												</MenuItem>
@@ -4225,7 +4231,9 @@ const FoldersLayout = () => {
 							// La celda mostraba solo el chip: en la tabla de atención se perdía qué
 							// se había buscado y cuántos candidatos había, y había que entrar al
 							// detalle para enterarse. 2026-08-26.
-							const candidatos = Array.isArray(folder.pendingCausaIds) ? folder.pendingCausaIds.length : 0;
+							// PJN: las candidatas son filas de la causa pivote (pendingCausaIds vacío); la cantidad viene en searchTotalResults.
+							const candidatos =
+								(Array.isArray(folder.pendingCausaIds) ? folder.pendingCausaIds.length : 0) || folder.searchTotalResults || 0;
 							const buscado = folder.searchTerm || folder.judFolder?.numberJudFolder || folder.judFolder?.cuij;
 							return (
 								<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={0.5}>

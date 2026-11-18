@@ -6,6 +6,7 @@ import { useTheme } from "@mui/material/styles";
 import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
 import { getPendingCausas, selectPendingCausa, clearPendingCausas } from "store/reducers/folder";
+import { pjnFueroPorCausaType } from "utils/pjnFueros";
 import { PendingCausa } from "types/folder";
 import { BRAND_BLUE, STALE_AMBER } from "themes/dashboardTokens";
 
@@ -152,6 +153,8 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({ open, onClose, folderId, 
 		if (causaType === "CausasPjSalta") return "PJ Salta - Poder Judicial de Salta";
 		if (causaType === "CausasPjCatamarca") return "PJ Catamarca - Poder Judicial de Catamarca";
 		if (causaType === "CausasPjMendoza") return "PJ Mendoza - Poder Judicial de Mendoza";
+		const fueroPjn = pjnFueroPorCausaType(causaType);
+		if (fueroPjn) return `PJN - ${fueroPjn.corto}`;
 		return "Sistema Judicial";
 	};
 
@@ -233,8 +236,8 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({ open, onClose, folderId, 
 						{!loading && truncated && (
 							<Alert severity="warning" sx={{ mt: 1, fontSize: "0.8rem", textAlign: "left" }}>
 								La búsqueda es demasiado amplia: se muestran <strong>{causas.length}</strong> de{" "}
-								<strong>{truncated.total ?? "muchas"}</strong> coincidencias. Si tu expediente no está en la lista, cancelá y
-								volvé a vincular la carpeta con un término más preciso (número de expediente o CUIJ).
+								<strong>{truncated.total ?? "muchas"}</strong> coincidencias. Si tu expediente no está en la lista, cancelá y volvé a
+								vincular la carpeta con un término más preciso (número de expediente o CUIJ).
 							</Alert>
 						)}
 					</Stack>
