@@ -31,12 +31,14 @@ interface Props {
 	searchQuery?: string;
 	/** Columna «Vencimiento» (plazos automáticos). Oculta mientras el cómputo no esté terminado. */
 	showVencimiento?: boolean;
+	/** Cambia cuando se pide «Actualizar» desde la barra de Actividad. */
+	refreshKey?: number;
 }
 
 // Notificaciones de la bandeja del PJN de la carpeta (12/11/2026, pedido de Estudio FS Abogados):
 // las cédulas que el juzgado notificó al domicilio electrónico, juntas, arriba de las
 // notificaciones manuales. Lee GET /api/folders/:id/cedulas (solo pjn-notifications).
-const PjnCedulasSection: React.FC<Props> = ({ folderId, folderName, searchQuery = "", showVencimiento = false }) => {
+const PjnCedulasSection: React.FC<Props> = ({ folderId, folderName, searchQuery = "", showVencimiento = false, refreshKey = 0 }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const [data, setData] = useState<PjnCedulasResponse | null>(null);
@@ -60,7 +62,7 @@ const PjnCedulasSection: React.FC<Props> = ({ folderId, folderName, searchQuery 
 		return () => {
 			cancelled = true;
 		};
-	}, [folderId]);
+	}, [folderId, refreshKey]);
 
 	const q = searchQuery.trim().toLowerCase();
 	const filas = (data?.data || []).filter((c) =>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
 	Table,
 	TableBody,
@@ -57,6 +57,8 @@ interface CombinedTablePaginatedProps {
 	isLoading?: boolean;
 	stats?: any;
 	pjnAccess?: PjnAccess;
+	/** Cambia cuando se pide «Actualizar»: vuelve a pedir la página actual con el orden y los filtros vigentes. */
+	refreshKey?: number;
 }
 
 type Order = "asc" | "desc";
@@ -133,6 +135,7 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 	pagination,
 	isLoading = false,
 	stats,
+	refreshKey = 0,
 	pjnAccess,
 }) => {
 	const { id } = useParams<{ id: string }>();
@@ -194,6 +197,27 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 			return () => clearTimeout(timer);
 		}
 	}, [id, localSearchQuery, localFilters, order, orderBy, rowsPerPage, dispatch]);
+
+	// «Actualizar» de la barra de Actividad: misma página, mismo orden y mismos filtros.
+	// La tabla se vuelve a montar mientras carga: solo un cambio de refreshKey posterior al montaje dispara el pedido.
+	const lastRefreshKey = useRef(refreshKey);
+	useEffect(() => {
+		if (refreshKey === lastRefreshKey.current || !id) return;
+		lastRefreshKey.current = refreshKey;
+		dispatch(
+			getCombinedActivities(id, {
+				page: page + 1,
+				limit: rowsPerPage,
+				search: localSearchQuery,
+				sort: order === "desc" ? `-${orderBy}` : orderBy,
+				filter: {
+					types: getFilterTypes(),
+					...localFilters,
+				},
+			}),
+		);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [refreshKey]);
 
 	// Sincronizar página con paginación del servidor
 	useEffect(() => {
@@ -391,7 +415,9 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 											<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.015em" }}>
 												Sin actividades combinadas
 											</Typography>
-											<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", maxWidth: 380, textAlign: "center" }}>
+											<Typography
+												sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", maxWidth: 380, textAlign: "center" }}
+											>
 												Esta vista unifica movimientos, notificaciones y eventos del expediente. Cuando se carguen, vas a verlos acá.
 											</Typography>
 										</Stack>
@@ -693,7 +719,9 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 
 			{/* Estadísticas adicionales */}
 			{stats && (
-				<Box sx={{ p: 2, borderTop: 1, borderColor: "divider", bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.50") }}>
+				<Box
+					sx={{ p: 2, borderTop: 1, borderColor: "divider", bgcolor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.50") }}
+				>
 					<Stack direction="row" spacing={2} flexWrap="wrap">
 						<Typography variant="caption" color="textSecondary">
 							Total con documentos: <strong>{stats.totalWithLinks || 0}</strong>

@@ -404,6 +404,8 @@ interface ReactTableProps extends Props {
 	storedHiddenColumns?: string[] | null;
 	onHiddenColumnsChange?: (ids: string[]) => void;
 	handleDeleteSelected?: (selectedRows: any[]) => void;
+	/** «Actualizar» (18/11/2026): vuelve a pedir las carpetas sin salir de la pantalla; conserva orden, filtros y página. */
+	handleRefresh?: () => void;
 	/** Equipos: asignación masiva de responsables (recibe cómo limpiar la selección). */
 	handleAssignSelected?: (selectedRows: any[], clearSelection: () => void) => void;
 	/** Equipos: asistente «Repartir carpetas» (fase 3, 6/11/2026); con selección, se limita a ella. */
@@ -423,6 +425,7 @@ function ReactTable({
 	handleAssignSelected,
 	handleDistribute,
 	handleSeguimientoSelected,
+	handleRefresh,
 	isLoading,
 	handleOpenArchivedModal,
 	handleOpenGuide,
@@ -979,6 +982,22 @@ function ReactTable({
 									</Button>
 								)}
 
+								{handleRefresh && (
+									<Tooltip title="Actualizar">
+										<span>
+											<IconButton
+												color="secondary"
+												size="small"
+												onClick={handleRefresh}
+												disabled={isLoading}
+												aria-label="Actualizar"
+												data-testid="folders-actualizar"
+											>
+												<Refresh variant="Bulk" size={20} />
+											</IconButton>
+										</span>
+									</Tooltip>
+								)}
 								{/* Overflow: resto de acciones colapsadas */}
 								<Tooltip title="Más opciones">
 									<span>
@@ -1363,6 +1382,22 @@ function ReactTable({
 								</Box>
 								{exportDialog}
 								<EtiquetasYTiposDialog open={etiquetasOpen} onClose={() => setEtiquetasOpen(false)} />
+								{handleRefresh && (
+									<Tooltip title="Actualizar">
+										<span>
+											<IconButton
+												color="secondary"
+												size="small"
+												onClick={handleRefresh}
+												disabled={isLoading}
+												aria-label="Actualizar"
+												data-testid="folders-actualizar"
+											>
+												<Refresh variant="Bulk" size={20} />
+											</IconButton>
+										</span>
+									</Tooltip>
+								)}
 								<Tooltip title="Más opciones">
 									<IconButton color="secondary" size="small" onClick={handleDesktopMenuOpen} aria-label="Más opciones">
 										<More variant="Bulk" size={20} />
@@ -1864,7 +1899,13 @@ function ReactTable({
 									{/* Filtro por etiqueta del expediente (las define cada estudio) */}
 									{onEtiquetaFilterChange && etiquetaOptions.length > 0 && (
 										<FormControl size="small" sx={{ minWidth: 170 }}>
-											<Select id="etiqueta-filter" displayEmpty value={etiquetaFilter} onChange={onEtiquetaFilterChange} sx={filterSelectSx}>
+											<Select
+												id="etiqueta-filter"
+												displayEmpty
+												value={etiquetaFilter}
+												onChange={onEtiquetaFilterChange}
+												sx={filterSelectSx}
+											>
 												<MenuItem value="all">
 													<Typography variant="body2">Etiqueta: Todas</Typography>
 												</MenuItem>
@@ -3858,6 +3899,14 @@ const FoldersLayout = () => {
 		setSeguimientoFilter(event.target.value);
 	}, []);
 
+	const handleRefreshFolders = useCallback(() => {
+		if (!user?._id || loadingRef.current) return;
+		if (isTeamMode && activeTeam?._id) dispatch(getFoldersByGroupId(activeTeam._id));
+		else dispatch(getFoldersByUserId(user._id, true));
+		dispatch(fetchUserStats() as any);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [user?._id, isTeamMode, activeTeam?._id]);
+
 	const handleUnarchiveSelected = useCallback(
 		async (folderIds: string[]) => {
 			if (!user?._id || folderIds.length === 0 || loadingRef.current) return;
@@ -5502,6 +5551,7 @@ const FoldersLayout = () => {
 								handleAssignSelected={isTeamMode && canEditResponsables ? handleAssignSelected : undefined}
 								handleDistribute={isTeamMode && canEditResponsables ? handleDistribute : undefined}
 								handleSeguimientoSelected={canUpdate ? handleSeguimientoSelected : undefined}
+								handleRefresh={handleRefreshFolders}
 								handleOpenGuide={handleOpenGuide}
 								handleOpenArchivedModal={handleOpenArchivedModal}
 								renderRowSubComponent={renderRowSubComponent}

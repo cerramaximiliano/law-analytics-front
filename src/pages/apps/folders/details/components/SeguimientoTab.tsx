@@ -35,6 +35,7 @@ import {
 	More,
 	NoteText,
 	Notification,
+	Refresh2,
 	SearchNormal1,
 	Setting2,
 	TickCircle,
@@ -684,6 +685,20 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 					sx={{ flex: "1 1 200px", maxWidth: 320, "& .MuiInputBase-root": { height: 32, fontSize: "0.82rem" } }}
 				/>
 				<Stack direction="row" spacing={0.75}>
+					<Tooltip title="Actualizar">
+						<span>
+							<IconButton
+								size="small"
+								onClick={refrescar}
+								disabled={loading}
+								aria-label="Actualizar"
+								data-testid="seguimiento-actualizar"
+								sx={iconBtnSx}
+							>
+								<Refresh2 size={16} />
+							</IconButton>
+						</span>
+					</Tooltip>
 					<Tooltip
 						title={
 							order === "desc"

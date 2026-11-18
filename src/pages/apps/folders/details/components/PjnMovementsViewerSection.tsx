@@ -64,6 +64,8 @@ interface Props {
 	// movimiento resaltado, sin forzar sub-pestaña del panel. Los deep-links de
 	// email siguen highlight-only.
 	autoOpen?: boolean;
+	/** Cambia cuando se pide «Actualizar» desde la barra de Actividad: vuelve a pedir la página actual. */
+	refreshKey?: number;
 	// Búsqueda del toolbar de ActivityTables (rediseño 2026-07: un solo buscador —
 	// esta sección ya NO renderiza el suyo). Se debounce-a acá adentro.
 	searchQuery?: string;
@@ -143,6 +145,7 @@ const PjnMovementsViewerSection = ({
 	highlightMovementId,
 	quickAction,
 	autoOpen = false,
+	refreshKey = 0,
 	searchQuery = "",
 	withDocuments = false,
 	dateFrom = "",
@@ -226,7 +229,7 @@ const PjnMovementsViewerSection = ({
 		} finally {
 			setLoading(false);
 		}
-	}, [folderId, page, limit, search, withDocuments, dateFrom, dateTo, linkedOnly, highlightMovementId]);
+	}, [folderId, page, limit, search, withDocuments, dateFrom, dateTo, linkedOnly, highlightMovementId, refreshKey]);
 
 	useEffect(() => {
 		fetchData();

@@ -38,6 +38,7 @@ import {
 	DocumentText,
 	Gallery,
 	Note1,
+	Refresh2,
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useParams } from "react-router";
@@ -46,6 +47,7 @@ import { useSelector, dispatch } from "store";
 import { getMovementsByFolderId } from "store/reducers/movements";
 import { getNotificationsByFolderId } from "store/reducers/notifications";
 import { getEventsById } from "store/reducers/events";
+import { getNotesByFolderId } from "store/reducers/notes";
 import { getCombinedActivities } from "store/reducers/activities";
 import MovementsTable from "./tables/MovementsTable";
 import PjnMovementsViewerSection from "./PjnMovementsViewerSection";
@@ -531,6 +533,25 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 		}
 	};
 
+	// «Actualizar» (18/11/2026, pedido de Estudio FS Abogados): trae lo nuevo de la sub-pestaña abierta sin salir
+	// de la carpeta. Las secciones que cargan por su cuenta (visor PJN, cédulas, tabla combinada) escuchan refreshKey.
+	const [refreshKey, setRefreshKey] = useState(0);
+	const [refreshing, setRefreshing] = useState(false);
+	const handleRefreshActive = () => {
+		if (!id || refreshing) return;
+		setRefreshKey((n) => n + 1);
+		if (activeTab === "movements") {
+			handleRefreshMovements();
+		} else if (activeTab === "notes") {
+			dispatch(getNotesByFolderId(id, true));
+		} else if (activeTab !== "combined") {
+			dispatch(getNotificationsByFolderId(id));
+			dispatch(getEventsById(id));
+		}
+		// El botón gira un momento: varias de estas cargas no dejan otra señal a la vista.
+		setRefreshing(true);
+		setTimeout(() => setRefreshing(false), 900);
+	};
 	const handleCloseBanner = () => {
 		setScrapingBannerClosed(true);
 	};
@@ -1139,6 +1160,27 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 		},
 	};
 
+	const refreshButton = (
+		<Tooltip title="Actualizar">
+			<span>
+				<IconButton
+					size="small"
+					onClick={handleRefreshActive}
+					disabled={refreshing}
+					aria-label="Actualizar"
+					data-testid="actividad-actualizar"
+					sx={{
+						...brandIconButtonSx,
+						"& svg": refreshing ? { animation: "actividadGiro 0.9s linear" } : undefined,
+						"@keyframes actividadGiro": { from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } },
+					}}
+				>
+					<Refresh2 size={16} variant="Bulk" />
+				</IconButton>
+			</span>
+		</Tooltip>
+	);
+
 	return (
 		<MainCard
 			content={false}
@@ -1196,6 +1238,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 
 									{/* Action buttons */}
 									<Stack direction="row" spacing={0.75}>
+										{refreshButton}
 										{activeTab !== "combined" && activeTab !== "notes" && canCreate && (
 											<Tooltip title={`Agregar ${currentTab?.label.toLowerCase().slice(0, -1)}`}>
 												<IconButton
@@ -1492,6 +1535,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 														dateTo={pjnDateTo}
 														causaLastSyncDate={movementsData.causaLastSyncDate}
 														accessCutoffAt={accessCutoffAt}
+														refreshKey={refreshKey}
 													/>
 												) : (
 													<MovementsTable
@@ -1526,6 +1570,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 													folderName={folderName}
 													searchQuery={searchQuery}
 													showVencimiento={isPlatformAdmin}
+													refreshKey={refreshKey}
 												/>
 											)}
 											{activeTab === "notifications" && (
@@ -1558,6 +1603,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 													pagination={activitiesData.pagination}
 													isLoading={activitiesData.isLoading}
 													stats={activitiesData.stats}
+													refreshKey={refreshKey}
 													pjnAccess={
 														activitiesData.pjnAccess ?? activitiesData.mevAccess ?? activitiesData.scbaAccess ?? activitiesData.ejeAccess
 													}
@@ -1789,6 +1835,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 
 									{/* Action buttons — brand. No se achican y quedan a la altura del buscador. */}
 									<Stack direction="row" spacing={0.75} alignItems="center" sx={{ flexShrink: 0, minHeight: 37 }}>
+										{refreshButton}
 										<Tooltip title="Exportar">
 											<IconButton size="small" onClick={handleExport} sx={brandIconButtonSx}>
 												<ExportSquare size={16} variant="Bulk" />
@@ -2079,6 +2126,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 														dateTo={pjnDateTo}
 														causaLastSyncDate={movementsData.causaLastSyncDate}
 														accessCutoffAt={accessCutoffAt}
+														refreshKey={refreshKey}
 													/>
 												) : (
 													<MovementsTable
@@ -2114,6 +2162,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 													folderName={folderName}
 													searchQuery={searchQuery}
 													showVencimiento={isPlatformAdmin}
+													refreshKey={refreshKey}
 												/>
 											)}
 											{activeTab === "notifications" && (
@@ -2146,6 +2195,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 													pagination={activitiesData.pagination}
 													isLoading={activitiesData.isLoading}
 													stats={activitiesData.stats}
+													refreshKey={refreshKey}
 													pjnAccess={
 														activitiesData.pjnAccess ?? activitiesData.mevAccess ?? activitiesData.scbaAccess ?? activitiesData.ejeAccess
 													}
