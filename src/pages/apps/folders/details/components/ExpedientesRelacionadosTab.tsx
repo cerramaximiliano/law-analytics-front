@@ -12,6 +12,7 @@ import dayjs from "utils/dayjs-config";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import { getRelacionesByFolder, type RelacionesData, type CarpetaRef } from "services/pjnRelacionesService";
 import PjnVinculadosSection from "./PjnVinculadosSection";
+import TabEmptyState from "./TabEmptyState";
 import type { FolderData } from "types/folder";
 import { dispatch } from "store";
 import { addFolder } from "store/reducers/folder";
@@ -32,6 +33,7 @@ export default function ExpedientesRelacionadosTab({ folder }: Props) {
 	const folderId = folder?._id;
 	const [data, setData] = useState<RelacionesData | null>(null);
 	const [loading, setLoading] = useState(false);
+	const [vinculadosVisible, setVinculadosVisible] = useState(true);
 
 	useEffect(() => {
 		if (!folderId || !folder?.pjn) return;
@@ -177,12 +179,16 @@ export default function ExpedientesRelacionadosTab({ folder }: Props) {
 				</Box>
 			)}
 
-			<PjnVinculadosSection folder={folder} />
+			<PjnVinculadosSection folder={folder} onVisibleChange={setVinculadosVisible} />
 
-			{!loading && data && !ac && acumuladas.length === 0 && !folder?.causaId && (
-				<Typography variant="body2" color="text.secondary">
-					Esta carpeta no tiene expedientes relacionados.
-				</Typography>
+			{/* Sin acumulación y sin sección de vinculados la pestaña quedaba en blanco (18/11/2026). */}
+			{!loading && !ac && acumuladas.length === 0 && !vinculadosVisible && (
+				<TabEmptyState
+					testId="relacionados-vacio"
+					icon={<Link21 size={28} variant="Bulk" />}
+					title="Sin expedientes relacionados"
+					subtitle="Esta carpeta no tiene acumulaciones ni expedientes vinculados registrados."
+				/>
 			)}
 		</Box>
 	);

@@ -42,6 +42,8 @@ import type { FolderData } from "types/folder";
 
 interface Props {
 	folder: Pick<FolderData, "_id" | "pjn" | "causaId"> | null | undefined;
+	/** Avisa si la sección muestra algo; la pestaña usa esto para no quedar en blanco. */
+	onVisibleChange?: (visible: boolean) => void;
 }
 
 const STATE_META: Record<PjnVinculadoState, { label: string; color: string; tooltip: string }> = {
@@ -61,7 +63,7 @@ const STATE_META: Record<PjnVinculadoState, { label: string; color: string; tool
 
 const fecha = (iso: string | null) => (iso ? dayjs(iso).format("DD/MM/YYYY") : "—");
 
-export default function PjnVinculadosSection({ folder }: Props) {
+export default function PjnVinculadosSection({ folder, onVisibleChange }: Props) {
 	const theme = useTheme();
 	const navigate = useNavigate();
 	const folderId = folder?._id;
@@ -147,6 +149,15 @@ export default function PjnVinculadosSection({ folder }: Props) {
 			);
 		}
 	};
+
+	// Carpetas sin causa PJN o de fueros sin pestaña Vinculados: la sección no se muestra.
+	const oculta =
+		!aplica ||
+		(!!data && (data.reason === "sin_causa_pjn" || data.reason === "fuero_sin_vinculados" || data.reason === "causa_no_encontrada"));
+	useEffect(() => {
+		onVisibleChange?.(!oculta);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [oculta]);
 
 	if (!aplica) return null;
 	// Carpeta de un incidente: breadcrumb hacia el principal.

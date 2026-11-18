@@ -41,6 +41,7 @@ import {
 	TickCircle,
 	Trash,
 } from "iconsax-react";
+import TabEmptyState from "./TabEmptyState";
 import { dispatch } from "store";
 import { addNote, deleteNote, updateNote } from "store/reducers/notes";
 import { openSnackbar } from "store/reducers/snackbar";
@@ -882,14 +883,16 @@ const SeguimientoTab: React.FC<SeguimientoTabProps> = ({ folderId, folderName })
 					))}
 				</Box>
 			) : total === 0 && !loading ? (
-				<Box sx={{ py: 5, textAlign: "center", border: `1px dashed ${theme.palette.divider}`, borderRadius: 1.5 }}>
-					<Typography sx={{ fontSize: "1rem", fontWeight: 600 }}>{hayFiltros ? "Sin resultados" : "Todavía no hay movimientos"}</Typography>
-					<Typography sx={{ fontSize: "0.82rem", color: "text.secondary", mt: 0.5 }}>
-						{hayFiltros
+				<TabEmptyState
+					testId="seguimiento-vacio"
+					icon={hayFiltros ? <SearchNormal1 size={28} variant="Bulk" /> : <NoteText size={28} variant="Bulk" />}
+					title={hayFiltros ? "Sin resultados" : "Todavía no hay movimientos"}
+					subtitle={
+						hayFiltros
 							? "Ningún registro coincide con la búsqueda o los filtros."
-							: "Acá vas a ver juntos lo que anote el estudio, los movimientos del expediente y las cédulas."}
-					</Typography>
-				</Box>
+							: "Acá vas a ver juntos lo que anote el estudio, los movimientos del expediente y las cédulas."
+					}
+				/>
 			) : (
 				<Box sx={{ border: `1px solid ${theme.palette.divider}`, borderBottom: "none", borderRadius: 1, overflow: "hidden" }}>
 					{(data?.items || []).map(renderItem)}
