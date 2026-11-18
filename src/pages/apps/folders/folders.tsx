@@ -654,6 +654,7 @@ function ReactTable({
 		return disableRowSelection ? [...base, "selection"] : base;
 	}, [matchDownSM, disableRowSelection, emptyColumns]);
 
+	const keepPageRef = useRef(false);
 	const {
 		getTableProps,
 		getTableBodyProps,
@@ -674,6 +675,7 @@ function ReactTable({
 		toggleAllRowsSelected,
 	} = useTable<Folder>(
 		{
+			autoResetPage: !keepPageRef.current,
 			columns: columns as any,
 			data,
 			filterTypes,
@@ -695,6 +697,25 @@ function ReactTable({
 		usePagination,
 		useRowSelect,
 	);
+
+	// «Actualizar» conserva la página: mientras dura la recarga (y un instante después, porque `data` se
+	// recalcula más de una vez) se apaga autoResetPage. Si quedaron menos páginas, se va a la última.
+	const onRefreshClick = () => {
+		keepPageRef.current = true;
+		handleRefresh?.();
+	};
+	useEffect(() => {
+		if (isLoading || !keepPageRef.current) return;
+		const t = setTimeout(() => {
+			keepPageRef.current = false;
+		}, 2000);
+		return () => clearTimeout(t);
+	}, [isLoading]);
+	useEffect(() => {
+		const last = Math.max(0, Math.ceil(rows.length / pageSize) - 1);
+		if (keepPageRef.current && !isLoading && pageIndex > last) gotoPage(last);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [rows.length, pageSize, isLoading]);
 
 	useEffect(() => {
 		if (prefsKey) writeListPrefs(prefsKey, { pageSize, sortBy: tableSortBy });
@@ -988,7 +1009,7 @@ function ReactTable({
 											<IconButton
 												color="secondary"
 												size="small"
-												onClick={handleRefresh}
+												onClick={onRefreshClick}
 												disabled={isLoading}
 												aria-label="Actualizar"
 												data-testid="folders-actualizar"
@@ -1388,7 +1409,7 @@ function ReactTable({
 											<IconButton
 												color="secondary"
 												size="small"
-												onClick={handleRefresh}
+												onClick={onRefreshClick}
 												disabled={isLoading}
 												aria-label="Actualizar"
 												data-testid="folders-actualizar"
