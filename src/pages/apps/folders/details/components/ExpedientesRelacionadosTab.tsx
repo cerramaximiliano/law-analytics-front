@@ -18,13 +18,14 @@ import { dispatch } from "store";
 import { addFolder } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
 import { useTeam } from "contexts/TeamContext";
+import { PJN_CODIGO_POR_CAUSA_TYPE } from "utils/pjnFueros";
 
 interface Props {
 	folder: Pick<FolderData, "_id" | "pjn" | "causaId" | "causaType" | "folderFuero"> | null | undefined;
 }
 
-// Inverso de causaService.getCausaTypeByPjnCode (hub) para los fueros con acumulación registrada.
-const PJN_CODE: Record<string, string> = { CausasCivil: "1", CausasSegSocial: "5", CausasTrabajo: "7", CausasComercial: "10" };
+// Inverso de causaService.getCausaTypeByPjnCode (hub), los 28 fueros.
+const PJN_CODE = PJN_CODIGO_POR_CAUSA_TYPE;
 
 const fecha = (iso: string | null) => (iso ? dayjs.utc(iso).format("DD/MM/YYYY") : null);
 

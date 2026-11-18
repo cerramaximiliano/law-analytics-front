@@ -33,6 +33,7 @@ import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import PjnGuardedButton from "components/PjnGuardedButton";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import { trackActivity } from "utils/productAnalytics";
+import { PJN_FUERO_OPCIONES } from "utils/pjnFueros";
 import ExpedienteSplitSuggestions from "components/UI/ExpedienteSplitSuggestions";
 import {
 	OTHER_NUMBER_MAX_DIGITS,
@@ -78,13 +79,7 @@ const LOGO_EJE = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/
 const LOGO_PJN = "https://res.cloudinary.com/dqyoeolib/image/upload/v1746884259/xndhymcmzv3kk0f62v0y.png";
 
 // Lista de jurisdicciones del Poder Judicial de la Nación
-const jurisdicciones = [
-	{ value: "", nombre: "Seleccione una jurisdicción" },
-	{ value: "1", nombre: "CIV - Cámara Nacional de Apelaciones en lo Civil" },
-	{ value: "5", nombre: "CSS - Camara Federal de la Seguridad Social" },
-	{ value: "7", nombre: "CNT - Cámara Nacional de Apelaciones del Trabajo" },
-	{ value: "10", nombre: "COM - Cámara Nacional de Apelaciones en lo Comercial" },
-];
+const jurisdicciones = [{ value: "", nombre: "Seleccione una jurisdicción" }, ...PJN_FUERO_OPCIONES];
 
 const LinkToJudicialPower = ({
 	openLink,

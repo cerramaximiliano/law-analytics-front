@@ -47,6 +47,7 @@ import type { PjnMovementPdfStatus, PjnMovementsListResponse } from "types/pjnMo
 import type { Note } from "types/note";
 import type { TaskType } from "types/task";
 import type { Event as CalendarEvent } from "types/events";
+import { PJN_FUERO_ETIQUETAS } from "utils/pjnFueros";
 
 interface Props {
 	folderId: string;
@@ -94,12 +95,7 @@ const QUICK_ACTION_TO_PANEL_TAB = {
 } as const;
 
 // CausasX → label humano para la línea de info densa.
-const CAUSA_TYPE_LABELS: Record<string, string> = {
-	CausasCivil: "Civil",
-	CausasTrabajo: "Trabajo",
-	CausasSegSocial: "Seguridad Social",
-	CausasComercial: "Comercial",
-};
+const CAUSA_TYPE_LABELS: Record<string, string> = PJN_FUERO_ETIQUETAS;
 
 function formatDate(iso: string | null): string {
 	if (!iso) return "—";
