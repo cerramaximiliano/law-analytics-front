@@ -610,10 +610,12 @@ function ReactTable({
 		if (etiquetaFilter !== "all") count++;
 		if (situacionFilter !== "all") count++;
 		if (seguimientoFilter !== "all") count++;
-		if (actividadPropiaFilter !== "all") count++;
+		// Sin escritos PJN encendidos el filtro no se muestra ni filtra: tampoco cuenta.
+		if (onActividadPropiaFilterChange && actividadPropiaFilter !== "all") count++;
 		return count;
 	}, [
 		actividadPropiaFilter,
+		onActividadPropiaFilterChange,
 		folderTypeFilter,
 		statusFilter,
 		parteFilter,
@@ -702,6 +704,9 @@ function ReactTable({
 			// Silvia): react-table lo reiniciaba al inicial con cada array nuevo de `data`. La página
 			// sí vuelve a la 1 al filtrar (autoResetPage queda por defecto).
 			autoResetSortBy: false,
+			// Las columnas ocultas las maneja el efecto de preferencias: sin esto, cualquier cambio del array de
+			// columnas (deps del useMemo, estado de escritos PJN) las volvía a las de fábrica (19/11/2026).
+			autoResetHiddenColumns: false,
 			initialState: {
 				pageIndex: 0,
 				pageSize: typeof savedPrefs.pageSize === "number" && savedPrefs.pageSize > 0 ? savedPrefs.pageSize : initialPageSize,
@@ -5435,6 +5440,12 @@ const FoldersLayout = () => {
 			avisoEscritos,
 		],
 	);
+	// Memorizada: react-table reinicia las columnas ocultas cada vez que cambia el array de columnas,
+	// y un .filter() en el render borraba las que eligió el usuario (19/11/2026).
+	const columnasTabla = useMemo(
+		() => (hayActosPjn ? columns : columns.filter((c: any) => c.id !== "actividadPropia")),
+		[hayActosPjn, columns],
+	);
 
 	// Row sub component memoizado
 	const renderRowSubComponent = useCallback(
@@ -5750,7 +5761,7 @@ const FoldersLayout = () => {
 					<Box>
 						<ScrollX>
 							<ReactTable
-								columns={(hayActosPjn ? columns : columns.filter((c: any) => c.id !== "actividadPropia")) as any}
+								columns={columnasTabla as any}
 								data={filteredVerifiedFolders}
 								handleAdd={canCreate ? handleAddFolder : undefined}
 								handleArchiveSelected={canUpdate ? handleArchiveSelected : undefined}
