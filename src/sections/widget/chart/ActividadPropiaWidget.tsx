@@ -38,7 +38,7 @@ const ActividadPropiaWidget = ({ onVisible }: { onVisible?: (visible: boolean) =
 	}, []);
 
 	const conActos = data ? data.total - data.tramos.sinActos : 0;
-	const visible = !!data && data.habilitado && data.activo !== false && (conActos > 0 || data.pendientes > 0);
+	const visible = !!data && data.habilitado && data.activo === true && (conActos > 0 || data.pendientes > 0);
 	useEffect(() => {
 		onVisible?.(visible);
 	}, [visible, onVisible]);

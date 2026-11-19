@@ -225,7 +225,7 @@ const TabPjnIntegration = () => {
 	};
 
 	const handleToggleEscritos = async () => {
-		const newValue = !(escritos?.activo ?? true);
+		const newValue = !(escritos?.activo ?? false);
 		setEscritosLoading(true);
 		try {
 			const response = await pjnCredentialsService.toggleEscritos(newValue);
@@ -428,8 +428,8 @@ const TabPjnIntegration = () => {
 								<PreferenceRow
 									title="Escritos presentados"
 									badge={<Chip size="small" label="Beta" color="primary" variant="outlined" />}
-									description="Leemos de tu bandeja del PJN los escritos, cédulas y DEOX que presentaste y mostramos en cada carpeta los días desde la última presentación. Desactivado, no los leemos ni aparecen en el listado, el panel ni las carpetas."
-									checked={escritos?.activo ?? true}
+									description="Leemos de tu bandeja del PJN los escritos, cédulas y DEOX que presentaste y mostramos en cada carpeta los días desde la última presentación. Desactivado, no aparecen en el listado, el panel ni las carpetas."
+									checked={escritos?.activo === true}
 									onChange={handleToggleEscritos}
 									// Sin bandeja de escritos no hay nada que leer: el interruptor no tendría efecto.
 									disabled={!canManageCredentials || escritos?.habilitado === false}
@@ -439,7 +439,7 @@ const TabPjnIntegration = () => {
 										<Typography sx={{ fontSize: "0.74rem", color: "text.secondary" }}>
 											Tu cuenta del PJN no tiene bandeja de escritos: el portal no nos da tus presentaciones.
 										</Typography>
-									) : escritos?.activo !== false ? (
+									) : escritos?.activo === true ? (
 										<Stack spacing={0.75}>
 											<Typography sx={{ fontSize: "0.74rem", color: "text.secondary" }}>
 												Última sincronización:{" "}

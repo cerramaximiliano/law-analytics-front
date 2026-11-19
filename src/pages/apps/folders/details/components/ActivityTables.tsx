@@ -190,12 +190,14 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 	const [mobileOpen, setMobileOpen] = useState(false);
 
 	// Última presentación del letrado: línea bajo la cabecera del expediente PJN.
-	// Apagados en Integraciones → PJN: ni la línea ni la sub-solapa.
-	const escritosActivos = actosPropios.data?.activo !== false;
+	// Opt-in desde Integraciones → PJN: sin encenderlos, ni la línea ni la sub-solapa.
+	const escritosActivos = actosPropios.data?.activo === true;
+	const escritosApagados = !!actosPropios.data && actosPropios.data.activo !== true;
 	useEffect(() => {
-		// También en carpetas que no son PJN: un ?sub=actos no abre el panel vacío.
-		if ((!pjn || !escritosActivos) && activeTab === "actos") setActiveTab("movements");
-	}, [pjn, escritosActivos, activeTab]);
+		// También en carpetas que no son PJN: un ?sub=actos no abre el panel vacío. Se espera la respuesta
+		// para no cerrar la sub-solapa de un enlace mientras carga.
+		if ((!pjn || escritosApagados) && activeTab === "actos") setActiveTab("movements");
+	}, [pjn, escritosApagados, activeTab]);
 	const lineaPresentaciones = pjn ? (
 		<ActividadPropiaLinea
 			resumen={actosPropios.data ? actosPropios.data.resumen : actividadPropia}

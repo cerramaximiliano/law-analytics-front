@@ -2990,7 +2990,7 @@ const FoldersLayout = () => {
 		};
 	}, []);
 	const hayActosPjn = useMemo(
-		() => estadoEscritos?.activo !== false && verifiedFolders.some((f: any) => f.pjn && f.ultimaActividadLetrado?.fecha),
+		() => estadoEscritos?.activo === true && verifiedFolders.some((f: any) => f.pjn && f.ultimaActividadLetrado?.fecha),
 		[verifiedFolders, estadoEscritos],
 	);
 	const avisoEscritos = avisoEscritosDetenidos(estadoEscritos?.sincronizacion);

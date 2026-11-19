@@ -46,7 +46,7 @@ const ActividadPropiaLinea = ({ resumen, habilitado, activo, sincronizacion, loa
 	const theme = useTheme();
 	const ambar = theme.palette.mode === "dark" ? AMBAR_TEXTO.dark : AMBAR_TEXTO.light;
 
-	if (activo === false || (loading && !resumen)) return null;
+	if (activo !== true || (loading && !resumen)) return null;
 
 	const tipoLabel = (t?: string | null) => (t ? TIPO_ACTO_LABEL[t as keyof typeof TIPO_ACTO_LABEL] ?? t : "Escrito");
 
