@@ -169,6 +169,7 @@ const PjnMovementsViewerSection = ({
 	const [pendingNavOnLoad, setPendingNavOnLoad] = useState<"first" | "last" | null>(null);
 	// Fila resaltada por deep-link: ref para hacer scrollIntoView una vez cargada.
 	const highlightRowRef = useRef<HTMLTableRowElement | null>(null);
+	const tablaContainerRef = useRef<HTMLDivElement | null>(null);
 	const hasScrolledToHighlight = useRef(false);
 
 	// Deep-link ?locate=: se manda UNA vez (primer fetch con highlight); el server
@@ -348,13 +349,26 @@ const PjnMovementsViewerSection = ({
 	// Deep-link: una vez cargada la página que contiene el movimiento resaltado,
 	// hacer scroll hacia su fila (una sola vez por id). Si no está en la página
 	// cargada no hace nada — el usuario igual aterriza en el expediente correcto.
+	// Depende también de `loading`: las filas (y la ref) se pintan recién cuando termina la carga, y si los
+	// movimientos llegaban antes el scroll no se reintentaba (19/11/2026). La tabla scrollea adentro en desktop:
+	// primero se centra la fila en su contenedor y después se acerca el contenedor a la vista de la página.
 	useEffect(() => {
-		if (!highlightMovementId || hasScrolledToHighlight.current) return;
-		if (movements.some((m) => m._id === highlightMovementId) && highlightRowRef.current) {
-			highlightRowRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+		if (!highlightMovementId || hasScrolledToHighlight.current || loading) return;
+		if (!movements.some((m) => m._id === highlightMovementId) || !highlightRowRef.current) return;
+		const t = setTimeout(() => {
+			const fila = highlightRowRef.current;
+			if (!fila) return;
 			hasScrolledToHighlight.current = true;
-		}
-	}, [highlightMovementId, movements]);
+			const contenedor = tablaContainerRef.current;
+			if (contenedor && contenedor.scrollHeight > contenedor.clientHeight) {
+				const rc = contenedor.getBoundingClientRect();
+				const rf = fila.getBoundingClientRect();
+				contenedor.scrollTop += rf.top - rc.top - (rc.height - rf.height) / 2;
+			}
+			fila.scrollIntoView({ behavior: "smooth", block: "nearest" });
+		}, 150);
+		return () => clearTimeout(t);
+	}, [highlightMovementId, movements, loading]);
 
 	// Si cambia el movimiento objetivo (ej. el usuario clickea otro chip de
 	// vínculo sin desmontar la sección), reabrir el scroll para el nuevo id.
@@ -640,7 +654,7 @@ const PjnMovementsViewerSection = ({
 						{/* maxHeight en desktop: la tabla scrollea adentro con el header sticky
 						    (1.100+ movimientos sin perder las columnas de vista). En mobile
 						    fluye con la página (scroll anidado en touch es incómodo). */}
-						<TableContainer sx={{ maxHeight: { md: "calc(100vh - 340px)" } }}>
+						<TableContainer ref={tablaContainerRef} sx={{ maxHeight: { md: "calc(100vh - 340px)" } }}>
 							<Table size="small" stickyHeader>
 								<TableHead>
 									<TableRow>
