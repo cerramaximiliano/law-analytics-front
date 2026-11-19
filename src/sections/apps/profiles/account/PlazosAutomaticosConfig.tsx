@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Button, Chip, FormControlLabel, Skeleton, Stack, Switch, TextField, Typography } from "@mui/material";
+import { Box, Button, Chip, Skeleton, Stack, TextField, Typography } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import {
 	cuitValido,
@@ -7,6 +7,7 @@ import {
 	savePlazosAutomaticosConfig,
 	PlazosAutomaticosConfig as Config,
 } from "api/plazosAutomaticos";
+import PreferenceRow from "sections/apps/profiles/account/PreferenceRow";
 
 // Activación y CUIT para las sugerencias automáticas de vencimiento (beta). El CUIT sirve para saber
 // qué cédulas te notifican a vos: la cédula electrónica trae el CUIT del domicilio del destinatario.
@@ -45,19 +46,14 @@ const PlazosAutomaticosConfig = () => {
 
 	return (
 		<Stack spacing={1.5}>
-			<Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
-				<FormControlLabel
-					control={<Switch checked={config.activo} disabled={saving} onChange={(e) => guardar({ activo: e.target.checked })} />}
-					label="Sugerirme vencimientos a partir de las cédulas"
-				/>
-				<Chip size="small" label="Beta" color="primary" variant="outlined" />
-			</Stack>
-			<Typography sx={{ fontSize: "0.82rem", color: "text.secondary" }}>
-				Cuando llega una cédula electrónica a una de tus causas del PJN, calculamos el vencimiento (días hábiles, feriados y ferias) y te lo
-				proponemos en el calendario con su fundamento. Es una sugerencia: verificala siempre. Solo proponemos los plazos que la cédula
-				indica o que surgen de una regla revisada. Si tenés tu cuenta del PJN vinculada, reconocemos solas las cédulas que llegan a tu
-				bandeja; el CUIT sirve para las demás.
-			</Typography>
+			<PreferenceRow
+				title="Sugerirme vencimientos a partir de las cédulas"
+				badge={<Chip size="small" label="Beta" color="primary" variant="outlined" />}
+				description="Cuando llega una cédula electrónica a una de tus causas del PJN, calculamos el vencimiento (días hábiles, feriados y ferias) y te lo proponemos en el calendario con su fundamento. Es una sugerencia: verificala siempre. Solo proponemos los plazos que la cédula indica o que surgen de una regla revisada. Si tenés tu cuenta del PJN vinculada, reconocemos solas las cédulas que llegan a tu bandeja; el CUIT sirve para las demás."
+				checked={config.activo}
+				onChange={(_, activo) => guardar({ activo })}
+				loading={saving}
+			/>
 			<Box>
 				<Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "flex-start" }}>
 					<TextField

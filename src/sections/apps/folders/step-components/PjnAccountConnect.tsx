@@ -15,6 +15,7 @@ import {
 	Button,
 	Alert,
 	CircularProgress,
+	Skeleton,
 	LinearProgress,
 	IconButton,
 	InputAdornment,
@@ -35,7 +36,6 @@ import { RootState } from "store";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { incrementUserStat, fetchUserStats } from "store/reducers/userStats";
 import { pjnSyncStarted, pjnSyncReset, pjnSyncCompleted, pjnSyncError, pjnCredentialsInvalidated } from "store/reducers/pjnSync";
-import LogoLoader from "components/logo/LogoLoader";
 import { PopupTransition } from "components/@extended/Transitions";
 import PjnMaintenanceAlert from "components/PjnMaintenanceAlert";
 import PjnGuardedButton from "components/PjnGuardedButton";
@@ -911,9 +911,11 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 		// Renderizar estado de carga (no interrumpir si estamos mostrando el resumen de finalización)
 		if (isLoadingStatus && !showCompletionSummary) {
 			return (
-				<Box display="flex" justifyContent="center" alignItems="center" minHeight={150}>
-					<LogoLoader size={40} />
-				</Box>
+				<Stack spacing={1.25} sx={{ py: 0.5 }}>
+					<Skeleton variant="rounded" height={56} />
+					<Skeleton variant="text" width="60%" />
+					<Skeleton variant="text" width="35%" />
+				</Stack>
 			);
 		}
 
@@ -989,7 +991,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 										<Typography sx={{ color: "white", fontSize: "0.65rem", fontWeight: 700, lineHeight: 1 }}>✓</Typography>
 									</Box>
 								) : (
-									<LogoLoader size={20} color={isRetrying ? theme.palette.warning.main : undefined} />
+									<CircularProgress size={18} sx={{ color: isRetrying ? theme.palette.warning.main : BRAND_BLUE, flexShrink: 0 }} />
 								)}
 								<Typography variant="subtitle1" fontWeight={500} color={isCompleted ? "success.main" : "text.primary"}>
 									{isCompleted ? "Sincronización completada" : "Sincronizando causas..."}

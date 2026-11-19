@@ -14,15 +14,29 @@ const DIA_MS = 86400000;
 
 export type TramoActividad = "hasta90" | "d91a180" | "d181a365" | "mas365" | "sinActos";
 
-export interface ResumenActividadPropia {
+/** Estado de la lectura de la bandeja (hub: services/escritosPjnEstado.js). */
+export interface SincronizacionEscritos {
+	/** Hasta cuándo se leyeron los escritos de la bandeja. */
+	ultimaLectura: string | null;
+	/** "detenida": la credencial no está leyendo o la última lectura es vieja; los días pueden no reflejar lo presentado después. */
+	estado: "ok" | "detenida";
+	motivo: "credencial" | "atrasada" | null;
+}
+
+export interface EstadoEscritos {
 	/** El usuario tiene credencial PJN con bandeja: sin ella no hay actos que leer. */
 	habilitado: boolean;
+	/** «Escritos presentados» activado en Integraciones → PJN. Apagado: no se muestran. */
+	activo: boolean;
+	sincronizacion: SincronizacionEscritos;
+}
+
+export interface ResumenActividadPropia extends EstadoEscritos {
 	total: number;
-	/** `sinActos`: ninguna presentación con la credencial. `sinConfirmar`: hay presentaciones, ninguna figura todavía en el expediente. */
-	tramos: Record<TramoActividad, number> & { sinConfirmar?: number };
+	/** `sinActos`: sin días que contar (ninguna presentación figura todavía en el expediente). */
+	tramos: Record<TramoActividad, number>;
+	/** Carpetas con escritos sin proveer; aparte de los tramos (una carpeta con días contados puede tenerlos). */
 	pendientes: number;
-	proximas: { _id: string; folderName: string; dias: number; fecha: string; tipo: TipoActoPropio }[];
-	proximasTotal: number;
 }
 
 export interface ActoPropio {
@@ -35,15 +49,19 @@ export interface ActoPropio {
 	fechaGestion: string | null;
 	numeroCedula: string | null;
 	destinatarios: string[];
-	movimiento: { fecha: string; tipo?: string; detalle?: string } | null;
+	/** `id`: _id en pjn-movements, para abrir el movimiento en el expediente. */
+	movimiento: { fecha: string; tipo?: string; detalle?: string; id?: string | null } | null;
+	/** Credencial con la que se presentó: etiqueta, abogado titular o «Cuenta PJN N». */
+	presento: string | null;
 }
 
-export interface ActosPropiosCarpeta {
-	habilitado: boolean;
+export interface ActosPropiosCarpeta extends EstadoEscritos {
 	resumen: UltimaActividadLetrado | null;
 	actos: ActoPropio[];
 	conteo: { escrito: number; cedula: number; deox: number; noCuentan: number };
 	truncado: boolean;
+	/** Presentaron con más de una credencial en esta causa: la tabla muestra quién. */
+	variasCredenciales?: boolean;
 }
 
 export const fetchResumenActividadPropia = async (): Promise<ResumenActividadPropia | null> => {
@@ -99,7 +117,23 @@ export const ESTADO_ACTO_LABEL: Record<EstadoActoPropio, string> = {
 };
 
 /** Filtro del listado de carpetas por actividad propia. */
-export type FiltroActividadPropia = "all" | TramoActividad | "mas90" | "mas180" | "pendientes" | "sinConfirmar";
+export type FiltroActividadPropia = "all" | TramoActividad | "mas90" | "mas180" | "pendientes";
+
+export const FILTROS_ACTIVIDAD: FiltroActividadPropia[] = [
+	"all",
+	"hasta90",
+	"d91a180",
+	"d181a365",
+	"mas365",
+	"mas90",
+	"mas180",
+	"pendientes",
+	"sinActos",
+];
+
+/** Valor de ?actividadPropia= o del filtro guardado; `sinConfirmar` (anterior al 19/11) es ahora parte de `sinActos`. */
+export const filtroActividadDe = (v: string | null | undefined): FiltroActividadPropia | null =>
+	v === "sinConfirmar" ? "sinActos" : FILTROS_ACTIVIDAD.includes(v as FiltroActividadPropia) ? (v as FiltroActividadPropia) : null;
 
 export const cumpleFiltroActividad = (filtro: FiltroActividadPropia, ult?: UltimaActividadLetrado | null): boolean => {
 	if (filtro === "all") return true;
@@ -111,13 +145,21 @@ export const cumpleFiltroActividad = (filtro: FiltroActividadPropia, ult?: Ultim
 			return dias !== null && dias > 180;
 		case "pendientes":
 			return (ult?.pendientes || 0) > 0;
-		case "sinConfirmar":
-			return dias === null && !!ult?.ultimoSinConfirmar;
-		case "sinActos":
-			return dias === null && !ult?.ultimoSinConfirmar;
 		default:
 			return tramoDe(dias) === filtro;
 	}
+};
+
+/** Fecha corta de la última lectura de la bandeja (dd/mm/aaaa). */
+export const fechaLectura = (iso?: string | null): string | null =>
+	iso ? new Date(iso).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }) : null;
+
+/** Texto del aviso de datos congelados, o null si la lectura está al día. */
+export const avisoEscritosDetenidos = (s?: SincronizacionEscritos | null): string | null => {
+	if (!s || s.estado !== "detenida") return null;
+	const al = fechaLectura(s.ultimaLectura);
+	const motivo = s.motivo === "credencial" ? "la credencial PJN no está sincronizando" : "la lectura de la bandeja está atrasada";
+	return al ? `Datos al ${al}: ${motivo}` : `Sin lectura reciente: ${motivo}`;
 };
 
 /** Ámbar legible sobre fondo claro y oscuro: el `warning` del tema es amarillo y no se lee como texto. */

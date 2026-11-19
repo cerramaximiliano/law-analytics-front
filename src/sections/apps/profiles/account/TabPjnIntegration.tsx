@@ -1,24 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-	Alert,
-	Box,
-	CircularProgress,
-	Divider,
-	FormControlLabel,
-	Grid,
-	Stack,
-	Switch,
-	ToggleButton,
-	ToggleButtonGroup,
-	Typography,
-} from "@mui/material";
+import { Alert, Box, Chip, Divider, Skeleton, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import { Buildings2, Calendar, InfoCircle, Link1, People } from "iconsax-react";
 import { enqueueSnackbar } from "notistack";
 
 // project-imports
-import MainCard from "components/MainCard";
 import { useTeam } from "contexts/TeamContext";
 import PjnAccountConnect from "sections/apps/folders/step-components/PjnAccountConnect";
 import ScbaAccountConnect from "sections/apps/folders/step-components/ScbaAccountConnect";
@@ -32,6 +19,91 @@ import pjnCredentialsService from "api/pjnCredentials";
 import { dispatch } from "store";
 import { fetchPjnSiteStatus } from "store/reducers/pjnSiteStatus";
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
+import PreferenceRow from "sections/apps/profiles/account/PreferenceRow";
+import AvisoEscritosDetenidos from "sections/actividad-propia/AvisoEscritosDetenidos";
+import type { EstadoEscritos } from "services/actividadPropiaService";
+
+// Fuera del componente: definida adentro, cada render del tab creaba un tipo nuevo y remontaba
+// lo que contiene (PjnAccountConnect volvía a pedir el estado y mostraba el loader).
+const SectionCard = ({
+	eyebrow,
+	title,
+	subtitle,
+	icon,
+	rightSlot,
+	children,
+}: {
+	eyebrow: string;
+	title: string;
+	subtitle?: string;
+	icon: React.ReactNode;
+	rightSlot?: React.ReactNode;
+	children: React.ReactNode;
+}) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	return (
+		<Box
+			sx={{
+				borderRadius: 2,
+				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+				bgcolor: "background.paper",
+				height: "100%",
+				overflow: "hidden",
+			}}
+		>
+			<Box
+				sx={{
+					px: { xs: 2, sm: 2.5 },
+					py: 1.75,
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
+					borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
+				}}
+			>
+				<Stack direction="row" spacing={1.25} alignItems="center">
+					<Box
+						sx={{
+							width: 32,
+							height: 32,
+							borderRadius: 1,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
+							color: BRAND_BLUE,
+							flexShrink: 0,
+						}}
+					>
+						{icon}
+					</Box>
+					<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
+						<Stack direction="row" spacing={0.625} alignItems="center">
+							<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
+							<Typography
+								sx={{
+									fontSize: "0.6rem",
+									fontWeight: 600,
+									letterSpacing: "0.08em",
+									textTransform: "uppercase",
+									color: "text.secondary",
+								}}
+							>
+								{eyebrow}
+							</Typography>
+						</Stack>
+						<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>{title}</Typography>
+						{subtitle && (
+							<Typography sx={{ fontSize: "0.74rem", color: "text.secondary", letterSpacing: "-0.005em" }}>{subtitle}</Typography>
+						)}
+					</Stack>
+					{rightSlot}
+				</Stack>
+			</Box>
+			<Box sx={{ p: { xs: 2, sm: 2.5 } }}>{children}</Box>
+		</Box>
+	);
+};
 
 // ==============================|| ACCOUNT PROFILE - PJN INTEGRATION ||============================== //
 
@@ -96,6 +168,10 @@ const TabPjnIntegration = () => {
 	const [bandejaNotifEnabled, setBandejaNotifEnabled] = useState(false);
 	const [bandejaNotifLoading, setBandejaNotifLoading] = useState(false);
 
+	// Escritos presentados (actos del letrado): interruptor de la cuenta, activado por defecto.
+	const [escritos, setEscritos] = useState<EstadoEscritos | null>(null);
+	const [escritosLoading, setEscritosLoading] = useState(false);
+
 	const loadPreferences = useCallback(async () => {
 		try {
 			const [prefRes, credRes] = await Promise.all([ApiService.getUserPreferences(), pjnCredentialsService.getCredentialsStatus()]);
@@ -104,6 +180,7 @@ const TabPjnIntegration = () => {
 			}
 			if (credRes.success && credRes.data) {
 				setBandejaNotifEnabled(credRes.data.bandejaNotificationsEnabled ?? false);
+				setEscritos(credRes.data.escritos ?? null);
 			}
 		} finally {
 			setPrefsLoaded(true);
@@ -147,6 +224,27 @@ const TabPjnIntegration = () => {
 		}
 	};
 
+	const handleToggleEscritos = async () => {
+		const newValue = !(escritos?.activo ?? true);
+		setEscritosLoading(true);
+		try {
+			const response = await pjnCredentialsService.toggleEscritos(newValue);
+			if (response.success) {
+				setEscritos((response as any).data?.escritos ?? (escritos ? { ...escritos, activo: newValue } : null));
+				enqueueSnackbar(newValue ? "Escritos presentados activados" : "Escritos presentados desactivados", {
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				});
+			} else {
+				enqueueSnackbar(response.error || "Error al actualizar la preferencia", { variant: "error" });
+			}
+		} catch (error) {
+			enqueueSnackbar("Error de conexión", { variant: "error" });
+		} finally {
+			setEscritosLoading(false);
+		}
+	};
+
 	const handleToggleBandejaNotif = async () => {
 		const newValue = !bandejaNotifEnabled;
 		setBandejaNotifLoading(true);
@@ -166,14 +264,6 @@ const TabPjnIntegration = () => {
 		} finally {
 			setBandejaNotifLoading(false);
 		}
-	};
-
-	const switchSx = {
-		"& .MuiSwitch-switchBase.Mui-checked": {
-			color: BRAND_BLUE,
-			"& .MuiSwitch-thumb": { backgroundColor: BRAND_BLUE, color: BRAND_BLUE },
-			"& + .MuiSwitch-track": { backgroundColor: `${BRAND_BLUE} !important`, opacity: 0.5 },
-		},
 	};
 
 	const toggleButtonSx = {
@@ -217,82 +307,6 @@ const TabPjnIntegration = () => {
 			/>
 		);
 	};
-
-	const SectionCard = ({
-		eyebrow,
-		title,
-		subtitle,
-		icon,
-		rightSlot,
-		children,
-	}: {
-		eyebrow: string;
-		title: string;
-		subtitle?: string;
-		icon: React.ReactNode;
-		rightSlot?: React.ReactNode;
-		children: React.ReactNode;
-	}) => (
-		<Box
-			sx={{
-				borderRadius: 2,
-				border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
-				bgcolor: "background.paper",
-				height: "100%",
-				overflow: "hidden",
-			}}
-		>
-			<Box
-				sx={{
-					px: { xs: 2, sm: 2.5 },
-					py: 1.75,
-					bgcolor: alpha(BRAND_BLUE, isDark ? 0.05 : 0.025),
-					borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}`,
-				}}
-			>
-				<Stack direction="row" spacing={1.25} alignItems="center">
-					<Box
-						sx={{
-							width: 32,
-							height: 32,
-							borderRadius: 1,
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
-							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.28 : 0.18)}`,
-							color: BRAND_BLUE,
-							flexShrink: 0,
-						}}
-					>
-						{icon}
-					</Box>
-					<Stack spacing={0.125} sx={{ flex: 1, minWidth: 0 }}>
-						<Stack direction="row" spacing={0.625} alignItems="center">
-							<Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: BRAND_BLUE }} />
-							<Typography
-								sx={{
-									fontSize: "0.6rem",
-									fontWeight: 600,
-									letterSpacing: "0.08em",
-									textTransform: "uppercase",
-									color: "text.secondary",
-								}}
-							>
-								{eyebrow}
-							</Typography>
-						</Stack>
-						<Typography sx={{ fontSize: "0.95rem", fontWeight: 600, letterSpacing: "-0.01em", color: "text.primary" }}>{title}</Typography>
-						{subtitle && (
-							<Typography sx={{ fontSize: "0.74rem", color: "text.secondary", letterSpacing: "-0.005em" }}>{subtitle}</Typography>
-						)}
-					</Stack>
-					{rightSlot}
-				</Stack>
-			</Box>
-			<Box sx={{ p: { xs: 2, sm: 2.5 } }}>{children}</Box>
-		</Box>
-	);
 
 	const StatusPill = ({ status }: { status: Exclude<ConnectionStatus, null> }) => {
 		const { color, label } =
@@ -370,197 +384,151 @@ const TabPjnIntegration = () => {
 			</Box>
 
 			{view === "pjn" ? (
-				<Grid container spacing={2.5}>
-					<Grid item xs={12} md={6}>
-						<SectionCard
-							eyebrow="Integración · Nación"
-							title="Cuenta PJN"
-							subtitle="Vincula tu cuenta del Poder Judicial de la Nación para sincronizar automáticamente todas tus causas."
-							icon={<Link1 size={16} variant="Bulk" />}
-							rightSlot={isConnected !== null ? <StatusPill status={isConnected} /> : undefined}
-						>
-							<PjnAccountConnect
-								onServiceAvailableChange={(available, message) => {
-									setServiceAvailable(available);
-									setServiceMessage(message || "");
-								}}
-								onConnectionStatusChange={(connected) => setIsConnected(connected)}
-							/>
-						</SectionCard>
-					</Grid>
+				<Stack spacing={2.5}>
+					<SectionCard
+						eyebrow="Integración · Nación"
+						title="Cuenta PJN"
+						subtitle="Vincula tu cuenta del Poder Judicial de la Nación para sincronizar automáticamente todas tus causas."
+						icon={<Link1 size={16} variant="Bulk" />}
+						rightSlot={isConnected !== null ? <StatusPill status={isConnected} /> : undefined}
+					>
+						<PjnAccountConnect
+							onServiceAvailableChange={(available, message) => {
+								setServiceAvailable(available);
+								setServiceMessage(message || "");
+							}}
+							onConnectionStatusChange={(connected) => setIsConnected(connected)}
+						/>
+					</SectionCard>
 
-					<Grid item xs={12} md={6}>
-						<SectionCard
-							eyebrow="Sincronización · Nación"
-							title="Preferencias de sincronización"
-							subtitle="Configurá cómo se sincronizan los intervinientes de tus causas del Poder Judicial de la Nación."
-							icon={<People size={16} variant="Bulk" />}
-						>
-							{!serviceAvailable ? (
-								<Box
-									sx={{
-										p: 1.5,
-										borderRadius: 1.25,
-										bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
-										border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
-									}}
-								>
-									<Stack direction="row" spacing={1} alignItems="flex-start">
-										<InfoCircle size={16} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
-										<Typography sx={{ fontSize: "0.82rem", color: "text.primary", letterSpacing: "-0.005em" }}>
-											{serviceMessage || "La integración con el Poder Judicial de la Nación no está disponible en este momento."}
-										</Typography>
-									</Stack>
-								</Box>
-							) : !prefsLoaded ? (
-								<Stack alignItems="center" sx={{ py: 4 }} spacing={1}>
-									<CircularProgress size={24} sx={{ color: BRAND_BLUE }} />
-									<Typography sx={{ fontSize: "0.72rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
-										Cargando preferencias…
-									</Typography>
-								</Stack>
-							) : (
-								<Stack spacing={1.5}>
-									<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5}>
-										<FormControlLabel
-											control={
-												<Switch
-													checked={syncContactsEnabled}
-													onChange={handleToggleSyncContacts}
-													disabled={syncContactsLoading}
-													sx={switchSx}
-												/>
-											}
-											label={
-												<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
-													Sincronizar intervinientes como contactos
-												</Typography>
-											}
-										/>
-										{syncContactsLoading && <CircularProgress size={18} sx={{ color: BRAND_BLUE, flexShrink: 0 }} />}
-									</Stack>
-									<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-										Los intervinientes (partes y letrados) extraídos de tus causas se crearán automáticamente como contactos en las carpetas
-										vinculadas.
-									</Typography>
-
-									{!syncContactsEnabled && (
-										<Box
-											sx={{
-												p: 1.25,
-												borderRadius: 1.25,
-												bgcolor: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
-												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.2 : 0.14)}`,
-											}}
-										>
-											<Stack direction="row" spacing={1} alignItems="flex-start">
-												<InfoCircle size={14} variant="Bulk" color={BRAND_BLUE} style={{ marginTop: 2, flexShrink: 0 }} />
-												<Typography sx={{ fontSize: "0.74rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-													Al activarlo, los actores y demandados de tus causas se crearán como contactos. La app detecta contactos
-													existentes con el mismo CUIT para evitar duplicados. Si tenés muchas causas, se pueden crear cientos de contactos
-													nuevos — activá con criterio.
-												</Typography>
-											</Stack>
-										</Box>
-									)}
-
-									<Box
-										sx={{
-											p: 1.25,
-											borderRadius: 1.25,
-											bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05),
-											border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
-										}}
-									>
-										<Stack direction="row" spacing={1} alignItems="flex-start">
-											<InfoCircle size={14} variant="Bulk" color={STALE_AMBER} style={{ marginTop: 2, flexShrink: 0 }} />
-											<Typography sx={{ fontSize: "0.74rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-												La cantidad de contactos sincronizados está sujeta a los límites de tu plan actual.
-											</Typography>
+					<SectionCard
+						eyebrow="Sincronización · Nación"
+						title="Qué leemos de tu cuenta"
+						subtitle="Elegí qué traemos del PJN a tus carpetas y qué te avisamos."
+						icon={<People size={16} variant="Bulk" />}
+					>
+						{!serviceAvailable ? (
+							<Alert severity="info" icon={<InfoCircle size={18} />} sx={{ "& .MuiAlert-message": { fontSize: "0.82rem" } }}>
+								{serviceMessage || "La integración con el Poder Judicial de la Nación no está disponible en este momento."}
+							</Alert>
+						) : !prefsLoaded ? (
+							<Stack spacing={2}>
+								{[0, 1, 2].map((i) => (
+									<Stack key={i} direction="row" spacing={2} alignItems="center">
+										<Stack sx={{ flex: 1 }}>
+											<Skeleton variant="text" width="30%" />
+											<Skeleton variant="text" width="80%" />
 										</Stack>
-									</Box>
-
-									<Divider sx={{ my: 0.5 }} />
-
-									<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5}>
-										<FormControlLabel
-											control={
-												<Switch
-													checked={bandejaNotifEnabled}
-													onChange={handleToggleBandejaNotif}
-													disabled={bandejaNotifLoading}
-													sx={switchSx}
-												/>
-											}
-											label={
-												<Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
-													Notificaciones de cédulas (bandeja)
-												</Typography>
-											}
-										/>
-										{bandejaNotifLoading && <CircularProgress size={18} sx={{ color: BRAND_BLUE, flexShrink: 0 }} />}
+										<Skeleton variant="rounded" width={44} height={22} />
 									</Stack>
-									<Typography sx={{ fontSize: "0.78rem", color: "text.secondary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
-										Recibí un email cuando lleguen nuevas cédulas electrónicas a tu bandeja del PJN (se incluyen junto a los movimientos del
-										día).
-									</Typography>
-								</Stack>
-							)}
-						</SectionCard>
-					</Grid>
+								))}
+							</Stack>
+						) : (
+							<Stack divider={<Divider flexItem />} spacing={2}>
+								<PreferenceRow
+									title="Escritos presentados"
+									badge={<Chip size="small" label="Beta" color="primary" variant="outlined" />}
+									description="Leemos de tu bandeja del PJN los escritos, cédulas y DEOX que presentaste y mostramos en cada carpeta los días desde la última presentación. Desactivado, no los leemos ni aparecen en el listado, el panel ni las carpetas."
+									checked={escritos?.activo ?? true}
+									onChange={handleToggleEscritos}
+									// Sin bandeja de escritos no hay nada que leer: el interruptor no tendría efecto.
+									disabled={!canManageCredentials || escritos?.habilitado === false}
+									loading={escritosLoading}
+								>
+									{escritos?.habilitado === false ? (
+										<Typography sx={{ fontSize: "0.74rem", color: "text.secondary" }}>
+											Tu cuenta del PJN no tiene bandeja de escritos: el portal no nos da tus presentaciones.
+										</Typography>
+									) : escritos?.activo !== false ? (
+										<Stack spacing={0.75}>
+											<Typography sx={{ fontSize: "0.74rem", color: "text.secondary" }}>
+												Última sincronización:{" "}
+												{escritos?.sincronizacion?.ultimaLectura
+													? new Date(escritos.sincronizacion.ultimaLectura).toLocaleString("es-AR", {
+															day: "2-digit",
+															month: "2-digit",
+															year: "numeric",
+															hour: "2-digit",
+															minute: "2-digit",
+													  })
+													: "todavía no hubo una lectura completa"}
+											</Typography>
+											<AvisoEscritosDetenidos sincronizacion={escritos?.sincronizacion} compacto />
+										</Stack>
+									) : null}
+								</PreferenceRow>
 
-					<Grid item xs={12}>
-						<SectionCard
-							eyebrow="Plazos · Nación"
-							title="Vencimientos automáticos"
-							subtitle="Te proponemos el vencimiento de cada cédula que llega a tus causas, con su fundamento."
-							icon={<Calendar size={16} variant="Bulk" />}
-						>
-							<PlazosAutomaticosConfig />
-						</SectionCard>
-					</Grid>
-				</Grid>
+								<PreferenceRow
+									title="Notificaciones de cédulas"
+									description="Recibí un email cuando lleguen nuevas cédulas electrónicas a tu bandeja del PJN (se incluyen junto a los movimientos del día)."
+									checked={bandejaNotifEnabled}
+									onChange={handleToggleBandejaNotif}
+									loading={bandejaNotifLoading}
+								/>
+
+								<PreferenceRow
+									title="Intervinientes como contactos"
+									description="Los intervinientes (partes y letrados) de tus causas se crean como contactos en las carpetas vinculadas. Detectamos contactos existentes con el mismo CUIT para no duplicarlos."
+									checked={syncContactsEnabled}
+									onChange={handleToggleSyncContacts}
+									loading={syncContactsLoading}
+								>
+									<Typography sx={{ fontSize: "0.74rem", color: "text.secondary" }}>
+										{syncContactsEnabled
+											? "La cantidad de contactos está sujeta a los límites de tu plan."
+											: "Con muchas causas se pueden crear cientos de contactos; la cantidad está sujeta a los límites de tu plan."}
+									</Typography>
+								</PreferenceRow>
+							</Stack>
+						)}
+					</SectionCard>
+
+					<SectionCard
+						eyebrow="Plazos · Nación"
+						title="Vencimientos automáticos"
+						subtitle="Te proponemos el vencimiento de cada cédula que llega a tus causas, con su fundamento."
+						icon={<Calendar size={16} variant="Bulk" />}
+					>
+						<PlazosAutomaticosConfig />
+					</SectionCard>
+				</Stack>
 			) : view === "scba" ? (
-				<Grid container spacing={2.5}>
-					<Grid item xs={12} md={6}>
-						<SectionCard
-							eyebrow="Integración · Buenos Aires"
-							title="Cuenta SCBA"
-							subtitle="Vincula tu domicilio electrónico de la Suprema Corte de Buenos Aires para sincronizar tus causas provinciales."
-							icon={<Link1 size={16} variant="Bulk" />}
-							rightSlot={isScbaConnected !== null ? <StatusPill status={isScbaConnected} /> : undefined}
-						>
-							{canManageCredentials ? (
-								<ScbaAccountConnect onConnectionStatusChange={(connected) => setIsScbaConnected(connected)} />
-							) : (
-								avisoSoloGestores("de la SCBA", "Las causas que importa, públicas y privadas, quedan a disposición de todo el equipo.")
-							)}
-						</SectionCard>
-					</Grid>
-				</Grid>
+				<Stack spacing={2.5}>
+					<SectionCard
+						eyebrow="Integración · Buenos Aires"
+						title="Cuenta SCBA"
+						subtitle="Vincula tu domicilio electrónico de la Suprema Corte de Buenos Aires para sincronizar tus causas provinciales."
+						icon={<Link1 size={16} variant="Bulk" />}
+						rightSlot={isScbaConnected !== null ? <StatusPill status={isScbaConnected} /> : undefined}
+					>
+						{canManageCredentials ? (
+							<ScbaAccountConnect onConnectionStatusChange={(connected) => setIsScbaConnected(connected)} />
+						) : (
+							avisoSoloGestores("de la SCBA", "Las causas que importa, públicas y privadas, quedan a disposición de todo el equipo.")
+						)}
+					</SectionCard>
+				</Stack>
 			) : view === "ia" ? (
 				<AiAssistantsView />
 			) : (
-				<Grid container spacing={2.5}>
-					<Grid item xs={12} md={6}>
-						<SectionCard
-							eyebrow="Integración · MEV"
-							title="Cuenta MEV"
-							subtitle="Vinculá tu cuenta del portal MEV (mev.scba.gov.ar). Sirve para consultar las causas de Buenos Aires, que son públicas; con una sola credencial cubrimos todas las de la cuenta."
-							icon={<Link1 size={16} variant="Bulk" />}
-							rightSlot={isMevConnected !== null ? <StatusPill status={isMevConnected} /> : undefined}
-						>
-							{canManageCredentials ? (
-								<MevAccountConnect onConnectionStatusChange={(connected) => setIsMevConnected(connected)} />
-							) : (
-								avisoSoloGestores(
-									"de la MEV",
-									"Con ella consultamos las causas de Buenos Aires, que son públicas: cualquiera del equipo con permiso de crear puede agregarlas.",
-								)
-							)}
-						</SectionCard>
-					</Grid>
-				</Grid>
+				<Stack spacing={2.5}>
+					<SectionCard
+						eyebrow="Integración · MEV"
+						title="Cuenta MEV"
+						subtitle="Vinculá tu cuenta del portal MEV (mev.scba.gov.ar). Sirve para consultar las causas de Buenos Aires, que son públicas; con una sola credencial cubrimos todas las de la cuenta."
+						icon={<Link1 size={16} variant="Bulk" />}
+						rightSlot={isMevConnected !== null ? <StatusPill status={isMevConnected} /> : undefined}
+					>
+						{canManageCredentials ? (
+							<MevAccountConnect onConnectionStatusChange={(connected) => setIsMevConnected(connected)} />
+						) : (
+							avisoSoloGestores(
+								"de la MEV",
+								"Con ella consultamos las causas de Buenos Aires, que son públicas: cualquiera del equipo con permiso de crear puede agregarlas.",
+							)
+						)}
+					</SectionCard>
+				</Stack>
 			)}
 		</Stack>
 	);

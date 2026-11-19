@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import SugerenciaPlazoFeedback from "sections/apps/calendar/SugerenciaPlazoFeedback";
 import {
 	Box,
@@ -163,6 +163,15 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 		setSearchParams(next, { replace: true });
 	}, [searchParams, setSearchParams]);
 	const actosPropios = useActosPropios(id, pjn);
+	// Desde Escritos PJN: abrir el movimiento resaltado en Movimientos (mismo deep-link que ?movement=).
+	const verMovimiento = useCallback(
+		(movementId: string) => {
+			const next = new URLSearchParams(searchParams);
+			next.set("movement", movementId);
+			setSearchParams(next, { replace: true });
+		},
+		[searchParams, setSearchParams],
+	);
 
 	// Al salir del tab de movimientos el deep-link ya fue atendido — descartarlo
 	// para que volver al tab no re-dispare el visor (las tablas remontan al
@@ -181,10 +190,18 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 	const [mobileOpen, setMobileOpen] = useState(false);
 
 	// Última presentación del letrado: línea bajo la cabecera del expediente PJN.
+	// Apagados en Integraciones → PJN: ni la línea ni la sub-solapa.
+	const escritosActivos = actosPropios.data?.activo !== false;
+	useEffect(() => {
+		// También en carpetas que no son PJN: un ?sub=actos no abre el panel vacío.
+		if ((!pjn || !escritosActivos) && activeTab === "actos") setActiveTab("movements");
+	}, [pjn, escritosActivos, activeTab]);
 	const lineaPresentaciones = pjn ? (
 		<ActividadPropiaLinea
 			resumen={actosPropios.data ? actosPropios.data.resumen : actividadPropia}
 			habilitado={actosPropios.data?.habilitado}
+			activo={actosPropios.data?.activo}
+			sincronizacion={actosPropios.data?.sincronizacion}
 			loading={actosPropios.loading}
 			onVerTodas={() => {
 				setActiveTab("actos");
@@ -428,14 +445,14 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 			color: BRAND_BLUE,
 			description: "Todas las actividades unificadas",
 		},
-		...(pjn
+		...(pjn && escritosActivos
 			? [
 					{
 						value: "actos" as TabValue,
-						label: "Presentaciones PJN",
+						label: "Escritos PJN",
 						icon: <Edit2 size={20} />,
 						color: BRAND_BLUE,
-						description: "Escritos, cédulas y DEOX del letrado",
+						description: "Escritos, cédulas y DEOX presentados",
 					},
 			  ]
 			: []),
@@ -1239,6 +1256,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 								loading={actosPropios.loading}
 								error={actosPropios.error}
 								onOpenMenu={() => setMobileOpen(true)}
+								onVerMovimiento={verMovimiento}
 							/>
 						)}
 						<Box sx={{ flex: 1, display: activeTab === "actos" ? "none" : "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -1681,7 +1699,12 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName, accessCutof
 
 						{/* Main Content Area */}
 						{activeTab === "actos" && (
-							<ActosPropiosPanel data={actosPropios.data} loading={actosPropios.loading} error={actosPropios.error} />
+							<ActosPropiosPanel
+								data={actosPropios.data}
+								loading={actosPropios.loading}
+								error={actosPropios.error}
+								onVerMovimiento={verMovimiento}
+							/>
 						)}
 						<Box
 							sx={{

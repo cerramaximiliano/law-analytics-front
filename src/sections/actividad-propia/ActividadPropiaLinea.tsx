@@ -4,12 +4,16 @@ import { BRAND_BLUE } from "themes/dashboardTokens";
 import AyudaActosPjn from "sections/actividad-propia/AyudaActosPjn";
 import DiasActividadChip from "sections/actividad-propia/DiasActividadChip";
 import type { UltimaActividadLetrado } from "types/folder";
-import { TIPO_ACTO_LABEL, ESTADO_ACTO_LABEL, AMBAR_TEXTO } from "services/actividadPropiaService";
+import AvisoEscritosDetenidos from "sections/actividad-propia/AvisoEscritosDetenidos";
+import { TIPO_ACTO_LABEL, ESTADO_ACTO_LABEL, AMBAR_TEXTO, type SincronizacionEscritos } from "services/actividadPropiaService";
 
 interface Props {
 	resumen: UltimaActividadLetrado | null | undefined;
 	/** undefined mientras no se sabe (sin respuesta del hub). */
 	habilitado?: boolean;
+	/** false: el usuario apagó los escritos en Integraciones → PJN; no se muestra la línea. */
+	activo?: boolean;
+	sincronizacion?: SincronizacionEscritos | null;
 	loading?: boolean;
 	onVerTodas?: () => void;
 }
@@ -34,27 +38,41 @@ const Detalle = ({ children }: { children: React.ReactNode }) => (
 );
 
 /**
- * Cabecera «presentaciones» arriba de los movimientos del expediente PJN, en dos bloques separados:
- * la última presentación que ya figura en el expediente (la que cuenta los días) y lo presentado
- * después que todavía no tiene movimiento (sin proveer).
+ * Cabecera «Último escrito PJN» arriba de los movimientos del expediente PJN, en dos bloques separados:
+ * el último escrito que ya figura en el expediente (el que cuenta los días) y lo presentado
+ * después que todavía no tiene movimiento (sin proveer). Sin escritos: una sola línea.
  */
-const ActividadPropiaLinea = ({ resumen, habilitado, loading, onVerTodas }: Props) => {
+const ActividadPropiaLinea = ({ resumen, habilitado, activo, sincronizacion, loading, onVerTodas }: Props) => {
 	const theme = useTheme();
 	const ambar = theme.palette.mode === "dark" ? AMBAR_TEXTO.dark : AMBAR_TEXTO.light;
 
-	if (loading && !resumen) return null;
+	if (activo === false || (loading && !resumen)) return null;
 
-	const tipoLabel = (t?: string | null) => (t ? TIPO_ACTO_LABEL[t as keyof typeof TIPO_ACTO_LABEL] ?? t : "Presentación");
+	const tipoLabel = (t?: string | null) => (t ? TIPO_ACTO_LABEL[t as keyof typeof TIPO_ACTO_LABEL] ?? t : "Escrito");
 
-	// Bloque 1: la última presentación que el expediente registra.
-	let ultima: React.ReactNode;
+	// Sin ningún escrito con la credencial: una sola línea baja, sin «Ver todas» (llevaría a una lista vacía).
 	if (!resumen) {
-		ultima = (
-			<Detalle>
-				{habilitado === false ? "La credencial PJN vinculada no tiene bandeja de escritos" : "Sin presentaciones con esta credencial"}
-			</Detalle>
+		return (
+			<Stack
+				direction="row"
+				spacing={1}
+				alignItems="center"
+				flexWrap="wrap"
+				useFlexGap
+				sx={(t) => ({ px: 2, py: 0.5, borderBottom: `1px solid ${t.palette.divider}` })}
+			>
+				<Typography sx={{ ...rotuloSx, color: "text.secondary" }}>Último escrito PJN</Typography>
+				<Detalle>
+					{habilitado === false ? "La credencial PJN vinculada no tiene bandeja de escritos" : "Sin escritos con esta credencial"}
+				</Detalle>
+				<AvisoEscritosDetenidos sincronizacion={sincronizacion} compacto />
+			</Stack>
 		);
-	} else if (!resumen.fecha) {
+	}
+
+	// Bloque 1: el último escrito que el expediente registra.
+	let ultima: React.ReactNode;
+	if (!resumen.fecha) {
 		ultima = <Detalle>Ninguna figura todavía en el expediente</Detalle>;
 	} else {
 		ultima = (
@@ -74,8 +92,8 @@ const ActividadPropiaLinea = ({ resumen, habilitado, loading, onVerTodas }: Prop
 	}
 
 	// Bloque 2: lo presentado después, todavía sin movimiento en el expediente.
-	const sinConfirmar = resumen?.ultimoSinConfirmar ?? null;
-	const pendientes = resumen?.pendientes || 0;
+	const sinConfirmar = resumen.ultimoSinConfirmar ?? null;
+	const pendientes = resumen.pendientes || 0;
 	const hayPendiente = !!sinConfirmar || pendientes > 0;
 	const rotuloPendiente = pendientes > 0 ? "Presentado, sin proveer" : "Presentado, sin movimiento todavía";
 	const otros = sinConfirmar ? pendientes - (sinConfirmar.tipo === "escrito" && sinConfirmar.estado === "presentado" ? 1 : 0) : pendientes;
@@ -90,12 +108,13 @@ const ActividadPropiaLinea = ({ resumen, habilitado, loading, onVerTodas }: Prop
 		>
 			<Stack spacing={0.25} sx={{ minWidth: 0 }}>
 				<Stack direction="row" spacing={0.5} alignItems="center">
-					<Typography sx={{ ...rotuloSx, color: "text.secondary" }}>Última presentación en el expediente</Typography>
+					<Typography sx={{ ...rotuloSx, color: "text.secondary" }}>Último escrito PJN en el expediente</Typography>
 					<AyudaActosPjn size={12} />
 				</Stack>
 				<Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
 					{ultima}
 				</Stack>
+				<AvisoEscritosDetenidos sincronizacion={sincronizacion} compacto />
 			</Stack>
 
 			{hayPendiente && (

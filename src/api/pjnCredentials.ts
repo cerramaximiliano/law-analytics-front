@@ -6,6 +6,7 @@
  */
 
 import axios, { AxiosError } from "axios";
+import type { EstadoEscritos } from "services/actividadPropiaService";
 import { teamHeaders } from "api/teamHeaders";
 import { pjnStatusNotice, PjnStatusReason } from "utils/pjnBindingState";
 
@@ -44,6 +45,8 @@ export interface PjnCredentialsStatus {
 	cuil?: string;
 	enabled: boolean;
 	bandejaNotificationsEnabled?: boolean;
+	/** Escritos presentados: interruptor de la cuenta y última lectura de la bandeja. */
+	escritos?: EstadoEscritos;
 	verified: boolean;
 	verifiedAt: string | null;
 	isValid: boolean;
@@ -437,6 +440,23 @@ class PjnCredentialsService {
 	/**
 	 * Activa/desactiva las notificaciones de bandeja (cédulas) de la credencial
 	 */
+	async toggleEscritos(actosLetradoEnabled: boolean): Promise<GenericResponse> {
+		try {
+			const response = await axios.patch(
+				`${BASE_URL}/api/pjn-credentials/escritos`,
+				{ actosLetradoEnabled },
+				{ withCredentials: true, headers: teamHeaders() },
+			);
+			return response.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<any>;
+			return {
+				success: false,
+				error: axiosError.response?.data?.error || "Error al actualizar los escritos presentados",
+			};
+		}
+	}
+
 	async toggleBandejaNotifications(bandejaNotificationsEnabled: boolean): Promise<GenericResponse> {
 		try {
 			const response = await axios.patch(

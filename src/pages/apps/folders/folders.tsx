@@ -192,7 +192,16 @@ import { usePjnCredentialError } from "hooks/usePjnCredentialError";
 import { useExpedienteChatAccess } from "hooks/useExpedienteChatAccess";
 import DiasActividadChip from "sections/actividad-propia/DiasActividadChip";
 import AyudaActosPjn from "sections/actividad-propia/AyudaActosPjn";
-import { cumpleFiltroActividad, ESTADO_ACTO_LABEL, TIPO_ACTO_LABEL, type FiltroActividadPropia } from "services/actividadPropiaService";
+import {
+	AMBAR_TEXTO,
+	avisoEscritosDetenidos,
+	cumpleFiltroActividad,
+	filtroActividadDe,
+	fetchResumenActividadPropia,
+	TIPO_ACTO_LABEL,
+	type EstadoEscritos,
+	type FiltroActividadPropia,
+} from "services/actividadPropiaService";
 
 const HIDDEN_COLUMNS_STORAGE_KEY = "la.folders.hiddenColumns.v1";
 const NON_HIDEABLE_COLUMNS = new Set(["selection", "folderName"]);
@@ -1841,37 +1850,34 @@ function ReactTable({
 											>
 												<MenuItem value="all">
 													<Stack direction="row" spacing={0.5} alignItems="center">
-														<Typography variant="body2">Presentaciones del letrado PJN: Todas</Typography>
+														<Typography variant="body2">Escritos PJN: todas las carpetas</Typography>
 														<AyudaActosPjn size={13} />
 													</Stack>
 												</MenuItem>
 												{/* Tramos: llegan desde el widget del panel (?actividadPropia=…) */}
 												<MenuItem value="hasta90">
-													<Typography variant="body2">PJN: última presentación hasta 90 días</Typography>
+													<Typography variant="body2">Escritos PJN: último hasta 90 días</Typography>
 												</MenuItem>
 												<MenuItem value="d91a180">
-													<Typography variant="body2">PJN: última presentación entre 91 y 180 días</Typography>
+													<Typography variant="body2">Escritos PJN: último entre 91 y 180 días</Typography>
 												</MenuItem>
 												<MenuItem value="d181a365">
-													<Typography variant="body2">PJN: última presentación entre 181 y 365 días</Typography>
+													<Typography variant="body2">Escritos PJN: último entre 181 y 365 días</Typography>
 												</MenuItem>
 												<MenuItem value="mas90">
-													<Typography variant="body2">PJN: última presentación hace más de 90 días</Typography>
+													<Typography variant="body2">Escritos PJN: último hace más de 90 días</Typography>
 												</MenuItem>
 												<MenuItem value="mas180">
-													<Typography variant="body2">PJN: última presentación hace más de 180 días</Typography>
+													<Typography variant="body2">Escritos PJN: último hace más de 180 días</Typography>
 												</MenuItem>
 												<MenuItem value="mas365">
-													<Typography variant="body2">PJN: última presentación hace más de 365 días</Typography>
+													<Typography variant="body2">Escritos PJN: último hace más de 365 días</Typography>
 												</MenuItem>
 												<MenuItem value="pendientes">
-													<Typography variant="body2">PJN: con escritos sin proveer</Typography>
+													<Typography variant="body2">Escritos PJN: con escritos sin proveer</Typography>
 												</MenuItem>
 												<MenuItem value="sinActos">
-													<Typography variant="body2">PJN: sin presentaciones con esta credencial</Typography>
-												</MenuItem>
-												<MenuItem value="sinConfirmar">
-													<Typography variant="body2">PJN: solo presentaciones sin proveer</Typography>
+													<Typography variant="body2">Escritos PJN: sin escritos en el expediente</Typography>
 												</MenuItem>
 											</Select>
 										</FormControl>
@@ -2755,32 +2761,26 @@ const FoldersLayout = () => {
 	// Seguimiento (6/11/2026): "all" | "si" | "no".
 	const [seguimientoFilter, setSeguimientoFilter] = useState<string>(savedFilters.seguimientoFilter ?? "all");
 	// Actividad procesal propia (10/11/2026). ?actividadPropia= lo usan el widget del panel y la franja de tramos.
-	const ACTIVIDAD_PROPIA_FILTROS: FiltroActividadPropia[] = [
-		"all",
-		"hasta90",
-		"d91a180",
-		"d181a365",
-		"mas365",
-		"sinActos",
-		"mas90",
-		"mas180",
-		"pendientes",
-		"sinConfirmar",
-	];
-	const esFiltroActividad = (v: string | null): v is FiltroActividadPropia =>
-		!!v && ACTIVIDAD_PROPIA_FILTROS.includes(v as FiltroActividadPropia);
 	const actividadPropiaParam = searchParams.get("actividadPropia");
 	const [actividadPropiaFilter, setActividadPropiaFilter] = useState<FiltroActividadPropia>(
-		esFiltroActividad(actividadPropiaParam)
-			? actividadPropiaParam
-			: esFiltroActividad(savedFilters.actividadPropiaFilter ?? null)
-			? savedFilters.actividadPropiaFilter
-			: "all",
+		filtroActividadDe(actividadPropiaParam) ?? filtroActividadDe(savedFilters.actividadPropiaFilter) ?? "all",
 	);
 	useEffect(() => {
-		if (esFiltroActividad(actividadPropiaParam)) setActividadPropiaFilter(actividadPropiaParam);
+		const desdeUrl = filtroActividadDe(actividadPropiaParam);
+		if (desdeUrl) setActividadPropiaFilter(desdeUrl);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [actividadPropiaParam]);
+	// URL ← filtro: recargar o compartir el enlace conserva el filtro de escritos.
+	useEffect(() => {
+		const actual = searchParams.get("actividadPropia");
+		const deseado = actividadPropiaFilter === "all" ? null : actividadPropiaFilter;
+		if (actual === deseado) return;
+		const next = new URLSearchParams(searchParams);
+		if (deseado) next.set("actividadPropia", deseado);
+		else next.delete("actividadPropia");
+		setSearchParams(next, { replace: true });
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [actividadPropiaFilter]);
 
 	// Estado para pre-seleccionar paso y valores al abrir AddFolder desde los badges
 	const [addFolderInitialStep, setAddFolderInitialStep] = useState<number | undefined>(undefined);
@@ -2980,7 +2980,20 @@ const FoldersLayout = () => {
 
 	// Actos del letrado en PJN (10/11/2026): la columna, el filtro y la franja solo aparecen si alguna carpeta PJN
 	// tiene actos leídos (credencial con bandeja). Sin datos, "Sin actos del letrado" confundiría.
-	const hayActosPjn = useMemo(() => verifiedFolders.some((f: any) => f.pjn && f.ultimaActividadLetrado?.fecha), [verifiedFolders]);
+	// Apagados en Integraciones → PJN (`activo: false`): sin columna ni filtro. Si el hub no responde, decide el dato.
+	const [estadoEscritos, setEstadoEscritos] = useState<EstadoEscritos | null>(null);
+	useEffect(() => {
+		let vivo = true;
+		fetchResumenActividadPropia().then((r) => vivo && r && setEstadoEscritos(r));
+		return () => {
+			vivo = false;
+		};
+	}, []);
+	const hayActosPjn = useMemo(
+		() => estadoEscritos?.activo !== false && verifiedFolders.some((f: any) => f.pjn && f.ultimaActividadLetrado?.fecha),
+		[verifiedFolders, estadoEscritos],
+	);
+	const avisoEscritos = avisoEscritosDetenidos(estadoEscritos?.sincronizacion);
 
 	// Filtrar carpetas verificadas por tipo
 	// Extraer valores únicos para filtros dinámicos
@@ -2993,6 +3006,18 @@ const FoldersLayout = () => {
 		});
 		return Array.from(partes).sort();
 	}, [verifiedFolders]);
+
+	// Llegando desde un enlace de escritos (?actividadPropia=…), un filtro de jurisdicción guardado sin carpetas PJN
+	// (p. ej. CABA) dejaría el listado vacío: se quita. Solo al llegar por la URL, no cuando el usuario lo elige.
+	useEffect(() => {
+		if (!filtroActividadDe(actividadPropiaParam) || jurisdiccionFilter === "all" || !verifiedFolders.length) return;
+		const hayPjn = verifiedFolders.some((f: any) => f.pjn && f.folderJuris?.label === jurisdiccionFilter);
+		if (!hayPjn) {
+			setJurisdiccionFilter("all");
+			setDepartamentoFilter("all");
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [actividadPropiaParam, verifiedFolders.length]);
 
 	const uniqueJurisdicciones = useMemo(() => {
 		const jurisdicciones = new Set<string>();
@@ -4912,7 +4937,16 @@ const FoldersLayout = () => {
 			},
 			{
 				// Actividad procesal propia (10/11/2026). Ordena por fecha del último acto: ascendente = más días sin actividad.
-				Header: "Última presentación PJN",
+				Header: avisoEscritos
+					? () => (
+							<Tooltip title={`${avisoEscritos}. Lo presentado después no figura todavía.`} arrow>
+								<Stack direction="row" spacing={0.5} alignItems="center" component="span">
+									<span>Último escrito PJN</span>
+									<Warning2 size={14} variant="Bulk" color={theme.palette.mode === "dark" ? AMBAR_TEXTO.dark : AMBAR_TEXTO.light} />
+								</Stack>
+							</Tooltip>
+					  )
+					: "Último escrito PJN",
 				id: "actividadPropia",
 				accessor: (row: any) => row.ultimaActividadLetrado?.fecha || null,
 				Cell: ({ row }: { row: any }) => {
@@ -4921,29 +4955,36 @@ const FoldersLayout = () => {
 					if (!ult?.fecha) {
 						return (
 							<Typography variant="caption" color="text.secondary">
-								{ult?.ultimoSinConfirmar ? "Sin presentaciones en el expediente todavía" : "Sin presentaciones con esta credencial"}
+								{ult?.ultimoSinConfirmar ? "Ninguno en el expediente todavía" : "Sin escritos con esta credencial"}
+								{ult?.pendientes > 0 ? ` · ${ult.pendientes} sin proveer` : ""}
 							</Typography>
 						);
 					}
 					return (
 						<Tooltip
-							title={`Última presentación del letrado en PJN${
+							title={`Último escrito PJN${
 								ult.titulo ? `: ${ult.titulo}` : ""
-							}. Última presentación que figura como movimiento en el expediente; sirve para estimar la caducidad de instancia (orientativo).`}
+							}. Último que figura como movimiento en el expediente; sirve para estimar la caducidad de instancia (orientativo).${
+								ult.pendientes > 0
+									? ` Además, ${ult.pendientes === 1 ? "1 escrito sin proveer" : `${ult.pendientes} escritos sin proveer`}.`
+									: ""
+							}`}
 							arrow
 							placement="top"
 						>
 							<Stack direction="row" alignItems="center" spacing={1}>
 								<DiasActividadChip fecha={ult.fecha} />
-								<Stack spacing={0} sx={{ minWidth: 0 }}>
-									<Typography variant="body2" sx={{ whiteSpace: "nowrap" }}>
-										{dayjs(ult.fecha).format("DD/MM/YYYY")} · {TIPO_ACTO_LABEL[ult.tipo as keyof typeof TIPO_ACTO_LABEL] ?? ult.tipo}
-									</Typography>
-									<Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
-										{ESTADO_ACTO_LABEL[ult.estado as keyof typeof ESTADO_ACTO_LABEL] ?? ult.estado}
-										{ult.pendientes > 0 ? ` · ${ult.pendientes} sin proveer` : ""}
-									</Typography>
-								</Stack>
+								<Typography variant="body2" sx={{ whiteSpace: "nowrap" }}>
+									{dayjs(ult.fecha).format("DD/MM/YYYY")} · {TIPO_ACTO_LABEL[ult.tipo as keyof typeof TIPO_ACTO_LABEL] ?? ult.tipo}
+								</Typography>
+								{ult.pendientes > 0 && (
+									<Warning2
+										size={14}
+										variant="Bold"
+										color={theme.palette.mode === "dark" ? AMBAR_TEXTO.dark : AMBAR_TEXTO.light}
+										aria-label={`${ult.pendientes} sin proveer`}
+									/>
+								)}
 							</Stack>
 						</Tooltip>
 					);
@@ -5391,6 +5432,7 @@ const FoldersLayout = () => {
 			scbaCredError.hasError,
 			pjnCredError.requiresAction,
 			isTeamMode,
+			avisoEscritos,
 		],
 	);
 

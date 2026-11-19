@@ -2,7 +2,7 @@ import { Box, Tooltip, Typography } from "@mui/material";
 import { InfoCircle } from "iconsax-react";
 
 /** Nombre visible de la función. Solo PJN: las demás jurisdicciones no tienen bandeja de escritos que leer. */
-export const NOMBRE_ACTOS_PJN = "Presentaciones del letrado en PJN";
+export const NOMBRE_ACTOS_PJN = "Escritos presentados en PJN";
 
 const AYUDA = (
 	<Box sx={{ p: 0.5, maxWidth: 300 }}>
@@ -20,7 +20,7 @@ const AyudaActosPjn = ({ size = 14, texto }: { size?: number; texto?: React.Reac
 		<Box
 			component="span"
 			tabIndex={0}
-			aria-label={`Qué son las ${NOMBRE_ACTOS_PJN.toLowerCase()}`}
+			aria-label={`Qué son los ${NOMBRE_ACTOS_PJN.toLowerCase()}`}
 			sx={{ display: "inline-flex", alignItems: "center", color: "text.secondary", verticalAlign: "middle" }}
 			onClick={(e) => e.stopPropagation()}
 		>

@@ -17,6 +17,7 @@ import {
 	Button,
 	Alert,
 	CircularProgress,
+	Skeleton,
 	LinearProgress,
 	IconButton,
 	InputAdornment,
@@ -30,7 +31,6 @@ import { Link1, Eye, EyeSlash, TickCircle, CloseCircle, Refresh2, InfoCircle, Do
 import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 import { enqueueSnackbar } from "notistack";
 import { Zoom } from "@mui/material";
-import LogoLoader from "components/logo/LogoLoader";
 import { PopupTransition } from "components/@extended/Transitions";
 import scbaCredentialsService, {
 	ScbaCredentialsData,
@@ -889,9 +889,11 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 
 		if (isLoadingStatus) {
 			return (
-				<Box display="flex" justifyContent="center" alignItems="center" minHeight={150}>
-					<LogoLoader size={40} />
-				</Box>
+				<Stack spacing={1.25} sx={{ py: 0.5 }}>
+					<Skeleton variant="rounded" height={56} />
+					<Skeleton variant="text" width="60%" />
+					<Skeleton variant="text" width="35%" />
+				</Stack>
 			);
 		}
 
@@ -942,7 +944,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 									flexShrink: 0,
 								}}
 							>
-								<LogoLoader size={16} color={BRAND_BLUE} />
+								<CircularProgress size={14} sx={{ color: BRAND_BLUE }} />
 							</Box>
 							<Typography sx={{ fontSize: "0.88rem", fontWeight: 600, letterSpacing: "-0.005em", color: "text.primary" }}>
 								Sincronizando causas

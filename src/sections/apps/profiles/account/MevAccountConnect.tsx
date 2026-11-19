@@ -10,6 +10,7 @@ import {
 	IconButton,
 	Tooltip,
 	CircularProgress,
+	Skeleton,
 	Chip,
 	Dialog,
 	DialogContent,
@@ -230,9 +231,10 @@ const MevAccountConnect = ({ onConnectionStatusChange }: Props) => {
 
 	if (loading) {
 		return (
-			<Stack alignItems="center" sx={{ py: 4 }} spacing={1}>
-				<CircularProgress size={24} sx={{ color: BRAND_BLUE }} />
-				<Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>Cargando credencial MEV…</Typography>
+			<Stack spacing={1.25} sx={{ py: 0.5 }}>
+				<Skeleton variant="rounded" height={56} />
+				<Skeleton variant="text" width="60%" />
+				<Skeleton variant="text" width="35%" />
 			</Stack>
 		);
 	}
