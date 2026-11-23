@@ -113,16 +113,17 @@ export default function FifthForm({ formField }: FifthFormProps) {
 			/>
 
 			<Typography variant="h6" sx={{ mt: 3, mb: 0.5 }}>
-				Bono previsional
+				Refuerzos previsionales
 			</Typography>
 			<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-				Sumas fijas que el Poder Ejecutivo otorgó algunos meses (subsidios desde 12/2019, refuerzos 2022–23, ayudas y bonos extraordinarios
-				desde 2024). Cada decreto da el monto completo a quien cobra hasta un umbral y completa hasta umbral + monto por encima. No integran
-				el haber ni se mueven con la movilidad.
+				Bonos, subsidios y ayudas que el Poder Ejecutivo otorgó algunos meses: pagos únicos entre 2004 y 2016, subsidios desde 12/2019,
+				refuerzos de 2022–23 y bonos extraordinarios desde 2024. Cada decreto fija a quién alcanza: a todos, solo al haber mínimo o hasta un
+				tope con importe decreciente. No integran el haber ni se mueven con la movilidad. Es la pregunta «¿Considera los Refuerzos
+				Previsionales?» de BlueCorp.
 			</Typography>
 			<Grid container spacing={2} sx={{ maxWidth: 720 }}>
 				<Grid item xs={12} sm={6}>
-					<InputLabel sx={{ mb: 0.5 }}>Contabilizar el bono</InputLabel>
+					<InputLabel sx={{ mb: 0.5 }}>¿Considera los refuerzos previsionales?</InputLabel>
 					<FormControl fullWidth>
 						<Select value={values.bono || "no"} onChange={(e) => setFieldValue("bono", e.target.value)}>
 							{OPCIONES_BONO.map((o) => (
@@ -135,7 +136,7 @@ export default function FifthForm({ formField }: FifthFormProps) {
 				</Grid>
 				{values.bono && values.bono !== "no" && (
 					<Grid item xs={12} sm={6}>
-						<InputLabel sx={{ mb: 0.5 }}>Cómo se liquida</InputLabel>
+						<InputLabel sx={{ mb: 0.5 }}>Cómo se liquidan</InputLabel>
 						<FormControl fullWidth>
 							<Select value={values.bonoTratamiento || "decreto"} onChange={(e) => setFieldValue("bonoTratamiento", e.target.value)}>
 								{TRATAMIENTOS_BONO.map((o) => (

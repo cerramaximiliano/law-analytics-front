@@ -349,7 +349,8 @@ export default function ThirdForm({ formField }: ThirdFormProps) {
 		if (!patronDef) return;
 		const fechaInicial = values.haberReclamadoAl || values.haberPagadoAl || criterios[0]?.fechaDesde || "";
 		setFieldValue(criteriosMovilidad.name, patronDef.generaTramos(fechaInicial));
-		if (patronDef.noInferiorAlPercibido) setFieldValue("noInferiorAlPercibido", true);
+		// cada patrón deja la opción como le corresponde: tildada si el criterio queda por debajo de lo cobrado en algún mes
+		setFieldValue("noInferiorAlPercibido", !!patronDef.noInferiorAlPercibido);
 	};
 
 	const handleAddCriterio = () => {

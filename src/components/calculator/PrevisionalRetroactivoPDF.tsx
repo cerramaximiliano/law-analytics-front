@@ -372,9 +372,11 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 				<KV k="Obra social" v={input.obraSocialPct ? `Descuento INSSJyP (PAMI) del ${numero(input.obraSocialPct)} %` : "Sin descuento"} />
 				{bono && (
 					<KV
-						k="Bono previsional"
-						v={`Sobre el haber ${[bono.percibido && "percibido", bono.reclamado && "reclamado"].filter(Boolean).join(" y el ")}, ${
-							bono.tratamiento === "integrado" ? "integrado a la diferencia (con SAC y obra social)" : "aparte, sin SAC ni obra social"
+						k="Refuerzos previsionales"
+						v={`Considerados en el haber ${[bono.percibido && "percibido", bono.reclamado && "reclamado"]
+							.filter(Boolean)
+							.join(" y el ")}, ${
+							bono.tratamiento === "integrado" ? "sumados al haber (con SAC y obra social)" : "aparte, sin SAC ni obra social"
 						}${bono.incluirSubsidios2019y2021 === false ? "; sin los subsidios de 12/2019, 4/2021, 5/2021 y 8/2021" : ""}`}
 					/>
 				)}
