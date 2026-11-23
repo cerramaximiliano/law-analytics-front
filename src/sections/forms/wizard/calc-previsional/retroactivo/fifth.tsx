@@ -147,6 +147,25 @@ export default function FifthForm({ formField }: FifthFormProps) {
 						</FormControl>
 					</Grid>
 				)}
+				{values.bono && values.bono !== "no" && (
+					<Grid item xs={12}>
+						<FormControlLabel
+							control={
+								<Checkbox
+									checked={values.bonoSubsidios2019y2021 !== false}
+									onChange={(e) => setFieldValue("bonoSubsidios2019y2021", e.target.checked)}
+								/>
+							}
+							label="Contar los subsidios de 12/2019, 4/2021, 5/2021 y 8/2021"
+						/>
+						<Typography variant="caption" color="text.secondary" display="block" sx={{ ml: 4 }}>
+							Son los subsidios extraordinarios de los decretos 73/2019 (pago de diciembre de 2019), 218/2021 (abril y mayo de 2021) y
+							481/2021 (agosto de 2021). Por los decretos corresponden a los haberes que no superan el tope, y figuran en los recibos.
+							BlueCorp no los incluye aunque se cuenten los refuerzos: destildá esta opción si necesitás que el resultado coincida con una
+							liquidación hecha con ese programa.
+						</Typography>
+					</Grid>
+				)}
 			</Grid>
 
 			<Typography variant="h6" sx={{ mt: 3, mb: 0.5 }}>

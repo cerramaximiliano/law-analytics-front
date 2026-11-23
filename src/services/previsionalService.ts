@@ -159,7 +159,7 @@ export interface RetroactivoInput {
 	obraSocialPct?: number;
 	tasa?: string;
 	pagos?: { fecha: string; importe: number; tipo?: TipoPago }[];
-	bono?: "no" | { percibido: boolean; reclamado: boolean; tratamiento: TratamientoBono };
+	bono?: "no" | { percibido: boolean; reclamado: boolean; tratamiento: TratamientoBono; incluirSubsidios2019y2021?: boolean };
 	/** Tope con el salario del activo (CSJN "Villanustre"): el haber computado no supera el porcentaje del salario. */
 	villanustre?: VillanustreInput | null;
 }
@@ -219,7 +219,7 @@ export interface RetroactivoResultado {
 	desde: string;
 	consolidacion: string;
 	tasa: { tipo: string; descripcion?: string; metodo: string };
-	bono?: { percibido: boolean; reclamado: boolean; tratamiento: TratamientoBono };
+	bono?: { percibido: boolean; reclamado: boolean; tratamiento: TratamientoBono; incluirSubsidios2019y2021?: boolean };
 	villanustre?: VillanustreInput | null;
 	filas: FilaRetroactivo[];
 	pagos: { fecha: string; importe: number; tipo?: TipoPago; detalle?: string }[];
@@ -324,6 +324,8 @@ export function armarInputRetroactivo(values: any): RetroactivoInput {
 						percibido: values.bono === "percibido" || values.bono === "ambos",
 						reclamado: values.bono === "reclamado" || values.bono === "ambos",
 						tratamiento: values.bonoTratamiento === "integrado" ? "integrado" : "decreto",
+						// subsidios de 12/2019, 4/2021, 5/2021 y 8/2021: por defecto se cuentan (BlueCorp no los suma)
+						incluirSubsidios2019y2021: values.bonoSubsidios2019y2021 !== false,
 				  }
 				: "no",
 		villanustre: villanustreDe(values),

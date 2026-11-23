@@ -375,7 +375,7 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 						k="Bono previsional"
 						v={`Sobre el haber ${[bono.percibido && "percibido", bono.reclamado && "reclamado"].filter(Boolean).join(" y el ")}, ${
 							bono.tratamiento === "integrado" ? "integrado a la diferencia (con SAC y obra social)" : "aparte, sin SAC ni obra social"
-						}`}
+						}${bono.incluirSubsidios2019y2021 === false ? "; sin los subsidios de 12/2019, 4/2021, 5/2021 y 8/2021" : ""}`}
 					/>
 				)}
 				{(r.pagos || []).length > 0 && (

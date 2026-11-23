@@ -34,6 +34,10 @@ const INDICES_MOVILIDAD = [
 	{ value: "aumentos_generales_anses", label: "Aumentos Generales ANSES por movilidad" },
 	{ value: "recomposicion_ley_27426", label: "Recomposición Ley 27.426 — Torelli (salto único en 1/2021)" },
 	{ value: "ley_27426_diferido_6_meses", label: "Continuidad Ley 27.426 — IPC+RIPTE mes a mes" },
+	{
+		value: "art4_dnu_274_24_con_27426_junio",
+		label: "Art. 4 DNU 274/24 abr-jun 2024; en junio, además, el 45,88 % de la Ley 27.426 (Galletta)",
+	},
 	{ value: "aumento_mar_2021_sem2_2020", label: "Aumento Marzo 2021 por segundo semestre 2020 (Cortes)" },
 	{ value: "ipc_trimestral_retrasado_3m", label: "IPC trimestral retrasado 3 meses (Cortes)" },
 	{ value: "badaro_isal", label: "Índice de salarios INDEC (Badaro), anual hasta 12/2006" },
@@ -136,7 +140,7 @@ const PATRONES: PatronMovilidad[] = [
 		value: "galletta",
 		label: "Precedente Galletta — Ley 27.426 hasta 6/2024",
 		descripcion:
-			"Aumentos generales hasta 12/2020 → recomposición Torelli en 1/2021 → Ley 27.426 (IPC+RIPTE) de manera continua hasta 6/2024, en lugar de la ley 27.609 → aumentos generales (decreto 274/24) desde 7/2024.",
+			"Aumentos generales hasta 12/2020 → recomposición Torelli en 1/2021 → Ley 27.426 (IPC+RIPTE) de manera continua hasta 6/2024, en lugar de la ley 27.609 → aumentos generales (decreto 274/24) desde 7/2024. En abril y mayo de 2024 el haber no aumenta y en junio sube 45,88 %. Equivale en BlueCorp a «Galletta, Sala II (27426 desde 01/2021, con recomposición 2020 a enero 2021)».",
 		generaTramos: (fechaInicial) => [
 			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: fechaInicial },
 			{ indiceMovilidad: "recomposicion_ley_27426", fechaDesde: "01/01/2021" },
@@ -146,6 +150,24 @@ const PATRONES: PatronMovilidad[] = [
 		// Cons. V: la pauta "en modo alguno puede resultar en un haber inferior al que hubiera correspondido por la
 		// aplicación de las disposiciones vigentes". En 4 y 5/2024 la ley 27.426 queda por debajo de lo cobrado.
 		noInferiorAlPercibido: true,
+	},
+	{
+		// La otra lectura del empalme de "Galletta" con el DNU 274/24, que BlueCorp anuncia como «Continuar con fallo
+		// Galletta» ("Galletta, Sala II: 27426 + integración 2020 + art. 4 DNU 274/24 abr-jun 2024"): la ley 27.426 se
+		// corta en 3/2024; en abril, mayo y junio rigen los aumentos del art. 4 del DNU y en junio, además, el 45,88 % de
+		// la 27.426 (que refleja octubre-diciembre de 2023; los del DNU, febrero-abril de 2024). No queda por debajo del
+		// percibido en ningún mes, así que no enciende "no inferior al percibido".
+		value: "galletta_dnu",
+		label: "Precedente Galletta — con art. 4 DNU 274/24 en abril-junio de 2024",
+		descripcion:
+			"Igual que Galletta hasta 3/2024; en abril, mayo y junio de 2024 suma los aumentos del art. 4 del DNU 274/24 y en junio, además, el 45,88 % de la Ley 27.426 → aumentos generales desde 7/2024. Es la variante que BlueCorp ofrece como «Continuar con fallo Galletta». El resultado cambia mucho respecto del otro patrón Galletta (el haber de junio de 2024 queda mucho más alto): elegí el que corresponda a la sentencia o a lo que se pide.",
+		generaTramos: (fechaInicial) => [
+			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: fechaInicial },
+			{ indiceMovilidad: "recomposicion_ley_27426", fechaDesde: "01/01/2021" },
+			{ indiceMovilidad: "ley_27426_diferido_6_meses", fechaDesde: "01/02/2021" },
+			{ indiceMovilidad: "art4_dnu_274_24_con_27426_junio", fechaDesde: "01/04/2024" },
+			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: "01/07/2024" },
+		],
 	},
 ];
 
@@ -184,6 +206,11 @@ const detectarPatron = (criterios: MovilidadCriterio[]): string => {
 		return "cortes";
 	if (indices.join() === "aumentos_generales_anses,recomposicion_ley_27426,ley_27426_diferido_6_meses,aumentos_generales_anses")
 		return "galletta";
+	if (
+		indices.join() ===
+		"aumentos_generales_anses,recomposicion_ley_27426,ley_27426_diferido_6_meses,art4_dnu_274_24_con_27426_junio,aumentos_generales_anses"
+	)
+		return "galletta_dnu";
 	return "personalizado";
 };
 
