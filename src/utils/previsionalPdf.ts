@@ -18,6 +18,11 @@ export const CRITERIOS_MOVILIDAD_LABELS: Record<string, string> = {
 	ngr_extendido: "Nivel General de las Remuneraciones extendido (Sánchez), mensual hasta 03/1995",
 	recomposicion_ley_27426: "Recomposición ley 27.426 - Torelli (salto único)",
 	ley_27426_diferido_6_meses: "Continuidad ley 27.426 (IPC + RIPTE)",
+	art4_dnu_274_24_con_27426_junio: "Art. 4 DNU 274/24 abr-jun 2024; en junio, además, el 45,88 % de la ley 27.426 (Galletta)",
+	empalme_27426_dnu_70_30_julio_2024:
+		"Empalme ley 27.426 – DNU 274/24: 70 % IPC y 30 % RIPTE de enero-abril 2024, en julio de 2024 (Galletta)",
+	mayor_27426_o_general: "El mayor entre la ley 27.426 y el aumento general, por trimestre, 03/2021 a 03/2024 (Galletta con piso)",
+	aguirre_ipc_trimestral: "Aguirre: IPC de octubre-diciembre 2023 en marzo 2024 y de enero-marzo 2024 en junio 2024",
 	aumento_mar_2021_sem2_2020: "Aumento de marzo 2021 por el segundo semestre 2020 (Cortes)",
 	ipc_trimestral_retrasado_3m: "IPC trimestral con 3 meses de atraso (Cortes)",
 };

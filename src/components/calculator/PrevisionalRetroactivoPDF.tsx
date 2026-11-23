@@ -332,6 +332,9 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 				/>
 				{pension && <KV k="Pensión derivada" v={`${numero(pension.porcentaje)} % del haber desde el ${fecha(pension.fecha)}`} />}
 				{input.zonaAustral && <KV k="Zona austral" v="Sí (suma fija de los aumentos por 1,4)" />}
+				{input.noInferiorAlPercibido && (
+					<KV k="Haber no inferior al percibido" v="Sí (si el criterio da menos que lo cobrado, se toma el percibido)" />
+				)}
 				<KV k="Período de diferencias" v={`${fecha(r.desde)} - ${mes(ultimoPeriodo)}`} />
 				<KV k="Fecha de cierre" v={fecha(r.consolidacion)} />
 				<KV k="Tasa de interés" v={tasaTexto} />
@@ -372,7 +375,7 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 						k="Bono previsional"
 						v={`Sobre el haber ${[bono.percibido && "percibido", bono.reclamado && "reclamado"].filter(Boolean).join(" y el ")}, ${
 							bono.tratamiento === "integrado" ? "integrado a la diferencia (con SAC y obra social)" : "aparte, sin SAC ni obra social"
-						}`}
+						}${bono.incluirSubsidios2019y2021 === false ? "; sin los subsidios de 12/2019, 4/2021, 5/2021 y 8/2021" : ""}`}
 					/>
 				)}
 				{(r.pagos || []).length > 0 && (
