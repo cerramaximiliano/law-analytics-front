@@ -38,9 +38,9 @@ export type PisoPercibido = "no" | "minimo" | "minimo82" | "sinGarantia";
 export type TipoTope = "no" | "si" | "actis_caporale_menor_15" | "actis_caporale_menor_15_sino_descuenta";
 
 export const PISOS_PERCIBIDO: { value: PisoPercibido; label: string }[] = [
-	{ value: "minimo", label: "Cobra al menos el haber mínimo" },
-	{ value: "minimo82", label: "Cobra al menos el haber mínimo y el suplemento al 82 % del SMVM (ley 27.426, 30 años de aportes)" },
-	{ value: "sinGarantia", label: "Sin garantía del mínimo: el haber informado con sus aumentos, aunque quede por debajo" },
+	{ value: "minimo", label: "Haber mínimo garantizado" },
+	{ value: "minimo82", label: "Haber mínimo garantizado y mínimo del 82 % del SMVyM (ley 27.426, 30 años de aportes)" },
+	{ value: "sinGarantia", label: "Sin haber mínimo garantizado: el haber informado con sus aumentos, aunque quede por debajo" },
 ];
 
 /** Igual que pisoDe() del motor: el piso del mínimo se aplica solo salvo "minimo82" o "sinGarantia". */
@@ -50,15 +50,15 @@ export type OpcionBono = "no" | "percibido" | "reclamado" | "ambos";
 export type TratamientoBono = "decreto" | "integrado";
 
 export const OPCIONES_BONO: { value: OpcionBono; label: string }[] = [
-	{ value: "no", label: "No contabilizar" },
-	{ value: "percibido", label: "Sobre el haber percibido" },
-	{ value: "ambos", label: "Sobre el percibido y el reclamado" },
-	{ value: "reclamado", label: "Sobre el haber reclamado" },
+	{ value: "no", label: "No" },
+	{ value: "percibido", label: "Sí, en el haber percibido" },
+	{ value: "ambos", label: "Sí, en el haber percibido y en el reclamado" },
+	{ value: "reclamado", label: "Sí, en el haber reclamado" },
 ];
 
 export const TRATAMIENTOS_BONO: { value: TratamientoBono; label: string }[] = [
 	{ value: "decreto", label: "Aparte, sin SAC ni obra social (como dicen los decretos)" },
-	{ value: "integrado", label: "Integrado a la diferencia, con SAC y obra social" },
+	{ value: "integrado", label: "Sumados al haber, con SAC y obra social (como BlueCorp)" },
 ];
 
 /** Moneda del haber inicial (el motor la pasa a pesos con los divisores del haber de caja). "ARS" = pesos. */
