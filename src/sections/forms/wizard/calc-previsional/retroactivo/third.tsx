@@ -38,6 +38,18 @@ const INDICES_MOVILIDAD = [
 		value: "art4_dnu_274_24_con_27426_junio",
 		label: "Art. 4 DNU 274/24 abr-jun 2024; en junio, además, el 45,88 % de la Ley 27.426 (Galletta)",
 	},
+	{
+		value: "empalme_27426_dnu_70_30_julio_2024",
+		label: "Empalme Ley 27.426 – DNU 274/24: 70 % IPC y 30 % RIPTE de enero-abril 2024, en julio de 2024 (Galletta)",
+	},
+	{
+		value: "mayor_27426_o_general",
+		label: "El mayor entre la Ley 27.426 y el aumento general, por trimestre, 3/2021 a 3/2024 (Galletta con piso)",
+	},
+	{
+		value: "aguirre_ipc_trimestral",
+		label: "Aguirre: IPC de octubre-diciembre 2023 en marzo 2024 y de enero-marzo 2024 en junio 2024",
+	},
 	{ value: "aumento_mar_2021_sem2_2020", label: "Aumento Marzo 2021 por segundo semestre 2020 (Cortes)" },
 	{ value: "ipc_trimestral_retrasado_3m", label: "IPC trimestral retrasado 3 meses (Cortes)" },
 	{ value: "badaro_isal", label: "Índice de salarios INDEC (Badaro), anual hasta 12/2006" },
@@ -133,34 +145,47 @@ const PATRONES: PatronMovilidad[] = [
 			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: "01/04/2024" },
 		],
 	},
+	// ── Movilidad 2021-2024: "Galletta" (CFSS Sala II, 13/11/2026) y "Aguirre" (Sala III, 5/11/2026) ──────────────
+	// Galletta ordena la ley 27.426 "de manera continua desde enero de 2021 hasta junio de 2024 inclusive, para empalmar
+	// a partir de allí con el régimen actual (decreto 274/2024)". Cómo se empalma admite varias lecturas; cada patrón
+	// es una de las opciones que ofrece BlueCorp y da lo mismo que BlueCorp mes a mes (validado el 23/11/2026, ver
+	// law-analytics-server/docs/PREVISIONAL_RETROACTIVO.md). El resultado cambia mucho de uno a otro.
+	// `noInferiorAlPercibido`: cons. V de Galletta, la pauta "en modo alguno puede resultar en un haber inferior al que
+	// hubiera correspondido por la aplicación de las disposiciones vigentes". Se enciende en los patrones donde algún
+	// mes el reclamado queda por debajo de lo cobrado (BlueCorp no tiene esa opción: para comparar con una planilla de
+	// BlueCorp hay que destildarla).
 	{
-		// CFSS Sala II, "Galletta" (13/11/2026): ley 27.426 "de manera continua desde enero de 2021 hasta junio de 2024
-		// inclusive, para empalmar a partir de allí con el régimen actual (decreto 274/2024)". La base de enero de 2021
-		// es la recompuesta por la movilidad de 2020 (Torelli), a la que el voto adhiere.
 		value: "galletta",
 		label: "Precedente Galletta — Ley 27.426 hasta 6/2024",
 		descripcion:
-			"Aumentos generales hasta 12/2020 → recomposición Torelli en 1/2021 → Ley 27.426 (IPC+RIPTE) de manera continua hasta 6/2024, en lugar de la ley 27.609 → aumentos generales (decreto 274/24) desde 7/2024. En abril y mayo de 2024 el haber no aumenta y en junio sube 45,88 %. Equivale en BlueCorp a «Galletta, Sala II (27426 desde 01/2021, con recomposición 2020 a enero 2021)».",
+			"Aumentos generales hasta 12/2020 → recomposición Torelli en 1/2021 → Ley 27.426 (IPC+RIPTE) hasta 6/2024, en lugar de la ley 27.609 → aumentos generales (decreto 274/24) desde 7/2024. En abril y mayo de 2024 el haber no aumenta y en junio sube 45,88 %. Es la lectura más baja. En BlueCorp: «Galletta, Sala II (27426 desde 01/2021, con recomposición 2020 a enero 2021)».",
 		generaTramos: (fechaInicial) => [
 			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: fechaInicial },
 			{ indiceMovilidad: "recomposicion_ley_27426", fechaDesde: "01/01/2021" },
 			{ indiceMovilidad: "ley_27426_diferido_6_meses", fechaDesde: "01/02/2021" },
 			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: "01/07/2024" },
 		],
-		// Cons. V: la pauta "en modo alguno puede resultar en un haber inferior al que hubiera correspondido por la
-		// aplicación de las disposiciones vigentes". En 4 y 5/2024 la ley 27.426 queda por debajo de lo cobrado.
+		noInferiorAlPercibido: true, // 4 y 5/2024 quedan por debajo de lo cobrado
+	},
+	{
+		value: "galletta_sin_recomposicion",
+		label: "Precedente Galletta — Ley 27.426 hasta 6/2024, sin recomposición de 2020",
+		descripcion:
+			"Igual que el anterior pero sin el salto de enero de 2021 por la movilidad suspendida en 2020: la Ley 27.426 arranca en 1/2021 sobre el haber cobrado. Suele quedar por debajo de lo percibido en muchos meses. En BlueCorp: «Galletta, Sala II (27426 desde 01/2021, sin recomposición)».",
+		generaTramos: (fechaInicial) => [
+			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: fechaInicial },
+			{ indiceMovilidad: "ley_27426_diferido_6_meses", fechaDesde: "01/01/2021" },
+			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: "01/07/2024" },
+		],
 		noInferiorAlPercibido: true,
 	},
 	{
-		// La otra lectura del empalme de "Galletta" con el DNU 274/24, que BlueCorp anuncia como «Continuar con fallo
-		// Galletta» ("Galletta, Sala II: 27426 + integración 2020 + art. 4 DNU 274/24 abr-jun 2024"): la ley 27.426 se
-		// corta en 3/2024; en abril, mayo y junio rigen los aumentos del art. 4 del DNU y en junio, además, el 45,88 % de
-		// la 27.426 (que refleja octubre-diciembre de 2023; los del DNU, febrero-abril de 2024). No queda por debajo del
-		// percibido en ningún mes, así que no enciende "no inferior al percibido".
+		// La ley 27.426 se corta en 3/2024; en abril, mayo y junio rigen los aumentos del art. 4 del DNU y en junio,
+		// además, el 45,88 % de la 27.426 (que refleja octubre-diciembre de 2023; los del DNU, febrero-abril de 2024).
 		value: "galletta_dnu",
 		label: "Precedente Galletta — con art. 4 DNU 274/24 en abril-junio de 2024",
 		descripcion:
-			"Igual que Galletta hasta 3/2024; en abril, mayo y junio de 2024 suma los aumentos del art. 4 del DNU 274/24 y en junio, además, el 45,88 % de la Ley 27.426 → aumentos generales desde 7/2024. Es la variante que BlueCorp ofrece como «Continuar con fallo Galletta». El resultado cambia mucho respecto del otro patrón Galletta (el haber de junio de 2024 queda mucho más alto): elegí el que corresponda a la sentencia o a lo que se pide.",
+			"Igual que Galletta hasta 3/2024; en abril, mayo y junio de 2024 suma los aumentos del art. 4 del DNU 274/24 y en junio, además, el 45,88 % de la Ley 27.426 → aumentos generales desde 7/2024. El haber de junio de 2024 queda mucho más alto que con el primer patrón. En BlueCorp: «Galletta, Sala II: 27426 + integración 2020 + art. 4 DNU 274/24 abr-jun 2024» (la de «Continuar con fallo Galletta»).",
 		generaTramos: (fechaInicial) => [
 			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: fechaInicial },
 			{ indiceMovilidad: "recomposicion_ley_27426", fechaDesde: "01/01/2021" },
@@ -168,6 +193,60 @@ const PATRONES: PatronMovilidad[] = [
 			{ indiceMovilidad: "art4_dnu_274_24_con_27426_junio", fechaDesde: "01/04/2024" },
 			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: "01/07/2024" },
 		],
+		noInferiorAlPercibido: true, // en haberes bajos, 6 a 11/2022 quedan apenas por debajo de lo cobrado
+	},
+	{
+		value: "galletta_empalme",
+		label: "Precedente Galletta — con empalme 70/30 en julio de 2024",
+		descripcion:
+			"Igual que Galletta hasta 6/2024; en julio de 2024 suma, sobre el aumento general, el 70 % de la variación del IPC y el 30 % de la del RIPTE de enero-abril de 2024 (el período que la Ley 27.426 dejaba sin cubrir) → aumentos generales desde 8/2024. Es la lectura más alta. En BlueCorp: «Galletta, Sala II, con recomposición 2020 y empalme 70/30 ene-abr 2024».",
+		generaTramos: (fechaInicial) => [
+			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: fechaInicial },
+			{ indiceMovilidad: "recomposicion_ley_27426", fechaDesde: "01/01/2021" },
+			{ indiceMovilidad: "ley_27426_diferido_6_meses", fechaDesde: "01/02/2021" },
+			{ indiceMovilidad: "empalme_27426_dnu_70_30_julio_2024", fechaDesde: "01/07/2024" },
+			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: "01/08/2024" },
+		],
+		noInferiorAlPercibido: true, // 4 y 5/2024 quedan por debajo de lo cobrado
+	},
+	{
+		value: "galletta_empalme_sin_recomposicion",
+		label: "Precedente Galletta — con empalme 70/30, sin recomposición de 2020",
+		descripcion:
+			"Como el anterior, sin el salto de enero de 2021: Ley 27.426 desde 1/2021 hasta 6/2024 y empalme 70/30 en julio de 2024. En BlueCorp: «Galletta, Sala II, sin recomposición, con empalme 70/30 ene-abr 2024».",
+		generaTramos: (fechaInicial) => [
+			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: fechaInicial },
+			{ indiceMovilidad: "ley_27426_diferido_6_meses", fechaDesde: "01/01/2021" },
+			{ indiceMovilidad: "empalme_27426_dnu_70_30_julio_2024", fechaDesde: "01/07/2024" },
+			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: "01/08/2024" },
+		],
+		noInferiorAlPercibido: true,
+	},
+	{
+		// No queda por debajo de lo cobrado en ningún mes: no enciende "no inferior al percibido".
+		value: "galletta_piso",
+		label: "Precedente Galletta — con piso trimestral (el mayor entre Ley 27.426 y ANSES)",
+		descripcion:
+			"Recomposición Torelli en 1/2021 y, de 3/2021 a 3/2024, en cada trimestre el aumento más alto entre el de la Ley 27.426 y el general de ANSES → aumentos generales desde 4/2024. Nunca queda por debajo de lo cobrado. En BlueCorp: «Galletta con piso trimestral: el mayor entre 27426 y ANSeS (Soroet)».",
+		generaTramos: (fechaInicial) => [
+			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: fechaInicial },
+			{ indiceMovilidad: "recomposicion_ley_27426", fechaDesde: "01/01/2021" },
+			{ indiceMovilidad: "mayor_27426_o_general", fechaDesde: "01/02/2021" },
+			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: "01/04/2024" },
+		],
+	},
+	{
+		// CFSS Sala III, "Aguirre" (5/11/2026); la mayoría de "Pena" (Sala I, 17/11/2026) sigue la misma pauta.
+		value: "aguirre",
+		label: "Precedente Aguirre — IPC trimestral en marzo y junio de 2024",
+		descripcion:
+			"Aumentos generales hasta 2/2024; en marzo de 2024 el IPC de octubre-diciembre de 2023 (53,29 %) en lugar del aumento de la ley 27.609, abril y mayo sin aumento, y en junio el IPC de enero-marzo de 2024 (51,62 %) → aumentos generales desde 7/2024. Es también la pauta de la mayoría en Pena. En BlueCorp: «Aguirre, Jorge Alberto (trimestral)».",
+		generaTramos: (fechaInicial) => [
+			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: fechaInicial },
+			{ indiceMovilidad: "aguirre_ipc_trimestral", fechaDesde: "01/03/2024" },
+			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: "01/07/2024" },
+		],
+		noInferiorAlPercibido: true, // 4 y 5/2024 quedan por debajo de lo cobrado
 	},
 ];
 
@@ -194,7 +273,8 @@ const detectarPatron = (criterios: MovilidadCriterio[]): string => {
 		indices[1] === "ley_27426_diferido_6_meses" &&
 		indices[2] === "aumentos_generales_anses"
 	)
-		return "continuidad";
+		// misma estructura en dos patrones: los distingue desde cuándo rige la ley 27.426 (2/2020 o 1/2021)
+		return String(criterios[1]?.fechaDesde || "").endsWith("/2021") ? "galletta_sin_recomposicion" : "continuidad";
 	if (
 		indices.length === 5 &&
 		indices[0] === "aumentos_generales_anses" &&
@@ -211,6 +291,16 @@ const detectarPatron = (criterios: MovilidadCriterio[]): string => {
 		"aumentos_generales_anses,recomposicion_ley_27426,ley_27426_diferido_6_meses,art4_dnu_274_24_con_27426_junio,aumentos_generales_anses"
 	)
 		return "galletta_dnu";
+	const G = "aumentos_generales_anses";
+	const R = "recomposicion_ley_27426";
+	const L = "ley_27426_diferido_6_meses";
+	const porEstructura: Record<string, string> = {
+		[[G, R, L, "empalme_27426_dnu_70_30_julio_2024", G].join()]: "galletta_empalme",
+		[[G, L, "empalme_27426_dnu_70_30_julio_2024", G].join()]: "galletta_empalme_sin_recomposicion",
+		[[G, R, "mayor_27426_o_general", G].join()]: "galletta_piso",
+		[[G, "aguirre_ipc_trimestral", G].join()]: "aguirre",
+	};
+	if (porEstructura[indices.join()]) return porEstructura[indices.join()];
 	return "personalizado";
 };
 
