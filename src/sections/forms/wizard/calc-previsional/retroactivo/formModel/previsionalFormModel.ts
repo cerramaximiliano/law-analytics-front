@@ -53,6 +53,7 @@ const previsionalFormModel = {
 		bono: { name: "bono", label: "Bono previsional (subsidios, refuerzos y bonos extraordinarios)" },
 		bonoTratamiento: { name: "bonoTratamiento", label: "Cómo se liquida el bono" },
 		capitalizarInteresImpago: { name: "capitalizarInteresImpago", label: "Capitalizar el interés impago" },
+		noInferiorAlPercibido: { name: "noInferiorAlPercibido", label: "El haber reclamado no puede ser inferior al percibido" },
 		// Tope con el salario del activo (CSJN "Villanustre"); cada salario: { fecha: DD/MM/AAAA, importe }
 		topeMaximoBadaro: { name: "topeMaximoBadaro", label: "Mover el haber máximo con la movilidad del fallo Badaro" },
 		topeMaximoBadaroDesde: { name: "topeMaximoBadaroDesde", label: "Desde" },

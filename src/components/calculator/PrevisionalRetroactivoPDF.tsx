@@ -332,6 +332,9 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 				/>
 				{pension && <KV k="Pensión derivada" v={`${numero(pension.porcentaje)} % del haber desde el ${fecha(pension.fecha)}`} />}
 				{input.zonaAustral && <KV k="Zona austral" v="Sí (suma fija de los aumentos por 1,4)" />}
+				{input.noInferiorAlPercibido && (
+					<KV k="Haber no inferior al percibido" v="Sí (si el criterio da menos que lo cobrado, se toma el percibido)" />
+				)}
 				<KV k="Período de diferencias" v={`${fecha(r.desde)} - ${mes(ultimoPeriodo)}`} />
 				<KV k="Fecha de cierre" v={fecha(r.consolidacion)} />
 				<KV k="Tasa de interés" v={tasaTexto} />

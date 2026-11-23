@@ -47,6 +47,9 @@ interface PatronMovilidad {
 	label: string;
 	descripcion: string;
 	generaTramos: (fechaInicial: string) => MovilidadCriterio[];
+	// El precedente dice que el reajuste no puede dejar un haber menor que el cobrado: al elegir el patrón se enciende
+	// la opción "el haber reclamado no puede ser inferior al percibido" (el usuario la puede apagar).
+	noInferiorAlPercibido?: boolean;
 }
 
 const PATRONES: PatronMovilidad[] = [
@@ -140,6 +143,9 @@ const PATRONES: PatronMovilidad[] = [
 			{ indiceMovilidad: "ley_27426_diferido_6_meses", fechaDesde: "01/02/2021" },
 			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: "01/07/2024" },
 		],
+		// Cons. V: la pauta "en modo alguno puede resultar en un haber inferior al que hubiera correspondido por la
+		// aplicación de las disposiciones vigentes". En 4 y 5/2024 la ley 27.426 queda por debajo de lo cobrado.
+		noInferiorAlPercibido: true,
 	},
 ];
 
@@ -226,6 +232,7 @@ export default function ThirdForm({ formField }: ThirdFormProps) {
 		if (!patronDef) return;
 		const fechaInicial = values.haberReclamadoAl || values.haberPagadoAl || criterios[0]?.fechaDesde || "";
 		setFieldValue(criteriosMovilidad.name, patronDef.generaTramos(fechaInicial));
+		if (patronDef.noInferiorAlPercibido) setFieldValue("noInferiorAlPercibido", true);
 	};
 
 	const handleAddCriterio = () => {
@@ -439,6 +446,18 @@ export default function ThirdForm({ formField }: ThirdFormProps) {
 				control={<Checkbox checked={!!values.zonaAustral} onChange={(e) => setFieldValue("zonaAustral", e.target.checked)} />}
 				label="Bonificación por zona austral (las sumas fijas y el haber máximo se multiplican por 1,4)"
 			/>
+			<FormControlLabel
+				sx={{ display: "flex", mt: 0.5 }}
+				control={
+					<Checkbox checked={!!values.noInferiorAlPercibido} onChange={(e) => setFieldValue("noInferiorAlPercibido", e.target.checked)} />
+				}
+				label="El haber reclamado no puede ser inferior al percibido"
+			/>
+			<Typography variant="caption" color="text.secondary" sx={{ display: "block", ml: 4, mb: 1 }}>
+				Si en algún mes el criterio elegido da un haber menor que el que se cobró, se toma el haber percibido: ese mes queda sin diferencia
+				en lugar de restar del total. Usalo cuando la sentencia dice que el reajuste no puede disminuir el haber (por ejemplo, Galletta). Si
+				lo dejás destildado, los meses en que el reclamado es menor se descuentan del capital. El resultado te avisa en qué meses pasó.
+			</Typography>
 			{values.prestacion === "pension_derivada" && (
 				<Grid container spacing={2.5} sx={{ mt: 0.5 }}>
 					<Grid item xs={12} md={6}>

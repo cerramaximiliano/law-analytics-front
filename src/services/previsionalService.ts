@@ -122,6 +122,8 @@ export interface RetroactivoInput {
 	desde: string;
 	/** Por defecto true: el interés impago tras un pago devenga intereses (art. 770 inc. c CCyC). */
 	capitalizarInteresImpago?: boolean;
+	/** Por defecto false: el haber reclamado de cada mes no baja del percibido de ese mes (mes con diferencia 0 en lugar de negativa). */
+	noInferiorAlPercibido?: boolean;
 	hasta?: string;
 	consolidacion: string;
 	percibido: {
@@ -213,6 +215,7 @@ export interface TramoRetroactivo {
 export interface RetroactivoResultado {
 	success: boolean;
 	capitalizarInteresImpago?: boolean;
+	noInferiorAlPercibido?: boolean;
 	desde: string;
 	consolidacion: string;
 	tasa: { tipo: string; descripcion?: string; metodo: string };
@@ -314,6 +317,7 @@ export function armarInputRetroactivo(values: any): RetroactivoInput {
 			.filter((p: PagoACuenta) => p && p.fecha && Number(p.importe) > 0)
 			.map((p: PagoACuenta) => ({ fecha: aISO(p.fecha), importe: Number(p.importe), tipo: p.tipo || "administrativo" })),
 		capitalizarInteresImpago: values.capitalizarInteresImpago !== false,
+		noInferiorAlPercibido: values.noInferiorAlPercibido === true,
 		bono:
 			values.bono && values.bono !== "no"
 				? {
