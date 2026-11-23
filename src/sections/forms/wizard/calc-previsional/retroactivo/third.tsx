@@ -34,6 +34,7 @@ const INDICES_MOVILIDAD = [
 	{ value: "aumentos_generales_anses", label: "Aumentos Generales ANSES por movilidad" },
 	{ value: "recomposicion_ley_27426", label: "Recomposición Ley 27.426 — Torelli (salto único en 1/2021)" },
 	{ value: "ley_27426_diferido_6_meses", label: "Continuidad Ley 27.426 — IPC+RIPTE mes a mes" },
+	{ value: "ley_27426_piso_52_percibido", label: "Ley 27.426 con piso del 52 % sobre el haber percibido (voto Fantini en Pena)" },
 	{ value: "aumento_mar_2021_sem2_2020", label: "Aumento Marzo 2021 por segundo semestre 2020 (Cortes)" },
 	{ value: "ipc_trimestral_retrasado_3m", label: "IPC trimestral retrasado 3 meses (Cortes)" },
 	{ value: "badaro_isal", label: "Índice de salarios INDEC (Badaro), anual hasta 12/2006" },
@@ -126,6 +127,36 @@ const PATRONES: PatronMovilidad[] = [
 			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: "01/04/2024" },
 		],
 	},
+	{
+		// CFSS Sala II, "Galletta" (13/11/2026): ley 27.426 "de manera continua desde enero de 2021 hasta junio de 2024
+		// inclusive, para empalmar a partir de allí con el régimen actual (decreto 274/2024)". La base de enero de 2021
+		// es la recompuesta por la movilidad de 2020 (Torelli), a la que el voto adhiere.
+		value: "galletta",
+		label: "Precedente Galletta — Ley 27.426 hasta 6/2024",
+		descripcion:
+			"Aumentos generales hasta 12/2020 → recomposición Torelli en 1/2021 → Ley 27.426 (IPC+RIPTE) de manera continua hasta 6/2024, en lugar de la ley 27.609 → aumentos generales (decreto 274/24) desde 7/2024.",
+		generaTramos: (fechaInicial) => [
+			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: fechaInicial },
+			{ indiceMovilidad: "recomposicion_ley_27426", fechaDesde: "01/01/2021" },
+			{ indiceMovilidad: "ley_27426_diferido_6_meses", fechaDesde: "01/02/2021" },
+			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: "01/07/2024" },
+		],
+	},
+	{
+		// Igual que Galletta, con el piso del voto del juez Fantini Albarenque en "Pena" (CFSS Sala I, 17/11/2026): la
+		// recomposición del haber bruto a junio de 2024 no puede ser "inferior al 52%". El piso no está en Galletta.
+		value: "galletta_piso",
+		label: "Precedente Galletta con piso del 52 % a 6/2024 (voto Fantini en Pena)",
+		descripcion:
+			"Igual que Galletta, y en 6/2024 el haber reclamado no baja del percibido de ese mes más un 52 %. El piso surge del voto en minoría del juez Fantini en Pena, no de Galletta: usalo si la sentencia lo fija o para pedirlo.",
+		generaTramos: (fechaInicial) => [
+			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: fechaInicial },
+			{ indiceMovilidad: "recomposicion_ley_27426", fechaDesde: "01/01/2021" },
+			{ indiceMovilidad: "ley_27426_diferido_6_meses", fechaDesde: "01/02/2021" },
+			{ indiceMovilidad: "ley_27426_piso_52_percibido", fechaDesde: "01/06/2024" },
+			{ indiceMovilidad: "aumentos_generales_anses", fechaDesde: "01/07/2024" },
+		],
+	},
 ];
 
 // Detecta el patrón a partir de los criterios actuales (solo por estructura de índices, ignorando fechas).
@@ -161,6 +192,13 @@ const detectarPatron = (criterios: MovilidadCriterio[]): string => {
 		indices[4] === "aumentos_generales_anses"
 	)
 		return "cortes";
+	if (indices.join() === "aumentos_generales_anses,recomposicion_ley_27426,ley_27426_diferido_6_meses,aumentos_generales_anses")
+		return "galletta";
+	if (
+		indices.join() ===
+		"aumentos_generales_anses,recomposicion_ley_27426,ley_27426_diferido_6_meses,ley_27426_piso_52_percibido,aumentos_generales_anses"
+	)
+		return "galletta_piso";
 	return "personalizado";
 };
 
