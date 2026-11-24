@@ -6044,6 +6044,7 @@ const FoldersLayout = () => {
 						open={archivedModalOpen}
 						onClose={handleCloseArchivedModal}
 						title="Causas Archivadas"
+						showStorageHiddenNotice={!isTeamMode}
 						items={archivedFolders || []}
 						onUnarchive={handleUnarchiveSelected}
 						loading={loadingUnarchive}
