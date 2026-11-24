@@ -19,6 +19,9 @@ export interface ArchivedSummary {
 	archivedByPlan: number;
 	archivedByUser: number;
 	total: number;
+	// Carpetas ocultas por falta de almacenamiento (hub storageHiddenAt): no están en `total` ni en el
+	// listado de archivadas; se muestran todas al subir de plan.
+	hiddenByStorage: number;
 	planId: string;
 	planLimit: number;
 	recommended: ArchivedSummaryRecommendation | null;
@@ -50,6 +53,7 @@ export const fetchArchivedSummary = async (): Promise<ArchivedSummary | null> =>
 			archivedByPlan: Number(data.archivedByPlan) || 0,
 			archivedByUser: Number(data.archivedByUser) || 0,
 			total: Number(data.total) || 0,
+			hiddenByStorage: Number(data.hiddenByStorage) || 0,
 			planId: data.planId || "free",
 			planLimit: Number(data.planLimit) || 0,
 			recommended: data.recommended || null,

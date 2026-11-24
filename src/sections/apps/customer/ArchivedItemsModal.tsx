@@ -36,6 +36,10 @@ import { PopupTransition } from "components/@extended/Transitions";
 import EmptyResults from "./EmptyResults";
 import { Archive, CloseCircle, CloseSquare, InfoCircle, SearchNormal1, Warning2, UserEdit } from "iconsax-react";
 import { BRAND_BLUE, LIVE_GREEN } from "themes/dashboardTokens";
+import { useNavigate } from "react-router-dom";
+import useArchivedSummary from "hooks/useArchivedSummary";
+import { planNameForCopy } from "services/archivedSummaryService";
+import { trackUpgradeCtaClick } from "utils/gtm";
 import { radicacionOrigen, radicacionSegunda, ubicacionInstancia, ubicacionTexto } from "utils/radicacion";
 
 /**
@@ -107,7 +111,11 @@ interface ArchivedItemsModalProps {
 	onSortChange?: (value: string) => void;
 	// Eliminar archivadas (6/11/2026, pedido de Silvia): el parent abre su diálogo de confirmación.
 	onDeleteSelected?: (selectedIds: string[]) => void;
+	// Aviso de carpetas ocultas por falta de almacenamiento (24/11/2026): solo en el listado personal.
+	showStorageHiddenNotice?: boolean;
 }
+
+const STORAGE_HIDDEN_PLANS_SOURCE = "archived_modal_storage";
 
 // ==============================|| ARCHIVED ITEMS MODAL ||============================== //
 
@@ -138,9 +146,14 @@ const ArchivedItemsModal = ({
 	sortValue = "",
 	onSortChange,
 	onDeleteSelected,
+	showStorageHiddenNotice = false,
 }: ArchivedItemsModalProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
+	const navigate = useNavigate();
+	// Ocultas por almacenamiento: el resumen se pide al abrir el modal (solo carpetas del listado personal)
+	const { summary: storageSummary } = useArchivedSummary(open && itemType === "folders" && showStorageHiddenNotice);
+	const hiddenByStorage = storageSummary?.hiddenByStorage || 0;
 	const [selected, setSelected] = useState<string[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [searchText, setSearchText] = useState("");
@@ -459,6 +472,55 @@ const ArchivedItemsModal = ({
 						</Stack>
 					</Stack>
 				</Box>
+
+				{hiddenByStorage > 0 && (
+					<Box
+						sx={{
+							p: 1.5,
+							mb: 2,
+							borderRadius: 1.25,
+							bgcolor: alpha(theme.palette.warning.main, isDark ? 0.1 : 0.06),
+							border: `1px solid ${alpha(theme.palette.warning.main, isDark ? 0.32 : 0.24)}`,
+							flexShrink: 0,
+						}}
+					>
+						<Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ xs: "stretch", sm: "center" }}>
+							<Stack direction="row" spacing={1} alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
+								<Warning2 size={16} variant="Bulk" color={theme.palette.warning.main} style={{ marginTop: 2, flexShrink: 0 }} />
+								<Stack spacing={0.25}>
+									<Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "text.primary", letterSpacing: "-0.005em" }}>
+										No se muestran todas tus causas archivadas
+									</Typography>
+									<Typography sx={{ fontSize: "0.76rem", color: "text.primary", letterSpacing: "-0.005em", textWrap: "pretty" }}>
+										{hiddenByStorage === 1 ? "Hay 1 causa más que no se muestra" : `Hay ${hiddenByStorage} causas más que no se muestran`} porque
+										superaste el almacenamiento del plan {planNameForCopy(storageSummary?.planId)}. Al mejorar tu plan se muestran todas.
+									</Typography>
+								</Stack>
+							</Stack>
+							<Button
+								variant="contained"
+								size="small"
+								onClick={() => {
+									trackUpgradeCtaClick(STORAGE_HIDDEN_PLANS_SOURCE);
+									navigate(`/suscripciones/tables?source=${STORAGE_HIDDEN_PLANS_SOURCE}`);
+								}}
+								sx={{
+									flexShrink: 0,
+									textTransform: "none",
+									fontWeight: 600,
+									borderRadius: 1.25,
+									px: 1.75,
+									bgcolor: BRAND_BLUE,
+									boxShadow: "none",
+									whiteSpace: "nowrap",
+									"&:hover": { bgcolor: alpha(BRAND_BLUE, 0.88), boxShadow: "none" },
+								}}
+							>
+								Ver planes
+							</Button>
+						</Stack>
+					</Box>
+				)}
 
 				{error && (
 					<Box

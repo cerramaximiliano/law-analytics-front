@@ -43,9 +43,10 @@ const ArchivedByPlanBanner = ({ onChooseVisible, refreshKey }: ArchivedByPlanBan
 		refresh();
 	}, [refreshKey, refresh]);
 
-	if (!summary || summary.archivedByPlan <= 0) return null;
+	if (!summary || (summary.archivedByPlan <= 0 && summary.hiddenByStorage <= 0)) return null;
 
 	const count = summary.archivedByPlan;
+	const hidden = summary.hiddenByStorage;
 
 	const handleViewPlans = () => {
 		trackUpgradeCtaClick(PLANS_SOURCE);
@@ -82,13 +83,27 @@ const ArchivedByPlanBanner = ({ onChooseVisible, refreshKey }: ArchivedByPlanBan
 						<Archive size={17} variant="Bulk" />
 					</Box>
 					<Typography sx={{ fontSize: "0.85rem", color: "text.primary", lineHeight: 1.5, letterSpacing: "-0.005em", textWrap: "pretty" }}>
-						<Box component="span" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-							{count} {count === 1 ? "causa" : "causas"}
-						</Box>{" "}
-						{count === 1 ? "quedó archivada" : "quedaron archivadas"} por el límite del plan {planNameForCopy(summary.planId)}.{" "}
-						{count === 1
-							? "Sigue recibiendo movimientos, pero no podés abrirla."
-							: "Siguen recibiendo movimientos, pero no podés abrirlas."}
+						{count > 0 && (
+							<>
+								<Box component="span" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+									{count} {count === 1 ? "causa" : "causas"}
+								</Box>{" "}
+								{count === 1 ? "quedó archivada" : "quedaron archivadas"} por el límite del plan {planNameForCopy(summary.planId)}.{" "}
+								{count === 1
+									? "Sigue recibiendo movimientos, pero no podés abrirla."
+									: "Siguen recibiendo movimientos, pero no podés abrirlas."}
+							</>
+						)}
+						{hidden > 0 && (
+							<>
+								{count > 0 ? " " : ""}
+								<Box component="span" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+									{hidden} {hidden === 1 ? "causa más" : "causas más"}
+								</Box>{" "}
+								{hidden === 1 ? "no se muestra" : "no se muestran"} porque superaste el almacenamiento de tu plan; al mejorarlo se
+								muestran todas.
+							</>
+						)}
 					</Typography>
 				</Stack>
 
