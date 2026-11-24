@@ -31,6 +31,7 @@ import { useTheme } from "@mui/material/styles";
 // project imports
 import MainCard from "components/MainCard";
 import { useNavigate } from "react-router-dom";
+import { isArchiveStorageError, showArchiveStorageSnackbar } from "utils/archiveStorageSnackbar";
 import {
 	Calculator,
 	Chart2,
@@ -1445,6 +1446,10 @@ const AllCalculators = () => {
 		try {
 			const response = await dispatch(archiveCalculators(userId, calculatorIds, { headers: getRequestHeaders() }));
 
+			if (isArchiveStorageError(response)) {
+				showArchiveStorageSnackbar(response.message, navigate);
+				return;
+			}
 			if (response.success) {
 				dispatch(
 					openSnackbar({

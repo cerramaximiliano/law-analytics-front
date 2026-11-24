@@ -780,7 +780,8 @@ export const updateFolderById = (folderId: string, updatedData: Partial<FolderDa
 };
 
 export const archiveFolders =
-	(userId: string, folderIds: string[], options?: { headers?: Record<string, string> }) =>
+	// swapUnarchiveIds: carpetas archivadas que se desarchivan en el mismo intercambio; liberan su almacenamiento.
+	(userId: string, folderIds: string[], options?: { headers?: Record<string, string>; swapUnarchiveIds?: string[] }) =>
 	async (dispatch: Dispatch, getState: () => any) => {
 		try {
 			dispatch({ type: SET_FOLDER_LOADING });
@@ -789,6 +790,7 @@ export const archiveFolders =
 				{
 					resourceType: "folders",
 					itemIds: folderIds,
+					...(options?.swapUnarchiveIds?.length ? { swapUnarchiveIds: options.swapUnarchiveIds } : {}),
 				},
 				{ headers: options?.headers },
 			);
@@ -835,12 +837,15 @@ export const archiveFolders =
 			const errorMessage = axios.isAxiosError(error)
 				? error.response?.data?.message || "Error al archivar causas."
 				: "Error desconocido al archivar causas.";
+			// Sin almacenamiento para archivar (hub /archive-items, 24/11/2026): la pantalla ofrece «Ver planes».
+			const code = axios.isAxiosError(error) ? error.response?.data?.code : undefined;
+			const storageInfo = axios.isAxiosError(error) ? error.response?.data?.storageInfo : undefined;
 
 			dispatch({
 				type: SET_FOLDER_ERROR,
 				payload: errorMessage,
 			});
-			return { success: false, message: errorMessage };
+			return { success: false, message: errorMessage, code, storageInfo };
 		}
 	};
 

@@ -2,6 +2,7 @@ import React from "react";
 import { isDevReview } from "utils/devReview";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState, Fragment, MouseEvent, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { isArchiveStorageError, showArchiveStorageSnackbar } from "utils/archiveStorageSnackbar";
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
 import {
@@ -3668,6 +3669,9 @@ const FoldersLayout = () => {
 				if (result.success) {
 					setSnackbarMessage(`${folderIds.length} ${folderIds.length === 1 ? "causa archivada" : "causas archivadas"} correctamente`);
 					setSnackbarSeverity("success");
+				} else if (isArchiveStorageError(result)) {
+					showArchiveStorageSnackbar(result.message, navigate);
+					return;
 				} else {
 					setSnackbarMessage(result.message || "Error al archivar causas");
 					setSnackbarSeverity("error");
@@ -3682,7 +3686,7 @@ const FoldersLayout = () => {
 				loadingRef.current = false;
 			}
 		},
-		[user?._id],
+		[user?._id, navigate],
 	);
 
 	// Equipos: responsables de una carpeta desde la celda del listado

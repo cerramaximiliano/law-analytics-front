@@ -24,7 +24,8 @@ import {
 } from "@mui/material";
 
 // third-party
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { isArchiveStorageError, showArchiveStorageSnackbar } from "utils/archiveStorageSnackbar";
 import { PatternFormat } from "react-number-format";
 import {
 	useFilters,
@@ -711,6 +712,7 @@ function ReactTable({
 
 const CustomerListPage = () => {
 	const theme = useTheme();
+	const navigate = useNavigate();
 	const mode = theme.palette.mode;
 
 	// Estados
@@ -906,6 +908,10 @@ const CustomerListPage = () => {
 				loadingRef.current = true;
 				const result = await dispatch(archiveContacts(userId, contactIds, { headers: getRequestHeaders() }));
 
+				if (isArchiveStorageError(result)) {
+					showArchiveStorageSnackbar(result.message, navigate);
+					return;
+				}
 				if (result.success) {
 					setSnackbarMessage(
 						`${contactIds.length} ${contactIds.length === 1 ? "contacto archivado" : "contactos archivados"} correctamente`,

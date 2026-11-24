@@ -32,7 +32,8 @@ import Avatar from "components/@extended/Avatar";
 import SimpleBar from "components/third-party/SimpleBar";
 import { UserSquare, Trash, Link1, More, Profile, UserAdd, ArrowDown2, User, Briefcase, Archive } from "iconsax-react";
 import { PopupTransition } from "components/@extended/Transitions";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { isArchiveStorageError, showArchiveStorageSnackbar } from "utils/archiveStorageSnackbar";
 import React, { useCallback, useState, useEffect, useMemo } from "react";
 import AddCustomer from "sections/apps/customer/AddCustomer";
 import ModalMembers from "../modals/ModalMembers";
@@ -140,6 +141,7 @@ const getRoleIcon = (role: string | string[]) => {
 };
 
 const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader, folderId, intervinientesPjnDisponibles = 0 }) => {
+	const navigate = useNavigate();
 	const theme = useTheme();
 	const { canDelete, canUpdate, canCreate } = useTeam();
 	// Get selectedContacts and archivedByFolderCount from Redux store
@@ -449,6 +451,10 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 		try {
 			const result = await dispatch(archiveContacts(userId, [contactId]));
 
+			if (isArchiveStorageError(result)) {
+				showArchiveStorageSnackbar(result.message, navigate);
+				return;
+			}
 			if (result.success) {
 				dispatch(
 					openSnackbar({
