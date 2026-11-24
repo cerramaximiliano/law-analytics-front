@@ -646,12 +646,15 @@ export const archiveContacts =
 			const errorMessage = axios.isAxiosError(error)
 				? error.response?.data?.message || "Error al archivar contactos."
 				: "Error desconocido al archivar contactos.";
+			// Sin almacenamiento para archivar (hub /archive-items, 24/11/2026): la pantalla ofrece «Ver planes».
+			const code = axios.isAxiosError(error) ? error.response?.data?.code : undefined;
+			const storageInfo = axios.isAxiosError(error) ? error.response?.data?.storageInfo : undefined;
 
 			dispatch({
 				type: SET_CONTACT_ERROR,
 				payload: errorMessage,
 			});
-			return { success: false, message: errorMessage };
+			return { success: false, message: errorMessage, code, storageInfo };
 		}
 	};
 

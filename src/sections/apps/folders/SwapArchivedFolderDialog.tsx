@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
 	Box,
 	Button,
@@ -24,6 +25,7 @@ import { archiveFolders, getFoldersByGroupId, getFoldersByUserId, getFolderById,
 import { openSnackbar } from "store/reducers/snackbar";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import { formatFolderName } from "utils/formatFolderName";
+import { isArchiveStorageError, showArchiveStorageSnackbar } from "utils/archiveStorageSnackbar";
 
 interface SwapArchivedFolderDialogProps {
 	open: boolean;
@@ -55,6 +57,7 @@ const SwapArchivedFolderDialog = ({ open, onClose, folder, onSwapped }: SwapArch
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const { isTeamMode, activeTeam, getRequestHeaders } = useTeam();
+	const navigate = useNavigate();
 
 	const userId = useSelector((state: RootState) => (state as any).auth?.user?._id as string | undefined);
 	const folders = useSelector((state: RootState) => ((state as any).folder?.folders || []) as any[]);
@@ -101,8 +104,13 @@ const SwapArchivedFolderDialog = ({ open, onClose, folder, onSwapped }: SwapArch
 		const options = { headers: getRequestHeaders() };
 		setSwapping(true);
 		try {
-			const archived = await dispatch(archiveFolders(userId, [selectedId], options));
+			// La que se activa libera su almacenamiento: el hub la descuenta al controlar el de la que se archiva.
+			const archived = await dispatch(archiveFolders(userId, [selectedId], { ...options, swapUnarchiveIds: [folder._id] }));
 			if (!archived?.success) {
+				if (isArchiveStorageError(archived)) {
+					showArchiveStorageSnackbar(archived.message, navigate);
+					return;
+				}
 				notify(archived?.message || "No se pudo archivar la causa elegida", "error");
 				return;
 			}

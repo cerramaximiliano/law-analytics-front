@@ -498,12 +498,15 @@ export const archiveCalculators =
 			const errorMessage = axios.isAxiosError(error)
 				? error.response?.data?.message || "Error al archivar cálculos."
 				: "Error desconocido al archivar cálculos.";
+			// Sin almacenamiento para archivar (hub /archive-items, 24/11/2026): la pantalla ofrece «Ver planes».
+			const code = axios.isAxiosError(error) ? error.response?.data?.code : undefined;
+			const storageInfo = axios.isAxiosError(error) ? error.response?.data?.storageInfo : undefined;
 
 			dispatch({
 				type: SET_ERROR,
 				payload: errorMessage,
 			});
-			return { success: false, message: errorMessage };
+			return { success: false, message: errorMessage, code, storageInfo };
 		}
 	};
 
