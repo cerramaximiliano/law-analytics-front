@@ -19,6 +19,9 @@ export interface UsePjnSiteStatusResult {
 	maintenanceSince: string | null;
 	message: string | null;
 	lastDetectedAt: string | null;
+	/** Incidente de portal activo (login caído o degradado), sin página de mantenimiento. */
+	hasPortalIncident: boolean;
+	portalIncidentSince: string | null;
 	hydrated: boolean;
 }
 
@@ -30,6 +33,8 @@ export function usePjnSiteStatus(): UsePjnSiteStatusResult {
 		maintenanceSince: state?.maintenanceSince ?? null,
 		message: state?.message ?? null,
 		lastDetectedAt: state?.lastDetectedAt ?? null,
+		hasPortalIncident: Boolean(state?.portalIncident?.startedAt),
+		portalIncidentSince: state?.portalIncident?.startedAt ?? null,
 		hydrated: state?.hydrated ?? false,
 	};
 }

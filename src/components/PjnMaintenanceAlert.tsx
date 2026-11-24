@@ -27,6 +27,11 @@ interface PjnMaintenanceAlertProps {
 	contextHint?: string;
 	/** Si true, arranca expandido (con detalle visible). Por defecto false. */
 	defaultExpanded?: boolean;
+	/**
+	 * Si true, el banner también aparece cuando hay un incidente de portal activo (el ingreso al PJN no responde,
+	 * sin página de mantenimiento). Para las pantallas de integración: ahí lo afectado es la sincronización.
+	 */
+	showIncident?: boolean;
 	/** Margen extra opcional. */
 	sx?: object;
 }
@@ -54,15 +59,24 @@ function formatSince(iso: string | null): string {
 	}
 }
 
-const PjnMaintenanceAlert = ({ compact = false, contextHint, defaultExpanded = false, sx }: PjnMaintenanceAlertProps) => {
+const PjnMaintenanceAlert = ({ compact = false, contextHint, defaultExpanded = false, showIncident = false, sx }: PjnMaintenanceAlertProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
-	const { isInMaintenance, maintenanceSince, message } = usePjnSiteStatus();
+	const { isInMaintenance, maintenanceSince, message: maintenanceMessage, hasPortalIncident, portalIncidentSince } = usePjnSiteStatus();
 	const [expanded, setExpanded] = useState(defaultExpanded);
 
-	if (!isInMaintenance) return null;
+	// El mantenimiento manda: si el portal lo anuncia, se muestra eso. El incidente (el ingreso no responde) solo
+	// donde se pidió (showIncident).
+	const isIncident = !isInMaintenance && showIncident && hasPortalIncident;
+	if (!isInMaintenance && !isIncident) return null;
 
-	const since = formatSince(maintenanceSince);
+	const since = formatSince(isIncident ? portalIncidentSince : maintenanceSince);
+	const title = isIncident ? "Portal del PJN con problemas de acceso" : "Portal del PJN en mantenimiento";
+	// En un incidente no hay mensaje del PJN ni acciones bloqueadas: el texto es fijo.
+	const message = isIncident ? null : maintenanceMessage;
+	const hint = isIncident
+		? "El ingreso al portal del PJN no está respondiendo. Tus causas se van a actualizar solas cuando vuelva; no hace falta que hagas nada."
+		: contextHint;
 	// Si no hay nada que expandir (ni mensaje PJN), no mostramos el toggle.
 	const hasExpandable = Boolean(message);
 
@@ -119,7 +133,7 @@ const PjnMaintenanceAlert = ({ compact = false, contextHint, defaultExpanded = f
 								color: "text.primary",
 							}}
 						>
-							Portal del PJN en mantenimiento
+							{title}
 						</Typography>
 						<Box
 							sx={{
@@ -169,7 +183,7 @@ const PjnMaintenanceAlert = ({ compact = false, contextHint, defaultExpanded = f
 					</Stack>
 
 					{/* Context hint — info accionable, siempre visible si se pasa */}
-					{contextHint && (
+					{hint && (
 						<Typography
 							sx={{
 								fontSize: compact ? "0.78rem" : "0.82rem",
@@ -179,7 +193,7 @@ const PjnMaintenanceAlert = ({ compact = false, contextHint, defaultExpanded = f
 								textWrap: "pretty",
 							}}
 						>
-							{contextHint}
+							{hint}
 						</Typography>
 					)}
 
