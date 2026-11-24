@@ -57,7 +57,7 @@ import LiquidacionPorTramos from "components/calculator/LiquidacionPorTramos";
 import { sePuedeReabrir } from "sections/forms/wizard/calc-previsional/retroactivo/formModel/valoresDesdeGuardado";
 import { descargarPdfRetroactivo, tieneDetalleParaPdf } from "utils/previsionalPdf";
 import { etiquetaVersion, fechaActualizadoAl, puedeMantenerActualizado, tienePercibidoManual } from "utils/previsionalKeepUpdated";
-import { AVISO_PERCIBIDO_MANUAL_SIN_ACTUALIZACION } from "services/previsionalService";
+import { AVISO_PERCIBIDO_MANUAL_SIN_ACTUALIZACION, descripcionRefuerzos, nombreIndiceMovilidad } from "services/previsionalService";
 
 // assets
 import { ArrowDown2, ArrowUp2, DocumentDownload, Edit2, Eye, EyeSlash, Link21, Refresh, Trash } from "iconsax-react";
@@ -81,10 +81,6 @@ const TOPE_LABELS: Record<string, string> = {
 	si: "Sí",
 	actis_caporale_menor_15: '"Actis Caporale" — si el tope es menor al 15%',
 	actis_caporale_menor_15_sino_descuenta: '"Actis Caporale" — si es menor al 15%, sino descuenta el 15%',
-};
-
-const INDICE_LABELS: Record<string, string> = {
-	aumentos_generales_anses: "Aumentos Generales ANSES",
 };
 
 // Las tasas vienen dinámicamente del store; este mapa es sólo fallback para
@@ -345,7 +341,7 @@ function ExpandedRow({ row, rates }: { row: Row<any>; rates: InterestRate[] }) {
 										<Chip size="small" label={idx + 1} color="primary" sx={{ minWidth: 28, height: 22, fontSize: "0.7rem" }} />
 										<Box>
 											<Typography sx={labelStyle}>Índice</Typography>
-											<Typography sx={valueStyle}>{INDICE_LABELS[c.indiceMovilidad] || c.indiceMovilidad}</Typography>
+											<Typography sx={valueStyle}>{nombreIndiceMovilidad(c.indiceMovilidad)}</Typography>
 										</Box>
 										<Box>
 											<Typography sx={labelStyle}>Desde</Typography>
@@ -353,6 +349,31 @@ function ExpandedRow({ row, rates }: { row: Row<any>; rates: InterestRate[] }) {
 										</Box>
 									</Stack>
 								))}
+							</Stack>
+						</Paper>
+					</Grid>
+				)}
+
+				{/* Opciones del haber reclamado y refuerzos */}
+				{(vars.noInferiorAlPercibido || descripcionRefuerzos(vars)) && (
+					<Grid item xs={12}>
+						<Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
+							Opciones del cálculo
+						</Typography>
+						<Paper elevation={0} sx={sectionStyle}>
+							<Stack spacing={1}>
+								{vars.noInferiorAlPercibido && (
+									<Box>
+										<Typography sx={labelStyle}>Haber no inferior al percibido</Typography>
+										<Typography sx={valueStyle}>Sí: si el criterio da menos que lo cobrado, se toma el percibido</Typography>
+									</Box>
+								)}
+								{descripcionRefuerzos(vars) && (
+									<Box>
+										<Typography sx={labelStyle}>Refuerzos previsionales</Typography>
+										<Typography sx={valueStyle}>{descripcionRefuerzos(vars)}</Typography>
+									</Box>
+								)}
 							</Stack>
 						</Paper>
 					</Grid>

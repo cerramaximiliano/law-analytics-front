@@ -25,38 +25,11 @@ import { Add, Trash, Setting2 } from "iconsax-react";
 import { useFormikContext } from "formik";
 import DateInputField from "components/UI/DateInputField";
 import NumberField from "components/UI/NumberField";
+import { INDICES_MOVILIDAD } from "services/previsionalService";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 
 dayjs.extend(customParseFormat);
-
-const INDICES_MOVILIDAD = [
-	{ value: "aumentos_generales_anses", label: "Aumentos Generales ANSES por movilidad" },
-	{ value: "recomposicion_ley_27426", label: "Recomposición Ley 27.426 — Torelli (salto único en 1/2021)" },
-	{ value: "ley_27426_diferido_6_meses", label: "Continuidad Ley 27.426 — IPC+RIPTE mes a mes" },
-	{
-		value: "art4_dnu_274_24_con_27426_junio",
-		label: "Art. 4 DNU 274/24 abr-jun 2024; en junio, además, el 45,88 % de la Ley 27.426 (Galletta)",
-	},
-	{
-		value: "empalme_27426_dnu_70_30_julio_2024",
-		label: "Empalme Ley 27.426 – DNU 274/24: 70 % IPC y 30 % RIPTE de enero-abril 2024, en julio de 2024 (Galletta)",
-	},
-	{
-		value: "mayor_27426_o_general",
-		label: "El mayor entre la Ley 27.426 y el aumento general, por trimestre, 3/2021 a 3/2024 (Galletta con piso)",
-	},
-	{
-		value: "aguirre_ipc_trimestral",
-		label: "Aguirre: IPC de octubre-diciembre 2023 en marzo 2024 y de enero-marzo 2024 en junio 2024",
-	},
-	{ value: "aumento_mar_2021_sem2_2020", label: "Aumento Marzo 2021 por segundo semestre 2020 (Cortes)" },
-	{ value: "ipc_trimestral_retrasado_3m", label: "IPC trimestral retrasado 3 meses (Cortes)" },
-	{ value: "badaro_isal", label: "Índice de salarios INDEC (Badaro), anual hasta 12/2006" },
-	{ value: "ngr_extendido", label: "Nivel General de las Remuneraciones extendido (Sánchez), mensual hasta 03/1995" },
-	{ value: "aumentos_porcentuales", label: "Aumentos generales ANSES, solo el porcentaje (sin sumas fijas)" },
-	{ value: "sin_movilidad", label: "Sin movilidad" },
-];
 
 interface PatronMovilidad {
 	value: string;

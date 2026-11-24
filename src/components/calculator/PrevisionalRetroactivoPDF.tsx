@@ -202,7 +202,7 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 	const tituloDoc = datos.titular ? `Retroactivo previsional - ${datos.titular}` : "Retroactivo previsional";
 	const notaCapital = `Importes en pesos. Capital = diferencia${conTope ? " menos la quita por tope" : ""}${
 		conVillanustre ? " menos lo que excede el límite Villanustre (* el haber computado es el límite; (P) con pauta salarial)" : ""
-	}${bonoAparte ? " más la diferencia de bono" : ""} + SAC - obra social.`;
+	}${bonoAparte ? " más la diferencia de refuerzos" : ""} + SAC - obra social.`;
 
 	const Pie = () => (
 		<Text
@@ -224,11 +224,11 @@ const PrevisionalRetroactivoPDF = ({ resultado: r, input, datos, validacion }: P
 			<Text style={s.derecha}>Diferencia</Text>
 			{conTope && <Text style={s.derecha}>Quita tope</Text>}
 			{conVillanustre && <Text style={s.derecha}>Límite Villanustre</Text>}
-			{conBono && <Text style={s.derecha}>Bono percibido</Text>}
-			{conBono && <Text style={s.derecha}>Bono reclamado</Text>}
+			{conBono && <Text style={s.derecha}>Refuerzo percibido</Text>}
+			{conBono && <Text style={s.derecha}>Refuerzo reclamado</Text>}
 			<Text style={s.derecha}>SAC</Text>
 			<Text style={s.derecha}>Obra social</Text>
-			{bonoAparte && <Text style={s.derecha}>Dif. de bono</Text>}
+			{bonoAparte && <Text style={s.derecha}>Dif. de refuerzos</Text>}
 			<Text style={s.derecha}>Capital</Text>
 			<Text style={s.derecha}>Interés</Text>
 		</View>
