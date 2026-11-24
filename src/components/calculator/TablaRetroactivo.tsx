@@ -71,11 +71,11 @@ const TablaRetroactivo = ({
 								Límite Villanustre
 							</TableCell>
 						)}
-						{bono && <TableCell align="right">Bono percibido</TableCell>}
-						{bono && <TableCell align="right">Bono reclamado</TableCell>}
+						{bono && <TableCell align="right">Refuerzo percibido</TableCell>}
+						{bono && <TableCell align="right">Refuerzo reclamado</TableCell>}
 						<TableCell align="right">SAC</TableCell>
 						<TableCell align="right">Obra social</TableCell>
-						{aparte && <TableCell align="right">Diferencia de bono</TableCell>}
+						{aparte && <TableCell align="right">Diferencia de refuerzos</TableCell>}
 						<TableCell align="right">Capital</TableCell>
 						<TableCell align="right">Interés</TableCell>
 					</TableRow>

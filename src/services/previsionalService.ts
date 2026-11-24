@@ -61,6 +61,50 @@ export const TRATAMIENTOS_BONO: { value: TratamientoBono; label: string }[] = [
 	{ value: "integrado", label: "Sumados al haber, con SAC y obra social (como BlueCorp)" },
 ];
 
+/** Índices de movilidad que se pueden elegir en cada tramo del haber reclamado (código del motor y su nombre). */
+export const INDICES_MOVILIDAD = [
+	{ value: "aumentos_generales_anses", label: "Aumentos Generales ANSES por movilidad" },
+	{ value: "recomposicion_ley_27426", label: "Recomposición Ley 27.426 — Torelli (salto único en 1/2021)" },
+	{ value: "ley_27426_diferido_6_meses", label: "Continuidad Ley 27.426 — IPC+RIPTE mes a mes" },
+	{
+		value: "art4_dnu_274_24_con_27426_junio",
+		label: "Art. 4 DNU 274/24 abr-jun 2024; en junio, además, el 45,88 % de la Ley 27.426 (Galletta)",
+	},
+	{
+		value: "empalme_27426_dnu_70_30_julio_2024",
+		label: "Empalme Ley 27.426 – DNU 274/24: 70 % IPC y 30 % RIPTE de enero-abril 2024, en julio de 2024 (Galletta)",
+	},
+	{
+		value: "mayor_27426_o_general",
+		label: "El mayor entre la Ley 27.426 y el aumento general, por trimestre, 3/2021 a 3/2024 (Galletta con piso)",
+	},
+	{
+		value: "aguirre_ipc_trimestral",
+		label: "Aguirre: IPC de octubre-diciembre 2023 en marzo 2024 y de enero-marzo 2024 en junio 2024",
+	},
+	{ value: "aumento_mar_2021_sem2_2020", label: "Aumento Marzo 2021 por segundo semestre 2020 (Cortes)" },
+	{ value: "ipc_trimestral_retrasado_3m", label: "IPC trimestral retrasado 3 meses (Cortes)" },
+	{ value: "badaro_isal", label: "Índice de salarios INDEC (Badaro), anual hasta 12/2006" },
+	{ value: "ngr_extendido", label: "Nivel General de las Remuneraciones extendido (Sánchez), mensual hasta 03/1995" },
+	{ value: "aumentos_porcentuales", label: "Aumentos generales ANSES, solo el porcentaje (sin sumas fijas)" },
+	{ value: "sin_movilidad", label: "Sin movilidad" },
+];
+
+const NOMBRE_INDICE_MOVILIDAD: Record<string, string> = Object.fromEntries(INDICES_MOVILIDAD.map((i) => [i.value, i.label]));
+
+/** Nombre de un índice de movilidad; si el código no se conoce, se devuelve tal cual. */
+export const nombreIndiceMovilidad = (codigo?: string): string => (codigo && NOMBRE_INDICE_MOVILIDAD[codigo]) || codigo || "-";
+
+/** Texto de cómo se consideraron los refuerzos en un cálculo guardado; `null` si no se consideraron. */
+export function descripcionRefuerzos(v: { bono?: string; bonoTratamiento?: string; bonoSubsidios2019y2021?: boolean }): string | null {
+	if (!v.bono || v.bono === "no") return null;
+	const donde = OPCIONES_BONO.find((o) => o.value === v.bono)?.label.replace(/^Sí, /, "");
+	if (!donde) return null;
+	const como = v.bonoTratamiento === "integrado" ? "sumados al haber, con SAC y obra social" : "aparte, sin SAC ni obra social";
+	const subsidios = v.bonoSubsidios2019y2021 === false ? "; sin los subsidios de 12/2019, 4/2021, 5/2021 y 8/2021" : "";
+	return `Considerados ${donde}, ${como}${subsidios}`;
+}
+
 /** Moneda del haber inicial (el motor la pasa a pesos con los divisores del haber de caja). "ARS" = pesos. */
 export const MONEDAS_HABER = [
 	{ value: "ARS", label: "Pesos (desde 1/1992)" },

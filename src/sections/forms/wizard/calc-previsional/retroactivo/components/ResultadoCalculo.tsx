@@ -91,7 +91,7 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 				...(r.bono && (r.bono.percibido || r.bono.reclamado)
 					? [
 							{
-								key: "Bono previsional",
+								key: "Refuerzos previsionales",
 								value: `sobre el haber ${[r.bono.percibido && "percibido", r.bono.reclamado && "reclamado"]
 									.filter(Boolean)
 									.join(" y el ")}, ${r.bono.tratamiento === "integrado" ? "integrado a la diferencia" : "aparte, sin SAC ni obra social"}`,

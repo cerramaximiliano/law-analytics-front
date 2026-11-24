@@ -50,7 +50,7 @@ const previsionalFormModel = {
 		sac: { name: "sac", label: "Incluir diferencias de SAC" },
 		// cada ítem: { fecha: DD/MM/AAAA, importe, tipo: administrativo | embargo | deposito_judicial | otro }
 		pagosACuenta: { name: "pagosACuenta", label: "Pagos a cuenta" },
-		bono: { name: "bono", label: "Bono previsional (subsidios, refuerzos y bonos extraordinarios)" },
+		bono: { name: "bono", label: "Refuerzos previsionales (subsidios, refuerzos y bonos extraordinarios)" },
 		bonoTratamiento: { name: "bonoTratamiento", label: "Cómo se liquida el bono" },
 		bonoSubsidios2019y2021: { name: "bonoSubsidios2019y2021", label: "Contar los subsidios de 12/2019, 4/2021, 5/2021 y 8/2021" },
 		capitalizarInteresImpago: { name: "capitalizarInteresImpago", label: "Capitalizar el interés impago" },
