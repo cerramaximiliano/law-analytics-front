@@ -1203,6 +1203,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 
 								<PjnMaintenanceAlert
 									compact
+									showIncident
 									contextHint="Las sincronizaciones de tus causas PJN están pausadas hasta que el servicio vuelva."
 								/>
 
@@ -1475,7 +1476,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 							</Typography>
 						</Stack>
 
-						<PjnMaintenanceAlert compact contextHint="No podés vincular ni sincronizar tu cuenta PJN mientras el portal esté caído." />
+						<PjnMaintenanceAlert compact showIncident contextHint="No podés vincular ni sincronizar tu cuenta PJN mientras el portal esté caído." />
 
 						<TextField
 							fullWidth

@@ -17,6 +17,11 @@ import { Dispatch } from "redux";
 
 export type PjnSiteStatusValue = "healthy" | "maintenance" | "unknown";
 
+export interface PjnPortalIncident {
+	type: string;
+	startedAt: string;
+}
+
 export interface PjnSiteStatusState {
 	status: PjnSiteStatusValue;
 	message: string | null;
@@ -25,6 +30,10 @@ export interface PjnSiteStatusState {
 	lastDetectedBy: string | null;
 	lastHealthyAt: string | null;
 	consecutiveDetections: number;
+	// Incidente de portal activo (login caído o degradado, sin página de mantenimiento). Lo abre y lo cierra el
+	// circuit breaker de los workers; llega solo por REST (no hay evento socket), así que se refresca al montar
+	// las pantallas de integración.
+	portalIncident: PjnPortalIncident | null;
 	// Metadatos del cliente
 	lastUpdatedAt: string | null;       // cuándo se actualizó el slice
 	hydrated: boolean;                  // true tras la primera carga REST exitosa
@@ -47,6 +56,7 @@ const initialState: PjnSiteStatusState = {
 	lastDetectedBy: null,
 	lastHealthyAt: null,
 	consecutiveDetections: 0,
+	portalIncident: null,
 	lastUpdatedAt: null,
 	hydrated: false,
 	loading: false,
@@ -118,6 +128,7 @@ const pjnSiteStatusReducer = (state = initialState, action: any): PjnSiteStatusS
 				lastDetectedBy: p.lastDetectedBy ?? null,
 				lastHealthyAt: p.lastHealthyAt ?? null,
 				consecutiveDetections: p.consecutiveDetections ?? 0,
+				portalIncident: p.portalIncident?.startedAt ? p.portalIncident : null,
 				lastUpdatedAt: new Date().toISOString(),
 				hydrated: true,
 				loading: false,
