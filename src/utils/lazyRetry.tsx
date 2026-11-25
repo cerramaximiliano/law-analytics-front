@@ -256,6 +256,7 @@ export function lazyRetry<T extends ComponentType<any>>(
 const RUTAS_PUBLICAS = [
 	"/funciones",
 	"/register",
+	"/registro/",
 	"/login",
 	"/guides",
 	"/jurisprudencia",
@@ -287,7 +288,7 @@ export const esRutaPublica = (ruta: string): boolean => ruta === "/" || RUTAS_PU
 // Google: login, registro, el consentimiento OAuth y el producto (por el modal
 // de sesión vencida). En la landing, funciones, planes o preguntas frecuentes
 // no hay nada que lo use y viajaba igual (2026-09-20).
-export const necesitaGoogleSignIn = (ruta: string): boolean => !esRutaPublica(ruta) || /^\/(login|register|oauth)/.test(ruta);
+export const necesitaGoogleSignIn = (ruta: string): boolean => !esRutaPublica(ruta) || /^\/(login|register|registro\/|oauth)/.test(ruta);
 
 // Función para prelanzar módulos críticos en segundo plano
 export const preloadCriticalRoutes = () => {
@@ -322,7 +323,7 @@ export const preloadCriticalRoutes = () => {
 // después del login no espere la red (antes recién se precargaba a los 5 s y solo en
 // rutas privadas). Junto con el dashboard se pide `MainLayout`, que desde el
 // 2026-10-13 tiene su propio chunk.
-const RUTAS_PRE_DASHBOARD = /^\/(register|login|code-verification)(\/|$)/;
+const RUTAS_PRE_DASHBOARD = /^\/(register|registro\/correo|login|code-verification)(\/|$)/;
 let dashboardPrecargado = false;
 
 export const preloadDashboardFromAuthRoutes = (ruta: string = typeof window !== "undefined" ? window.location.pathname : "") => {

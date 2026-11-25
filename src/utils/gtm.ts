@@ -254,7 +254,7 @@ export const trackRegisterView = (source?: string, feature?: string): void => {
 /**
  * Track successful sign up with attribution
  */
-export const trackSignUp = (method: "email" | "google", source?: string, feature?: string): void => {
+export const trackSignUp = (method: "email" | "google" | "email_link", source?: string, feature?: string): void => {
 	pushGTMEvent(GTMEvents.SIGN_UP, {
 		method,
 		source: source || "direct",
@@ -285,7 +285,7 @@ export const trackRegisterFormStart = (source?: string, feature?: string): void 
 /**
  * Track register form submit (user clicked "Registrarme")
  */
-export const trackRegisterFormSubmit = (method: "email", source?: string, feature?: string): void => {
+export const trackRegisterFormSubmit = (method: "email" | "email_link", source?: string, feature?: string): void => {
 	pushGTMEvent(GTMEvents.REGISTER_FORM_SUBMIT, {
 		method,
 		source: source || "direct",

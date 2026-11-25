@@ -69,6 +69,9 @@ const DashboardDefault = () => {
 	//   ?onboarding=clear → limpia el override
 	//   sin param          → usa el override de sessionStorage si existe, o el estado real
 	const [searchParams, setSearchParams] = useSearchParams();
+	// ?conectar=pjn|scba: el registro de un clic desde el correo aterriza acá y abre directo «Conectar mi cuenta».
+	const conectarParam = searchParams.get("conectar");
+	const conectarDesdeEnlace = conectarParam === "pjn" || conectarParam === "scba" ? conectarParam : null;
 	const [onboardingOverride, setOnboardingOverride] = useState<"force" | "skip" | "primera" | null>(() => {
 		if (typeof window === "undefined") return null;
 		const stored = sessionStorage.getItem(ONBOARDING_OVERRIDE_KEY);
@@ -544,6 +547,7 @@ const DashboardDefault = () => {
 							preferredJurisdiction={onboardingSignals?.preferredJurisdiction || null}
 							onExplore={handleSkipFirstCausa}
 							onFolderCreated={handleRetry}
+							abrirConectar={conectarDesdeEnlace}
 						/>
 					</Grid>
 				)}

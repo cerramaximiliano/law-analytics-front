@@ -109,9 +109,11 @@ interface PrimeraCausaProps {
 	preferredJurisdiction?: string | null; // key del catálogo (pjn, eje, mev, ...)
 	onExplore: () => void; // "Explorar primero": vuelve al dashboard con el checklist
 	onFolderCreated?: () => void;
+	// Abre directo «Conectar mi cuenta» de ese portal (?conectar=pjn, destino del registro de un clic desde el correo).
+	abrirConectar?: Portal | null;
 }
 
-const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdiction, onExplore, onFolderCreated }) => {
+const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdiction, onExplore, onFolderCreated, abrirConectar }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	// En pantallas anchas el formulario se compacta (poderes en una fila, botón junto al año)
@@ -133,6 +135,13 @@ const PrimeraCausa: React.FC<PrimeraCausaProps> = ({ userName, preferredJurisdic
 	// Segundo modo: conectar la cuenta del portal (PJN o SCBA) y traer todas las causas.
 	const [connectPortal, setConnectPortal] = useState<Portal | null>(null);
 	const startedRef = useRef(false);
+	const abiertoPorEnlaceRef = useRef(false);
+	useEffect(() => {
+		if (!abrirConectar || abiertoPorEnlaceRef.current) return;
+		abiertoPorEnlaceRef.current = true;
+		trackActivity("causa_link_start", { jurisdiction: abrirConectar, type: "account", mode: "connect_auto", source: "primera_causa" });
+		setConnectPortal(abrirConectar);
+	}, [abrirConectar]);
 	const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
 	const selected = POWERS.find((p) => p.key === power)!;
