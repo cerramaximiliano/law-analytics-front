@@ -8,7 +8,7 @@ import { useTheme, alpha } from "@mui/material/styles";
 //
 // Cuenta el primer minuto en un ciclo de 14 s: se conecta el PJN y se importan las causas, aparece el resumen
 // (movimientos de hoy, plazos de la semana, aviso diario), llega una sentencia, se marca un plazo que vence y a
-// las 19 el aviso del día. Cierra con «Sin entrar al portal del PJN».
+// las 19:30 el aviso del día. Cierra con «Sin entrar al portal del PJN».
 //
 // Copy honesto con el plan gratuito (tope de 5 carpetas activas): el contador dice «importadas», no «al día».
 // Los estilos base son el cuadro FINAL (todo visible): sin animación (prefers-reduced-motion) queda completo.
@@ -118,7 +118,7 @@ const PanelCausasAnimado: React.FC = () => {
 	const kpis = [
 		{ valor: "6", texto: "movimientos hoy", color: c.acento },
 		{ valor: "2", texto: "plazos esta semana", color: c.ambar },
-		{ valor: "19:00", texto: "aviso diario", color: c.verde },
+		{ valor: "19:30", texto: "aviso diario", color: c.verde },
 	];
 
 	return (
@@ -126,7 +126,7 @@ const PanelCausasAnimado: React.FC = () => {
 			viewBox="0 0 560 548"
 			width="100%"
 			role="img"
-			aria-label="Tus causas del PJN importadas solas: resumen de movimientos y plazos, una sentencia nueva, un plazo que vence y el aviso diario de las 19, sin entrar al portal"
+			aria-label="Tus causas del PJN importadas solas: resumen de movimientos y plazos, una sentencia nueva, un plazo que vence y el aviso diario de las 19:30, sin entrar al portal"
 			style={{ display: "block", maxWidth: 560, fontFamily: "Inter, system-ui, sans-serif", overflow: "visible" }}
 		>
 			<style>{css}</style>
@@ -298,13 +298,13 @@ const PanelCausasAnimado: React.FC = () => {
 					</text>
 				</g>
 
-				{/* Aviso de las 19 */}
+				{/* Aviso de las 19:30 */}
 				<g className="pca-a pca-aviso" filter="url(#pca-sombra-flota)">
 					<rect x="270" y="462" width="282" height="78" rx="12" fill={c.fondo} stroke={c.linea} />
 					<circle cx="298" cy="494" r="15" fill={alpha(c.acento, dark ? 0.25 : 0.12)} />
 					<path d="M298 485 a6 6 0 0 1 6 6 v4 l2 3 h-16 l2 -3 v-4 a6 6 0 0 1 6 -6 z M295.5 500 a2.5 2.5 0 0 0 5 0 z" fill={c.acento} />
 					<text x="322" y="484" fontSize="11.5" fontWeight="700" fill={c.texto}>
-						19:00 · Novedades del día
+						19:30 · Novedades del día
 					</text>
 					<text x="322" y="501" fontSize="10.5" fill={c.medio}>
 						GÓMEZ c/ ACME: sentencia definitiva
@@ -340,7 +340,7 @@ export const PanelCausasConPie: React.FC = () => {
 						textWrap: "pretty",
 					}}
 				>
-					Conectás el PJN una vez. Tus causas se importan solas, se actualizan todos los días y a las 19 te avisamos qué se movió.
+					Conectás el PJN una vez. Tus causas se importan solas, se actualizan todos los días y a las 19:30 te avisamos qué se movió.
 				</p>
 				<div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "6px 16px" }}>
 					{senales.map((s) => (

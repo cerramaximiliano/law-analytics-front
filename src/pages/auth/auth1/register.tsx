@@ -465,7 +465,7 @@ const Register = () => {
 	const benefits = esEmailPjn
 		? [
 				"Conectás tu usuario del PJN y ves todas tus causas en un minuto",
-				"Se actualizan solas: cada día a las 19 te avisamos qué se movió",
+				"Se actualizan solas: cada día a las 19:30 te avisamos qué se movió",
 				"Gratis, sin tarjeta",
 		  ]
 		: ["Estados y movimientos automáticos", "Alertas de vencimientos", "Centralizá agenda y cálculos"];

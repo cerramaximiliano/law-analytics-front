@@ -51,7 +51,7 @@ const BRAND_GRADIENT_TEXT = "linear-gradient(90deg, #3A7BFF, #8A5CFF, #3A7BFF) 0
 
 const VALOR = [
 	{ icon: DocumentText1, texto: "Conectás tu usuario del PJN y en un minuto ves todas tus causas, con sus movimientos." },
-	{ icon: Notification, texto: "Se actualizan solas: cada día a las 19 te avisamos qué se movió." },
+	{ icon: Notification, texto: "Se actualizan solas: cada día a las 19:30 te avisamos qué se movió." },
 	{ icon: TickCircle, texto: "Gratis, sin tarjeta. Cancelás cuando quieras." },
 ];
 
