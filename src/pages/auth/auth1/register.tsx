@@ -22,7 +22,7 @@ import AuthWrapper from "sections/auth/AuthWrapper";
 import MainCard from "components/MainCard";
 import PageBackground from "components/PageBackground";
 import MockupFrame from "components/MockupFrame";
-import PanelCausasAnimado from "components/auth/PanelCausasAnimado";
+import { PanelCausasConPie } from "components/auth/PanelCausasAnimado";
 import AuthRegister from "sections/auth/auth-forms/AuthRegister";
 import CustomGoogleButton from "components/auth/CustomGoogleButton";
 import { FeatureModalData } from "components/FeatureModal";
@@ -808,24 +808,24 @@ const Register = () => {
 													border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.22)}`,
 												}}
 											/>
-											<Box sx={{ width: "100%", maxWidth: 520 }}>
+											<Box sx={{ width: "100%", maxWidth: esEmailPjn ? 560 : 520 }}>
 												{/* email-pjn: panel animado (SVG liviano). El resto del tráfico sigue con el mockup,
 												    a propósito: Google convierte bien y no se mezclan efectos (decisión 25/11). */}
-												{esEmailPjn ? <PanelCausasAnimado /> : <MockupFrame showSecondaryCopy={false} />}
+												{esEmailPjn ? <PanelCausasConPie /> : <MockupFrame showSecondaryCopy={false} />}
 											</Box>
-											<Typography
-												variant="body2"
-												sx={{
-													color: theme.palette.text.secondary,
-													fontSize: "0.875rem",
-													maxWidth: 420,
-													textWrap: "pretty",
-												}}
-											>
-												{esEmailPjn
-													? "Conectás el PJN una vez: tus causas se cargan solas y cada día a las 19 te avisamos qué se movió."
-													: "Centralizá expedientes de PJN, MEV y EJE con novedades y movimientos automáticos."}
-											</Typography>
+											{!esEmailPjn && (
+												<Typography
+													variant="body2"
+													sx={{
+														color: theme.palette.text.secondary,
+														fontSize: "0.875rem",
+														maxWidth: 420,
+														textWrap: "pretty",
+													}}
+												>
+													Centralizá expedientes de PJN, MEV y EJE con novedades y movimientos automáticos.
+												</Typography>
+											)}
 										</Stack>
 									)}
 								</motion.div>

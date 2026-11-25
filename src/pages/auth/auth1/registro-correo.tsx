@@ -16,7 +16,7 @@ import MainCard from "components/MainCard";
 import PageBackground from "components/PageBackground";
 import LogoDrawLoader from "components/logo/LogoDrawLoader";
 import CustomGoogleButton from "components/auth/CustomGoogleButton";
-import PanelCausasAnimado from "components/auth/PanelCausasAnimado";
+import { PanelCausasConPie } from "components/auth/PanelCausasAnimado";
 import AuthDivider from "sections/auth/AuthDivider";
 import useAuth from "hooks/useAuth";
 import { useDeferredGoogleLogin } from "hooks/useDeferredGoogleLogin";
@@ -427,12 +427,7 @@ const RegistroCorreo = () => {
 					</Grid>
 					{!isMobile && (
 						<Grid item md={6} sx={{ display: { xs: "none", md: "flex" }, justifyContent: "center" }}>
-							<Stack spacing={3} alignItems="center" sx={{ width: "100%", maxWidth: 540, textAlign: "center" }}>
-								<PanelCausasAnimado />
-								<Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.9rem", maxWidth: 420, textWrap: "pretty" }}>
-									Conectás el PJN una vez: tus causas se cargan solas y cada día a las 19 te avisamos qué se movió.
-								</Typography>
-							</Stack>
+							<PanelCausasConPie />
 						</Grid>
 					)}
 				</Grid>
