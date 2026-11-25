@@ -22,6 +22,9 @@ const OauthLogin = Loadable(lazyRetry(() => import("pages/oauth/login")));
 const OauthConsent = Loadable(lazyRetry(() => import("pages/oauth/consent")));
 const OauthUpgradeRequired = Loadable(lazyRetry(() => import("pages/oauth/upgrade-required")));
 const SessionHandoff = Loadable(lazyRetry(() => import("pages/auth/handoff")));
+// Registro de un clic desde los correos de captación ({{registroUrl}}). Fuera del GuestGuard: la página resuelve
+// sola el caso con sesión y, tras crear la cuenta, hace una carga completa hacia conectar el PJN.
+const RegistroCorreo = Loadable(lazyRetry(() => import("pages/auth/auth1/registro-correo")));
 
 // Landing pública de conectores AI (Claude.ai + ChatGPT) — Phase 7 PR 7.3.
 // Renombrada de /integraciones/claude-ai a /integraciones/conectores-ai
@@ -76,6 +79,10 @@ const LoginRoutes = {
 			path: "/",
 			element: <CommonLayout />,
 			children: [
+				{
+					path: "registro/correo",
+					element: <RegistroCorreo />,
+				},
 				{
 					path: "oauth/login",
 					element: <OauthLogin />,

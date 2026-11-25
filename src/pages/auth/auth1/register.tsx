@@ -5,7 +5,7 @@ import { useDeferredGoogleLogin } from "hooks/useDeferredGoogleLogin";
 
 // material-ui
 import { useTheme, alpha, Theme } from "@mui/material/styles";
-import { Alert, Box, Chip, Container, Grid, Stack, Typography, useMediaQuery } from "@mui/material";
+import { Alert, Box, Button, Chip, Collapse, Container, Grid, Stack, Typography, useMediaQuery } from "@mui/material";
 
 // third party
 import { motion } from "framer-motion";
@@ -381,6 +381,7 @@ const Register = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [isEmailLoading, setIsEmailLoading] = useState<boolean>(false);
+	const [mostrarFormEmail, setMostrarFormEmail] = useState<boolean>(false);
 	const isAnyLoading = isLoading || isEmailLoading;
 	const location = useLocation();
 
@@ -455,7 +456,18 @@ const Register = () => {
 		);
 	}
 
-	const benefits = ["Estados y movimientos automáticos", "Alertas de vencimientos", "Centralizá agenda y cálculos"];
+	// Variante para el tráfico de los correos de captación (source=email-pjn, 2026-11-25): el correo ya convenció,
+	// pero /register convertía el 5,4 % de las vistas contra 12,6 % de Google. Se muestra el valor concreto dentro de
+	// la tarjeta (en el celular el panel derecho no aparece), Google primero y el formulario de correo plegado
+	// (casi nadie lo usaba desde el correo). Los eventos no cambian. la-ads/analysis/2026-11-21-…captacion.md §8.
+	const esEmailPjn = source === "email-pjn";
+	const benefits = esEmailPjn
+		? [
+				"Conectás tu usuario del PJN y ves todas tus causas en un minuto",
+				"Se actualizan solas: cada día a las 19 te avisamos qué se movió",
+				"Gratis, sin tarjeta",
+		  ]
+		: ["Estados y movimientos automáticos", "Alertas de vencimientos", "Centralizá agenda y cálculos"];
 
 	return (
 		<Box
@@ -583,7 +595,7 @@ const Register = () => {
 																textWrap: "balance",
 															}}
 														>
-															Empezá{" "}
+															{esEmailPjn ? "Tus causas del PJN, " : "Empezá "}
 															<Box
 																component="span"
 																sx={{
@@ -597,7 +609,7 @@ const Register = () => {
 																	},
 																}}
 															>
-																gratis
+																{esEmailPjn ? "actualizadas solas" : "gratis"}
 															</Box>
 														</Typography>
 														<Typography
@@ -619,7 +631,9 @@ const Register = () => {
 														color="text.secondary"
 														sx={{ fontSize: "0.875rem", letterSpacing: "-0.005em", textWrap: "pretty" }}
 													>
-														Configuración inicial en menos de 2 minutos.
+														{esEmailPjn
+															? "Creá tu cuenta gratis y conectá el PJN en un minuto."
+															: "Configuración inicial en menos de 2 minutos."}
 													</Typography>
 												</Stack>
 											</motion.div>
@@ -632,8 +646,8 @@ const Register = () => {
 												<Stack spacing={0.625}>
 													{benefits.map((label) => (
 														<Stack key={label} direction="row" alignItems="center" spacing={0.875}>
-															<TickCircle size={14} variant="Bold" color={LIVE_GREEN} />
-															<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.78rem" }}>
+															<TickCircle size={14} variant="Bold" color={LIVE_GREEN} style={{ flexShrink: 0 }} />
+															<Typography variant="caption" color="text.secondary" sx={{ fontSize: esEmailPjn ? "0.84rem" : "0.78rem" }}>
 																{label}
 															</Typography>
 														</Stack>
@@ -657,7 +671,7 @@ const Register = () => {
 													onWarm={warmGoogle}
 													disabled={isLoading}
 													showLoader={isLoading}
-													text="Registrate con Google"
+													text={esEmailPjn ? "Continuar con Google" : "Registrate con Google"}
 													fullWidth
 													sx={{ py: 1.5 }}
 												/>
@@ -733,7 +747,7 @@ const Register = () => {
 
 											<AuthDivider>
 												<Typography variant="caption" color="text.secondary" sx={{ opacity: 0.6, fontSize: "0.7rem" }}>
-													o usá tu email
+													{esEmailPjn ? "o" : "o usá tu email"}
 												</Typography>
 											</AuthDivider>
 
@@ -742,7 +756,20 @@ const Register = () => {
 												animate={{ opacity: 1, translateY: 0 }}
 												transition={{ ...SPRING, delay: 0.4 }}
 											>
-												<AuthRegister source={source} feature={feature} onLoadingChange={setIsEmailLoading} />
+												{esEmailPjn ? (
+													<>
+														<Collapse in={!mostrarFormEmail} unmountOnExit>
+															<Button fullWidth variant="text" color="secondary" onClick={() => setMostrarFormEmail(true)} sx={{ py: 1 }}>
+																Registrarme con mi correo y una contraseña
+															</Button>
+														</Collapse>
+														<Collapse in={mostrarFormEmail}>
+															<AuthRegister source={source} feature={feature} onLoadingChange={setIsEmailLoading} />
+														</Collapse>
+													</>
+												) : (
+													<AuthRegister source={source} feature={feature} onLoadingChange={setIsEmailLoading} />
+												)}
 											</motion.div>
 										</Stack>
 									</Box>

@@ -1,5 +1,5 @@
 import { useState, SyntheticEvent } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 
 // material-ui
 import {
@@ -58,6 +58,9 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 	const { isLoggedIn, login, cancelAccountDeletion } = useAuth();
 	const scriptedRef = useScriptRef();
 	const navigate = useNavigate();
+	// Correo que trae el registro de un clic cuando la cuenta ya existe (/registro/correo). Va por state y no por la
+	// URL para que no termine en GA4.
+	const emailDesdeEnlace = (useLocation().state as { email?: unknown } | null)?.email;
 
 	const [showPassword, setShowPassword] = useState(false);
 	const handleClickShowPassword = () => {
@@ -147,7 +150,12 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 		<>
 			<Formik
 				initialValues={{
-					email: import.meta.env.MODE === "development" ? import.meta.env.VITE_DEV_EMAIL || "" : "",
+					email:
+						typeof emailDesdeEnlace === "string"
+							? emailDesdeEnlace
+							: import.meta.env.MODE === "development"
+							? import.meta.env.VITE_DEV_EMAIL || ""
+							: "",
 					password: import.meta.env.MODE === "development" ? import.meta.env.VITE_DEV_PASSWORD || "" : "",
 					submit: null,
 				}}
