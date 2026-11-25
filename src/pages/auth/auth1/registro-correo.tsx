@@ -5,7 +5,7 @@ import type { CredentialResponse } from "@react-oauth/google";
 
 // material-ui
 import { useTheme, alpha } from "@mui/material/styles";
-import { Alert, Box, Button, CircularProgress, Container, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Container, Grid, Stack, Typography, useMediaQuery } from "@mui/material";
 
 // icons
 import { Notification, TickCircle, DocumentText1, Sms } from "iconsax-react";
@@ -16,6 +16,7 @@ import MainCard from "components/MainCard";
 import PageBackground from "components/PageBackground";
 import LogoDrawLoader from "components/logo/LogoDrawLoader";
 import CustomGoogleButton from "components/auth/CustomGoogleButton";
+import PanelCausasAnimado from "components/auth/PanelCausasAnimado";
 import AuthDivider from "sections/auth/AuthDivider";
 import useAuth from "hooks/useAuth";
 import { useDeferredGoogleLogin } from "hooks/useDeferredGoogleLogin";
@@ -45,6 +46,8 @@ type Estado =
 const API = import.meta.env.VITE_BASE_URL;
 const DESTINO_CONECTAR = "/dashboard/default?conectar=pjn";
 const LIVE_GREEN = "#22C55E";
+const BRAND_BLUE = "#3A7BFF";
+const BRAND_GRADIENT_TEXT = "linear-gradient(90deg, #3A7BFF, #8A5CFF, #3A7BFF) 0 0 / 400% 100%";
 
 const VALOR = [
 	{ icon: DocumentText1, texto: "Conectás tu usuario del PJN y en un minuto ves todas tus causas, con sus movimientos." },
@@ -55,6 +58,7 @@ const VALOR = [
 const RegistroCorreo = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
+	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const location = useLocation();
 	const navigate = useNavigate();
 	const { loginWithGoogle, isLoggedIn } = useAuth();
@@ -321,72 +325,117 @@ const RegistroCorreo = () => {
 				overflow: "hidden",
 				minHeight: { xs: "100dvh", sm: "100vh" },
 				bgcolor: theme.palette.background.default,
-				py: { xs: 4, sm: 6 },
+				py: { xs: 4, sm: 6, md: 8 },
 				display: "flex",
 				alignItems: "center",
 			}}
 		>
 			<PageBackground variant="default" />
-			<Container maxWidth="sm" sx={{ position: "relative", zIndex: 1, px: { xs: 2, sm: 3 } }}>
-				<MainCard
-					content={false}
-					sx={{
-						maxWidth: 480,
-						mx: "auto",
-						boxShadow: `0 30px 60px ${alpha("#0F172A", isDark ? 0.35 : 0.12)}`,
-						border: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`,
-					}}
-				>
-					<Box sx={{ p: { xs: 3, sm: 4 }, position: "relative" }}>
-						{creando && (
-							<Box
-								sx={{
-									position: "absolute",
-									inset: 0,
-									zIndex: 10,
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-									bgcolor: alpha(theme.palette.background.paper, 0.94),
-								}}
-							>
-								<LogoDrawLoader caption="Creando tu cuenta..." />
-							</Box>
-						)}
-						<Stack spacing={2.5}>
-							<Box sx={{ textAlign: "center" }}>
-								<Logo to="/" />
-							</Box>
-							<Stack spacing={1}>
-								<Typography
-									component="h1"
-									sx={{
-										fontSize: { xs: "1.5rem", sm: "1.75rem" },
-										fontWeight: 600,
-										lineHeight: 1.15,
-										letterSpacing: "-0.02em",
-										textWrap: "balance",
-									}}
-								>
-									Tus causas del PJN, actualizadas solas
-								</Typography>
-								<Stack spacing={0.75}>
-									{VALOR.map(({ icon: Icono, texto }) => (
-										<Stack key={texto} direction="row" spacing={1} alignItems="flex-start">
-											<Box sx={{ flexShrink: 0, mt: "2px", lineHeight: 0 }}>
-												<Icono size={16} variant="Bulk" color={LIVE_GREEN} />
+			<Box
+				aria-hidden
+				sx={{
+					position: "absolute",
+					top: { xs: "-8%", md: "-12%" },
+					right: { xs: "-20%", md: "-10%" },
+					width: { xs: 380, md: 620 },
+					height: { xs: 380, md: 620 },
+					borderRadius: "50%",
+					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.13)} 0%, transparent 62%)`,
+					filter: "blur(60px)",
+					pointerEvents: "none",
+				}}
+			/>
+			<Container sx={{ position: "relative", zIndex: 1, px: { xs: 2, sm: 3 } }}>
+				<Grid container alignItems="center" justifyContent="center" spacing={{ xs: 3, md: 6 }}>
+					<Grid item xs={12} md={6} sx={{ display: "flex", justifyContent: "center" }}>
+						<MainCard
+							content={false}
+							sx={{
+								width: "100%",
+								maxWidth: 460,
+								boxShadow: `0 30px 60px ${alpha("#0F172A", isDark ? 0.35 : 0.12)}, 0 12px 28px ${alpha("#0F172A", isDark ? 0.25 : 0.08)}`,
+								border: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`,
+							}}
+						>
+							<Box sx={{ p: { xs: 3, sm: 3.5, md: 4 }, position: "relative" }}>
+								{creando && (
+									<Box
+										sx={{
+											position: "absolute",
+											inset: 0,
+											zIndex: 10,
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											bgcolor: alpha(theme.palette.background.paper, 0.94),
+										}}
+									>
+										<LogoDrawLoader caption="Creando tu cuenta..." />
+									</Box>
+								)}
+								<Stack spacing={3}>
+									<Box sx={{ textAlign: "center" }}>
+										<Logo to="/" />
+									</Box>
+									<Stack spacing={1}>
+										<Typography
+											component="h1"
+											sx={{
+												fontSize: { xs: "1.6rem", sm: "1.75rem" },
+												fontWeight: 600,
+												lineHeight: 1.22,
+												letterSpacing: "-0.02em",
+												textWrap: "balance",
+											}}
+										>
+											Tus causas del PJN,
+											<Box
+												component="span"
+												sx={{
+													display: "block",
+													background: BRAND_GRADIENT_TEXT,
+													color: "transparent",
+													WebkitBackgroundClip: "text",
+													backgroundClip: "text",
+													animation: "move-bg-registro-correo 24s infinite linear",
+													"@keyframes move-bg-registro-correo": { "100%": { backgroundPosition: "400% 0" } },
+												}}
+											>
+												actualizadas solas
 											</Box>
-											<Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.45 }}>
-												{texto}
-											</Typography>
-										</Stack>
-									))}
+										</Typography>
+										<Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.9rem", textWrap: "pretty" }}>
+											Creá tu cuenta gratis y conectá el PJN en un minuto.
+										</Typography>
+									</Stack>
+									<Stack spacing={1.25}>
+										{VALOR.map(({ icon: Icono, texto }) => (
+											<Stack key={texto} direction="row" spacing={1.25} alignItems="flex-start">
+												<Box sx={{ flexShrink: 0, mt: "1px", lineHeight: 0 }}>
+													<Icono size={18} variant="Bulk" color={LIVE_GREEN} />
+												</Box>
+												<Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.86rem", lineHeight: 1.5 }}>
+													{texto}
+												</Typography>
+											</Stack>
+										))}
+									</Stack>
+									{renderContenido()}
 								</Stack>
+							</Box>
+						</MainCard>
+					</Grid>
+					{!isMobile && (
+						<Grid item md={6} sx={{ display: { xs: "none", md: "flex" }, justifyContent: "center" }}>
+							<Stack spacing={3} alignItems="center" sx={{ width: "100%", maxWidth: 540, textAlign: "center" }}>
+								<PanelCausasAnimado />
+								<Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.9rem", maxWidth: 420, textWrap: "pretty" }}>
+									Conectás el PJN una vez: tus causas se cargan solas y cada día a las 19 te avisamos qué se movió.
+								</Typography>
 							</Stack>
-							{renderContenido()}
-						</Stack>
-					</Box>
-				</MainCard>
+						</Grid>
+					)}
+				</Grid>
 			</Container>
 		</Box>
 	);

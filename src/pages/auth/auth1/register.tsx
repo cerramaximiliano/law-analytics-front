@@ -22,6 +22,7 @@ import AuthWrapper from "sections/auth/AuthWrapper";
 import MainCard from "components/MainCard";
 import PageBackground from "components/PageBackground";
 import MockupFrame from "components/MockupFrame";
+import PanelCausasAnimado from "components/auth/PanelCausasAnimado";
 import AuthRegister from "sections/auth/auth-forms/AuthRegister";
 import CustomGoogleButton from "components/auth/CustomGoogleButton";
 import { FeatureModalData } from "components/FeatureModal";
@@ -808,7 +809,9 @@ const Register = () => {
 												}}
 											/>
 											<Box sx={{ width: "100%", maxWidth: 520 }}>
-												<MockupFrame showSecondaryCopy={false} />
+												{/* email-pjn: panel animado (SVG liviano). El resto del tráfico sigue con el mockup,
+												    a propósito: Google convierte bien y no se mezclan efectos (decisión 25/11). */}
+												{esEmailPjn ? <PanelCausasAnimado /> : <MockupFrame showSecondaryCopy={false} />}
 											</Box>
 											<Typography
 												variant="body2"
@@ -819,7 +822,9 @@ const Register = () => {
 													textWrap: "pretty",
 												}}
 											>
-												Centralizá expedientes de PJN, MEV y EJE con novedades y movimientos automáticos.
+												{esEmailPjn
+													? "Conectás el PJN una vez: tus causas se cargan solas y cada día a las 19 te avisamos qué se movió."
+													: "Centralizá expedientes de PJN, MEV y EJE con novedades y movimientos automáticos."}
 											</Typography>
 										</Stack>
 									)}
