@@ -584,7 +584,12 @@ const Register = () => {
 												transition={{ ...SPRING, delay: 0.1 }}
 											>
 												<Stack spacing={0.75}>
-													<Stack direction="row" justifyContent="space-between" alignItems="baseline" spacing={1}>
+													<Stack
+														direction={esEmailPjn ? { xs: "column", sm: "row" } : "row"}
+														justifyContent="space-between"
+														alignItems={esEmailPjn ? { xs: "flex-start", sm: "baseline" } : "baseline"}
+														spacing={esEmailPjn ? { xs: 0.5, sm: 1 } : 1}
+													>
 														<Typography
 															variant="h3"
 															sx={{
