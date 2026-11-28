@@ -52,6 +52,7 @@ const LaborLayout = Loadable(lazyRetry(() => import("pages/calculator/labor/inde
 const CivilLayouts = Loadable(lazyRetry(() => import("pages/calculator/civil/index")));
 const InteresesLayouts = Loadable(lazyRetry(() => import("pages/calculator/intereses/index")));
 const PrevisionalLayout = Loadable(lazyRetry(() => import("pages/calculator/previsional/index")));
+const HaberCajaLayout = Loadable(lazyRetry(() => import("pages/calculator/previsional/haber-caja")));
 const LiquidacionLayout = Loadable(lazyRetry(() => import("pages/calculator/liquidacion/index")));
 const AllCalculatorsLayout = Loadable(lazyRetry(() => import("pages/calculator/all/index")));
 const ValoresArancelariosLayout = Loadable(lazyRetry(() => import("pages/calculator/valores/index"), "ValoresArancelarios"));
@@ -213,6 +214,10 @@ const MainRoutes = {
 								{
 									path: "previsional",
 									element: <PrevisionalLayout />,
+								},
+								{
+									path: "previsional/haber-caja",
+									element: <HaberCajaLayout />,
 								},
 								{
 									path: "valores",

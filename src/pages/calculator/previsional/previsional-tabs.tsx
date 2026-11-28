@@ -2,13 +2,13 @@ import React from "react";
 import { useState, ReactNode, SyntheticEvent, useEffect, useCallback } from "react";
 
 // material-ui
-import { Box, Tab, Tabs, Skeleton, Stack, Grid, Typography } from "@mui/material";
+import { Box, Button, Tab, Tabs, Skeleton, Stack, Grid, Typography } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
 import SavedPrevisional from "./components/SavedPrevisional";
 import PrevisionalRetroactivoWizard from "sections/forms/wizard/calc-previsional/retroactivo";
-import { useSearchParams } from "react-router-dom";
+import { Link as RouterLink, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
@@ -196,6 +196,10 @@ export default function PrevisionalTabs() {
 						<Tab label="Retroactivo" icon={<Calculator />} iconPosition="start" {...a11yProps(0)} />
 						<Tab label="Guardados" icon={<DocumentCloud />} iconPosition="start" {...a11yProps(1)} />
 					</Tabs>
+					{/* Acceso a la pantalla del haber de caja (haber inicial de la Ley 24.241) */}
+					<Button component={RouterLink} to="/apps/calc/previsional/haber-caja" size="small" sx={{ ml: 1, flexShrink: 0 }}>
+						Haber de caja
+					</Button>
 					{shouldShowFolderName && (
 						<Typography variant="subtitle1" sx={{ ml: 2, mr: 2, color: "text.secondary", display: "flex", alignItems: "center", gap: 1 }}>
 							<DocumentCloud size={20} />
