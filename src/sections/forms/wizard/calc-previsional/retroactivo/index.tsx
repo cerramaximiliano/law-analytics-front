@@ -24,6 +24,7 @@ import previsionalFormModel from "./formModel/previsionalFormModel";
 import formInitialValues from "./formModel/formInitialValues";
 import validationSchema from "./formModel/validationSchema";
 import { valoresDesdeCalculadora } from "./formModel/valoresDesdeGuardado";
+import { PrecargaRetroactivo } from "../haber-caja/formModel/valoresDesdeGuardado";
 
 import FirstForm from "./first";
 import SecondForm from "./second";
@@ -51,6 +52,11 @@ interface PrevisionalRetroactivoWizardProps {
 	onSalirEdicion?: () => void;
 	/** Ya se guardó (actualizado o como nuevo): la página limpia `?edit=` y vuelve a Guardados. */
 	onGuardado?: (modo: "actualizado" | "nuevo") => void;
+	/**
+	 * Cálculo encadenado: haber que viene de un haber de caja (más adelante, de un haber de reajuste). Precarga el haber
+	 * percibido y deja el origen en los valores (`cadenaOrigen`) para que el guardado quede vinculado.
+	 */
+	precarga?: PrecargaRetroactivo | null;
 }
 
 function _renderStepContent(step: number, formField: any, folder?: any, onFolderChange?: (folderId: string | null) => void) {
@@ -76,6 +82,7 @@ const PrevisionalRetroactivoWizard = ({
 	calculadoraEnEdicion,
 	onSalirEdicion,
 	onGuardado,
+	precarga,
 }: PrevisionalRetroactivoWizardProps) => {
 	const [activeStep, setActiveStep] = useState(0);
 	const [calculo, setCalculo] = useState<{ resultado: RetroactivoResultado; input: RetroactivoInput; values: any } | null>(null);
@@ -106,6 +113,12 @@ const PrevisionalRetroactivoWizard = ({
 					titular: calculadoraEnEdicion.user || calculadoraEnEdicion.variables?.datosExpediente?.reclamante || "",
 			  }
 			: null;
+
+	// Valores iniciales de un cálculo encadenado (no aplica al reabrir un guardado)
+	const valoresPrecarga = useMemo(
+		() => (precarga && !calculadoraEnEdicion ? { ...formInitialValues, ...precarga.valores, cadenaOrigen: precarga.origen } : null),
+		[precarga, calculadoraEnEdicion],
+	);
 
 	const isLastStep = activeStep === steps.length - 1;
 	const currentValidationSchema = validationSchema[activeStep];
@@ -204,6 +217,15 @@ const PrevisionalRetroactivoWizard = ({
 					Este cálculo es anterior y no se puede reabrir para editar. Podés cargar uno nuevo.
 				</Alert>
 			)}
+			{valoresPrecarga && precarga && (
+				<Alert severity="info" sx={{ mb: 3 }}>
+					El haber pagado por ANSES viene del haber de caja calculado ({precarga.origen.mes.slice(5, 7)}/{precarga.origen.mes.slice(0, 4)}
+					). Podés corregirlo.{" "}
+					{precarga.origen.calculatorId
+						? "Al guardar, este retroactivo queda vinculado a ese haber de caja."
+						: "El haber de caja no está guardado: este retroactivo no queda vinculado a él."}
+				</Alert>
+			)}
 			{sinAcceso && (
 				<Alert severity="info" sx={{ mb: 3 }}>
 					El cálculo de retroactivos previsionales está disponible en los planes Estándar, Pro y Premium. Podés cargar los datos; para
@@ -250,7 +272,7 @@ const PrevisionalRetroactivoWizard = ({
 			</Stack>
 
 			<Formik
-				initialValues={valoresPrevios || valoresEdicion || formInitialValues}
+				initialValues={valoresPrevios || valoresEdicion || valoresPrecarga || formInitialValues}
 				validationSchema={currentValidationSchema}
 				onSubmit={_handleSubmit}
 				validateOnChange={false}

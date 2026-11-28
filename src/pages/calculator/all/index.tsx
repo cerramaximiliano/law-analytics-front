@@ -296,6 +296,8 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 				return "Riesgos del trabajo (ART)";
 			case "retroactivo":
 				return "Retroactivo previsional";
+			case "haberCaja":
+				return "Haber de caja";
 		}
 
 		// Para cálculos de intereses, el subClassType contiene el value de la tasa

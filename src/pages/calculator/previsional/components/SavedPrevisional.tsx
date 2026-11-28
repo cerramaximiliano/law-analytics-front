@@ -55,6 +55,7 @@ import { InterestRate } from "store/reducers/interestRates";
 import TablaRetroactivo, { flagsDeFilas } from "components/calculator/TablaRetroactivo";
 import LiquidacionPorTramos from "components/calculator/LiquidacionPorTramos";
 import { sePuedeReabrir } from "sections/forms/wizard/calc-previsional/retroactivo/formModel/valoresDesdeGuardado";
+import { esHaberCajaGuardado } from "sections/forms/wizard/calc-previsional/haber-caja/formModel/valoresDesdeGuardado";
 import { descargarPdfRetroactivo, tieneDetalleParaPdf } from "utils/previsionalPdf";
 import { etiquetaVersion, fechaActualizadoAl, puedeMantenerActualizado, tienePercibidoManual } from "utils/previsionalKeepUpdated";
 import { AVISO_PERCIBIDO_MANUAL_SIN_ACTUALIZACION, descripcionRefuerzos, nombreIndiceMovilidad } from "services/previsionalService";
@@ -705,6 +706,9 @@ export default function SavedPrevisional() {
 		}
 	}, []);
 
+	// Los haberes de caja guardados comparten classType con el retroactivo y tienen su propio listado
+	const retroactivos = useMemo(() => (selectedCalculators || []).filter((c: any) => !esHaberCajaGuardado(c)), [selectedCalculators]);
+
 	const columns: Column[] = useMemo(
 		() => [
 			{
@@ -921,7 +925,7 @@ export default function SavedPrevisional() {
 			<MainCard content={false}>
 				<ReactTable
 					columns={columns}
-					data={selectedCalculators}
+					data={retroactivos}
 					renderRowSubComponent={({ row }: { row: Row<any> }) => <ExpandedRow row={row} rates={rates} />}
 					isLoading={isLoader && !keepUpdatedLoading}
 					expandedRowId={expandedRowId}

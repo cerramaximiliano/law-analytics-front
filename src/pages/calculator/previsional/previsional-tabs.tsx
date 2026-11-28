@@ -8,7 +8,8 @@ import { Box, Button, Tab, Tabs, Skeleton, Stack, Grid, Typography } from "@mui/
 import MainCard from "components/MainCard";
 import SavedPrevisional from "./components/SavedPrevisional";
 import PrevisionalRetroactivoWizard from "sections/forms/wizard/calc-previsional/retroactivo";
-import { Link as RouterLink, useSearchParams } from "react-router-dom";
+import { Link as RouterLink, useLocation, useSearchParams } from "react-router-dom";
+import { PrecargaRetroactivo } from "sections/forms/wizard/calc-previsional/haber-caja/formModel/valoresDesdeGuardado";
 import { useSelector } from "react-redux";
 import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
@@ -54,6 +55,9 @@ function a11yProps(index: number) {
 export default function PrevisionalTabs() {
 	const [value, setValue] = useState(0);
 	const [searchParams, setSearchParams] = useSearchParams();
+	// Encadenado desde el haber de caja: el haber calculado llega en el `state` de la navegación y entra como haber percibido
+	const location = useLocation();
+	const precarga: PrecargaRetroactivo | null = (location.state as any)?.desdeHaberCaja || null;
 	const { folders } = useSelector((state: any) => state.folder);
 	const user = useSelector((state: any) => state.auth?.user);
 	const id = user?._id || user?.id;
@@ -217,6 +221,7 @@ export default function PrevisionalTabs() {
 					) : (
 						<PrevisionalRetroactivoWizard
 							key={calculadoraEnEdicion?._id || "nuevo"}
+							precarga={calculadoraEnEdicion ? null : precarga}
 							folder={currentFolder}
 							onFolderChange={handleFolderChange}
 							calculadoraEnEdicion={calculadoraEnEdicion}

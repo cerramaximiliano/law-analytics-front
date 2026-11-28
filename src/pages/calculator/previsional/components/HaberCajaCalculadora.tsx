@@ -1,19 +1,26 @@
-import React, { ClipboardEvent, useMemo, useRef, useState } from "react";
+import React, { ClipboardEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // material-ui
 import {
+	Accordion,
+	AccordionDetails,
+	AccordionSummary,
 	Alert,
 	AlertTitle,
 	Box,
 	Button,
+	Checkbox,
 	CircularProgress,
 	Divider,
+	FormControlLabel,
+	FormHelperText,
 	Grid,
 	IconButton,
 	InputAdornment,
 	MenuItem,
 	Paper,
 	Stack,
+	Switch,
 	Table,
 	TableBody,
 	TableCell,
@@ -25,138 +32,385 @@ import {
 	Typography,
 } from "@mui/material";
 
+// third-party
+import { Form, Formik, FormikHelpers, getIn, useFormikContext } from "formik";
+
 // project-imports
+import InputField from "components/UI/InputField";
+import NumberField from "components/UI/NumberField";
+import LinkCauseSelector from "sections/forms/wizard/calc-previsional/retroactivo/components/LinkCauseSelector";
 import {
+	avisoDeCategoria,
 	calcularHaberCaja,
+	CatalogoHaberCaja,
+	categoriasOfrecidas,
+	equiparacionDeCategoria,
 	HaberCajaInput,
 	HaberCajaRespuesta,
 	leerFilasPegadas,
-	leerImporte,
+	monedaDelPeriodo,
 	normalizarPeriodo,
-	PrestacionHaberCaja,
-	ProgramaHaberCaja,
-	TiempoAMD,
+	obtenerCatalogoHaberCaja,
 } from "services/haberCajaService";
+import {
+	armarEntradaHaberCaja,
+	CAUSA_VINCULADA,
+	ClaseServicio,
+	FilaAutonomoForm,
+	filaAutonomoVacia,
+	FilaRemuneracionForm,
+	filaRemuneracionVacia,
+	FORM_ID,
+	HaberCajaValues,
+	nuevaFilaAutonomo,
+	nuevaFilaRemuneracion,
+	TramoServicio,
+	valoresIniciales,
+} from "sections/forms/wizard/calc-previsional/haber-caja/formModel/haberCajaFormModel";
+import crearValidationSchema from "sections/forms/wizard/calc-previsional/haber-caja/formModel/validationSchema";
+import { valoresDesdeCalculadora } from "sections/forms/wizard/calc-previsional/haber-caja/formModel/valoresDesdeGuardado";
+import HaberCajaResultado, { HaberCajaEnEdicion } from "./HaberCajaResultado";
 import useSubscription from "hooks/useSubscription";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
+import { fechaCalculo } from "utils/calculatorDate";
 
 // assets
-import { Add, Calculator, Trash } from "iconsax-react";
+import { Add, ArrowDown2, Calculator, Trash } from "iconsax-react";
 
 // Misma feature paga que el retroactivo previsional: el hub responde 403 con upgradeRequired si el plan no la tiene
 const FEATURE = "calculoPrevisional";
-// El motor calcula para FAD desde la vigencia de la Ley 24.241
-const INICIO_LEY_24241 = "1994-07";
 
-// ---- estado del formulario ----
+const CLASES: { clase: ClaseServicio; etiqueta: string }[] = [
+	{ clase: "n", etiqueta: "Relación de dependencia" },
+	{ clase: "m", etiqueta: "Autónomos" },
+	{ clase: "p", etiqueta: "Simultáneos" },
+];
+const TRAMOS: { tramo: TramoServicio; etiqueta: string }[] = [
+	{ tramo: "antes", etiqueta: "hasta 6/1994" },
+	{ tramo: "despues", etiqueta: "desde 7/1994" },
+];
+const UNIDADES = [
+	["a", "Años"],
+	["m", "Meses"],
+	["d", "Días"],
+] as const;
 
-interface FilaRemuneracion {
-	id: number;
-	periodo: string;
-	importe: string;
+interface Props {
+	/** Carpeta de `?folder=`: el cálculo arranca vinculado a ella. */
+	folder?: any;
+	onFolderChange?: (folderId: string | null) => void;
+	/** Haber de caja guardado que se reabre para editar. */
+	calculadoraEnEdicion?: any | null;
+	onSalirEdicion?: () => void;
+	onGuardado?: (modo: "actualizado" | "nuevo") => void;
 }
-interface TiempoTexto {
-	a: string;
-	m: string;
-	d: string;
+
+/** Mensajes de error de Formik aplanados (los de las grillas vienen anidados por fila). */
+function mensajesDe(errores: unknown, salida: string[] = []): string[] {
+	if (!errores) return salida;
+	if (typeof errores === "string") {
+		if (errores && !salida.includes(errores)) salida.push(errores);
+	} else if (Array.isArray(errores)) errores.forEach((e) => mensajesDe(e, salida));
+	else if (typeof errores === "object") Object.values(errores as object).forEach((e) => mensajesDe(e, salida));
+	return salida;
 }
-interface Formulario {
-	prestacion: PrestacionHaberCaja;
-	programa: ProgramaHaberCaja;
-	porcentajePension: string;
-	fad: string;
-	cese: string;
-	solicitud: string;
-	alta: string;
-	antes: TiempoTexto;
-	despues: TiempoTexto;
+
+// ---- filas de las grillas (memoizadas: al tipear en una fila no se vuelven a dibujar las demás) ----
+
+interface FilaRemuneracionProps {
+	fila: FilaRemuneracionForm;
+	indice: number;
+	error: any;
+	catalogo: CatalogoHaberCaja | null;
+	onCambiar: (indice: number, campo: keyof FilaRemuneracionForm, valor: string) => void;
+	onQuitar: (id: number) => void;
 }
-type Errores = Partial<Record<"fad" | "cese" | "solicitud" | "alta" | "porcentajePension" | "servicios" | "remuneraciones", string>>;
 
-const TIEMPO_VACIO: TiempoTexto = { a: "", m: "", d: "" };
-const FORMULARIO_INICIAL: Formulario = {
-	prestacion: "jubilacion",
-	programa: "ansesPrpa",
-	porcentajePension: "",
-	fad: "",
-	cese: "",
-	solicitud: "",
-	alta: "",
-	antes: { ...TIEMPO_VACIO },
-	despues: { ...TIEMPO_VACIO },
-};
-const FILAS_INICIALES = 3;
-
-// ---- formato ----
-
-const pesos = (n: number | null | undefined) =>
-	n === null || n === undefined || Number.isNaN(n)
-		? "-"
-		: new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2 }).format(n);
-const numero = (n: number | null | undefined) =>
-	n === null || n === undefined || Number.isNaN(n)
-		? "-"
-		: new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
-const mesLegible = (p?: string | null) => (p && /^\d{4}-\d{2}/.test(p) ? `${p.slice(5, 7)}/${p.slice(0, 4)}` : p || "-");
-
-const entero = (t: string) => {
-	const n = Number(String(t).trim());
-	return Number.isInteger(n) && n >= 0 ? n : NaN;
-};
-/** Años, meses y días del formulario → { a, m, d }; null si hay un valor inválido. */
-function tiempoDe(t: TiempoTexto): TiempoAMD | null {
-	const a = t.a.trim() ? entero(t.a) : 0;
-	const m = t.m.trim() ? entero(t.m) : 0;
-	const d = t.d.trim() ? entero(t.d) : 0;
-	if ([a, m, d].some(Number.isNaN) || m > 11 || d > 30) return null;
-	return { a, m, d };
-}
-const tiempoVacio = (t: TiempoAMD | null) => !t || !(t.a || t.m || t.d);
-
-// ==============================|| HABER DE CAJA: FORMULARIO Y RESULTADO ||============================== //
-
-export default function HaberCajaCalculadora() {
-	const [form, setForm] = useState<Formulario>(FORMULARIO_INICIAL);
-	const siguienteId = useRef(FILAS_INICIALES);
-	const [filas, setFilas] = useState<FilaRemuneracion[]>(() =>
-		Array.from({ length: FILAS_INICIALES }, (_, i) => ({ id: i, periodo: "", importe: "" })),
-	);
-	const [errores, setErrores] = useState<Errores>({});
-	const [avisoPegado, setAvisoPegado] = useState<string | null>(null);
-	const [cargando, setCargando] = useState(false);
-	const [errorCalculo, setErrorCalculo] = useState<string | null>(null);
-	const [respuesta, setRespuesta] = useState<HaberCajaRespuesta | null>(null);
-	const [mejorarPlan, setMejorarPlan] = useState(false);
-	const { subscription, hasFeatureLocal } = useSubscription();
-	// Sin suscripción cargada todavía no se bloquea: decide el hub
-	const sinAcceso = !!subscription && !hasFeatureLocal(FEATURE);
-
-	const esPension = form.prestacion === "pension";
-	const filasCargadas = useMemo(() => filas.filter((f) => f.periodo.trim() || f.importe.trim()), [filas]);
-
-	const cambiar = <K extends keyof Formulario>(campo: K, valor: Formulario[K]) => {
-		setForm((prev) => ({ ...prev, [campo]: valor }));
-		setErrores((prev) => ({ ...prev, [campo]: undefined }));
+const FilaRemuneracionGrilla = memo(function FilaRemuneracionGrilla({
+	fila: f,
+	indice: i,
+	error,
+	catalogo,
+	onCambiar,
+	onQuitar,
+}: FilaRemuneracionProps) {
+	const periodo = normalizarPeriodo(f.periodo);
+	const automatica = monedaDelPeriodo(catalogo, periodo);
+	const elegida = f.moneda ? catalogo?.monedas.find((m) => m.clave === f.moneda) : automatica;
+	const normalizar = (campo: "periodo" | "hasta") => {
+		const p = normalizarPeriodo(f[campo]);
+		if (p && p !== f[campo]) onCambiar(i, campo, p);
 	};
-	const cambiarTiempo = (tramo: "antes" | "despues", campo: keyof TiempoTexto, valor: string) => {
-		setForm((prev) => ({ ...prev, [tramo]: { ...prev[tramo], [campo]: valor.replace(/\D/g, "") } }));
-		setErrores((prev) => ({ ...prev, servicios: undefined }));
+	return (
+		<TableRow>
+			<TableCell sx={{ color: "text.secondary" }}>{i + 1}</TableCell>
+			<TableCell>
+				<TextField
+					fullWidth
+					size="small"
+					placeholder="MM/AAAA"
+					value={f.periodo}
+					onChange={(e) => onCambiar(i, "periodo", e.target.value)}
+					onBlur={() => normalizar("periodo")}
+					error={!!error?.periodo || (!!f.periodo.trim() && !periodo)}
+					inputProps={{ "aria-label": `Período de la fila ${i + 1}` }}
+				/>
+			</TableCell>
+			<TableCell>
+				<TextField
+					fullWidth
+					size="small"
+					placeholder="Un mes"
+					value={f.hasta}
+					onChange={(e) => onCambiar(i, "hasta", e.target.value)}
+					onBlur={() => normalizar("hasta")}
+					error={!!error?.hasta}
+					inputProps={{ "aria-label": `Hasta de la fila ${i + 1}` }}
+				/>
+			</TableCell>
+			<TableCell>
+				<TextField
+					fullWidth
+					size="small"
+					placeholder="0,00"
+					value={f.importe}
+					onChange={(e) => onCambiar(i, "importe", e.target.value)}
+					error={!!error?.importe}
+					InputProps={{ startAdornment: <InputAdornment position="start">{elegida?.simbolo || "$"}</InputAdornment> }}
+					inputProps={{ inputMode: "decimal", "aria-label": `Importe de la fila ${i + 1}` }}
+				/>
+			</TableCell>
+			<TableCell>
+				<TextField
+					select
+					fullWidth
+					size="small"
+					value={f.moneda}
+					onChange={(e) => onCambiar(i, "moneda", e.target.value)}
+					disabled={!catalogo}
+					SelectProps={{ native: true }}
+					inputProps={{ "aria-label": `Moneda de la fila ${i + 1}` }}
+				>
+					<option value="">{automatica ? `${automatica.etiqueta} (por el período)` : "Según el período"}</option>
+					{(catalogo?.monedas || []).map((m) => (
+						<option key={m.clave} value={m.clave}>
+							{m.etiqueta}
+						</option>
+					))}
+				</TextField>
+			</TableCell>
+			<TableCell align="right">
+				<Tooltip title="Quitar fila">
+					<IconButton size="small" color="error" onClick={() => onQuitar(f.id)} aria-label={`Quitar la fila ${i + 1}`}>
+						<Trash size={16} />
+					</IconButton>
+				</Tooltip>
+			</TableCell>
+		</TableRow>
+	);
+});
+
+interface FilaAutonomoProps {
+	fila: FilaAutonomoForm;
+	indice: number;
+	error: any;
+	catalogo: CatalogoHaberCaja | null;
+	sinEquiparacion: boolean;
+	onCambiar: (indice: number, campo: keyof FilaAutonomoForm, valor: string) => void;
+	onQuitar: (id: number) => void;
+}
+
+const FilaAutonomoGrilla = memo(function FilaAutonomoGrilla({
+	fila: f,
+	indice: i,
+	error,
+	catalogo,
+	sinEquiparacion,
+	onCambiar,
+	onQuitar,
+}: FilaAutonomoProps) {
+	const desde = normalizarPeriodo(f.desde);
+	const hasta = normalizarPeriodo(f.hasta);
+	const periodoListo = !!desde && !!hasta && hasta >= desde;
+	// Las categorías que se ofrecen son las de la época del período (catálogo del hub); el resto queda en «Otras»
+	const ofrecidas = periodoListo ? categoriasOfrecidas(catalogo, desde, hasta) : [];
+	const otras = (catalogo?.categorias || []).filter((c) => !ofrecidas.some((o) => o.codigo === c.codigo));
+	const aviso = periodoListo && f.categoria ? avisoDeCategoria(catalogo, f.categoria, desde, hasta) : null;
+	const equiparada = periodoListo && f.categoria && !sinEquiparacion ? equiparacionDeCategoria(catalogo, f.categoria, desde, hasta) : null;
+	const cruzaEpocas = periodoListo && !!catalogo && !ofrecidas.length;
+	const ayuda =
+		error?.categoria ||
+		aviso ||
+		(equiparada ? `Se computa ${equiparada}.` : null) ||
+		(cruzaEpocas && !f.categoria ? "El período cruza épocas con categorías distintas: conviene partirlo." : null);
+	const normalizar = (campo: "desde" | "hasta") => {
+		const p = normalizarPeriodo(f[campo]);
+		if (p && p !== f[campo]) onCambiar(i, campo, p);
+	};
+	return (
+		<TableRow>
+			<TableCell sx={{ verticalAlign: "top" }}>
+				<TextField
+					fullWidth
+					size="small"
+					placeholder="MM/AAAA"
+					value={f.desde}
+					onChange={(e) => onCambiar(i, "desde", e.target.value)}
+					onBlur={() => normalizar("desde")}
+					error={!!error?.desde}
+					helperText={error?.desde}
+					inputProps={{ "aria-label": `Desde del período de autónomos ${i + 1}` }}
+				/>
+			</TableCell>
+			<TableCell sx={{ verticalAlign: "top" }}>
+				<TextField
+					fullWidth
+					size="small"
+					placeholder="MM/AAAA"
+					value={f.hasta}
+					onChange={(e) => onCambiar(i, "hasta", e.target.value)}
+					onBlur={() => normalizar("hasta")}
+					error={!!error?.hasta}
+					helperText={error?.hasta}
+					inputProps={{ "aria-label": `Hasta del período de autónomos ${i + 1}` }}
+				/>
+			</TableCell>
+			<TableCell sx={{ verticalAlign: "top" }}>
+				<TextField
+					select
+					fullWidth
+					size="small"
+					value={f.categoria}
+					onChange={(e) => onCambiar(i, "categoria", e.target.value)}
+					disabled={!catalogo}
+					error={!!error?.categoria}
+					helperText={ayuda}
+					FormHelperTextProps={{ sx: { color: error?.categoria ? undefined : aviso ? "warning.dark" : undefined } }}
+					SelectProps={{ native: true }}
+					inputProps={{ "aria-label": `Categoría del período de autónomos ${i + 1}` }}
+				>
+					<option value="">{periodoListo ? "Elegí la categoría" : "Cargá el período"}</option>
+					{ofrecidas.length > 0 && (
+						<optgroup label="Categorías del período">
+							{ofrecidas.map((c) => (
+								<option key={c.codigo} value={c.codigo}>
+									{c.etiqueta}
+								</option>
+							))}
+						</optgroup>
+					)}
+					<optgroup label={ofrecidas.length ? "Otras categorías" : "Categorías"}>
+						{otras.map((c) => (
+							<option key={c.codigo} value={c.codigo}>
+								{c.etiqueta}
+							</option>
+						))}
+					</optgroup>
+				</TextField>
+			</TableCell>
+			<TableCell align="center" sx={{ verticalAlign: "top" }}>
+				{/* El motor todavía no distingue la moratoria: entra con su categoría, valuada a la misma fecha */}
+				<Tooltip title="Todavía no cambia el cálculo: la moratoria entra con su categoría">
+					<span>
+						<Checkbox
+							size="small"
+							checked={!!f.moratoria}
+							disabled
+							inputProps={{ "aria-label": `Moratoria del período de autónomos ${i + 1}` }}
+						/>
+					</span>
+				</Tooltip>
+			</TableCell>
+			<TableCell align="right" sx={{ verticalAlign: "top" }}>
+				<Tooltip title="Quitar período">
+					<IconButton size="small" color="error" onClick={() => onQuitar(f.id)} aria-label={`Quitar el período de autónomos ${i + 1}`}>
+						<Trash size={16} />
+					</IconButton>
+				</Tooltip>
+			</TableCell>
+		</TableRow>
+	);
+});
+
+// ---- formulario ----
+
+interface FormularioProps {
+	catalogo: CatalogoHaberCaja | null;
+	errorCatalogo: boolean;
+	onReintentarCatalogo: () => void;
+	folder?: any;
+	onFolderChange?: (folderId: string | null) => void;
+	cargando: boolean;
+	onLimpiar: () => void;
+}
+
+function Formulario({ catalogo, errorCatalogo, onReintentarCatalogo, folder, onFolderChange, cargando, onLimpiar }: FormularioProps) {
+	const { values, errors, submitCount, setFieldValue, setFieldError, getFieldProps } = useFormikContext<HaberCajaValues>();
+	// La validación corre al calcular; al corregir una fila marcada se le quita el error para no dejarlo viejo a la vista
+	const erroresRef = useRef(errors);
+	erroresRef.current = errors;
+	const limpiarErrorDeFila = useCallback(
+		(grilla: "remuneraciones" | "autonomos", indice: number) => {
+			const e = erroresRef.current[grilla];
+			if (Array.isArray(e) && e[indice]) setFieldError(`${grilla}[${indice}]`, undefined);
+		},
+		[setFieldError],
+	);
+	const [avisoPegado, setAvisoPegado] = useState<string | null>(null);
+	const esPension = values.prestacion === "pension";
+
+	// ---- carpeta vinculada (igual que el retroactivo) ----
+	const carpetaInicial =
+		folder || (values.folderId ? { _id: values.folderId, folderName: values.folderName || "Carpeta vinculada", materia: "" } : null);
+	const [metodo, setMetodo] = useState<"manual" | "causa">(carpetaInicial ? "causa" : "manual");
+	const [carpeta, setCarpeta] = useState<any>(carpetaInicial);
+	useEffect(() => {
+		if (folder && folder._id !== carpeta?._id) {
+			setCarpeta(folder);
+			setMetodo("causa");
+			setFieldValue("reclamante", `${CAUSA_VINCULADA}${folder._id}`, false);
+			setFieldValue("folderId", folder._id, false);
+			setFieldValue("folderName", folder.folderName || "", false);
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [folder?._id]);
+	const cambiarMetodo = (m: "manual" | "causa", datosCarpeta: any, meta?: { folderId: string; folderName: string }) => {
+		setMetodo(m);
+		setCarpeta(datosCarpeta);
+		if (m === "causa" && datosCarpeta) {
+			setFieldValue("reclamante", `${CAUSA_VINCULADA}${datosCarpeta._id}`);
+			if (meta) {
+				setFieldValue("folderId", meta.folderId);
+				setFieldValue("folderName", meta.folderName);
+			}
+			if (onFolderChange && meta?.folderId) onFolderChange(meta.folderId);
+		} else {
+			setFieldValue("reclamante", "");
+			setFieldValue("folderId", "");
+			setFieldValue("folderName", "");
+			if (onFolderChange) onFolderChange(null);
+		}
 	};
 
 	// ---- grilla de remuneraciones ----
-
-	const nuevaFila = (periodo = "", importe = ""): FilaRemuneracion => ({ id: siguienteId.current++, periodo, importe });
-	const agregarFila = () => setFilas((prev) => [...prev, nuevaFila()]);
-	const quitarFila = (id: number) => setFilas((prev) => (prev.length > 1 ? prev.filter((f) => f.id !== id) : [nuevaFila()]));
-	const cambiarFila = (id: number, campo: "periodo" | "importe", valor: string) => {
-		setFilas((prev) => prev.map((f) => (f.id === id ? { ...f, [campo]: valor } : f)));
-		setErrores((prev) => ({ ...prev, remuneraciones: undefined }));
-	};
-	const vaciarFilas = () => {
-		setFilas([nuevaFila()]);
-		setAvisoPegado(null);
-	};
-
+	const remuneraciones = values.remuneraciones;
+	const cargadas = useMemo(() => remuneraciones.filter((f) => !filaRemuneracionVacia(f)).length, [remuneraciones]);
+	const cambiarRemuneracion = useCallback(
+		(indice: number, campo: keyof FilaRemuneracionForm, valor: string) => {
+			setFieldValue(`remuneraciones[${indice}].${campo}`, valor, false);
+			limpiarErrorDeFila("remuneraciones", indice);
+		},
+		[setFieldValue, limpiarErrorDeFila],
+	);
+	const quitarRemuneracion = useCallback(
+		(id: number) =>
+			setFieldValue(
+				"remuneraciones",
+				values.remuneraciones.length > 1 ? values.remuneraciones.filter((f) => f.id !== id) : [nuevaFilaRemuneracion()],
+				false,
+			),
+		[setFieldValue, values.remuneraciones],
+	);
 	// Pegado desde una planilla: si el texto trae varias celdas (tabulaciones o saltos de línea) se convierte en filas;
 	// si es un valor suelto se deja que el campo lo pegue como siempre.
 	const pegar = (e: ClipboardEvent<HTMLDivElement>) => {
@@ -168,175 +422,598 @@ export default function HaberCajaCalculadora() {
 			setAvisoPegado("No se pudo leer ninguna fila de lo pegado. Se esperan dos columnas: período (MM/AAAA o AAAA-MM) e importe.");
 			return;
 		}
-		setFilas((prev) => [
-			...prev.filter((f) => f.periodo.trim() || f.importe.trim()),
-			...pegadas.map((f) => nuevaFila(f.periodo, f.importe)),
-		]);
-		setErrores((prev) => ({ ...prev, remuneraciones: undefined }));
+		setFieldValue(
+			"remuneraciones",
+			[...remuneraciones.filter((f) => !filaRemuneracionVacia(f)), ...pegadas.map((f) => nuevaFilaRemuneracion(f.periodo, f.importe))],
+			false,
+		);
 		setAvisoPegado(
 			`Se pegaron ${pegadas.length} ${pegadas.length === 1 ? "fila" : "filas"}` +
 				(descartadas
 					? ` (${descartadas} ${descartadas === 1 ? "línea descartada" : "líneas descartadas"} por no tener período e importe).`
-					: "."),
+					: ".") +
+				" La moneda de cada una sale del período; revisala si la constancia ya trae los importes convertidos.",
 		);
 	};
 
-	// ---- validación y armado de la entrada del motor ----
+	// ---- grilla de autónomos ----
+	const autonomos = values.autonomos;
+	const cambiarAutonomo = useCallback(
+		(indice: number, campo: keyof FilaAutonomoForm, valor: string) => {
+			setFieldValue(`autonomos[${indice}].${campo}`, valor, false);
+			limpiarErrorDeFila("autonomos", indice);
+		},
+		[setFieldValue, limpiarErrorDeFila],
+	);
+	const quitarAutonomo = useCallback(
+		(id: number) =>
+			setFieldValue(
+				"autonomos",
+				values.autonomos.filter((f) => f.id !== id),
+				false,
+			),
+		[setFieldValue, values.autonomos],
+	);
 
-	function armarEntrada(): { input: HaberCajaInput | null; errores: Errores } {
-		const err: Errores = {};
-		if (!form.fad) err.fad = "Requerida";
-		else if (form.fad.slice(0, 7) < INICIO_LEY_24241) err.fad = "El haber de caja se calcula para FAD desde 7/1994 (Ley 24.241)";
-		if (!form.cese && !esPension) err.cese = "Requerida";
-		if (!form.solicitud) err.solicitud = "Requerida";
-		if (!form.alta) err.alta = "Requerida";
+	const errorRemuneraciones = typeof errors.remuneraciones === "string" ? errors.remuneraciones : null;
+	const errorAutonomos = typeof errors.autonomos === "string" ? errors.autonomos : null;
+	const errorServicios = errors.servicios ? mensajesDe(errors.servicios)[0] : null;
+	const mensajes = submitCount > 0 ? mensajesDe(errors) : [];
+	const hayAutonomos = autonomos.some((f) => !filaAutonomoVacia(f));
 
-		let porcentajePension: number | undefined;
-		if (esPension && form.porcentajePension.trim()) {
-			const p = leerImporte(form.porcentajePension);
-			if (p === null || p <= 0 || p > 100) err.porcentajePension = "Entre 0 y 100";
-			else porcentajePension = p;
+	const fecha = (name: keyof HaberCajaValues & string, label: string, ayuda?: string, extra?: object) => (
+		<Grid item xs={12} sm={6} md={4} lg={2.4}>
+			<InputField
+				fullWidth
+				type="date"
+				name={name}
+				label={label}
+				InputLabelProps={{ shrink: true }}
+				{...(ayuda ? { helperText: getIn(errors, name) || ayuda } : {})}
+				{...extra}
+			/>
+		</Grid>
+	);
+	const casilla = (name: keyof HaberCajaValues & string, label: string, extra?: object) => (
+		<FormControlLabel
+			control={<Checkbox checked={!!values[name]} onChange={(e) => setFieldValue(name, e.target.checked)} />}
+			label={label}
+			{...extra}
+		/>
+	);
+
+	return (
+		<Stack spacing={3}>
+			{/* Titular y carpeta */}
+			<Box>
+				<Typography variant="h5" sx={{ mb: 2 }}>
+					Titular
+				</Typography>
+				<LinkCauseSelector
+					requiereField="reclamante"
+					requeridoField="folderId"
+					onMethodChange={cambiarMetodo}
+					initialFolder={carpetaInicial}
+				/>
+				<Box sx={{ mt: 2 }}>
+					{metodo === "causa" && carpeta ? (
+						<Paper variant="outlined" sx={{ p: 1.5, borderColor: "primary.main" }}>
+							<Typography variant="body1" fontWeight={500}>
+								{carpeta.folderName}
+							</Typography>
+						</Paper>
+					) : (
+						<Grid container spacing={2}>
+							<Grid item xs={12} md={6}>
+								<InputField fullWidth name="reclamante" label="Titular" placeholder="Apellido y nombre o nombre del caso" />
+							</Grid>
+						</Grid>
+					)}
+				</Box>
+			</Box>
+
+			<Divider />
+
+			{/* Prestación y fechas */}
+			<Box>
+				<Typography variant="h5" sx={{ mb: 2 }}>
+					Prestación y fechas
+				</Typography>
+				<Grid container spacing={2}>
+					<Grid item xs={12} sm={6} md={3}>
+						<TextField select fullWidth label="Prestación" {...getFieldProps("prestacion")}>
+							<MenuItem value="jubilacion">Jubilación</MenuItem>
+							<MenuItem value="pension">Pensión directa</MenuItem>
+							<MenuItem value="edadAvanzada">Edad avanzada</MenuItem>
+						</TextField>
+					</Grid>
+					{esPension && (
+						<Grid item xs={12} sm={6} md={3}>
+							<NumberField
+								fullWidth
+								name="porcentajePension"
+								label="Porcentaje de la pensión"
+								decimalScale={2}
+								helperText="Opcional (p. ej. 70). Vacío: haber del causante."
+								InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+							/>
+						</Grid>
+					)}
+					{!esPension && (
+						<Grid item xs={12} sm={6} md={3}>
+							{casilla("anticipada", "Prestación anticipada")}
+						</Grid>
+					)}
+					{!esPension && values.anticipada && (
+						<Grid item xs={12} sm={6} md={3}>
+							<NumberField
+								fullWidth
+								name="anticipadaPorcentaje"
+								label="Porcentaje de la anticipada"
+								decimalScale={2}
+								helperText="Vacío: 50 % (Ley 25.994) u 80 % (Dec. 674/21) según la fecha."
+								InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+							/>
+						</Grid>
+					)}
+					<Grid item xs={12} sm={6} md={3}>
+						<TextField
+							select
+							fullWidth
+							label="Criterio de cálculo"
+							helperText="Convenciones de redondeo y de topes"
+							{...getFieldProps("programa")}
+						>
+							<MenuItem value="ansesPrpa">ANSES (primeros pagos)</MenuItem>
+							<MenuItem value="bluecorp">BlueCorp</MenuItem>
+						</TextField>
+					</Grid>
+				</Grid>
+				<Grid container spacing={2} sx={{ mt: 0 }}>
+					{fecha("fad", esPension ? "Fecha de fallecimiento (FAD)" : "Adquisición del derecho (FAD)")}
+					{fecha("cese", "Cese", esPension ? "Opcional en la pensión directa" : undefined)}
+					{fecha("solicitud", "Solicitud")}
+					{fecha("alta", "Alta")}
+					{fecha("acuerdo", "Acuerdo", "Opcional: suma PBU, PC y PAP a ese mes")}
+					{/* El motor todavía no la usa (movilidad desde el inicio de pago): visible y deshabilitada */}
+					{fecha("inicioPago", "Inicial de pago", "Todavía no interviene en el cálculo", { disabled: true })}
+				</Grid>
+			</Box>
+
+			<Divider />
+
+			{/* Servicios */}
+			<Box>
+				<Typography variant="h5" sx={{ mb: 0.5 }}>
+					Servicios
+				</Typography>
+				<Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+					Años, meses y días de la constancia, antes y después de 7/1994 (PC y PAP), por clase de servicio.
+				</Typography>
+				<TableContainer component={Paper} variant="outlined" sx={{ borderColor: errorServicios ? "error.main" : undefined }}>
+					<Table size="small">
+						<TableHead>
+							<TableRow>
+								<TableCell />
+								{TRAMOS.map((t) => (
+									<TableCell key={t.tramo} align="center">
+										{t.tramo === "antes" ? "Hasta el 6/1994 (PC)" : "Desde el 7/1994 (PAP)"}
+									</TableCell>
+								))}
+							</TableRow>
+						</TableHead>
+						<TableBody>
+							{CLASES.map((c) => (
+								<TableRow key={c.clase}>
+									<TableCell sx={{ whiteSpace: "nowrap" }}>{c.etiqueta}</TableCell>
+									{TRAMOS.map((t) => (
+										<TableCell key={t.tramo}>
+											<Stack direction="row" spacing={1}>
+												{UNIDADES.map(([u, etiqueta]) => {
+													const name = `servicios.${c.clase}.${t.tramo}.${u}`;
+													return (
+														<TextField
+															key={u}
+															fullWidth
+															size="small"
+															placeholder={etiqueta}
+															value={getIn(values, name) || ""}
+															onChange={(e) => setFieldValue(name, e.target.value.replace(/\D/g, ""), false)}
+															error={!!getIn(errors, `servicios.${c.clase}.${t.tramo}`)}
+															inputProps={{
+																inputMode: "numeric",
+																maxLength: 2,
+																"aria-label": `${etiqueta} de ${c.etiqueta.toLowerCase()} ${t.etiqueta}`,
+															}}
+														/>
+													);
+												})}
+											</Stack>
+										</TableCell>
+									))}
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				</TableContainer>
+				{errorServicios && <FormHelperText error>{errorServicios}</FormHelperText>}
+				<Grid container spacing={2} sx={{ mt: 0.5 }}>
+					<Grid item xs={12} md={6}>
+						<TextField
+							select
+							fullWidth
+							label="Servicios excedentes de 35 años (PC)"
+							helperText="De qué clase se quitan los meses anteriores a 7/1994 que pasan de 35 años"
+							{...getFieldProps("excedente35")}
+						>
+							<MenuItem value="">Según el criterio de cálculo</MenuItem>
+							<MenuItem value="menosFavorable">Los menos favorables</MenuItem>
+							<MenuItem value="autonomos">Primero los autónomos</MenuItem>
+							<MenuItem value="dependencia">Primero los de dependencia</MenuItem>
+							<MenuItem value="ninguno">No quitar</MenuItem>
+						</TextField>
+					</Grid>
+				</Grid>
+			</Box>
+
+			<Divider />
+
+			{/* Remuneraciones */}
+			<Box>
+				<Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" sx={{ mb: 1, gap: 1 }}>
+					<Typography variant="h5">Remuneraciones</Typography>
+					<Stack direction="row" spacing={1}>
+						<Button
+							size="small"
+							color="secondary"
+							onClick={() => {
+								setFieldValue("remuneraciones", [nuevaFilaRemuneracion()], false);
+								setAvisoPegado(null);
+							}}
+							disabled={!cargadas}
+						>
+							Vaciar
+						</Button>
+						<Button
+							size="small"
+							variant="outlined"
+							startIcon={<Add size={16} />}
+							onClick={() => setFieldValue("remuneraciones", [...remuneraciones, nuevaFilaRemuneracion()], false)}
+						>
+							Agregar fila
+						</Button>
+					</Stack>
+				</Stack>
+				<Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+					Una fila por mes; para un renglón de varios meses cargá también el «hasta» y el importe total. Varias filas del mismo mes son
+					empleadores distintos. La moneda sale sola del período y se puede corregir. Podés copiar dos columnas de una planilla (período e
+					importe) y pegarlas sobre la grilla.
+				</Typography>
+				{avisoPegado && (
+					<Alert severity="info" onClose={() => setAvisoPegado(null)} sx={{ mb: 1.5 }}>
+						{avisoPegado}
+					</Alert>
+				)}
+				<TableContainer
+					component={Paper}
+					variant="outlined"
+					onPaste={pegar}
+					sx={{ maxHeight: 420, borderColor: errors.remuneraciones && submitCount > 0 ? "error.main" : undefined }}
+				>
+					<Table size="small" stickyHeader>
+						<TableHead>
+							<TableRow>
+								<TableCell sx={{ width: 48 }}>#</TableCell>
+								<TableCell sx={{ minWidth: 110 }}>Período</TableCell>
+								<TableCell sx={{ minWidth: 110 }}>Hasta</TableCell>
+								<TableCell sx={{ minWidth: 150 }}>Importe</TableCell>
+								<TableCell sx={{ minWidth: 220 }}>Moneda</TableCell>
+								<TableCell sx={{ width: 48 }} />
+							</TableRow>
+						</TableHead>
+						<TableBody>
+							{remuneraciones.map((f, i) => (
+								<FilaRemuneracionGrilla
+									key={f.id}
+									fila={f}
+									indice={i}
+									error={Array.isArray(errors.remuneraciones) ? errors.remuneraciones[i] : undefined}
+									catalogo={catalogo}
+									onCambiar={cambiarRemuneracion}
+									onQuitar={quitarRemuneracion}
+								/>
+							))}
+						</TableBody>
+					</Table>
+				</TableContainer>
+				<Typography variant="caption" color={errorRemuneraciones ? "error" : "text.secondary"} sx={{ display: "block", mt: 1 }}>
+					{errorRemuneraciones || `${cargadas} ${cargadas === 1 ? "remuneración cargada" : "remuneraciones cargadas"}`}
+				</Typography>
+				<Grid container spacing={2} sx={{ mt: 0.5 }}>
+					<Grid item xs={12} sm={6} md={3}>
+						<InputField fullWidth name="promedioDesde" label="Período del promedio: desde" placeholder="MM/AAAA" />
+					</Grid>
+					<Grid item xs={12} sm={6} md={3}>
+						<InputField fullWidth name="promedioHasta" label="Período del promedio: hasta" placeholder="MM/AAAA" />
+					</Grid>
+					<Grid item xs={12} md={6} sx={{ display: "flex", alignItems: "center" }}>
+						<Typography variant="caption" color="text.secondary">
+							Opcional. El «Período Dde/Hasta» de la constancia: solo las remuneraciones de ese período entran en el promedio. Vacío, entran
+							todas las cargadas.
+						</Typography>
+					</Grid>
+				</Grid>
+			</Box>
+
+			<Divider />
+
+			{/* Autónomos */}
+			<Box>
+				<Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" sx={{ mb: 1, gap: 1 }}>
+					<Typography variant="h5">Aportes autónomos</Typography>
+					<Button
+						size="small"
+						variant="outlined"
+						startIcon={<Add size={16} />}
+						onClick={() => setFieldValue("autonomos", [...autonomos, nuevaFilaAutonomo()], false)}
+					>
+						Agregar período
+					</Button>
+				</Stack>
+				<Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+					Un período por categoría, con la categoría histórica (la efectivamente aportada): las que se ofrecen son las de la época del
+					período y debajo se muestra cómo se computa. Los años de servicios autónomos y simultáneos se cargan arriba, en Servicios.
+				</Typography>
+				{errorCatalogo && (
+					<Alert
+						severity="warning"
+						sx={{ mb: 1.5 }}
+						action={
+							<Button color="inherit" size="small" onClick={onReintentarCatalogo}>
+								Reintentar
+							</Button>
+						}
+					>
+						No se pudo cargar el catálogo de categorías y monedas. Sin él no se pueden elegir categorías; la moneda de cada remuneración la
+						asigna el servidor por el período.
+					</Alert>
+				)}
+				{autonomos.length > 0 && (
+					<TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 420 }}>
+						<Table size="small" stickyHeader>
+							<TableHead>
+								<TableRow>
+									<TableCell sx={{ minWidth: 120 }}>Desde</TableCell>
+									<TableCell sx={{ minWidth: 120 }}>Hasta</TableCell>
+									<TableCell sx={{ minWidth: 260 }}>Categoría</TableCell>
+									<TableCell align="center" sx={{ width: 90 }}>
+										Moratoria
+									</TableCell>
+									<TableCell sx={{ width: 48 }} />
+								</TableRow>
+							</TableHead>
+							<TableBody>
+								{autonomos.map((f, i) => (
+									<FilaAutonomoGrilla
+										key={f.id}
+										fila={f}
+										indice={i}
+										error={Array.isArray(errors.autonomos) ? errors.autonomos[i] : undefined}
+										catalogo={catalogo}
+										sinEquiparacion={values.sinEquiparacion}
+										onCambiar={cambiarAutonomo}
+										onQuitar={quitarAutonomo}
+									/>
+								))}
+							</TableBody>
+						</Table>
+					</TableContainer>
+				)}
+				{errorAutonomos && <FormHelperText error>{errorAutonomos}</FormHelperText>}
+				<FormControlLabel
+					sx={{ mt: 1 }}
+					control={
+						<Switch
+							checked={values.sinEquiparacion}
+							onChange={(e) => setFieldValue("sinEquiparacion", e.target.checked)}
+							disabled={!hayAutonomos}
+						/>
+					}
+					label="Computar la categoría efectivamente aportada (sin la equiparación del Dec. 1361/80)"
+				/>
+			</Box>
+
+			<Divider />
+
+			{/* Otras entradas */}
+			<Box>
+				<Typography variant="h5" sx={{ mb: 2 }}>
+					Bonificaciones y convenios
+				</Typography>
+				<Grid container spacing={2} alignItems="center">
+					<Grid item xs={12} md={4}>
+						{casilla("zonaAustral", "Bonificación por zona austral (Ley 19.485)")}
+					</Grid>
+					<Grid item xs={12} sm={6} md={4}>
+						<NumberField
+							fullWidth
+							name="reciprocidad"
+							label="Porcentaje de reciprocidad a cargo de ANSES"
+							decimalScale={4}
+							helperText="Opcional (p. ej. 81,67). Vacío: sin convenio de reciprocidad."
+							InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+						/>
+					</Grid>
+					<Grid item xs={12} sm={6} md={4}>
+						<TextField
+							select
+							fullWidth
+							label="La reciprocidad se aplica sobre"
+							disabled={values.reciprocidad === "" || values.reciprocidad === undefined || values.reciprocidad === null}
+							{...getFieldProps("reciprocidadAlcance")}
+						>
+							<MenuItem value="pbu">Solo la PBU</MenuItem>
+							<MenuItem value="todas">PBU, PC y PAP</MenuItem>
+						</TextField>
+					</Grid>
+				</Grid>
+			</Box>
+
+			{/* Opciones de cálculo: los ajustes con que se valida la correspondencia con la liquidación de ANSES */}
+			<Accordion variant="outlined" disableGutters>
+				<AccordionSummary expandIcon={<ArrowDown2 size={16} />}>
+					<Typography variant="subtitle1">Opciones de cálculo</Typography>
+				</AccordionSummary>
+				<AccordionDetails>
+					<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+						Por defecto el cálculo sigue la norma. Estas opciones reproducen lo que a veces hace ANSES al liquidar, para validar la
+						correspondencia con la constancia.
+					</Typography>
+					<Grid container spacing={2}>
+						<Grid item xs={12} sm={6}>
+							<TextField select fullWidth label="Remuneraciones actualizadas al mes de" {...getFieldProps("mesActualizacion")}>
+								<MenuItem value="cesacion">La cesación (norma)</MenuItem>
+								<MenuItem value="acuerdo">El acuerdo</MenuItem>
+							</TextField>
+						</Grid>
+						<Grid item xs={12} sm={6}>
+							<TextField select fullWidth label="Divisor del promedio de remuneraciones" {...getFieldProps("divisorW")}>
+								<MenuItem value="">Según el criterio de cálculo</MenuItem>
+								<MenuItem value="meses">Meses con remuneración (hasta 120)</MenuItem>
+								<MenuItem value="120">Siempre 120</MenuItem>
+							</TextField>
+						</Grid>
+						<Grid item xs={12} sm={6}>
+							{casilla("topeArt9", "Tope del art. 9 sobre la remuneración del mes")}
+						</Grid>
+						<Grid item xs={12} sm={6}>
+							{casilla("topeArt14", "Tope del máximo a la cesación sobre la remuneración actualizada")}
+						</Grid>
+						<Grid item xs={12} sm={6}>
+							{casilla("aplicarMaximo", "Aplicar el haber máximo")}
+						</Grid>
+						<Grid item xs={12} sm={6}>
+							{casilla("aplicarMinimo", "Incluir en el haber el complemento al haber mínimo")}
+						</Grid>
+					</Grid>
+				</AccordionDetails>
+			</Accordion>
+
+			{mensajes.length > 0 && (
+				<Alert severity="error">
+					<AlertTitle>Revisá los datos antes de calcular</AlertTitle>
+					<Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+						{mensajes.slice(0, 8).map((m) => (
+							<li key={m}>{m}</li>
+						))}
+						{mensajes.length > 8 && <li>y {mensajes.length - 8} más</li>}
+					</Box>
+				</Alert>
+			)}
+
+			{/* Acciones */}
+			<Stack direction="row" spacing={1.5} justifyContent="flex-end">
+				<Button color="secondary" onClick={onLimpiar} disabled={cargando}>
+					Limpiar
+				</Button>
+				<Button
+					variant="contained"
+					type="submit"
+					disabled={cargando}
+					startIcon={cargando ? <CircularProgress size={16} color="inherit" /> : <Calculator size={18} />}
+				>
+					{cargando ? "Calculando…" : "Calcular"}
+				</Button>
+			</Stack>
+		</Stack>
+	);
+}
+
+// ==============================|| HABER DE CAJA: FORMULARIO Y RESULTADO ||============================== //
+
+export default function HaberCajaCalculadora({ folder, onFolderChange, calculadoraEnEdicion, onSalirEdicion, onGuardado }: Props) {
+	const [catalogo, setCatalogo] = useState<CatalogoHaberCaja | null>(null);
+	const [errorCatalogo, setErrorCatalogo] = useState(false);
+	const [errorCalculo, setErrorCalculo] = useState<string | null>(null);
+	const [calculo, setCalculo] = useState<{ respuesta: HaberCajaRespuesta; input: HaberCajaInput; values: HaberCajaValues } | null>(null);
+	const [mejorarPlan, setMejorarPlan] = useState(false);
+	const { subscription, hasFeatureLocal } = useSubscription();
+	// Sin suscripción cargada todavía no se bloquea: decide el hub
+	const sinAcceso = !!subscription && !hasFeatureLocal(FEATURE);
+
+	// Catálogo del hub: categorías de autónomos por época y moneda de curso legal por período
+	const cargarCatalogo = useCallback(async () => {
+		setErrorCatalogo(false);
+		try {
+			setCatalogo(await obtenerCatalogoHaberCaja());
+		} catch {
+			setErrorCatalogo(true);
 		}
+	}, []);
+	useEffect(() => {
+		cargarCatalogo();
+	}, [cargarCatalogo]);
 
-		const antes = tiempoDe(form.antes);
-		const despues = tiempoDe(form.despues);
-		if (!antes || !despues) err.servicios = "Años, meses (0 a 11) y días (0 a 30) en números enteros.";
-		else if (tiempoVacio(antes) && tiempoVacio(despues)) err.servicios = "Cargá los servicios en relación de dependencia.";
+	const esquema = useMemo(() => crearValidationSchema(catalogo), [catalogo]);
 
-		const remuneraciones: HaberCajaInput["remuneraciones"] = [];
-		const vistos = new Set<string>();
-		let invalidas = 0;
-		let repetido: string | null = null;
-		for (const f of filasCargadas) {
-			const periodo = normalizarPeriodo(f.periodo);
-			const importe = leerImporte(f.importe);
-			if (!periodo || importe === null || importe < 0) {
-				invalidas++;
-				continue;
-			}
-			if (vistos.has(periodo)) repetido = repetido || periodo;
-			vistos.add(periodo);
-			remuneraciones.push({ periodo, importe });
-		}
-		if (!filasCargadas.length) err.remuneraciones = "Cargá al menos una remuneración.";
-		else if (invalidas)
-			err.remuneraciones = `${invalidas} ${
-				invalidas === 1 ? "fila tiene" : "filas tienen"
-			} el período o el importe inválido (período AAAA-MM o MM/AAAA).`;
-		else if (repetido) err.remuneraciones = `El período ${mesLegible(repetido)} está repetido.`;
+	// Edición de un guardado: valores iniciales desde `variables.formulario` (o `input` como respaldo)
+	const valoresEdicion = useMemo(
+		() => (calculadoraEnEdicion ? valoresDesdeCalculadora(calculadoraEnEdicion) : null),
+		[calculadoraEnEdicion],
+	);
+	const enEdicion: HaberCajaEnEdicion | null =
+		calculadoraEnEdicion && valoresEdicion
+			? { id: calculadoraEnEdicion._id, fecha: calculadoraEnEdicion.date, titular: calculadoraEnEdicion.user || "" }
+			: null;
+	const [iniciales] = useState<HaberCajaValues>(() => valoresEdicion || valoresIniciales());
 
-		if (Object.keys(err).length || !antes || !despues) return { input: null, errores: err };
-		remuneraciones.sort((x, y) => x.periodo.localeCompare(y.periodo));
-		return {
-			input: {
-				programa: form.programa,
-				prestacion: form.prestacion,
-				...(porcentajePension !== undefined ? { porcentajePension } : {}),
-				fechas: {
-					fad: form.fad,
-					...(form.cese ? { cese: form.cese } : {}),
-					solicitud: form.solicitud,
-					alta: form.alta,
-				},
-				servicios: { n: { antes, despues } },
-				remuneraciones,
-				// Pendiente: aportes autónomos (`autonomo.periodos` y `servicios.m`)
-			},
-			errores: err,
-		};
-	}
-
-	async function calcular() {
-		const { input, errores: err } = armarEntrada();
-		setErrores(err);
-		if (!input) return;
+	async function calcular(values: HaberCajaValues, acciones: FormikHelpers<HaberCajaValues>) {
 		if (sinAcceso) {
 			setMejorarPlan(true);
+			acciones.setSubmitting(false);
 			return;
 		}
-		setCargando(true);
 		setErrorCalculo(null);
 		try {
-			const r = await calcularHaberCaja(input);
-			if (!r?.resultado) throw new Error("El servidor no devolvió el resultado del cálculo");
-			setRespuesta(r);
+			const input = armarEntradaHaberCaja(values, catalogo);
+			const respuesta = await calcularHaberCaja(input);
+			if (!respuesta?.resultado) throw new Error("El servidor no devolvió el resultado del cálculo");
+			setCalculo({ respuesta, input, values });
 		} catch (error: any) {
 			if (error?.response?.status === 403 && error?.response?.data?.upgradeRequired) {
 				setMejorarPlan(true);
 				return;
 			}
-			setRespuesta(null);
+			setCalculo(null);
 			setErrorCalculo(error?.response?.data?.mensaje || error?.mensaje || error?.message || "No se pudo calcular el haber de caja");
 		} finally {
-			setCargando(false);
+			acciones.setSubmitting(false);
 		}
 	}
-
-	const limpiar = () => {
-		setForm(FORMULARIO_INICIAL);
-		setFilas(Array.from({ length: FILAS_INICIALES }, () => nuevaFila()));
-		setErrores({});
-		setAvisoPegado(null);
-		setErrorCalculo(null);
-		setRespuesta(null);
-	};
-
-	// ---- piezas de la vista ----
-
-	const campoFecha = (campo: "fad" | "cese" | "solicitud" | "alta", etiqueta: string, ayuda?: string) => (
-		<Grid item xs={12} sm={6} md={3}>
-			<TextField
-				fullWidth
-				type="date"
-				label={etiqueta}
-				value={form[campo]}
-				onChange={(e) => cambiar(campo, e.target.value)}
-				InputLabelProps={{ shrink: true }}
-				error={!!errores[campo]}
-				helperText={errores[campo] || ayuda || " "}
-			/>
-		</Grid>
-	);
-
-	const camposTiempo = (tramo: "antes" | "despues", titulo: string) => (
-		<Grid item xs={12} md={6}>
-			<Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-				{titulo}
-			</Typography>
-			<Stack direction="row" spacing={1.5}>
-				{(
-					[
-						["a", "Años"],
-						["m", "Meses"],
-						["d", "Días"],
-					] as const
-				).map(([campo, etiqueta]) => (
-					<TextField
-						key={campo}
-						fullWidth
-						label={etiqueta}
-						value={form[tramo][campo]}
-						onChange={(e) => cambiarTiempo(tramo, campo, e.target.value)}
-						inputProps={{ inputMode: "numeric", maxLength: 2 }}
-						error={!!errores.servicios}
-					/>
-				))}
-			</Stack>
-		</Grid>
-	);
-
-	const r = respuesta?.resultado;
-	const filasResultado = r?.remuneraciones?.filas || [];
-	const hayTopes = filasResultado.some((f) => f.topeArt9 !== null || f.topeArt14 !== null || f.topeSimultaneo !== null);
-	const haySimultaneos = filasResultado.some((f) => f.topeSimultaneo !== null && f.topeSimultaneo !== undefined);
 
 	return (
 		<Stack spacing={3}>
 			<Typography variant="body2" color="text.secondary">
-				Haber inicial de la Ley 24.241 (PBU + PC + PAP) tal como lo liquida ANSES, a partir de las fechas, los servicios y las
-				remuneraciones de la constancia de primeros pagos. FAD desde 7/1994.
+				Haber inicial de la Ley 24.241 (PBU + PC + PAP) tal como lo liquida ANSES, a partir de las fechas, los servicios, las remuneraciones
+				y los aportes autónomos de la constancia de primeros pagos. FAD desde 7/1994.
 			</Typography>
 
+			{enEdicion && (
+				<Alert
+					severity="warning"
+					action={
+						<Button color="inherit" size="small" onClick={onSalirEdicion} sx={{ textTransform: "none" }}>
+							Descartar edición
+						</Button>
+					}
+				>
+					Estás editando el haber de caja guardado del {enEdicion.fecha ? fechaCalculo(enEdicion.fecha) : "—"}
+					{enEdicion.titular ? ` (${enEdicion.titular})` : ""}. Los cambios no se aplican hasta que guardes.
+				</Alert>
+			)}
+			{calculadoraEnEdicion && !valoresEdicion && (
+				<Alert severity="info">Este cálculo no se puede reabrir para editar. Podés cargar uno nuevo.</Alert>
+			)}
 			{sinAcceso && (
 				<Alert severity="info">
 					El cálculo del haber de caja está disponible en los planes Estándar, Pro y Premium. Podés cargar los datos; para calcular, mejorá
@@ -351,189 +1028,26 @@ export default function HaberCajaCalculadora() {
 				upgradeRequired={true}
 			/>
 
-			{/* Prestación y fechas */}
-			<Box>
-				<Typography variant="h5" sx={{ mb: 2 }}>
-					Prestación y fechas
-				</Typography>
-				<Grid container spacing={2}>
-					<Grid item xs={12} sm={6} md={3}>
-						<TextField
-							select
-							fullWidth
-							label="Prestación"
-							value={form.prestacion}
-							onChange={(e) => cambiar("prestacion", e.target.value as PrestacionHaberCaja)}
-							helperText=" "
-						>
-							<MenuItem value="jubilacion">Jubilación</MenuItem>
-							<MenuItem value="pension">Pensión directa</MenuItem>
-						</TextField>
-					</Grid>
-					{esPension && (
-						<Grid item xs={12} sm={6} md={3}>
-							<TextField
-								fullWidth
-								label="Porcentaje de la pensión"
-								value={form.porcentajePension}
-								onChange={(e) => cambiar("porcentajePension", e.target.value)}
-								InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
-								inputProps={{ inputMode: "decimal" }}
-								error={!!errores.porcentajePension}
-								helperText={errores.porcentajePension || "Opcional (p. ej. 70). Vacío: haber del causante."}
-							/>
-						</Grid>
-					)}
-					<Grid item xs={12} sm={6} md={3}>
-						<TextField
-							select
-							fullWidth
-							label="Criterio de cálculo"
-							value={form.programa}
-							onChange={(e) => cambiar("programa", e.target.value as ProgramaHaberCaja)}
-							helperText="Convenciones de redondeo y de topes"
-						>
-							<MenuItem value="ansesPrpa">ANSES (primeros pagos)</MenuItem>
-							<MenuItem value="bluecorp">BlueCorp</MenuItem>
-						</TextField>
-					</Grid>
-				</Grid>
-				<Grid container spacing={2} sx={{ mt: 0 }}>
-					{campoFecha("fad", esPension ? "Fecha de fallecimiento (FAD)" : "Adquisición del derecho (FAD)")}
-					{campoFecha("cese", "Cese", esPension ? "Opcional en la pensión directa" : undefined)}
-					{campoFecha("solicitud", "Solicitud")}
-					{campoFecha("alta", "Alta")}
-				</Grid>
-			</Box>
-
-			<Divider />
-
-			{/* Servicios */}
-			<Box>
-				<Typography variant="h5" sx={{ mb: 2 }}>
-					Servicios en relación de dependencia
-				</Typography>
-				<Grid container spacing={2}>
-					{camposTiempo("antes", "Hasta el 6/1994 (para la PC)")}
-					{camposTiempo("despues", "Desde el 7/1994 (para la PAP)")}
-				</Grid>
-				{errores.servicios && (
-					<Typography variant="caption" color="error" sx={{ display: "block", mt: 1 }}>
-						{errores.servicios}
-					</Typography>
+			<Formik initialValues={iniciales} validationSchema={esquema} onSubmit={calcular} validateOnChange={false} validateOnBlur={true}>
+				{({ isSubmitting, resetForm }) => (
+					<Form id={FORM_ID} noValidate>
+						<Formulario
+							catalogo={catalogo}
+							errorCatalogo={errorCatalogo}
+							onReintentarCatalogo={cargarCatalogo}
+							folder={folder}
+							onFolderChange={onFolderChange}
+							cargando={isSubmitting}
+							onLimpiar={() => {
+								resetForm({ values: valoresIniciales() });
+								setErrorCalculo(null);
+								setCalculo(null);
+								if (onFolderChange) onFolderChange(null);
+							}}
+						/>
+					</Form>
 				)}
-				{/* Lugar previsto para los servicios y aportes autónomos (pendiente) */}
-				<Alert severity="info" variant="outlined" sx={{ mt: 2 }}>
-					Servicios y aportes autónomos (categorías por período): todavía no se cargan en esta pantalla. El cálculo toma solo la relación de
-					dependencia.
-				</Alert>
-			</Box>
-
-			<Divider />
-
-			{/* Remuneraciones */}
-			<Box>
-				<Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" sx={{ mb: 1, gap: 1 }}>
-					<Typography variant="h5">Remuneraciones</Typography>
-					<Stack direction="row" spacing={1}>
-						<Button size="small" color="secondary" onClick={vaciarFilas} disabled={!filasCargadas.length}>
-							Vaciar
-						</Button>
-						<Button size="small" variant="outlined" startIcon={<Add size={16} />} onClick={agregarFila}>
-							Agregar fila
-						</Button>
-					</Stack>
-				</Stack>
-				<Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-					Una fila por mes, en pesos. Podés copiar dos columnas de una planilla (período e importe) y pegarlas sobre la grilla.
-				</Typography>
-				{avisoPegado && (
-					<Alert severity="info" onClose={() => setAvisoPegado(null)} sx={{ mb: 1.5 }}>
-						{avisoPegado}
-					</Alert>
-				)}
-				<TableContainer
-					component={Paper}
-					variant="outlined"
-					onPaste={pegar}
-					sx={{ maxHeight: 420, borderColor: errores.remuneraciones ? "error.main" : undefined }}
-				>
-					<Table size="small" stickyHeader>
-						<TableHead>
-							<TableRow>
-								<TableCell sx={{ width: 56 }}>#</TableCell>
-								<TableCell>Período</TableCell>
-								<TableCell>Importe</TableCell>
-								<TableCell sx={{ width: 56 }} />
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							{filas.map((f, i) => {
-								const periodoMal = !!f.periodo.trim() && !normalizarPeriodo(f.periodo);
-								const importeMal = !!f.importe.trim() && leerImporte(f.importe) === null;
-								return (
-									<TableRow key={f.id}>
-										<TableCell sx={{ color: "text.secondary" }}>{i + 1}</TableCell>
-										<TableCell>
-											<TextField
-												fullWidth
-												size="small"
-												placeholder="AAAA-MM"
-												value={f.periodo}
-												onChange={(e) => cambiarFila(f.id, "periodo", e.target.value)}
-												onBlur={() => {
-													const p = normalizarPeriodo(f.periodo);
-													if (p && p !== f.periodo) cambiarFila(f.id, "periodo", p);
-												}}
-												error={periodoMal}
-												inputProps={{ "aria-label": `Período de la fila ${i + 1}` }}
-											/>
-										</TableCell>
-										<TableCell>
-											<TextField
-												fullWidth
-												size="small"
-												placeholder="0,00"
-												value={f.importe}
-												onChange={(e) => cambiarFila(f.id, "importe", e.target.value)}
-												error={importeMal}
-												InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
-												inputProps={{ inputMode: "decimal", "aria-label": `Importe de la fila ${i + 1}` }}
-											/>
-										</TableCell>
-										<TableCell align="right">
-											<Tooltip title="Quitar fila">
-												<IconButton size="small" color="error" onClick={() => quitarFila(f.id)} aria-label={`Quitar la fila ${i + 1}`}>
-													<Trash size={16} />
-												</IconButton>
-											</Tooltip>
-										</TableCell>
-									</TableRow>
-								);
-							})}
-						</TableBody>
-					</Table>
-				</TableContainer>
-				<Typography variant="caption" color={errores.remuneraciones ? "error" : "text.secondary"} sx={{ display: "block", mt: 1 }}>
-					{errores.remuneraciones ||
-						`${filasCargadas.length} ${filasCargadas.length === 1 ? "remuneración cargada" : "remuneraciones cargadas"}`}
-				</Typography>
-			</Box>
-
-			{/* Acciones */}
-			<Stack direction="row" spacing={1.5} justifyContent="flex-end">
-				<Button color="secondary" onClick={limpiar} disabled={cargando}>
-					Limpiar
-				</Button>
-				<Button
-					variant="contained"
-					onClick={calcular}
-					disabled={cargando}
-					startIcon={cargando ? <CircularProgress size={16} color="inherit" /> : <Calculator size={18} />}
-				>
-					{cargando ? "Calculando…" : "Calcular"}
-				</Button>
-			</Stack>
+			</Formik>
 
 			{errorCalculo && (
 				<Alert severity="error" onClose={() => setErrorCalculo(null)}>
@@ -542,136 +1056,14 @@ export default function HaberCajaCalculadora() {
 				</Alert>
 			)}
 
-			{/* Resultado */}
-			{r && respuesta && (
-				<Box sx={{ opacity: cargando ? 0.5 : 1, transition: "opacity 0.2s" }}>
-					<Divider sx={{ mb: 3 }} />
-					<Typography variant="h5" sx={{ mb: 0.5 }}>
-						Resultado
-					</Typography>
-					<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-						{r.regimen?.descripcion ? `${r.regimen.descripcion}. ` : ""}
-						Remuneraciones actualizadas a {mesLegible(r.ancla)}. Haber valuado en {mesLegible(r.mesValuacion)}.
-					</Typography>
-
-					<Grid container spacing={2}>
-						{(
-							[
-								[
-									"Promedio de remuneraciones (W)",
-									r.W,
-									r.remuneraciones ? `Suma ${numero(r.remuneraciones.suma)} ÷ ${r.remuneraciones.divisor}` : null,
-								],
-								["PBU", r.PBU, r.pbuDetalle || null],
-								[
-									"PC",
-									r.PC,
-									r.topeAplicado
-										? `Con el tope del art. 26 (sin tope: ${pesos(r.PCsinTope)})`
-										: r.anios
-										? `${numero(r.anios.N1computados ?? r.anios.N1)} años`
-										: null,
-								],
-								["PAP", r.PAP, r.anios ? `${numero(r.anios.N2)} años` : null],
-							] as [string, number, string | null][]
-						).map(([titulo, valor, detalle]) => (
-							<Grid item xs={12} sm={6} md={3} key={titulo}>
-								<Paper variant="outlined" sx={{ p: 2, height: "100%" }}>
-									<Typography variant="caption" color="text.secondary">
-										{titulo}
-									</Typography>
-									<Typography variant="h4" sx={{ mt: 0.5 }}>
-										{pesos(valor)}
-									</Typography>
-									{detalle && (
-										<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
-											{detalle}
-										</Typography>
-									)}
-								</Paper>
-							</Grid>
-						))}
-						<Grid item xs={12}>
-							<Paper variant="outlined" sx={{ p: 2, borderColor: "primary.main", bgcolor: "primary.lighter" }}>
-								<Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} spacing={1}>
-									<Box>
-										<Typography variant="caption" color="text.secondary">
-											Haber de caja · {mesLegible(r.mesValuacion)}
-										</Typography>
-										<Typography variant="h3">{pesos(r.haber)}</Typography>
-									</Box>
-									<Box sx={{ textAlign: { sm: "right" } }}>
-										{!!r.suplemento && (
-											<Typography variant="body2" color="text.secondary">
-												Incluye suplemento por movilidad: {pesos(r.suplemento)}
-											</Typography>
-										)}
-										{!!r.descuentoMaximo && (
-											<Typography variant="body2" color="text.secondary">
-												Topeado al haber máximo ({pesos(r.haberMaximo)})
-											</Typography>
-										)}
-										{!!r.complementoMinimo && (
-											<Typography variant="body2" color="text.secondary">
-												Con el complemento al haber mínimo: {pesos(r.haberConMinimo)}
-											</Typography>
-										)}
-									</Box>
-								</Stack>
-							</Paper>
-						</Grid>
-					</Grid>
-
-					{r.avisos?.length > 0 && (
-						<Alert severity="warning" sx={{ mt: 2 }}>
-							<AlertTitle>Avisos del cálculo</AlertTitle>
-							<Box component="ul" sx={{ m: 0, pl: 2.5 }}>
-								{r.avisos.map((a, i) => (
-									<li key={i}>{a}</li>
-								))}
-							</Box>
-						</Alert>
-					)}
-
-					{filasResultado.length > 0 && (
-						<Box sx={{ mt: 3 }}>
-							<Typography variant="h5" sx={{ mb: 1.5 }}>
-								Remuneraciones actualizadas
-							</Typography>
-							<TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 480 }}>
-								<Table size="small" stickyHeader>
-									<TableHead>
-										<TableRow>
-											<TableCell>Período</TableCell>
-											<TableCell align="right">Importe</TableCell>
-											{hayTopes && <TableCell align="right">Tope art. 9</TableCell>}
-											<TableCell align="right">Actualizada</TableCell>
-											{hayTopes && <TableCell align="right">Tope art. 14</TableCell>}
-											{haySimultaneos && <TableCell align="right">Tope simultáneos</TableCell>}
-										</TableRow>
-									</TableHead>
-									<TableBody>
-										{filasResultado.map((f, i) => (
-											<TableRow key={`${f.periodo}-${i}`} hover>
-												<TableCell>{mesLegible(f.periodo)}</TableCell>
-												<TableCell align="right">{numero(f.importe)}</TableCell>
-												{hayTopes && <TableCell align="right">{numero(f.topeArt9)}</TableCell>}
-												<TableCell align="right">{numero(f.actualizada)}</TableCell>
-												{hayTopes && <TableCell align="right">{numero(f.topeArt14)}</TableCell>}
-												{haySimultaneos && <TableCell align="right">{numero(f.topeSimultaneo)}</TableCell>}
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							</TableContainer>
-						</Box>
-					)}
-
-					<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 2 }}>
-						Criterio: {respuesta.programa === "bluecorp" ? "BlueCorp" : "ANSES (primeros pagos)"} · Datos previsionales versión{" "}
-						{respuesta.datosVersion}
-					</Typography>
-				</Box>
+			{calculo && (
+				<HaberCajaResultado
+					respuesta={calculo.respuesta}
+					input={calculo.input}
+					values={calculo.values}
+					enEdicion={enEdicion}
+					onGuardado={onGuardado}
+				/>
 			)}
 		</Stack>
 	);

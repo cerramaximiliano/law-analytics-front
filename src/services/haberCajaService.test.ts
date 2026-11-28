@@ -1,8 +1,76 @@
 import { describe, expect, it, vi } from "vitest";
-import { leerFilasPegadas, leerImporte, normalizarPeriodo } from "./haberCajaService";
+import {
+	avisoDeCategoria,
+	bloqueoDeCategoria,
+	categoriasOfrecidas,
+	equiparacionDeCategoria,
+	leerFilasPegadas,
+	leerImporte,
+	monedaDelPeriodo,
+	normalizarPeriodo,
+	obtenerCatalogoHaberCaja,
+} from "./haberCajaService";
+import { CATALOGO_PRUEBA } from "sections/forms/wizard/calc-previsional/haber-caja/formModel/catalogoPrueba";
 
 // vitest sube los vi.mock por encima de los imports: el servicio no llega a cargar el axios real
-vi.mock("utils/axios", () => ({ default: { post: vi.fn() } }));
+const { get } = vi.hoisted(() => ({ get: vi.fn() }));
+vi.mock("utils/axios", () => ({ default: { post: vi.fn(), get } }));
+
+describe("haber de caja: catálogo del hub", () => {
+	it("pide el catálogo y rechaza una respuesta sin tramos o monedas", async () => {
+		get.mockResolvedValueOnce({ data: { success: true, ...CATALOGO_PRUEBA } });
+		expect((await obtenerCatalogoHaberCaja()).tramos).toHaveLength(CATALOGO_PRUEBA.tramos.length);
+		expect(get).toHaveBeenCalledWith("/api/previsional/haber-caja/catalogo");
+		get.mockResolvedValueOnce({ data: { success: true, monedas: [] } });
+		await expect(obtenerCatalogoHaberCaja()).rejects.toThrow(/catálogo/);
+	});
+
+	it("la moneda sale del período, con los cortes que manda el hub", () => {
+		const clave = (p: string) => monedaDelPeriodo(CATALOGO_PRUEBA, p)?.clave;
+		expect(clave("1969-12")).toBe("pesosMonedaNacional");
+		expect(clave("1970-01")).toBe("pesosLey");
+		expect(clave("1983-05")).toBe("pesosLey");
+		expect(clave("1983-06")).toBe("pesosArgentinos");
+		expect(clave("1985-06")).toBe("australes");
+		expect(clave("1991-12")).toBe("australes");
+		expect(clave("1992-01")).toBe("pesos");
+		expect(monedaDelPeriodo(null, "1992-01")).toBeNull();
+		expect(monedaDelPeriodo(CATALOGO_PRUEBA, null)).toBeNull();
+	});
+
+	it("ofrece las categorías de la época del período; si cruza épocas, las comunes", () => {
+		const codigos = (d: string, h: string) => categoriasOfrecidas(CATALOGO_PRUEBA, d, h).map((c) => c.codigo);
+		expect(codigos("1965-01", "1966-12")).toEqual(["IND"]);
+		expect(codigos("1975-01", "1976-12")).toEqual(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "M"]);
+		expect(codigos("1990-01", "1990-12")).toContain("J");
+		expect(codigos("2010-01", "2012-12")).toEqual(["Cat.I", "Cat.II", "MONOTRI"]);
+		// 1985 a 1990 cruza el 6/1988: H, I y J no valen en todo el período
+		expect(codigos("1985-01", "1990-12")).toEqual(["A", "B", "C", "D", "E", "F", "G"]);
+		// 1965 a 1975 no tiene ninguna categoría común: hay que partirlo
+		expect(codigos("1965-01", "1975-12")).toEqual([]);
+		expect(categoriasOfrecidas(null, "1975-01", "1976-12")).toEqual([]);
+	});
+
+	it("bloqueos, avisos y equiparación de una categoría en un período", () => {
+		// de 1/1969 a 6/1980 las letras H a N existen (el motor las convierte por el Dec. 1361/80)
+		expect(bloqueoDeCategoria(CATALOGO_PRUEBA, "H", "1975-01", "1976-12")).toBeNull();
+		expect(bloqueoDeCategoria(CATALOGO_PRUEBA, "M", "1975-01", "1980-06")).toBeNull();
+		expect(bloqueoDeCategoria(CATALOGO_PRUEBA, "M", "1985-01", "1985-12")).toMatch(/categoría M vale hasta 6\/1980/);
+		expect(bloqueoDeCategoria(CATALOGO_PRUEBA, "H", "1975-01", "1981-12")).toMatch(/desde 6\/1988/);
+		expect(bloqueoDeCategoria(CATALOGO_PRUEBA, "H", "1987-01", "1989-12")).toMatch(/desde 6\/1988/);
+		expect(bloqueoDeCategoria(CATALOGO_PRUEBA, "H", "1988-06", "1989-12")).toBeNull();
+		expect(bloqueoDeCategoria(CATALOGO_PRUEBA, "IND", "1968-01", "1969-03")).toMatch(/hasta 12\/1968/);
+		expect(bloqueoDeCategoria(CATALOGO_PRUEBA, "A", "1975-01", "1976-12")).toBeNull();
+		// «otra» categoría fuera de su época: no impide calcular, avisa cómo la toma el cálculo
+		expect(avisoDeCategoria(CATALOGO_PRUEBA, "A", "1975-01", "1976-12")).toBeNull();
+		expect(avisoDeCategoria(CATALOGO_PRUEBA, "B", "2010-01", "2010-12")).toMatch(/la toma como Monotributo social/);
+		expect(avisoDeCategoria(CATALOGO_PRUEBA, "A", "1965-01", "1966-12")).toMatch(/la toma como Categoría A/);
+		expect(equiparacionDeCategoria(CATALOGO_PRUEBA, "C", "1975-01", "1976-12")).toBe("C → A por el Dec. 1361/80");
+		expect(equiparacionDeCategoria(CATALOGO_PRUEBA, "G", "1975-01", "1985-12")).toBe("G → B por el Dec. 1361/80");
+		expect(equiparacionDeCategoria(CATALOGO_PRUEBA, "M", "1975-01", "1976-12")).toBe("M → F por el Dec. 1361/80");
+		expect(equiparacionDeCategoria(CATALOGO_PRUEBA, "C", "1985-01", "1986-12")).toBeNull();
+	});
+});
 
 describe("haber de caja: utilidades de carga", () => {
 	it("normaliza los períodos a AAAA-MM", () => {

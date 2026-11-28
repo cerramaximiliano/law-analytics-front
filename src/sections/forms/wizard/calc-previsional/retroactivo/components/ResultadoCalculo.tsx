@@ -128,6 +128,11 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 		formulario: values,
 	});
 
+	// Cadena previsional (haber de caja → haber de reajuste → retroactivo): si el haber vino de un cálculo guardado,
+	// el retroactivo guarda de cuál; el hub valida que sea del mismo dueño y completa las etapas.
+	const origenId: string | null = values.cadenaOrigen?.calculatorId || null;
+	const cadena = origenId ? { cadenaPrevisional: { origenRef: origenId } } : {};
+
 	const guardar = async () => {
 		const userId = user?._id || user?.id;
 		if (!userId) return enqueueSnackbar("No se encontró el usuario", { variant: "error" });
@@ -145,6 +150,7 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 					interest: r.totales.intereses,
 					user: reclamante || user?.name || "Usuario",
 					...(values.folderId ? { folderId: values.folderId, folderName: values.folderName } : {}),
+					...cadena,
 					variables: armarVariables(),
 				} as any,
 				{ headers: getRequestHeaders() },
@@ -173,6 +179,7 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 				user: reclamante || user?.name || "Usuario",
 				folderId: values.folderId || null,
 				folderName: values.folderId ? values.folderName || null : null,
+				...cadena,
 				variables: armarVariables(),
 			} as any),
 		);

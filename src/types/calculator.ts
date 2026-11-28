@@ -58,7 +58,13 @@ export type CalculatorType = {
 	folderName?: string | null;
 	type: "Calculado" | "Ofertado" | "Reclamado";
 	classType?: "laboral" | "civil" | "intereses" | "liquidacion" | "previsional";
-	subClassType?: "despido" | "liquidación final" | "intereses" | "liquidacion" | "retroactivo";
+	subClassType?: "despido" | "liquidación final" | "intereses" | "liquidacion" | "retroactivo" | "haberCaja";
+	// Cadena previsional: haber de caja → haber de reajuste → retroactivo (cada eslabón guarda de qué cálculo tomó el haber)
+	cadenaPrevisional?: {
+		etapa?: "haberCaja" | "haberReajuste" | "retroactivo";
+		origenRef?: string | null;
+		origenEtapa?: "haberCaja" | "haberReajuste" | null;
+	};
 	// Liquidación encadenada: un componente por concepto (capital, intereses, honorarios, IVA, tasa de justicia…)
 	componentes?: {
 		tipo: string;
