@@ -20,6 +20,28 @@ export interface HaberCajaEntrada {
 	servicios?: { n?: Tramo; m?: Tramo; p?: Tramo };
 	remuneraciones?: { periodo: string; hasta?: string; meses?: number; importe: number; moneda?: string }[];
 	autonomo?: { periodos?: { desde: string; hasta: string; categoria: string }[] };
+	pensionDerivada?: { fallecimiento: string; porcentaje: number };
+}
+
+/** Serie mensual del haber (anexo «Movilidad del haber mensual»): una fila por mes. */
+export interface SeriePdfHaberCaja {
+	desde: string;
+	hasta: string;
+	minimo82?: boolean;
+	filas: {
+		mes: string;
+		PBU: number;
+		PC: number;
+		PAP: number;
+		haberBase?: number;
+		suplemento: number;
+		sumaFija: number;
+		haberPuro: number;
+		descuentoMaximo: number;
+		complementoMinimo: number;
+		haberAlPago: number;
+		pensionDerivada?: boolean;
+	}[];
 }
 
 export interface HaberCajaResultado {
@@ -45,7 +67,26 @@ export interface HaberCajaResultado {
 	haberConMinimo?: number;
 	complementoMinimo?: number;
 	anticipada?: { porcentaje: number; norma: string } | null;
-	anios: { pbu: number; N1: number; N1computados?: number; N2: number };
+	anios?: { pbu: number; N1: number; N1computados?: number; N2: number };
+	retiroInvalidez?: {
+		norma: string;
+		ingresoBase: number;
+		pctReferencia: number;
+		prestacionReferencia: number;
+		participacionEstatal: number;
+		haberRetiro: number;
+	} | null;
+	pensionDerivada?: {
+		norma: string;
+		mes: string;
+		porcentaje: number;
+		PBU: number;
+		PC: number;
+		PAP: number;
+		haber: number;
+		haberConMinimo: number;
+	} | null;
+	edadAvanzada?: { pbuPct: number; norma: string } | null;
 	remuneraciones?: {
 		filas: {
 			periodo: string;
@@ -92,6 +133,8 @@ interface Props {
 	resultado: HaberCajaResultado;
 	datos: DatosPdfHaberCaja;
 	impreso?: HaberCajaImpreso | null;
+	/** Serie mensual, si el usuario la generó. */
+	serie?: SeriePdfHaberCaja | null;
 }
 
 const money = (n: number | null | undefined) =>
@@ -116,7 +159,12 @@ const difPct = (motor: number, impreso?: number) =>
 			: "0,0000 %"
 		: `${importe(Math.abs(motor / impreso - 1) * 100, 4)} %`;
 
-const PRESTACIONES: Record<string, string> = { jubilacion: "Jubilación ordinaria (Ley 24.241)", pension: "Pensión (Ley 24.241)" };
+const PRESTACIONES: Record<string, string> = {
+	jubilacion: "Jubilación ordinaria (Ley 24.241)",
+	pension: "Pensión por fallecimiento del afiliado (Ley 24.241)",
+	edadAvanzada: "Prestación por edad avanzada (Ley 24.241 art. 34 bis)",
+	retiroInvalidez: "Retiro por invalidez (Ley 24.241 art. 97)",
+};
 const MONEDAS: Record<string, string> = {
 	PESOS: "Pesos",
 	AUSTR: "Australes",
@@ -125,6 +173,7 @@ const MONEDAS: Record<string, string> = {
 	australes: "Australes",
 	pesosArgentinos: "Pesos argentinos",
 	pesosLey18188: "Pesos ley 18.188",
+	pesosLey: "Pesos ley 18.188",
 	pesosMonedaNacional: "Moneda nacional",
 };
 
@@ -195,7 +244,12 @@ const KV = ({ k, v }: { k: string; v: React.ReactNode }) => (
 
 const TOLERANCIA = 1e-4; // 0,01 %, criterio de cierre del motor
 
-const HaberCajaPDF = ({ entrada, resultado: r, datos, impreso }: Props) => {
+const HaberCajaPDF = ({ entrada, resultado: r, datos, impreso, serie }: Props) => {
+	const anios = r.anios || { pbu: 0, N1: 0, N2: 0 };
+	const invalidez = r.retiroInvalidez || null;
+	const derivada = r.pensionDerivada || null;
+	const filasSerie = serie?.filas || [];
+	const serieConUnico = filasSerie.some((x) => x.haberBase);
 	const f = entrada.fechas || ({} as HaberCajaEntrada["fechas"]);
 	const serv = entrada.servicios || {};
 	const filasMes = r.remuneraciones?.filas || [];
@@ -234,14 +288,19 @@ const HaberCajaPDF = ({ entrada, resultado: r, datos, impreso }: Props) => {
 	const encabezado = [datos.expedienteAdmin && `Expediente ${datos.expedienteAdmin}`, datos.carpeta].filter(Boolean).join(" · ");
 	const tituloDoc = datos.titular ? `Haber de caja - ${datos.titular}` : "Haber de caja";
 
-	const componentes: { k: keyof HaberCajaImpreso; label: string; motor: number }[] = [
-		{ k: "sumatoria", label: "Sumatoria de remuneraciones actualizadas", motor: r.remuneraciones?.suma || 0 },
-		{ k: "W", label: "Promedio de remuneraciones (W)", motor: r.W },
-		{ k: "R", label: "Promedio de rentas de autónomo (R)", motor: r.R },
-		{ k: "PBU", label: "Prestación Básica Universal (PBU)", motor: r.PBU },
-		{ k: "PC", label: "Prestación Compensatoria (PC)", motor: r.PC },
-		{ k: "PAP", label: "Prestación Adicional por Permanencia (PAP)", motor: r.PAP },
-	];
+	const componentes: { k: keyof HaberCajaImpreso; label: string; motor: number }[] = invalidez
+		? [
+				{ k: "sumatoria", label: "Sumatoria de remuneraciones actualizadas", motor: r.remuneraciones?.suma || 0 },
+				{ k: "W", label: "Ingreso base (promedio de las remuneraciones)", motor: invalidez.ingresoBase },
+		  ]
+		: [
+				{ k: "sumatoria", label: "Sumatoria de remuneraciones actualizadas", motor: r.remuneraciones?.suma || 0 },
+				{ k: "W", label: "Promedio de remuneraciones (W)", motor: r.W },
+				{ k: "R", label: "Promedio de rentas de autónomo (R)", motor: r.R },
+				{ k: "PBU", label: "Prestación Básica Universal (PBU)", motor: r.PBU },
+				{ k: "PC", label: "Prestación Compensatoria (PC)", motor: r.PC },
+				{ k: "PAP", label: "Prestación Adicional por Permanencia (PAP)", motor: r.PAP },
+		  ];
 
 	const Pie = () => (
 		<Text
@@ -271,6 +330,12 @@ const HaberCajaPDF = ({ entrada, resultado: r, datos, impreso }: Props) => {
 						entrada.prestacion === "pension" && entrada.porcentajePension ? ` (${entrada.porcentajePension} %)` : ""
 					}${r.anticipada ? ` · anticipada al ${r.anticipada.porcentaje} % (${r.anticipada.norma})` : ""}`}
 				/>
+				{derivada ? (
+					<KV
+						k="Pensión derivada"
+						v={`${importe(derivada.porcentaje)} % del haber del causante desde ${mes(derivada.mes)} (${derivada.norma})`}
+					/>
+				) : null}
 				<KV k="Adquisición del derecho (FAD)" v={fecha(f.fad)} />
 				<KV k="Cese / cierre de cómputo" v={fecha(f.cese)} />
 				<KV k="Solicitud" v={fecha(f.solicitud)} />
@@ -301,9 +366,11 @@ const HaberCajaPDF = ({ entrada, resultado: r, datos, impreso }: Props) => {
 					</View>
 				))}
 				<Text style={s.nota}>
-					Años computados: PBU {r.anios.pbu} · PC {r.anios.N1}
-					{r.anios.N1computados !== undefined && r.anios.N1computados !== r.anios.N1 ? ` (computados ${r.anios.N1computados})` : ""} · PAP{" "}
-					{r.anios.N2}
+					{invalidez ? "El retiro por invalidez sale del ingreso base: no usa los años de servicios. " : ""}
+					Años computados: PBU {anios.pbu}
+					{anios.pbu > 30 ? ` (${Math.min(anios.pbu - 30, 15)} excedentes de 30)` : ""} · PC {anios.N1}
+					{anios.N1computados !== undefined && anios.N1computados !== anios.N1 ? ` (computados ${anios.N1computados})` : ""} · PAP{" "}
+					{anios.N2}
 				</Text>
 
 				<Text style={s.seccion}>Resultado</Text>
@@ -327,8 +394,9 @@ const HaberCajaPDF = ({ entrada, resultado: r, datos, impreso }: Props) => {
 				})}
 				<View style={s.totalFila} wrap={false}>
 					<Text style={s.celdaAncha}>
-						Haber (PBU + PC + PAP{r.suplemento ? " + suplemento" : ""}
-						{r.zonaAustral ? " + zona austral" : ""})
+						{invalidez
+							? `Haber del retiro (${importe(invalidez.pctReferencia)} % del ingreso base${r.suplemento ? " + suplemento" : ""})`
+							: `Haber (PBU + PC + PAP${r.suplemento ? " + suplemento" : ""}${r.zonaAustral ? " + zona austral" : ""})`}
 					</Text>
 					<Text style={s.derecha}>{importe(r.haber)}</Text>
 					{impreso ? (
@@ -338,11 +406,27 @@ const HaberCajaPDF = ({ entrada, resultado: r, datos, impreso }: Props) => {
 					) : null}
 					{impreso ? <Text style={s.derecha} /> : null}
 				</View>
+				{derivada ? (
+					<View style={s.totalFila} wrap={false}>
+						<Text style={s.celdaAncha}>
+							Pensión derivada a {mes(derivada.mes)} ({importe(derivada.porcentaje)} %: PBU {importe(derivada.PBU)} · PC{" "}
+							{importe(derivada.PC)} · PAP {importe(derivada.PAP)})
+						</Text>
+						<Text style={s.derecha}>{importe(derivada.haberConMinimo)}</Text>
+						{impreso ? <Text style={s.derecha} /> : null}
+						{impreso ? <Text style={s.derecha} /> : null}
+					</View>
+				) : null}
 				<Text style={s.nota}>
-					W: {r.remuneraciones?.meses || 0} meses, divisor {r.remuneraciones?.divisor || "-"}. PC: {r.porcentajes?.pc ?? 1.5} % ×{" "}
-					{r.anios.N1} años
-					{r.topeAplicado ? ` (con el tope del art. 26: ${money(r.topePC)}; sin tope ${money(r.PCsinTope)})` : ""}. PAP:{" "}
-					{r.porcentajes?.pap ?? 1.5} % × {r.anios.N2} años. {r.pbuDetalle ? `${r.pbuDetalle}. ` : ""}
+					W: {r.remuneraciones?.meses || 0} meses, divisor {r.remuneraciones?.divisor || "-"}.{" "}
+					{invalidez
+						? `Prestación de referencia ${money(invalidez.prestacionReferencia)}; participación estatal ${importe(
+								invalidez.participacionEstatal,
+						  )} % (${invalidez.norma}). `
+						: `PC: ${r.porcentajes?.pc ?? 1.5} % × ${anios.N1} años${
+								r.topeAplicado ? ` (con el tope del art. 26: ${money(r.topePC)}; sin tope ${money(r.PCsinTope)})` : ""
+						  }. PAP: ${r.porcentajes?.pap ?? 1.5} % × ${anios.N2} años. `}
+					{r.pbuDetalle ? `${r.pbuDetalle}. ` : ""}
 					Haber mínimo {money(r.haberMinimo)} y máximo {money(r.haberMaximo)} al {mes(r.mesParametros || r.ancla)}
 					{r.complementoMinimo ? `; con el complemento al mínimo, ${money(r.haberConMinimo)}` : ""}.
 					{impreso ? ` Comparado con la ${fuente}; cierra si la diferencia es de hasta 0,01 %.` : ""}
@@ -461,6 +545,49 @@ const HaberCajaPDF = ({ entrada, resultado: r, datos, impreso }: Props) => {
 							))}
 						</>
 					)}
+					<Pie />
+				</Page>
+			)}
+
+			{filasSerie.length > 0 && serie && (
+				<Page size="A4" style={s.pageTabla}>
+					<Text style={s.seccionTabla}>Movilidad del haber mensual</Text>
+					<Text style={s.notaTabla}>
+						El haber de caja evolucionado mes a mes, de {mes(serie.desde)} a {mes(serie.hasta)}, con todas las movilidades desde el primer
+						haber. El haber al pago es el bruto del mes con el haber máximo y el mínimo aplicados (sin el descuento de obra social): es el
+						haber percibido de cada mes en el retroactivo.
+						{serie.minimo82 ? " El mínimo incluye la garantía del 82 % del salario mínimo (Ley 27.426 art. 5)." : ""}
+						{filasSerie.some((x) => x.pensionDerivada) ? " Los meses marcados con * son de la pensión derivada." : ""}
+					</Text>
+					<View style={s.cab} fixed>
+						<Text style={s.celda}>Mes</Text>
+						{serieConUnico ? <Text style={s.derecha}>Haber</Text> : null}
+						{!serieConUnico ? <Text style={s.derecha}>PBU</Text> : null}
+						{!serieConUnico ? <Text style={s.derecha}>PC</Text> : null}
+						{!serieConUnico ? <Text style={s.derecha}>PAP</Text> : null}
+						<Text style={s.derecha}>Suplementos</Text>
+						<Text style={s.derecha}>Haber puro</Text>
+						<Text style={s.derecha}>Tope máx.</Text>
+						<Text style={s.derecha}>Compl. mín.</Text>
+						<Text style={[s.derecha, { flex: 1.2 }]}>Haber al pago</Text>
+					</View>
+					{filasSerie.map((x) => (
+						<View style={s.fila} key={x.mes} wrap={false}>
+							<Text style={s.celda}>
+								{mes(x.mes)}
+								{x.pensionDerivada ? " *" : ""}
+							</Text>
+							{serieConUnico ? <Text style={s.derecha}>{importe(x.haberBase)}</Text> : null}
+							{!serieConUnico ? <Text style={s.derecha}>{importe(x.PBU)}</Text> : null}
+							{!serieConUnico ? <Text style={s.derecha}>{importe(x.PC)}</Text> : null}
+							{!serieConUnico ? <Text style={s.derecha}>{importe(x.PAP)}</Text> : null}
+							<Text style={s.derecha}>{importe((x.suplemento || 0) + (x.sumaFija || 0))}</Text>
+							<Text style={s.derecha}>{importe(x.haberPuro)}</Text>
+							<Text style={s.derecha}>{x.descuentoMaximo ? importe(-x.descuentoMaximo) : "-"}</Text>
+							<Text style={s.derecha}>{x.complementoMinimo ? importe(x.complementoMinimo) : "-"}</Text>
+							<Text style={[s.derecha, { flex: 1.2 }]}>{importe(x.haberAlPago)}</Text>
+						</View>
+					))}
 					<Pie />
 				</Page>
 			)}

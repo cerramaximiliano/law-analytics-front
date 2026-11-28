@@ -1,6 +1,6 @@
 // Haber de caja guardado: reabrirlo en el formulario y llevarlo al retroactivo como haber percibido.
 import dayjs from "utils/dayjs-config";
-import { HaberCajaInput, HaberCajaResultado, TiempoAMD } from "services/haberCajaService";
+import { HaberCajaInput, HaberCajaResultado, SerieMensualHaberCaja, TiempoAMD } from "services/haberCajaService";
 import {
 	CAUSA_VINCULADA,
 	HaberCajaValues,
@@ -35,8 +35,14 @@ export function valoresDesdeInput(input: HaberCajaInput, datosExpediente?: any):
 	return {
 		...base,
 		reclamante: datosExpediente?.reclamante || "",
-		prestacion: input.prestacion || "jubilacion",
-		anticipada: !!anticipada,
+		// la anticipada llega al motor como jubilación con reducción: en el selector es una prestación aparte
+		prestacion: anticipada && (input.prestacion || "jubilacion") === "jubilacion" ? "anticipada" : input.prestacion || "jubilacion",
+		anticipada: false,
+		pensionDerivada: !!input.pensionDerivada,
+		pensionDerivadaPorcentaje: input.pensionDerivada?.porcentaje ?? "",
+		pensionDerivadaFallecimiento: input.pensionDerivada?.fallecimiento || "",
+		tipoAfiliado: input.tipoAfiliado === "irregular" ? "irregular" : "regular",
+		excedentesPBU: typeof input.aniosPBU === "number" && input.aniosPBU >= 30 ? String(Math.min(input.aniosPBU - 30, 15)) : "",
 		anticipadaPorcentaje: anticipada && typeof anticipada === "object" ? anticipada.porcentaje : "",
 		porcentajePension: input.porcentajePension ?? "",
 		programa: input.programa || "ansesPrpa",
@@ -86,6 +92,9 @@ export function valoresDesdeCalculadora(calc: any): HaberCajaValues | null {
 		  }
 		: valoresDesdeInput(v.input, v.datosExpediente);
 	if (!base.remuneraciones.length) base.remuneraciones = inicial.remuneraciones;
+	// guardados anteriores: la anticipada era una casilla sobre la jubilación
+	if (base.prestacion === "jubilacion" && base.anticipada) base.prestacion = "anticipada";
+	base.anticipada = false;
 	// La carpeta vinculada manda la del documento (puede haberse vinculado después desde Guardados)
 	const folderId = calc.folderId || "";
 	const folderName = calc.folderId ? calc.folderName || base.folderName || "" : "";
@@ -109,6 +118,14 @@ export interface OrigenCadena {
 	mes: string;
 	haber: number;
 	componentes: { PBU: number; PC: number; PAP: number };
+	/** Prestación del haber de caja (clave del selector). */
+	prestacion?: string;
+	/**
+	 * Los percibidos del retroactivo son la serie mensual del haber de caja (cada mensual es el percibido de ese mes) y
+	 * el rango que cubre. Sin serie, el retroactivo arranca del haber pagado y lo mueve con los aumentos generales.
+	 * Cuando exista el haber de reajuste, su serie ocupará el lugar de los reclamados con este mismo esquema.
+	 */
+	serie?: { desde: string; hasta: string } | null;
 }
 
 export interface PrecargaRetroactivo {
@@ -117,17 +134,31 @@ export interface PrecargaRetroactivo {
 	valores: Record<string, any>;
 }
 
-const PRESTACION_RETROACTIVO: Record<string, string> = { jubilacion: "jubilacion_ordinaria" };
+/** Prestación del haber de caja → prestación del retroactivo (mismas claves que su selector). */
+export const PRESTACION_RETROACTIVO: Record<string, string> = {
+	jubilacion: "jubilacion_ordinaria",
+	pension: "pension_directa",
+	retiroInvalidez: "retiro_invalidez",
+	edadAvanzada: "edad_avanzada",
+	anticipada: "prestacion_anticipada",
+};
+
+/** Percibidos del retroactivo a partir de la serie: el haber al pago de cada mes. */
+export const percibidosDeSerie = (serie: SerieMensualHaberCaja): { periodo: string; importe: number }[] =>
+	serie.filas.filter((f) => f.haberAlPago > 0).map((f) => ({ periodo: f.mes, importe: f.haberAlPago }));
 
 /**
- * Precarga del retroactivo desde un haber de caja calculado: el haber de caja es el reflejo de lo que liquida ANSES, así
- * que entra como «Haber pagado ANSES». Con fecha de acuerdo se toma el mensual de ese mes (lo que imprime la constancia);
- * si no, el haber al mes de valuación.
+ * Precarga del retroactivo desde un haber de caja calculado. Con la serie mensual, los percibidos del retroactivo son los
+ * mensuales del haber de caja (uno por mes, desde el primer haber hasta el último mes con datos: el usuario elige después
+ * el desde y el hasta del reclamo y la grilla muestra ese tramo). El haber de caja entra además como «Haber pagado ANSES»
+ * (con fecha de acuerdo, el mensual de ese mes): es de donde arranca el reclamado y el respaldo si se desvincula.
+ * La pensión derivada pasa con la fecha del fallecimiento y el porcentaje, que el retroactivo aplica al reclamado.
  */
 export function precargaRetroactivoDesdeHaberCaja(
 	resultado: HaberCajaResultado,
 	values: HaberCajaValues,
 	calculatorId: string | null,
+	serie?: SerieMensualHaberCaja | null,
 ): PrecargaRetroactivo {
 	const a = resultado.alAcuerdo;
 	const mes = a ? a.mes : resultado.mesValuacion;
@@ -136,19 +167,34 @@ export function precargaRetroactivoDesdeHaberCaja(
 	const fecha = (iso: string, formato: string) =>
 		iso && dayjs(iso, "YYYY-MM-DD", true).isValid() ? dayjs(iso, "YYYY-MM-DD").format(formato) : "";
 	const vinculada = !!values.folderId;
+	const prestacion = values.prestacion === "jubilacion" && values.anticipada ? "anticipada" : values.prestacion;
+	const derivada = resultado.pensionDerivada || null;
+	const percibidos = serie ? percibidosDeSerie(serie) : [];
 	return {
-		origen: { etapa: "haberCaja", calculatorId, mes, haber, componentes },
+		origen: {
+			etapa: "haberCaja",
+			calculatorId,
+			mes,
+			haber,
+			componentes,
+			prestacion,
+			serie: percibidos.length && serie ? { desde: serie.desde, hasta: serie.hasta } : null,
+		},
 		valores: {
 			reclamante: vinculada ? `${CAUSA_VINCULADA}${values.folderId}` : titularDe(values),
 			folderId: values.folderId || "",
 			folderName: vinculada ? values.folderName || "" : "",
-			prestacion: PRESTACION_RETROACTIVO[values.prestacion] || "",
+			prestacion: derivada ? "pension_derivada" : PRESTACION_RETROACTIVO[prestacion] || "",
 			fechaAdquisicion: fecha(values.fad, "DD/MM/YYYY"),
 			fechaAlta: fecha(values.alta, "MM/YYYY"),
 			haberPagadoAnses: haber,
 			haberPagadoAl: fecha(`${mes}-01`, "DD/MM/YYYY"),
 			monedaHaberPagado: "ARS",
 			zonaAustral: !!values.zonaAustral,
+			...(derivada
+				? { pensionFecha: fecha(values.pensionDerivadaFallecimiento, "DD/MM/YYYY"), pensionPorcentaje: derivada.porcentaje }
+				: {}),
+			...(percibidos.length ? { percibidoManual: true, percibidosMensuales: percibidos } : {}),
 		},
 	};
 }

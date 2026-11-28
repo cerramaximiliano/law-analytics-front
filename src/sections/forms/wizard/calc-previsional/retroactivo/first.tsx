@@ -28,15 +28,15 @@ import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
 import InputField from "components/UI/InputField";
 import LinkCauseSelector from "./components/LinkCauseSelector";
+import { PRESTACION_LABELS } from "utils/previsionalPdf";
 
 dayjs.extend(customParseFormat);
 
 const esLocale = esES.components.MuiLocalizationProvider.defaultProps.localeText;
 
-const PRESTACIONES = [
-	{ value: "jubilacion_ordinaria", label: "Jubilación Ordinaria" },
-	{ value: "pension_derivada", label: "Pensión derivada" },
-];
+// Mismas prestaciones que el haber de caja (así el pase desde allá no queda en blanco). El cálculo del retroactivo no
+// cambia con la prestación: los mínimos y máximos son los generales; solo la pensión derivada abre sus campos (paso 3).
+const PRESTACIONES = Object.entries(PRESTACION_LABELS).map(([value, label]) => ({ value, label }));
 
 const OBRAS_SOCIALES = [{ value: "inssjyp_pami", label: "INSSJyP (PAMI)" }];
 

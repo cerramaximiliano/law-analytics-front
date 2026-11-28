@@ -1,13 +1,17 @@
 // Formulario del haber de caja (Formik): valores, valores iniciales y armado de la entrada del motor.
 // Las fechas van en AAAA-MM-DD (campos de fecha) y los períodos se escriben MM/AAAA o AAAA-MM.
 import {
+	aniosDeServicios,
 	CatalogoHaberCaja,
+	CriterioMonedasViejas,
 	Excedente35,
+	excedentesDe30,
 	HaberCajaInput,
 	leerImporte,
-	monedaDelPeriodo,
+	monedaPorDefectoDelPeriodo,
 	normalizarPeriodo,
 	PrestacionHaberCaja,
+	PrestacionSelector,
 	ProgramaHaberCaja,
 	TiempoAMD,
 } from "services/haberCajaService";
@@ -30,7 +34,7 @@ export interface FilaRemuneracionForm {
 	/** Último mes del renglón, si abarca varios. */
 	hasta: string;
 	importe: string;
-	/** Vacío = automática (la de curso legal del período); con valor, la que corrigió el usuario. */
+	/** Vacío = automática (la moneda por defecto del período: convención de BlueCorp); con valor, la que corrigió el usuario. */
 	moneda: string;
 }
 export interface FilaAutonomoForm {
@@ -46,10 +50,18 @@ export interface HaberCajaValues {
 	reclamante: string;
 	folderId: string;
 	folderName: string;
-	prestacion: PrestacionHaberCaja;
+	/** Prestación del selector («anticipada» = jubilación con la reducción de la anticipada). */
+	prestacion: PrestacionSelector;
+	/** Guardados anteriores: la anticipada era una casilla sobre la jubilación. Hoy es una prestación del selector. */
 	anticipada: boolean;
 	anticipadaPorcentaje: number | string;
 	porcentajePension: number | string;
+	/** «¿Es pensión derivada?»: sobre la prestación del causante, con su porcentaje y la fecha del fallecimiento. */
+	pensionDerivada: boolean;
+	pensionDerivadaPorcentaje: number | string;
+	pensionDerivadaFallecimiento: string;
+	/** Retiro por invalidez: aportante regular (70 %) o irregular con derecho (50 %). */
+	tipoAfiliado: "regular" | "irregular";
 	programa: ProgramaHaberCaja;
 	fad: string;
 	cese: string;
@@ -64,7 +76,15 @@ export interface HaberCajaValues {
 	reciprocidad: number | string;
 	reciprocidadAlcance: "pbu" | "todas";
 	servicios: Record<ClaseServicio, Record<TramoServicio, TiempoTexto>>;
+	/**
+	 * Años de servicios excedentes de 30 que bonifican la PBU (Ley 24.241 art. 20). Vacío = los que salen de los servicios
+	 * cargados; con valor (0 a 15), los corrige a mano.
+	 */
+	excedentesPBU: string;
+	/** Opción de cálculo: de qué clase se quitan los meses anteriores a 7/1994 que pasan de 35 años (PC). */
 	excedente35: "" | Excedente35;
+	/** En qué moneda están los importes anteriores al peso (cambia la moneda de todas esas filas de una vez). Por defecto, como BlueCorp. */
+	monedasViejas: CriterioMonedasViejas;
 	remuneraciones: FilaRemuneracionForm[];
 	autonomos: FilaAutonomoForm[];
 	/** Computar la categoría efectivamente aportada (sin la equiparación del Dec. 1361/80). */
@@ -107,6 +127,10 @@ export const valoresIniciales = (): HaberCajaValues => ({
 	anticipada: false,
 	anticipadaPorcentaje: "",
 	porcentajePension: "",
+	pensionDerivada: false,
+	pensionDerivadaPorcentaje: "",
+	pensionDerivadaFallecimiento: "",
+	tipoAfiliado: "regular",
 	programa: "ansesPrpa",
 	fad: "",
 	cese: "",
@@ -120,7 +144,9 @@ export const valoresIniciales = (): HaberCajaValues => ({
 	reciprocidad: "",
 	reciprocidadAlcance: "pbu",
 	servicios: { n: tramoVacio(), m: tramoVacio(), p: tramoVacio() },
+	excedentesPBU: "",
 	excedente35: "",
+	monedasViejas: "bluecorp",
 	remuneraciones: Array.from({ length: FILAS_INICIALES }, () => nuevaFilaRemuneracion()),
 	autonomos: [],
 	sinEquiparacion: false,
@@ -164,9 +190,32 @@ export function porcentajeDe(v: unknown): number | undefined {
 export const titularDe = (values: Pick<HaberCajaValues, "reclamante" | "folderName">) =>
 	texto(values.reclamante).startsWith(CAUSA_VINCULADA) ? values.folderName || "" : texto(values.reclamante);
 
+/** Prestación del selector → la que recibe el motor (la anticipada es una jubilación con reducción). */
+export const prestacionDelMotor = (p: PrestacionSelector): PrestacionHaberCaja =>
+	p === "pension" || p === "edadAvanzada" || p === "retiroInvalidez" ? p : "jubilacion";
+/** ¿La prestación elegida es la anticipada? (también los guardados anteriores: jubilación con la casilla marcada). */
+export const esAnticipada = (values: Pick<HaberCajaValues, "prestacion" | "anticipada">) =>
+	values.prestacion === "anticipada" || (values.prestacion === "jubilacion" && !!values.anticipada);
+/** Prestaciones sobre las que se puede preguntar «¿Es pensión derivada?» (la del causante). */
+export const admiteDerivada = (p: PrestacionSelector) => p === "jubilacion" || p === "edadAvanzada" || p === "anticipada";
+
+/** Años de servicios de la PBU que salen de los tiempos cargados (lo que calcularía el motor); null si hay un tiempo inválido. */
+export function aniosPBUCalculados(servicios: HaberCajaValues["servicios"] | undefined): number | null {
+	const tiempos = (["n", "m", "p"] as const).flatMap((c) => [tiempoDe(servicios?.[c]?.antes), tiempoDe(servicios?.[c]?.despues)]);
+	return tiempos.some((t) => t === null) ? null : aniosDeServicios(tiempos);
+}
+/** Años excedentes de 30 corregidos a mano (0 a 15); undefined si el campo está vacío, NaN si no es válido. */
+export function excedentesCargados(v: unknown): number | undefined {
+	if (!texto(v)) return undefined;
+	const n = entero(String(v));
+	return Number.isNaN(n) || n > 15 ? NaN : n;
+}
+export { excedentesDe30 };
+
 /**
  * Entrada del motor a partir de los valores ya validados del formulario. La moneda de cada fila es la que corrigió el
- * usuario o, si quedó en automática, la del período según el catálogo; sin catálogo va sin moneda y la pone el hub.
+ * usuario o, si quedó en automática, la moneda por defecto del período según el catálogo (convención de BlueCorp); sin
+ * catálogo va sin moneda y la pone el hub con la misma tabla.
  */
 export function armarEntradaHaberCaja(values: HaberCajaValues, catalogo?: CatalogoHaberCaja | null): HaberCajaInput {
 	const servicios: HaberCajaInput["servicios"] = {};
@@ -182,7 +231,7 @@ export function armarEntradaHaberCaja(values: HaberCajaValues, catalogo?: Catalo
 		.map((f) => {
 			const periodo = normalizarPeriodo(f.periodo) as string;
 			const hasta = texto(f.hasta) ? normalizarPeriodo(f.hasta) : null;
-			const moneda = texto(f.moneda) || monedaDelPeriodo(catalogo, periodo)?.clave;
+			const moneda = texto(f.moneda) || monedaPorDefectoDelPeriodo(catalogo, periodo)?.clave;
 			return {
 				periodo,
 				importe: leerImporte(f.importe) as number,
@@ -202,6 +251,11 @@ export function armarEntradaHaberCaja(values: HaberCajaValues, catalogo?: Catalo
 		.sort((x, y) => x.desde.localeCompare(y.desde));
 
 	const esPension = values.prestacion === "pension";
+	const esInvalidez = values.prestacion === "retiroInvalidez";
+	const anticipada = esAnticipada(values);
+	const derivada = !!values.pensionDerivada && admiteDerivada(values.prestacion);
+	const pctDerivada = porcentajeDe(values.pensionDerivadaPorcentaje);
+	const excedentes = excedentesCargados(values.excedentesPBU);
 	const pctPension = porcentajeDe(values.porcentajePension);
 	const pctAnticipada = porcentajeDe(values.anticipadaPorcentaje);
 	const reciprocidad = porcentajeDe(values.reciprocidad);
@@ -210,9 +264,14 @@ export function armarEntradaHaberCaja(values: HaberCajaValues, catalogo?: Catalo
 
 	return {
 		programa: values.programa,
-		prestacion: values.prestacion,
+		prestacion: prestacionDelMotor(values.prestacion),
 		...(esPension && pctPension !== undefined ? { porcentajePension: pctPension } : {}),
-		...(values.anticipada && !esPension ? { anticipada: pctAnticipada !== undefined ? { porcentaje: pctAnticipada } : true } : {}),
+		...(anticipada ? { anticipada: pctAnticipada !== undefined ? { porcentaje: pctAnticipada } : true } : {}),
+		...(derivada && pctDerivada !== undefined
+			? { pensionDerivada: { fallecimiento: values.pensionDerivadaFallecimiento, porcentaje: pctDerivada } }
+			: {}),
+		...(esInvalidez && values.tipoAfiliado === "irregular" ? { tipoAfiliado: "irregular" as const } : {}),
+		...(excedentes !== undefined && !esInvalidez ? { aniosPBU: 30 + excedentes } : {}),
 		fechas: {
 			fad: values.fad,
 			...(values.cese ? { cese: values.cese } : {}),

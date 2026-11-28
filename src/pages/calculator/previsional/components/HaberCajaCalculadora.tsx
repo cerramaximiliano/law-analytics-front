@@ -44,17 +44,28 @@ import {
 	calcularHaberCaja,
 	CatalogoHaberCaja,
 	categoriasOfrecidas,
+	CRITERIO_MONEDAS_POR_DEFECTO,
+	CriterioMonedasViejas,
+	criteriosMonedasViejas,
+	esPeriodoAnteriorAlPeso,
 	equiparacionDeCategoria,
+	excedentesDe30,
 	HaberCajaInput,
 	HaberCajaRespuesta,
 	leerFilasPegadas,
-	monedaDelPeriodo,
+	monedaPorDefectoDelPeriodo,
+	monedaSegunCriterio,
+	primerMesEnPesos,
 	normalizarPeriodo,
 	obtenerCatalogoHaberCaja,
+	prestacionesDelCatalogo,
 } from "services/haberCajaService";
 import {
+	admiteDerivada,
+	aniosPBUCalculados,
 	armarEntradaHaberCaja,
 	CAUSA_VINCULADA,
+	esAnticipada,
 	ClaseServicio,
 	FilaAutonomoForm,
 	filaAutonomoVacia,
@@ -135,7 +146,7 @@ const FilaRemuneracionGrilla = memo(function FilaRemuneracionGrilla({
 	onQuitar,
 }: FilaRemuneracionProps) {
 	const periodo = normalizarPeriodo(f.periodo);
-	const automatica = monedaDelPeriodo(catalogo, periodo);
+	const automatica = monedaPorDefectoDelPeriodo(catalogo, periodo);
 	const elegida = f.moneda ? catalogo?.monedas.find((m) => m.clave === f.moneda) : automatica;
 	const normalizar = (campo: "periodo" | "hasta") => {
 		const p = normalizarPeriodo(f[campo]);
@@ -191,7 +202,7 @@ const FilaRemuneracionGrilla = memo(function FilaRemuneracionGrilla({
 					SelectProps={{ native: true }}
 					inputProps={{ "aria-label": `Moneda de la fila ${i + 1}` }}
 				>
-					<option value="">{automatica ? `${automatica.etiqueta} (por el período)` : "Según el período"}</option>
+					<option value="">{automatica ? `${automatica.etiqueta} (automática)` : "Automática"}</option>
 					{(catalogo?.monedas || []).map((m) => (
 						<option key={m.clave} value={m.clave}>
 							{m.etiqueta}
@@ -358,6 +369,13 @@ function Formulario({ catalogo, errorCatalogo, onReintentarCatalogo, folder, onF
 	);
 	const [avisoPegado, setAvisoPegado] = useState<string | null>(null);
 	const esPension = values.prestacion === "pension";
+	const esInvalidez = values.prestacion === "retiroInvalidez";
+	const anticipada = esAnticipada(values);
+	const puedeDerivada = admiteDerivada(values.prestacion);
+	const prestaciones = prestacionesDelCatalogo(catalogo);
+	// Años de la PBU que salen de los servicios cargados (lo que calcula el motor) y sus excedentes de 30
+	const aniosPBU = aniosPBUCalculados(values.servicios);
+	const excedentesCalculados = aniosPBU === null ? null : excedentesDe30(aniosPBU);
 
 	// ---- carpeta vinculada (igual que el retroactivo) ----
 	const carpetaInicial =
@@ -424,7 +442,17 @@ function Formulario({ catalogo, errorCatalogo, onReintentarCatalogo, folder, onF
 		}
 		setFieldValue(
 			"remuneraciones",
-			[...remuneraciones.filter((f) => !filaRemuneracionVacia(f)), ...pegadas.map((f) => nuevaFilaRemuneracion(f.periodo, f.importe))],
+			[
+				...remuneraciones.filter((f) => !filaRemuneracionVacia(f)),
+				...pegadas.map((f) =>
+					nuevaFilaRemuneracion(
+						f.periodo,
+						f.importe,
+						"",
+						monedaSegunCriterio(values.monedasViejas || CRITERIO_MONEDAS_POR_DEFECTO, f.periodo, catalogo),
+					),
+				),
+			],
 			false,
 		);
 		setAvisoPegado(
@@ -432,7 +460,31 @@ function Formulario({ catalogo, errorCatalogo, onReintentarCatalogo, folder, onF
 				(descartadas
 					? ` (${descartadas} ${descartadas === 1 ? "línea descartada" : "líneas descartadas"} por no tener período e importe).`
 					: ".") +
-				" La moneda de cada una sale del período; revisala si la constancia ya trae los importes convertidos.",
+				" La moneda de cada una se asigna según el período, como lo hace BlueCorp; si la constancia trae los importes viejos ya convertidos a pesos, indicalo abajo.",
+		);
+	};
+
+	// Importes anteriores al peso: la moneda automática es la convención de BlueCorp (la tabla la publica el catálogo); la
+	// constancia de ANSES los trae ya convertidos a pesos. El control cambia la moneda de todas esas filas de una vez.
+	const filasViejas = useMemo(
+		() =>
+			remuneraciones.filter((f) => {
+				const p = normalizarPeriodo(f.periodo);
+				return esPeriodoAnteriorAlPeso(catalogo, p);
+			}).length,
+		[remuneraciones, catalogo],
+	);
+	// año desde el que la moneda es el peso: sale del catálogo
+	const anioDelPeso = (primerMesEnPesos(catalogo) || "").slice(0, 4);
+	const cambiarMonedasViejas = (criterio: CriterioMonedasViejas) => {
+		setFieldValue("monedasViejas", criterio, false);
+		setFieldValue(
+			"remuneraciones",
+			remuneraciones.map((f) => {
+				const p = normalizarPeriodo(f.periodo);
+				return p && esPeriodoAnteriorAlPeso(catalogo, p) ? { ...f, moneda: monedaSegunCriterio(criterio, p, catalogo) } : f;
+			}),
+			false,
 		);
 	};
 
@@ -520,11 +572,25 @@ function Formulario({ catalogo, errorCatalogo, onReintentarCatalogo, folder, onF
 					Prestación y fechas
 				</Typography>
 				<Grid container spacing={2}>
-					<Grid item xs={12} sm={6} md={3}>
-						<TextField select fullWidth label="Prestación" {...getFieldProps("prestacion")}>
-							<MenuItem value="jubilacion">Jubilación</MenuItem>
-							<MenuItem value="pension">Pensión directa</MenuItem>
-							<MenuItem value="edadAvanzada">Edad avanzada</MenuItem>
+					<Grid item xs={12} sm={6} md={4}>
+						<TextField
+							select
+							fullWidth
+							label="Prestación"
+							{...getFieldProps("prestacion")}
+							onChange={(e) => {
+								setFieldValue("prestacion", e.target.value);
+								// la casilla de los guardados anteriores deja de mandar: la anticipada es una prestación del selector
+								setFieldValue("anticipada", false, false);
+							}}
+							value={anticipada ? "anticipada" : values.prestacion}
+						>
+							{prestaciones.map((p) => (
+								<MenuItem key={p.clave} value={p.clave} disabled={!p.habilitada}>
+									{p.etiqueta}
+									{!p.habilitada && p.leyenda ? ` — ${p.leyenda}` : ""}
+								</MenuItem>
+							))}
 						</TextField>
 					</Grid>
 					{esPension && (
@@ -539,12 +605,21 @@ function Formulario({ catalogo, errorCatalogo, onReintentarCatalogo, folder, onF
 							/>
 						</Grid>
 					)}
-					{!esPension && (
-						<Grid item xs={12} sm={6} md={3}>
-							{casilla("anticipada", "Prestación anticipada")}
+					{esInvalidez && (
+						<Grid item xs={12} sm={6} md={4}>
+							<TextField
+								select
+								fullWidth
+								label="Aportante"
+								helperText="Prestación de referencia sobre el ingreso base (Ley 24.241 art. 97)"
+								{...getFieldProps("tipoAfiliado")}
+							>
+								<MenuItem value="regular">Regular (70 %)</MenuItem>
+								<MenuItem value="irregular">Irregular con derecho (50 %)</MenuItem>
+							</TextField>
 						</Grid>
 					)}
-					{!esPension && values.anticipada && (
+					{anticipada && (
 						<Grid item xs={12} sm={6} md={3}>
 							<NumberField
 								fullWidth
@@ -569,9 +644,53 @@ function Formulario({ catalogo, errorCatalogo, onReintentarCatalogo, folder, onF
 						</TextField>
 					</Grid>
 				</Grid>
+				{/* «¿Es pensión derivada?» de BlueCorp: la pensión es el porcentaje del haber del causante desde su fallecimiento */}
+				<Grid container spacing={2} sx={{ mt: 0 }} alignItems="flex-start">
+					<Grid item xs={12} sm={6} md={4}>
+						<Tooltip
+							title={
+								puedeDerivada
+									? ""
+									: "Se pregunta sobre la prestación del causante (jubilación, edad avanzada o anticipada), no sobre la pensión directa ni el retiro por invalidez"
+							}
+						>
+							<span>{casilla("pensionDerivada", "¿Es pensión derivada?", { disabled: !puedeDerivada })}</span>
+						</Tooltip>
+					</Grid>
+					{values.pensionDerivada && puedeDerivada && (
+						<>
+							<Grid item xs={12} sm={6} md={4}>
+								<NumberField
+									fullWidth
+									name="pensionDerivadaPorcentaje"
+									label="Porcentaje de la pensión derivada"
+									decimalScale={2}
+									helperText="Sobre el haber del causante (p. ej. 70)"
+									InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+								/>
+							</Grid>
+							<Grid item xs={12} sm={6} md={4}>
+								<InputField
+									fullWidth
+									type="date"
+									name="pensionDerivadaFallecimiento"
+									label="Fallecimiento del causante"
+									InputLabelProps={{ shrink: true }}
+								/>
+							</Grid>
+						</>
+					)}
+				</Grid>
 				<Grid container spacing={2} sx={{ mt: 0 }}>
-					{fecha("fad", esPension ? "Fecha de fallecimiento (FAD)" : "Adquisición del derecho (FAD)")}
-					{fecha("cese", "Cese", esPension ? "Opcional en la pensión directa" : undefined)}
+					{fecha(
+						"fad",
+						esPension ? "Fecha de fallecimiento (FAD)" : esInvalidez ? "Fecha de la invalidez (FAD)" : "Adquisición del derecho (FAD)",
+					)}
+					{fecha(
+						"cese",
+						"Cese",
+						esPension ? "Opcional en la pensión directa" : esInvalidez ? "Opcional en el retiro por invalidez" : undefined,
+					)}
 					{fecha("solicitud", "Solicitud")}
 					{fecha("alta", "Alta")}
 					{fecha("acuerdo", "Acuerdo", "Opcional: suma PBU, PC y PAP a ese mes")}
@@ -589,6 +708,7 @@ function Formulario({ catalogo, errorCatalogo, onReintentarCatalogo, folder, onF
 				</Typography>
 				<Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
 					Años, meses y días de la constancia, antes y después de 7/1994 (PC y PAP), por clase de servicio.
+					{esInvalidez ? " El retiro por invalidez sale del ingreso base: no usa los años de servicios." : ""}
 				</Typography>
 				<TableContainer component={Paper} variant="outlined" sx={{ borderColor: errorServicios ? "error.main" : undefined }}>
 					<Table size="small">
@@ -637,23 +757,38 @@ function Formulario({ catalogo, errorCatalogo, onReintentarCatalogo, folder, onF
 					</Table>
 				</TableContainer>
 				{errorServicios && <FormHelperText error>{errorServicios}</FormHelperText>}
-				<Grid container spacing={2} sx={{ mt: 0.5 }}>
-					<Grid item xs={12} md={6}>
-						<TextField
-							select
-							fullWidth
-							label="Servicios excedentes de 35 años (PC)"
-							helperText="De qué clase se quitan los meses anteriores a 7/1994 que pasan de 35 años"
-							{...getFieldProps("excedente35")}
-						>
-							<MenuItem value="">Según el criterio de cálculo</MenuItem>
-							<MenuItem value="menosFavorable">Los menos favorables</MenuItem>
-							<MenuItem value="autonomos">Primero los autónomos</MenuItem>
-							<MenuItem value="dependencia">Primero los de dependencia</MenuItem>
-							<MenuItem value="ninguno">No quitar</MenuItem>
-						</TextField>
+				{!esInvalidez && (
+					<Grid container spacing={2} sx={{ mt: 0.5 }}>
+						<Grid item xs={12} sm={6} md={4}>
+							<TextField
+								fullWidth
+								label="Servicios excedentes (años)"
+								placeholder={excedentesCalculados === null ? "Según los servicios" : String(excedentesCalculados)}
+								value={values.excedentesPBU}
+								onChange={(e) => setFieldValue("excedentesPBU", e.target.value.replace(/\D/g, "").slice(0, 2), false)}
+								error={!!errors.excedentesPBU}
+								InputLabelProps={{ shrink: true }}
+								inputProps={{ inputMode: "numeric", "aria-label": "Servicios excedentes de 30 años" }}
+								helperText={
+									(errors.excedentesPBU as string) ||
+									(values.excedentesPBU !== ""
+										? `Corregido a mano: ${values.excedentesPBU} sobre 30${
+												excedentesCalculados !== null ? ` (de los servicios salen ${excedentesCalculados})` : ""
+										  }. Vacío vuelve al cálculo automático.`
+										: excedentesCalculados === null
+										? "Años de aportes excedentes de 30. Salen de los servicios cargados."
+										: `De los servicios cargados salen ${aniosPBU} años: ${excedentesCalculados} excedentes de 30. Podés corregirlos.`)
+								}
+							/>
+						</Grid>
+						<Grid item xs={12} sm={6} md={8} sx={{ display: "flex", alignItems: "center" }}>
+							<Typography variant="caption" color="text.secondary">
+								Cantidad de años de aportes excedentes de 30 (más de 6 meses se computan como 1 año). Bonifican la PBU con 1 % por año,
+								hasta 15 (Ley 24.241 art. 20), en los beneficios con FAD anterior a 3/2009; desde esa fecha la PBU es la de la tabla.
+							</Typography>
+						</Grid>
 					</Grid>
-				</Grid>
+				)}
 			</Box>
 
 			<Divider />
@@ -686,12 +821,42 @@ function Formulario({ catalogo, errorCatalogo, onReintentarCatalogo, folder, onF
 				</Stack>
 				<Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
 					Una fila por mes; para un renglón de varios meses cargá también el «hasta» y el importe total. Varias filas del mismo mes son
-					empleadores distintos. La moneda sale sola del período y se puede corregir. Podés copiar dos columnas de una planilla (período e
-					importe) y pegarlas sobre la grilla.
+					empleadores distintos. La moneda se asigna sola según el período, como lo hace BlueCorp, y se puede corregir. Podés copiar dos
+					columnas de una planilla (período e importe) y pegarlas sobre la grilla.
 				</Typography>
 				{avisoPegado && (
 					<Alert severity="info" onClose={() => setAvisoPegado(null)} sx={{ mb: 1.5 }}>
 						{avisoPegado}
+					</Alert>
+				)}
+				{filasViejas > 0 && (
+					<Alert severity="warning" sx={{ mb: 1.5 }}>
+						<AlertTitle>
+							Hay {filasViejas} {filasViejas === 1 ? "remuneración anterior" : "remuneraciones anteriores"} a {anioDelPeso}: revisá en qué
+							moneda {filasViejas === 1 ? "está" : "están"}
+						</AlertTitle>
+						Sin indicarlo, se toman como los carga BlueCorp. La constancia de ANSES suele traer esos importes ya convertidos a pesos: si es
+						tu caso, cambialo acá. Con la moneda equivocada el promedio cambia mucho (pasar de una moneda a otra es correr la coma).
+						<TextField
+							select
+							fullWidth
+							size="small"
+							sx={{ mt: 1.5, maxWidth: 520, display: "flex" }}
+							label={`Los importes anteriores a ${anioDelPeso} están`}
+							value={values.monedasViejas || CRITERIO_MONEDAS_POR_DEFECTO}
+							onChange={(e) => cambiarMonedasViejas(e.target.value as CriterioMonedasViejas)}
+							SelectProps={{ native: true }}
+							inputProps={{ "aria-label": "Moneda de los importes anteriores al peso" }}
+						>
+							{criteriosMonedasViejas(catalogo).map((c) => (
+								<option key={c.clave} value={c.clave}>
+									{c.etiqueta}
+								</option>
+							))}
+						</TextField>
+						<Typography variant="caption" sx={{ display: "block", mt: 0.5 }}>
+							Cambia la moneda de todas esas filas de una vez; después podés corregir cada una en la grilla.
+						</Typography>
 					</Alert>
 				)}
 				<TableContainer
@@ -884,6 +1049,22 @@ function Formulario({ catalogo, errorCatalogo, onReintentarCatalogo, folder, onF
 							</TextField>
 						</Grid>
 						<Grid item xs={12} sm={6}>
+							<TextField
+								select
+								fullWidth
+								label="Meses anteriores a 7/1994 que pasan de 35 años (PC)"
+								helperText="La PC computa hasta 35 años: de qué clase de servicio se quitan los meses que sobran (Dec. 679/95)"
+								{...getFieldProps("excedente35")}
+							>
+								<MenuItem value="">Según el criterio de cálculo</MenuItem>
+								<MenuItem value="menosFavorable">Los menos favorables</MenuItem>
+								<MenuItem value="autonomos">Primero los de autónomos</MenuItem>
+								<MenuItem value="dependencia">Primero los de dependencia</MenuItem>
+								<MenuItem value="ninguno">No quitar ninguno</MenuItem>
+							</TextField>
+						</Grid>
+						<Grid item xs={12} sm={6} />
+						<Grid item xs={12} sm={6}>
 							{casilla("topeArt9", "Tope del art. 9 sobre la remuneración del mes")}
 						</Grid>
 						<Grid item xs={12} sm={6}>
@@ -941,7 +1122,7 @@ export default function HaberCajaCalculadora({ folder, onFolderChange, calculado
 	// Sin suscripción cargada todavía no se bloquea: decide el hub
 	const sinAcceso = !!subscription && !hasFeatureLocal(FEATURE);
 
-	// Catálogo del hub: categorías de autónomos por época y moneda de curso legal por período
+	// Catálogo del hub: categorías de autónomos por época, moneda por defecto de cada período y prestaciones
 	const cargarCatalogo = useCallback(async () => {
 		setErrorCatalogo(false);
 		try {
@@ -995,7 +1176,8 @@ export default function HaberCajaCalculadora({ folder, onFolderChange, calculado
 		<Stack spacing={3}>
 			<Typography variant="body2" color="text.secondary">
 				Haber inicial de la Ley 24.241 (PBU + PC + PAP) tal como lo liquida ANSES, a partir de las fechas, los servicios, las remuneraciones
-				y los aportes autónomos de la constancia de primeros pagos. FAD desde 7/1994.
+				y los aportes autónomos de la constancia de primeros pagos. FAD desde 7/1994. Del resultado sale también la serie mensual del haber,
+				que el retroactivo toma como haberes percibidos.
 			</Typography>
 
 			{enEdicion && (

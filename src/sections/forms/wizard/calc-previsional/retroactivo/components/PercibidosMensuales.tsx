@@ -23,6 +23,7 @@ import {
 } from "@mui/material";
 import { useFormikContext } from "formik";
 import { enqueueSnackbar } from "notistack";
+import { serieMensualHaberCajaGuardado } from "services/haberCajaService";
 import {
 	AVISO_PERCIBIDO_MANUAL_SIN_ACTUALIZACION,
 	PercibidoMensual,
@@ -227,6 +228,36 @@ export default function PercibidosMensuales() {
 
 	const errorCompletitud = typeof errors.percibidosMensuales === "string" ? errors.percibidosMensuales : null;
 
+	// Cadena previsional: los percibidos vienen de la serie mensual del haber de caja de origen (`cadenaOrigen.serie`).
+	// Se puede desvincular (vuelve al percibido calculado desde el haber pagado) y, si el haber de caja está guardado,
+	// volver a traer la serie (pisa lo corregido a mano).
+	const origen = values.cadenaOrigen || null;
+	const desdeHaberCaja = !!origen?.serie && activo;
+	const [trayendo, setTrayendo] = useState(false);
+	const desvincular = () => {
+		setFieldValue("cadenaOrigen", null);
+		setFieldValue("percibidoManual", false);
+		enqueueSnackbar("Retroactivo desvinculado del haber de caja: el percibido se calcula desde el haber pagado por ANSES", {
+			variant: "info",
+		});
+	};
+	const volverATraer = async () => {
+		if (!origen?.calculatorId) return;
+		setTrayendo(true);
+		try {
+			const serie = await serieMensualHaberCajaGuardado(origen.calculatorId);
+			const m = new Map(porMesRef.current);
+			for (const f of serie.filas) if (f.haberAlPago > 0) m.set(f.mes, f.haberAlPago);
+			guardar(m);
+			setFieldValue("cadenaOrigen", { ...origen, serie: { desde: serie.desde, hasta: serie.hasta } });
+			enqueueSnackbar(`Se trajeron ${serie.filas.length} mes(es) del haber de caja`, { variant: "success" });
+		} catch (e: any) {
+			enqueueSnackbar(e?.response?.data?.mensaje || "No se pudo traer la serie del haber de caja", { variant: "error" });
+		} finally {
+			setTrayendo(false);
+		}
+	};
+
 	return (
 		<Box>
 			<Typography variant="h5" gutterBottom sx={{ mb: 0.5 }}>
@@ -252,6 +283,29 @@ export default function PercibidosMensuales() {
 			/>
 			{activo && (
 				<Box sx={{ mt: 1.5 }}>
+					{desdeHaberCaja && (
+						<Alert
+							severity="success"
+							sx={{ mb: 2 }}
+							action={
+								<Stack direction="row" spacing={0.5}>
+									{origen.calculatorId && (
+										<Button color="inherit" size="small" onClick={volverATraer} disabled={trayendo} sx={{ textTransform: "none" }}>
+											{trayendo ? "Trayendo…" : "Volver a traer"}
+										</Button>
+									)}
+									<Button color="inherit" size="small" onClick={desvincular} sx={{ textTransform: "none" }}>
+										Desvincular
+									</Button>
+								</Stack>
+							}
+						>
+							Los percibidos vienen del haber de caja {origen.calculatorId ? "vinculado" : "calculado (sin guardar)"}: es su serie mensual,
+							de {mesLegible(origen.serie.desde)} a {mesLegible(origen.serie.hasta)}. Cada mes es el haber de caja evolucionado con las
+							movilidades desde el primer haber. Podés corregir cualquier mes; «Desvincular» vuelve al percibido calculado desde el haber
+							pagado.
+						</Alert>
+					)}
 					<Alert severity="info" sx={{ mb: 2 }}>
 						Cada mes del período reclamado necesita su percibido: sin todos los meses no se puede calcular. Lo que cargues se toma tal cual
 						(sin aumentos, reajustes ni piso), en pesos. El reajuste y el piso de arriba solo se usan para precargar la grilla.{" "}

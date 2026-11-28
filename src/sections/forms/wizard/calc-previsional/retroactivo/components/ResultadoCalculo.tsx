@@ -132,6 +132,8 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 	// el retroactivo guarda de cuál; el hub valida que sea del mismo dueño y completa las etapas.
 	const origenId: string | null = values.cadenaOrigen?.calculatorId || null;
 	const cadena = origenId ? { cadenaPrevisional: { origenRef: origenId } } : {};
+	// Al editar se manda siempre: si el retroactivo se desvinculó del haber de caja, el vínculo guardado se suelta
+	const cadenaEdicion = { cadenaPrevisional: { origenRef: origenId } };
 
 	const guardar = async () => {
 		const userId = user?._id || user?.id;
@@ -179,7 +181,7 @@ const ResultadoCalculo = ({ resultado: r, input, values, onModificar, onNuevoCal
 				user: reclamante || user?.name || "Usuario",
 				folderId: values.folderId || null,
 				folderName: values.folderId ? values.folderName || null : null,
-				...cadena,
+				...cadenaEdicion,
 				variables: armarVariables(),
 			} as any),
 		);

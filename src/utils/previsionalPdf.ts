@@ -33,9 +33,14 @@ export const TOPE_LABELS: Record<string, string> = {
 	actis_caporale_menor_15_sino_descuenta: '"Actis Caporale": se aplica si la quita es menor al 15 %, si no se descuenta el 15 %',
 };
 
+/** Prestaciones del retroactivo (selector del paso 1 y PDF). Las mismas que calcula el haber de caja, más la pensión derivada. */
 export const PRESTACION_LABELS: Record<string, string> = {
 	jubilacion_ordinaria: "Jubilación Ordinaria",
 	pension_derivada: "Pensión derivada",
+	pension_directa: "Pensión por fallecimiento del afiliado (directa)",
+	retiro_invalidez: "Retiro por invalidez",
+	edad_avanzada: "Edad avanzada",
+	prestacion_anticipada: "Prestación anticipada por desempleo",
 };
 
 export interface DatosDescargaRetroactivo {

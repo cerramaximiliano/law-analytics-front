@@ -18,6 +18,11 @@ const equiparada = (c: string, a: string) => ({ codigo: c, computable: a, equiva
 
 export const CATALOGO_PRUEBA: CatalogoHaberCaja = {
 	datosVersion: "abc123def456",
+	monedasPorDefecto: [
+		{ clave: "pesosArgentinos", etiqueta: "Pesos argentinos", simbolo: "$a", desde: null, hasta: "1984-12" },
+		{ clave: "australes", etiqueta: "Australes", simbolo: "A", desde: "1985-01", hasta: "1991-12" },
+		{ clave: "pesos", etiqueta: "Pesos", simbolo: "$", desde: "1992-01", hasta: null },
+	],
 	monedas: [
 		{ clave: "pesosMonedaNacional", etiqueta: "Pesos moneda nacional", simbolo: "m$n", desde: null, hasta: "1969-12" },
 		{ clave: "pesosLey", etiqueta: "Pesos ley 18.188", simbolo: "$ley", desde: "1970-01", hasta: "1983-05" },

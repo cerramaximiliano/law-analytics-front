@@ -31,6 +31,8 @@ import {
 	sePuedeReabrirHaberCaja,
 	valoresDesdeCalculadora,
 } from "sections/forms/wizard/calc-previsional/haber-caja/formModel/valoresDesdeGuardado";
+import { etiquetaPrestacion, serieMensualHaberCajaGuardado, SerieMensualHaberCaja } from "services/haberCajaService";
+import { enqueueSnackbar } from "notistack";
 import { RUTA_RETROACTIVO } from "./HaberCajaResultado";
 
 // assets
@@ -39,7 +41,6 @@ import { ArrowRight, Edit2, Link21, Trash } from "iconsax-react";
 const pesos = (n: number | null | undefined) =>
 	n === null || n === undefined || Number.isNaN(n) ? "-" : new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(n);
 const mesLegible = (p?: string | null) => (p && /^\d{4}-\d{2}/.test(p) ? `${p.slice(5, 7)}/${p.slice(0, 4)}` : "-");
-const PRESTACIONES: Record<string, string> = { jubilacion: "Jubilación", pension: "Pensión directa", edadAvanzada: "Edad avanzada" };
 
 /** Ruta de la pantalla del haber de caja (el formulario lee `?edit=` y `?folder=`). */
 export const RUTA_HABER_CAJA = "/apps/calc/previsional/haber-caja";
@@ -78,13 +79,28 @@ export default function SavedHaberCaja() {
 		[navigate],
 	);
 
-	// Encadenar: el retroactivo arranca con este haber como haber percibido y queda vinculado a este cálculo
+	// Encadenar: los percibidos del retroactivo son la serie mensual de este haber de caja (el hub la recalcula con la
+	// entrada guardada) y el retroactivo queda vinculado a este cálculo. Sin la serie, pasa solo el haber como haber pagado.
+	const [armando, setArmando] = useState<string | null>(null);
 	const usarEnRetroactivo = useCallback(
-		(calc: any) => {
+		async (calc: any) => {
 			const values = valoresDesdeCalculadora(calc);
 			const resultado = calc.variables?.resultado;
 			if (!values || !resultado) return;
-			const precarga = precargaRetroactivoDesdeHaberCaja(resultado, values, calc._id);
+			setArmando(calc._id);
+			let serie: SerieMensualHaberCaja | null = null;
+			try {
+				serie = await serieMensualHaberCajaGuardado(calc._id);
+			} catch (e: any) {
+				enqueueSnackbar(
+					`No se pudo traer la serie mensual (${
+						e?.response?.data?.mensaje || e?.message || "error del servidor"
+					}): el retroactivo arranca solo con el haber de caja como haber pagado.`,
+					{ variant: "warning" },
+				);
+			}
+			setArmando(null);
+			const precarga = precargaRetroactivoDesdeHaberCaja(resultado, values, calc._id, serie);
 			navigate(RUTA_RETROACTIVO + (calc.folderId ? `?folder=${calc.folderId}` : ""), { state: { desdeHaberCaja: precarga } });
 		},
 		[navigate],
@@ -123,7 +139,8 @@ export default function SavedHaberCaja() {
 						<TableBody>
 							{guardados.map((calc: any) => {
 								const v = calc.variables || {};
-								const prestacion = v.input?.prestacion || v.datosExpediente?.prestacion;
+								// la del selector (la anticipada llega al motor como jubilación con reducción)
+								const prestacion = v.datosExpediente?.prestacion || (v.input?.anticipada ? "anticipada" : v.input?.prestacion);
 								const titular = calc.user || v.datosExpediente?.reclamante || "este cálculo";
 								const reabrible = sePuedeReabrirHaberCaja(calc);
 								return (
@@ -150,7 +167,9 @@ export default function SavedHaberCaja() {
 												)}
 											</Stack>
 										</TableCell>
-										<TableCell>{PRESTACIONES[prestacion] || prestacion || "-"}</TableCell>
+										<TableCell>
+											{prestacion ? etiquetaPrestacion(prestacion) + (v.input?.pensionDerivada ? " · pensión derivada" : "") : "-"}
+										</TableCell>
 										<TableCell>{v.input?.fechas?.fad ? fechaCalculo(v.input.fechas.fad) : "-"}</TableCell>
 										<TableCell align="right" sx={{ whiteSpace: "nowrap", fontWeight: 500 }}>
 											{pesos(v.resultado?.haber ?? calc.amount)}
@@ -176,7 +195,7 @@ export default function SavedHaberCaja() {
 														<IconButton
 															size="small"
 															color="secondary"
-															disabled={!reabrible || !v.resultado}
+															disabled={!reabrible || !v.resultado || armando === calc._id}
 															onClick={() => usarEnRetroactivo(calc)}
 															aria-label={`Usar en el retroactivo el haber de caja de ${titular}`}
 														>

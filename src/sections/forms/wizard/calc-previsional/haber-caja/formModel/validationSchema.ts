@@ -1,13 +1,15 @@
 // Validación del formulario del haber de caja con Yup (el mismo mecanismo que el retroactivo previsional).
 // El esquema se arma con el catálogo del hub: las categorías de autónomos que no se pueden cargar en un período salen de ahí.
 import * as Yup from "yup";
-import { bloqueoDeCategoria, CatalogoHaberCaja, leerImporte, normalizarPeriodo } from "services/haberCajaService";
+import { bloqueoDeCategoria, CatalogoHaberCaja, leerImporte, normalizarPeriodo, prestacionesDelCatalogo } from "services/haberCajaService";
 import {
 	CAUSA_VINCULADA,
 	FilaAutonomoForm,
 	filaAutonomoVacia,
 	FilaRemuneracionForm,
 	filaRemuneracionVacia,
+	admiteDerivada,
+	excedentesCargados,
 	porcentajeDe,
 	tiempoDe,
 	tiempoVacio,
@@ -46,7 +48,8 @@ export default function crearValidationSchema(catalogo?: CatalogoHaberCaja | nul
 		const periodo = normalizarPeriodo(f.periodo);
 		if (!periodo) return this.createError({ path: `${this.path}.periodo`, message: "Período inválido (MM/AAAA o AAAA-MM)" });
 		const importe = leerImporte(f.importe);
-		if (importe === null || importe < 0) return this.createError({ path: `${this.path}.importe`, message: "Importe inválido" });
+		// el signo no se valida: la constancia de ANSES trae ajustes negativos y el motor los suma
+		if (importe === null) return this.createError({ path: `${this.path}.importe`, message: "Importe inválido" });
 		if (f.hasta && f.hasta.trim()) {
 			const hasta = normalizarPeriodo(f.hasta);
 			if (!hasta) return this.createError({ path: `${this.path}.hasta`, message: "Hasta inválido (MM/AAAA o AAAA-MM)" });
@@ -81,8 +84,28 @@ export default function crearValidationSchema(catalogo?: CatalogoHaberCaja | nul
 			.required("Ingrese un nombre o seleccione una carpeta")
 			.test("carpeta", "Seleccione una carpeta", (v) => v !== CAUSA_VINCULADA),
 		prestacion: Yup.string()
-			.oneOf(["jubilacion", "pension", "edadAvanzada"], "Seleccione una prestación")
-			.required("Seleccione una prestación"),
+			.required("Seleccione una prestación")
+			.test("habilitada", "Esa prestación todavía no se calcula: elegí otra", (v) =>
+				prestacionesDelCatalogo(catalogo).some((p) => p.clave === v && p.habilitada),
+			),
+		pensionDerivadaPorcentaje: porcentaje("Porcentaje de la pensión derivada: entre 0 y 100").test(
+			"requerido",
+			"Ingrese el porcentaje de la pensión derivada",
+			function (v) {
+				return !(this.parent.pensionDerivada && admiteDerivada(this.parent.prestacion)) || porcentajeDe(v) !== undefined;
+			},
+		),
+		pensionDerivadaFallecimiento: fecha()
+			.test("requerida", "Ingrese la fecha de fallecimiento del causante", function (v) {
+				return !(this.parent.pensionDerivada && admiteDerivada(this.parent.prestacion)) || !!v;
+			})
+			.test("posterior", "El fallecimiento del causante no puede ser anterior a la adquisición del derecho", function (v) {
+				return !v || !this.parent.fad || !this.parent.pensionDerivada || v.slice(0, 7) >= String(this.parent.fad).slice(0, 7);
+			}),
+		excedentesPBU: Yup.mixed().test("excedentes", "Años excedentes de 30: un número entero entre 0 y 15", (v) => {
+			const n = excedentesCargados(v);
+			return n === undefined || !Number.isNaN(n);
+		}),
 		programa: Yup.string().oneOf(["ansesPrpa", "bluecorp"]).required(),
 		porcentajePension: porcentaje("Entre 0 y 100"),
 		anticipadaPorcentaje: porcentaje("Entre 0 y 100"),
@@ -93,7 +116,7 @@ export default function crearValidationSchema(catalogo?: CatalogoHaberCaja | nul
 			(v) => !v || v.slice(0, 7) >= INICIO_LEY_24241,
 		),
 		cese: fecha().when("prestacion", {
-			is: "pension",
+			is: (p: string) => p === "pension" || p === "retiroInvalidez",
 			then: (s) => s,
 			otherwise: (s) => s.required("Ingrese la fecha de cese"),
 		}),
@@ -118,7 +141,9 @@ export default function crearValidationSchema(catalogo?: CatalogoHaberCaja | nul
 				const h = normalizarPeriodo(v || "");
 				return !d || !h || h >= d;
 			}),
-		servicios: Yup.object({ n: tramo, m: tramo, p: tramo }).test("algun-servicio", "Cargue los años de servicios", (s: any) => {
+		servicios: Yup.object({ n: tramo, m: tramo, p: tramo }).test("algun-servicio", "Cargue los años de servicios", function (s: any) {
+			// el retiro por invalidez sale del ingreso base: no usa los años de servicios
+			if (this.parent.prestacion === "retiroInvalidez") return true;
 			const tiempos = ["n", "m", "p"].flatMap((k) => [tiempoDe(s?.[k]?.antes), tiempoDe(s?.[k]?.despues)]);
 			// los tiempos inválidos ya tienen su propio error
 			return tiempos.some((t) => t === null) || tiempos.some((t) => !tiempoVacio(t));

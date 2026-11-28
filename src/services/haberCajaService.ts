@@ -16,7 +16,53 @@ export interface TramoServicios {
 	despues?: TiempoAMD;
 }
 
-export type PrestacionHaberCaja = "jubilacion" | "pension" | "edadAvanzada";
+/** Prestaciones que recibe el motor. */
+export type PrestacionHaberCaja = "jubilacion" | "pension" | "edadAvanzada" | "retiroInvalidez";
+/**
+ * Prestaciones del selector de la pantalla (la lista del cálculo de haber de BlueCorp). «anticipada» viaja al motor como
+ * jubilación con la reducción de la anticipada; las tres últimas se muestran deshabilitadas.
+ */
+export type PrestacionSelector = PrestacionHaberCaja | "anticipada" | "baseJubilatoria" | "rentaVitalicia" | "retiroProgramado";
+
+export interface PrestacionCatalogo {
+	clave: PrestacionSelector;
+	etiqueta: string;
+	habilitada: boolean;
+	/** Texto corto: por qué está deshabilitada o cómo se calcula. */
+	leyenda?: string;
+	/** Admite la pregunta «¿Es pensión derivada?» sobre esta prestación (la del causante). */
+	pensionDerivada?: boolean;
+}
+
+/** Respaldo del selector si el catálogo no trae la lista (hub anterior): la misma que publica el hub. */
+export const PRESTACIONES_SELECTOR: PrestacionCatalogo[] = [
+	{ clave: "jubilacion", etiqueta: "Jubilación ordinaria (PBU, PC y PAP)", habilitada: true, pensionDerivada: true },
+	{ clave: "pension", etiqueta: "Pensión por fallecimiento del afiliado (directa)", habilitada: true },
+	{ clave: "retiroInvalidez", etiqueta: "Retiro por invalidez", habilitada: true },
+	{ clave: "edadAvanzada", etiqueta: "Edad avanzada", habilitada: true, pensionDerivada: true },
+	{ clave: "anticipada", etiqueta: "Prestación anticipada por desempleo", habilitada: true, pensionDerivada: true },
+	{ clave: "baseJubilatoria", etiqueta: "Base jubilatoria", habilitada: false, leyenda: "Todavía no disponible" },
+	{
+		clave: "rentaVitalicia",
+		etiqueta: "Renta vitalicia previsional",
+		habilitada: false,
+		leyenda: "Régimen de capitalización: todavía no se calcula",
+	},
+	{
+		clave: "retiroProgramado",
+		etiqueta: "Retiro programado",
+		habilitada: false,
+		leyenda: "Régimen de capitalización: todavía no se calcula",
+	},
+];
+
+/** Lista del selector: la del catálogo del hub o el respaldo. */
+export const prestacionesDelCatalogo = (catalogo?: { prestacionesCatalogo?: PrestacionCatalogo[] } | null): PrestacionCatalogo[] =>
+	catalogo?.prestacionesCatalogo?.length ? catalogo.prestacionesCatalogo : PRESTACIONES_SELECTOR;
+
+/** Nombre legible de la prestación del selector (o de la que recibe el motor). */
+export const etiquetaPrestacion = (clave?: string | null, catalogo?: { prestacionesCatalogo?: PrestacionCatalogo[] } | null): string =>
+	prestacionesDelCatalogo(catalogo).find((p) => p.clave === clave)?.etiqueta || clave || "-";
 
 /** Perfiles de convenciones que acepta la ruta de usuario (cualquier otro cae en `ansesPrpa`). */
 export type ProgramaHaberCaja = "ansesPrpa" | "bluecorp";
@@ -51,6 +97,12 @@ export interface HaberCajaInput {
 	porcentajePension?: number;
 	/** Prestación anticipada: true (porcentaje según la fecha) o el porcentaje. */
 	anticipada?: boolean | { porcentaje: number };
+	/** Pensión derivada sobre la prestación del causante: mes del fallecimiento (AAAA-MM-DD) y porcentaje. */
+	pensionDerivada?: { fallecimiento: string; porcentaje: number };
+	/** Retiro por invalidez: aportante regular (70 % del ingreso base) o irregular con derecho (50 %). */
+	tipoAfiliado?: "regular" | "irregular";
+	/** Años de servicios para la bonificación de la PBU (30 más los excedentes, hasta 45). Sin el campo, los calcula el motor. */
+	aniosPBU?: number;
 	/** Fechas en AAAA-MM-DD. */
 	fechas: { fad: string; cese?: string; solicitud?: string; alta?: string; acuerdo?: string };
 	/** «Período Dde/Hasta» del promedio: solo esas remuneraciones entran en la sumatoria. */
@@ -118,6 +170,31 @@ export interface HaberCajaResultado {
 	PAP: number;
 	porcentajes?: { pc: number; pap: number };
 	anios?: { pbu: number; N1: number; N1computados?: number; N2: number };
+	/** Retiro por invalidez (art. 97): ingreso base, porcentaje de referencia y haber. Sin PBU, PC ni PAP. */
+	retiroInvalidez?: {
+		norma: string;
+		ingresoBase: number;
+		pctReferencia: number;
+		prestacionReferencia: number;
+		participacionEstatal: number;
+		haberRetiro: number;
+	} | null;
+	/** Pensión derivada en el mes del fallecimiento del causante. */
+	pensionDerivada?: {
+		norma: string;
+		fallecimiento: string;
+		mes: string;
+		porcentaje: number;
+		PBU: number;
+		PC: number;
+		PAP: number;
+		suplemento?: number;
+		sumaFija?: number;
+		haber: number;
+		haberMinimo?: number | null;
+		complementoMinimo?: number;
+		haberConMinimo: number;
+	} | null;
 	meses?: { antes: { n: number; m: number; p: number; excedente35?: number } };
 	anticipada?: { porcentaje: number; norma: string } | null;
 	edadAvanzada?: { pbuPct: number; norma: string } | null;
@@ -158,6 +235,87 @@ export async function calcularHaberCaja(input: HaberCajaInput): Promise<HaberCaj
 	return data;
 }
 
+// ---- serie mensual: el haber de caja evolucionado mes a mes (lo que el retroactivo toma como percibido) ----
+
+/** Una fila por mes, como el anexo «Movilidad del haber mensual» de BlueCorp. */
+export interface FilaSerieMensual {
+	/** AAAA-MM */
+	mes: string;
+	PBU: number;
+	PC: number;
+	PAP: number;
+	/** Haber único de las prestaciones sin PBU, PC ni PAP (retiro por invalidez). */
+	haberBase?: number;
+	suplemento: number;
+	/** Suma fija del DNU 163/20 (3/2020 a 2/2021). */
+	sumaFija: number;
+	haberPuro: number;
+	zonaAustral?: number;
+	haberMaximo?: number | null;
+	descuentoMaximo: number;
+	haberMinimo?: number | null;
+	complementoMinimo: number;
+	/** Haber bruto del mes, con el máximo y el mínimo aplicados: es el percibido de ese mes. */
+	haberAlPago: number;
+	/** Desde el fallecimiento del causante la fila es la pensión derivada. */
+	pensionDerivada?: boolean;
+	/** Qué cambió respecto del mes anterior (movilidad, integración de la suma fija…). */
+	cambio?: string;
+}
+export interface SerieMensualHaberCaja {
+	desde: string;
+	hasta: string;
+	/** Mes del primer haber. */
+	mesParametros: string;
+	/** La serie garantiza el 82 % del salario mínimo (Ley 27.426): 30 años de servicios o más. */
+	minimo82?: boolean;
+	pensionDerivada?: { fallecimiento: string; porcentaje: number };
+	filas: FilaSerieMensual[];
+	avisos: string[];
+}
+/** Rango de la serie en AAAA-MM. Sin `desde`: el mes del primer haber; sin `hasta`: el último mes con datos. */
+export interface RangoSerie {
+	desde?: string;
+	hasta?: string;
+}
+
+const serieDe = (data: any): SerieMensualHaberCaja => {
+	if (!data?.success || !Array.isArray(data?.serie?.filas)) throw new Error("El servidor no devolvió la serie mensual del haber de caja");
+	return data.serie;
+};
+
+/** Serie mensual a partir de la entrada del cálculo. */
+export async function serieMensualHaberCaja(input: HaberCajaInput, rango: RangoSerie = {}): Promise<SerieMensualHaberCaja> {
+	const { data } = await axios.post("/api/previsional/haber-caja/serie-mensual", { ...input, serie: rango });
+	return serieDe(data);
+}
+
+/** Serie mensual de un haber de caja guardado (el hub la recalcula con la entrada guardada). */
+export async function serieMensualHaberCajaGuardado(calculatorId: string, rango: RangoSerie = {}): Promise<SerieMensualHaberCaja> {
+	const { data } = await axios.post(`/api/previsional/haber-caja/guardados/${calculatorId}/serie-mensual`, rango);
+	return serieDe(data);
+}
+
+/**
+ * Años de servicios que el motor computa para la PBU a partir de los tiempos cargados (misma regla que `anios` del motor:
+ * la fracción de más de 6 meses cuenta un año). Sirve para mostrar los excedentes de 30 antes de calcular; el resultado
+ * trae el valor del motor en `anios.pbu`.
+ */
+export function aniosDeServicios(tiempos: (TiempoAMD | null | undefined)[]): number {
+	let meses = 0;
+	let dias = 0;
+	for (const t of tiempos) {
+		if (!t) continue;
+		meses += (Number(t.a) || 0) * 12 + (Number(t.m) || 0);
+		dias += Number(t.d) || 0;
+	}
+	const total = meses + (dias > 0 ? dias / 30 : 0);
+	const enteros = Math.floor(total / 12);
+	return total - enteros * 12 > 6 ? enteros + 1 : enteros;
+}
+/** Años excedentes de 30 que bonifican la PBU (Ley 24.241 art. 20): hasta 15. */
+export const excedentesDe30 = (anios: number): number => Math.min(Math.max(anios - 30, 0), 15);
+
 // ---- catálogo (GET /api/previsional/haber-caja/catalogo): categorías por época y moneda por período ----
 
 /** Rango de meses AAAA-MM; `desde: null` = sin límite hacia atrás, `hasta: null` = sigue vigente. */
@@ -187,13 +345,18 @@ export interface BloqueoCatalogo extends RangoMeses {
 }
 export interface CatalogoHaberCaja {
 	datosVersion: string;
+	/** Moneda de curso legal por período (la «moneda de la época»). */
 	monedas: MonedaCatalogo[];
+	/** Moneda que recibe la fila sin moneda, por período: la convención de BlueCorp. */
+	monedasPorDefecto?: MonedaCatalogo[];
 	/** Categorías que se ofrecen en cada época del período de aportes. */
 	tramos: TramoCatalogo[];
 	/** Lista completa, para elegir «otra». */
 	categorias: CategoriaCatalogo[];
 	/** Combinaciones de categoría y época que no se dejan cargar. */
 	bloqueos: BloqueoCatalogo[];
+	/** Lista del selector de prestaciones, con las que el motor todavía no calcula deshabilitadas. */
+	prestacionesCatalogo?: PrestacionCatalogo[];
 	limites: { remuneraciones: number; periodosAutonomo: number; mesesRenglon: number };
 }
 
@@ -283,6 +446,64 @@ export function equiparacionDeCategoria(
 		.filter((k) => k && k.equivalencia)
 		.map((k) => `${codigo} → ${k!.computable}${k!.norma ? ` por el ${k!.norma}` : ""}`);
 	return partes.length ? [...new Set(partes)].join("; ") : null;
+}
+
+// ---- importes anteriores al peso: en qué moneda están cargados ----
+
+/**
+ * Cómo están expresados los importes anteriores al peso. La moneda automática (fila sin moneda) es la convención de
+ * BlueCorp, que publica el catálogo en `monedasPorDefecto` (decisión del dueño): pesos argentinos y, después, australes.
+ * Las otras dos formas: la moneda de curso legal de cada período («epoca», `monedas` del catálogo) y los importes ya
+ * convertidos a pesos, como los trae la constancia de ANSES. Pasar de una a otra es correr la coma.
+ * Las fechas de corte salen todas del catálogo del hub.
+ */
+export type CriterioMonedasViejas = "bluecorp" | "epoca" | "pesos";
+export const CRITERIO_MONEDAS_POR_DEFECTO: CriterioMonedasViejas = "bluecorp";
+
+/** Moneda que recibe la fila sin moneda en ese período (convención de BlueCorp); null si el catálogo no la trae. */
+export function monedaPorDefectoDelPeriodo(
+	catalogo: CatalogoHaberCaja | null | undefined,
+	periodo: string | null | undefined,
+): MonedaCatalogo | null {
+	if (!catalogo?.monedasPorDefecto || !periodo) return null;
+	return catalogo.monedasPorDefecto.find((m) => dentro(m, periodo)) || null;
+}
+
+/** Primer mes en que la moneda por defecto ya es el peso (los importes anteriores son los «viejos»); null sin catálogo. */
+export function primerMesEnPesos(catalogo: CatalogoHaberCaja | null | undefined): string | null {
+	return catalogo?.monedasPorDefecto?.find((m) => m.clave === "pesos")?.desde || null;
+}
+
+/** ¿El período es anterior al peso? (sin catálogo no se sabe: false) */
+export function esPeriodoAnteriorAlPeso(catalogo: CatalogoHaberCaja | null | undefined, periodo: string | null | undefined): boolean {
+	const corte = primerMesEnPesos(catalogo);
+	return !!corte && !!periodo && periodo < corte;
+}
+
+/** Opciones del control, con los nombres de las monedas que trae el catálogo. */
+export function criteriosMonedasViejas(
+	catalogo: CatalogoHaberCaja | null | undefined,
+): { clave: CriterioMonedasViejas; etiqueta: string }[] {
+	const deBlueCorp = (catalogo?.monedasPorDefecto || []).filter((m) => m.clave !== "pesos").map((m) => m.etiqueta.toLowerCase());
+	return [
+		{ clave: "bluecorp", etiqueta: `Como los carga BlueCorp${deBlueCorp.length ? `: en ${deBlueCorp.join(" y en ")}` : ""}` },
+		{ clave: "pesos", etiqueta: "Ya convertidos a pesos (como la constancia de ANSES)" },
+		{ clave: "epoca", etiqueta: "En la moneda que regía en cada período" },
+	];
+}
+
+/**
+ * Moneda de la fila según el criterio; "" = automática (la convención de BlueCorp, que pone el hub). Solo cambia los
+ * períodos anteriores al peso.
+ */
+export function monedaSegunCriterio(
+	criterio: CriterioMonedasViejas,
+	periodo: string,
+	catalogo: CatalogoHaberCaja | null | undefined,
+): string {
+	if (!esPeriodoAnteriorAlPeso(catalogo, periodo) || criterio === "bluecorp") return "";
+	if (criterio === "pesos") return "pesos";
+	return monedaDelPeriodo(catalogo, periodo)?.clave || "";
 }
 
 // ---- utilidades de carga (formulario y pegado desde planilla) ----

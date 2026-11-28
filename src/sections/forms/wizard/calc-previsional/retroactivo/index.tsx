@@ -39,6 +39,7 @@ import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 const FEATURE = "calculoPrevisional";
 
 const steps = ["Datos del expediente", "Haberes", "Movilidad", "Topes", "Intereses"];
+const mesLegible = (p?: string | null) => (p && /^\d{4}-\d{2}/.test(p) ? `${p.slice(5, 7)}/${p.slice(0, 4)}` : p || "-");
 const { formId, formField } = previsionalFormModel;
 
 // ==============================|| PREVISIONAL RETROACTIVO WIZARD ||============================== //
@@ -219,8 +220,13 @@ const PrevisionalRetroactivoWizard = ({
 			)}
 			{valoresPrecarga && precarga && (
 				<Alert severity="info" sx={{ mb: 3 }}>
-					El haber pagado por ANSES viene del haber de caja calculado ({precarga.origen.mes.slice(5, 7)}/{precarga.origen.mes.slice(0, 4)}
-					). Podés corregirlo.{" "}
+					{precarga.origen.serie
+						? `Los haberes percibidos vienen del haber de caja calculado: su serie mensual, de ${mesLegible(
+								precarga.origen.serie.desde,
+						  )} a ${mesLegible(
+								precarga.origen.serie.hasta,
+						  )}. En el paso 2 elegís desde y hasta cuándo se reclama y podés corregirlos o desvincularlos.`
+						: `El haber pagado por ANSES viene del haber de caja calculado (${mesLegible(precarga.origen.mes)}). Podés corregirlo.`}{" "}
 					{precarga.origen.calculatorId
 						? "Al guardar, este retroactivo queda vinculado a ese haber de caja."
 						: "El haber de caja no está guardado: este retroactivo no queda vinculado a él."}

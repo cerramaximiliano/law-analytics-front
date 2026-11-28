@@ -102,8 +102,18 @@ export function valoresDesdeCalculadora(calc: any): Record<string, any> | null {
 	// La carpeta vinculada manda la del documento (puede haberse vinculado después desde Guardados)
 	const folderId = calc.folderId || base.folderId || "";
 	const folderName = calc.folderName || base.folderName || "";
+	// Cadena previsional: manda el vínculo del documento. Si el haber de caja de origen se borró (el hub suelta el vínculo)
+	// o el retroactivo se desvinculó, el origen guardado en el formulario queda sin cálculo y no se vuelve a mandar.
+	const origenDelDocumento = calc.cadenaPrevisional?.origenRef ? String(calc.cadenaPrevisional.origenRef) : null;
+	const cadenaOrigen =
+		base.cadenaOrigen && base.cadenaOrigen.calculatorId && base.cadenaOrigen.calculatorId !== origenDelDocumento
+			? { ...base.cadenaOrigen, calculatorId: origenDelDocumento, origenBorrado: !origenDelDocumento }
+			: base.cadenaOrigen ||
+			  // guardado sin el formulario: el vínculo del documento se conserva al volver a guardar
+			  (origenDelDocumento ? { etapa: calc.cadenaPrevisional.origenEtapa || "haberCaja", calculatorId: origenDelDocumento } : null);
 	return {
 		...base,
+		...(cadenaOrigen ? { cadenaOrigen } : {}),
 		folderId,
 		folderName,
 		// Si el guardado apuntaba a una carpeta que ya no existe, el marcador interno no debe

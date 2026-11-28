@@ -3,7 +3,22 @@
  * precarga del retroactivo. Datos inventados.
  */
 import { describe, expect, it, vi } from "vitest";
-import { armarEntradaHaberCaja, HaberCajaValues, nuevaFilaAutonomo, nuevaFilaRemuneracion, valoresIniciales } from "./haberCajaFormModel";
+import {
+	aniosPBUCalculados,
+	armarEntradaHaberCaja,
+	HaberCajaValues,
+	nuevaFilaAutonomo,
+	nuevaFilaRemuneracion,
+	valoresIniciales,
+} from "./haberCajaFormModel";
+import {
+	aniosDeServicios,
+	excedentesDe30,
+	monedaPorDefectoDelPeriodo,
+	monedaSegunCriterio,
+	primerMesEnPesos,
+	SerieMensualHaberCaja,
+} from "services/haberCajaService";
 import crearValidationSchema from "./validationSchema";
 import {
 	precargaRetroactivoDesdeHaberCaja,
@@ -125,7 +140,7 @@ describe("haber de caja: entrada del motor", () => {
 		});
 	});
 
-	it("moneda automática por período, moneda corregida y renglones de varios meses", () => {
+	it("moneda automática por período (convención de BlueCorp), moneda corregida y renglones de varios meses", () => {
 		const input = armarEntradaHaberCaja(
 			completos({
 				remuneraciones: [
@@ -140,8 +155,9 @@ describe("haber de caja: entrada del motor", () => {
 			CATALOGO_PRUEBA,
 		);
 		expect(input.remuneraciones).toEqual([
-			{ periodo: "1969-12", importe: 50000, moneda: "pesosMonedaNacional" },
-			{ periodo: "1975-01", importe: 60000, moneda: "pesosLey", hasta: "1975-12" },
+			// la moneda automática es la convención de BlueCorp que publica el catálogo: pesos argentinos antes de 1985
+			{ periodo: "1969-12", importe: 50000, moneda: "pesosArgentinos" },
+			{ periodo: "1975-01", importe: 60000, moneda: "pesosArgentinos", hasta: "1975-12" },
 			{ periodo: "1984-06", importe: 9000, moneda: "pesosArgentinos" },
 			{ periodo: "1988-06", importe: 4500, moneda: "australes" },
 			{ periodo: "1988-07", importe: 0.45, moneda: "pesos" },
@@ -175,7 +191,6 @@ describe("haber de caja: entrada del motor", () => {
 		v.servicios.p.despues = { a: "", m: "6", d: "" };
 		expect(armarEntradaHaberCaja(v, CATALOGO_PRUEBA)).toMatchObject({
 			prestacion: "edadAvanzada",
-			anticipada: { porcentaje: 50 },
 			fechas: { acuerdo: "2019-08-10" },
 			periodoPromedio: { desde: "2009-03", hasta: "2019-02" },
 			servicios: {
@@ -266,6 +281,8 @@ describe("haber de caja: guardados y encadenado con el retroactivo", () => {
 			mes: "2019-02",
 			haber: 24795.5,
 			componentes: { PBU: 4500.25, PC: 5125.06, PAP: 15170.19 },
+			prestacion: "jubilacion",
+			serie: null,
 		});
 		expect(p.valores).toEqual({
 			reclamante: "Caso de prueba",
@@ -292,10 +309,186 @@ describe("haber de caja: guardados y encadenado con el retroactivo", () => {
 		expect(p.valores).toMatchObject({
 			haberPagadoAnses: 27100,
 			haberPagadoAl: "01/08/2019",
-			prestacion: "",
+			prestacion: "pension_directa",
 			reclamante: "__CAUSA_VINCULADA__f1",
 			folderId: "f1",
 			folderName: "Carpeta de prueba",
 		});
+	});
+
+	const serie: SerieMensualHaberCaja = {
+		desde: "2019-02",
+		hasta: "2019-05",
+		mesParametros: "2019-02",
+		filas: [
+			["2019-02", 24795.5],
+			["2019-03", 27728.81],
+			["2019-04", 27728.81],
+			["2019-05", 27728.81],
+		].map(([mes, haberAlPago]) => ({
+			mes: mes as string,
+			PBU: 1,
+			PC: 1,
+			PAP: 1,
+			suplemento: 0,
+			sumaFija: 0,
+			haberPuro: haberAlPago as number,
+			descuentoMaximo: 0,
+			complementoMinimo: 0,
+			haberAlPago: haberAlPago as number,
+		})),
+		avisos: [],
+	};
+
+	it("con la serie mensual, los percibidos del retroactivo son los mensuales del haber de caja", () => {
+		const p = precargaRetroactivoDesdeHaberCaja(resultado, completos(), "calc1", serie);
+		expect(p.origen.serie).toEqual({ desde: "2019-02", hasta: "2019-05" });
+		expect(p.valores.percibidoManual).toBe(true);
+		expect(p.valores.percibidosMensuales).toEqual([
+			{ periodo: "2019-02", importe: 24795.5 },
+			{ periodo: "2019-03", importe: 27728.81 },
+			{ periodo: "2019-04", importe: 27728.81 },
+			{ periodo: "2019-05", importe: 27728.81 },
+		]);
+		// el haber de caja sigue entrando como haber pagado: de ahí arranca el reclamado y es el respaldo si se desvincula
+		expect(p.valores).toMatchObject({ haberPagadoAnses: 24795.5, haberPagadoAl: "01/02/2019" });
+		// sin serie (o vacía) el retroactivo queda en el modo de siempre
+		const sin = precargaRetroactivoDesdeHaberCaja(resultado, completos(), "calc1", { ...serie, filas: [] });
+		expect(sin.origen.serie).toBeNull();
+		expect(sin.valores).not.toHaveProperty("percibidoManual");
+	});
+
+	it("todas las prestaciones habilitadas llegan al retroactivo con su prestación; la derivada, con fecha y porcentaje", () => {
+		const de = (cambios: Partial<HaberCajaValues>, r: any = resultado) =>
+			precargaRetroactivoDesdeHaberCaja(r, completos(cambios), null).valores;
+		expect(de({ prestacion: "jubilacion" }).prestacion).toBe("jubilacion_ordinaria");
+		expect(de({ prestacion: "pension" }).prestacion).toBe("pension_directa");
+		expect(de({ prestacion: "retiroInvalidez" }).prestacion).toBe("retiro_invalidez");
+		expect(de({ prestacion: "edadAvanzada" }).prestacion).toBe("edad_avanzada");
+		expect(de({ prestacion: "anticipada" }).prestacion).toBe("prestacion_anticipada");
+		// guardados anteriores: la anticipada era una casilla sobre la jubilación
+		expect(de({ prestacion: "jubilacion", anticipada: true }).prestacion).toBe("prestacion_anticipada");
+		const derivada = de(
+			{ prestacion: "jubilacion", pensionDerivada: true, pensionDerivadaPorcentaje: 70, pensionDerivadaFallecimiento: "2022-05-10" },
+			{ ...resultado, pensionDerivada: { mes: "2022-05", porcentaje: 70, PBU: 1, PC: 1, PAP: 1, haber: 3, haberConMinimo: 3 } },
+		);
+		expect(derivada).toMatchObject({ prestacion: "pension_derivada", pensionFecha: "10/05/2022", pensionPorcentaje: 70 });
+	});
+});
+
+describe("haber de caja: prestaciones del selector, excedentes de 30 y monedas anteriores a 1992", () => {
+	it("la anticipada viaja como jubilación con reducción; el retiro por invalidez, con el tipo de aportante", () => {
+		const anticipada = armarEntradaHaberCaja(completos({ prestacion: "anticipada" }), CATALOGO_PRUEBA);
+		expect(anticipada).toMatchObject({ prestacion: "jubilacion", anticipada: true });
+		expect(armarEntradaHaberCaja(completos({ prestacion: "anticipada", anticipadaPorcentaje: 80 }), CATALOGO_PRUEBA).anticipada).toEqual({
+			porcentaje: 80,
+		});
+		// ida y vuelta: la entrada del motor vuelve a ser la anticipada del selector
+		expect(valoresDesdeInput(anticipada).prestacion).toBe("anticipada");
+		expect(
+			valoresDesdeCalculadora({
+				classType: "previsional",
+				subClassType: "haberCaja",
+				variables: { formulario: completos({ anticipada: true }) },
+			}),
+		).toMatchObject({
+			prestacion: "anticipada",
+			anticipada: false,
+		});
+
+		const invalidez = armarEntradaHaberCaja(
+			completos({ prestacion: "retiroInvalidez", tipoAfiliado: "irregular", excedentesPBU: "4" }),
+			CATALOGO_PRUEBA,
+		);
+		expect(invalidez).toMatchObject({ prestacion: "retiroInvalidez", tipoAfiliado: "irregular" });
+		expect(invalidez).not.toHaveProperty("aniosPBU");
+		expect(armarEntradaHaberCaja(completos({ prestacion: "retiroInvalidez" }), CATALOGO_PRUEBA)).not.toHaveProperty("tipoAfiliado");
+		expect(valoresDesdeInput(invalidez)).toMatchObject({ prestacion: "retiroInvalidez", tipoAfiliado: "irregular" });
+	});
+
+	it("pensión derivada: porcentaje y fallecimiento sobre la prestación del causante", async () => {
+		const v = completos({ pensionDerivada: true, pensionDerivadaPorcentaje: 70, pensionDerivadaFallecimiento: "2022-05-10" });
+		const entrada = armarEntradaHaberCaja(v, CATALOGO_PRUEBA);
+		expect(entrada.pensionDerivada).toEqual({ fallecimiento: "2022-05-10", porcentaje: 70 });
+		expect(valoresDesdeInput(entrada)).toMatchObject({
+			pensionDerivada: true,
+			pensionDerivadaPorcentaje: 70,
+			pensionDerivadaFallecimiento: "2022-05-10",
+		});
+		// no se pregunta sobre la pensión directa ni sobre el retiro por invalidez
+		expect(armarEntradaHaberCaja({ ...v, prestacion: "pension" }, CATALOGO_PRUEBA)).not.toHaveProperty("pensionDerivada");
+		expect(armarEntradaHaberCaja({ ...v, prestacion: "retiroInvalidez" }, CATALOGO_PRUEBA)).not.toHaveProperty("pensionDerivada");
+		expect(await errores(v)).toEqual({});
+		const e = await errores(completos({ pensionDerivada: true }));
+		expect(e.pensionDerivadaPorcentaje).toMatch(/porcentaje de la pensión derivada/);
+		expect(e.pensionDerivadaFallecimiento).toMatch(/fallecimiento del causante/);
+		expect((await errores({ ...v, pensionDerivadaFallecimiento: "2018-01-10" })).pensionDerivadaFallecimiento).toMatch(
+			/anterior a la adquisición/,
+		);
+	});
+
+	it("las prestaciones que el motor no calcula no pasan la validación; el retiro por invalidez no pide servicios ni cese", async () => {
+		for (const prestacion of ["baseJubilatoria", "rentaVitalicia", "retiroProgramado"] as const)
+			expect((await errores(completos({ prestacion }))).prestacion).toMatch(/todavía no se calcula/);
+		const v = valoresIniciales();
+		const invalidez = completos({ prestacion: "retiroInvalidez", cese: "", servicios: v.servicios });
+		expect(await errores(invalidez)).toEqual({});
+		expect((await errores(completos({ servicios: v.servicios }))).servicios).toBe("Cargue los años de servicios");
+	});
+
+	it("servicios excedentes: años sobre 30 que calcula el motor de los servicios, corregibles a mano (aniosPBU = 30 + excedentes)", async () => {
+		// misma regla que `anios` del motor: la fracción de más de 6 meses cuenta un año
+		expect(aniosDeServicios([{ a: 22, m: 7 }, { a: 11 }])).toBe(34);
+		expect(aniosDeServicios([{ a: 33, m: 6 }])).toBe(33);
+		expect(aniosDeServicios([{ a: 33, m: 6, d: 1 }])).toBe(34);
+		expect(aniosDeServicios([{ a: 20 }, null, undefined])).toBe(20);
+		expect([29, 30, 34, 50].map(excedentesDe30)).toEqual([0, 0, 4, 15]);
+		const v = completos();
+		v.servicios.n = { antes: { a: "22", m: "7", d: "" }, despues: { a: "11", m: "", d: "" } };
+		expect(aniosPBUCalculados(v.servicios)).toBe(34);
+		v.servicios.n.antes.m = "14";
+		expect(aniosPBUCalculados(v.servicios)).toBeNull();
+
+		// vacío: no viaja y el motor calcula; con valor: 30 + excedentes
+		expect(armarEntradaHaberCaja(completos(), CATALOGO_PRUEBA)).not.toHaveProperty("aniosPBU");
+		expect(armarEntradaHaberCaja(completos({ excedentesPBU: "8" }), CATALOGO_PRUEBA).aniosPBU).toBe(38);
+		expect(armarEntradaHaberCaja(completos({ excedentesPBU: "0" }), CATALOGO_PRUEBA).aniosPBU).toBe(30);
+		expect(valoresDesdeInput(armarEntradaHaberCaja(completos({ excedentesPBU: "8" }), CATALOGO_PRUEBA)).excedentesPBU).toBe("8");
+		expect((await errores(completos({ excedentesPBU: "16" }))).excedentesPBU).toMatch(/entre 0 y 15/);
+		expect(await errores(completos({ excedentesPBU: "15" }))).toEqual({});
+		// la opción de los 35 años de la PC es otra cosa y viaja aparte
+		expect(armarEntradaHaberCaja(completos({ excedentesPBU: "8", excedente35: "ninguno" }), CATALOGO_PRUEBA)).toMatchObject({
+			aniosPBU: 38,
+			excedente35: "ninguno",
+		});
+	});
+
+	it("importes anteriores al peso: como BlueCorp (automática), ya en pesos o en la moneda de la época; los negativos se aceptan", async () => {
+		const periodos = ["1968-05", "1975-03", "1984-12", "1985-03", "1990-01"];
+		const con = (c: "epoca" | "pesos" | "bluecorp") => periodos.map((p) => monedaSegunCriterio(c, p, CATALOGO_PRUEBA));
+		// BlueCorp es la automática: la fila va sin moneda y recibe la del catálogo (`monedasPorDefecto`)
+		expect(con("bluecorp")).toEqual(["", "", "", "", ""]);
+		expect(periodos.map((p) => monedaPorDefectoDelPeriodo(CATALOGO_PRUEBA, p)?.clave)).toEqual([
+			"pesosArgentinos",
+			"pesosArgentinos",
+			"pesosArgentinos",
+			"australes",
+			"australes",
+		]);
+		expect(con("pesos")).toEqual(["pesos", "pesos", "pesos", "pesos", "pesos"]);
+		// la moneda de la época es la de curso legal (`monedas` del catálogo)
+		expect(con("epoca")).toEqual(["pesosMonedaNacional", "pesosLey", "pesosArgentinos", "pesosArgentinos", "australes"]);
+		// desde el peso no cambia nada; el corte sale del catálogo y sin catálogo no se toca ninguna fila
+		expect(primerMesEnPesos(CATALOGO_PRUEBA)).toBe("1992-01");
+		for (const c of ["epoca", "pesos", "bluecorp"] as const) expect(monedaSegunCriterio(c, "1992-01", CATALOGO_PRUEBA)).toBe("");
+		expect(monedaSegunCriterio("pesos", "1975-03", null)).toBe("");
+		// la entrada lleva la moneda por defecto en las filas automáticas
+		const viejas = completos({ remuneraciones: [nuevaFilaRemuneracion("03/1975", "120000"), nuevaFilaRemuneracion("03/1988", "5000")] });
+		expect(armarEntradaHaberCaja(viejas, CATALOGO_PRUEBA).remuneraciones.map((r) => r.moneda)).toEqual(["pesosArgentinos", "australes"]);
+		expect(valoresIniciales().monedasViejas).toBe("bluecorp");
+		// la constancia de ANSES trae ajustes negativos y el motor los suma
+		const v = completos({ remuneraciones: [nuevaFilaRemuneracion("01/2019", "40000"), nuevaFilaRemuneracion("01/2019", "-500,00")] });
+		expect(await errores(v)).toEqual({});
+		expect(armarEntradaHaberCaja(v, CATALOGO_PRUEBA).remuneraciones.map((r) => r.importe)).toEqual([40000, -500]);
 	});
 });
